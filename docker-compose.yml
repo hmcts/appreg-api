@@ -1,0 +1,50 @@
+version: '2.1'
+
+services:
+  app-reg-poc-backend:
+    build:
+      context: .
+      args:
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    image: app-reg-poc-backend:latest
+    container_name: app-reg-poc-backend
+    environment:
+      # these environment variables are used by java-logging library
+      - ROOT_APPENDER
+      - JSON_CONSOLE_PRETTY_PRINT
+      - ROOT_LOGGING_LEVEL
+      - REFORM_SERVICE_TYPE
+      - REFORM_SERVICE_NAME
+      - REFORM_TEAM
+      - REFORM_ENVIRONMENT
+      - LOGBACK_DATE_FORMAT
+      - LOGBACK_REQUIRE_THREAD
+      - LOGBACK_REQUIRE_ALERT_LEVEL=false
+      - LOGBACK_REQUIRE_ERROR_CODE=false
+      - LOGBACK_REQUIRE_LOGGER_NAME=false
+      - LOGBACK_REQUIRE_MESSAGE=false
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/app_reg_db
+      - SPRING_DATASOURCE_USERNAME=app_reg_user
+      - SPRING_DATASOURCE_PASSWORD=password
+    ports:
+      - "4550:4550"
+      - "5005:5005"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: app_register_postgres
+    environment:
+      - POSTGRES_USER=app_reg_user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=app_reg_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

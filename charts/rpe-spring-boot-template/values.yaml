@@ -1,0 +1,27 @@
+java:
+  applicationPort: 4550
+  image: 'sdshmctspublic.azurecr.io/appreg/api:latest'
+  ingressHost: appreg-api-{{ .Values.global.environment }}.platform.hmcts.net
+  aadIdentityName: appreg
+  Uncomment once the vault containing the app insights key has been set up
+  keyVaults:
+    appreg:
+      secrets:
+        - name: AppInsightsInstrumentationKey
+          alias: APP_INSIGHTS_INSTRUMENTATION_KEY
+        - name: app-insights-connection-string
+          alias: APP_INSIGHTS_CONNECTION_STRING
+        - name: POSTGRES-USER
+          alias: POSTGRES_USER
+        - name: POSTGRES-PASS
+          alias: POSTGRES_PASSWORD
+        - name: POSTGRES-HOST
+          alias: POSTGRES_HOST
+        - name: POSTGRES-PORT
+          alias: POSTGRES_PORT
+        - name: POSTGRES-DATABASE
+          alias: POSTGRES_DATABASE
+        - name: POSTGRES-SSL
+          alias: POSTGRES_SSL
+  environment:
+    APPREG_PORTAL_URL: 'https://appreg-frontend-{{ .Values.global.environment }}.platform.hmcts.net'

@@ -1,0 +1,35 @@
+#!groovy
+
+@Library("Infrastructure")
+
+def type = "java"
+def product = "appreg"
+def component = "api"
+
+def branchesToSync = ['demo', 'ithc']
+
+def secrets = [
+        'appreg-${env}': [
+                secret('POSTGRES-USER', 'DB_USER'),
+                secret('POSTGRES-PASS', 'DB_PASSWORD'),
+                secret('POSTGRES-HOST', 'DB_HOST'),
+                secret('POSTGRES-PORT', 'DB_PORT'),
+                secret('POSTGRES-DATABASE', 'DB_NAME'),
+        ]
+]
+
+static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
+    [$class     : 'AzureKeyVaultSecret',
+     secretType : 'Secret',
+     name       : secretName,
+     version    : '',
+     envVariable: envVar
+    ]
+}
+
+withPipeline(type, product, component) {
+    loadVaultSecrets(secrets)
+    enableSlackNotifications('#appreg-builds')
+
+    syncBranchesWithMaster(branchesToSync)
+}ß
