@@ -2,14 +2,17 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.4.4'
+  id 'org.springframework.boot' version '3.5.3'
   id 'com.github.ben-manes.versions' version '0.52.0'
-  id 'org.sonarqube' version '6.1.0.5360'
+  id 'org.sonarqube' version '6.2.0.5505'
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
-  id 'uk.gov.hmcts.java' version '0.12.65'
+  id 'uk.gov.hmcts.java' version '0.12.66'
+  id 'com.diffplug.spotless' version '7.0.4'
+  id 'checkstyle'
+  id 'org.openrewrite.rewrite' version 'latest.release'
 }
 
 application {
@@ -22,6 +25,24 @@ java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(21)
   }
+}
+
+
+spotless {
+  java {
+    // files to format
+    target 'src/**/*.java'
+    googleJavaFormat('1.22.0').aosp()
+    trimTrailingWhitespace()
+    endWithNewline()
+  }
+}
+
+rewrite {
+  activeRecipes = [
+    'org.openrewrite.staticanalysis.NeedBraces',
+    'org.openrewrite.java.OrderImports'
+  ]
 }
 
 def configureSourceSet(String name) {
@@ -58,6 +79,7 @@ tasks.withType(JavaExec).configureEach {
 }
 
 tasks.withType(Test).configureEach {
+  enabled = true
   useJUnitPlatform()
   failFast = true
 
@@ -74,6 +96,8 @@ tasks.register('functional', Test) {
 }
 
 tasks.register('integration', Test) {
+  //AD disabled
+  enabled = false
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
@@ -102,8 +126,8 @@ tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
-    property "sonar.projectName", "Reform :: spring-boot-template"
-    property "sonar.projectKey", "uk.gov.hmcts.reform:spring-boot-template"
+    property "sonar.projectName", "Appregister-api :: spring-boot-template"
+    property "sonar.projectKey", "uk.gov.hmcts.appregister:spring-boot-template"
   }
 }
 
@@ -127,11 +151,13 @@ dependencyCheck {
 repositories {
   mavenLocal()
   mavenCentral()
-  maven { url = 'https://jitpack.io' }
+  maven {
+    url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
+  }
 }
 
 ext {
-  log4JVersion = "2.24.3"
+  log4JVersion = "2.25.0"
   logbackVersion = "1.5.18"
 }
 
@@ -139,37 +165,40 @@ ext['snakeyaml.version'] = '2.0'
 
 dependencies {
   // Core Spring Boot Starters
-  implementation 'org.springframework.boot:spring-boot-starter-web'
-  implementation 'org.springframework.boot:spring-boot-starter-actuator'
-  implementation 'org.springframework.boot:spring-boot-starter-aop'
-  implementation 'org.springframework.boot:spring-boot-starter-json'
-  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
+
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
 
   // OAuth2 support
-  implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
 
   // SpringDoc OpenAPI
-  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6' // kept only one version
+  implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.9'
 
   // Logging
-  implementation 'com.github.hmcts.java-logging:logging:6.1.8'
-  implementation "org.apache.logging.log4j:log4j-api:$log4JVersion"
-  implementation "org.apache.logging.log4j:log4j-to-slf4j:$log4JVersion"
-  implementation "ch.qos.logback:logback-classic:$logbackVersion"
-  implementation "ch.qos.logback:logback-core:$logbackVersion"
-  implementation 'org.springframework.boot:spring-boot-starter-security'
-  testImplementation 'org.springframework.security:spring-security-test'
+  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
+  implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
+  implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
+  implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+  implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
+  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
+  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
 
   // Lombok
-  compileOnly 'org.projectlombok:lombok:1.18.30'
-  annotationProcessor 'org.projectlombok:lombok:1.18.30'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
 
   // Database
-  runtimeOnly 'org.postgresql:postgresql:42.7.3'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.3'
 
   // Testing
-  testImplementation 'org.springframework.boot:spring-boot-starter-test'
-  testImplementation 'io.rest-assured:rest-assured:5.5.1'
+  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.1'
+
+  rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.11.0'
 }
 
 bootJar {

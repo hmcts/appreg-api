@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.mapper;
 
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.dto.read.ApplicationFeeRecordDto;
@@ -9,8 +10,6 @@ import uk.gov.hmcts.appregister.model.ApplicationFee;
 import uk.gov.hmcts.appregister.model.ApplicationFeeRecord;
 import uk.gov.hmcts.appregister.service.VersionManager;
 
-import java.time.LocalDate;
-
 @RequiredArgsConstructor
 @Component
 public class ApplicationFeeRecordMapper {
@@ -19,33 +18,31 @@ public class ApplicationFeeRecordMapper {
 
     public ApplicationFeeRecordDto toReadDto(ApplicationFeeRecord entity) {
         return new ApplicationFeeRecordDto(
-            entity.getId(),
-            entity.getPaymentReference(),
-            entity.getFeeStatus(),
-            entity.getStatusDate(),
-            entity.getCreationDate(),
-            entity.getApplicationFee().getAmount(),
-            entity.getApplicationFee().getDescription()
-        );
+                entity.getId(),
+                entity.getPaymentReference(),
+                entity.getFeeStatus(),
+                entity.getStatusDate(),
+                entity.getCreationDate(),
+                entity.getApplicationFee().getAmount(),
+                entity.getApplicationFee().getDescription());
     }
 
     public ApplicationFeeRecord createEntity(
-        ApplicationWriteDto dto,
-        Application application,
-        ApplicationFee fee,
-        String userName,
-        LocalDate changedDate
-    ) {
+            ApplicationWriteDto dto,
+            Application application,
+            ApplicationFee fee,
+            String userName,
+            LocalDate changedDate) {
         return ApplicationFeeRecord.builder()
-            .application(application)
-            .applicationFee(fee)
-            .feeStatus(dto.feeTypeStatus())
-            .statusDate(changedDate)
-            .paymentReference(dto.paymentRef())
-            .version(versionManager.increment(0))
-            .changedBy(userName)
-            .changedDate(changedDate)
-            .userName(userName)
-            .build();
+                .application(application)
+                .applicationFee(fee)
+                .feeStatus(dto.feeTypeStatus())
+                .statusDate(changedDate)
+                .paymentReference(dto.paymentRef())
+                .version(versionManager.increment(0))
+                .changedBy(userName)
+                .changedDate(changedDate)
+                .userName(userName)
+                .build();
     }
 }

@@ -1,11 +1,10 @@
 package uk.gov.hmcts.appregister.util.parser;
 
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.springframework.stereotype.Service;
 
 @Service
 public class WordingTemplateParser {
@@ -17,7 +16,8 @@ public class WordingTemplateParser {
      * - Group 2: NAME (e.g. Date)
      * - Group 3: MAX LENGTH (e.g. 10)
      */
-    private static final Pattern TOKEN_PATTERN = Pattern.compile("\\{([^|}]+)\\|([^|}]+)\\|(\\d+)}");
+    private static final Pattern TOKEN_PATTERN =
+            Pattern.compile("\\{([^|}]+)\\|([^|}]+)\\|(\\d+)}");
     private static final int TYPE = 1;
     private static final int NAME = 2;
     private static final int MAX_LENGTH = 3;
@@ -25,12 +25,16 @@ public class WordingTemplateParser {
     public String generateWording(String template, List<String> inputFields) {
         List<TemplateToken> tokens = extractTokens(template);
         if (!hasCorrectNumberOfTexts(tokens, inputFields)) {
-            throw new IllegalArgumentException("Expected " + tokens.size()
-                + " text fields but received " + (inputFields == null ? 0 : inputFields.size()));
+            throw new IllegalArgumentException(
+                    "Expected "
+                            + tokens.size()
+                            + " text fields but received "
+                            + (inputFields == null ? 0 : inputFields.size()));
         }
 
         if (!areTextsWithinLength(tokens, inputFields)) {
-            throw new IllegalArgumentException("One or more text fields exceed the maximum allowed length.");
+            throw new IllegalArgumentException(
+                    "One or more text fields exceed the maximum allowed length.");
         }
 
         return injectInputFieldsIntoTemplate(template, inputFields);
@@ -40,11 +44,11 @@ public class WordingTemplateParser {
         List<TemplateToken> tokens = new ArrayList<>();
         Matcher matcher = TOKEN_PATTERN.matcher(template);
         while (matcher.find()) {
-            tokens.add(new TemplateToken(
-                matcher.group(TYPE),
-                matcher.group(NAME),
-                Integer.parseInt(matcher.group(MAX_LENGTH))
-            ));
+            tokens.add(
+                    new TemplateToken(
+                            matcher.group(TYPE),
+                            matcher.group(NAME),
+                            Integer.parseInt(matcher.group(MAX_LENGTH))));
         }
         return tokens;
     }

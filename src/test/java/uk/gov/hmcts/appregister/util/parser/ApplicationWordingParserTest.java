@@ -1,13 +1,14 @@
 package uk.gov.hmcts.appregister.util.parser;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class ApplicationWordingParserTest {
 
@@ -31,9 +32,10 @@ class ApplicationWordingParserTest {
         String template = "The hearing is on {TEXT|Date|10} at {TEXT|Time|5}.";
         List<String> input = Collections.singletonList("2025-06-01");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            parser.generateWording(template, input)
-        );
+        IllegalArgumentException ex =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> parser.generateWording(template, input));
         assertTrue(ex.getMessage().contains("Expected"));
     }
 
@@ -42,9 +44,10 @@ class ApplicationWordingParserTest {
         String template = "The hearing is on {TEXT|Date|10}.";
         List<String> input = Collections.singletonList("2025-06-01-TOO-LONG");
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            parser.generateWording(template, input)
-        );
+        IllegalArgumentException ex =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> parser.generateWording(template, input));
         assertTrue(ex.getMessage().contains("exceed"));
     }
 
@@ -60,9 +63,10 @@ class ApplicationWordingParserTest {
     void generateWording_nullInputFields_throwsException() {
         String template = "Filed by {TEXT|User|8}.";
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-            parser.generateWording(template, null)
-        );
+        IllegalArgumentException ex =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> parser.generateWording(template, null));
         assertTrue(ex.getMessage().contains("text fields"));
     }
 

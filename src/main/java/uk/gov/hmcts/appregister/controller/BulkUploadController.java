@@ -9,7 +9,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.dto.read.bulkupload.BulkUploadResponseDto;
 import uk.gov.hmcts.appregister.service.api.BulkUploadService;
@@ -19,13 +23,12 @@ import uk.gov.hmcts.appregister.service.api.BulkUploadService;
 @RequiredArgsConstructor
 public class BulkUploadController {
 
-    private final static Logger log = LoggerFactory.getLogger(BulkUploadController.class);
+    private static final Logger log = LoggerFactory.getLogger(BulkUploadController.class);
     private final BulkUploadService bulkUploadService;
 
     @Operation(
-        summary = "Bulk upload application entries for a specific list",
-        operationId = "bulkUploadEntries"
-    )
+            summary = "Bulk upload application entries for a specific list",
+            operationId = "bulkUploadEntries")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "CSV processed successfully"),
         @ApiResponse(responseCode = "400", description = "Malformed file or invalid data"),
@@ -33,10 +36,9 @@ public class BulkUploadController {
     })
     @PostMapping("/{listId}/applications/bulk-upload")
     public ResponseEntity<BulkUploadResponseDto> uploadEntries(
-        @PathVariable Long listId,
-        @RequestParam("file") MultipartFile file,
-        @AuthenticationPrincipal Jwt jwt
-    ) {
+            @PathVariable Long listId,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
         log.info("Bulk uploading entries to listId: {}", listId);
         String userId = jwt.getClaimAsString("oid");
         BulkUploadResponseDto response = bulkUploadService.uploadCsv(listId, file, userId);

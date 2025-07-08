@@ -1,6 +1,10 @@
 package uk.gov.hmcts.appregister.service;
 
-import jakarta.transaction.Transactional;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,19 +15,16 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.appregister.dto.read.bulkupload.BulkUploadErrorDto;
 import uk.gov.hmcts.appregister.dto.read.bulkupload.BulkUploadResponseDto;
 import uk.gov.hmcts.appregister.dto.read.bulkupload.CsvRowDto;
-import uk.gov.hmcts.appregister.model.*;
+import uk.gov.hmcts.appregister.model.Application;
+import uk.gov.hmcts.appregister.model.ApplicationCode;
+import uk.gov.hmcts.appregister.model.ApplicationList;
+import uk.gov.hmcts.appregister.model.IdentityDetails;
+import uk.gov.hmcts.appregister.model.StandardApplicant;
 import uk.gov.hmcts.appregister.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.repository.ApplicationRepository;
 import uk.gov.hmcts.appregister.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.service.api.BulkUploadService;
 import uk.gov.hmcts.appregister.util.parser.Parser;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +52,8 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             int rowNumber = i + 2; // Account for header + 0-index
 
             try {
-                StandardApplicant applicant = resolveStandardApplicant(row.standardApplicantCode(), userId);
+                StandardApplicant applicant =
+                        resolveStandardApplicant(row.standardApplicantCode(), userId);
                 ApplicationCode applicationCode = resolveApplicationCode(row.applicationCode());
                 Application entry = mapToEntity(row, list, applicant, applicationCode, userId);
                 saveService.saveApplication(entry);
@@ -59,7 +61,11 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
                 log.debug("Row {} saved successfully: {}", rowNumber, row);
             } catch (Exception e) {
-                log.warn("Row {} failed: {} - {}", rowNumber, e.getClass().getSimpleName(), e.getMessage());
+                log.warn(
+                        "Row {} failed: {} - {}",
+                        rowNumber,
+                        e.getClass().getSimpleName(),
+                        e.getMessage());
                 log.debug("Failed row content: {}", row);
                 errors.add(new BulkUploadErrorDto(rowNumber, row, e.getMessage()));
             }
@@ -69,39 +75,48 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     }
 
     private ApplicationList findList(Long listId, String userId) {
-        return listRepository.findByIdAndUserId(listId, userId)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND,
-                "Application list not found or you do not have permission to access it."
-            ));
+        return listRepository
+                .findByIdAndUserId(listId, userId)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Application list not found or you do not have permission to access it."));
     }
 
     private StandardApplicant resolveStandardApplicant(String code, String userId) {
-        return standardApplicantRepository.findByApplicantCode(code)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Standard applicant not found"));
+        return standardApplicantRepository
+                .findByApplicantCode(code)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Standard applicant not found"));
     }
 
     private ApplicationCode resolveApplicationCode(String code) {
-        return applicationCodeRepository.findByApplicationCode(code)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application code not found"));
+        return applicationCodeRepository
+                .findByApplicationCode(code)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Application code not found"));
     }
 
     private Application mapToEntity(
-        CsvRowDto row,
-        ApplicationList list,
-        StandardApplicant applicant,
-        ApplicationCode applicationCode,
-        String userId
-    ) {
+            CsvRowDto row,
+            ApplicationList list,
+            StandardApplicant applicant,
+            ApplicationCode applicationCode,
+            String userId) {
         Application entry = new Application();
         entry.setApplicationList(list);
         entry.setStandardApplicant(applicant);
         entry.setApplicationCode(applicationCode);
         entry.setAccountNumber(row.accountNumber());
         entry.setApplicationWording(
-            Stream.of(row.applicationText1(), row.applicationText2())
-                .filter(s -> s != null && !s.isBlank())
-                .collect(Collectors.joining(" ")));
+                Stream.of(row.applicationText1(), row.applicationText2())
+                        .filter(s -> s != null && !s.isBlank())
+                        .collect(Collectors.joining(" ")));
         entry.setRespondent(buildIdentityDetails(row));
         entry.setNumberOfBulkRespondents(1);
         entry.setChangedBy(userId);

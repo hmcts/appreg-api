@@ -8,20 +8,20 @@ import uk.gov.hmcts.appregister.model.CourtHouse;
 public class CourtHouseMapper {
 
     public CourtHouseDto toReadDto(CourtHouse entity) {
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
 
         return new CourtHouseDto(
-            entity.getId(),
-            entity.getName(),
-            entity.getCourtType(),
-            entity.getStartDate(),
-            entity.getEndDate(),
-            entity.getLocationId(),
-            entity.getPsaId(),
-            entity.getCourtLocationCode(),
-            entity.getWelshName(),
-            entity.getOrgId()
-        );
+                entity.getId(),
+                entity.getName(),
+                entity.getCourtType(),
+                entity.getStartDate(),
+                entity.getEndDate(),
+                entity.getLocationId(),
+                entity.getPsaId(),
+                entity.getCourtLocationCode(),
+                entity.getWelshName(),
+                entity.getOrgId());
     }
 }
-

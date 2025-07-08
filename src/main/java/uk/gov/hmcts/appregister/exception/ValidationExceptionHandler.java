@@ -1,14 +1,13 @@
 package uk.gov.hmcts.appregister.exception;
 
+import java.util.function.Supplier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.function.Supplier;
-
 public class ValidationExceptionHandler {
     /**
-     * Runs the given action and wraps any IllegalArgumentException
-     * into a ResponseStatusException (400 Bad Request).
+     * Runs the given action and wraps any IllegalArgumentException into a ResponseStatusException
+     * (400 Bad Request).
      *
      * @param action a lambda that may throw IllegalArgumentException
      * @param <T> return type

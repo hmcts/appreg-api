@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.service;
 
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,6 @@ import uk.gov.hmcts.appregister.repository.ResultCodeRepository;
 import uk.gov.hmcts.appregister.service.api.ApplicationResultService;
 import uk.gov.hmcts.appregister.util.parser.WordingTemplateParser;
 
-import java.time.LocalDate;
-
 @Service
 @RequiredArgsConstructor
 public class ApplicationResultServiceImpl implements ApplicationResultService {
@@ -33,31 +32,38 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationResultDto getResultForApplication(Long listId, Long applicationId, String userId) {
+    public ApplicationResultDto getResultForApplication(
+            Long listId, Long applicationId, String userId) {
         ApplicationResult result = findOrThrow(null, applicationId, listId, userId);
         return mapper.toReadDto(result);
     }
 
     @Override
     @Transactional
-    public ApplicationResultDto create(Long listId, Long applicationId, ApplicationResultWriteDto dto, String userId) {
-        Application app = applicationRepository
-            .findByIdAndApplicationListIdAndApplicationListUserId(applicationId, listId, userId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+    public ApplicationResultDto create(
+            Long listId, Long applicationId, ApplicationResultWriteDto dto, String userId) {
+        Application app =
+                applicationRepository
+                        .findByIdAndApplicationListIdAndApplicationListUserId(
+                                applicationId, listId, userId)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Application not found"));
 
-        ResultCode resultCode = resultCodeRepository.findById(dto.resultCodeId())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Result code not found"));
+        ResultCode resultCode =
+                resultCodeRepository
+                        .findById(dto.resultCodeId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Result code not found"));
 
-        String wording = ValidationExceptionHandler.wrap(() ->
-            parser.generateWording(resultCode.getWording(), dto.textFields())
-        );
+        String wording =
+                ValidationExceptionHandler.wrap(
+                        () -> parser.generateWording(resultCode.getWording(), dto.textFields()));
 
-        ApplicationResult result = mapper.createFromWriteDto(
-            dto,
-            userId,
-            LocalDate.now(),
-            wording
-        );
+        ApplicationResult result = mapper.createFromWriteDto(dto, userId, LocalDate.now(), wording);
 
         result.setResultCode(resultCode);
         result.setApplication(app);
@@ -67,15 +73,25 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
 
     @Override
     @Transactional
-    public ApplicationResultDto update(Long listId, Long applicationId, Long resultId, ApplicationResultWriteDto dto, String userId) {
+    public ApplicationResultDto update(
+            Long listId,
+            Long applicationId,
+            Long resultId,
+            ApplicationResultWriteDto dto,
+            String userId) {
         ApplicationResult existing = findOrThrow(resultId, applicationId, listId, userId);
 
-        ResultCode resultCode = resultCodeRepository.findById(dto.resultCodeId())
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Result code not found"));
+        ResultCode resultCode =
+                resultCodeRepository
+                        .findById(dto.resultCodeId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "Result code not found"));
 
-        String wording = ValidationExceptionHandler.wrap(() ->
-            parser.generateWording(resultCode.getWording(), dto.textFields())
-        );
+        String wording =
+                ValidationExceptionHandler.wrap(
+                        () -> parser.generateWording(resultCode.getWording(), dto.textFields()));
 
         mapper.updateFromWriteDto(dto, existing, userId, LocalDate.now(), wording);
         existing.setResultCode(resultCode);
@@ -93,13 +109,21 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
 
     private ApplicationResult findOrThrow(Long resultId, Long appId, Long listId, String userId) {
         if (resultId != null) {
-            return resultRepository.findByIdWithApplicationAndListAndUser(resultId, appId, listId, userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Result not found"));
+            return resultRepository
+                    .findByIdWithApplicationAndListAndUser(resultId, appId, listId, userId)
+                    .orElseThrow(
+                            () ->
+                                    new ResponseStatusException(
+                                            HttpStatus.NOT_FOUND, "Result not found"));
         }
 
-        return resultRepository.findByApplicationId(appId)
-            .filter(r -> r.getApplication().getApplicationList().getId().equals(listId))
-            .filter(r -> r.getApplication().getApplicationList().getUserId().equals(userId))
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Result not found"));
+        return resultRepository
+                .findByApplicationId(appId)
+                .filter(r -> r.getApplication().getApplicationList().getId().equals(listId))
+                .filter(r -> r.getApplication().getApplicationList().getUserId().equals(userId))
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Result not found"));
     }
 }

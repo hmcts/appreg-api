@@ -15,7 +15,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(resourceServer ->
-                    resourceServer.jwt(jwt -> {})
+                    resourceServer.jwt(jwt -> { })
                 );
         return http.build();
     }
