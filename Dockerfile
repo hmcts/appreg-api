@@ -5,7 +5,8 @@ FROM hmctspublic.azurecr.io/base/java:21-distroless
 COPY lib/applicationinsights.json /opt/app/
 COPY build/libs/app-register.jar /opt/app/
 
-WORKDIR /opt/app
+RUN apt-get update && \
+    apt-get install -y bash
 
 EXPOSE 4550
 ENTRYPOINT ["java","-Duser.timezone=UTC","-jar","/opt/app/app-register.jar"]
