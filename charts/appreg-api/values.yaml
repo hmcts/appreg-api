@@ -3,7 +3,6 @@ java:
   image: 'sdshmctspublic.azurecr.io/appreg/api:latest'
   ingressHost: appreg-api-{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: appreg
-  Uncomment once the vault containing the app insights key has been set up
   keyVaults:
     appreg:
       secrets:
