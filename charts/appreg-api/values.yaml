@@ -20,7 +20,5 @@ java:
           alias: POSTGRES_PORT
         - name: POSTGRES-DATABASE
           alias: POSTGRES_DATABASE
-        - name: POSTGRES-SSL
-          alias: POSTGRES_SSL
   environment:
     APPREG_PORTAL_URL: 'https://appreg-frontend-{{ .Values.global.environment }}.platform.hmcts.net'
