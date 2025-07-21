@@ -97,7 +97,7 @@ tasks.register('functional', Test) {
 
 tasks.register('integration', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
