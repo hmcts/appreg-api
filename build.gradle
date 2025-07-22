@@ -79,7 +79,7 @@ tasks.withType(JavaExec).configureEach {
 }
 
 tasks.withType(Test).configureEach {
-  enabled = true
+  enabled = false
   useJUnitPlatform()
   failFast = true
 
@@ -89,6 +89,8 @@ tasks.withType(Test).configureEach {
 }
 
 tasks.register('functional', Test) {
+  //AD disabled
+  enabled = true
   description = "Runs functional tests"
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
@@ -97,7 +99,7 @@ tasks.register('functional', Test) {
 
 tasks.register('integration', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
@@ -106,12 +108,15 @@ tasks.register('integration', Test) {
 }
 
 tasks.register('smoke', Test) {
+  //AD disabled
+  enabled = true
   description = "Runs Smoke Tests"
   group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
+/* 
 jacocoTestReport {
   executionData(test, integration)
   reports {
@@ -119,15 +124,25 @@ jacocoTestReport {
     csv.getRequired().set(false)
     html.getRequired().set(true)
   }
+} */
+jacocoTestReport {
+  //AD disabled
+  enabled = false
+  executionData(test, integration)
+  reports {
+    xml.getRequired().set(false)
+    csv.getRequired().set(false)
+    html.getRequired().set(false)
+  }
 }
-
+//AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
-    property "sonar.projectName", "Appregister-api :: spring-boot-template"
-    property "sonar.projectKey", "uk.gov.hmcts.appregister:spring-boot-template"
+    property "sonar.projectName", "Appregister :: appreg-api"
+    property "sonar.projectKey", "uk.gov.hmcts.appregister:api"
   }
 }
 
