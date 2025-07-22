@@ -25,9 +25,10 @@ spring:
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://localhost:5432/app_reg_db
-    username: app_reg_user
-    password: password
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:app_reg_db}?ssl=true
+    username: ${POSTGRES_USER:appreg}
+    password: ${POSTGRES_PASS:password}
+
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
