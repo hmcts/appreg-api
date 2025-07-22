@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregiater.openapi;
+package uk.gov.hmcts.appregister.openapi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
