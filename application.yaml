@@ -14,7 +14,7 @@ management:
     web:
       base-path: /
       exposure:
-        include: health, liveness, info, prometheus
+        include: health, info, prometheus
 
 springdoc:
   writer-with-order-by-keys: true
