@@ -113,12 +113,21 @@ tasks.register('smoke', Test) {
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
+/* 
 jacocoTestReport {
   executionData(test, integration)
   reports {
     xml.getRequired().set(true)
     csv.getRequired().set(false)
     html.getRequired().set(true)
+  }
+} */
+jacocoTestReport {
+  executionData(test, integration)
+  reports {
+    xml.getRequired().set(false)
+    csv.getRequired().set(false)
+    html.getRequired().set(false)
   }
 }
 
