@@ -79,7 +79,7 @@ tasks.withType(JavaExec).configureEach {
 }
 
 tasks.withType(Test).configureEach {
-  enabled = false
+  enabled = true
   useJUnitPlatform()
   failFast = true
 
@@ -106,7 +106,7 @@ tasks.register('integration', Test) {
 }
 
 tasks.register('smoke', Test) {
-  enabled = false
+  enabled = true
   description = "Runs Smoke Tests"
   group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
