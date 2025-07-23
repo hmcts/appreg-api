@@ -90,7 +90,7 @@ tasks.withType(Test).configureEach {
 
 tasks.register('functional', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs functional tests"
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
@@ -99,7 +99,7 @@ tasks.register('functional', Test) {
 
 tasks.register('integration', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
@@ -109,7 +109,7 @@ tasks.register('integration', Test) {
 
 tasks.register('smoke', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs Smoke Tests"
   group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
@@ -136,7 +136,7 @@ jacocoTestReport {
   }
 }
 //AD disabled
-//tasks.sonarqube.dependsOn(jacocoTestReport)
+tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks.check.dependsOn(integration)
 
 sonarqube {
