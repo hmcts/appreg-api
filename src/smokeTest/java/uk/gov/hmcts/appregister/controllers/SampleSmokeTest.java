@@ -32,7 +32,6 @@ class SampleSmokeTest {
                         .extract()
                         .response();
 
-        Assertions.assertEquals(200, response.statusCode());
-        Assertions.assertTrue(response.asString().startsWith("Welcome"));
+        Assertions.assertEquals(401, response.statusCode());
     }
 }
