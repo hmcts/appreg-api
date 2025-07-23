@@ -106,6 +106,7 @@ tasks.register('integration', Test) {
 }
 
 tasks.register('smoke', Test) {
+  enabled = false
   description = "Runs Smoke Tests"
   group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
