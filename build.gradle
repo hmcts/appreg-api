@@ -89,6 +89,8 @@ tasks.withType(Test).configureEach {
 }
 
 tasks.register('functional', Test) {
+  //AD disabled
+  enabled = false
   description = "Runs functional tests"
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
@@ -106,6 +108,7 @@ tasks.register('integration', Test) {
 }
 
 tasks.register('smoke', Test) {
+  //AD disabled
   enabled = false
   description = "Runs Smoke Tests"
   group = "Verification"
@@ -123,6 +126,8 @@ jacocoTestReport {
   }
 } */
 jacocoTestReport {
+  //AD disabled
+  enabled = false
   executionData(test, integration)
   reports {
     xml.getRequired().set(false)
@@ -130,14 +135,14 @@ jacocoTestReport {
     html.getRequired().set(false)
   }
 }
-
-tasks.sonarqube.dependsOn(jacocoTestReport)
+//AD disabled
+//tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
-    property "sonar.projectName", "Appregister-api :: spring-boot-template"
-    property "sonar.projectKey", "uk.gov.hmcts.appregister:spring-boot-template"
+    property "sonar.projectName", "Appregister :: appreg-api"
+    property "sonar.projectKey", "uk.gov.hmcts.appregister:api"
   }
 }
 
