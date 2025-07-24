@@ -56,14 +56,15 @@ def configureSourceSet(String name) {
   }
 }
 
-['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
+//['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
+['smokeTest', 'functionalTest'].each { configureSourceSet(it) }
 
 configurations {
   functionalTestImplementation.extendsFrom testImplementation
   functionalTestRuntimeOnly.extendsFrom runtimeOnly
 
-  integrationTestImplementation.extendsFrom testImplementation
-  integrationTestRuntimeOnly.extendsFrom runtimeOnly
+//  integrationTestImplementation.extendsFrom testImplementation
+//  integrationTestRuntimeOnly.extendsFrom runtimeOnly
 
   smokeTestImplementation.extendsFrom testImplementation
   smokeTestRuntimeOnly.extendsFrom runtimeOnly
@@ -97,7 +98,7 @@ tasks.register('functional', Test) {
   classpath = sourceSets.functionalTest.runtimeClasspath
 }
 
-tasks.register('integration', Test) {
+/* tasks.register('integration', Test) {
   //AD disabled
   enabled = false
   description = "Runs integration tests"
@@ -105,11 +106,11 @@ tasks.register('integration', Test) {
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
   failFast = true
-}
+} */
 
 tasks.register('smoke', Test) {
   //AD disabled
-  enabled = false
+  enabled = true
   description = "Runs Smoke Tests"
   group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
@@ -127,17 +128,18 @@ jacocoTestReport {
 } */
 jacocoTestReport {
   //AD disabled
-  enabled = false
-  executionData(test, integration)
+  enabled = true
+  //executionData(test, integration)
+  executionData(test)
   reports {
-    xml.getRequired().set(false)
+    xml.getRequired().set(true)
     csv.getRequired().set(false)
-    html.getRequired().set(false)
+    html.getRequired().set(true)
   }
 }
 //AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
-tasks.check.dependsOn(integration)
+//tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
