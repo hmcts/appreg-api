@@ -1,7 +1,7 @@
 package uk.gov.hmcts;
 
-import org.junit.jupiter.api.Test;
 import java.util.logging.Logger;
+import org.junit.jupiter.api.Test;
 
 class JenkinsTest {
 
