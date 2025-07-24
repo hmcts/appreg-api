@@ -132,9 +132,9 @@ jacocoTestReport {
   //executionData(test, integration)
   executionData(test)
   reports {
-    xml.getRequired().set(false)
+    xml.getRequired().set(true)
     csv.getRequired().set(false)
-    html.getRequired().set(false)
+    html.getRequired().set(true)
   }
 }
 //AD disabled
