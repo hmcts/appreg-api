@@ -32,4 +32,4 @@ withPipeline(type, product, component) {
     enableSlackNotifications('#appreg-builds')
 
     syncBranchesWithMaster(branchesToSync)
-}ß
+}

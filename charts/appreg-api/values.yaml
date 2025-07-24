@@ -13,7 +13,7 @@ java:
         - name: POSTGRES-USER
           alias: POSTGRES_USER
         - name: POSTGRES-PASS
-          alias: POSTGRES_PASSWORD
+          alias: POSTGRES_PASS
         - name: POSTGRES-HOST
           alias: POSTGRES_HOST
         - name: POSTGRES-PORT

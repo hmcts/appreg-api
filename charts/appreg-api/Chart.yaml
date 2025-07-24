@@ -1,9 +1,9 @@
 apiVersion: v2
 appVersion: "1.0"
 description: A Helm chart for AppReg API
-name: AppReg API
+name: appreg-api
 home: https://github.com/hmcts/appreg-api
-version: 0.0.18
+version: 0.0.2
 maintainers:
   - name: HMCTS AppReg Team
 dependencies:
