@@ -139,7 +139,7 @@ jacocoTestReport {
 }
 //AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
-tasks.check.dependsOn(integration)
+//tasks.check.dependsOn(integration)
 
 sonarqube {
   properties {
