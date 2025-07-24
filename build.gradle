@@ -98,7 +98,7 @@ tasks.register('functional', Test) {
   classpath = sourceSets.functionalTest.runtimeClasspath
 }
 
-tasks.register('integration', Test) {
+/* tasks.register('integration', Test) {
   //AD disabled
   enabled = false
   description = "Runs integration tests"
@@ -106,7 +106,7 @@ tasks.register('integration', Test) {
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
   failFast = true
-}
+} */
 
 tasks.register('smoke', Test) {
   //AD disabled
