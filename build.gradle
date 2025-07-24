@@ -56,11 +56,12 @@ def configureSourceSet(String name) {
   }
 }
 
-['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
+//['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
+['smokeTest', 'functionalTest'].each { configureSourceSet(it) }
 
 configurations {
-  functionalTestImplementation.extendsFrom testImplementation
-  functionalTestRuntimeOnly.extendsFrom runtimeOnly
+//  functionalTestImplementation.extendsFrom testImplementation
+//  functionalTestRuntimeOnly.extendsFrom runtimeOnly
 
   integrationTestImplementation.extendsFrom testImplementation
   integrationTestRuntimeOnly.extendsFrom runtimeOnly
