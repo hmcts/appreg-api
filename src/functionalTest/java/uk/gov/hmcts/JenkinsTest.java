@@ -1,15 +1,14 @@
 package uk.gov.hmcts;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import java.util.logging.Logger;
 
-// This is a placeholder test to ensure the Jenkins pipeline runs successfully.
-//This class can not be moved into the darts package else it will be excluded
-@Slf4j
 class JenkinsTest {
+
+    private static final Logger logger = Logger.getLogger(JenkinsTest.class.getName());
 
     @Test
     void test() {
-        log.info("Jenkins test executed successfully.");
+        logger.info("Jenkins test executed successfully.");
     }
 }
