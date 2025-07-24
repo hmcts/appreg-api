@@ -128,7 +128,7 @@ jacocoTestReport {
 } */
 jacocoTestReport {
   //AD disabled
-  enabled = false
+  enabled = true
   //executionData(test, integration)
   executionData(test)
   reports {
