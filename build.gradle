@@ -80,7 +80,7 @@ tasks.withType(JavaExec).configureEach {
 }
 
 tasks.withType(Test).configureEach {
-  enabled = false
+  enabled = true
   useJUnitPlatform()
   failFast = true
 
