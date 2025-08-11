@@ -205,8 +205,8 @@ dependencies {
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
 
   // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
