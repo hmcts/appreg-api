@@ -209,7 +209,7 @@ dependencies {
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
 
   // Database
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.3'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
 
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
