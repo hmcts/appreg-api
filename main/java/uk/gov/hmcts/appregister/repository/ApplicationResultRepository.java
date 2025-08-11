@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import uk.gov.hmcts.appregister.model.ApplicationResult;
+import uk.gov.hmcts.appregister.applicationresult.model.ApplicationResult;
 
 import java.util.Optional;
 
