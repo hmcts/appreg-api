@@ -1,0 +1,37 @@
+databaseType = "PostgreSql"
+id = "47161b4c-2c1b-43de-8867-c86eefa449c3"
+name = "appreg"
+
+[flyway]
+locations = [ "filesystem:migrations" ]
+mixed = true
+outOfOrder = true
+schemaModelLocation = "schema-model"
+validateMigrationNaming = true
+
+  [flyway.check]
+  majorTolerance = 0
+
+[flywayDesktop]
+developmentEnvironment = "development"
+shadowEnvironment = "shadow"
+enableMigrations = false
+
+[redgateCompare]
+filterFile = "filter.rgf"
+
+[redgateCompare.postgresql.options.behavior]
+detectRenames = "identical-only"
+
+[redgateCompare.postgresql.options.ignores]
+ignoreNewlinesInTextObjects = "off"
+
+[environments.target1]
+url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
+schemas = [ "appreg" ]
+displayName = "Development"
+
+[environments.staging]
+url = "jdbc:postgresql://appreg-stg.postgres.database.azure.com:5432/appreg-db"
+schemas = [ "appreg" ]
+displayName = "Staging"
