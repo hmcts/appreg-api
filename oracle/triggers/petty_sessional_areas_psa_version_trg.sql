@@ -1,0 +1,37 @@
+  CREATE OR REPLACE TRIGGER "LIBRA"."PSA_VERSION_TRG"
+ BEFORE INSERT
+ ON PETTY_SESSIONAL_AREAS
+ REFERENCING OLD AS OLD NEW AS NEW
+ FOR EACH ROW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BEGIN
+   :NEW.version_number := nvl(:OLD.version_number,0) + 1;
+END;
+ALTER TRIGGER "LIBRA"."PSA_VERSION_TRG" ENABLE

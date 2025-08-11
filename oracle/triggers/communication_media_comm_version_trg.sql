@@ -1,0 +1,37 @@
+  CREATE OR REPLACE TRIGGER "LIBRA"."COMM_VERSION_TRG"
+ BEFORE INSERT
+ ON COMMUNICATION_MEDIA
+ REFERENCING OLD AS OLD NEW AS NEW
+ FOR EACH ROW
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BEGIN
+   :NEW.version_number := nvl(:OLD.version_number,0) + 1;
+END;
+ALTER TRIGGER "LIBRA"."COMM_VERSION_TRG" ENABLE
