@@ -1,7 +1,7 @@
 java:
   applicationPort: 4550
   image: 'sdshmctspublic.azurecr.io/appreg/api:latest'
-  ingressHost: appreg-api-{{ .Values.global.environment }}.platform.hmcts.net
+  ingressHost: appreg-api.{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: appreg
   keyVaults:
     appreg:
@@ -21,4 +21,4 @@ java:
         - name: POSTGRES-DATABASE
           alias: POSTGRES_DATABASE
   environment:
-    APPREG_PORTAL_URL: 'https://appreg-frontend-{{ .Values.global.environment }}.platform.hmcts.net'
+    APPREG_PORTAL_URL: 'https://appreg.{{ .Values.global.environment }}.platform.hmcts.net'
