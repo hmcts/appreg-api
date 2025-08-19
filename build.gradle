@@ -203,6 +203,8 @@ dependencies {
   implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+  testImplementation 'org.springframework.security:spring-security-test'
+
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'

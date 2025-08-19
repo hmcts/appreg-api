@@ -47,9 +47,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://localhost:9000/.well-known/jwks.json
-        # The below is the default issuer URI for Azure AD v2.0. When connecting to AAD we will need to set the issuer URI to the AAD tenant.
-        # issuer-uri: https://login.microsoftonline.com/{your-tenant-id}/v2.0
+          issuer-uri: https://login.microsoftonline.com/${OIDC_TENANT_ID}/v2.0
 
 logging:
   level:
@@ -59,3 +57,7 @@ logging:
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+
+app:
+  security:
+    expected-audience: ${OIDC_AUDIENCE}
