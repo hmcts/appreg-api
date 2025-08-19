@@ -30,25 +30,26 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFeatureChain(
             HttpSecurity http, JwtAuthenticationConverter jwtAuthConverter) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(
-                        auth ->
-                                auth.requestMatchers(SWAGGER_UI, OPENAPI_DOCS, HEALTH)
-                                        .permitAll()
-                                        .requestMatchers(ADMIN_ENDPOINT)
-                                        .hasRole(ADMIN_ROLE)
-                                        .requestMatchers(USER_ENDPOINT)
-                                        .hasAnyRole(USER_ROLE, ADMIN_ROLE)
-                                        .anyRequest()
-                                        .authenticated())
-                .oauth2ResourceServer(
-                        oauth ->
-                                oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-                                        .authenticationEntryPoint(
-                                                (req, res, ex) -> res.sendError(ERR_AUTH_REQUIRED)))
-                .exceptionHandling(
-                        e -> e.accessDeniedHandler((req, res, ex) -> res.sendError(ERR_FORBIDDEN)))
-                .build();
+
+        http.csrf(AbstractHttpConfigurer::disable);
+
+        http.authorizeHttpRequests(
+                auth ->
+                        auth.requestMatchers(SWAGGER_UI, OPENAPI_DOCS, HEALTH)
+                                .permitAll()
+                                .anyRequest()
+                                .authenticated());
+
+        http.oauth2ResourceServer(
+                oauth ->
+                        oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
+                                .authenticationEntryPoint(
+                                        (req, res, ex) -> res.sendError(ERR_AUTH_REQUIRED)));
+
+        http.exceptionHandling(
+                e -> e.accessDeniedHandler((req, res, ex) -> res.sendError(ERR_FORBIDDEN)));
+
+        return http.build();
     }
 
     /**
@@ -73,13 +74,16 @@ public class SecurityConfig {
      */
     @Bean
     JwtDecoder jwtDecoder(
-            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
-            OAuth2TokenValidator<Jwt> audienceValidator) {
+        @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
+        OAuth2TokenValidator<Jwt> audienceValidator) {
         var decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build();
-        var withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
-        decoder.setJwtValidator(
-                new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator));
+        decoder.setJwtValidator(buildValidator(issuer, audienceValidator));
         return decoder;
+    }
+
+    OAuth2TokenValidator<Jwt> buildValidator(String issuer, OAuth2TokenValidator<Jwt> audienceValidator) {
+        var withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
+        return new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
     }
 
     /**
