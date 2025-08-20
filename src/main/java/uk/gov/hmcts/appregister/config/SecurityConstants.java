@@ -7,7 +7,7 @@ public final class SecurityConstants {
     }
 
     // Claim names
-    public static final String CLAIM_ROLES = "roles";
+    public static final String ROLE_CLAIM = "roles";
 
     // Authority prefix
     public static final String ROLE_PREFIX = "ROLE_";

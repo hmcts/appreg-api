@@ -72,7 +72,7 @@ class SecurityConfigIntegrationTest {
     @Test
     void unauthenticatedRequest_returns401() throws Exception {
         mvc.perform(get("/admin/hello")) // no Authorization header
-            .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized());
     }
 
     // helper to craft a JWT the security chain will accept

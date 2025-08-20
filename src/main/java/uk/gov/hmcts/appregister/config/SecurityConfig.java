@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.config;
 
 import static uk.gov.hmcts.appregister.config.SecurityConstants.*;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,26 +29,23 @@ public class SecurityConfig {
      * mechanism. - Maps authentication failures (401) and authorization failures (403).
      */
     @Bean
-    SecurityFilterChain securityFeatureChain(
+    SecurityFilterChain securityFilterChain(
             HttpSecurity http, JwtAuthenticationConverter jwtAuthConverter) throws Exception {
 
-        http.csrf(AbstractHttpConfigurer::disable);
-
-        http.authorizeHttpRequests(
-                auth ->
-                        auth.requestMatchers(SWAGGER_UI, OPENAPI_DOCS, HEALTH)
-                                .permitAll()
-                                .anyRequest()
-                                .authenticated());
-
-        http.oauth2ResourceServer(
-                oauth ->
-                        oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
-                                .authenticationEntryPoint(
-                                        (req, res, ex) -> res.sendError(ERR_AUTH_REQUIRED)));
-
-        http.exceptionHandling(
-                e -> e.accessDeniedHandler((req, res, ex) -> res.sendError(ERR_FORBIDDEN)));
+        http.csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers(SWAGGER_UI, OPENAPI_DOCS, HEALTH)
+                                        .permitAll()
+                                        .anyRequest()
+                                        .authenticated())
+                .oauth2ResourceServer(
+                        oauth ->
+                                oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
+                                        .authenticationEntryPoint(
+                                                (req, res, ex) -> res.sendError(ERR_AUTH_REQUIRED)))
+                .exceptionHandling(
+                        e -> e.accessDeniedHandler((req, res, ex) -> res.sendError(ERR_FORBIDDEN)));
 
         return http.build();
     }
@@ -59,7 +57,7 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthConverter() {
         var authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthoritiesClaimName(CLAIM_ROLES);
+        authoritiesConverter.setAuthoritiesClaimName(ROLE_CLAIM);
         authoritiesConverter.setAuthorityPrefix(ROLE_PREFIX);
 
         var authenticationConverter = new JwtAuthenticationConverter();
@@ -74,16 +72,28 @@ public class SecurityConfig {
      */
     @Bean
     JwtDecoder jwtDecoder(
-        @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
-        OAuth2TokenValidator<Jwt> audienceValidator) {
-        var decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build();
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String issuer,
+            OAuth2TokenValidator<Jwt> audienceValidator) {
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(issuer).build();
         decoder.setJwtValidator(buildValidator(issuer, audienceValidator));
         return decoder;
     }
 
-    OAuth2TokenValidator<Jwt> buildValidator(String issuer, OAuth2TokenValidator<Jwt> audienceValidator) {
-        var withIssuer = JwtValidators.createDefaultWithIssuer(issuer);
-        return new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+    /**
+     * Creates a token validator that checks both issuer and expiration (by default), and adds a
+     * custom audience validator.
+     *
+     * <p>Note: issuer and expiration validation are included automatically by {@code
+     * createDefaultWithIssuer(issuer)}.
+     *
+     * @param issuer expected issuer ("iss" claim)
+     * @param audienceValidator custom validator for the "aud" claim
+     * @return combined validator enforcing issuer, expiration, and audience
+     */
+    OAuth2TokenValidator<Jwt> buildValidator(
+            String issuer, OAuth2TokenValidator<Jwt> audienceValidator) {
+        OAuth2TokenValidator<Jwt> defaultValidator = JwtValidators.createDefaultWithIssuer(issuer);
+        return new DelegatingOAuth2TokenValidator<>(defaultValidator, audienceValidator);
     }
 
     /**
@@ -94,10 +104,14 @@ public class SecurityConfig {
     @Bean
     OAuth2TokenValidator<Jwt> audienceValidator(
             @Value("${app.security.expected-audience}") String expectedAud) {
-        return token ->
-                token.getAudience().contains(expectedAud)
-                        ? OAuth2TokenValidatorResult.success()
-                        : OAuth2TokenValidatorResult.failure(
-                                new OAuth2Error(INVALID_TOKEN, AUD_MISMATCH_MESSAGE, null));
+        return token -> {
+            List<String> audience = token.getAudience();
+            boolean valid = audience != null && audience.contains(expectedAud);
+
+            return valid
+                    ? OAuth2TokenValidatorResult.success()
+                    : OAuth2TokenValidatorResult.failure(
+                            new OAuth2Error(INVALID_TOKEN, AUD_MISMATCH_MESSAGE, null));
+        };
     }
 }

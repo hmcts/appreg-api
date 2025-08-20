@@ -22,24 +22,8 @@ class SecurityConfigTest {
     SecurityConfig config = new SecurityConfig();
 
     @Test
-    void audienceValidator_passesWhenExpectedAudiencePresent1() {
-        var validator = config.audienceValidator("expected-aud");
-
-        Jwt jwt =
-            new Jwt(
-                "t",
-                Instant.now(),
-                Instant.now().plusSeconds(60),
-                Map.of("alg", "none"),
-                Map.of("aud", List.of("expected-aud")));
-
-        OAuth2TokenValidatorResult result = validator.validate(jwt);
-        assertThat(result.hasErrors()).isFalse();
-    }
-
-    @Test
-    void audienceValidator_passesWhenExpectedAudiencePresent() {
-        var validator = config.audienceValidator("expected-aud");
+    void audienceValidator_expectedAudiencePresentInJwt_resultContainNoErrors() {
+        OAuth2TokenValidator<Jwt> validator = config.audienceValidator("expected-aud");
 
         Jwt jwt =
                 new Jwt(
@@ -54,7 +38,7 @@ class SecurityConfigTest {
     }
 
     @Test
-    void audienceValidator_failsWhenAudienceMissing() {
+    void audienceValidator_invalidAudiencePresentInJwt_resultContainsError() {
         var validator = config.audienceValidator("expected-aud");
 
         Jwt jwt =
@@ -100,14 +84,13 @@ class SecurityConfigTest {
 
         OAuth2TokenValidator<Jwt> combined = config.buildValidator(issuer, audienceValidator);
 
-        assertThat(combined)
-            .isInstanceOf(DelegatingOAuth2TokenValidator.class);
+        assertThat(combined).isInstanceOf(DelegatingOAuth2TokenValidator.class);
 
         Field field = DelegatingOAuth2TokenValidator.class.getDeclaredField("tokenValidators");
         field.setAccessible(true);
 
         Collection<OAuth2TokenValidator<Jwt>> validators =
-            (Collection<OAuth2TokenValidator<Jwt>>) field.get(combined);
+                (Collection<OAuth2TokenValidator<Jwt>>) field.get(combined);
 
         assertThat(validators).hasSize(2);
         assertThat(validators).anyMatch(v -> v == audienceValidator);
