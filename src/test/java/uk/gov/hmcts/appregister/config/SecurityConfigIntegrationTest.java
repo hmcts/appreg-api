@@ -71,7 +71,7 @@ class SecurityConfigIntegrationTest {
 
     @Test
     void unauthenticatedRequest_returns401() throws Exception {
-        mvc.perform(get("/admin/hello")) // no Authorization header
+        mvc.perform(get("/admin/hello"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -89,9 +89,9 @@ class SecurityConfigIntegrationTest {
                         "iss",
                         "https://issuer.test",
                         "aud",
-                        List.of("test-aud"), // must match audienceValidator
+                        List.of("test-aud"),
                         "roles",
-                        roles // your config maps "roles" -> ROLE_*
+                        roles
                         ));
     }
 
