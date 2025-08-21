@@ -1,5 +1,16 @@
 package uk.gov.hmcts.appregister.config;
 
+import static uk.gov.hmcts.appregister.config.SecurityConstants.AUD_MISMATCH_MESSAGE;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRED;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.INVALID_TOKEN;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI_DOCS;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
+
+import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,18 +28,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-
-import java.util.List;
-
-import static uk.gov.hmcts.appregister.config.SecurityConstants.AUD_MISMATCH_MESSAGE;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRED;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.INVALID_TOKEN;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI_DOCS;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
 
 @Configuration
 @EnableMethodSecurity
