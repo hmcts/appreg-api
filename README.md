@@ -1,177 +1,107 @@
-# Spring Boot application template
+# Application Register API
 
-## Purpose
+This file contains basic repository information and a setup guide for development.
 
-The purpose of this template is to speed up the creation of new Spring applications within HMCTS
-and help keep the same standards across multiple teams. If you need to create a new app, you can
-simply use this one as a starting point and build on top of it.
+Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/display/ARM/Backend+development+for+new+users).
 
-## What's inside
+## Prerequisites
 
-The template is a working application with a minimal setup. It contains:
- * application skeleton
- * setup script to prepare project
- * common plugins and libraries
- * [HMCTS Java plugin](https://github.com/hmcts/gradle-java-plugin)
- * docker setup
- * automatically publishes API documentation to [hmcts/cnp-api-docs](https://github.com/hmcts/cnp-api-docs)
- * code quality tools already set up
- * MIT license and contribution information
- * Helm chart using chart-java.
+- HMCTS.NET account
+- GitHub account linked to HMCTS.NET, and Git installed
+- Access to required GitHub repositories (see internal guide)
 
-The application exposes health endpoint (http://localhost:4550/health) and metrics endpoint
-(http://localhost:4550/metrics).
+## Guide
+
+The steps work on Windows, macOS, and Linux.
+
+1. **Install IntelliJ IDEA.**
+   You may request a license via your line manager. Other IDEs work, but IntelliJ is recommended.
+
+2. **Ensure JDK 21.**
+   IntelliJ includes a JDK. Confirm the version is 21.
+   ```bash
+   java -version
+   ```
+
+3. **Clone and open the repo.**
+   ```bash
+   git clone <repo-url>
+   cd appreg-api
+   ```
+   Open the project directory in IntelliJ.
+
+4. **Configure run settings.**
+   After indexing completes, open `.run/appreg-api-bootRun.run.xml` and set these environment variables:
+  - `OIDC_TENANT_ID`
+  - `POSTGRES_HOST`
+  - `POSTGRES_PASS`
+    Ask an existing developer for values.
+    If the file is missing, create a new Run/Debug configuration in IntelliJ:
+  - Type: **Gradle**
+  - Tasks: `bootRun`
+  - Environment variables: add the three variables above
+
+5. **Run the application.**
+   ```bash
+   ./gradlew bootRun
+   ```
+   Or use the IntelliJ *appreg-api-bootRun* configuration.
+
+6. **Expected first-run errors.**
+   PostgreSQL, SQL, or JDBC errors are expected until the database is provisioned and reachable. See **Database setup** below.
+## Common tasks
+
+- **Build and test**
+  ```bash
+  ./gradlew clean build
+  ```
+
+- **Static analysis (includes Checkstyle)**
+  ```bash
+  ./gradlew check
+  ```
+
+- **Dependency vulnerability scan (OWASP Dependency-Check)**
+  ```bash
+  ./gradlew dependencyCheck
+  ```
+
+- **Code coverage report (JaCoCo)**
+  ```bash
+  ./gradlew jacocoTestReport
+  # Report: build/reports/jacoco/test/html/index.html
+  ```
+
+- **Find dependency updates**
+  ```bash
+  ./gradlew dependencyUpdates -Drevision=release
+  ```
 
 ## Plugins
 
-The template contains the following plugins:
+- **HMCTS Gradle Java plugin**
+  Applies HMCTS defaults for analysis.
+  Repo: https://github.com/hmcts/gradle-java-plugin
+  Includes:
+  - **Checkstyle** — Style checks, part of `./gradlew check`. Docs: https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+  - **OWASP Dependency-Check** — Scans dependencies for known CVEs. Docs: https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/index.html
 
-  * HMCTS Java plugin
+- **JaCoCo**
+  Code coverage for Java. Docs: https://docs.gradle.org/current/userguide/jacoco_plugin.html
 
-    Applies code analysis tools with HMCTS default settings. See the [project repository](https://github.com/hmcts/gradle-java-plugin) for details.
+- **Spring Dependency Management**
+  Maven-like dependency management. Docs: https://github.com/spring-gradle-plugins/dependency-management-plugin
 
-    Analysis tools include:
+- **Spring Boot**
+  Reduces boilerplate for Spring applications. Site: http://projects.spring.io/spring-boot/
 
-    * checkstyle
+- **Gradle Versions Plugin**
+  Reports dependency updates. Docs: https://github.com/ben-manes/gradle-versions-plugin
 
-        https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+## Database setup
 
-        Performs code style checks on Java source files using Checkstyle and generates reports from these checks.
-        The checks are included in gradle's *check* task (you can run them by executing `./gradlew check` command).
-
-    * org.owasp.dependencycheck
-
-        https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/index.html
-
-        Provides monitoring of the project's dependent libraries and creating a report
-        of known vulnerable components that are included in the build. To run it
-        execute `gradle dependencyCheck` command.
-
-  * jacoco
-
-    https://docs.gradle.org/current/userguide/jacoco_plugin.html
-
-    Provides code coverage metrics for Java code via integration with JaCoCo.
-    You can create the report by running the following command:
-
-    ```bash
-      ./gradlew jacocoTestReport
-    ```
-
-    The report will be created in build/reports subdirectory in your project directory.
-
-  * io.spring.dependency-management
-
-    https://github.com/spring-gradle-plugins/dependency-management-plugin
-
-    Provides Maven-like dependency management. Allows you to declare dependency management
-    using `dependency 'groupId:artifactId:version'`
-    or `dependency group:'group', name:'name', version:version'`.
-
-  * org.springframework.boot
-
-    http://projects.spring.io/spring-boot/
-
-    Reduces the amount of work needed to create a Spring application
-
-
-  * com.github.ben-manes.versions
-
-    https://github.com/ben-manes/gradle-versions-plugin
-
-    Provides a task to determine which dependencies have updates. Usage:
-
-    ```bash
-      ./gradlew dependencyUpdates -Drevision=release
-    ```
-
-## Setup
-
-Located in `./bin/init.sh`. Simply run and follow the explanation how to execute it.
-
-## Building and deploying the application
-
-### Building the application
-
-The project uses [Gradle](https://gradle.org) as a build tool. It already contains
-`./gradlew` wrapper script, so there's no need to install gradle.
-
-To build the project execute the following command:
-
-```bash
-  ./gradlew build
-```
-
-### Running the application
-
-Create the image of the application by executing the following command:
-
-```bash
-  ./gradlew assemble
-```
-
-Note: Docker Compose V2 is highly recommended for building and running the application.
-In the Compose V2 old `docker-compose` command is replaced with `docker compose`.
-
-Create docker image:
-
-```bash
-  docker compose build
-```
-
-Run the distribution (created in `build/install/spring-boot-template` directory)
-by executing the following command:
-
-```bash
-  docker compose up
-```
-
-This will start the API container exposing the application's port
-(set to `4550` in this template app).
-
-In order to test if the application is up, you can call its health endpoint:
-
-```bash
-  curl http://localhost:4550/health
-```
-
-You should get a response similar to this:
-
-```
-  {"status":"UP","diskSpace":{"status":"UP","total":249644974080,"free":137188298752,"threshold":10485760}}
-```
-
-### Alternative script to run application
-
-To skip all the setting up and building, just execute the following command:
-
-```bash
-./bin/run-in-docker.sh
-```
-
-For more information:
-
-```bash
-./bin/run-in-docker.sh -h
-```
-
-Script includes bare minimum environment variables necessary to start api instance. Whenever any variable is changed or any other script regarding docker image/container build, the suggested way to ensure all is cleaned up properly is by this command:
-
-```bash
-docker compose rm
-```
-
-It clears stopped containers correctly. Might consider removing clutter of images too, especially the ones fiddled with:
-
-```bash
-docker images
-
-docker image rm <image-id>
-```
-
-There is no need to remove postgres and java or similar core images.
+TODO: Add DB provisioning and local connection instructions here. Until then, startup may log PostgreSQL/JDBC connection errors.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
-
+This project is licensed under the MIT License — see [LICENSE](LICENSE).
