@@ -48,6 +48,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: https://login.microsoftonline.com/${OIDC_TENANT_ID}/v2.0
+          audiences: ${OIDC_AUDIENCE}
 
 logging:
   level:
@@ -57,7 +58,3 @@ logging:
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
-
-app:
-  security:
-    expected-audience: ${OIDC_AUDIENCE}

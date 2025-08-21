@@ -17,12 +17,7 @@ public final class SecurityConstants {
     public static final String OPENAPI_DOCS = "/v3/api-docs/**";
     public static final String HEALTH = "/health/**";
 
-    // Error messages
-    public static final String AUD_MISMATCH_MESSAGE =
-            "The access token was not issued for this API (audience mismatch).";
-
     // Error codes
     public static final int ERR_AUTH_REQUIRED = 401;
     public static final int ERR_FORBIDDEN = 403;
-    public static final String INVALID_TOKEN = "invalid_token";
 }

@@ -15,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +27,9 @@ import org.springframework.web.bind.annotation.RestController;
     SecurityConfig.class,
     SecurityConfigIntegrationTest.UserRoleController.class,
     SecurityConfigIntegrationTest.AdminRoleController.class
+})
+@TestPropertySource(properties = {
+    "OIDC_TENANT_ID=dummy-tenant-id", // 👈 Fake value for test context
 })
 class SecurityConfigIntegrationTest {
 
