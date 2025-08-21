@@ -35,8 +35,10 @@ The steps work on Windows, macOS, and Linux.
   - `OIDC_TENANT_ID`
   - `POSTGRES_HOST`
   - `POSTGRES_PASS`
-    Ask an existing developer for values.
-    If the file is missing, create a new Run/Debug configuration in IntelliJ:
+
+Ask an existing developer for values.
+
+If the file is missing, create a new Run/Debug configuration in IntelliJ:
   - Type: **Gradle**
   - Tasks: `bootRun`
   - Environment variables: add the three variables above
