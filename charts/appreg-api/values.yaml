@@ -20,5 +20,12 @@ java:
           alias: POSTGRES_PORT
         - name: POSTGRES-DATABASE
           alias: POSTGRES_DATABASE
+        - name: azure-tenant-id
+          alias: azure-tenant-id
+        - name: azure-client-secret
+          alias: azure-client-secret	
+        - name: azure-app-id
+          alias: azure-app-id
+
   environment:
     APPREG_PORTAL_URL: 'https://appreg-frontend-{{ .Values.global.environment }}.platform.hmcts.net'
