@@ -8,6 +8,8 @@ java:
     POSTGRES_HOST: "appreg-dev.postgres.database.azure.com"
     POSTGRES_PORT: 5432
     POSTGRES_DATABASE: postgres
+    OIDC_TENANT_ID: "temp_tenant_id"
+    OIDC_AUDIENCE: "temp_aud"
   secrets:
     POSTGRES_PASS:
       secretRef: "postgres"
