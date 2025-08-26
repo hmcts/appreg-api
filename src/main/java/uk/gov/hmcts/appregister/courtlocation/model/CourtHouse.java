@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
  * I'm not sure what HOCODE and MCC stand for, but they are used in the Libra database.
  */
 @Entity
-@Table(name = "courthouse")
+@Table(name = "national_court_houses")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,10 +30,10 @@ public class CourtHouse {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false, updatable = false)
+    @Column(name = "nch_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "courthouse_name", nullable = false)
     private String name;
 
     @Column(name = "court_type", nullable = false)
@@ -45,18 +45,18 @@ public class CourtHouse {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "location_id")
+    @Column(name = "loc_loc_id")
     private Long locationId;
 
-    @Column(name = "psa_id")
+    @Column(name = "psa_psa_id")
     private Long psaId;
 
-    @Column(name = "location_code")
+    @Column(name = "court_location_code")
     private String courtLocationCode;
 
-    @Column(name = "welsh_name")
+    @Column(name = "sl_courthouse_name")
     private String welshName;
 
-    @Column(name = "org_id")
+    @Column(name = "norg_id")
     private Long orgId;
 }

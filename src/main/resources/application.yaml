@@ -25,7 +25,7 @@ spring:
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg_db}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}
     username: ${POSTGRES_USER:appreg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
@@ -39,6 +39,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: appreg
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
