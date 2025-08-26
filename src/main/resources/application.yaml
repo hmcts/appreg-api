@@ -48,8 +48,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${OIDC_TENANT_ID}/v2.0
-          audiences: ${OIDC_AUDIENCE}
+          issuer-uri: https://login.microsoftonline.com/${azure-tenant-id}/v2.0
+          audiences: ${azure-audience-id}
 
 logging:
   level:

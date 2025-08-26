@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
     SecurityConfigIntegrationTest.UserRoleController.class,
     SecurityConfigIntegrationTest.AdminRoleController.class
 })
-@TestPropertySource(properties = {"OIDC_TENANT_ID=dummy-tenant-id"})
+@TestPropertySource(properties = {"azure-tenant-id=dummy-tenant-id"})
 class SecurityConfigIntegrationTest {
 
     @Autowired MockMvc mvc;
