@@ -1,28 +1,26 @@
 package uk.gov.hmcts.appregister.courtlocation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-
 import uk.gov.hmcts.appregister.courtlocation.dto.CourtHouseDto;
 import uk.gov.hmcts.appregister.courtlocation.service.CourtLocationService;
 
 @ExtendWith(MockitoExtension.class)
 class CourtHouseControllerTest {
 
-    @Mock
-    private CourtLocationService service;
+    @Mock private CourtLocationService service;
 
-    @InjectMocks
-    private CourtHouseController controller;
+    @InjectMocks private CourtHouseController controller;
 
     @Test
     void getAll_returnsOkWithBody() {

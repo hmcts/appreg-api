@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.courtlocation.model;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
@@ -9,7 +10,6 @@ class CourtHouseTest {
 
     @Test
     void settersThenGetters_returnAssignedValues() {
-        // Arrange sample values
         Long id = 123L;
         String name = "Cardiff Crown Court";
         String courtType = "CROWN";
@@ -21,7 +21,6 @@ class CourtHouseTest {
         String welshName = "Llys y Goron Caerdydd";
         Long orgId = 999L;
 
-        // Act
         CourtHouse ch = new CourtHouse();
         ch.setId(id);
         ch.setName(name);
@@ -34,7 +33,6 @@ class CourtHouseTest {
         ch.setWelshName(welshName);
         ch.setOrgId(orgId);
 
-        // Assert (every getter)
         assertEquals(id, ch.getId());
         assertEquals(name, ch.getName());
         assertEquals(courtType, ch.getCourtType());
@@ -60,10 +58,18 @@ class CourtHouseTest {
         String welshName = "—";
         Long orgId = 30L;
 
-        CourtHouse ch = new CourtHouse(
-            id, name, courtType, startDate, endDate,
-            locationId, psaId, courtLocationCode, welshName, orgId
-        );
+        CourtHouse ch =
+                new CourtHouse(
+                        id,
+                        name,
+                        courtType,
+                        startDate,
+                        endDate,
+                        locationId,
+                        psaId,
+                        courtLocationCode,
+                        welshName,
+                        orgId);
 
         assertEquals(id, ch.getId());
         assertEquals(name, ch.getName());
@@ -90,18 +96,19 @@ class CourtHouseTest {
         String welshName = "Manceinion";
         Long orgId = 300L;
 
-        CourtHouse ch = CourtHouse.builder()
-            .id(id)
-            .name(name)
-            .courtType(courtType)
-            .startDate(startDate)
-            .endDate(endDate)
-            .locationId(locationId)
-            .psaId(psaId)
-            .courtLocationCode(courtLocationCode)
-            .welshName(welshName)
-            .orgId(orgId)
-            .build();
+        CourtHouse ch =
+                CourtHouse.builder()
+                        .id(id)
+                        .name(name)
+                        .courtType(courtType)
+                        .startDate(startDate)
+                        .endDate(endDate)
+                        .locationId(locationId)
+                        .psaId(psaId)
+                        .courtLocationCode(courtLocationCode)
+                        .welshName(welshName)
+                        .orgId(orgId)
+                        .build();
 
         assertEquals(id, ch.getId());
         assertEquals(name, ch.getName());
@@ -118,7 +125,6 @@ class CourtHouseTest {
     @Test
     void noArgsConstructor_hasNullDefaults_andSettersUpdate() {
         CourtHouse ch = new CourtHouse();
-        // Defaults (no Lombok @Builder.Default present, so nulls)
         assertNull(ch.getId());
         assertNull(ch.getName());
         assertNull(ch.getCourtType());
@@ -130,7 +136,6 @@ class CourtHouseTest {
         assertNull(ch.getWelshName());
         assertNull(ch.getOrgId());
 
-        // Update one to be sure setters still work from null
         ch.setName("Leeds");
         assertEquals("Leeds", ch.getName());
     }

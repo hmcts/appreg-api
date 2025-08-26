@@ -2,18 +2,21 @@ package uk.gov.hmcts.appregister.courtlocation.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
-
 import uk.gov.hmcts.appregister.courtlocation.dto.CourtHouseDto;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtHouseMapper;
 import uk.gov.hmcts.appregister.courtlocation.model.CourtHouse;
@@ -23,6 +26,7 @@ import uk.gov.hmcts.appregister.courtlocation.repository.CourtHouseRepository;
 class CourtLocationServiceImplTest {
 
     @Mock private CourtHouseRepository repository;
+
     @Mock private CourtHouseMapper mapper;
 
     @InjectMocks private CourtLocationServiceImpl service;
@@ -30,8 +34,10 @@ class CourtLocationServiceImplTest {
     @Test
     void findAll_mapsEachEntityToDto_andReturnsList() {
         // Arrange
-        CourtHouse e1 = new CourtHouse(); e1.setId(1L);
-        CourtHouse e2 = new CourtHouse(); e2.setId(2L);
+        CourtHouse e1 = new CourtHouse();
+        e1.setId(1L);
+        CourtHouse e2 = new CourtHouse();
+        e2.setId(2L);
         when(repository.findAll()).thenReturn(List.of(e1, e2));
 
         CourtHouseDto d1 = mock(CourtHouseDto.class);
@@ -64,7 +70,8 @@ class CourtLocationServiceImplTest {
     @Test
     void findById_whenFound_mapsAndReturnsDto() {
         Long id = 123L;
-        CourtHouse entity = new CourtHouse(); entity.setId(id);
+        CourtHouse entity = new CourtHouse();
+        entity.setId(id);
         CourtHouseDto dto = mock(CourtHouseDto.class);
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));
@@ -84,7 +91,7 @@ class CourtLocationServiceImplTest {
         when(repository.findById(id)).thenReturn(Optional.empty());
 
         ResponseStatusException ex =
-            assertThrows(ResponseStatusException.class, () -> service.findById(id));
+                assertThrows(ResponseStatusException.class, () -> service.findById(id));
 
         assertThat(ex.getStatusCode().value()).isEqualTo(HttpStatus.NOT_FOUND.value());
         assertThat(ex.getReason()).isEqualTo("Courthouse not found");
