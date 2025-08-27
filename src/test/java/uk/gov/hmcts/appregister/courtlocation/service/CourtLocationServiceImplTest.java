@@ -33,7 +33,6 @@ import uk.gov.hmcts.appregister.courtlocation.repository.CourtLocationRepository
 class CourtLocationServiceImplTest {
 
     @Mock private CourtLocationRepository repository;
-
     @Mock private CourtLocationMapper mapper;
 
     @InjectMocks private CourtLocationServiceImpl service;
@@ -42,17 +41,21 @@ class CourtLocationServiceImplTest {
 
     @Test
     void findAll_mapsEntitiesToDtos_andReturnsList() {
+        // Arrange: repository returns two entities
         CourtLocation e1 = mock(CourtLocation.class);
         CourtLocation e2 = mock(CourtLocation.class);
         when(repository.findAll()).thenReturn(List.of(e1, e2));
 
+        // Map each entity to a DTO
         CourtLocationDto d1 = mock(CourtLocationDto.class);
         CourtLocationDto d2 = mock(CourtLocationDto.class);
         when(mapper.toReadDto(e1)).thenReturn(d1);
         when(mapper.toReadDto(e2)).thenReturn(d2);
 
+        // Act: call the service
         List<CourtLocationDto> out = service.findAll();
 
+        // Assert: both entities were mapped and returned in order
         assertThat(out).containsExactly(d1, d2);
         verify(repository).findAll();
         verify(mapper).toReadDto(e1);
@@ -62,10 +65,13 @@ class CourtLocationServiceImplTest {
 
     @Test
     void findAll_whenEmpty_returnsEmpty_andDoesNotCallMapper() {
+        // Arrange: repository has no records
         when(repository.findAll()).thenReturn(List.of());
 
+        // Act
         List<CourtLocationDto> out = service.findAll();
 
+        // Assert: result is empty and mapper was never used
         assertThat(out).isEmpty();
         verify(repository).findAll();
         verifyNoInteractions(mapper);
@@ -75,14 +81,17 @@ class CourtLocationServiceImplTest {
 
     @Test
     void findById_whenFound_mapsAndReturnsDto() {
+        // Arrange: repository finds entity
         Long id = 42L;
         CourtLocation entity = mock(CourtLocation.class);
         CourtLocationDto dto = mock(CourtLocationDto.class);
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(mapper.toReadDto(entity)).thenReturn(dto);
 
+        // Act
         CourtLocationDto out = service.findById(id);
 
+        // Assert: correct entity was mapped and returned
         assertThat(out).isSameAs(dto);
         verify(repository).findById(id);
         verify(mapper).toReadDto(entity);
@@ -91,14 +100,18 @@ class CourtLocationServiceImplTest {
 
     @Test
     void findById_whenMissing_throws404_andDoesNotCallMapper() {
+        // Arrange: repository returns empty
         Long id = 404L;
         when(repository.findById(id)).thenReturn(Optional.empty());
 
+        // Act + Assert: service should throw 404
         ResponseStatusException ex =
                 assertThrows(ResponseStatusException.class, () -> service.findById(id));
 
         assertThat(ex.getStatusCode().value()).isEqualTo(404);
         assertThat(ex.getReason()).isEqualTo("CourtLocation not found");
+
+        // Ensure mapper never called
         verify(repository).findById(id);
         verifyNoInteractions(mapper);
     }
@@ -107,6 +120,7 @@ class CourtLocationServiceImplTest {
 
     @Test
     void search_withBothFilters_buildsNonNullSpec_andMapsPage() {
+        // Arrange: name + type filters, repository returns one entity in a Page
         String name = "man";
         String courtType = "CROWN";
         Pageable pageable = PageRequest.of(1, 5);
@@ -118,11 +132,14 @@ class CourtLocationServiceImplTest {
                 .thenReturn(repoPage);
         when(mapper.toReadDto(entity)).thenReturn(dto);
 
+        // Act
         Page<CourtLocationDto> out = service.searchCourtLocations(name, courtType, pageable);
 
+        // Assert: mapped DTO present and total count preserved
         assertThat(out.getContent()).containsExactly(dto);
         assertThat(out.getTotalElements()).isEqualTo(17);
 
+        // Verify spec built and passed to repository
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Specification<CourtLocation>> specCaptor =
                 ArgumentCaptor.forClass((Class) Specification.class);
@@ -133,6 +150,7 @@ class CourtLocationServiceImplTest {
 
     @Test
     void search_withNameOnly_buildsNonNullSpec_andRespectsPageable() {
+        // Arrange: only name filter supplied
         String name = "card";
         String courtType = null;
         Pageable pageable = PageRequest.of(0, 10);
@@ -144,10 +162,13 @@ class CourtLocationServiceImplTest {
                 .thenReturn(repoPage);
         when(mapper.toReadDto(entity)).thenReturn(dto);
 
+        // Act
         Page<CourtLocationDto> out = service.searchCourtLocations(name, courtType, pageable);
 
+        // Assert: result contains mapped DTO
         assertThat(out.getContent()).containsExactly(dto);
 
+        // Verify non-null spec was passed
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Specification<CourtLocation>> specCaptor =
                 ArgumentCaptor.forClass((Class) Specification.class);
@@ -158,6 +179,7 @@ class CourtLocationServiceImplTest {
 
     @Test
     void search_withCourtTypeOnly_buildsNonNullSpec() {
+        // Arrange: only courtType filter supplied
         String name = null;
         String courtType = "MAGISTRATES";
         Pageable pageable = PageRequest.of(2, 3);
@@ -169,10 +191,13 @@ class CourtLocationServiceImplTest {
                 .thenReturn(repoPage);
         when(mapper.toReadDto(entity)).thenReturn(dto);
 
+        // Act
         Page<CourtLocationDto> out = service.searchCourtLocations(name, courtType, pageable);
 
+        // Assert
         assertThat(out.getContent()).containsExactly(dto);
 
+        // Verify non-null spec was passed
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Specification<CourtLocation>> specCaptor =
                 ArgumentCaptor.forClass((Class) Specification.class);
@@ -183,6 +208,7 @@ class CourtLocationServiceImplTest {
 
     @Test
     void search_withNoFilters_usesMatchAllSpec_andReturnsEmptyMappedPage() {
+        // Arrange: no filters (blank type treated as no filter)
         String name = null;
         String courtType = "   ";
         Pageable pageable = PageRequest.of(0, 10);
@@ -191,13 +217,17 @@ class CourtLocationServiceImplTest {
         when(repository.findAll(ArgumentMatchers.<Specification<CourtLocation>>any(), eq(pageable)))
                 .thenReturn(repoPage);
 
+        // Act
         Page<CourtLocationDto> out = service.searchCourtLocations(name, courtType, pageable);
 
+        // Assert: empty page returned
         assertThat(out.getContent()).isEmpty();
         assertThat(out.getTotalElements()).isEqualTo(0);
 
+        // Verify that repository was still called with a spec (match-all) and pageable
         verify(repository)
                 .findAll(ArgumentMatchers.<Specification<CourtLocation>>any(), eq(pageable));
+        // Mapper should not be called since no entities returned
         verifyNoInteractions(mapper);
     }
 }
