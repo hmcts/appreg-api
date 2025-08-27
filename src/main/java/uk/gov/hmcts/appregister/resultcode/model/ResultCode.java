@@ -11,7 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "result_code")
+@Table(name = "resolution_codes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,30 +19,30 @@ import lombok.NoArgsConstructor;
 public class ResultCode {
 
     @Id
-    @Column(name = "id", nullable = false, updatable = false)
+    @Column(name = "rc_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "result_code", nullable = false, length = 10)
+    @Column(name = "resolution_code", nullable = false, length = 10)
     private String resultCode;
 
-    @Column(name = "title", nullable = false, length = 500)
+    @Column(name = "resolution_code_title", nullable = false, length = 500)
     private String title;
 
-    @Column(name = "wording", nullable = false)
+    @Column(name = "resolution_code_wording", nullable = false)
     private String wording;
 
-    @Column(name = "legislation")
+    @Column(name = "resolution_legislation")
     private String legislation;
 
-    @Column(name = "destination_email_address_1")
+    @Column(name = "rc_destination_email_address_1")
     private String destinationEmail1;
 
-    @Column(name = "destination_email_address_2")
+    @Column(name = "rc_destination_email_address_2")
     private String destinationEmail2;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "resolution_code_start_date", nullable = false)
     private LocalDate startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "resolution_code_end_date")
     private LocalDate endDate;
 }
