@@ -3,14 +3,12 @@ package uk.gov.hmcts.appregister.courtlocation.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,37 +29,69 @@ import uk.gov.hmcts.appregister.courtlocation.service.CourtLocationService;
 @ExtendWith(MockitoExtension.class)
 class CourtLocationControllerTest {
 
-    @Mock private CourtLocationService service;
-    @InjectMocks private CourtLocationController controller;
+    @Mock
+    private CourtLocationService service;
+
+    @InjectMocks
+    private CourtLocationController controller;
 
     @Test
-    void list_defaults_applyAndServiceIsCalledWithSortedPageable() {
-        // Arrange: mock two DTOs and a Page result
-        CourtLocationDto d1 = mock(CourtLocationDto.class);
-        CourtLocationDto d2 = mock(CourtLocationDto.class);
-        Page<CourtLocationDto> page = new PageImpl<>(List.of(d1, d2), PageRequest.of(0, 10), 2);
+    void list_whenNoParams_appliesDefaults_andCallsServiceWithNameSortedPageable() {
+        // Arrange: a page with 2 DTOs, created using 0-based PageRequest(0,10)
+        CourtLocationDto d1 = new CourtLocationDto(1L, "A", null, null, null, null, null, null, null, null);
+        CourtLocationDto d2 = new CourtLocationDto(2L, "B", null, null, null, null, null, null, null, null);
+        Page<CourtLocationDto> svcPage = new PageImpl<>(List.of(d1, d2), PageRequest.of(0, 10), 2);
 
-        // Stub service to return the page when no filters and any Pageable are passed
-        when(service.searchCourtLocations(isNull(), isNull(), any(Pageable.class)))
-                .thenReturn(page);
+        // Use lenient "any(...)" matchers for stubbing to avoid strict argument-mismatch
+        // while still capturing exact values in verification below.
+        when(service.searchCourtLocations(
+            any(), any(), any(), any(), any(), any(), any(Pageable.class))
+        ).thenReturn(svcPage);
 
-        // Act: call list with all params null (defaults should apply)
-        ResponseEntity<CourtLocationPageResponse> resp = controller.list(null, null, null, null);
+        // Act: call with all nulls (controller should apply defaults page=1,size=10)
+        ResponseEntity<CourtLocationPageResponse> resp =
+            controller.list(null, null, null, null, null, null, null, null);
 
-        // Assert: response is OK and contains expected data/metadata
+        // Assert: successful response with expected body and paging metadata
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().results()).containsExactly(d1, d2);
-        assertThat(resp.getBody().totalCount()).isEqualTo(2L);
-        assertThat(resp.getBody().page()).isEqualTo(1); // public API uses 1-based pages
-        assertThat(resp.getBody().pageSize()).isEqualTo(10);
+        CourtLocationPageResponse body = resp.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.results()).containsExactly(d1, d2);
+        assertThat(body.totalCount()).isEqualTo(2L);
+        assertThat(body.page()).isEqualTo(1);       // API is 1-based
+        assertThat(body.pageSize()).isEqualTo(10);
 
-        // Capture the Pageable passed into the service and assert it has correct defaults
-        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(service).searchCourtLocations(isNull(), isNull(), captor.capture());
+        // Capture the exact arguments passed to the service to assert defaults were propagated
+        ArgumentCaptor<String> nameCap = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> courtTypeCap = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<LocalDate> sFromCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> sToCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> eFromCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> eToCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<Pageable> pageableCap = ArgumentCaptor.forClass(Pageable.class);
 
-        Pageable used = captor.getValue();
-        assertThat(used.getPageNumber()).isEqualTo(0); // internally 0-based
+        // Verify a single invocation and capture arguments in order
+        org.mockito.Mockito.verify(service).searchCourtLocations(
+            nameCap.capture(),
+            courtTypeCap.capture(),
+            sFromCap.capture(),
+            sToCap.capture(),
+            eFromCap.capture(),
+            eToCap.capture(),
+            pageableCap.capture()
+        );
+
+        // All filters should be null when not provided
+        assertThat(nameCap.getValue()).isNull();
+        assertThat(courtTypeCap.getValue()).isNull();
+        assertThat(sFromCap.getValue()).isNull();
+        assertThat(sToCap.getValue()).isNull();
+        assertThat(eFromCap.getValue()).isNull();
+        assertThat(eToCap.getValue()).isNull();
+
+        // Pageable should be 0-based (page 0) with size 10 and sorted by name ASC
+        Pageable used = pageableCap.getValue();
+        assertThat(used.getPageNumber()).isEqualTo(0);
         assertThat(used.getPageSize()).isEqualTo(10);
         Sort.Order nameOrder = used.getSort().getOrderFor("name");
         assertThat(nameOrder).isNotNull();
@@ -69,39 +99,65 @@ class CourtLocationControllerTest {
     }
 
     @Test
-    void list_withFiltersAndPaging_passedThroughAndReflectedInResponse() {
-        // Arrange: set filters and custom page params
+    void list_withAllFiltersAndPaging_passesThroughFilters_andBuildsResponse() {
+        // Arrange: explicit filters and paging
         String name = "card";
         String courtType = "CROWN";
-        Integer pageParam = 2;
-        Integer sizeParam = 5;
+        Integer page = 2;    // API 1-based => should map to 0-based page 1
+        Integer size = 5;
+        LocalDate sFrom = LocalDate.of(2020, 1, 1);
+        LocalDate sTo = LocalDate.of(2021, 1, 1);
+        LocalDate eFrom = LocalDate.of(2022, 1, 1);
+        LocalDate eTo = LocalDate.of(2023, 1, 1);
 
-        // Prepare one DTO and a Page result with total count 21
-        CourtLocationDto d1 = mock(CourtLocationDto.class);
-        Page<CourtLocationDto> page = new PageImpl<>(List.of(d1), PageRequest.of(1, 5), 21);
+        CourtLocationDto d = new CourtLocationDto(10L, "Cardiff", "CROWN", null, null, null, null, null, null, null);
+        Page<CourtLocationDto> svcPage = new PageImpl<>(List.of(d), PageRequest.of(1, 5), 21);
 
-        // Stub service with expected filter values and Pageable
-        when(service.searchCourtLocations(eq(name), eq(courtType), any(Pageable.class)))
-                .thenReturn(page);
+        when(service.searchCourtLocations(
+            any(), any(), any(), any(), any(), any(), any(Pageable.class))
+        ).thenReturn(svcPage);
 
-        // Act: call list with filters and pagination
+        // Act
         ResponseEntity<CourtLocationPageResponse> resp =
-                controller.list(name, courtType, pageParam, sizeParam);
+            controller.list(name, courtType, page, size, sFrom, sTo, eFrom, eTo);
 
-        // Assert: response contains expected values
+        // Assert: body reflects the Page from service, but with 1-based page
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
-        assertThat(resp.getBody()).isNotNull();
-        assertThat(resp.getBody().results()).containsExactly(d1);
-        assertThat(resp.getBody().totalCount()).isEqualTo(21L);
-        assertThat(resp.getBody().page()).isEqualTo(2);
-        assertThat(resp.getBody().pageSize()).isEqualTo(5);
+        CourtLocationPageResponse body = resp.getBody();
+        assertThat(body).isNotNull();
+        assertThat(body.results()).containsExactly(d);
+        assertThat(body.totalCount()).isEqualTo(21L);
+        assertThat(body.page()).isEqualTo(2);
+        assertThat(body.pageSize()).isEqualTo(5);
 
-        // Verify Pageable used matches the requested params
-        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
-        verify(service).searchCourtLocations(eq(name), eq(courtType), captor.capture());
+        // Verify exact args passed to service
+        ArgumentCaptor<String> nameCap = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> courtTypeCap = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<LocalDate> sFromCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> sToCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> eFromCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<LocalDate> eToCap = ArgumentCaptor.forClass(LocalDate.class);
+        ArgumentCaptor<Pageable> pageableCap = ArgumentCaptor.forClass(Pageable.class);
 
-        Pageable used = captor.getValue();
-        assertThat(used.getPageNumber()).isEqualTo(1); // page=2 externally -> page=1 internally
+        org.mockito.Mockito.verify(service).searchCourtLocations(
+            nameCap.capture(),
+            courtTypeCap.capture(),
+            sFromCap.capture(),
+            sToCap.capture(),
+            eFromCap.capture(),
+            eToCap.capture(),
+            pageableCap.capture()
+        );
+
+        assertThat(nameCap.getValue()).isEqualTo(name);
+        assertThat(courtTypeCap.getValue()).isEqualTo(courtType);
+        assertThat(sFromCap.getValue()).isEqualTo(sFrom);
+        assertThat(sToCap.getValue()).isEqualTo(sTo);
+        assertThat(eFromCap.getValue()).isEqualTo(eFrom);
+        assertThat(eToCap.getValue()).isEqualTo(eTo);
+
+        Pageable used = pageableCap.getValue();
+        assertThat(used.getPageNumber()).isEqualTo(1); // converted to 0-based
         assertThat(used.getPageSize()).isEqualTo(5);
         Sort.Order nameOrder = used.getSort().getOrderFor("name");
         assertThat(nameOrder).isNotNull();
@@ -109,63 +165,71 @@ class CourtLocationControllerTest {
     }
 
     @Test
-    void list_whenPageLessThanOne_returnsBadRequest_andDoesNotCallService() {
-        // Invalid page param should return 400 and not hit the service
-        ResponseEntity<CourtLocationPageResponse> resp = controller.list(null, null, 0, 10);
+    void list_whenPageLessThanOne_returns400_andDoesNotCallService() {
+        ResponseEntity<CourtLocationPageResponse> resp =
+            controller.list(null, null, 0, 10, null, null, null, null);
+
+        assertThat(resp.getStatusCodeValue()).isEqualTo(400);
+        verifyNoInteractions(service); // ensure short-circuit before service call
+    }
+
+    @Test
+    void list_whenPageSizeInvalid_returns400_andDoesNotCallService() {
+        // size < 1
+        ResponseEntity<CourtLocationPageResponse> r1 =
+            controller.list(null, null, 1, 0, null, null, null, null);
+        assertThat(r1.getStatusCodeValue()).isEqualTo(400);
+
+        // size > MAX (100)
+        ResponseEntity<CourtLocationPageResponse> r2 =
+            controller.list(null, null, 1, 101, null, null, null, null);
+        assertThat(r2.getStatusCodeValue()).isEqualTo(400);
+
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void list_whenStartDateRangeInvalid_returns400_andDoesNotCallService() {
+        LocalDate from = LocalDate.of(2024, 1, 2);
+        LocalDate to = LocalDate.of(2024, 1, 1); // from > to -> invalid
+        ResponseEntity<CourtLocationPageResponse> resp =
+            controller.list(null, null, 1, 10, from, to, null, null);
 
         assertThat(resp.getStatusCodeValue()).isEqualTo(400);
         verifyNoInteractions(service);
     }
 
     @Test
-    void list_whenPageSizeLessThanOne_returnsBadRequest_andDoesNotCallService() {
-        // Invalid pageSize param (zero) should return 400
-        ResponseEntity<CourtLocationPageResponse> resp = controller.list(null, null, 1, 0);
+    void list_whenEndDateRangeInvalid_returns400_andDoesNotCallService() {
+        LocalDate from = LocalDate.of(2024, 1, 2);
+        LocalDate to = LocalDate.of(2024, 1, 1); // from > to -> invalid
+        ResponseEntity<CourtLocationPageResponse> resp =
+            controller.list(null, null, 1, 10, null, null, from, to);
 
         assertThat(resp.getStatusCodeValue()).isEqualTo(400);
         verifyNoInteractions(service);
     }
 
     @Test
-    void list_whenPageSizeOverMax_returnsBadRequest_andDoesNotCallService() {
-        // Invalid pageSize param (>100) should return 400
-        ResponseEntity<CourtLocationPageResponse> resp = controller.list(null, null, 1, 101);
-
-        assertThat(resp.getStatusCodeValue()).isEqualTo(400);
-        verifyNoInteractions(service);
-    }
-
-    @Test
-    void getById_returnsOkWithBody() {
-        // Arrange: stub service to return a DTO for given ID
+    void getById_whenServiceReturnsDto_returnsOkWithBody() {
         Long id = 123L;
-        CourtLocationDto dto = mock(CourtLocationDto.class);
+        CourtLocationDto dto = new CourtLocationDto(id, "X", null, null, null, null, null, null, null, null);
         when(service.findById(id)).thenReturn(dto);
 
-        // Act: call getById
         ResponseEntity<CourtLocationDto> resp = controller.getById(id);
 
-        // Assert: service was called, response is OK and body is the same DTO
         assertThat(resp.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(resp.getBody()).isSameAs(dto);
-        verify(service).findById(id);
     }
 
     @Test
-    void getById_whenServiceThrows_propagatesException() {
-        // Arrange: stub service to throw 404 ResponseStatusException
+    void getById_whenServiceThrows404_isPropagated() {
         Long id = 404L;
         when(service.findById(id))
-                .thenThrow(
-                        new ResponseStatusException(
-                                org.springframework.http.HttpStatus.NOT_FOUND, "not found"));
+            .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "not found"));
 
-        // Act + Assert: controller should propagate the exception unchanged
-        ResponseStatusException ex =
-                assertThrows(ResponseStatusException.class, () -> controller.getById(id));
-
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> controller.getById(id));
         assertThat(ex.getStatusCode().value()).isEqualTo(404);
         assertThat(ex.getReason()).isEqualTo("not found");
-        verify(service).findById(id);
     }
 }

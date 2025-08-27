@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,16 +10,15 @@ import uk.gov.hmcts.appregister.courtlocation.dto.CourtLocationDto;
  * Service layer contract for interacting with Court Location data.
  *
  * <p>This interface defines the operations available for reading Court Location records, decoupling
- * the controller from the repository layer. Implementations are responsible for applying business
+ * controllers from the repository layer. Implementations are responsible for applying business
  * rules, mapping JPA entities to DTOs, and delegating persistence operations to a repository.
  *
- * <p>Usage pattern:
- *
+ * <p><b>Usage pattern:</b>
  * <ul>
- *   <li>Controllers depend on this interface rather than directly on repositories.
- *   <li>Implementations typically use {@link
- *       uk.gov.hmcts.appregister.courtlocation.repository.CourtLocationRepository} and {@link
- *       uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper}.
+ *   <li>Controllers depend on this interface rather than directly on repositories.</li>
+ *   <li>Implementations typically use
+ *   {@link uk.gov.hmcts.appregister.courtlocation.repository.CourtLocationRepository} and
+ *   {@link uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper}.</li>
  * </ul>
  */
 public interface CourtLocationService {
@@ -44,20 +44,35 @@ public interface CourtLocationService {
     /**
      * Search for court locations using optional filters and pagination.
      *
-     * <p>Filters:
-     *
+     * <p><b>Filters:</b>
      * <ul>
-     *   <li>{@code name} – optional case-insensitive substring filter on the courthouse name.
-     *   <li>{@code courtType} – optional exact match on the court type field.
+     *   <li>{@code name} – optional case-insensitive substring filter on the courthouse name.</li>
+     *   <li>{@code courtType} – optional exact match on the {@code courtType} field.</li>
+     *   <li>{@code startDateFrom}/{@code startDateTo} – optional inclusive range on
+     *       {@code startDate}.</li>
+     *   <li>{@code endDateFrom}/{@code endDateTo} – optional inclusive range on {@code endDate}.
+     *       Implementations should define semantics for {@code NULL endDate} (e.g., treat as
+     *       “ongoing” when applying {@code endDateFrom}).</li>
      * </ul>
      *
-     * <p>Paging and sorting are handled via the provided {@link Pageable} parameter. The default
-     * sort order is typically configured at the controller level.
+     * <p><b>Paging/Sorting:</b> Provided via the {@link Pageable} argument. Controllers typically
+     * supply a default sort (e.g., {@code Sort.by("name").ascending()}).
      *
-     * @param name optional substring filter on the courthouse name
-     * @param courtType optional exact filter on the court type
+     * @param name optional substring filter on the courthouse name; case-insensitive
+     * @param courtType optional exact match on the court type
+     * @param startDateFrom optional lower bound for {@code startDate} (inclusive)
+     * @param startDateTo optional upper bound for {@code startDate} (inclusive)
+     * @param endDateFrom optional lower bound for {@code endDate} (inclusive)
+     * @param endDateTo optional upper bound for {@code endDate} (inclusive)
      * @param pageable paging information including page number, size, and sort
      * @return a {@link Page} of {@link CourtLocationDto} results matching the criteria
      */
-    Page<CourtLocationDto> searchCourtLocations(String name, String courtType, Pageable pageable);
+    Page<CourtLocationDto> searchCourtLocations(
+        String name,
+        String courtType,
+        LocalDate startDateFrom,
+        LocalDate startDateTo,
+        LocalDate endDateFrom,
+        LocalDate endDateTo,
+        Pageable pageable); // controller provides 0-based paging + sort; service composes filters
 }
