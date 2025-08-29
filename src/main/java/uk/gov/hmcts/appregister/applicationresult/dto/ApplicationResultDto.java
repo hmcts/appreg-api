@@ -1,11 +1,11 @@
 package uk.gov.hmcts.appregister.applicationresult.dto;
 
 import java.time.LocalDate;
-import uk.gov.hmcts.appregister.resultcode.dto.ResultCodeDto;
+import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 
 public record ApplicationResultDto(
         Long id,
-        ResultCodeDto resultCode,
+        ResolutionCodeDto resultCode,
         String resultWording,
         String resultOfficer,
         String changedBy,

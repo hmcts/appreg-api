@@ -6,14 +6,14 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListDto;
 import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListWriteDto;
 import uk.gov.hmcts.appregister.applicationlist.model.ApplicationList;
-import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
-import uk.gov.hmcts.appregister.courtlocation.model.CourtLocation;
+import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapper;
+import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 @RequiredArgsConstructor
 @Component
 public class ApplicationListMapper {
 
-    private final CourtLocationMapper courtHouseMapper;
+    private final NationalCourtHouseMapper courtHouseMapper;
 
     public ApplicationListDto toReadDto(ApplicationList entity) {
         if (entity == null) {
@@ -36,7 +36,7 @@ public class ApplicationListMapper {
             ApplicationListWriteDto dto,
             String userId,
             LocalDate changedDate,
-            CourtLocation courtHouse) {
+            NationalCourtHouse courtHouse) {
         return ApplicationList.builder()
                 .status(dto.status())
                 .date(dto.date())
@@ -54,7 +54,7 @@ public class ApplicationListMapper {
             ApplicationList entity,
             String userId,
             LocalDate changedDate,
-            CourtLocation courtHouse) {
+            NationalCourtHouse courtHouse) {
         entity.setStatus(dto.status());
         entity.setDate(dto.date());
         entity.setTime(dto.time());

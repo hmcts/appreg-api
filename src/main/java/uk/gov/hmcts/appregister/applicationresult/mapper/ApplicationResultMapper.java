@@ -6,14 +6,14 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultDto;
 import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultWriteDto;
 import uk.gov.hmcts.appregister.applicationresult.model.ApplicationResult;
-import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
+import uk.gov.hmcts.appregister.resolutioncode.mapper.ResolutionCodeMapper;
 import uk.gov.hmcts.appregister.util.VersionManager;
 
 @RequiredArgsConstructor
 @Component
 public class ApplicationResultMapper {
 
-    private final ResultCodeMapper resultCodeMapper;
+    private final ResolutionCodeMapper resultCodeMapper;
     private final VersionManager versionManager;
 
     public ApplicationResultDto toReadDto(ApplicationResult entity) {
