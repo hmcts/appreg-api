@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.nationalcourthouse.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 /**
@@ -29,7 +30,7 @@ import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
  * </pre>
  */
 public interface NationalCourtHouseRepository
-        extends JpaRepository<NationalCourtHouse, Long>,
+        extends PagingAndSortingRepository<NationalCourtHouse, Long>,
                 JpaSpecificationExecutor<NationalCourtHouse> {
     // No additional methods required yet – Spring Data generates CRUD and spec-based methods.
 }

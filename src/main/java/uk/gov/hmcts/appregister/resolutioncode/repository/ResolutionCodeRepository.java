@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.resolutioncode.repository;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
 
 /**
@@ -27,7 +28,8 @@ import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
  * </ul>
  */
 public interface ResolutionCodeRepository
-        extends JpaRepository<ResolutionCode, Long>, JpaSpecificationExecutor<ResolutionCode> {
+    extends PagingAndSortingRepository<ResolutionCode, Long>,
+    JpaSpecificationExecutor<ResolutionCode> {
 
     /**
      * Finds a {@link ResolutionCode} by its short code value.
