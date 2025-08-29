@@ -4,6 +4,8 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
 import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
+import java.util.Optional;
+
 /**
  * Mapper component responsible for converting {@link NationalCourtHouse} JPA entities into their
  * corresponding API-facing {@link NationalCourtHouseDto}.
@@ -28,28 +30,26 @@ public class NationalCourtHouseMapper {
      * @param entity the {@link NationalCourtHouse} entity to map; may be {@code null}
      * @return a populated {@link NationalCourtHouseDto}, or {@code null} if input was {@code null}
      */
-    public NationalCourtHouseDto toReadDto(NationalCourtHouse entity) {
-        if (entity == null) {
-            // Defensive null check to avoid NullPointerExceptions.
-            // Returning null here lets the service/controller decide
-            // how to handle missing entities.
-            return null;
-        }
-
-        // Map entity fields directly to the DTO record.
-        // Each field corresponds to a column in the national_court_houses table,
-        // except where the DTO normalises naming for client readability.
-        return new NationalCourtHouseDto(
-                entity.getId(), // primary key ID
-                entity.getName(), // courthouse name
-                entity.getCourtType(), // type of court (e.g. CROWN, MAGISTRATES)
-                entity.getStartDate(), // validity start date
-                entity.getEndDate(), // validity end date (nullable)
-                entity.getLocationId(), // FK to location
-                entity.getPsaId(), // FK to petty sessions area
-                entity.getCourtLocationCode(), // business reference code
-                entity.getWelshName(), // Welsh-language name, if defined
-                entity.getOrgId() // organisation ID
-                );
+    /**
+     * Converts a {@link NationalCourtHouse} entity into a {@link NationalCourtHouseDto}.
+     *
+     * @param entity the entity to map; may be {@code null}
+     * @return an {@link Optional} containing the DTO if the entity was non-null, otherwise {@link Optional#empty()}
+     */
+    public Optional<NationalCourtHouseDto> toReadDto(NationalCourtHouse entity) {
+        return Optional.ofNullable(entity).map(e ->
+                                                   new NationalCourtHouseDto(
+                                                       e.getId(),
+                                                       e.getName(),
+                                                       e.getCourtType(),
+                                                       e.getStartDate(),
+                                                       e.getEndDate(),
+                                                       e.getLocationId(),
+                                                       e.getPsaId(),
+                                                       e.getCourtLocationCode(),
+                                                       e.getWelshName(),
+                                                       e.getOrgId()
+                                                   )
+        );
     }
 }
