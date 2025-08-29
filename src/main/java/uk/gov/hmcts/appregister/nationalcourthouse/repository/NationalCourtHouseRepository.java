@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
+import java.util.Optional;
+
 /**
  * Repository interface for accessing {@link NationalCourtHouse} entities.
  *
@@ -29,8 +31,6 @@ import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
  *   Page&lt;CourtLocation&gt; page = courtLocationRepository.findAll(spec, pageable);
  * </pre>
  */
-public interface NationalCourtHouseRepository
-        extends PagingAndSortingRepository<NationalCourtHouse, Long>,
-                JpaSpecificationExecutor<NationalCourtHouse> {
-    // No additional methods required yet – Spring Data generates CRUD and spec-based methods.
+public interface NationalCourtHouseRepository extends PagingAndSortingRepository<NationalCourtHouse, Long>, JpaSpecificationExecutor<NationalCourtHouse> {
+    Optional<NationalCourtHouse> findById(Long id);
 }

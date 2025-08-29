@@ -2,9 +2,12 @@ package uk.gov.hmcts.appregister.nationalcourthouse.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.StreamSupport;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -47,9 +50,10 @@ public class NationalCourtHouseServiceImpl implements NationalCourtHouseService 
      */
     @Override
     public List<NationalCourtHouseDto> findAll() {
-        final List<NationalCourtHouse> courtLocations = repository.findAll();
-        // Map each JPA entity into a DTO for external use.
-        return courtLocations.stream().map(mapper::toReadDto).toList();
+        Iterable<NationalCourtHouse> all = repository.findAll(Sort.by("name").ascending());
+        return StreamSupport.stream(all.spliterator(), false)
+            .map(mapper::toReadDto)
+            .toList();
     }
 
     /**
@@ -61,15 +65,10 @@ public class NationalCourtHouseServiceImpl implements NationalCourtHouseService 
      */
     @Override
     public NationalCourtHouseDto findById(Long id) {
-        NationalCourtHouse courtLocation =
-                repository
-                        .findById(id)
-                        // Translate "not found" into a 404 for the REST API layer.
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "CourtLocation not found"));
-        return mapper.toReadDto(courtLocation);
+        repository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "CourtLocation not found"));
+        return mapper.toReadDto(null);
     }
 
     /**
@@ -90,29 +89,32 @@ public class NationalCourtHouseServiceImpl implements NationalCourtHouseService 
      * @return a {@link Page} of {@link NationalCourtHouseDto} matching the criteria
      */
     @Override
-    public Page<NationalCourtHouseDto> searchCourtLocations(
-            String name,
-            String courtType,
-            LocalDate startDateFrom,
-            LocalDate startDateTo,
-            LocalDate endDateFrom,
-            LocalDate endDateTo,
-            Pageable pageable) {
+    public Page<NationalCourtHouseDto> search(
+        String name,
+        String courtType,
+        LocalDate startDateFrom,
+        LocalDate startDateTo,
+        LocalDate endDateFrom,
+        LocalDate endDateTo,
+        Pageable pageable) {
 
         // Combine all optional specifications into one
         Specification<NationalCourtHouse> spec =
-                Specification.allOf(
-                        nameSpec(name),
-                        courtTypeSpec(courtType),
-                        startDateFromSpec(startDateFrom),
-                        startDateToSpec(startDateTo),
-                        endDateFromSpec(endDateFrom),
-                        endDateToSpec(endDateTo));
+            Specification.allOf(
+                nameSpec(name),
+                courtTypeSpec(courtType),
+                startDateFromSpec(startDateFrom),
+                startDateToSpec(startDateTo),
+                endDateFromSpec(endDateFrom),
+                endDateToSpec(endDateTo)
+            );
 
         return repository.findAll(spec, pageable).map(mapper::toReadDto);
     }
 
-    /** Build specification: start_date >= from. */
+    /**
+     * Build specification: start_date >= from.
+     */
     private Specification<NationalCourtHouse> startDateFromSpec(LocalDate from) {
         if (from == null) {
             return null;
@@ -120,7 +122,9 @@ public class NationalCourtHouseServiceImpl implements NationalCourtHouseService 
         return (root, q, cb) -> cb.greaterThanOrEqualTo(root.get("startDate"), from);
     }
 
-    /** Build specification: start_date <= to. */
+    /**
+     * Build specification: start_date <= to.
+     */
     private Specification<NationalCourtHouse> startDateToSpec(LocalDate to) {
         if (to == null) {
             return null;
@@ -139,12 +143,15 @@ public class NationalCourtHouseServiceImpl implements NationalCourtHouseService 
             return null;
         }
         return (root, q, cb) ->
-                cb.or(
-                        cb.isNull(root.get("endDate")),
-                        cb.greaterThanOrEqualTo(root.get("endDate"), from));
+            cb.or(
+                cb.isNull(root.get("endDate")),
+                cb.greaterThanOrEqualTo(root.get("endDate"), from)
+            );
     }
 
-    /** Build specification: end_date <= to (NULLs excluded by default). */
+    /**
+     * Build specification: end_date <= to (NULLs excluded by default).
+     */
     private Specification<NationalCourtHouse> endDateToSpec(LocalDate to) {
         if (to == null) {
             return null;

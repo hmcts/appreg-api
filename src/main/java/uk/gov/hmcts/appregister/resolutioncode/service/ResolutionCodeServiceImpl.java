@@ -4,9 +4,12 @@ import static java.util.Objects.nonNull;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.StreamSupport;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -49,10 +52,10 @@ public class ResolutionCodeServiceImpl implements ResolutionCodeService {
      */
     @Override
     public List<ResolutionCodeDto> findAll() {
-        final List<ResolutionCode> resultCodes = repository.findAll();
-
-        // Convert each entity to a DTO for API exposure.
-        return resultCodes.stream().map(mapper::toReadDto).toList();
+        Iterable<ResolutionCode> all = repository.findAll(Sort.by("name").ascending());
+        return StreamSupport.stream(all.spliterator(), false)
+            .map(mapper::toReadDto)
+            .toList();
     }
 
     /**
