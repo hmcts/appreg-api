@@ -26,7 +26,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
-import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHousePageResponse;
 import uk.gov.hmcts.appregister.nationalcourthouse.service.NationalCourtHouseService;
 
 @ExtendWith(MockitoExtension.class)

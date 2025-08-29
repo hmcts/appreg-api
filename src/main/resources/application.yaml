@@ -20,6 +20,14 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
+        page-parameter: page
+        size-parameter: pageSize
+        default-page-size: 10
+        max-page-size: 100
   config:
     import: "optional:configtree:/mnt/secrets/appreg/"
   application:

@@ -1,16 +1,11 @@
 package uk.gov.hmcts.appregister.nationalcourthouse.controller;
 
-import static java.util.Objects.requireNonNullElse;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
-import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHousePageResponse;
 import uk.gov.hmcts.appregister.nationalcourthouse.service.NationalCourtHouseService;
 
 /**
@@ -51,15 +45,6 @@ import uk.gov.hmcts.appregister.nationalcourthouse.service.NationalCourtHouseSer
 @RequiredArgsConstructor
 public class NationalCourtHouseController {
 
-    /** Default page number for public API (1-based). */
-    private static final int DEFAULT_PAGE = 1;
-
-    /** Default page size when not specified by the client. */
-    private static final int DEFAULT_PAGE_SIZE = 10;
-
-    /** Upper bound on page size to protect the service from overly large requests. */
-    private static final int MAX_PAGE_SIZE = 100;
-
     /** Application service used to query court locations. */
     private final NationalCourtHouseService service;
 
@@ -85,20 +70,17 @@ public class NationalCourtHouseController {
      * <p><b>Responses:</b>
      *
      * <ul>
-     *   <li>{@code 200 OK} with {@link NationalCourtHousePageResponse} on success.
+     *   <li>{@code 200 OK} with {@link NationalCourtHouseDto} on success.
      *   <li>{@code 400 Bad Request} when input validation fails (see class-level notes).
      * </ul>
      *
      * @param name optional case-insensitive substring filter on court location name
      * @param courtType optional exact-match court type filter
-     * @param page optional 1-based page number; defaults to {@value #DEFAULT_PAGE}
-     * @param pageSize optional page size; defaults to {@value #DEFAULT_PAGE_SIZE}; must be {@code
-     *     1..}{@value #MAX_PAGE_SIZE}
      * @param startDateFrom optional lower bound for {@code start_date} (inclusive)
      * @param startDateTo optional upper bound for {@code start_date} (inclusive)
      * @param endDateFrom optional lower bound for {@code end_date} (inclusive)
      * @param endDateTo optional upper bound for {@code end_date} (inclusive)
-     * @return {@link ResponseEntity} containing {@link NationalCourtHousePageResponse} or {@code
+     * @return {@link ResponseEntity} containing {@link NationalCourtHouseDto} or {@code
      *     400}
      */
     @Operation(
@@ -108,30 +90,25 @@ public class NationalCourtHouseController {
             responseCode = "200",
             description = "List of court locations retrieved successfully")
     @GetMapping
-    public ResponseEntity<NationalCourtHousePageResponse> list(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String courtType,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer pageSize,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                    LocalDate startDateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                    LocalDate startDateTo,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                    LocalDate endDateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-                    LocalDate endDateTo) {
+    public ResponseEntity<Page<NationalCourtHouseDto>> list(
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String courtType,
+        // optional date filters…
+        @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam(required = false) java.time.LocalDate startDateFrom,
+        @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam(required = false) java.time.LocalDate startDateTo,
+        @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam(required = false) java.time.LocalDate endDateFrom,
+        @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        @RequestParam(required = false) java.time.LocalDate endDateTo,
 
-        // Apply defaults for pagination inputs (public API is 1-based).
-        final int p = requireNonNullElse(page, DEFAULT_PAGE);
-        final int s = requireNonNullElse(pageSize, DEFAULT_PAGE_SIZE);
-
-        // Basic pagination validation.
-        if (p < 1 || s < 1 || s > MAX_PAGE_SIZE) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        // Validate date ranges only when both ends are provided.
+        // Pageable comes from Spring Data Web; defaults & limits set via annotations or properties
+        @org.springframework.data.web.PageableDefault(size = 10, sort = "name",
+            direction = org.springframework.data.domain.Sort.Direction.ASC)
+        Pageable pageable
+    ) {
+        // (optional) validate your date ranges here; return 400 if invalid
         if (startDateFrom != null && startDateTo != null && startDateFrom.isAfter(startDateTo)) {
             return ResponseEntity.badRequest().build();
         }
@@ -139,26 +116,12 @@ public class NationalCourtHouseController {
             return ResponseEntity.badRequest().build();
         }
 
-        // Convert to Spring Data's 0-based paging and apply fixed sort by name ASC.
-        Pageable pageable = PageRequest.of(p - 1, s, Sort.by("name").ascending());
+        // Delegate – service returns a Page<NationalCourtHouseDto>
+        Page<NationalCourtHouseDto> page = service.searchCourtLocations(
+            name, courtType, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable
+        );
 
-        // Delegate to service with all filters + pageable; the service composes Specifications.
-        Page<NationalCourtHouseDto> pageDto =
-                service.searchCourtLocations(
-                        name,
-                        courtType,
-                        startDateFrom,
-                        startDateTo,
-                        endDateFrom,
-                        endDateTo,
-                        pageable);
-
-        // Wrap the Spring Page into the API's response model, preserving 1-based page number.
-        NationalCourtHousePageResponse body =
-                new NationalCourtHousePageResponse(
-                        pageDto.getContent(), pageDto.getTotalElements(), p, s);
-
-        return ResponseEntity.ok(body);
+        return ResponseEntity.ok(page);
     }
 
     /**
