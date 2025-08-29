@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
 import uk.gov.hmcts.appregister.nationalcourthouse.service.NationalCourtHouseService;
+import uk.gov.hmcts.appregister.shared.validation.DateRangeValidator;
 
 /**
  * REST controller exposing read-only endpoints for Court Locations.
@@ -47,6 +48,8 @@ public class NationalCourtHouseController {
 
     /** Application service used to query court locations. */
     private final NationalCourtHouseService service;
+
+    private final DateRangeValidator dateRangeValidator;
 
     /**
      * Returns a paginated list of court locations with optional filters.
@@ -93,7 +96,6 @@ public class NationalCourtHouseController {
     public ResponseEntity<Page<NationalCourtHouseDto>> list(
         @RequestParam(required = false) String name,
         @RequestParam(required = false) String courtType,
-        // optional date filters…
         @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         @RequestParam(required = false) java.time.LocalDate startDateFrom,
         @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -102,21 +104,12 @@ public class NationalCourtHouseController {
         @RequestParam(required = false) java.time.LocalDate endDateFrom,
         @org.springframework.format.annotation.DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
         @RequestParam(required = false) java.time.LocalDate endDateTo,
-
-        // Pageable comes from Spring Data Web; defaults & limits set via annotations or properties
-        @org.springframework.data.web.PageableDefault(size = 10, sort = "name",
+        @org.springframework.data.web.PageableDefault(sort = "name",
             direction = org.springframework.data.domain.Sort.Direction.ASC)
         Pageable pageable
     ) {
-        // (optional) validate your date ranges here; return 400 if invalid
-        if (startDateFrom != null && startDateTo != null && startDateFrom.isAfter(startDateTo)) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (endDateFrom != null && endDateTo != null && endDateFrom.isAfter(endDateTo)) {
-            return ResponseEntity.badRequest().build();
-        }
+        dateRangeValidator.validate(startDateFrom, startDateTo, endDateFrom, endDateTo);
 
-        // Delegate – service returns a Page<NationalCourtHouseDto>
         Page<NationalCourtHouseDto> page = service.search(
             name, courtType, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable
         );

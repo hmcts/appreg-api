@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
 import uk.gov.hmcts.appregister.resolutioncode.service.ResolutionCodeService;
+import uk.gov.hmcts.appregister.shared.validation.DateRangeValidator;
 
 /**
  * REST controller exposing read-only endpoints for Result Codes.
@@ -49,17 +50,9 @@ import uk.gov.hmcts.appregister.resolutioncode.service.ResolutionCodeService;
 @RequiredArgsConstructor
 public class ResolutionCodeController {
 
-    // Default 1-based page number exposed by the public API.
-    private static final int DEFAULT_PAGE = 1;
-
-    // Default page size when caller does not specify {@code pageSize}.
-    private static final int DEFAULT_PAGE_SIZE = 10;
-
-    // Upper bound on page size to protect the service from overly large requests.
-    private static final int MAX_PAGE_SIZE = 100;
-
     // Application service that encapsulates search and lookup logic.
     private final ResolutionCodeService service;
+    private final DateRangeValidator dateRangeValidator;
 
     /**
      * Returns a paginated, filterable list of result codes.
@@ -105,16 +98,10 @@ public class ResolutionCodeController {
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDateTo,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateFrom,
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDateTo,
-        @org.springframework.data.web.PageableDefault(size = 10, sort = "title",
+        @org.springframework.data.web.PageableDefault(sort = "title",
             direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        // Optional: validate date ranges
-        if (startDateFrom != null && startDateTo != null && startDateFrom.isAfter(startDateTo)) {
-            return ResponseEntity.badRequest().build();
-        }
-        if (endDateFrom != null && endDateTo != null && endDateFrom.isAfter(endDateTo)) {
-            return ResponseEntity.badRequest().build();
-        }
+        dateRangeValidator.validate(startDateFrom, startDateTo, endDateFrom, endDateTo);
 
         Page<ResolutionCodeListItemDto> page =
             service.search(code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
