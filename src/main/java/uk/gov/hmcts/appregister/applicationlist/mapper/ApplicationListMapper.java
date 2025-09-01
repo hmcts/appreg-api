@@ -20,21 +20,21 @@ public class ApplicationListMapper {
             return null;
         }
 
-        var courthouseDto = java.util.Optional.ofNullable(entity.getCourthouse())
-            .flatMap(courtHouseMapper::toReadDto) // Optional<NationalCourtHouseDto>
-            .orElse(null);                        // <-- unwrap or null
+        var courthouseDto =
+                java.util.Optional.ofNullable(entity.getCourthouse())
+                        .flatMap(courtHouseMapper::toReadDto) // Optional<NationalCourtHouseDto>
+                        .orElse(null); // <-- unwrap or null
 
         return new ApplicationListDto(
-            entity.getId(),
-            entity.getStatus(),
-            entity.getDate(),
-            entity.getTime(),
-            entity.getDescription(),
-            courthouseDto,           // NationalCourtHouseDto (possibly null)
-            entity.getChangedBy(),
-            entity.getChangedDate(),
-            entity.getVersion()
-        );
+                entity.getId(),
+                entity.getStatus(),
+                entity.getDate(),
+                entity.getTime(),
+                entity.getDescription(),
+                courthouseDto, // NationalCourtHouseDto (possibly null)
+                entity.getChangedBy(),
+                entity.getChangedDate(),
+                entity.getVersion());
     }
 
     public ApplicationList createEntityFromWriteDto(

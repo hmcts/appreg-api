@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationresult.mapper;
 
 import java.time.LocalDate;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultDto;
@@ -24,37 +23,35 @@ public class ApplicationResultMapper {
         }
 
         ResolutionCodeDto rcDto =
-            resolutionCodeMapper.toReadDto(entity.getResultCode()).orElse(null);
+                resolutionCodeMapper.toReadDto(entity.getResultCode()).orElse(null);
 
         return new ApplicationResultDto(
-            entity.getId(),
-            rcDto,
-            entity.getResultWording(),
-            entity.getResultOfficer(),
-            entity.getChangedBy(),
-            entity.getChangedDate(),
-            entity.getVersion()
-        );
+                entity.getId(),
+                rcDto,
+                entity.getResultWording(),
+                entity.getResultOfficer(),
+                entity.getChangedBy(),
+                entity.getChangedDate(),
+                entity.getVersion());
     }
 
-
     public ApplicationResult createFromWriteDto(
-        ApplicationResultWriteDto dto, String userId, LocalDate changedDate, String wording) {
+            ApplicationResultWriteDto dto, String userId, LocalDate changedDate, String wording) {
         return ApplicationResult.builder()
-            .resultWording(wording)
-            .resultOfficer(dto.resultOfficer())
-            .changedBy(userId)
-            .changedDate(changedDate)
-            .version(versionManager.increment(0))
-            .build();
+                .resultWording(wording)
+                .resultOfficer(dto.resultOfficer())
+                .changedBy(userId)
+                .changedDate(changedDate)
+                .version(versionManager.increment(0))
+                .build();
     }
 
     public void updateFromWriteDto(
-        ApplicationResultWriteDto dto,
-        ApplicationResult entity,
-        String userId,
-        LocalDate changedDate,
-        String wording) {
+            ApplicationResultWriteDto dto,
+            ApplicationResult entity,
+            String userId,
+            LocalDate changedDate,
+            String wording) {
         entity.setResultWording(wording);
         entity.setResultOfficer(dto.resultOfficer());
         entity.setChangedBy(userId);

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.nationalcourthouse.service;
 
 import java.time.LocalDate;
 import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
@@ -16,8 +15,8 @@ import uk.gov.hmcts.appregister.nationalcourthouse.repository.NationalCourtHouse
  * typically compose repository queries (JPQL, Specifications, or derived queries) and transform
  * entities into API-facing DTOs via {@link NationalCourtHouseMapper}.
  *
- * <p><strong>Repository expectations:</strong> Implementations will use
- * {@link NationalCourtHouseRepository}, which extends {@code PagingAndSortingRepository} for
+ * <p><strong>Repository expectations:</strong> Implementations will use {@link
+ * NationalCourtHouseRepository}, which extends {@code PagingAndSortingRepository} for
  * pagination/sorting and {@code JpaSpecificationExecutor} for dynamic filtering.
  *
  * <p><strong>Pagination model:</strong> Methods that accept a {@link Pageable} expect 0-based
@@ -52,34 +51,35 @@ public interface NationalCourtHouseService {
      * Search for court locations using optional filters and pagination.
      *
      * <p><strong>Filters (all optional):</strong>
+     *
      * <ul>
-     *   <li>{@code name} – case-insensitive substring match.</li>
-     *   <li>{@code courtType} – exact match.</li>
-     *   <li>{@code startDateFrom}/{@code startDateTo} – inclusive range on {@code startDate}.</li>
+     *   <li>{@code name} – case-insensitive substring match.
+     *   <li>{@code courtType} – exact match.
+     *   <li>{@code startDateFrom}/{@code startDateTo} – inclusive range on {@code startDate}.
      *   <li>{@code endDateFrom}/{@code endDateTo} – inclusive range on {@code endDate}.
      *       Implementations commonly treat {@code endDate = NULL} as “ongoing” and include those
-     *       when {@code endDateFrom} is supplied.</li>
+     *       when {@code endDateFrom} is supplied.
      * </ul>
      *
      * <p><strong>Paging/Sorting:</strong> Provided via {@link Pageable}. Controllers typically
      * supply a default sort (e.g., {@code Sort.by("name").ascending()}). Results should already be
      * mapped to DTOs.
      *
-     * @param name          case-insensitive substring filter on name (nullable = no filter)
-     * @param courtType     exact match on court type (nullable = no filter)
+     * @param name case-insensitive substring filter on name (nullable = no filter)
+     * @param courtType exact match on court type (nullable = no filter)
      * @param startDateFrom lower bound for {@code startDate} (inclusive), or {@code null}
-     * @param startDateTo   upper bound for {@code startDate} (inclusive), or {@code null}
-     * @param endDateFrom   lower bound for {@code endDate} (inclusive), or {@code null}
-     * @param endDateTo     upper bound for {@code endDate} (inclusive), or {@code null}
-     * @param pageable      page number/size/sort (0-based page index)
+     * @param startDateTo upper bound for {@code startDate} (inclusive), or {@code null}
+     * @param endDateFrom lower bound for {@code endDate} (inclusive), or {@code null}
+     * @param endDateTo upper bound for {@code endDate} (inclusive), or {@code null}
+     * @param pageable page number/size/sort (0-based page index)
      * @return a {@link Page} of {@link NationalCourtHouseDto} matching the criteria
      */
     Page<NationalCourtHouseDto> search(
-        String name,
-        String courtType,
-        LocalDate startDateFrom,
-        LocalDate startDateTo,
-        LocalDate endDateFrom,
-        LocalDate endDateTo,
-        Pageable pageable);
+            String name,
+            String courtType,
+            LocalDate startDateFrom,
+            LocalDate startDateTo,
+            LocalDate endDateFrom,
+            LocalDate endDateTo,
+            Pageable pageable);
 }

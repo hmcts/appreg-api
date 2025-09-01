@@ -1,15 +1,14 @@
 package uk.gov.hmcts.appregister.resolutioncode.mapper;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
 import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
-
-import java.time.LocalDate;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class ResolutionCodeMapperTest {
 
@@ -30,17 +29,18 @@ class ResolutionCodeMapperTest {
 
     @Test
     void toReadDto_mapsAllFields() {
-        ResolutionCode entity = ResolutionCode.builder()
-            .id(42L)
-            .resultCode("RC-001")
-            .title("Refused: Missing Info")
-            .wording("Application refused due to missing information.")
-            .legislation("Some Act 1998 s.10")
-            .destinationEmail1("primary@example.com")
-            .destinationEmail2("secondary@example.com")
-            .startDate(LocalDate.of(2024, 1, 1))
-            .endDate(LocalDate.of(2025, 12, 31))
-            .build();
+        ResolutionCode entity =
+                ResolutionCode.builder()
+                        .id(42L)
+                        .resultCode("RC-001")
+                        .title("Refused: Missing Info")
+                        .wording("Application refused due to missing information.")
+                        .legislation("Some Act 1998 s.10")
+                        .destinationEmail1("primary@example.com")
+                        .destinationEmail2("secondary@example.com")
+                        .startDate(LocalDate.of(2024, 1, 1))
+                        .endDate(LocalDate.of(2025, 12, 31))
+                        .build();
 
         ResolutionCodeDto dto = mapper.toReadDto(entity).orElseThrow();
 
@@ -57,17 +57,18 @@ class ResolutionCodeMapperTest {
 
     @Test
     void toReadDto_preservesNulls() {
-        ResolutionCode entity = ResolutionCode.builder()
-            .id(7L)
-            .resultCode("RC-007")
-            .title("Conditional Approval")
-            .wording(null)                     // intentionally null
-            .legislation(null)                 // intentionally null
-            .destinationEmail1("owner@example.com")
-            .destinationEmail2(null)           // intentionally null
-            .startDate(LocalDate.of(2024, 6, 1))
-            .endDate(null)                     // intentionally null
-            .build();
+        ResolutionCode entity =
+                ResolutionCode.builder()
+                        .id(7L)
+                        .resultCode("RC-007")
+                        .title("Conditional Approval")
+                        .wording(null) // intentionally null
+                        .legislation(null) // intentionally null
+                        .destinationEmail1("owner@example.com")
+                        .destinationEmail2(null) // intentionally null
+                        .startDate(LocalDate.of(2024, 6, 1))
+                        .endDate(null) // intentionally null
+                        .build();
 
         ResolutionCodeDto dto = mapper.toReadDto(entity).orElseThrow();
 
@@ -87,17 +88,17 @@ class ResolutionCodeMapperTest {
 
     @Test
     void toEntityFromReadDto_mapsAllFields() {
-        ResolutionCodeDto dto = new ResolutionCodeDto(
-            100L,
-            "RC-100",
-            "Approved",
-            "Application approved.",
-            "Regulation 2020/1",
-            "approvals@example.com",
-            "audit@example.com",
-            LocalDate.of(2023, 5, 10),
-            LocalDate.of(2024, 5, 10)
-        );
+        ResolutionCodeDto dto =
+                new ResolutionCodeDto(
+                        100L,
+                        "RC-100",
+                        "Approved",
+                        "Application approved.",
+                        "Regulation 2020/1",
+                        "approvals@example.com",
+                        "audit@example.com",
+                        LocalDate.of(2023, 5, 10),
+                        LocalDate.of(2024, 5, 10));
 
         ResolutionCode entity = mapper.toEntityFromReadDto(dto).orElseThrow();
 
@@ -114,17 +115,18 @@ class ResolutionCodeMapperTest {
 
     @Test
     void toEntityFromReadDto_preservesNulls() {
-        ResolutionCodeDto dto = new ResolutionCodeDto(
-            5L,
-            "RC-005",
-            "Pending",
-            null,           // wording
-            null,           // legislation
-            "queue@example.com",
-            null,           // dest2
-            null,           // startDate
-            null            // endDate
-        );
+        ResolutionCodeDto dto =
+                new ResolutionCodeDto(
+                        5L,
+                        "RC-005",
+                        "Pending",
+                        null, // wording
+                        null, // legislation
+                        "queue@example.com",
+                        null, // dest2
+                        null, // startDate
+                        null // endDate
+                        );
 
         ResolutionCode entity = mapper.toEntityFromReadDto(dto).orElseThrow();
 
@@ -145,17 +147,18 @@ class ResolutionCodeMapperTest {
 
     @Test
     void toListItem_mapsExpectedFields_onlyIdCodeTitle() {
-        ResolutionCode entity = ResolutionCode.builder()
-            .id(9L)
-            .resultCode("RC-009")
-            .title("Rejected")
-            .wording("Some long wording that should NOT appear in list item")
-            .legislation("Irrelevant here")
-            .destinationEmail1("x@y.com")
-            .destinationEmail2("z@y.com")
-            .startDate(LocalDate.of(2022, 2, 2))
-            .endDate(LocalDate.of(2023, 3, 3))
-            .build();
+        ResolutionCode entity =
+                ResolutionCode.builder()
+                        .id(9L)
+                        .resultCode("RC-009")
+                        .title("Rejected")
+                        .wording("Some long wording that should NOT appear in list item")
+                        .legislation("Irrelevant here")
+                        .destinationEmail1("x@y.com")
+                        .destinationEmail2("z@y.com")
+                        .startDate(LocalDate.of(2022, 2, 2))
+                        .endDate(LocalDate.of(2023, 3, 3))
+                        .build();
 
         ResolutionCodeListItemDto item = mapper.toListItem(entity).orElseThrow();
 
@@ -169,20 +172,21 @@ class ResolutionCodeMapperTest {
 
     @Test
     void roundTrip_entity_toReadDto_backToEntity_preservesValues() {
-        ResolutionCode original = ResolutionCode.builder()
-            .id(77L)
-            .resultCode("RC-077")
-            .title("Escalated")
-            .wording("Escalated for supervisor review.")
-            .legislation("Supervision Act 2012")
-            .destinationEmail1("supervisor@example.com")
-            .destinationEmail2(null)
-            .startDate(LocalDate.of(2024, 9, 1))
-            .endDate(null)
-            .build();
+        ResolutionCode original =
+                ResolutionCode.builder()
+                        .id(77L)
+                        .resultCode("RC-077")
+                        .title("Escalated")
+                        .wording("Escalated for supervisor review.")
+                        .legislation("Supervision Act 2012")
+                        .destinationEmail1("supervisor@example.com")
+                        .destinationEmail2(null)
+                        .startDate(LocalDate.of(2024, 9, 1))
+                        .endDate(null)
+                        .build();
 
-         ResolutionCodeDto dto = mapper.toReadDto(original).orElseThrow();
-         ResolutionCode roundTripped = mapper.toEntityFromReadDto(dto).orElseThrow();
+        ResolutionCodeDto dto = mapper.toReadDto(original).orElseThrow();
+        ResolutionCode roundTripped = mapper.toEntityFromReadDto(dto).orElseThrow();
 
         assertThat(roundTripped.getId()).isEqualTo(original.getId());
         assertThat(roundTripped.getResultCode()).isEqualTo(original.getResultCode());

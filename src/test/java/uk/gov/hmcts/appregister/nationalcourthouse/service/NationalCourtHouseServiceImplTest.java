@@ -2,13 +2,15 @@ package uk.gov.hmcts.appregister.nationalcourthouse.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -30,20 +32,18 @@ import uk.gov.hmcts.appregister.nationalcourthouse.repository.NationalCourtHouse
 @ExtendWith(MockitoExtension.class)
 class NationalCourtHouseServiceImplTest {
 
-    @Mock
-    private NationalCourtHouseRepository repository;
+    @Mock private NationalCourtHouseRepository repository;
 
-    @Mock
-    private NationalCourtHouseMapper mapper;
+    @Mock private NationalCourtHouseMapper mapper;
 
-    @InjectMocks
-    private NationalCourtHouseServiceImpl service;
+    @InjectMocks private NationalCourtHouseServiceImpl service;
 
     // ---------- findAll ----------
 
     @Test
     void findAll_sortsByNameAscending_flattensEmptyOptionals() {
-        // Arrange: repository returns two entities; mapper maps first -> DTO, second -> empty Optional
+        // Arrange: repository returns two entities; mapper maps first -> DTO, second -> empty
+        // Optional
         NationalCourtHouse e1 = new NationalCourtHouse();
         e1.setId(1L);
         e1.setName("Alpha");
@@ -51,12 +51,11 @@ class NationalCourtHouseServiceImplTest {
         e2.setId(2L);
         e2.setName("Beta");
 
-        when(repository.findAll(Sort.by("name").ascending()))
-            .thenReturn(List.of(e1, e2));
+        when(repository.findAll(Sort.by("name").ascending())).thenReturn(List.of(e1, e2));
 
-        NationalCourtHouseDto d1 = new NationalCourtHouseDto(
-            1L, "Alpha", "CROWN", LocalDate.now(), null, null, null, null, null, null
-        );
+        NationalCourtHouseDto d1 =
+                new NationalCourtHouseDto(
+                        1L, "Alpha", "CROWN", LocalDate.now(), null, null, null, null, null, null);
 
         when(mapper.toReadDto(e1)).thenReturn(Optional.of(d1));
         when(mapper.toReadDto(e2)).thenReturn(Optional.empty()); // simulate declined mapping
@@ -77,8 +76,7 @@ class NationalCourtHouseServiceImplTest {
 
     @Test
     void findAll_whenRepositoryReturnsEmpty_returnsEmptyList() {
-        when(repository.findAll(Sort.by("name").ascending()))
-            .thenReturn(List.of());
+        when(repository.findAll(Sort.by("name").ascending())).thenReturn(List.of());
 
         List<NationalCourtHouseDto> out = service.findAll();
 
@@ -94,9 +92,18 @@ class NationalCourtHouseServiceImplTest {
         Long id = 42L;
         NationalCourtHouse entity = new NationalCourtHouse();
         entity.setId(id);
-        NationalCourtHouseDto dto = new NationalCourtHouseDto(
-            id, "Leeds", "CROWN", LocalDate.of(2020, 1, 1), null, null, null, null, null, null
-        );
+        NationalCourtHouseDto dto =
+                new NationalCourtHouseDto(
+                        id,
+                        "Leeds",
+                        "CROWN",
+                        LocalDate.of(2020, 1, 1),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));
         when(mapper.toReadDto(entity)).thenReturn(Optional.of(dto));
@@ -114,7 +121,7 @@ class NationalCourtHouseServiceImplTest {
         when(repository.findById(id)).thenReturn(Optional.empty());
 
         ResponseStatusException ex =
-            assertThrows(ResponseStatusException.class, () -> service.findById(id));
+                assertThrows(ResponseStatusException.class, () -> service.findById(id));
 
         assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         verify(repository).findById(id);
@@ -132,7 +139,7 @@ class NationalCourtHouseServiceImplTest {
         when(mapper.toReadDto(entity)).thenReturn(Optional.empty());
 
         ResponseStatusException ex =
-            assertThrows(ResponseStatusException.class, () -> service.findById(id));
+                assertThrows(ResponseStatusException.class, () -> service.findById(id));
 
         assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         verify(repository).findById(id);
@@ -145,10 +152,10 @@ class NationalCourtHouseServiceImplTest {
     void search_withFilters_delegatesToRepository_andMapsEntities() {
         String name = "card";
         String courtType = "CROWN";
-        LocalDate sFrom = LocalDate.of(2020, 1, 1);
-        LocalDate sTo = LocalDate.of(2020, 12, 31);
-        LocalDate eFrom = LocalDate.of(2021, 1, 1);
-        LocalDate eTo = LocalDate.of(2022, 1, 1);
+        LocalDate startDateFrom = LocalDate.of(2020, 1, 1);
+        LocalDate startDateTo = LocalDate.of(2020, 12, 31);
+        LocalDate endDateFrom = LocalDate.of(2021, 1, 1);
+        LocalDate endDateTo = LocalDate.of(2022, 1, 1);
         Pageable pageable = PageRequest.of(1, 5);
 
         // Repository returns a page of entities
@@ -158,23 +165,55 @@ class NationalCourtHouseServiceImplTest {
         e2.setId(20L);
 
         Page<NationalCourtHouse> repoPage = new PageImpl<>(List.of(e1, e2), pageable, 9);
-        when(repository.search(eq(name), eq(courtType), eq(sFrom), eq(sTo), eq(eFrom), eq(eTo), any(Pageable.class)))
-            .thenReturn(repoPage);
+        when(repository.search(
+                        eq(name),
+                        eq(courtType),
+                        eq(startDateFrom),
+                        eq(startDateTo),
+                        eq(endDateFrom),
+                        eq(endDateTo),
+                        any(Pageable.class)))
+                .thenReturn(repoPage);
 
         // Mapper returns DTOs wrapped in Optional
-        NationalCourtHouseDto d1 = new NationalCourtHouseDto(
-            10L, "Cardiff", "CROWN", LocalDate.of(2019, 1, 1), null, null, null, null, null, null
-        );
-        NationalCourtHouseDto d2 = new NationalCourtHouseDto(
-            20L, "Cardigan", "CROWN", LocalDate.of(2018, 1, 1), null, null, null, null, null, null
-        );
+        NationalCourtHouseDto d1 =
+                new NationalCourtHouseDto(
+                        10L,
+                        "Cardiff",
+                        "CROWN",
+                        LocalDate.of(2019, 1, 1),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
+        NationalCourtHouseDto d2 =
+                new NationalCourtHouseDto(
+                        20L,
+                        "Cardigan",
+                        "CROWN",
+                        LocalDate.of(2018, 1, 1),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
 
         when(mapper.toReadDto(e1)).thenReturn(Optional.of(d1));
         when(mapper.toReadDto(e2)).thenReturn(Optional.of(d2));
 
         // Act
         Page<NationalCourtHouseDto> out =
-            service.search(name, courtType, sFrom, sTo, eFrom, eTo, pageable);
+                service.search(
+                        name,
+                        courtType,
+                        startDateFrom,
+                        startDateTo,
+                        endDateFrom,
+                        endDateTo,
+                        pageable);
 
         // Assert: page content mapped, metadata preserved
         assertThat(out.getContent()).containsExactly(d1, d2);
@@ -184,7 +223,15 @@ class NationalCourtHouseServiceImplTest {
 
         // Verify repository was called with the same pageable we supplied
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(repository).search(eq(name), eq(courtType), eq(sFrom), eq(sTo), eq(eFrom), eq(eTo), pageableCaptor.capture());
+        verify(repository)
+                .search(
+                        eq(name),
+                        eq(courtType),
+                        eq(startDateFrom),
+                        eq(startDateTo),
+                        eq(endDateFrom),
+                        eq(endDateTo),
+                        pageableCaptor.capture());
         assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
         assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
     }
@@ -199,16 +246,27 @@ class NationalCourtHouseServiceImplTest {
         e2.setId(2L);
 
         when(repository.search(any(), any(), any(), any(), any(), any(), any(Pageable.class)))
-            .thenReturn(new PageImpl<>(List.of(e1, e2), pageable, 2));
+                .thenReturn(new PageImpl<>(List.of(e1, e2), pageable, 2));
 
-        when(mapper.toReadDto(e1)).thenReturn(Optional.of(new NationalCourtHouseDto(
-            1L, "A", "CROWN", LocalDate.now(), null, null, null, null, null, null
-        )));
+        when(mapper.toReadDto(e1))
+                .thenReturn(
+                        Optional.of(
+                                new NationalCourtHouseDto(
+                                        1L,
+                                        "A",
+                                        "CROWN",
+                                        LocalDate.now(),
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null,
+                                        null)));
         when(mapper.toReadDto(e2)).thenReturn(Optional.empty()); // simulate declined mapping
 
         // Act + Assert: service should throw IllegalStateException to surface the issue
-        assertThrows(IllegalStateException.class, () ->
-            service.search(null, null, null, null, null, null, pageable)
-        );
+        assertThrows(
+                IllegalStateException.class,
+                () -> service.search(null, null, null, null, null, null, pageable));
     }
 }

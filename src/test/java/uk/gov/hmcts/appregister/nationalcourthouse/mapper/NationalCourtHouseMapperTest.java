@@ -1,13 +1,12 @@
 package uk.gov.hmcts.appregister.nationalcourthouse.mapper;
 
-import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
-import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
+import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 class NationalCourtHouseMapperTest {
 
@@ -26,18 +25,19 @@ class NationalCourtHouseMapperTest {
     @Test
     void toReadDto_shouldMapEntityToDto_whenEntityIsValid() {
         // Arrange
-        NationalCourtHouse entity = NationalCourtHouse.builder()
-            .id(1L)
-            .name("Cardiff Crown Court")
-            .courtType("CROWN")
-            .startDate(LocalDate.of(2020, 1, 1))
-            .endDate(LocalDate.of(2025, 12, 31))
-            .locationId(100L)
-            .psaId(200L)
-            .courtLocationCode("CCC01")
-            .welshName("Llys y Goron Caerdydd")
-            .orgId(300L)
-            .build();
+        NationalCourtHouse entity =
+                NationalCourtHouse.builder()
+                        .id(1L)
+                        .name("Cardiff Crown Court")
+                        .courtType("CROWN")
+                        .startDate(LocalDate.of(2020, 1, 1))
+                        .endDate(LocalDate.of(2025, 12, 31))
+                        .locationId(100L)
+                        .psaId(200L)
+                        .courtLocationCode("CCC01")
+                        .welshName("Llys y Goron Caerdydd")
+                        .orgId(300L)
+                        .build();
 
         // Act
         Optional<NationalCourtHouseDto> result = mapper.toReadDto(entity);
@@ -61,13 +61,14 @@ class NationalCourtHouseMapperTest {
     @Test
     void toReadDto_shouldHandleEntityWithNullOptionalFields() {
         // Arrange
-        NationalCourtHouse entity = NationalCourtHouse.builder()
-            .id(2L)
-            .name("Bristol Magistrates Court")
-            .courtType("MAGISTRATES")
-            .startDate(LocalDate.of(2019, 6, 1))
-            // End date and other fields left null intentionally
-            .build();
+        NationalCourtHouse entity =
+                NationalCourtHouse.builder()
+                        .id(2L)
+                        .name("Bristol Magistrates Court")
+                        .courtType("MAGISTRATES")
+                        .startDate(LocalDate.of(2019, 6, 1))
+                        // End date and other fields left null intentionally
+                        .build();
 
         // Act
         Optional<NationalCourtHouseDto> result = mapper.toReadDto(entity);

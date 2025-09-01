@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,28 +21,25 @@ import uk.gov.hmcts.appregister.resolutioncode.repository.ResolutionCodeReposito
  * Concrete service for read-only operations on {@link ResolutionCode} data.
  *
  * <p>Primary responsibilities:
+ *
  * <ul>
- *   <li>Coordinating persistence calls via {@link ResolutionCodeRepository}.</li>
- *   <li>Mapping entities to API-facing DTOs via {@link ResolutionCodeMapper}.</li>
- *   <li>Applying high-level business behavior (e.g., 404 on missing records).</li>
+ *   <li>Coordinating persistence calls via {@link ResolutionCodeRepository}.
+ *   <li>Mapping entities to API-facing DTOs via {@link ResolutionCodeMapper}.
+ *   <li>Applying high-level business behavior (e.g., 404 on missing records).
  * </ul>
  *
- * <p><strong>Notes on mapping:</strong>
- * The mapper returns {@code Optional<...>} to make null-safety explicit. This service therefore
- * unwraps Optionals and fails fast if an empty Optional is returned for a non-null entity.
+ * <p><strong>Notes on mapping:</strong> The mapper returns {@code Optional<...>} to make
+ * null-safety explicit. This service therefore unwraps Optionals and fails fast if an empty
+ * Optional is returned for a non-null entity.
  */
 @Service
 @RequiredArgsConstructor
 public class ResolutionCodeServiceImpl implements ResolutionCodeService {
 
-    /**
-     * Persistence gateway for {@link ResolutionCode} entities.
-     */
+    // Persistence gateway for {@link ResolutionCode} entities.
     private final ResolutionCodeRepository repository;
 
-    /**
-     * Converts between entities and DTOs.
-     */
+    // Converts between entities and DTOs.
     private final ResolutionCodeMapper mapper;
 
     /**
@@ -62,9 +58,9 @@ public class ResolutionCodeServiceImpl implements ResolutionCodeService {
         // Mapper returns Optional; unwrap and discard empties. If we ever get Optional.empty()
         // for a non-null entity, that indicates a mapping bug rather than a runtime condition.
         return StreamSupport.stream(all.spliterator(), false)
-            .map(mapper::toReadDto)     // Stream<Optional<ResolutionCodeDto>>
-            .flatMap(Optional::stream)  // Stream<ResolutionCodeDto>
-            .toList();
+                .map(mapper::toReadDto) // Stream<Optional<ResolutionCodeDto>>
+                .flatMap(Optional::stream) // Stream<ResolutionCodeDto>
+                .toList();
     }
 
     /**
@@ -77,25 +73,32 @@ public class ResolutionCodeServiceImpl implements ResolutionCodeService {
     @Override
     public ResolutionCodeDto findByCode(String code) {
         // 404 if the business code doesn’t exist.
-        ResolutionCode resultCode = repository.findByResultCode(code)
-            .orElseThrow(() -> new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "ResultCode not found"));
+        ResolutionCode resultCode =
+                repository
+                        .findByResultCode(code)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND, "ResultCode not found"));
 
         // Mapper returns Optional; treat empty as illegal state for a non-null entity.
         return mapper.toReadDto(resultCode)
-            .orElseThrow(() -> new IllegalStateException(
-                "Mapper returned empty Optional for non-null entity"));
+                .orElseThrow(
+                        () ->
+                                new IllegalStateException(
+                                        "Mapper returned empty Optional for non-null entity"));
     }
 
     /**
      * Search result codes with optional filters and pagination.
      *
      * <p>Supported filters (all optional):
+     *
      * <ul>
-     *   <li>{@code code}: case-insensitive partial match</li>
-     *   <li>{@code title}: case-insensitive partial match</li>
-     *   <li>{@code startDateFrom}/{@code startDateTo}: inclusive bounds on validity start</li>
-     *   <li>{@code endDateFrom}/{@code endDateTo}: inclusive bounds on validity end</li>
+     *   <li>{@code code}: case-insensitive partial match
+     *   <li>{@code title}: case-insensitive partial match
+     *   <li>{@code startDateFrom}/{@code startDateTo}: inclusive bounds on validity start
+     *   <li>{@code endDateFrom}/{@code endDateTo}: inclusive bounds on validity end
      * </ul>
      *
      * <p>Pagination/sorting is driven entirely by {@link Pageable} supplied by the controller
@@ -105,24 +108,27 @@ public class ResolutionCodeServiceImpl implements ResolutionCodeService {
      */
     @Override
     public Page<ResolutionCodeListItemDto> search(
-        String code,
-        String title,
-        LocalDate startDateFrom,
-        LocalDate startDateTo,
-        LocalDate endDateFrom,
-        LocalDate endDateTo,
-        Pageable pageable
-    ) {
+            String code,
+            String title,
+            LocalDate startDateFrom,
+            LocalDate startDateTo,
+            LocalDate endDateFrom,
+            LocalDate endDateTo,
+            Pageable pageable) {
         // Helper that unwraps Optional from the mapper and fails loudly if empty.
         // Page#map requires a non-null mapping result for each element.
         java.util.function.Function<ResolutionCode, ResolutionCodeListItemDto> mapOrThrow =
-            entity -> mapper.toListItem(entity)
-                .orElseThrow(() -> new IllegalStateException(
-                    "Mapper returned empty Optional for non-null entity"));
+                entity ->
+                        mapper.toListItem(entity)
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalStateException(
+                                                        "Mapper returned empty Optional for non-null entity"));
 
-        // Delegate filtering to the repository’s @Query method; map entities to lightweight list items.
+        // Delegate filtering to the repository’s @Query method; map entities to lightweight list
+        // items.
         return repository
-            .search(code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable)
-            .map(mapOrThrow);
+                .search(code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable)
+                .map(mapOrThrow);
     }
 }

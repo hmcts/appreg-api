@@ -52,7 +52,7 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
                                                 HttpStatus.NOT_FOUND, "Application not found"));
 
         ResolutionCode resultCode =
-            resolutionCodeRepository
+                resolutionCodeRepository
                         .findById(dto.resultCodeId())
                         .orElseThrow(
                                 () ->
@@ -82,7 +82,7 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
         ApplicationResult existing = findOrThrow(resultId, applicationId, listId, userId);
 
         ResolutionCode resultCode =
-            resolutionCodeRepository
+                resolutionCodeRepository
                         .findById(dto.resultCodeId())
                         .orElseThrow(
                                 () ->

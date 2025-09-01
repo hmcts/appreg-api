@@ -12,14 +12,15 @@ import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
  * Service-layer contract for interacting with {@link ResolutionCode} data.
  *
  * <p>This interface defines read/search operations and decouples controllers from persistence.
- * Implementations typically delegate to a Spring Data repository and use a mapper for
- * entity-to-DTO conversion.
+ * Implementations typically delegate to a Spring Data repository and use a mapper for entity-to-DTO
+ * conversion.
  *
  * <p><strong>Typical responsibilities:</strong>
+ *
  * <ul>
- *   <li>Fetch all result codes as full DTOs (administrative use).</li>
- *   <li>Lookup of a single result code by its business code.</li>
- *   <li>Paginated, filterable search returning lightweight list items for UI lists.</li>
+ *   <li>Fetch all result codes as full DTOs (administrative use).
+ *   <li>Lookup of a single result code by its business code.
+ *   <li>Paginated, filterable search returning lightweight list items for UI lists.
  * </ul>
  */
 public interface ResolutionCodeService {
@@ -27,8 +28,8 @@ public interface ResolutionCodeService {
     /**
      * Returns every result code without filtering or pagination.
      *
-     * <p>Prefer {@link #search(String, String, LocalDate, LocalDate, LocalDate, LocalDate, Pageable)}
-     * for user-facing workflows, as it provides paging and filtering.
+     * <p>Prefer {@link #search(String, String, LocalDate, LocalDate, LocalDate, LocalDate,
+     * Pageable)} for user-facing workflows, as it provides paging and filtering.
      *
      * @return a complete list of {@link ResolutionCodeDto}; may be empty
      */
@@ -39,8 +40,8 @@ public interface ResolutionCodeService {
      *
      * @param code exact result code value (column {@code resolution_code})
      * @return the matching {@link ResolutionCodeDto}
-     * @throws org.springframework.web.server.ResponseStatusException (404 NOT_FOUND)
-     *         if no record exists for the given code
+     * @throws org.springframework.web.server.ResponseStatusException (404 NOT_FOUND) if no record
+     *     exists for the given code
      */
     ResolutionCodeDto findByCode(String code);
 
@@ -48,36 +49,37 @@ public interface ResolutionCodeService {
      * Searches result codes with optional filters and pagination.
      *
      * <p><strong>Filter semantics:</strong>
+     *
      * <ul>
-     *   <li><b>code</b>: case-insensitive partial match (ILIKE semantics).</li>
-     *   <li><b>title</b>: case-insensitive partial match.</li>
-     *   <li><b>startDateFrom / startDateTo</b>: inclusive bounds on {@code startDate}.</li>
+     *   <li><b>code</b>: case-insensitive partial match (ILIKE semantics).
+     *   <li><b>title</b>: case-insensitive partial match.
+     *   <li><b>startDateFrom / startDateTo</b>: inclusive bounds on {@code startDate}.
      *   <li><b>endDateFrom</b>: includes records where {@code endDate} is <em>null</em> (treated as
-     *       ongoing) <strong>or</strong> {@code endDate >= endDateFrom}.</li>
-     *   <li><b>endDateTo</b>: inclusive upper bound on {@code endDate}; {@code null} end dates do not match this predicate.</li>
-     *   <li>Any {@code null} parameter disables that specific filter.</li>
+     *       ongoing) <strong>or</strong> {@code endDate >= endDateFrom}.
+     *   <li><b>endDateTo</b>: inclusive upper bound on {@code endDate}; {@code null} end dates do
+     *       not match this predicate.
+     *   <li>Any {@code null} parameter disables that specific filter.
      * </ul>
      *
-     * <p><strong>Pagination & sorting:</strong>
-     * Provided via {@link Pageable}. Controllers commonly default to
-     * {@code Sort.by("title").ascending()} for deterministic UI ordering.
+     * <p><strong>Pagination & sorting:</strong> Provided via {@link Pageable}. Controllers commonly
+     * default to {@code Sort.by("title").ascending()} for deterministic UI ordering.
      *
      * @param code optional case-insensitive partial code filter
      * @param title optional case-insensitive partial title filter
      * @param startDateFrom optional lower bound (inclusive) for {@code startDate}
      * @param startDateTo optional upper bound (inclusive) for {@code startDate}
-     * @param endDateFrom optional lower bound (inclusive) for {@code endDate}; also matches ongoing ({@code null}) end dates
+     * @param endDateFrom optional lower bound (inclusive) for {@code endDate}; also matches ongoing
+     *     ({@code null}) end dates
      * @param endDateTo optional upper bound (inclusive) for {@code endDate}
      * @param pageable page/size/sort
      * @return a {@link Page} of {@link ResolutionCodeListItemDto} with results and paging metadata
      */
     Page<ResolutionCodeListItemDto> search(
-        String code,
-        String title,
-        LocalDate startDateFrom,
-        LocalDate startDateTo,
-        LocalDate endDateFrom,
-        LocalDate endDateTo,
-        Pageable pageable
-    );
+            String code,
+            String title,
+            LocalDate startDateFrom,
+            LocalDate startDateTo,
+            LocalDate endDateFrom,
+            LocalDate endDateTo,
+            Pageable pageable);
 }
