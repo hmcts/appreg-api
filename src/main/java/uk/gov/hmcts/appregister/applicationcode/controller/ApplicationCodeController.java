@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +35,7 @@ public class ApplicationCodeController {
         @ApiResponse(responseCode = "404", description = "Application code not found")
     })
     @GetMapping("/{code}")
+    @PreAuthorize("hasRole('Admin')")
     public ResponseEntity<ApplicationCodeDto> getByCode(@PathVariable String code) {
         return ResponseEntity.ok(service.findByCode(code));
     }

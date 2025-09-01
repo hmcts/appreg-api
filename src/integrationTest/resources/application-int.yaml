@@ -25,7 +25,7 @@ spring:
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg_db}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:app_reg_db}
     username: ${POSTGRES_USER:appreg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
@@ -40,11 +40,6 @@ spring:
       hibernate:
         format_sql: true
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-  flyway:
-    enabled: ${ENABLE_DB_MIGRATE:true}
-    locations: classpath:/migrations
-    default-schema: ${spring.datasource.schema}
-    mixed: true
   sql:
     init:
       mode: never
@@ -52,8 +47,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${azure-tenant-id}/v2.0
-          audiences: ${azure-audience-id}
+          issuer-uri: issuer
+          audiences: audience
 
 logging:
   level:

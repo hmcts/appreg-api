@@ -5,6 +5,7 @@ plugins {
   id 'org.springframework.boot' version '3.5.5'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'org.sonarqube' version '6.3.1.5724'
+  id "io.freefair.lombok" version "8.13.1"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -56,15 +57,14 @@ def configureSourceSet(String name) {
   }
 }
 
-//['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
-['smokeTest', 'functionalTest'].each { configureSourceSet(it) }
+['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
 
 configurations {
   functionalTestImplementation.extendsFrom testImplementation
   functionalTestRuntimeOnly.extendsFrom runtimeOnly
 
-//  integrationTestImplementation.extendsFrom testImplementation
-//  integrationTestRuntimeOnly.extendsFrom runtimeOnly
+  integrationTestImplementation.extendsFrom testImplementation
+  integrationTestRuntimeOnly.extendsFrom runtimeOnly
 
   smokeTestImplementation.extendsFrom testImplementation
   smokeTestRuntimeOnly.extendsFrom runtimeOnly
@@ -89,35 +89,64 @@ tasks.withType(Test).configureEach {
   }
 }
 
+sourceSets {
+  main {
+    resources {
+      srcDirs = ['src/main/java', 'src/main/resources', 'flyway']
+    }
+  }
+
+  // Ensure main source set includes resources from flyway directory
+  functionalTest {
+    java {
+      compileClasspath += main.output
+
+      runtimeClasspath += main.output
+      srcDir file('src/functionalTest/java')
+    }
+    resources.srcDir file('src/functionalTest/resources')
+  }
+
+  integrationTest {
+    java {
+      compileClasspath += main.output
+      runtimeClasspath += main.output
+      srcDir file('src/integrationTest/java')
+    }
+    resources.srcDir file('src/integrationTest/resources')
+  }
+
+  smokeTest {
+    java {
+      compileClasspath += main.output
+      runtimeClasspath += main.output
+      srcDir file('src/smokeTest/java')
+    }
+    resources.srcDir file('src/smokeTest/resources')
+  }
+}
+
 tasks.register('functional', Test) {
-  //AD disabled
-  enabled = true
   description = "Runs functional tests"
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
 }
 
-/* tasks.register('integration', Test) {
-  //AD disabled
-  enabled = false
+tasks.register('integration', Test) {
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
   classpath = sourceSets.integrationTest.runtimeClasspath
-  failFast = true
-} */
+}
 
 tasks.register('smoke', Test) {
-  //AD disabled
-  enabled = true
   description = "Runs Smoke Tests"
-  group = "Verification"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
-/* 
+/*
 jacocoTestReport {
   executionData(test, integration)
   reports {
@@ -139,7 +168,8 @@ jacocoTestReport {
 }
 //AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
-//tasks.check.dependsOn(integration)
+tasks['check'].finalizedBy integration
+
 
 sonarqube {
   properties {
@@ -162,7 +192,24 @@ dependencyUpdates {
 
 // https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
 dependencyCheck {
+  // Specifies if the build should be failed if a CVSS score above a specified level is identified.
+  // range of 0-10 fails the build, anything greater and it doesn't fail the build
+  failBuildOnCVSS = 0
   suppressionFile = 'config/owasp/suppressions.xml'
+
+  analyzers {
+    // Disable scanning of .NET related binaries
+    assemblyEnabled = false
+  }
+  skipConfigurations = [
+    "compileOnly",
+    "pmd",
+    "integrationTest",
+    "functionalTest",
+    "smokeTest",
+    "contractTestRuntimeClasspath",
+    "contractTestCompileClasspath"
+  ]
 }
 
 repositories {
@@ -199,13 +246,7 @@ dependencies {
   implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
   implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
   implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
-  implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
-  implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
-
-  // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
@@ -215,7 +256,16 @@ dependencies {
   testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
   testImplementation 'org.springframework.security:spring-security-test'
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+  testImplementation 'io.github.hakky54:logcaptor:2.11.0'
+  testImplementation 'org.testcontainers:testcontainers:1.21.0'
+  testImplementation 'org.testcontainers:postgresql:1.20.0'
+  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {
+    exclude group: 'junit', module: 'junit'
+    exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+  }
 
+
+  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.2.1'
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
 
   // Updated Third-Party Dependencies
@@ -234,6 +284,20 @@ bootJar {
 
 // Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
 rootProject.tasks.named("processSmokeTestResources") {
+  duplicatesStrategy = 'include'
+}
+
+
+// Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
+rootProject.tasks.named("processSmokeTestResources") {
+  duplicatesStrategy = 'include'
+}
+
+rootProject.tasks.named("processFunctionalTestResources") {
+  duplicatesStrategy = 'include'
+}
+
+rootProject.tasks.named("processIntegrationTestResources") {
   duplicatesStrategy = 'include'
 }
 
