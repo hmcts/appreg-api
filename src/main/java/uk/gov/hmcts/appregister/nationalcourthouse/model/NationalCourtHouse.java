@@ -41,7 +41,7 @@ import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapp
  * </ul>
  */
 @Entity
-@Table(name = "national_court_house")
+@Table(name = "national_court_houses")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

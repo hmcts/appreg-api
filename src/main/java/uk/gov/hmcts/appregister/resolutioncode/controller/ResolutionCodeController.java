@@ -39,7 +39,7 @@ import uk.gov.hmcts.appregister.shared.validation.DateRangeValidator;
  * returned.
  */
 @RestController
-@RequestMapping("/resolution-code")
+@RequestMapping("/resolution-codes")
 @RequiredArgsConstructor
 public class ResolutionCodeController {
 

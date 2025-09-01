@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.resolutioncode.repository;
 
 import java.time.LocalDate;
 import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -32,8 +33,8 @@ import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
  * </ul>
  */
 public interface ResolutionCodeRepository
-        extends PagingAndSortingRepository<ResolutionCode, Long>,
-                JpaSpecificationExecutor<ResolutionCode> {
+    extends PagingAndSortingRepository<ResolutionCode, Long>,
+    JpaSpecificationExecutor<ResolutionCode> {
 
     /**
      * Find a single record by its business code (e.g., "RC123").
@@ -61,34 +62,34 @@ public interface ResolutionCodeRepository
      *   <li>Any null parameter disables that particular filter.
      * </ul>
      *
-     * @param code optional partial code filter (case-insensitive)
-     * @param title optional partial title filter (case-insensitive)
+     * @param code      optional partial code filter (case-insensitive)
+     * @param title     optional partial title filter (case-insensitive)
      * @param startFrom optional lower bound (inclusive) for start date
-     * @param startTo optional upper bound (inclusive) for start date
-     * @param endFrom optional lower bound (inclusive) for end date; also includes null end dates
-     * @param endTo optional upper bound (inclusive) for end date
-     * @param pageable standard Spring Data pagination/sorting descriptor
+     * @param startTo   optional upper bound (inclusive) for start date
+     * @param endFrom   optional lower bound (inclusive) for end date; also includes null end dates
+     * @param endTo     optional upper bound (inclusive) for end date
+     * @param pageable  standard Spring Data pagination/sorting descriptor
      * @return paginated result set matching the applied filters
      */
-    @Query(
-            """
+    @Query("""
         SELECT r
-          FROM ResolutionCode r
-         WHERE (:code IS NULL OR LOWER(r.resultCode) LIKE LOWER(CONCAT('%', :code, '%')))
-           AND (:title IS NULL OR LOWER(r.title) LIKE LOWER(CONCAT('%', :title, '%')))
-           AND (:startFrom IS NULL OR r.startDate >= :startFrom)
-           AND (:startTo   IS NULL OR r.startDate <= :startTo)
-           AND (:endFrom   IS NULL OR (r.endDate IS NULL OR r.endDate >= :endFrom))
-           AND (:endTo     IS NULL OR r.endDate <= :endTo)
+        FROM ResolutionCode r
+        WHERE (:code  IS NULL OR lower(r.resultCode)  LIKE concat('%', lower(cast(:code  as string)), '%'))
+          AND (:title IS NULL OR lower(r.title) LIKE concat('%', lower(cast(:title as string)), '%'))
+          AND (:startFrom IS NULL OR r.startDate >= :startFrom)
+          AND (:startTo   IS NULL OR r.startDate <= :startTo)
+          AND (:endFrom  IS NULL OR r.endDate IS NULL OR r.endDate >= :endFrom)
+          AND (:endTo    IS NULL OR r.endDate <= :endTo)
         """)
     Page<ResolutionCode> search(
-            @Param("code") String code,
-            @Param("title") String title,
-            @Param("startFrom") LocalDate startFrom,
-            @Param("startTo") LocalDate startTo,
-            @Param("endFrom") LocalDate endFrom,
-            @Param("endTo") LocalDate endTo,
-            Pageable pageable);
+        @Param("code") String code,
+        @Param("title") String title,
+        @Param("startFrom") LocalDate startFrom,
+        @Param("startTo") LocalDate startTo,
+        @Param("endFrom") LocalDate endFrom,
+        @Param("endTo") LocalDate endTo,
+        Pageable pageable
+    );
 
     /**
      * Find a single record by its primary key identifier.

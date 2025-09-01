@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,8 +33,10 @@ import uk.gov.hmcts.appregister.resolutioncode.repository.ResolutionCodeReposito
 @ExtendWith(MockitoExtension.class)
 class ResolutionCodeServiceImplTest {
 
-    @Mock private ResolutionCodeRepository repository;
-    @Mock private ResolutionCodeMapper mapper;
+    @Mock
+    private ResolutionCodeRepository repository;
+    @Mock
+    private ResolutionCodeMapper mapper;
 
     private ResolutionCodeServiceImpl service;
 
@@ -85,15 +88,15 @@ class ResolutionCodeServiceImplTest {
         when(repository.findByResultCode("RC-X")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findByCode("RC-X"))
-                .isInstanceOf(ResponseStatusException.class)
-                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+            .isInstanceOf(ResponseStatusException.class)
+            .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void findByCode_ok_whenMapperReturnsDto() {
         ResolutionCode entity =
-                ResolutionCode.builder().id(9L).resultCode("RC-9").title("Nine").build();
+            ResolutionCode.builder().id(9L).resultCode("RC-9").title("Nine").build();
         ResolutionCodeDto dto = dto(9L, "RC-9", "Nine");
 
         when(repository.findByResultCode("RC-9")).thenReturn(Optional.of(entity));
@@ -109,14 +112,14 @@ class ResolutionCodeServiceImplTest {
     @Test
     void findByCode_throwsIllegalState_whenMapperReturnsEmptyForEntity() {
         ResolutionCode entity =
-                ResolutionCode.builder().id(7L).resultCode("RC-7").title("Seven").build();
+            ResolutionCode.builder().id(7L).resultCode("RC-7").title("Seven").build();
 
         when(repository.findByResultCode("RC-7")).thenReturn(Optional.of(entity));
         when(mapper.toReadDto(entity)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findByCode("RC-7"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Mapper returned empty Optional for non-null entity");
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Mapper returned empty Optional for non-null entity");
     }
 
     // ---------- search ----------
@@ -138,14 +141,15 @@ class ResolutionCodeServiceImplTest {
         Page<ResolutionCode> repoPage = new PageImpl<>(List.of(e1, e2), pageable, 5);
 
         when(repository.search(
-                        eq(code),
-                        eq(title),
-                        eq(startDateFrom),
-                        eq(startDateTo),
-                        eq(endDateFrom),
-                        eq(endDateTo),
-                        eq(pageable)))
-                .thenReturn(repoPage);
+            eq(code),
+            eq(title),
+            eq(startDateFrom),
+            eq(startDateTo),
+            eq(endDateFrom),
+            eq(endDateTo),
+            eq(pageable)
+        ))
+            .thenReturn(repoPage);
 
         // Mapper for list items:
         ResolutionCodeListItemDto i1 = new ResolutionCodeListItemDto(1L, "RC-1", "A");
@@ -154,8 +158,8 @@ class ResolutionCodeServiceImplTest {
         when(mapper.toListItem(e2)).thenReturn(Optional.of(i2));
 
         Page<ResolutionCodeListItemDto> out =
-                service.search(
-                        code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
+            service.search(
+                code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
 
         assertThat(out.getContent()).containsExactly(i1, i2);
         assertThat(out.getNumber()).isEqualTo(1);
@@ -163,14 +167,15 @@ class ResolutionCodeServiceImplTest {
         assertThat(out.getTotalElements()).isEqualTo(5);
 
         verify(repository)
-                .search(
-                        eq(code),
-                        eq(title),
-                        eq(startDateFrom),
-                        eq(startDateTo),
-                        eq(endDateFrom),
-                        eq(endDateTo),
-                        eq(pageable));
+            .search(
+                eq(code),
+                eq(title),
+                eq(startDateFrom),
+                eq(startDateTo),
+                eq(endDateFrom),
+                eq(endDateTo),
+                eq(pageable)
+            );
         verify(mapper).toListItem(e1);
         verify(mapper).toListItem(e2);
     }
@@ -181,26 +186,27 @@ class ResolutionCodeServiceImplTest {
         ResolutionCode e1 = ResolutionCode.builder().id(1L).resultCode("RC-1").title("A").build();
 
         when(repository.search(any(), any(), any(), any(), any(), any(), eq(pageable)))
-                .thenReturn(new PageImpl<>(List.of(e1), pageable, 1));
+            .thenReturn(new PageImpl<>(List.of(e1), pageable, 1));
         when(mapper.toListItem(e1)).thenReturn(Optional.empty()); // should explode
 
         assertThatThrownBy(() -> service.search(null, null, null, null, null, null, pageable))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Mapper returned empty Optional for non-null entity");
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Mapper returned empty Optional for non-null entity");
     }
 
     // ---------- helpers ----------
 
     private static ResolutionCodeDto dto(Long id, String code, String title) {
         return new ResolutionCodeDto(
-                id,
-                code,
-                title,
-                "wording",
-                "legislation",
-                "dest1@example.com",
-                "dest2@example.com",
-                LocalDate.of(2024, 1, 1),
-                LocalDate.of(2025, 1, 1));
+            id,
+            code,
+            title,
+            "wording",
+            "legislation",
+            "dest1@example.com",
+            "dest2@example.com",
+            LocalDate.of(2024, 1, 1),
+            LocalDate.of(2025, 1, 1)
+        );
     }
 }

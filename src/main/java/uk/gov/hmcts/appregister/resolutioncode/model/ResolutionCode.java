@@ -39,7 +39,7 @@ import lombok.NoArgsConstructor;
  * </ul>
  */
 @Entity
-@Table(name = "resolution_code")
+@Table(name = "resolution_codes")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

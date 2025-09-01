@@ -56,7 +56,7 @@ import uk.gov.hmcts.appregister.shared.validation.DateRangeValidator;
  * </ul>
  */
 @RestController
-@RequestMapping("/national-court-house")
+@RequestMapping("/national-court-houses")
 @RequiredArgsConstructor
 public class NationalCourtHouseController {
 
@@ -124,7 +124,7 @@ public class NationalCourtHouseController {
                         endDateTo,
                         pageable);
 
-        // Return the Page directly; Spring serialises content + pagination metadata.
+        // Return the Page directly; Spring serializes content and pagination metadata.
         return ResponseEntity.ok(page);
     }
 
