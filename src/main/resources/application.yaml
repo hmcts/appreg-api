@@ -20,12 +20,20 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  data:
+    web:
+      pageable:
+        one-indexed-parameters: true
+        page-parameter: page
+        size-parameter: pageSize
+        default-page-size: 10
+        max-page-size: 100
   config:
     import: "optional:configtree:/mnt/secrets/appreg/"
   application:
     name: Application Registration API
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg_db}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}
     username: ${POSTGRES_USER:appreg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
@@ -39,6 +47,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: appreg
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:true}

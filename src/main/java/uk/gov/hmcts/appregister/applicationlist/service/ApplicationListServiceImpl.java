@@ -12,8 +12,8 @@ import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListWriteDto;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.model.ApplicationList;
 import uk.gov.hmcts.appregister.applicationlist.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.courtlocation.model.CourtHouse;
-import uk.gov.hmcts.appregister.courtlocation.repository.CourtHouseRepository;
+import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
+import uk.gov.hmcts.appregister.nationalcourthouse.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.util.VersionManager;
 
 @RequiredArgsConstructor
@@ -23,7 +23,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListRepository repository;
     private final ApplicationListMapper mapper;
     private final VersionManager versionManager;
-    private final CourtHouseRepository courtHouseRepository;
+    private final NationalCourtHouseRepository courtHouseRepository;
 
     @Override
     public List<ApplicationListDto> getAllForUser(String userId) {
@@ -44,7 +44,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public ApplicationListDto create(ApplicationListWriteDto dto, String userId) {
-        CourtHouse courthouse =
+        NationalCourtHouse courthouse =
                 courtHouseRepository
                         .findById(dto.courthouseId())
                         .orElseThrow(
@@ -71,7 +71,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                 HttpStatus.NOT_FOUND,
                                                 "Application list not found"));
 
-        CourtHouse courthouse =
+        NationalCourtHouse courthouse =
                 courtHouseRepository
                         .findById(dto.courthouseId())
                         .orElseThrow(

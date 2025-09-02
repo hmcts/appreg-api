@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.dto;
 
 import java.time.LocalDate;
-import uk.gov.hmcts.appregister.courtlocation.dto.CourtHouseDto;
+import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
 
 public record ApplicationListDto(
         Long id,
@@ -9,7 +9,7 @@ public record ApplicationListDto(
         LocalDate date,
         String time,
         String description,
-        CourtHouseDto courthouse,
+        NationalCourtHouseDto courthouse,
         String changedBy,
         LocalDate changedDate,
         Integer version) {}

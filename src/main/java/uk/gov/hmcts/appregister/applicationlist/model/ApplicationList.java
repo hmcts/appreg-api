@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import uk.gov.hmcts.appregister.applicationentry.model.Application;
-import uk.gov.hmcts.appregister.courtlocation.model.CourtHouse;
+import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 @Entity
 @Table(name = "application_list")
@@ -47,7 +47,7 @@ public class ApplicationList {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "courthouse_id", nullable = false)
-    private CourtHouse courthouse;
+    private NationalCourtHouse courthouse;
 
     @Column(name = "description", nullable = false)
     private String description;

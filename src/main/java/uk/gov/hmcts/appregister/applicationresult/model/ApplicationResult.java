@@ -17,7 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import uk.gov.hmcts.appregister.applicationentry.model.Application;
-import uk.gov.hmcts.appregister.resultcode.model.ResultCode;
+import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
 
 @Entity
 @Table(name = "application_result")
@@ -39,7 +39,7 @@ public class ApplicationResult {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "result_code_id", nullable = false)
-    private ResultCode resultCode;
+    private ResolutionCode resultCode;
 
     @Column(name = "result_wording")
     private String resultWording;

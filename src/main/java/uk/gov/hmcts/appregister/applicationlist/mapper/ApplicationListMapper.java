@@ -6,19 +6,24 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListDto;
 import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListWriteDto;
 import uk.gov.hmcts.appregister.applicationlist.model.ApplicationList;
-import uk.gov.hmcts.appregister.courtlocation.mapper.CourtHouseMapper;
-import uk.gov.hmcts.appregister.courtlocation.model.CourtHouse;
+import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapper;
+import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 @RequiredArgsConstructor
 @Component
 public class ApplicationListMapper {
 
-    private final CourtHouseMapper courtHouseMapper;
+    private final NationalCourtHouseMapper courtHouseMapper;
 
     public ApplicationListDto toReadDto(ApplicationList entity) {
         if (entity == null) {
             return null;
         }
+
+        var courthouseDto =
+                java.util.Optional.ofNullable(entity.getCourthouse())
+                        .flatMap(courtHouseMapper::toReadDto) // Optional<NationalCourtHouseDto>
+                        .orElse(null); // <-- unwrap or null
 
         return new ApplicationListDto(
                 entity.getId(),
@@ -26,7 +31,7 @@ public class ApplicationListMapper {
                 entity.getDate(),
                 entity.getTime(),
                 entity.getDescription(),
-                courtHouseMapper.toReadDto(entity.getCourthouse()),
+                courthouseDto, // NationalCourtHouseDto (possibly null)
                 entity.getChangedBy(),
                 entity.getChangedDate(),
                 entity.getVersion());
@@ -36,7 +41,7 @@ public class ApplicationListMapper {
             ApplicationListWriteDto dto,
             String userId,
             LocalDate changedDate,
-            CourtHouse courtHouse) {
+            NationalCourtHouse courtHouse) {
         return ApplicationList.builder()
                 .status(dto.status())
                 .date(dto.date())
@@ -54,7 +59,7 @@ public class ApplicationListMapper {
             ApplicationList entity,
             String userId,
             LocalDate changedDate,
-            CourtHouse courtHouse) {
+            NationalCourtHouse courtHouse) {
         entity.setStatus(dto.status());
         entity.setDate(dto.date());
         entity.setTime(dto.time());

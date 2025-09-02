@@ -15,8 +15,8 @@ import uk.gov.hmcts.appregister.applicationresult.mapper.ApplicationResultMapper
 import uk.gov.hmcts.appregister.applicationresult.model.ApplicationResult;
 import uk.gov.hmcts.appregister.applicationresult.repository.ApplicationResultRepository;
 import uk.gov.hmcts.appregister.exception.ValidationExceptionHandler;
-import uk.gov.hmcts.appregister.resultcode.model.ResultCode;
-import uk.gov.hmcts.appregister.resultcode.repository.ResultCodeRepository;
+import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
+import uk.gov.hmcts.appregister.resolutioncode.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.util.VersionManager;
 
 @Service
@@ -26,7 +26,7 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
     private final WordingTemplateParser parser;
     private final ApplicationResultRepository resultRepository;
     private final ApplicationRepository applicationRepository;
-    private final ResultCodeRepository resultCodeRepository;
+    private final ResolutionCodeRepository resolutionCodeRepository;
     private final ApplicationResultMapper mapper;
     private final VersionManager versionManager;
 
@@ -51,8 +51,8 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
                                         new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND, "Application not found"));
 
-        ResultCode resultCode =
-                resultCodeRepository
+        ResolutionCode resultCode =
+                resolutionCodeRepository
                         .findById(dto.resultCodeId())
                         .orElseThrow(
                                 () ->
@@ -81,8 +81,8 @@ public class ApplicationResultServiceImpl implements ApplicationResultService {
             String userId) {
         ApplicationResult existing = findOrThrow(resultId, applicationId, listId, userId);
 
-        ResultCode resultCode =
-                resultCodeRepository
+        ResolutionCode resultCode =
+                resolutionCodeRepository
                         .findById(dto.resultCodeId())
                         .orElseThrow(
                                 () ->
