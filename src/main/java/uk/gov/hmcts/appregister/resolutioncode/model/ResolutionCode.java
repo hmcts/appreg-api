@@ -1,9 +1,7 @@
 package uk.gov.hmcts.appregister.resolutioncode.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,6 +47,8 @@ public class ResolutionCode {
     // Primary key identifier (maps to {@code rc_id}).
     @Id
     @Column(name = "rc_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_seq")
+    @SequenceGenerator(name = "na_seq", sequenceName = "na_seq", allocationSize = 1)
     private Long id;
 
     // Short alphanumeric resolution code value (max length 10, e.g. "RC123").

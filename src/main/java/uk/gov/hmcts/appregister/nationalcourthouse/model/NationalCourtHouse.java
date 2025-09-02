@@ -1,11 +1,7 @@
 package uk.gov.hmcts.appregister.nationalcourthouse.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -48,10 +44,11 @@ import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapp
 @Builder
 public class NationalCourtHouse {
 
-    // Primary key identifier for the court house record.
+    // Primary key identifier for the courthouse record.
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "nch_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
+    @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     private Long id;
 
     // Name of the courthouse (e.g. "Cardiff Crown Court").
