@@ -5,25 +5,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * Validates optional date ranges commonly used by list endpoints. Throws a 400 if a provided
- * "from..to" pair is inverted.
- */
 @Component
-public class DateRangeValidator {
+public class DateRangeValidator implements Validator<DateRangeRequest> {
 
-    public void validate(
-            LocalDate startDateFrom,
-            LocalDate startDateTo,
-            LocalDate endDateFrom,
-            LocalDate endDateTo) {
-        if (startDateFrom != null && startDateTo != null && startDateFrom.isAfter(startDateTo)) {
+    @Override
+    public void validate(DateRangeRequest req) {
+        validateRange("startDate", req.start());
+        validateRange("endDate",   req.end());
+    }
+
+    private void validateRange(String label, DateRange range) {
+        if (range == null) return;
+        LocalDate from = range.from();
+        LocalDate to   = range.to();
+        if (from != null && to != null && from.isAfter(to)) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "startDateFrom must be on or before startDateTo");
+                HttpStatus.BAD_REQUEST, label + "From must be on or before " + label + "To");
         }
-        if (endDateFrom != null && endDateTo != null && endDateFrom.isAfter(endDateTo)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "endDateFrom must be on or before endDateTo");
-        }
+    }
+
+    /** Adapter to keep old call sites working while you migrate. */
+    public void validate(LocalDate startDateFrom, LocalDate startDateTo,
+                         LocalDate endDateFrom,   LocalDate endDateTo) {
+        validate(new DateRangeRequest(
+            new DateRange(startDateFrom, startDateTo),
+            new DateRange(endDateFrom,   endDateTo)
+        ));
     }
 }
