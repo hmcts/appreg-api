@@ -1,0 +1,32 @@
+databaseType = "PostgreSql"
+id = "85f505ac-5c52-431a-a644-b4834590d060"
+name = "flyway_data_migration_validation"
+
+[flyway]
+locations = [ "filesystem:migrations" ]
+mixed = true
+outOfOrder = true
+schemaModelLocation = "schema-model"
+validateMigrationNaming = true
+
+  [flyway.check]
+  majorTolerance = 0
+
+[flywayDesktop]
+developmentEnvironment = "development"
+shadowEnvironment = "shadow"
+enableMigrations = false
+
+[redgateCompare]
+filterFile = "filter.rgf"
+
+[redgateCompare.postgresql.options.behavior]
+detectRenames = "identical-only"
+
+[redgateCompare.postgresql.options.ignores]
+ignoreNewlinesInTextObjects = "off"
+
+[environments.development]
+url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
+schemas = [ "data_validation" ]
+displayName = "Development"
