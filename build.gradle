@@ -204,8 +204,8 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
 
   // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.38'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
