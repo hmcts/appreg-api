@@ -6,7 +6,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 /** Utility class to handle validation exceptions and convert them to appropriate HTTP responses. */
 public class ValidationExceptionHandler {
-    private ValidationExceptionHandler() {}
+    private ValidationExceptionHandler() {
+
+    }
 
     /**
      * Runs the given action and wraps any IllegalArgumentException into a ResponseStatusException

@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 public class AuthenticatedUser {
 
     private static final String ROLES_CLAIM = "roles";
-    private static final String USER_UNKNOWN = "roles";
 
     public String[] getRoles() {
         if (getJwt() == null) {
