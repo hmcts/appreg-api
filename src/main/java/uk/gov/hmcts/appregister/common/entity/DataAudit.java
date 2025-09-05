@@ -7,11 +7,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 
 /** Entity for Data Audit table. */
 @Entity
@@ -20,9 +24,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class DataAudit {
+@Getter
+@Setter
+public class DataAudit implements Accountable {
     @Id
-    @Column(name = "aler_id", nullable = false, updatable = false)
+    @Column(name = "data_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
     @SequenceGenerator(
             name = "add_dataaudit_event_gen",
@@ -31,28 +37,32 @@ public class DataAudit {
     @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(name = "schema", nullable = false)
-    private String schema;
-
     @Column(name = "schema_name", nullable = false)
+    @Size(max = 30)
     private String schemaName;
 
     @Column(name = "table_name", nullable = false)
+    @Size(max = 30)
     private String tableName;
 
     @Column(name = "column_name", nullable = false)
+    @Size(max = 30)
     private String columnName;
 
     @Column(name = "old_value")
+    @Size(max = 4000)
     private String oldValue;
 
     @Column(name = "new_value")
+    @Size(max = 4000)
     private String newValue;
 
     @Column(name = "user_id")
-    private String userId;
+    @Size(max = 32)
+    private String createdUser;
 
     @Column(name = "link")
+    @Size(max = 100)
     private String link;
 
     @Column(name = "created_date", nullable = false)
@@ -65,23 +75,29 @@ public class DataAudit {
     private Long relatedKey;
 
     @Column(name = "update_type", nullable = false)
+    @Size(max = 1)
     private String updateType;
 
     @Column(name = "data_type")
+    @Size(max = 1000)
     private String dataType;
 
     @Column(name = "case_id")
     private Long caseId;
 
     @Column(name = "related_items_identifier")
+    @Size(max = 30)
     private String relatedItemsIdentifier;
 
     @Column(name = "related_items_identifier_index")
+    @Size(max = 30)
     private String relatedItemsIdentifierIndex;
 
     @Column(name = "event_name")
+    @Size(max = 100)
     private String eventName;
 
     @Column(name = "user_name")
+    @Size(max = 20)
     private String userName;
 }
