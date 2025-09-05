@@ -7,11 +7,11 @@ package uk.gov.hmcts.appregister.shared.validation;
  */
 @FunctionalInterface
 public interface Validator<T> {
-  /**
-   * Validate the provided value.
-   *
-   * @param validatable value to check
-   * @throws RuntimeException if validation fails
-   */
-  void validate(T validatable); // single operation
+    /**
+     * Validate the provided value.
+     *
+     * @param validatable value to check
+     * @throws RuntimeException if validation fails
+     */
+    void validate(T validatable); // single operation
 }

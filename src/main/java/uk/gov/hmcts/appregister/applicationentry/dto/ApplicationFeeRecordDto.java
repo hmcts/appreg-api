@@ -7,10 +7,10 @@ import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
 /** DTO for application fee record. */
 public record ApplicationFeeRecordDto(
-    Long id,
-    String paymentReference,
-    FeeStatusType feeStatus,
-    LocalDate statusDate,
-    OffsetDateTime creationDate,
-    BigDecimal amount,
-    String feeDescription) {}
+        Long id,
+        String paymentReference,
+        FeeStatusType feeStatus,
+        LocalDate statusDate,
+        OffsetDateTime creationDate,
+        BigDecimal amount,
+        String feeDescription) {}

@@ -8,13 +8,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DefaultVersionStrategy implements VersionStrategy {
-  @Override
-  public void updateVersion(Versionable versionable) {
-    if (versionable.getVersion() == null) {
-      versionable.setVersion(0L);
-    }
+    @Override
+    public void updateVersion(Versionable versionable) {
+        if (versionable.getVersion() == null) {
+            versionable.setVersion(0L);
+        }
 
-    // increment the version
-    versionable.setVersion(versionable.getVersion() + 1);
-  }
+        // increment the version
+        versionable.setVersion(versionable.getVersion() + 1);
+    }
 }

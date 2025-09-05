@@ -15,29 +15,29 @@ import uk.gov.hmcts.appregister.report.shared.CsvReportGenerator;
 @RequiredArgsConstructor
 public class FeeReportServiceImpl implements FeeReportService {
 
-  private final FeeReportJdbcRepository feeReportRepository;
-  private final CsvReportGenerator csvReportGenerator;
+    private final FeeReportJdbcRepository feeReportRepository;
+    private final CsvReportGenerator csvReportGenerator;
 
-  @Override
-  public void generateFeeReportCsv(FeeReportFilterDto filter, HttpServletResponse response)
-      throws IOException {
-    String wrappedStandardApplicantCode = filter.standardApplicantCode();
-    String wrappedApplicantSurname = filter.applicantSurname();
-    String wrappedCourthouseCode = filter.courthouseCode();
+    @Override
+    public void generateFeeReportCsv(FeeReportFilterDto filter, HttpServletResponse response)
+            throws IOException {
+        String wrappedStandardApplicantCode = filter.standardApplicantCode();
+        String wrappedApplicantSurname = filter.applicantSurname();
+        String wrappedCourthouseCode = filter.courthouseCode();
 
-    List<FeeReportRowDto> feeReport =
-        feeReportRepository.generateFeeReport(
-            filter.startDate(),
-            filter.endDate(),
-            wrappedStandardApplicantCode,
-            wrappedApplicantSurname,
-            wrappedCourthouseCode);
+        List<FeeReportRowDto> feeReport =
+                feeReportRepository.generateFeeReport(
+                        filter.startDate(),
+                        filter.endDate(),
+                        wrappedStandardApplicantCode,
+                        wrappedApplicantSurname,
+                        wrappedCourthouseCode);
 
-    if (feeReport.isEmpty()) {
-      response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-      return;
+        if (feeReport.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            return;
+        }
+
+        csvReportGenerator.writeFeeReport(feeReport, response);
     }
-
-    csvReportGenerator.writeFeeReport(feeReport, response);
-  }
 }

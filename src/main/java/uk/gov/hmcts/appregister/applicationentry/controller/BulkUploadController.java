@@ -24,25 +24,25 @@ import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadService;
 @RequiredArgsConstructor
 public class BulkUploadController {
 
-  private static final Logger log = LoggerFactory.getLogger(BulkUploadController.class);
-  private final BulkUploadService bulkUploadService;
+    private static final Logger log = LoggerFactory.getLogger(BulkUploadController.class);
+    private final BulkUploadService bulkUploadService;
 
-  @Operation(
-      summary = "Bulk upload application entries for a specific list",
-      operationId = "bulkUploadEntries")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "CSV processed successfully"),
-    @ApiResponse(responseCode = "400", description = "Malformed file or invalid data"),
-    @ApiResponse(responseCode = "404", description = "Application list not found")
-  })
-  @PostMapping("/{listId}/applications/bulk-upload")
-  public ResponseEntity<BulkUploadResponseDto> uploadEntries(
-      @PathVariable Long listId,
-      @RequestParam("file") MultipartFile file,
-      @AuthenticationPrincipal Jwt jwt) {
-    log.info("Bulk uploading entries to listId: {}", listId);
-    String userId = jwt.getClaimAsString("oid");
-    BulkUploadResponseDto response = bulkUploadService.uploadCsv(listId, file, userId);
-    return ResponseEntity.ok(response);
-  }
+    @Operation(
+            summary = "Bulk upload application entries for a specific list",
+            operationId = "bulkUploadEntries")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "CSV processed successfully"),
+        @ApiResponse(responseCode = "400", description = "Malformed file or invalid data"),
+        @ApiResponse(responseCode = "404", description = "Application list not found")
+    })
+    @PostMapping("/{listId}/applications/bulk-upload")
+    public ResponseEntity<BulkUploadResponseDto> uploadEntries(
+            @PathVariable Long listId,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt) {
+        log.info("Bulk uploading entries to listId: {}", listId);
+        String userId = jwt.getClaimAsString("oid");
+        BulkUploadResponseDto response = bulkUploadService.uploadCsv(listId, file, userId);
+        return ResponseEntity.ok(response);
+    }
 }

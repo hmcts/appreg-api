@@ -31,24 +31,24 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
 public class CommunicationMedia extends BaseChangeableEntity implements Versionable {
-  @Id
-  @Column(name = "comm_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "comm_gen")
-  @SequenceGenerator(name = "comm_gen", sequenceName = "comm_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "comm_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "comm_gen")
+    @SequenceGenerator(name = "comm_gen", sequenceName = "comm_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "detail", nullable = false)
-  @Size(max = 254)
-  private String detail;
+    @Column(name = "detail", nullable = false)
+    @Size(max = 254)
+    private String detail;
 
-  @Column(name = "start_date", nullable = false)
-  private OffsetDateTime startDate;
+    @Column(name = "start_date", nullable = false)
+    private OffsetDateTime startDate;
 
-  @Column(name = "end_date")
-  private OffsetDateTime endDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
 
-  @Column(name = "version_number", nullable = false)
-  @Size(max = 38)
-  private Long version;
+    @Column(name = "version_number", nullable = false)
+    @Size(max = 38)
+    private Long version;
 }

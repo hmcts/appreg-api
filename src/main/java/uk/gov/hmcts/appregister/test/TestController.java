@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TestController {
 
-  @GetMapping("/test")
-  public String loginSuccess() {
-    return "You successfully logged in!";
-  }
+    @GetMapping("/test")
+    public String loginSuccess() {
+        return "You successfully logged in!";
+    }
 }

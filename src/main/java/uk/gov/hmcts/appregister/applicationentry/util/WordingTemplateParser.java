@@ -10,76 +10,77 @@ import org.springframework.stereotype.Service;
 @Service
 public class WordingTemplateParser {
 
-  // TODO: Triple check this assumption.
-  /* Matches wording tokens in the format {TYPE|NAME|MAX_LENGTH}
-   * Example: {TEXT|Date|10}
-   * - Group 1: TYPE (e.g. TEXT)
-   * - Group 2: NAME (e.g. Date)
-   * - Group 3: MAX LENGTH (e.g. 10)
-   */
-  private static final Pattern TOKEN_PATTERN = Pattern.compile("\\{([^|}]+)\\|([^|}]+)\\|(\\d+)}");
-  private static final int TYPE = 1;
-  private static final int NAME = 2;
-  private static final int MAX_LENGTH = 3;
+    // TODO: Triple check this assumption.
+    /* Matches wording tokens in the format {TYPE|NAME|MAX_LENGTH}
+     * Example: {TEXT|Date|10}
+     * - Group 1: TYPE (e.g. TEXT)
+     * - Group 2: NAME (e.g. Date)
+     * - Group 3: MAX LENGTH (e.g. 10)
+     */
+    private static final Pattern TOKEN_PATTERN =
+            Pattern.compile("\\{([^|}]+)\\|([^|}]+)\\|(\\d+)}");
+    private static final int TYPE = 1;
+    private static final int NAME = 2;
+    private static final int MAX_LENGTH = 3;
 
-  /** Generates the final wording by injecting input fields into the template. */
-  public String generateWording(String template, List<String> inputFields) {
-    List<TemplateToken> tokens = extractTokens(template);
-    if (!hasCorrectNumberOfTexts(tokens, inputFields)) {
-      throw new IllegalArgumentException(
-          "Expected "
-              + tokens.size()
-              + " text fields but received "
-              + (inputFields == null ? 0 : inputFields.size()));
+    /** Generates the final wording by injecting input fields into the template. */
+    public String generateWording(String template, List<String> inputFields) {
+        List<TemplateToken> tokens = extractTokens(template);
+        if (!hasCorrectNumberOfTexts(tokens, inputFields)) {
+            throw new IllegalArgumentException(
+                    "Expected "
+                            + tokens.size()
+                            + " text fields but received "
+                            + (inputFields == null ? 0 : inputFields.size()));
+        }
+
+        if (!areTextsWithinLength(tokens, inputFields)) {
+            throw new IllegalArgumentException(
+                    "One or more text fields exceed the maximum allowed length.");
+        }
+
+        return injectInputFieldsIntoTemplate(template, inputFields);
     }
 
-    if (!areTextsWithinLength(tokens, inputFields)) {
-      throw new IllegalArgumentException(
-          "One or more text fields exceed the maximum allowed length.");
+    private List<TemplateToken> extractTokens(String template) {
+        List<TemplateToken> tokens = new ArrayList<>();
+        Matcher matcher = TOKEN_PATTERN.matcher(template);
+        while (matcher.find()) {
+            tokens.add(
+                    new TemplateToken(
+                            matcher.group(TYPE),
+                            matcher.group(NAME),
+                            Integer.parseInt(matcher.group(MAX_LENGTH))));
+        }
+        return tokens;
     }
 
-    return injectInputFieldsIntoTemplate(template, inputFields);
-  }
-
-  private List<TemplateToken> extractTokens(String template) {
-    List<TemplateToken> tokens = new ArrayList<>();
-    Matcher matcher = TOKEN_PATTERN.matcher(template);
-    while (matcher.find()) {
-      tokens.add(
-          new TemplateToken(
-              matcher.group(TYPE),
-              matcher.group(NAME),
-              Integer.parseInt(matcher.group(MAX_LENGTH))));
+    private boolean hasCorrectNumberOfTexts(List<TemplateToken> tokens, List<String> inputFields) {
+        return inputFields != null && inputFields.size() >= tokens.size();
     }
-    return tokens;
-  }
 
-  private boolean hasCorrectNumberOfTexts(List<TemplateToken> tokens, List<String> inputFields) {
-    return inputFields != null && inputFields.size() >= tokens.size();
-  }
-
-  private boolean areTextsWithinLength(List<TemplateToken> tokens, List<String> inputFields) {
-    for (int i = 0; i < tokens.size(); i++) {
-      String value = inputFields.get(i);
-      TemplateToken token = tokens.get(i);
-      if (value.length() > token.maxLength()) {
-        return false;
-      }
+    private boolean areTextsWithinLength(List<TemplateToken> tokens, List<String> inputFields) {
+        for (int i = 0; i < tokens.size(); i++) {
+            String value = inputFields.get(i);
+            TemplateToken token = tokens.get(i);
+            if (value.length() > token.maxLength()) {
+                return false;
+            }
+        }
+        return true;
     }
-    return true;
-  }
 
-  private String injectInputFieldsIntoTemplate(String template, List<String> inputFields) {
-    Matcher matcher = TOKEN_PATTERN.matcher(template);
-    StringBuilder result = new StringBuilder();
-    int i = 0;
+    private String injectInputFieldsIntoTemplate(String template, List<String> inputFields) {
+        Matcher matcher = TOKEN_PATTERN.matcher(template);
+        StringBuilder result = new StringBuilder();
+        int i = 0;
 
-    while (matcher.find()) {
-      String replacement = (i < inputFields.size()) ? inputFields.get(i) : "";
-      matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
-      i++;
+        while (matcher.find()) {
+            String replacement = (i < inputFields.size()) ? inputFields.get(i) : "";
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+            i++;
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
-    matcher.appendTail(result);
-    return result.toString();
-  }
 }

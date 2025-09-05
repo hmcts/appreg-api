@@ -21,24 +21,24 @@ import uk.gov.hmcts.appregister.Application;
  */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(
-    classes = Application.class,
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        classes = Application.class,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 class OpenApiPublisherTest {
 
-  @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-  @Autowired
-  private MockMvc mvc;
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    private MockMvc mvc;
 
-  @DynamicPropertySource
-  static void registerPgProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.flyway.enabled", () -> "false");
-  }
+    @DynamicPropertySource
+    static void registerPgProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.flyway.enabled", () -> "false");
+    }
 
-  @DisplayName("Generate swagger documentation")
-  @Test
-  @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
-  void generateDocs() throws Exception {
-    mvc.perform(get("/specs/openapi.yaml")).andExpect(status().isOk());
-  }
+    @DisplayName("Generate swagger documentation")
+    @Test
+    @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
+    void generateDocs() throws Exception {
+        mvc.perform(get("/specs/openapi.yaml")).andExpect(status().isOk());
+    }
 }

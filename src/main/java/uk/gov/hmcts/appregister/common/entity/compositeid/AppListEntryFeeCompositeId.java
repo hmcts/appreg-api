@@ -9,18 +9,18 @@ import lombok.Setter;
 @Setter
 public class AppListEntryFeeCompositeId implements Serializable {
 
-  private Long appListEntryId;
+    private Long appListEntryId;
 
-  private Long feeId;
+    private Long feeId;
 
-  /**
-   * Create composite id.
-   *
-   * @param appListEntryId entryId
-   * @param feeId feeId
-   */
-  public AppListEntryFeeCompositeId(Long appListEntryId, Long feeId) {
-    this.appListEntryId = appListEntryId;
-    this.feeId = feeId;
-  }
+    /**
+     * Create composite id.
+     *
+     * @param appListEntryId entryId
+     * @param feeId feeId
+     */
+    public AppListEntryFeeCompositeId(Long appListEntryId, Long feeId) {
+        this.appListEntryId = appListEntryId;
+        this.feeId = feeId;
+    }
 }

@@ -17,34 +17,35 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 @RequiredArgsConstructor
 public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
-  private final ApplicationCodeRepository repository;
-  private final ApplicationCodeMapper applicationCodeMapper;
-  private final ApplicationFeeService feeService;
+    private final ApplicationCodeRepository repository;
+    private final ApplicationCodeMapper applicationCodeMapper;
+    private final ApplicationFeeService feeService;
 
-  @Override
-  public List<ApplicationCodeDto> findAll() {
-    final List<ApplicationCode> applicationCodeList = repository.findAll();
+    @Override
+    public List<ApplicationCodeDto> findAll() {
+        final List<ApplicationCode> applicationCodeList = repository.findAll();
 
-    return applicationCodeList.stream()
-        .map(
-            code -> {
-              FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
-              return applicationCodeMapper.toReadDto(code, feePair);
-            })
-        .toList();
-  }
+        return applicationCodeList.stream()
+                .map(
+                        code -> {
+                            FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
+                            return applicationCodeMapper.toReadDto(code, feePair);
+                        })
+                .toList();
+    }
 
-  @Override
-  public ApplicationCodeDto findByCode(String code) {
-    final ApplicationCode applicationCode =
-        repository
-            .findByApplicationCode(code)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Application Code not found"));
+    @Override
+    public ApplicationCodeDto findByCode(String code) {
+        final ApplicationCode applicationCode =
+                repository
+                        .findByApplicationCode(code)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Application Code not found"));
 
-    FeePair feePair = feeService.resolveFeePair(applicationCode.getFeeReference());
-    return applicationCodeMapper.toReadDto(applicationCode, feePair);
-  }
+        FeePair feePair = feeService.resolveFeePair(applicationCode.getFeeReference());
+        return applicationCodeMapper.toReadDto(applicationCode, feePair);
+    }
 }

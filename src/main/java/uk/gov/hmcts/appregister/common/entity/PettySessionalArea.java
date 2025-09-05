@@ -31,67 +31,67 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class PettySessionalArea extends BaseChangeableEntity implements Versionable {
-  @Id
-  @Column(name = "psa_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "psa_gen")
-  @SequenceGenerator(name = "psa_gen", sequenceName = "psa_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "psa_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "psa_gen")
+    @SequenceGenerator(name = "psa_gen", sequenceName = "psa_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "psa_name")
-  @Size(max = 100)
-  private String name;
+    @Column(name = "psa_name")
+    @Size(max = 100)
+    private String name;
 
-  @Column(name = "short_name")
-  @Size(max = 10)
-  private String shortName;
+    @Column(name = "short_name")
+    @Size(max = 10)
+    private String shortName;
 
-  @Column(name = "version_number", nullable = false)
-  @Size(max = 38)
-  private Long version;
+    @Column(name = "version_number", nullable = false)
+    @Size(max = 38)
+    private Long version;
 
-  @Column(name = "cma_cma_id")
-  private Long cmaId;
+    @Column(name = "cma_cma_id")
+    private Long cmaId;
 
-  @Column(name = "psa_code", nullable = false)
-  @Size(max = 4)
-  private String psaCode;
+    @Column(name = "psa_code", nullable = false)
+    @Size(max = 4)
+    private String psaCode;
 
-  @Column(name = "start_date")
-  private OffsetDateTime startDate;
+    @Column(name = "start_date")
+    private OffsetDateTime startDate;
 
-  @Column(name = "end_date")
-  private OffsetDateTime endDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
 
-  @Column(name = "jc_name")
-  @Size(max = 200)
-  private String jcName;
+    @Column(name = "jc_name")
+    @Size(max = 200)
+    private String jcName;
 
-  @Column(name = "court_type", nullable = false)
-  @Size(max = 10)
-  private String courtType;
+    @Column(name = "court_type", nullable = false)
+    @Size(max = 10)
+    private String courtType;
 
-  @Column(name = "crime_cases_loc_id")
-  private Long crimeCasesLocId;
+    @Column(name = "crime_cases_loc_id")
+    private Long crimeCasesLocId;
 
-  @Column(name = "fine_accounts_loc_id")
-  private Long fineAccountsLocId;
+    @Column(name = "fine_accounts_loc_id")
+    private Long fineAccountsLocId;
 
-  @Column(name = "maintenance_enforcement_loc_id")
-  private Long enforcedLocId;
+    @Column(name = "maintenance_enforcement_loc_id")
+    private Long enforcedLocId;
 
-  @Column(name = "family_cases_loc_id")
-  private Long familyCasesLocId;
+    @Column(name = "family_cases_loc_id")
+    private Long familyCasesLocId;
 
-  @Column(name = "court_location_code")
-  private String courtLocationCode;
+    @Column(name = "court_location_code")
+    private String courtLocationCode;
 
-  @Column(name = "central_finance_loc_id")
-  private Long centralFinanceLocId;
+    @Column(name = "central_finance_loc_id")
+    private Long centralFinanceLocId;
 
-  @Column(name = "sl_psa_name")
-  private String psaName;
+    @Column(name = "sl_psa_name")
+    private String psaName;
 
-  @Column(name = "norg_id")
-  private Long orgId;
+    @Column(name = "norg_id")
+    private Long orgId;
 }

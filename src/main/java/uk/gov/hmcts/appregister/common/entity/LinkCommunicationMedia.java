@@ -35,37 +35,37 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 public class LinkCommunicationMedia extends BaseChangeableEntity implements Versionable {
 
-  @Id
-  @Column(name = "lcm_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lcm_gen")
-  @SequenceGenerator(name = "lcm_gen", sequenceName = "lcm_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "lcm_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "lcm_gen")
+    @SequenceGenerator(name = "lcm_gen", sequenceName = "lcm_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "lcm_type", nullable = false)
-  @Size(max = 2)
-  private String lcmType;
+    @Column(name = "lcm_type", nullable = false)
+    @Size(max = 2)
+    private String lcmType;
 
-  @Column(name = "start_date")
-  private OffsetDateTime startDate;
+    @Column(name = "start_date")
+    private OffsetDateTime startDate;
 
-  @Column(name = "end_date")
-  private OffsetDateTime endDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
 
-  @Column(name = "version_number", nullable = false)
-  @Size(max = 38)
-  private Long version;
+    @Column(name = "version_number", nullable = false)
+    @Size(max = 38)
+    private Long version;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "comm_comm_id")
-  private CommunicationMedia commId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "comm_comm_id")
+    private CommunicationMedia commId;
 
-  @Column(name = "loc_loc_id")
-  private Long locId;
+    @Column(name = "loc_loc_id")
+    private Long locId;
 
-  @Column(name = "er_er_id")
-  private Long erId;
+    @Column(name = "er_er_id")
+    private Long erId;
 
-  @Column(name = "bu_bu_id")
-  private Long buId;
+    @Column(name = "bu_bu_id")
+    private Long buId;
 }

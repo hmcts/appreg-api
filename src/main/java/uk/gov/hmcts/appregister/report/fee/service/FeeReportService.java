@@ -6,6 +6,6 @@ import uk.gov.hmcts.appregister.report.fee.dto.FeeReportFilterDto;
 
 /** Service interface for generating fee reports. */
 public interface FeeReportService {
-  void generateFeeReportCsv(FeeReportFilterDto filter, HttpServletResponse response)
-      throws IOException;
+    void generateFeeReportCsv(FeeReportFilterDto filter, HttpServletResponse response)
+            throws IOException;
 }

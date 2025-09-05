@@ -33,32 +33,32 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class AppListEntryOfficial extends BaseChangeableEntity implements Accountable {
-  @Id
-  @Column(name = "aleo_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = " aleo_gen")
-  @SequenceGenerator(name = " aleo_gen", sequenceName = " aleo_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "aleo_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = " aleo_gen")
+    @SequenceGenerator(name = " aleo_gen", sequenceName = " aleo_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ale_ale_id", nullable = false)
-  private ApplicationListEntry appListEntry;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ale_ale_id", nullable = false)
+    private ApplicationListEntry appListEntry;
 
-  @Column(name = "title")
-  @Size(max = 100)
-  private String title;
+    @Column(name = "title")
+    @Size(max = 100)
+    private String title;
 
-  @Column(name = "forename")
-  @Size(max = 100)
-  private String forename;
+    @Column(name = "forename")
+    @Size(max = 100)
+    private String forename;
 
-  @Column(name = "surname")
-  @Size(max = 100)
-  private String surname;
+    @Column(name = "surname")
+    @Size(max = 100)
+    private String surname;
 
-  @Column(name = "official_type", nullable = false)
-  private String officialType;
+    @Column(name = "official_type", nullable = false)
+    private String officialType;
 
-  @Column(name = "user_name", nullable = false)
-  private String createdUser;
+    @Column(name = "user_name", nullable = false)
+    private String createdUser;
 }

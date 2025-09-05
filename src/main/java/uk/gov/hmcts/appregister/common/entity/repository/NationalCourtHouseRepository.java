@@ -44,47 +44,47 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
  * </ul>
  */
 public interface NationalCourtHouseRepository
-    extends PagingAndSortingRepository<NationalCourtHouse, Long>,
-        JpaSpecificationExecutor<NationalCourtHouse> {
+        extends PagingAndSortingRepository<NationalCourtHouse, Long>,
+                JpaSpecificationExecutor<NationalCourtHouse> {
 
-  /**
-   * Searches {@link NationalCourtHouse} rows applying the provided (nullable) filters.
-   *
-   * <p>Sorting is provided by the {@link Pageable} argument unless you hardcode an {@code ORDER BY}
-   * in the JPQL.
-   *
-   * @param name optional courthouse name fragment (case-insensitive contains)
-   * @param courtType optional exact court type match
-   * @param startFrom optional lower bound (inclusive) for {@code startDate}
-   * @param startTo optional upper bound (inclusive) for {@code startDate}
-   * @param endFrom optional lower bound (inclusive) for {@code endDate}; {@code null} endDate is
-   *     treated as active
-   * @param endTo optional upper bound (inclusive) for {@code endDate}
-   * @param pageable page + size (+ optional sort)
-   * @return a page of matching {@link NationalCourtHouse} entities
-   */
-  @Query(
-      """
-        SELECT n
-        FROM NationalCourtHouse n
-        WHERE (:courtType IS NULL OR n.courtType = :courtType)
-          AND (:name IS NULL OR lower(n.name) LIKE concat('%', lower(cast(:name as string)), '%'))
-          AND (:startFrom IS NULL OR n.startDate >= :startFrom)
-          AND (:startTo   IS NULL OR n.startDate <= :startTo)
-          AND (:endFrom  IS NULL OR n.endDate IS NULL OR n.endDate >= :endFrom)
-          AND (:endTo    IS NULL OR n.endDate <= :endTo)
-        """)
-  Page<NationalCourtHouse> search(
-      @Param("name") String name,
-      @Param("courtType") String courtType,
-      @Param("startFrom") LocalDate startFrom,
-      @Param("startTo") LocalDate startTo,
-      @Param("endFrom") LocalDate endFrom,
-      @Param("endTo") LocalDate endTo,
-      Pageable pageable);
+    /**
+     * Searches {@link NationalCourtHouse} rows applying the provided (nullable) filters.
+     *
+     * <p>Sorting is provided by the {@link Pageable} argument unless you hardcode an {@code ORDER
+     * BY} in the JPQL.
+     *
+     * @param name optional courthouse name fragment (case-insensitive contains)
+     * @param courtType optional exact court type match
+     * @param startFrom optional lower bound (inclusive) for {@code startDate}
+     * @param startTo optional upper bound (inclusive) for {@code startDate}
+     * @param endFrom optional lower bound (inclusive) for {@code endDate}; {@code null} endDate is
+     *     treated as active
+     * @param endTo optional upper bound (inclusive) for {@code endDate}
+     * @param pageable page + size (+ optional sort)
+     * @return a page of matching {@link NationalCourtHouse} entities
+     */
+    @Query(
+            """
+            SELECT n
+            FROM NationalCourtHouse n
+            WHERE (:courtType IS NULL OR n.courtType = :courtType)
+              AND (:name IS NULL OR lower(n.name) LIKE concat('%', lower(cast(:name as string)), '%'))
+              AND (:startFrom IS NULL OR n.startDate >= :startFrom)
+              AND (:startTo   IS NULL OR n.startDate <= :startTo)
+              AND (:endFrom  IS NULL OR n.endDate IS NULL OR n.endDate >= :endFrom)
+              AND (:endTo    IS NULL OR n.endDate <= :endTo)
+            """)
+    Page<NationalCourtHouse> search(
+            @Param("name") String name,
+            @Param("courtType") String courtType,
+            @Param("startFrom") LocalDate startFrom,
+            @Param("startTo") LocalDate startTo,
+            @Param("endFrom") LocalDate endFrom,
+            @Param("endTo") LocalDate endTo,
+            Pageable pageable);
 
-  /** Convenience method for single-row lookup. */
-  Optional<NationalCourtHouse> findById(Long id);
+    /** Convenience method for single-row lookup. */
+    Optional<NationalCourtHouse> findById(Long id);
 
-  List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
+    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
 }

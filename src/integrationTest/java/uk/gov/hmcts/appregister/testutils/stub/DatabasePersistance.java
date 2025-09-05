@@ -13,17 +13,17 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
  */
 @Component
 public class DatabasePersistance {
-  @Autowired private ApplicationCodeRepository applicationCodeRepository;
+    @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
-  @Autowired private FeeRepository feeRepository;
+    @Autowired private FeeRepository feeRepository;
 
-  @Transactional
-  public ApplicationCode saveAppCode(ApplicationCode data) {
-    return applicationCodeRepository.save(data);
-  }
+    @Transactional
+    public ApplicationCode saveAppCode(ApplicationCode data) {
+        return applicationCodeRepository.save(data);
+    }
 
-  @Transactional
-  public Fee saveFee(Fee data) {
-    return feeRepository.save(data);
-  }
+    @Transactional
+    public Fee saveFee(Fee data) {
+        return feeRepository.save(data);
+    }
 }

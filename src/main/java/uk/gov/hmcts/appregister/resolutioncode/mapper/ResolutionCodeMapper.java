@@ -28,63 +28,67 @@ import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
 @Component
 public class ResolutionCodeMapper {
 
-  /**
-   * Maps a {@link ResolutionCode} entity into a full {@link ResolutionCodeDto}.
-   *
-   * @param entity the JPA entity to map; may be {@code null}
-   * @return an {@link Optional} containing the mapped DTO, or empty if {@code entity} was null
-   */
-  public Optional<ResolutionCodeDto> toReadDto(ResolutionCode entity) {
-    return Optional.ofNullable(entity)
-        .map(
-            e ->
-                new ResolutionCodeDto(
-                    e.getId(),
-                    e.getResultCode(),
-                    e.getTitle(),
-                    e.getWording(),
-                    e.getLegislation(),
-                    e.getDestinationEmail1(),
-                    e.getDestinationEmail2(),
-                    e.getStartDate(),
-                    e.getEndDate()));
-  }
+    /**
+     * Maps a {@link ResolutionCode} entity into a full {@link ResolutionCodeDto}.
+     *
+     * @param entity the JPA entity to map; may be {@code null}
+     * @return an {@link Optional} containing the mapped DTO, or empty if {@code entity} was null
+     */
+    public Optional<ResolutionCodeDto> toReadDto(ResolutionCode entity) {
+        return Optional.ofNullable(entity)
+                .map(
+                        e ->
+                                new ResolutionCodeDto(
+                                        e.getId(),
+                                        e.getResultCode(),
+                                        e.getTitle(),
+                                        e.getWording(),
+                                        e.getLegislation(),
+                                        e.getDestinationEmail1(),
+                                        e.getDestinationEmail2(),
+                                        e.getStartDate(),
+                                        e.getEndDate()));
+    }
 
-  /**
-   * Maps a {@link ResolutionCodeDto} back into a {@link ResolutionCode} entity.
-   *
-   * <p>This is primarily useful in service or test code, not typically exposed to API clients.
-   *
-   * @param dto the DTO to map; may be {@code null}
-   * @return an {@link Optional} containing the mapped entity, or empty if {@code dto} was null
-   */
-  public Optional<ResolutionCode> toEntityFromReadDto(ResolutionCodeDto dto) {
-    return Optional.ofNullable(dto)
-        .map(
-            d ->
-                ResolutionCode.builder()
-                    .id(d.id())
-                    .resultCode(d.resultCode())
-                    .title(d.title())
-                    .wording(d.wording())
-                    .legislation(d.legislation())
-                    .destinationEmail1(d.destinationEmail1())
-                    .destinationEmail2(d.destinationEmail2())
-                    .startDate(d.startDate())
-                    .endDate(d.endDate())
-                    .build());
-  }
+    /**
+     * Maps a {@link ResolutionCodeDto} back into a {@link ResolutionCode} entity.
+     *
+     * <p>This is primarily useful in service or test code, not typically exposed to API clients.
+     *
+     * @param dto the DTO to map; may be {@code null}
+     * @return an {@link Optional} containing the mapped entity, or empty if {@code dto} was null
+     */
+    public Optional<ResolutionCode> toEntityFromReadDto(ResolutionCodeDto dto) {
+        return Optional.ofNullable(dto)
+                .map(
+                        d ->
+                                ResolutionCode.builder()
+                                        .id(d.id())
+                                        .resultCode(d.resultCode())
+                                        .title(d.title())
+                                        .wording(d.wording())
+                                        .legislation(d.legislation())
+                                        .destinationEmail1(d.destinationEmail1())
+                                        .destinationEmail2(d.destinationEmail2())
+                                        .startDate(d.startDate())
+                                        .endDate(d.endDate())
+                                        .build());
+    }
 
-  /**
-   * Maps a {@link ResolutionCode} entity into a lightweight {@link ResolutionCodeListItemDto}.
-   *
-   * <p>Intended for use in paginated search endpoints where only id, code, and title are required.
-   *
-   * @param entity the JPA entity to map; may be {@code null}
-   * @return an {@link Optional} containing the list item DTO, or empty if {@code entity} was null
-   */
-  public Optional<ResolutionCodeListItemDto> toListItem(ResolutionCode entity) {
-    return Optional.ofNullable(entity)
-        .map(e -> new ResolutionCodeListItemDto(e.getId(), e.getResultCode(), e.getTitle()));
-  }
+    /**
+     * Maps a {@link ResolutionCode} entity into a lightweight {@link ResolutionCodeListItemDto}.
+     *
+     * <p>Intended for use in paginated search endpoints where only id, code, and title are
+     * required.
+     *
+     * @param entity the JPA entity to map; may be {@code null}
+     * @return an {@link Optional} containing the list item DTO, or empty if {@code entity} was null
+     */
+    public Optional<ResolutionCodeListItemDto> toListItem(ResolutionCode entity) {
+        return Optional.ofNullable(entity)
+                .map(
+                        e ->
+                                new ResolutionCodeListItemDto(
+                                        e.getId(), e.getResultCode(), e.getTitle()));
+    }
 }

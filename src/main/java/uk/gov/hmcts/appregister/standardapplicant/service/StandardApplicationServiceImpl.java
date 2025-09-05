@@ -15,26 +15,27 @@ import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper
 @RequiredArgsConstructor
 public class StandardApplicationServiceImpl implements StandardApplicantService {
 
-  private final StandardApplicantRepository repository;
-  private final StandardApplicantMapper mapper;
+    private final StandardApplicantRepository repository;
+    private final StandardApplicantMapper mapper;
 
-  @Override
-  public List<StandardApplicantDto> findAll() {
-    final List<StandardApplicant> standardApplicants = repository.findAll();
+    @Override
+    public List<StandardApplicantDto> findAll() {
+        final List<StandardApplicant> standardApplicants = repository.findAll();
 
-    return standardApplicants.stream().map(mapper::toReadDto).toList();
-  }
+        return standardApplicants.stream().map(mapper::toReadDto).toList();
+    }
 
-  @Override
-  public StandardApplicantDto findById(Long id) {
-    final StandardApplicant standardApplicant =
-        repository
-            .findById(id)
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Standard applicant not found"));
+    @Override
+    public StandardApplicantDto findById(Long id) {
+        final StandardApplicant standardApplicant =
+                repository
+                        .findById(id)
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Standard applicant not found"));
 
-    return mapper.toReadDto(standardApplicant);
-  }
+        return mapper.toReadDto(standardApplicant);
+    }
 }

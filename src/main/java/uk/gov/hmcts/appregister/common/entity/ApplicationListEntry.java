@@ -38,98 +38,98 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class ApplicationListEntry extends BaseChangeableEntity implements Accountable, Versionable {
 
-  @Id
-  @Column(name = "ale_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
-  @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "ale_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
+    @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "al_al_id")
-  private ApplicationList applicationList;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "al_al_id")
+    private ApplicationList applicationList;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "sa_sa_id")
-  private StandardApplicant standardApplicant;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sa_sa_id")
+    private StandardApplicant standardApplicant;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ac_ac_id")
-  private ApplicationCode applicationCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ac_ac_id")
+    private ApplicationCode applicationCode;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "a_na_id")
-  private NameAddress anamedaddress;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "a_na_id")
+    private NameAddress anamedaddress;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "r_na_id")
-  private NameAddress rnameaddress;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "r_na_id")
+    private NameAddress rnameaddress;
 
-  @Column(name = "number_of_bulk_respondents")
-  private Short numberOfBulkRespondents;
+    @Column(name = "number_of_bulk_respondents")
+    private Short numberOfBulkRespondents;
 
-  @Column(name = "application_list_entry_wording", nullable = false)
-  private String applicationListEntryWording;
+    @Column(name = "application_list_entry_wording", nullable = false)
+    private String applicationListEntryWording;
 
-  @Column(name = "case_reference")
-  @Size(max = 15)
-  private String caseReference;
+    @Column(name = "case_reference")
+    @Size(max = 15)
+    private String caseReference;
 
-  @Column(name = "account_number")
-  @Size(max = 20)
-  private String accountNumber;
+    @Column(name = "account_number")
+    @Size(max = 20)
+    private String accountNumber;
 
-  @Column(name = "entry_rescheduled", nullable = false)
-  @Size(max = 1)
-  private String entryRescheduled;
+    @Column(name = "entry_rescheduled", nullable = false)
+    @Size(max = 1)
+    private String entryRescheduled;
 
-  @Column(name = "notes")
-  @Size(max = 4000)
-  private Boolean notes;
+    @Column(name = "notes")
+    @Size(max = 4000)
+    private Boolean notes;
 
-  @Column(name = "version", nullable = false)
-  private Long version;
+    @Column(name = "version", nullable = false)
+    private Long version;
 
-  @Column(name = "bulk_upload")
-  private String bulkUpload;
+    @Column(name = "bulk_upload")
+    private String bulkUpload;
 
-  @Column(name = "user_name")
-  private String userName;
+    @Column(name = "user_name")
+    private String userName;
 
-  @Column(name = "sequence_number", nullable = false)
-  private Short sequenceNumber;
+    @Column(name = "sequence_number", nullable = false)
+    private Short sequenceNumber;
 
-  @Column(name = "tcep_status")
-  private Short tcepStatus;
+    @Column(name = "tcep_status")
+    private Short tcepStatus;
 
-  @Column(name = "message_uuid")
-  private Short messageUuid;
+    @Column(name = "message_uuid")
+    private Short messageUuid;
 
-  @Column(name = "retry_count")
-  private Short retryCount;
+    @Column(name = "retry_count")
+    private Short retryCount;
 
-  @Column(name = "lodgement_date", nullable = false)
-  private OffsetDateTime lodgementDate;
+    @Column(name = "lodgement_date", nullable = false)
+    private OffsetDateTime lodgementDate;
 
-  @Override
-  public String getCreatedUser() {
-    return userName;
-  }
+    @Override
+    public String getCreatedUser() {
+        return userName;
+    }
 
-  @Override
-  public void setCreatedUser(String user) {
-    this.userName = user;
-  }
+    @Override
+    public void setCreatedUser(String user) {
+        this.userName = user;
+    }
 
-  @OneToMany(mappedBy = "applicationList")
-  private List<AppListEntryResolution> resolutions;
+    @OneToMany(mappedBy = "applicationList")
+    private List<AppListEntryResolution> resolutions;
 
-  @OneToMany(mappedBy = "appListEntry")
-  private List<AppListEntryOfficial> officials;
+    @OneToMany(mappedBy = "appListEntry")
+    private List<AppListEntryOfficial> officials;
 
-  @OneToMany(mappedBy = "appListEntry")
-  private List<AppListEntryFeeStatus> entryFeeStatuses;
+    @OneToMany(mappedBy = "appListEntry")
+    private List<AppListEntryFeeStatus> entryFeeStatuses;
 
-  @OneToMany(mappedBy = "appListEntryId")
-  private List<AppListEntryFeeId> entryFeeIds;
+    @OneToMany(mappedBy = "appListEntryId")
+    private List<AppListEntryFeeId> entryFeeIds;
 }

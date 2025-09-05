@@ -20,23 +20,23 @@ import uk.gov.hmcts.appregister.applicationentry.service.ApplicationActionsServi
 @RequiredArgsConstructor
 public class ApplicationActionsController {
 
-  private final ApplicationActionsService actionsService;
+    private final ApplicationActionsService actionsService;
 
-  @Operation(
-      summary = "Move multiple applications to a different application list",
-      operationId = "moveApplications")
-  @ApiResponses({
-    @ApiResponse(responseCode = "204", description = "Applications moved successfully"),
-    @ApiResponse(
-        responseCode = "403",
-        description = "User is not allowed to move one or more applications"),
-    @ApiResponse(responseCode = "404", description = "Target application list not found")
-  })
-  @PostMapping("/move")
-  public ResponseEntity<Void> moveApplications(
-      @RequestBody ApplicationMoveRequestDto request, @AuthenticationPrincipal Jwt jwt) {
-    String userId = jwt.getClaimAsString("oid");
-    actionsService.moveApplications(request.applicationIds(), request.targetListId(), userId);
-    return ResponseEntity.noContent().build();
-  }
+    @Operation(
+            summary = "Move multiple applications to a different application list",
+            operationId = "moveApplications")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Applications moved successfully"),
+        @ApiResponse(
+                responseCode = "403",
+                description = "User is not allowed to move one or more applications"),
+        @ApiResponse(responseCode = "404", description = "Target application list not found")
+    })
+    @PostMapping("/move")
+    public ResponseEntity<Void> moveApplications(
+            @RequestBody ApplicationMoveRequestDto request, @AuthenticationPrincipal Jwt jwt) {
+        String userId = jwt.getClaimAsString("oid");
+        actionsService.moveApplications(request.applicationIds(), request.targetListId(), userId);
+        return ResponseEntity.noContent().build();
+    }
 }

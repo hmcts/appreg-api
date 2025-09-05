@@ -18,50 +18,50 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticatedUser {
 
-  private static final String ROLES_CLAIM = "roles";
-  private static final String USER_UNKNOWN = "roles";
+    private static final String ROLES_CLAIM = "roles";
+    private static final String USER_UNKNOWN = "roles";
 
-  public String[] getRoles() {
-    if (getJwt() == null) {
-      return new String[0];
+    public String[] getRoles() {
+        if (getJwt() == null) {
+            return new String[0];
+        }
+
+        return getJwt().getClaimAsStringList(ROLES_CLAIM).toArray(new String[0]);
     }
 
-    return getJwt().getClaimAsStringList(ROLES_CLAIM).toArray(new String[0]);
-  }
-
-  /**
-   * Gets the user from the subject claim.
-   *
-   * @return The user
-   */
-  public String getUser() {
-    if (getJwt() == null) {
-      return "unknown";
+    /**
+     * Gets the user from the subject claim.
+     *
+     * @return The user
+     */
+    public String getUser() {
+        if (getJwt() == null) {
+            return "unknown";
+        }
+        return getJwt().getClaimAsString(JWTClaimNames.SUBJECT);
     }
-    return getJwt().getClaimAsString(JWTClaimNames.SUBJECT);
-  }
 
-  /**
-   * Returns a number that uniquely identifies the user.
-   *
-   * @return The user number
-   */
-  // TODO: We need a number to insert into the database. Not sure where we get the number from
-  public Long getUserNumber() {
-    if (getJwt() == null) {
-      return 0L;
+    /**
+     * Returns a number that uniquely identifies the user.
+     *
+     * @return The user number
+     */
+    // TODO: We need a number to insert into the database. Not sure where we get the number from
+    public Long getUserNumber() {
+        if (getJwt() == null) {
+            return 0L;
+        }
+        // TODO: What is the users number
+        return 0L;
     }
-    // TODO: What is the users number
-    return 0L;
-  }
 
-  /** gets the token from thread local using {@link} SecurityContextHolder}. */
-  private Jwt getJwt() {
-    if (SecurityContextHolder.getContext().getAuthentication() != null
-        && SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-            instanceof Jwt jwt) {
-      return jwt;
+    /** gets the token from thread local using {@link} SecurityContextHolder}. */
+    private Jwt getJwt() {
+        if (SecurityContextHolder.getContext().getAuthentication() != null
+                && SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                        instanceof Jwt jwt) {
+            return jwt;
+        }
+        return null;
     }
-    return null;
-  }
 }

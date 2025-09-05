@@ -5,7 +5,7 @@ import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 
 /** Service interface for managing application codes. */
 public interface ApplicationCodeService {
-  List<ApplicationCodeDto> findAll();
+    List<ApplicationCodeDto> findAll();
 
-  ApplicationCodeDto findByCode(String code);
+    ApplicationCodeDto findByCode(String code);
 }

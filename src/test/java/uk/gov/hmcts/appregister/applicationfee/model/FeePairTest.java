@@ -19,11 +19,11 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
  * the record.
  */
 public class FeePairTest {
-  @Test
-  void constructorAndAccessors_workWithNulls() {
-    FeePair pair = new FeePair(null, null);
+    @Test
+    void constructorAndAccessors_workWithNulls() {
+        FeePair pair = new FeePair(null, null);
 
-    assertNull(pair.mainFee());
-    assertNull(pair.offsetFee());
-  }
+        assertNull(pair.mainFee());
+        assertNull(pair.offsetFee());
+    }
 }

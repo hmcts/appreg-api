@@ -18,30 +18,31 @@ import uk.gov.hmcts.appregister.testutils.data.FeeTestData;
 @Slf4j
 public class FeeRepositoryTest extends BasePostgresIntegrationTest {
 
-  @Autowired private FeeRepository applicationFeeRepository;
+    @Autowired private FeeRepository applicationFeeRepository;
 
-  @Autowired private AuthenticatedUser loggedInUser;
+    @Autowired private AuthenticatedUser loggedInUser;
 
-  @Test
-  public void testBasicInsertionUpdate() throws Exception {
-    // test save
-    Fee fee = persistance.saveFee(new FeeTestData().someMinimal().build());
+    @Test
+    public void testBasicInsertionUpdate() throws Exception {
+        // test save
+        Fee fee = persistance.saveFee(new FeeTestData().someMinimal().build());
 
-    // assert that the save has occurred
-    long count = applicationFeeRepository.count();
-    log.info("ApplicationCode count: {}", 42, count);
+        // assert that the save has occurred
+        long count = applicationFeeRepository.count();
+        log.info("ApplicationCode count: {}", 42, count);
 
-    // test get
-    Optional<Fee> applicationCodeToAssertAgainst = applicationFeeRepository.findById(fee.getId());
+        // test get
+        Optional<Fee> applicationCodeToAssertAgainst =
+                applicationFeeRepository.findById(fee.getId());
 
-    // assert that the data that has been retrieved aligns with the data that we have stored
-    expectAllCommonEntityFields(fee, applicationFeeRepository);
-    assertNotNull(applicationCodeToAssertAgainst.get());
-    assertEquals(fee.getAmount(), applicationCodeToAssertAgainst.get().getAmount());
-    assertEquals(fee.getReference(), applicationCodeToAssertAgainst.get().getReference());
-    assertEquals(fee.getDescription(), applicationCodeToAssertAgainst.get().getDescription());
-    assertTrue(
-        DateUtil.equalsIgnoreMillis(
-            fee.getStartDate(), applicationCodeToAssertAgainst.get().getStartDate()));
-  }
+        // assert that the data that has been retrieved aligns with the data that we have stored
+        expectAllCommonEntityFields(fee, applicationFeeRepository);
+        assertNotNull(applicationCodeToAssertAgainst.get());
+        assertEquals(fee.getAmount(), applicationCodeToAssertAgainst.get().getAmount());
+        assertEquals(fee.getReference(), applicationCodeToAssertAgainst.get().getReference());
+        assertEquals(fee.getDescription(), applicationCodeToAssertAgainst.get().getDescription());
+        assertTrue(
+                DateUtil.equalsIgnoreMillis(
+                        fee.getStartDate(), applicationCodeToAssertAgainst.get().getStartDate()));
+    }
 }

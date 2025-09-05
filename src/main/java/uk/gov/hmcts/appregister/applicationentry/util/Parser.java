@@ -9,5 +9,5 @@ import org.springframework.web.multipart.MultipartFile;
  * @param <T> the type of objects to be parsed from the file
  */
 public interface Parser<T> {
-  List<T> parse(MultipartFile file);
+    List<T> parse(MultipartFile file);
 }

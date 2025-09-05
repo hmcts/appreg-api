@@ -14,53 +14,62 @@ import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapp
 @Component
 public class ApplicationListMapper {
 
-  private final NationalCourtHouseMapper courtHouseMapper;
+    private final NationalCourtHouseMapper courtHouseMapper;
 
-  public ApplicationListDto toReadDto(ApplicationList entity) {
-    if (entity == null) {
-      return null;
+    public ApplicationListDto toReadDto(ApplicationList entity) {
+        if (entity == null) {
+            return null;
+        }
+
+        /* var courthouseDto =
+                        java.util.Optional.ofNullable(entity.getCourthouse())
+                                .flatMap(courtHouseMapper::toReadDto) // Optional<NationalCourtHouseDto>
+                                .orElse(null); // <-- unwrap or null
+
+        */
+        // TODO: This will likely derive from a foreign key relation which does not currently exist
+        NationalCourtHouseDto courtHouseDto =
+                new NationalCourtHouseDto(
+                        null,
+                        entity.getCourthouseName(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null);
+
+        return new ApplicationListDto(
+                entity.getId(),
+                entity.getStatus(),
+                entity.getDate(),
+                entity.getTime().toString(),
+                entity.getDescription(),
+                courtHouseDto, // NationalCourtHouseDto (possibly null)
+                entity.getChangedBy().toString(),
+                entity.getChangedDate(),
+                entity.getVersion().intValue());
     }
 
-    /* var courthouseDto =
-                    java.util.Optional.ofNullable(entity.getCourthouse())
-                            .flatMap(courtHouseMapper::toReadDto) // Optional<NationalCourtHouseDto>
-                            .orElse(null); // <-- unwrap or null
+    public ApplicationList createEntityFromWriteDto(
+            ApplicationListWriteDto dto, NationalCourtHouse courtHouse) {
+        return ApplicationList.builder()
+                .status(dto.status())
+                .date(dto.date())
+                .time(dto.time())
+                .description(dto.description())
+                .courthouseName(courtHouse.getName())
+                .build();
+    }
 
-    */
-    // TODO: This will likely derive from a foreign key relation which does not currently exist
-    NationalCourtHouseDto courtHouseDto =
-        new NationalCourtHouseDto(
-            null, entity.getCourthouseName(), null, null, null, null, null, null, null, null);
-
-    return new ApplicationListDto(
-        entity.getId(),
-        entity.getStatus(),
-        entity.getDate(),
-        entity.getTime().toString(),
-        entity.getDescription(),
-        courtHouseDto, // NationalCourtHouseDto (possibly null)
-        entity.getChangedBy().toString(),
-        entity.getChangedDate(),
-        entity.getVersion().intValue());
-  }
-
-  public ApplicationList createEntityFromWriteDto(
-      ApplicationListWriteDto dto, NationalCourtHouse courtHouse) {
-    return ApplicationList.builder()
-        .status(dto.status())
-        .date(dto.date())
-        .time(dto.time())
-        .description(dto.description())
-        .courthouseName(courtHouse.getName())
-        .build();
-  }
-
-  public void updateEntityFromWriteDto(
-      ApplicationListWriteDto dto, ApplicationList entity, NationalCourtHouse courtHouse) {
-    entity.setStatus(dto.status());
-    entity.setDate(dto.date());
-    entity.setTime(dto.time());
-    entity.setDescription(dto.description());
-    entity.setCourthouseName(courtHouse.getName());
-  }
+    public void updateEntityFromWriteDto(
+            ApplicationListWriteDto dto, ApplicationList entity, NationalCourtHouse courtHouse) {
+        entity.setStatus(dto.status());
+        entity.setDate(dto.date());
+        entity.setTime(dto.time());
+        entity.setDescription(dto.description());
+        entity.setCourthouseName(courtHouse.getName());
+    }
 }

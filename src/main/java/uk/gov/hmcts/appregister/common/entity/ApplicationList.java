@@ -35,69 +35,69 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class ApplicationList extends BaseChangeableEntity implements Accountable, Versionable {
-  @Id
-  @Column(name = "al_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
-  @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "al_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
+    @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "application_list_status")
-  @Size(max = 6)
-  private String status;
+    @Column(name = "application_list_status")
+    @Size(max = 6)
+    private String status;
 
-  @Column(name = "application_list_date", nullable = false)
-  private OffsetDateTime date;
+    @Column(name = "application_list_date", nullable = false)
+    private OffsetDateTime date;
 
-  @Column(name = "application_list_time", nullable = false)
-  private OffsetDateTime time;
+    @Column(name = "application_list_time", nullable = false)
+    private OffsetDateTime time;
 
-  @Column(name = "courthouse_code")
-  @Size(max = 10)
-  private String courthouseCode;
+    @Column(name = "courthouse_code")
+    @Size(max = 10)
+    private String courthouseCode;
 
-  @Column(name = "other_courthouse")
-  @Size(max = 200)
-  private String description;
+    @Column(name = "other_courthouse")
+    @Size(max = 200)
+    private String description;
 
-  @Column(name = "list_description", nullable = false)
-  @Size(max = 200)
-  private LocalDate listDescription;
+    @Column(name = "list_description", nullable = false)
+    @Size(max = 200)
+    private LocalDate listDescription;
 
-  @Column(name = "user_name")
-  @Size(max = 250)
-  private String userName;
+    @Column(name = "user_name")
+    @Size(max = 250)
+    private String userName;
 
-  @Column(name = "courthouse_name")
-  @Size(max = 200)
-  private String courthouseName;
+    @Column(name = "courthouse_name")
+    @Size(max = 200)
+    private String courthouseName;
 
-  @Column(name = "version")
-  private Long version;
+    @Column(name = "version")
+    private Long version;
 
-  @Column(name = "duration_hour")
-  private short durationHour;
+    @Column(name = "duration_hour")
+    private short durationHour;
 
-  @Column(name = "duration_minute")
-  private short durationMinute;
+    @Column(name = "duration_minute")
+    private short durationMinute;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "cja_cja_id")
-  private CriminalJusticeArea cja;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cja_cja_id")
+    private CriminalJusticeArea cja;
 
-  @OneToMany(mappedBy = "applicationList")
-  private List<ApplicationListEntry> entries;
+    @OneToMany(mappedBy = "applicationList")
+    private List<ApplicationListEntry> entries;
 
-  @Override
-  public String getCreatedUser() {
-    return userName;
-  }
+    @Override
+    public String getCreatedUser() {
+        return userName;
+    }
 
-  @Override
-  public void setCreatedUser(String user) {
-    this.userName = user;
-  }
+    @Override
+    public void setCreatedUser(String user) {
+        this.userName = user;
+    }
 
-  @OneToMany(mappedBy = "applicationList")
-  private List<ApplicationRegister> registers;
+    @OneToMany(mappedBy = "applicationList")
+    private List<ApplicationRegister> registers;
 }

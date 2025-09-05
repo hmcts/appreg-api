@@ -26,49 +26,49 @@ import uk.gov.hmcts.appregister.testutils.stub.DatabasePersistance;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
 public abstract class BasePostgresIntegrationTest {
-  protected static PostgresCommand postgresCommand = new PostgresCommand();
+    protected static PostgresCommand postgresCommand = new PostgresCommand();
 
-  @Autowired private DatabaseReset reset;
+    @Autowired private DatabaseReset reset;
 
-  @Autowired protected DatabasePersistance persistance;
+    @Autowired protected DatabasePersistance persistance;
 
-  @BeforeEach
-  public void beforeEachTest() {
-    reset.resetSequences();
-    reset.resetDbData();
-  }
-
-  @DynamicPropertySource
-  static void registerPgProperties(DynamicPropertyRegistry registry) {
-    postgresCommand.start(registry);
-  }
-
-  public void expectAccountable(Accountable expected, Accountable actual) {
-    Assertions.assertEquals(expected.getCreatedUser(), actual.getCreatedUser());
-  }
-
-  public void expectVersionable(Versionable expected, Versionable actual) {
-    Assertions.assertEquals(expected.getVersion(), actual.getVersion());
-  }
-
-  public void expectChangeable(Changeable expected, Changeable actual) {
-    Assertions.assertEquals(expected.getChangedBy(), actual.getChangedBy());
-    Assertions.assertTrue(
-        DateUtil.equalsIgnoreMillis(expected.getChangedDate(), actual.getChangedDate()));
-  }
-
-  public void expectAllCommonEntityFields(Object expected, Object actual) {
-    if (expected instanceof Accountable expectedAccountable
-        && actual instanceof Accountable actualAccountable) {
-      expectAccountable(expectedAccountable, actualAccountable);
+    @BeforeEach
+    public void beforeEachTest() {
+        reset.resetSequences();
+        reset.resetDbData();
     }
-    if (expected instanceof Versionable expectedVersionable
-        && actual instanceof Versionable actualVersionable) {
-      expectVersionable(expectedVersionable, actualVersionable);
+
+    @DynamicPropertySource
+    static void registerPgProperties(DynamicPropertyRegistry registry) {
+        postgresCommand.start(registry);
     }
-    if (expected instanceof Changeable expectedChangeable
-        && actual instanceof Changeable actualChangeable) {
-      expectChangeable(expectedChangeable, actualChangeable);
+
+    public void expectAccountable(Accountable expected, Accountable actual) {
+        Assertions.assertEquals(expected.getCreatedUser(), actual.getCreatedUser());
     }
-  }
+
+    public void expectVersionable(Versionable expected, Versionable actual) {
+        Assertions.assertEquals(expected.getVersion(), actual.getVersion());
+    }
+
+    public void expectChangeable(Changeable expected, Changeable actual) {
+        Assertions.assertEquals(expected.getChangedBy(), actual.getChangedBy());
+        Assertions.assertTrue(
+                DateUtil.equalsIgnoreMillis(expected.getChangedDate(), actual.getChangedDate()));
+    }
+
+    public void expectAllCommonEntityFields(Object expected, Object actual) {
+        if (expected instanceof Accountable expectedAccountable
+                && actual instanceof Accountable actualAccountable) {
+            expectAccountable(expectedAccountable, actualAccountable);
+        }
+        if (expected instanceof Versionable expectedVersionable
+                && actual instanceof Versionable actualVersionable) {
+            expectVersionable(expectedVersionable, actualVersionable);
+        }
+        if (expected instanceof Changeable expectedChangeable
+                && actual instanceof Changeable actualChangeable) {
+            expectChangeable(expectedChangeable, actualChangeable);
+        }
+    }
 }

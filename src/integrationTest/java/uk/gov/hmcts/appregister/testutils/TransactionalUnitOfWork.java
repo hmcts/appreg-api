@@ -10,22 +10,22 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** A unit of work class that allows us to write custom code in a transactional. */
 @Component
 public class TransactionalUnitOfWork {
-  @Autowired private PlatformTransactionManager transactionManager;
+    @Autowired private PlatformTransactionManager transactionManager;
 
-  private TransactionTemplate transactionTemplate;
+    private TransactionTemplate transactionTemplate;
 
-  @Transactional()
-  public void inTransaction(Runnable runnable) {
-    runnable.run();
-  }
-
-  @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
-  @Transactional
-  public <T> T inTransaction(Callable<T> supplier) {
-    try {
-      return supplier.call();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    @Transactional()
+    public void inTransaction(Runnable runnable) {
+        runnable.run();
     }
-  }
+
+    @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
+    @Transactional
+    public <T> T inTransaction(Callable<T> supplier) {
+        try {
+            return supplier.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

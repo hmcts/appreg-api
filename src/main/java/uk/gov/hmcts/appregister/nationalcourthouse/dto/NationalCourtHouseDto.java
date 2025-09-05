@@ -38,13 +38,13 @@ import java.time.LocalDate;
  * </ul>
  */
 public record NationalCourtHouseDto(
-    Long id,
-    String name,
-    String courtType,
-    LocalDate startDate,
-    LocalDate endDate,
-    Long locationId,
-    Long psaId,
-    String courtLocationCode,
-    String welshName,
-    Long orgId) {}
+        Long id,
+        String name,
+        String courtType,
+        LocalDate startDate,
+        LocalDate endDate,
+        Long locationId,
+        Long psaId,
+        String courtLocationCode,
+        String welshName,
+        Long orgId) {}

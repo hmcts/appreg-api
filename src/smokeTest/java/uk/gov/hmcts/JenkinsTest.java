@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 
 class JenkinsTest {
 
-  private static final Logger logger = Logger.getLogger(JenkinsTest.class.getName());
+    private static final Logger logger = Logger.getLogger(JenkinsTest.class.getName());
 
-  @Test
-  void test() {
-    logger.info("Jenkins test executed successfully.");
-  }
+    @Test
+    void test() {
+        logger.info("Jenkins test executed successfully.");
+    }
 }

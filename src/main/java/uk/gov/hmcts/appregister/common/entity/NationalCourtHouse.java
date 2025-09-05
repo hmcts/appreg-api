@@ -57,51 +57,51 @@ import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapp
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class NationalCourtHouse extends BaseChangeableEntity implements Versionable {
 
-  // Primary key identifier for the courthouse record.
-  @Id
-  @Column(name = "nch_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "nch_gen")
-  @SequenceGenerator(name = "nch_gen", sequenceName = "nch_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    // Primary key identifier for the courthouse record.
+    @Id
+    @Column(name = "nch_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "nch_gen")
+    @SequenceGenerator(name = "nch_gen", sequenceName = "nch_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  // Name of the courthouse (e.g. "Cardiff Crown Court").
-  @Column(name = "courthouse_name", nullable = false)
-  private String name;
+    // Name of the courthouse (e.g. "Cardiff Crown Court").
+    @Column(name = "courthouse_name", nullable = false)
+    private String name;
 
-  // Type of court, such as "CROWN" or "MAGISTRATES".
-  @Column(name = "version_number", nullable = false)
-  private Long version;
+    // Type of court, such as "CROWN" or "MAGISTRATES".
+    @Column(name = "version_number", nullable = false)
+    private Long version;
 
-  @Column(name = "court_type", nullable = false)
-  private String courtType;
+    @Column(name = "court_type", nullable = false)
+    private String courtType;
 
-  // Date when this record became effective. Always required.
-  @Column(name = "start_date", nullable = false)
-  private LocalDate startDate;
+    // Date when this record became effective. Always required.
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
 
-  // Date when this record ended, or {@code null} if still active.
-  @Column(name = "end_date")
-  private LocalDate endDate;
+    // Date when this record ended, or {@code null} if still active.
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
-  // Foreign key reference to a linked location record.
-  @Column(name = "loc_loc_id")
-  private Long locationId;
+    // Foreign key reference to a linked location record.
+    @Column(name = "loc_loc_id")
+    private Long locationId;
 
-  // Foreign key reference to the petty sessions area (PSA).
-  @ManyToOne()
-  @JoinColumn(name = "psa_psa_id", nullable = false)
-  private PettySessionalArea psaId;
+    // Foreign key reference to the petty sessions area (PSA).
+    @ManyToOne()
+    @JoinColumn(name = "psa_psa_id", nullable = false)
+    private PettySessionalArea psaId;
 
-  // Business reference code for this court location, used in integrations.
-  @Column(name = "court_location_code")
-  private String courtLocationCode;
+    // Business reference code for this court location, used in integrations.
+    @Column(name = "court_location_code")
+    private String courtLocationCode;
 
-  // Welsh-language name for the courthouse, if available.
-  @Column(name = "sl_courthouse_name")
-  private String welshName;
+    // Welsh-language name for the courthouse, if available.
+    @Column(name = "sl_courthouse_name")
+    private String welshName;
 
-  // Organisation identifier linking this court to its parent organisation.
-  @Column(name = "norg_id")
-  private Long orgId;
+    // Organisation identifier linking this court to its parent organisation.
+    @Column(name = "norg_id")
+    private Long orgId;
 }

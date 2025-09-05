@@ -8,5 +8,5 @@ package uk.gov.hmcts.appregister.shared.validation;
  * @param end range applied to endDate (nullable)
  */
 public record DateRangeRequest(DateRange start, DateRange end) {
-  // data carrier only
+    // data carrier only
 }

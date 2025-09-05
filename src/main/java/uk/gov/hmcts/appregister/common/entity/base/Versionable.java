@@ -5,7 +5,7 @@ import jakarta.persistence.EntityListeners;
 /** Interface to be implemented by entities that require versioning. */
 @EntityListeners(PreCreateUpdateEntityListener.class)
 public interface Versionable {
-  void setVersion(Long version);
+    void setVersion(Long version);
 
-  Long getVersion();
+    Long getVersion();
 }

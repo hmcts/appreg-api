@@ -29,94 +29,94 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class NameAddress extends BaseChangeableEntity implements Accountable {
-  @Id
-  @Column(name = "na_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
-  @SequenceGenerator(name = "na_gen", sequenceName = "na_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "na_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
+    @SequenceGenerator(name = "na_gen", sequenceName = "na_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "code")
-  private String code;
+    @Column(name = "code")
+    private String code;
 
-  @Column(name = "name")
-  private String name;
+    @Column(name = "name")
+    private String name;
 
-  @Column(name = "title")
-  private String title;
+    @Column(name = "title")
+    private String title;
 
-  @Column(name = "forename_1")
-  @Size(max = 100)
-  private String forename1;
+    @Column(name = "forename_1")
+    @Size(max = 100)
+    private String forename1;
 
-  @Column(name = "forename_2")
-  @Size(max = 100)
-  private String forename2;
+    @Column(name = "forename_2")
+    @Size(max = 100)
+    private String forename2;
 
-  @Column(name = "forename_3")
-  @Size(max = 100)
-  private String forename3;
+    @Column(name = "forename_3")
+    @Size(max = 100)
+    private String forename3;
 
-  @Column(name = "surname")
-  private String surname;
+    @Column(name = "surname")
+    private String surname;
 
-  @Column(name = "address_l1")
-  @Size(max = 35)
-  private String address1;
+    @Column(name = "address_l1")
+    @Size(max = 35)
+    private String address1;
 
-  @Column(name = "address_l2")
-  @Size(max = 35)
-  private String address2;
+    @Column(name = "address_l2")
+    @Size(max = 35)
+    private String address2;
 
-  @Column(name = "address_l3")
-  @Size(max = 35)
-  private String address3;
+    @Column(name = "address_l3")
+    @Size(max = 35)
+    private String address3;
 
-  @Column(name = "address_l4")
-  @Size(max = 35)
-  private String address4;
+    @Column(name = "address_l4")
+    @Size(max = 35)
+    private String address4;
 
-  @Column(name = "address_l5")
-  @Size(max = 35)
-  private String address5;
+    @Column(name = "address_l5")
+    @Size(max = 35)
+    private String address5;
 
-  @Column(name = "postcode")
-  @Size(max = 8)
-  private String postcode;
+    @Column(name = "postcode")
+    @Size(max = 8)
+    private String postcode;
 
-  @Column(name = "email_address")
-  @Size(max = 253)
-  private String emailAddress;
+    @Column(name = "email_address")
+    @Size(max = 253)
+    private String emailAddress;
 
-  @Column(name = "telephone_number")
-  @Size(max = 20)
-  private String telephoneNumber;
+    @Column(name = "telephone_number")
+    @Size(max = 20)
+    private String telephoneNumber;
 
-  @Column(name = "mobile_number")
-  @Size(max = 20)
-  private String mobileNumber;
+    @Column(name = "mobile_number")
+    @Size(max = 20)
+    private String mobileNumber;
 
-  @Column(name = "version", nullable = false)
-  private BigDecimal version;
+    @Column(name = "version", nullable = false)
+    private BigDecimal version;
 
-  @Column(name = "user_name", nullable = false)
-  @Size(max = 250)
-  private String userName;
+    @Column(name = "user_name", nullable = false)
+    @Size(max = 250)
+    private String userName;
 
-  @Column(name = "date_of_birth")
-  private OffsetDateTime dateOfBirth;
+    @Column(name = "date_of_birth")
+    private OffsetDateTime dateOfBirth;
 
-  @Column(name = "dms_id")
-  @Size(max = 20)
-  private Long dmsId;
+    @Column(name = "dms_id")
+    @Size(max = 20)
+    private Long dmsId;
 
-  @Override
-  public String getCreatedUser() {
-    return userName;
-  }
+    @Override
+    public String getCreatedUser() {
+        return userName;
+    }
 
-  @Override
-  public void setCreatedUser(String user) {
-    this.userName = user;
-  }
+    @Override
+    public void setCreatedUser(String user) {
+        this.userName = user;
+    }
 }

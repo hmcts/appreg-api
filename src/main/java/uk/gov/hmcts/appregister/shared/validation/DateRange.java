@@ -10,5 +10,5 @@ import java.time.LocalDate;
  * @param to end date (nullable)
  */
 public record DateRange(LocalDate from, LocalDate to) {
-  // carrier type only
+    // carrier type only
 }

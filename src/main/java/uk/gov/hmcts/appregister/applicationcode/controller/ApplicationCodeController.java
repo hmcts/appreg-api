@@ -18,24 +18,24 @@ import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeService;
 @RequestMapping("/application-codes")
 @RequiredArgsConstructor
 public class ApplicationCodeController {
-  private final ApplicationCodeService service;
+    private final ApplicationCodeService service;
 
-  @Operation(summary = "Get all application codes", operationId = "getAllApplicationCodes")
-  @ApiResponse(
-      responseCode = "200",
-      description = "List of application codes retrieved successfully")
-  @GetMapping
-  public ResponseEntity<List<ApplicationCodeDto>> getAll() {
-    return ResponseEntity.ok(service.findAll());
-  }
+    @Operation(summary = "Get all application codes", operationId = "getAllApplicationCodes")
+    @ApiResponse(
+            responseCode = "200",
+            description = "List of application codes retrieved successfully")
+    @GetMapping
+    public ResponseEntity<List<ApplicationCodeDto>> getAll() {
+        return ResponseEntity.ok(service.findAll());
+    }
 
-  @Operation(summary = "Get a single application code by its code")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Application code found"),
-    @ApiResponse(responseCode = "404", description = "Application code not found")
-  })
-  @GetMapping("/{code}")
-  public ResponseEntity<ApplicationCodeDto> getByCode(@PathVariable String code) {
-    return ResponseEntity.ok(service.findByCode(code));
-  }
+    @Operation(summary = "Get a single application code by its code")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Application code found"),
+        @ApiResponse(responseCode = "404", description = "Application code not found")
+    })
+    @GetMapping("/{code}")
+    public ResponseEntity<ApplicationCodeDto> getByCode(@PathVariable String code) {
+        return ResponseEntity.ok(service.findByCode(code));
+    }
 }

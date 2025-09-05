@@ -32,37 +32,37 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Fee implements Accountable, Changeable, Versionable {
 
-  @Id
-  @Column(name = "fee_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fee_gen")
-  @SequenceGenerator(name = "fee_gen", sequenceName = "fee_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "fee_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fee_gen")
+    @SequenceGenerator(name = "fee_gen", sequenceName = "fee_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "fee_reference", nullable = false, length = 12)
-  private String reference;
+    @Column(name = "fee_reference", nullable = false, length = 12)
+    private String reference;
 
-  @Column(name = "fee_description", nullable = false, length = 250)
-  private String description;
+    @Column(name = "fee_description", nullable = false, length = 250)
+    private String description;
 
-  @Column(name = "fee_value", nullable = false)
-  private Double amount;
+    @Column(name = "fee_value", nullable = false)
+    private Double amount;
 
-  @Column(name = "fee_start_date", nullable = false)
-  private OffsetDateTime startDate;
+    @Column(name = "fee_start_date", nullable = false)
+    private OffsetDateTime startDate;
 
-  @Column(name = "fee_end_date")
-  private OffsetDateTime endDate;
+    @Column(name = "fee_end_date")
+    private OffsetDateTime endDate;
 
-  @Column(name = "fee_version", nullable = false)
-  private Long version;
+    @Column(name = "fee_version", nullable = false)
+    private Long version;
 
-  @Column(name = "fee_changed_by", nullable = false)
-  private Long changedBy;
+    @Column(name = "fee_changed_by", nullable = false)
+    private Long changedBy;
 
-  @Column(name = "fee_changed_date", nullable = false)
-  private OffsetDateTime changedDate;
+    @Column(name = "fee_changed_date", nullable = false)
+    private OffsetDateTime changedDate;
 
-  @Column(name = "fee_user_name", nullable = false)
-  private String createdUser;
+    @Column(name = "fee_user_name", nullable = false)
+    private String createdUser;
 }

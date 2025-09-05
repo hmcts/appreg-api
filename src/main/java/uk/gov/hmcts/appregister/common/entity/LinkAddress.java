@@ -31,42 +31,42 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class LinkAddress extends BaseChangeableEntity implements Versionable {
-  @Id
-  @Column(name = "la_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "la_gen")
-  @SequenceGenerator(name = "la_gen", sequenceName = "la_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+    @Id
+    @Column(name = "la_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "la_gen")
+    @SequenceGenerator(name = "la_gen", sequenceName = "la_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @Column(name = "no_fixed_abode", nullable = false)
-  private String noFixedAbode;
+    @Column(name = "no_fixed_abode", nullable = false)
+    private String noFixedAbode;
 
-  @Column(name = "la_type", nullable = false)
-  private String laType;
+    @Column(name = "la_type", nullable = false)
+    private String laType;
 
-  @Column(name = "start_date", nullable = false)
-  private OffsetDateTime startDate;
+    @Column(name = "start_date", nullable = false)
+    private OffsetDateTime startDate;
 
-  @Column(name = "end_date")
-  private OffsetDateTime endDate;
+    @Column(name = "end_date")
+    private OffsetDateTime endDate;
 
-  @Column(name = "version_number", nullable = false)
-  private Long version;
+    @Column(name = "version_number", nullable = false)
+    private Long version;
 
-  @Column(name = "head_office_indicator")
-  @Size(max = 1)
-  private String headOfficeIndicator;
+    @Column(name = "head_office_indicator")
+    @Size(max = 1)
+    private String headOfficeIndicator;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "adr_adr_id")
-  private Address addresses;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adr_adr_id")
+    private Address addresses;
 
-  @Column(name = "bu_bu_id")
-  private Long buId;
+    @Column(name = "bu_bu_id")
+    private Long buId;
 
-  @Column(name = "er_er_id")
-  private Long erId;
+    @Column(name = "er_er_id")
+    private Long erId;
 
-  @Column(name = "loc_loc_id")
-  private Long locId;
+    @Column(name = "loc_loc_id")
+    private Long locId;
 }

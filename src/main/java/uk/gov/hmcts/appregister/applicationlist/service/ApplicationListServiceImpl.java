@@ -20,74 +20,82 @@ import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
 
-  private final ApplicationListRepository repository;
-  private final ApplicationListMapper mapper;
-  private final NationalCourtHouseRepository courtHouseRepository;
-  private final AuthenticatedUser appRegUser;
+    private final ApplicationListRepository repository;
+    private final ApplicationListMapper mapper;
+    private final NationalCourtHouseRepository courtHouseRepository;
+    private final AuthenticatedUser appRegUser;
 
-  @Override
-  public List<ApplicationListDto> getAllForUser() {
-    return repository.findAllByUserName(appRegUser.getUser()).stream()
-        .map(mapper::toReadDto)
-        .toList();
-  }
+    @Override
+    public List<ApplicationListDto> getAllForUser() {
+        return repository.findAllByUserName(appRegUser.getUser()).stream()
+                .map(mapper::toReadDto)
+                .toList();
+    }
 
-  @Override
-  public ApplicationListDto getByIdForUser(Long id) {
-    return repository
-        .findByIdAndUserName(id, appRegUser.getUser())
-        .map(mapper::toReadDto)
-        .orElseThrow(
-            () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application list not found"));
-  }
+    @Override
+    public ApplicationListDto getByIdForUser(Long id) {
+        return repository
+                .findByIdAndUserName(id, appRegUser.getUser())
+                .map(mapper::toReadDto)
+                .orElseThrow(
+                        () ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "Application list not found"));
+    }
 
-  @Override
-  @Transactional
-  public ApplicationListDto create(ApplicationListWriteDto dto) {
-    NationalCourtHouse courthouse =
-        courtHouseRepository
-            .findById(dto.courthouseId())
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Courthouse not found"));
+    @Override
+    @Transactional
+    public ApplicationListDto create(ApplicationListWriteDto dto) {
+        NationalCourtHouse courthouse =
+                courtHouseRepository
+                        .findById(dto.courthouseId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST, "Courthouse not found"));
 
-    ApplicationList entity = mapper.createEntityFromWriteDto(dto, courthouse);
+        ApplicationList entity = mapper.createEntityFromWriteDto(dto, courthouse);
 
-    return mapper.toReadDto(repository.save(entity));
-  }
+        return mapper.toReadDto(repository.save(entity));
+    }
 
-  @Override
-  @Transactional
-  public ApplicationListDto update(Long id, ApplicationListWriteDto dto) {
-    ApplicationList existing =
-        repository
-            .findByIdAndUserName(id, appRegUser.getUser())
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Application list not found"));
+    @Override
+    @Transactional
+    public ApplicationListDto update(Long id, ApplicationListWriteDto dto) {
+        ApplicationList existing =
+                repository
+                        .findByIdAndUserName(id, appRegUser.getUser())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Application list not found"));
 
-    NationalCourtHouse courthouse =
-        courtHouseRepository
-            .findById(dto.courthouseId())
-            .orElseThrow(
-                () -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Courthouse not found"));
+        NationalCourtHouse courthouse =
+                courtHouseRepository
+                        .findById(dto.courthouseId())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST, "Courthouse not found"));
 
-    mapper.updateEntityFromWriteDto(dto, existing, courthouse);
+        mapper.updateEntityFromWriteDto(dto, existing, courthouse);
 
-    return mapper.toReadDto(repository.save(existing));
-  }
+        return mapper.toReadDto(repository.save(existing));
+    }
 
-  @Override
-  @Transactional
-  public void delete(Long id) {
-    ApplicationList list =
-        repository
-            .findByIdAndUserName(id, appRegUser.getUser())
-            .orElseThrow(
-                () ->
-                    new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Application list not found or access denied"));
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        ApplicationList list =
+                repository
+                        .findByIdAndUserName(id, appRegUser.getUser())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "Application list not found or access denied"));
 
-    repository.delete(list);
-  }
+        repository.delete(list);
+    }
 }

@@ -33,33 +33,33 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class AppListEntryResolution extends BaseChangeableEntity
-    implements Accountable, Versionable {
-  @Id
-  @Column(name = "aler_id", nullable = false, updatable = false)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aler_gen")
-  @SequenceGenerator(name = "aler_gen", sequenceName = "aler_seq", allocationSize = 1)
-  @EqualsAndHashCode.Include
-  private Long id;
+        implements Accountable, Versionable {
+    @Id
+    @Column(name = "aler_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aler_gen")
+    @SequenceGenerator(name = "aler_gen", sequenceName = "aler_seq", allocationSize = 1)
+    @EqualsAndHashCode.Include
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ale_ale_id", nullable = false)
-  private ApplicationListEntry applicationList;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ale_ale_id", nullable = false)
+    private ApplicationListEntry applicationList;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "rc_rc_id", nullable = false)
-  private ResolutionCode resolutionCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "rc_rc_id", nullable = false)
+    private ResolutionCode resolutionCode;
 
-  @Column(name = "al_entry_resolution_wording", nullable = false)
-  private String resolutionWording;
+    @Column(name = "al_entry_resolution_wording", nullable = false)
+    private String resolutionWording;
 
-  @Column(name = "al_entry_resolution_officer ", nullable = false)
-  @Size(max = 1000)
-  private String resolutionOfficer;
+    @Column(name = "al_entry_resolution_officer ", nullable = false)
+    @Size(max = 1000)
+    private String resolutionOfficer;
 
-  @Column(name = "version", nullable = false)
-  private Long version;
+    @Column(name = "version", nullable = false)
+    private Long version;
 
-  @Column(name = "user_name")
-  @Size(max = 250)
-  private String createdUser;
+    @Column(name = "user_name")
+    @Size(max = 250)
+    private String createdUser;
 }

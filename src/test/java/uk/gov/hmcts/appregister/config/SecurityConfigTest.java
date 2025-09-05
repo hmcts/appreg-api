@@ -13,25 +13,25 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 
 class SecurityConfigTest {
 
-  SecurityConfig config = new SecurityConfig();
+    SecurityConfig config = new SecurityConfig();
 
-  @Test
-  void jwtAuthConverter_mapsRolesClaimToAuthorities() {
-    JwtAuthenticationConverter converter = config.jwtAuthConverter();
+    @Test
+    void jwtAuthConverter_mapsRolesClaimToAuthorities() {
+        JwtAuthenticationConverter converter = config.jwtAuthConverter();
 
-    Jwt jwt =
-        new Jwt(
-            "t",
-            Instant.now(),
-            Instant.now().plusSeconds(60),
-            Map.of("alg", "none"),
-            Map.of("roles", List.of("Admin", "User")));
+        Jwt jwt =
+                new Jwt(
+                        "t",
+                        Instant.now(),
+                        Instant.now().plusSeconds(60),
+                        Map.of("alg", "none"),
+                        Map.of("roles", List.of("Admin", "User")));
 
-    AbstractAuthenticationToken auth = converter.convert(jwt);
+        AbstractAuthenticationToken auth = converter.convert(jwt);
 
-    assertThat(auth).isNotNull();
-    assertThat(auth.getAuthorities())
-        .extracting(GrantedAuthority::getAuthority)
-        .containsExactlyInAnyOrder("ROLE_Admin", "ROLE_User");
-  }
+        assertThat(auth).isNotNull();
+        assertThat(auth.getAuthorities())
+                .extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("ROLE_Admin", "ROLE_User");
+    }
 }

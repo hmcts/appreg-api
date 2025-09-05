@@ -33,28 +33,28 @@ import uk.gov.hmcts.appregister.common.entity.compositeid.AppListEntryFeeComposi
 @Getter
 @Setter
 public class AppListEntryFeeId extends BaseChangeableEntity implements Accountable, Versionable {
-  @Id
-  @Column(name = "ale_ale_id", nullable = false)
-  @EqualsAndHashCode.Include
-  private Long appListEntryId;
+    @Id
+    @Column(name = "ale_ale_id", nullable = false)
+    @EqualsAndHashCode.Include
+    private Long appListEntryId;
 
-  @Id
-  @Column(name = "fee_fee_id", nullable = false)
-  @EqualsAndHashCode.Include
-  private Long feeId;
+    @Id
+    @Column(name = "fee_fee_id", nullable = false)
+    @EqualsAndHashCode.Include
+    private Long feeId;
 
-  @ManyToOne()
-  @JoinColumn(name = "entryId", nullable = false)
-  private ApplicationListEntry entry;
+    @ManyToOne()
+    @JoinColumn(name = "entryId", nullable = false)
+    private ApplicationListEntry entry;
 
-  @ManyToOne()
-  @JoinColumn(name = "feeId", nullable = false)
-  private Fee fee;
+    @ManyToOne()
+    @JoinColumn(name = "feeId", nullable = false)
+    private Fee fee;
 
-  @Column(name = "version", nullable = false)
-  private Long version;
+    @Column(name = "version", nullable = false)
+    private Long version;
 
-  @Column(name = "user_name", nullable = false)
-  @Size(max = 250)
-  private String createdUser;
+    @Column(name = "user_name", nullable = false)
+    @Size(max = 250)
+    private String createdUser;
 }

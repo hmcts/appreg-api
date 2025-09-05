@@ -18,48 +18,48 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 @Component
 @RequiredArgsConstructor
 public class DatabaseReset {
-  private final EntityManagerFactory entityManagerFactory;
+    private final EntityManagerFactory entityManagerFactory;
 
-  @Autowired ApplicationCodeRepository applicationCodeRepository;
+    @Autowired ApplicationCodeRepository applicationCodeRepository;
 
-  @Value("${spring.sql.init.schema-locations}")
-  private String sqlInitSchema;
+    @Value("${spring.sql.init.schema-locations}")
+    private String sqlInitSchema;
 
-  /**
-   * A bit crude but a sequence number that manages the data beyond all the baseline data sequence
-   * numbers. This means we can manage data targeted around specific tests.
-   */
-  private static final int SEQUENCE_START_VALUE = 321364044;
+    /**
+     * A bit crude but a sequence number that manages the data beyond all the baseline data sequence
+     * numbers. This means we can manage data targeted around specific tests.
+     */
+    private static final int SEQUENCE_START_VALUE = 321364044;
 
-  @Transactional
-  public void resetDbData() {
-    resetSequences();
-    applicationCodeRepository.deleteAll(
-        applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-  }
-
-  @Transactional
-  public void resetSequences() {
-    try (EntityManager em = entityManagerFactory.createEntityManager()) {
-      em.getTransaction().begin();
-      final Query query =
-          em.createNativeQuery(
-              "SELECT sequence_name FROM information_schema.sequences "
-                  + "WHERE sequence_schema = '"
-                  + sqlInitSchema
-                  + "'");
-      final List sequences = query.getResultList();
-      for (Object seqName : sequences) {
-        em.createNativeQuery(
-                "ALTER SEQUENCE "
-                    + sqlInitSchema
-                    + "."
-                    + seqName
-                    + " RESTART WITH "
-                    + SEQUENCE_START_VALUE)
-            .executeUpdate();
-      }
-      em.getTransaction().commit();
+    @Transactional
+    public void resetDbData() {
+        resetSequences();
+        applicationCodeRepository.deleteAll(
+                applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
     }
-  }
+
+    @Transactional
+    public void resetSequences() {
+        try (EntityManager em = entityManagerFactory.createEntityManager()) {
+            em.getTransaction().begin();
+            final Query query =
+                    em.createNativeQuery(
+                            "SELECT sequence_name FROM information_schema.sequences "
+                                    + "WHERE sequence_schema = '"
+                                    + sqlInitSchema
+                                    + "'");
+            final List sequences = query.getResultList();
+            for (Object seqName : sequences) {
+                em.createNativeQuery(
+                                "ALTER SEQUENCE "
+                                        + sqlInitSchema
+                                        + "."
+                                        + seqName
+                                        + " RESTART WITH "
+                                        + SEQUENCE_START_VALUE)
+                        .executeUpdate();
+            }
+            em.getTransaction().commit();
+        }
+    }
 }

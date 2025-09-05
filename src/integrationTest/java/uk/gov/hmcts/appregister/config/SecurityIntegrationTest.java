@@ -17,30 +17,30 @@ import org.springframework.test.web.servlet.MvcResult;
 @AutoConfigureMockMvc
 public class SecurityIntegrationTest {
 
-  @DynamicPropertySource
-  static void registerPgProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.flyway.enabled", () -> "false");
-  }
+    @DynamicPropertySource
+    static void registerPgProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.flyway.enabled", () -> "false");
+    }
 
-  @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-  @Autowired
-  private transient MockMvc mockMvc;
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    private transient MockMvc mockMvc;
 
-  @Test
-  @DisplayName("Should allow unauthenticated access to /health")
-  void healthEndpoint_shouldAllowAnonymousAccess() throws Exception {
-    MvcResult result = mockMvc.perform(get("/health")).andExpect(status().isOk()).andReturn();
-  }
+    @Test
+    @DisplayName("Should allow unauthenticated access to /health")
+    void healthEndpoint_shouldAllowAnonymousAccess() throws Exception {
+        MvcResult result = mockMvc.perform(get("/health")).andExpect(status().isOk()).andReturn();
+    }
 
-  @Test
-  @DisplayName("Should allow unauthenticated access to /swagger-ui/index.html")
-  void swaggerEndpoint_shouldAllowAnonymousAccess() throws Exception {
-    mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
-  }
+    @Test
+    @DisplayName("Should allow unauthenticated access to /swagger-ui/index.html")
+    void swaggerEndpoint_shouldAllowAnonymousAccess() throws Exception {
+        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
+    }
 
-  @Test
-  @DisplayName("Should return 401 for protected endpoint without JWT")
-  void protectedEndpoint_shouldRequireAuthentication() throws Exception {
-    mockMvc.perform(get("/some-protected-endpoint")).andExpect(status().isUnauthorized());
-  }
+    @Test
+    @DisplayName("Should return 401 for protected endpoint without JWT")
+    void protectedEndpoint_shouldRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/some-protected-endpoint")).andExpect(status().isUnauthorized());
+    }
 }

@@ -11,15 +11,15 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 @Service
 @RequiredArgsConstructor
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
-  private final FeeRepository feeRepository;
+    private final FeeRepository feeRepository;
 
-  public FeePair resolveFeePair(String feeReference) {
-    List<Fee> fees = feeRepository.findByReference(feeReference);
+    public FeePair resolveFeePair(String feeReference) {
+        List<Fee> fees = feeRepository.findByReference(feeReference);
 
-    Fee mainFee = fees.stream().findFirst().orElse(null);
+        Fee mainFee = fees.stream().findFirst().orElse(null);
 
-    // TODO: No offset fee in the DB yet so second fee will always be offset
-    Fee offsetFee = fees.size() > 1 ? fees.get(1) : null;
-    return new FeePair(mainFee, offsetFee);
-  }
+        // TODO: No offset fee in the DB yet so second fee will always be offset
+        Fee offsetFee = fees.size() > 1 ? fees.get(1) : null;
+        return new FeePair(mainFee, offsetFee);
+    }
 }

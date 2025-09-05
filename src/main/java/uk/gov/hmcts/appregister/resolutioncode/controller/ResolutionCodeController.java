@@ -43,74 +43,77 @@ import uk.gov.hmcts.appregister.shared.validation.DateRangeValidator;
 @RequiredArgsConstructor
 public class ResolutionCodeController {
 
-  /** Application service that encapsulates search and lookup logic. */
-  private final ResolutionCodeService service;
+    /** Application service that encapsulates search and lookup logic. */
+    private final ResolutionCodeService service;
 
-  /** Centralised validator for start/end date ranges. */
-  private final DateRangeValidator dateRangeValidator;
+    /** Centralised validator for start/end date ranges. */
+    private final DateRangeValidator dateRangeValidator;
 
-  /**
-   * Returns a paginated, filterable list of resolution codes.
-   *
-   * <p><strong>Filters:</strong>
-   *
-   * <ul>
-   *   <li>{@code code} – case-insensitive partial match.
-   *   <li>{@code title} – case-insensitive partial match.
-   *   <li>{@code startDateFrom}/{@code startDateTo} – inclusive range on {@code startDate}.
-   *   <li>{@code endDateFrom}/{@code endDateTo} – inclusive range on {@code endDate}.
-   * </ul>
-   *
-   * <p><strong>Dates:</strong> ISO-8601 ({@code yyyy-MM-dd}). Supplying only one bound applies a
-   * single-sided range; supplying both bounds must satisfy {@code from <= to} (validated here).
-   *
-   * @return {@code 200 OK} with a {@link Page} of {@link ResolutionCodeListItemDto}.
-   */
-  @Operation(summary = "Get result codes (paginated, filterable)")
-  @ApiResponse(responseCode = "200", description = "List of result codes retrieved successfully")
-  @GetMapping
-  public ResponseEntity<Page<ResolutionCodeListItemDto>> list(
-      @RequestParam(required = false) String code,
-      @RequestParam(required = false) String title,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate startDateFrom,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate startDateTo,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate endDateFrom,
-      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-          LocalDate endDateTo,
-      // Default sort: title ASC; clients can override with ?sort=field,desc etc.
-      @org.springframework.data.web.PageableDefault(sort = "title", direction = Sort.Direction.ASC)
-          Pageable pageable) {
-    // Delegate range checks (returns 400 via exception on invalid input).
-    dateRangeValidator.validate(startDateFrom, startDateTo, endDateFrom, endDateTo);
+    /**
+     * Returns a paginated, filterable list of resolution codes.
+     *
+     * <p><strong>Filters:</strong>
+     *
+     * <ul>
+     *   <li>{@code code} – case-insensitive partial match.
+     *   <li>{@code title} – case-insensitive partial match.
+     *   <li>{@code startDateFrom}/{@code startDateTo} – inclusive range on {@code startDate}.
+     *   <li>{@code endDateFrom}/{@code endDateTo} – inclusive range on {@code endDate}.
+     * </ul>
+     *
+     * <p><strong>Dates:</strong> ISO-8601 ({@code yyyy-MM-dd}). Supplying only one bound applies a
+     * single-sided range; supplying both bounds must satisfy {@code from <= to} (validated here).
+     *
+     * @return {@code 200 OK} with a {@link Page} of {@link ResolutionCodeListItemDto}.
+     */
+    @Operation(summary = "Get result codes (paginated, filterable)")
+    @ApiResponse(responseCode = "200", description = "List of result codes retrieved successfully")
+    @GetMapping
+    public ResponseEntity<Page<ResolutionCodeListItemDto>> list(
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate startDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate startDateTo,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate endDateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                    LocalDate endDateTo,
+            // Default sort: title ASC; clients can override with ?sort=field,desc etc.
+            @org.springframework.data.web.PageableDefault(
+                            sort = "title",
+                            direction = Sort.Direction.ASC)
+                    Pageable pageable) {
+        // Delegate range checks (returns 400 via exception on invalid input).
+        dateRangeValidator.validate(startDateFrom, startDateTo, endDateFrom, endDateTo);
 
-    // Delegate search to the service; page metadata (size, number, total) is preserved.
-    Page<ResolutionCodeListItemDto> page =
-        service.search(code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
+        // Delegate search to the service; page metadata (size, number, total) is preserved.
+        Page<ResolutionCodeListItemDto> page =
+                service.search(
+                        code, title, startDateFrom, startDateTo, endDateFrom, endDateTo, pageable);
 
-    return ResponseEntity.ok(page);
-  }
+        return ResponseEntity.ok(page);
+    }
 
-  /**
-   * Retrieves full metadata for a single resolution code identified by its code value.
-   *
-   * <p>On missing entity, the service throws a {@code
-   * ResponseStatusException(HttpStatus.NOT_FOUND)}, which Spring maps to {@code 404 Not Found}.
-   *
-   * @param code the unique resolution code to look up
-   * @return {@code 200 OK} with {@link ResolutionCodeDto}
-   */
-  @Operation(summary = "Get a result code by code", operationId = "getResultCodeByCode")
-  @ApiResponses({
-    @ApiResponse(responseCode = "200", description = "Result code found"),
-    @ApiResponse(responseCode = "404", description = "Result code not found")
-  })
-  @GetMapping("/{code}")
-  public ResponseEntity<ResolutionCodeDto> getByCode(@PathVariable String code) {
-    // Service encapsulates repository and mapping; exceptions bubble up for Spring to
-    // translate.
-    return ResponseEntity.ok(service.findByCode(code));
-  }
+    /**
+     * Retrieves full metadata for a single resolution code identified by its code value.
+     *
+     * <p>On missing entity, the service throws a {@code
+     * ResponseStatusException(HttpStatus.NOT_FOUND)}, which Spring maps to {@code 404 Not Found}.
+     *
+     * @param code the unique resolution code to look up
+     * @return {@code 200 OK} with {@link ResolutionCodeDto}
+     */
+    @Operation(summary = "Get a result code by code", operationId = "getResultCodeByCode")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Result code found"),
+        @ApiResponse(responseCode = "404", description = "Result code not found")
+    })
+    @GetMapping("/{code}")
+    public ResponseEntity<ResolutionCodeDto> getByCode(@PathVariable String code) {
+        // Service encapsulates repository and mapping; exceptions bubble up for Spring to
+        // translate.
+        return ResponseEntity.ok(service.findByCode(code));
+    }
 }

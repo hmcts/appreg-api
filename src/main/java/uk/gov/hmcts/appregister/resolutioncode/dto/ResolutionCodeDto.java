@@ -26,12 +26,12 @@ import java.time.OffsetDateTime;
  * from {@code ResolutionCode} JPA entities.
  */
 public record ResolutionCodeDto(
-    Long id,
-    String resultCode,
-    String title,
-    String wording,
-    String legislation,
-    String destinationEmail1,
-    String destinationEmail2,
-    OffsetDateTime startDate,
-    OffsetDateTime endDate) {}
+        Long id,
+        String resultCode,
+        String title,
+        String wording,
+        String legislation,
+        String destinationEmail1,
+        String destinationEmail2,
+        OffsetDateTime startDate,
+        OffsetDateTime endDate) {}

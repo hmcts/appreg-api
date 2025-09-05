@@ -19,21 +19,25 @@ import uk.gov.hmcts.appregister.report.fee.service.FeeReportService;
 @RequiredArgsConstructor
 public class FeeReportController {
 
-  private final FeeReportService feeReportService;
+    private final FeeReportService feeReportService;
 
-  @GetMapping(value = "/fees", produces = "text/csv")
-  public void downloadFeeReport(
-      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-      @RequestParam(required = false) String standardApplicantCode,
-      @RequestParam(required = false) String applicantSurname,
-      @RequestParam(required = false) String courthouseCode,
-      HttpServletResponse response)
-      throws IOException {
-    FeeReportFilterDto filter =
-        new FeeReportFilterDto(
-            startDate, endDate, standardApplicantCode, applicantSurname, courthouseCode);
-    feeReportService.generateFeeReportCsv(filter, response);
-    response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=fee-report.csv");
-  }
+    @GetMapping(value = "/fees", produces = "text/csv")
+    public void downloadFeeReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String standardApplicantCode,
+            @RequestParam(required = false) String applicantSurname,
+            @RequestParam(required = false) String courthouseCode,
+            HttpServletResponse response)
+            throws IOException {
+        FeeReportFilterDto filter =
+                new FeeReportFilterDto(
+                        startDate,
+                        endDate,
+                        standardApplicantCode,
+                        applicantSurname,
+                        courthouseCode);
+        feeReportService.generateFeeReportCsv(filter, response);
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=fee-report.csv");
+    }
 }

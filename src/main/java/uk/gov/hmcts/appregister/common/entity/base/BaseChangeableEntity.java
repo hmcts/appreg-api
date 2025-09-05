@@ -20,11 +20,11 @@ import org.springframework.data.annotation.CreatedBy;
 @EntityListeners(PreCreateUpdateEntityListener.class)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BaseChangeableEntity implements Changeable {
-  @Column(name = "changed_by", nullable = false)
-  private Long changedBy;
+    @Column(name = "changed_by", nullable = false)
+    private Long changedBy;
 
-  @CreatedBy
-  @UpdateTimestamp
-  @Column(name = "changed_date", nullable = false)
-  private OffsetDateTime changedDate;
+    @CreatedBy
+    @UpdateTimestamp
+    @Column(name = "changed_date", nullable = false)
+    private OffsetDateTime changedDate;
 }

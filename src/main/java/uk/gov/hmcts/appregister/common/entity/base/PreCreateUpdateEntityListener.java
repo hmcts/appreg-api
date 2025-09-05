@@ -18,47 +18,47 @@ import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
 @RequiredArgsConstructor
 public class PreCreateUpdateEntityListener {
 
-  /** The logged in user. */
-  private final AuthenticatedUser userIdentity;
+    /** The logged in user. */
+    private final AuthenticatedUser userIdentity;
 
-  /** The version strategy to apply to versions. */
-  private final VersionStrategy versionStrategy;
+    /** The version strategy to apply to versions. */
+    private final VersionStrategy versionStrategy;
 
-  @PrePersist
-  void beforeSave(Object object) {
-    log.debug("Saving object of type: {}", object.getClass().getName());
-    updateCreatedBy(object);
-    updateModifiedBy(object);
-    updateVersion(object);
-    log.debug("Saved object of type: {}", object.getClass().getName());
-  }
-
-  @PreUpdate
-  void beforeUpdate(Object object) {
-    log.debug("Updating object of type: {}", object.getClass().getName());
-
-    updateVersion(object);
-    updateModifiedBy(object);
-
-    log.debug("Updated object of type: {}", object.getClass().getName());
-  }
-
-  void updateCreatedBy(Object object) {
-    if (object instanceof Accountable entity) {
-      entity.setCreatedUser(userIdentity.getUser());
+    @PrePersist
+    void beforeSave(Object object) {
+        log.debug("Saving object of type: {}", object.getClass().getName());
+        updateCreatedBy(object);
+        updateModifiedBy(object);
+        updateVersion(object);
+        log.debug("Saved object of type: {}", object.getClass().getName());
     }
-  }
 
-  void updateModifiedBy(Object object) {
-    if (object instanceof Changeable entity) {
-      entity.setChangedBy(userIdentity.getUserNumber());
-      entity.setChangedDate(OffsetDateTime.now(Clock.systemUTC()));
-    }
-  }
+    @PreUpdate
+    void beforeUpdate(Object object) {
+        log.debug("Updating object of type: {}", object.getClass().getName());
 
-  void updateVersion(Object object) {
-    if (object instanceof Versionable entity) {
-      versionStrategy.updateVersion(entity);
+        updateVersion(object);
+        updateModifiedBy(object);
+
+        log.debug("Updated object of type: {}", object.getClass().getName());
     }
-  }
+
+    void updateCreatedBy(Object object) {
+        if (object instanceof Accountable entity) {
+            entity.setCreatedUser(userIdentity.getUser());
+        }
+    }
+
+    void updateModifiedBy(Object object) {
+        if (object instanceof Changeable entity) {
+            entity.setChangedBy(userIdentity.getUserNumber());
+            entity.setChangedDate(OffsetDateTime.now(Clock.systemUTC()));
+        }
+    }
+
+    void updateVersion(Object object) {
+        if (object instanceof Versionable entity) {
+            versionStrategy.updateVersion(entity);
+        }
+    }
 }
