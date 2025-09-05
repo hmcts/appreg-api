@@ -54,7 +54,11 @@ public class AuthenticatedUser {
         return 0L;
     }
 
-    /** gets the token from thread local using {@link} SecurityContextHolder}. */
+    /**
+     * gets the token from thread local using {@link} SecurityContextHolder}.
+     *
+     * @return The jwt or null if not found
+     */
     private Jwt getJwt() {
         if (SecurityContextHolder.getContext().getAuthentication() != null
                 && SecurityContextHolder.getContext().getAuthentication().getPrincipal()
