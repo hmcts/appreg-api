@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 import java.util.List;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 
+/** Service interface for managing application codes. */
 public interface ApplicationCodeService {
   List<ApplicationCodeDto> findAll();
 

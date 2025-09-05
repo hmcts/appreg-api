@@ -6,15 +6,16 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationFeeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
-/** A persistence class that knows how to install the data into
- * the database in the correct order. */
+/**
+ * A persistence class that knows how to install the data into the database in the correct order.
+ */
 @Component
 public class DatabasePersistance {
   @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
-  @Autowired private ApplicationFeeRepository feeRepository;
+  @Autowired private FeeRepository feeRepository;
 
   @Transactional
   public ApplicationCode saveAppCode(ApplicationCode data) {

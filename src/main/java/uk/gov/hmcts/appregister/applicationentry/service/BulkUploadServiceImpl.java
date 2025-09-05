@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
+/** Service handling bulk upload of application entries via CSV files. */
 @Service
 @RequiredArgsConstructor
 public class BulkUploadServiceImpl implements BulkUploadService {

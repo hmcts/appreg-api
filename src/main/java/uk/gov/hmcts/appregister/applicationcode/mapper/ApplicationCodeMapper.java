@@ -6,6 +6,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 
+/** Mapper for ApplicationCode entity and ApplicationCodeDto. */
 @Component
 public class ApplicationCodeMapper {
 

@@ -19,8 +19,8 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
- * Represents a Communication Media entity mapped to the
- * "communication_media" table in the database.
+ * Represents a Communication Media entity mapped to the "communication_media" table in the
+ * database.
  */
 @Entity
 @Table(name = "communication_media")

@@ -10,14 +10,8 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
 
 /**
- * A database entity listener that updates standard fields when an object is saved or updated.:-
-
- * <ul>
- *   <li> Changed by</li>
- *   <li>Changed Date</li>
- *   <li>Version</li>
- *   <li>Username</li>
- * </ul>.
+ * A database entity listener that updates standard fields when an object is saved or updated
+ * Changed by, Changed Date, Version, Username.
  */
 @Component
 @Slf4j

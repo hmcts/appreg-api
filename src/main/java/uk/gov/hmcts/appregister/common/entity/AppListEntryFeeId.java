@@ -20,8 +20,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.compositeid.AppListEntryFeeCompositeId;
 
 /**
- * Represents the association between an application list entry and a fee, mapped
- * to the "app_list_entry_fee_id" table in the database.
+ * Represents the association between an application list entry and a fee, mapped to the
+ * "app_list_entry_fee_id" table in the database.
  */
 @Entity
 @Table(name = "app_list_entry_fee_id")
@@ -36,7 +36,7 @@ public class AppListEntryFeeId extends BaseChangeableEntity implements Accountab
   @Id
   @Column(name = "ale_ale_id", nullable = false)
   @EqualsAndHashCode.Include
-  private Long appListId;
+  private Long appListEntryId;
 
   @Id
   @Column(name = "fee_fee_id", nullable = false)
@@ -44,11 +44,11 @@ public class AppListEntryFeeId extends BaseChangeableEntity implements Accountab
   private Long feeId;
 
   @ManyToOne()
-  @JoinColumn(name = "ale_ale_id", nullable = false)
+  @JoinColumn(name = "entryId", nullable = false)
   private ApplicationListEntry entry;
 
   @ManyToOne()
-  @JoinColumn(name = "fee_fee_id", nullable = false)
+  @JoinColumn(name = "feeId", nullable = false)
   private Fee fee;
 
   @Column(name = "version", nullable = false)

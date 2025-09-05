@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.report.fee.dto.FeeReportRowDto;
 
+/** Repository to run custom SQL queries for generating fee reports. */
 @RequiredArgsConstructor
 @Repository
 public class FeeReportJdbcRepository {
@@ -54,7 +55,7 @@ public class FeeReportJdbcRepository {
             JOIN standard_applicant ON application.standard_applicant_id = standard_applicant.id
             WHERE application_code.fee_due = true
               AND application_list.date BETWEEN :startDate AND :endDate
-              AND (:standardApplicantCode IS NULL OR standard_applicant.code 
+              AND (:standardApplicantCode IS NULL OR standard_applicant.code
               ILIKE :standardApplicantCode)
               AND (:applicantSurname IS NULL OR standard_applicant.surname ILIKE :applicantSurname)
               AND (:courthouseCode IS NULL OR courthouse.location_code ILIKE :courthouseCode)
@@ -73,7 +74,7 @@ public class FeeReportJdbcRepository {
                     courthouse.name AS courthouseName,
                     NULL AS otherCourthouse,
                     NULL AS standardApplicantCode,
-                    COALESCE(identity_details.surname, identity_details.name) 
+                    COALESCE(identity_details.surname, identity_details.name)
                     AS applicantNameOrSurname,
                     application_code.application_code AS applicationCode,
                     application_code.title AS applicationCodeTitle

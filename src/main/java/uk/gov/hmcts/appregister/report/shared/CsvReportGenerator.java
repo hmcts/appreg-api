@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.report.fee.dto.FeeReportRowDto;
 
+/** Utility class for generating CSV reports. */
 @Component
 public class CsvReportGenerator {
 

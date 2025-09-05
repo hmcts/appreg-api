@@ -16,6 +16,10 @@ plugins {
   id 'org.openrewrite.rewrite' version 'latest.release'
 }
 
+checkstyle {
+  toolVersion = '11.0.1'                // or a version that matches your rules
+}
+
 application {
   mainClass = 'uk.gov.hmcts.appregister.Application'
   group = 'uk.gov.hmcts.appregister'

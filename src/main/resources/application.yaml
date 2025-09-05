@@ -63,7 +63,8 @@ spring:
         jwt:
           issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}/v2.0
           audiences: ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
-
+  mvc:
+    static-path-pattern: /specs/**
 logging:
   level:
     org.springframework.security: DEBUG
@@ -72,3 +73,6 @@ logging:
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+
+
+

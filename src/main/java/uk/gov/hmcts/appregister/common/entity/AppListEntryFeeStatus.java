@@ -21,9 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
-/**
- *  The AppListEntryFeeStatus entity represents the fee status of an application list entry.
- */
+/** The AppListEntryFeeStatus entity represents the fee status of an application list entry. */
 @Entity
 @Table(name = "app_list_entry_fee_status")
 @NoArgsConstructor

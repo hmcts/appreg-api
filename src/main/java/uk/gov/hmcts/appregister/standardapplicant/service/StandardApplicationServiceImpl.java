@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 
+/** Service implementation for managing standard applicants. */
 @Service
 @RequiredArgsConstructor
 public class StandardApplicationServiceImpl implements StandardApplicantService {

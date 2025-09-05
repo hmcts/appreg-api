@@ -12,6 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 
+/** Service implementation for managing application codes. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationCodeServiceImpl implements ApplicationCodeService {

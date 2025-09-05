@@ -21,8 +21,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
 /**
- * Represents an official associated with an application list entry,
- * mapped to the "app_list_entry_official" table in the database.
+ * Represents an official associated with an application list entry, mapped to the
+ * "app_list_entry_official" table in the database.
  */
 @Entity
 @Table(name = "app_list_entry_official")

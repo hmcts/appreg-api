@@ -11,8 +11,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.annotation.CreatedBy;
 
 /**
- * Define a standard class for the changed state. Simple extend
- * this class if you need to apply these columns to an entity
+ * Define a standard class for the changed state. Simple extend this class if you need to apply
+ * these columns to an entity
  */
 @MappedSuperclass
 @Getter

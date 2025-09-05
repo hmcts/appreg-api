@@ -1,5 +1,14 @@
 package uk.gov.hmcts.appregister.testutils.data;
 
+/**
+ * Interface for creating persistable entities with minimal and maximal field population.
+ *
+ * <p>Implementations should ensure that the objects returned by these methods can be persisted
+ * without violating any non-null constraints, except for the id field which is expected to be
+ * populated by the persistence layer upon save.
+ *
+ * @param <T> the type of the entity
+ */
 public interface Persistable<T> {
 
   /**

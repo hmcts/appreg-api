@@ -75,7 +75,7 @@ public interface ResolutionCodeRepository
       """
         SELECT r
         FROM ResolutionCode r
-        WHERE (:code  IS NULL OR lower(r.resultCode)  LIKE concat('%', 
+        WHERE (:code  IS NULL OR lower(r.resultCode)  LIKE concat('%',
                 lower(cast(:code  as string)), '%'))
           AND (:title IS NULL OR lower(r.title) LIKE concat('%',
                    lower(cast(:title as string)), '%'))

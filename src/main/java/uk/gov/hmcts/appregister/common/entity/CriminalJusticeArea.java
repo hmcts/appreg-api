@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/** Entity representing a Criminal Justice Area (CJA). */
 @Entity
 @Table(name = "criminal_justice_area")
 @NoArgsConstructor

@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationFeeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.testutils.data.FeeTestData;
 @Slf4j
 public class FeeRepositoryTest extends BasePostgresIntegrationTest {
 
-  @Autowired private ApplicationFeeRepository applicationFeeRepository;
+  @Autowired private FeeRepository applicationFeeRepository;
 
   @Autowired private AuthenticatedUser loggedInUser;
 

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
+/** DTO for application fee record. */
 public record ApplicationFeeRecordDto(
     Long id,
     String paymentReference,

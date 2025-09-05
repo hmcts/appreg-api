@@ -23,10 +23,4 @@ package uk.gov.hmcts.appregister.resolutioncode.dto;
  * org.springframework.data.domain.Page} responses from search endpoints. Typically constructed via
  * a mapper converting from {@code ResolutionCode} JPA entities.
  */
-public record ResolutionCodeListItemDto(
-
-    Long id,
-
-    String code,
-
-    String title) {}
+public record ResolutionCodeListItemDto(Long id, String code, String title) {}

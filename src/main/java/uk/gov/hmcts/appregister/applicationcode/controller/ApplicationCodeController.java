@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeService;
 
+/** REST controller for managing application codes. */
 @RestController
 @RequestMapping("/application-codes")
 @RequiredArgsConstructor

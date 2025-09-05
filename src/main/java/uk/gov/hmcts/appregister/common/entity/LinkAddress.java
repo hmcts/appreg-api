@@ -54,7 +54,7 @@ public class LinkAddress extends BaseChangeableEntity implements Versionable {
   private Long version;
 
   @Column(name = "head_office_indicator")
-  @Size(max =  1)
+  @Size(max = 1)
   private String headOfficeIndicator;
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.applicationentry.dto.ApplicationDto;
 import uk.gov.hmcts.appregister.applicationentry.dto.ApplicationWriteDto;
 
+/** Service Implementation for managing Applications. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationServiceImpl implements ApplicationService {

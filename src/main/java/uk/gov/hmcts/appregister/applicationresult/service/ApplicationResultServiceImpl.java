@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultWriteDto;
 // import uk.gov.hmcts.appregister.applicationresult.mapper.ApplicationResultMapper;
 // import uk.gov.hmcts.appregister.applicationresult.repository.ApplicationResultRepository;
 
+/** Service implementation for managing application results. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationResultServiceImpl implements ApplicationResultService {

@@ -25,8 +25,8 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
- * Represents an entry in the application list, mapped to the
- * "application_list_entries" table in the database.
+ * Represents an entry in the application list, mapped to the "application_list_entries" table in
+ * the database.
  */
 @Entity
 @Table(name = "application_list_entries")
@@ -130,6 +130,6 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
   @OneToMany(mappedBy = "appListEntry")
   private List<AppListEntryFeeStatus> entryFeeStatuses;
 
-  @OneToMany(mappedBy = "ale_ale_id")
+  @OneToMany(mappedBy = "appListEntryId")
   private List<AppListEntryFeeId> entryFeeIds;
 }

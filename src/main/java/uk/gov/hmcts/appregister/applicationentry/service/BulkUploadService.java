@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.dto.BulkUploadResponseDto;
 
+/** Service interface for handling bulk uploads of CSV files. */
 public interface BulkUploadService {
 
   /**

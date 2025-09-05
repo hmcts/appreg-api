@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 
+/** Service for handling application actions such as moving applications between lists. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationActionsServiceImpl implements ApplicationActionsService {

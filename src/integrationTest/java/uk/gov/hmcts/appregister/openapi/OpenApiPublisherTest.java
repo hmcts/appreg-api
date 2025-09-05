@@ -3,15 +3,14 @@ package uk.gov.hmcts.appregister.openapi;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import uk.gov.hmcts.appregister.Application;
@@ -31,19 +30,15 @@ class OpenApiPublisherTest {
   @Autowired
   private MockMvc mvc;
 
+  @DynamicPropertySource
+  static void registerPgProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.flyway.enabled", () -> "false");
+  }
+
   @DisplayName("Generate swagger documentation")
   @Test
   @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
   void generateDocs() throws Exception {
-    byte[] specs =
-        mvc.perform(get("/v3/api-docs"))
-            .andExpect(status().isOk())
-            .andReturn()
-            .getResponse()
-            .getContentAsByteArray();
-
-    try (OutputStream outputStream = Files.newOutputStream(Paths.get("/tmp/openapi-specs.json"))) {
-      outputStream.write(specs);
-    }
+    mvc.perform(get("/specs/openapi.yaml")).andExpect(status().isOk());
   }
 }

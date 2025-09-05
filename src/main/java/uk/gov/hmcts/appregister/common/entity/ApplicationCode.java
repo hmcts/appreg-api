@@ -24,9 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * APPLICATION_CODE table in SYSTEM.APPREGISTER
  * from Oracle DB.
  */
-/**
- * Represents an ApplicationCode entity mapped to the "application_codes" table in the database.
- */
+/** Represents an ApplicationCode entity mapped to the "application_codes" table in the database. */
 @Entity
 @Table(name = "application_codes")
 @NoArgsConstructor

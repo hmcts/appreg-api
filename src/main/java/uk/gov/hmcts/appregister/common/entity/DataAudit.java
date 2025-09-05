@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+/** Entity for Data Audit table. */
 @Entity
 @Table(name = "data_audit")
 @NoArgsConstructor

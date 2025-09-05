@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.applicationentry.dto.ApplicationMoveRequestDto;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationActionsService;
 
+/** Controller for application actions such as moving applications between lists. */
 @RestController
 @RequestMapping("/application-actions")
 @RequiredArgsConstructor

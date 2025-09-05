@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.testutils;
 
+/** Utility class for string operations. */
 public class StringUtil {
   /**
    * Strips a string down to a maximum length.

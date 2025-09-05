@@ -5,12 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationFeeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
+/** Service to handle application fee operations. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
-  private final ApplicationFeeRepository feeRepository;
+  private final FeeRepository feeRepository;
 
   public FeePair resolveFeePair(String feeReference) {
     List<Fee> fees = feeRepository.findByReference(feeReference);

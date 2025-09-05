@@ -6,7 +6,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 
 /** Repository interface for managing Application Fees. */
-public interface ApplicationFeeRepository extends JpaRepository<Fee, Long> {
+public interface FeeRepository extends JpaRepository<Fee, Long> {
 
   /**
    * Finds a list of Fee entities by their reference.

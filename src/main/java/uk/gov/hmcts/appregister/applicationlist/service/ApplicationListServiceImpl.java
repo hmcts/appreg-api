@@ -14,15 +14,14 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
-import uk.gov.hmcts.appregister.util.VersionManager;
 
+/** Service implementation for managing application lists. */
 @RequiredArgsConstructor
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
 
   private final ApplicationListRepository repository;
   private final ApplicationListMapper mapper;
-  private final VersionManager versionManager;
   private final NationalCourtHouseRepository courtHouseRepository;
   private final AuthenticatedUser appRegUser;
 

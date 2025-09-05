@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationresult.service;
 import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultDto;
 import uk.gov.hmcts.appregister.applicationresult.dto.ApplicationResultWriteDto;
 
+/** Service interface for managing application results. */
 public interface ApplicationResultService {
   ApplicationResultDto getResultForApplication(Long listId, Long applicationId, String userId);
 

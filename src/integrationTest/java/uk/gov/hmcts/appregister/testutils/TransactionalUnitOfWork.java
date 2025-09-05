@@ -7,9 +7,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/**
- * A unit of work class that allows us to write custom code in a transactional.
- */
+/** A unit of work class that allows us to write custom code in a transactional. */
 @Component
 public class TransactionalUnitOfWork {
   @Autowired private PlatformTransactionManager transactionManager;

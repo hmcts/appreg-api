@@ -9,6 +9,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
 import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapper;
 
+/** Mapper for ApplicationList entity and its DTOs. */
 @RequiredArgsConstructor
 @Component
 public class ApplicationListMapper {

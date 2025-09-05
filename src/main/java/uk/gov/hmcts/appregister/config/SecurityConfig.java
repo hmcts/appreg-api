@@ -3,7 +3,7 @@ package uk.gov.hmcts.appregister.config;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRED;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI_DOCS;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+/** Configuration for securing the API using Spring Security and JWTs. */
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -32,7 +33,7 @@ public class SecurityConfig {
 
     http.authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(SWAGGER_UI, OPENAPI_DOCS, HEALTH)
+                auth.requestMatchers(SWAGGER_UI, OPENAPI, HEALTH)
                     .permitAll()
                     .anyRequest()
                     .authenticated())

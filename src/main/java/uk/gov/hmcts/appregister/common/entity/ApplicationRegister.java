@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
+/** Entity representing an application register entry. */
 @Entity
 @Table(name = "application_register")
 @NoArgsConstructor
