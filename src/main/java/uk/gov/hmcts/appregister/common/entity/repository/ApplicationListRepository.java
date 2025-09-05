@@ -25,5 +25,12 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      */
     Optional<ApplicationList> findByIdAndCreatedUser(Long id, String userId);
 
+    /**
+     * Check if an ApplicationList entity exists by its ID and associated user.
+     *
+     * @param id the ID of the ApplicationList
+     * @param userId the ID of the user
+     * @return true if the ApplicationList exists, false otherwise
+     */
     boolean existsByIdAndCreatedUser(Long id, String userId);
 }

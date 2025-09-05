@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -36,6 +37,7 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
     private final ApplicationFeeService feeService;
     private final ApplicationListEntryMapper applicationMapper;
     private final AppListEntryFeeStatusMapper feeRecordMapper;
+    private final AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @Override
     public List<ApplicationListEntryDto> getAllByListId(Long listId, String userId) {
@@ -106,12 +108,16 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
 
         if (feePair.mainFee() != null) {
             app.getEntryFeeStatuses()
-                    .add(feeRecordMapper.createEntity(dto, app, feePair.mainFee()));
+                    .add(
+                            appListEntryFeeStatusRepository.save(
+                                    feeRecordMapper.createEntity(dto, app, feePair.mainFee())));
         }
 
         if (Boolean.TRUE.equals(dto.includesOffsetPayment()) && feePair.offsetFee() != null) {
             app.getEntryFeeStatuses()
-                    .add(feeRecordMapper.createEntity(dto, app, feePair.offsetFee()));
+                    .add(
+                            appListEntryFeeStatusRepository.save(
+                                    feeRecordMapper.createEntity(dto, app, feePair.offsetFee())));
         }
     }
 
