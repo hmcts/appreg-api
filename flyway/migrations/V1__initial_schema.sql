@@ -166,7 +166,7 @@ CREATE TABLE app_list_entry_resolutions (
 	aler_id NUMERIC NOT NULL,
 	rc_rc_id NUMERIC NOT NULL,
 	ale_ale_id NUMERIC NOT NULL,
-	al_entry_resolution_wording text NOT NULL,
+ 	al_entry_resolution_wording text NOT NULL,
 	al_entry_resolution_officer varchar(1000) NOT NULL,
 	version NUMERIC NOT NULL,
 	changed_by NUMERIC NOT NULL,
