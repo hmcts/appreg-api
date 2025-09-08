@@ -5,10 +5,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -100,4 +102,7 @@ public class ApplicationCode extends BaseChangeableEntity implements Accountable
     public void setCreatedUser(String user) {
         userName = user;
     }
+
+    @OneToMany(mappedBy = "applicationCode")
+    private List<ApplicationListEntry> applicationListEntryList;
 }

@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 
 /**
@@ -86,5 +85,5 @@ public interface NationalCourtHouseRepository
     /** Convenience method for single-row lookup. */
     Optional<NationalCourtHouse> findById(Long id);
 
-    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
+    List<NationalCourtHouse> findByIdGreaterThanEqual(Integer value);
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -23,22 +24,30 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private AuthenticatedUser loggedInUser;
 
+    private static final int BASELINE_TEST_COUNT = 41;
+
     @Test
     public void testBasicInsertionUpdate() throws Exception {
-        // test save
-        ApplicationCode code =
-                persistance.saveAppCode(new ApplicationCodeTestData().someMinimal().build());
-
         // assert that the save has occurred
         long count = applicationCodeRepository.count();
-        log.info("ApplicationCode count: {}", 42, count);
+        Assertions.assertEquals(BASELINE_TEST_COUNT, count);
+
+        // test save
+        ApplicationCode code =
+                persistance.save(new ApplicationCodeTestData().someMinimal().build());
+
+        // assert that the save has occurred
+        count = applicationCodeRepository.count();
+        Assertions.assertEquals(BASELINE_TEST_COUNT + 1, count);
 
         // test get
         Optional<ApplicationCode> applicationCodeToAssertAgainst =
                 applicationCodeRepository.findById(code.getId());
 
         // assert that the data that has been retrieved aligns with the data that we have stored
+        expectAllCommonEntityFields(code, applicationCodeToAssertAgainst);
         assertNotNull(applicationCodeToAssertAgainst.get());
+        assertEquals(code.getCreatedUser(), applicationCodeToAssertAgainst.get().getCreatedUser());
         assertEquals(
                 code.getApplicationCode(),
                 applicationCodeToAssertAgainst.get().getApplicationCode());

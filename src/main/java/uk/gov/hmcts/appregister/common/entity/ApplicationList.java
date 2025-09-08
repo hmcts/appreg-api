@@ -12,7 +12,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -62,7 +61,7 @@ public class ApplicationList extends BaseChangeableEntity implements Accountable
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)
-    private LocalDate listDescription;
+    private String listDescription;
 
     @Column(name = "user_name")
     @Size(max = 250)

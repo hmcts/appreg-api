@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 
 /** Repository interface for managing Application Fees. */
@@ -25,5 +24,5 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
      * @param value the minimum ID value
      * @return a list of ApplicationCode entities with IDs >= value
      */
-    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
+    List<Fee> findByIdGreaterThanEqual(Integer value);
 }

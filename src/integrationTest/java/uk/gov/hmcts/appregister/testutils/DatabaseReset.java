@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 /**
  * A global persistence class that knows how to persist objects. Specifically ones that have been
@@ -20,7 +23,13 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 public class DatabaseReset {
     private final EntityManagerFactory entityManagerFactory;
 
-    @Autowired ApplicationCodeRepository applicationCodeRepository;
+    @Autowired private final ApplicationCodeRepository applicationCodeRepository;
+
+    @Autowired private final ApplicationListRepository applicationListRepository;
+
+    @Autowired private final ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private final DataAuditRepository dataAuditRepository;
 
     @Value("${spring.sql.init.schema-locations}")
     private String sqlInitSchema;
@@ -34,8 +43,15 @@ public class DatabaseReset {
     @Transactional
     public void resetDbData() {
         resetSequences();
+
+        applicationListEntryRepository.deleteAll(
+                applicationListEntryRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationCodeRepository.deleteAll(
                 applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        applicationCodeRepository.deleteAll(
+                applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        applicationListRepository.deleteAll(
+                applicationListRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
     }
 
     @Transactional

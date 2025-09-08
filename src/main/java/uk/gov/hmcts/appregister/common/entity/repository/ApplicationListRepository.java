@@ -33,4 +33,13 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      * @return true if the ApplicationList exists, false otherwise
      */
     boolean existsByIdAndCreatedUser(Long id, String userId);
+
+    /**
+     * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
+     *
+     * @param value the minimum ID value (inclusive)
+     * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
+     *     value
+     */
+    List<ApplicationList> findByIdGreaterThanEqual(Integer value);
 }

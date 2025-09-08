@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 
 /**
@@ -115,5 +114,5 @@ public interface ResolutionCodeRepository
      */
     Optional<ResolutionCode> findById(Long id);
 
-    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
+    List<ResolutionCode> findByIdGreaterThanEqual(Integer value);
 }

@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 
 /** Repository for StandardApplicant entities. */
@@ -25,5 +24,5 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      * @param value the minimum ID value
      * @return a list of ApplicationCode entities with IDs >= value
      */
-    List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
+    List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
 }

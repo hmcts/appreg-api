@@ -54,7 +54,7 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
     private StandardApplicant standardApplicant;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ac_ac_id")
+    @JoinColumn(name = "ac_ac_id", nullable = false)
     private ApplicationCode applicationCode;
 
     @ManyToOne(fetch = FetchType.LAZY)

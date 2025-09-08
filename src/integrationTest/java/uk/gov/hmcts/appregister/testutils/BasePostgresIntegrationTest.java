@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.testutils;
 
+import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,5 +71,18 @@ public abstract class BasePostgresIntegrationTest {
                 && actual instanceof Changeable actualChangeable) {
             expectChangeable(expectedChangeable, actualChangeable);
         }
+    }
+
+    /**
+     * assert the common entity fields.
+     *
+     * @param expected The expected value
+     * @param actual the actual value
+     * @param consumer The consumer with an expected and actual
+     */
+    public void assertCommonEntityFields(
+            Object expected, Object actual, BiConsumer<Object, Object> consumer) {
+        consumer.accept(expected, actual);
+        expectAllCommonEntityFields(expected, actual);
     }
 }

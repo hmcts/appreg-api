@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
@@ -22,14 +23,16 @@ public class FeeRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private AuthenticatedUser loggedInUser;
 
+    private static final int BASELINE_TEST_COUNT = 18;
+
     @Test
     public void testBasicInsertionUpdate() throws Exception {
-        // test save
-        Fee fee = persistance.saveFee(new FeeTestData().someMinimal().build());
-
         // assert that the save has occurred
         long count = applicationFeeRepository.count();
-        log.info("ApplicationCode count: {}", 42, count);
+        Assertions.assertEquals(BASELINE_TEST_COUNT, count);
+
+        // test save
+        Fee fee = persistance.save(new FeeTestData().someMinimal().build());
 
         // test get
         Optional<Fee> applicationCodeToAssertAgainst =

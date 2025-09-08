@@ -22,7 +22,7 @@ public class DataAuditRepositoryTest extends BasePostgresIntegrationTest {
     @Test
     public void testBasicInsertionUpdate() throws Exception {
         // test save
-        DataAudit dataAudit = persistance.saveAudit(new DataAuditTestData().someMinimal().build());
+        DataAudit dataAudit = persistance.save(new DataAuditTestData().someMinimal().build());
 
         // test get
         Optional<DataAudit> dataAuditToAssertAgainst =
