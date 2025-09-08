@@ -81,42 +81,43 @@ class ResolutionCodeServiceImplTest {
     // ---------- findByCode ----------
 
     @Test
-    void findByCode_404_whenRepositoryEmpty() {
-        when(repository.findByResultCode("RC-X")).thenReturn(Optional.empty());
+    void findById_404_whenRepositoryEmpty() {
+        when(repository.findById(123L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.findByCode("RC-X"))
+        assertThatThrownBy(() -> service.findById(123L))
                 .isInstanceOf(ResponseStatusException.class)
                 .extracting(e -> ((ResponseStatusException) e).getStatusCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
-    void findByCode_ok_whenMapperReturnsDto() {
+    void findById_ok_whenMapperReturnsDto() {
         ResolutionCode entity =
                 ResolutionCode.builder().id(9L).resultCode("RC-9").title("Nine").build();
         ResolutionCodeDto dto = dto(9L, "RC-9", "Nine");
 
-        when(repository.findByResultCode("RC-9")).thenReturn(Optional.of(entity));
+        when(repository.findById(9L)).thenReturn(Optional.of(entity));
         when(mapper.toReadDto(entity)).thenReturn(Optional.of(dto));
 
-        ResolutionCodeDto out = service.findByCode("RC-9");
+        ResolutionCodeDto out = service.findById(9L);
 
         assertThat(out).isEqualTo(dto);
-        verify(repository).findByResultCode("RC-9");
+        verify(repository).findById(9L);
         verify(mapper).toReadDto(entity);
     }
 
     @Test
-    void findByCode_throwsIllegalState_whenMapperReturnsEmptyForEntity() {
+    void findById_404_whenMapperReturnsEmptyForEntity() {
         ResolutionCode entity =
                 ResolutionCode.builder().id(7L).resultCode("RC-7").title("Seven").build();
 
-        when(repository.findByResultCode("RC-7")).thenReturn(Optional.of(entity));
+        when(repository.findById(7L)).thenReturn(Optional.of(entity));
         when(mapper.toReadDto(entity)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.findByCode("RC-7"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Mapper returned empty Optional for non-null entity");
+        assertThatThrownBy(() -> service.findById(7L))
+                .isInstanceOf(ResponseStatusException.class)
+                .extracting(e -> ((ResponseStatusException) e).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     // ---------- search ----------

@@ -135,7 +135,7 @@ class ResolutionCodeControllerTest {
     }
 
     @Test
-    void getByCode_whenFound_returnsOkWithBody() {
+    void getById_whenFound_returnsOkWithBody() {
         // Arrange
         var dto =
                 new ResolutionCodeDto(
@@ -148,30 +148,30 @@ class ResolutionCodeControllerTest {
                         "dest2@ex.com",
                         LocalDate.of(2024, 1, 1),
                         LocalDate.of(2025, 1, 1));
-        when(service.findByCode("RC-010")).thenReturn(dto);
+        when(service.findById(10L)).thenReturn(dto);
 
         // Act
-        var response = controller.getByCode("RC-010");
+        var response = controller.getById(10L);
 
         // Assert
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isSameAs(dto);
-        verify(service).findByCode("RC-010");
+        verify(service).findById(10L);
     }
 
     @Test
-    void getByCode_whenMissing_propagates404() {
+    void getById_whenMissing_propagates404() {
         // Arrange
-        when(service.findByCode("RC-404"))
+        when(service.findById(404L))
                 .thenThrow(
                         new ResponseStatusException(
                                 org.springframework.http.HttpStatus.NOT_FOUND, "not found"));
 
         // Act + Assert
         ResponseStatusException ex =
-                assertThrows(ResponseStatusException.class, () -> controller.getByCode("RC-404"));
+                assertThrows(ResponseStatusException.class, () -> controller.getById(404L));
         assertThat(ex.getStatusCode().value()).isEqualTo(404);
         assertThat(ex.getReason()).isEqualTo("not found");
-        verify(service).findByCode("RC-404");
+        verify(service).findById(404L);
     }
 }

@@ -64,29 +64,28 @@ public class ResolutionCodeServiceImpl implements ResolutionCodeService {
     }
 
     /**
-     * Fetch a single resolution code by its business code (unique string).
+     * Retrieve one resolution code by id; throws 404 if it does not exist.
      *
-     * @param code business identifier from {@code resolution_code}
-     * @return the mapped {@link ResolutionCodeDto}
-     * @throws ResponseStatusException 404 if not found
+     * <p>We unwrap in two stages:
+     *
+     * <ol>
+     *   <li>Repository {@code findById} → {@code Optional<entity>}, 404 if missing.
+     *   <li>Mapper {@code toReadDto(entity)} → {@code Optional<dto>}, 404 if mapping declined.
+     * </ol>
+     *
+     * @param id entity identifier
+     * @return mapped DTO
+     * @throws ResponseStatusException 404 when not found (or mapping produces empty)
      */
     @Override
-    public ResolutionCodeDto findByCode(String code) {
-        // 404 if the business code doesn’t exist.
-        ResolutionCode resultCode =
-                repository
-                        .findByResultCode(code)
-                        .orElseThrow(
-                                () ->
-                                        new ResponseStatusException(
-                                                HttpStatus.NOT_FOUND, "ResultCode not found"));
-
-        // Mapper returns Optional; treat empty as illegal state for a non-null entity.
-        return mapper.toReadDto(resultCode)
+    public ResolutionCodeDto findById(Long id) {
+        return repository
+                .findById(id)
+                .flatMap(mapper::toReadDto)
                 .orElseThrow(
                         () ->
-                                new IllegalStateException(
-                                        "Mapper returned empty Optional for non-null entity"));
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND, "ResolutionCode not found"));
     }
 
     /**
