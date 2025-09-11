@@ -16,7 +16,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
      * @param applicationCode the application code to search for
      * @return an Optional containing the found ApplicationCode, or empty if not found
      */
-    Optional<ApplicationCode> findByApplicationCode(String applicationCode);
+    Optional<ApplicationCode> findByCode(String applicationCode);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.

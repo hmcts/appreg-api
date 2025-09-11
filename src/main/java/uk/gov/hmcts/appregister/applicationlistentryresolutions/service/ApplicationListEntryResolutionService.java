@@ -5,14 +5,10 @@ import uk.gov.hmcts.appregister.applicationlistentryresolutions.dto.ApplicationL
 
 /** Service interface for managing application results. */
 public interface ApplicationListEntryResolutionService {
-    ApplicationListEntryResolutionDto getResultForApplication(
-            Long listId, Long applicationId, String userId);
+    ApplicationListEntryResolutionDto getResultForApplication(Long listId, Long applicationId);
 
     ApplicationListEntryResolutionDto create(
-            Long listId,
-            Long applicationId,
-            ApplicationListEntryResolutionWriteDto dto,
-            String userId);
+            Long listId, Long applicationId, ApplicationListEntryResolutionWriteDto dto);
 
     ApplicationListEntryResolutionDto update(
             Long listId,
@@ -20,5 +16,5 @@ public interface ApplicationListEntryResolutionService {
             Long resultId,
             ApplicationListEntryResolutionWriteDto dto);
 
-    void delete(Long listId, Long applicationId, Long resultId, String userId);
+    void delete(Long listId, Long applicationId, Long resultId);
 }

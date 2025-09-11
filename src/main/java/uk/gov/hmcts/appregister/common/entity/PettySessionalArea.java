@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -48,6 +49,7 @@ public class PettySessionalArea extends BaseChangeableEntity implements Versiona
 
     @Column(name = "version_number", nullable = false)
     @Size(max = 38)
+    @Version
     private Long version;
 
     @Column(name = "cma_cma_id")

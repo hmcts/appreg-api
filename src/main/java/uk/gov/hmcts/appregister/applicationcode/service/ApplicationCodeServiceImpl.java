@@ -48,7 +48,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     public ApplicationCodeDto findByCode(String code) {
         final ApplicationCode applicationCode =
                 repository
-                        .findByApplicationCode(code)
+                        .findByCode(code)
                         .orElseThrow(
                                 () -> {
                                     throw new AppRegistryException(

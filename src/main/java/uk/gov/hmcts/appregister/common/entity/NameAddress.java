@@ -7,8 +7,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -97,7 +97,8 @@ public class NameAddress extends BaseChangeableEntity implements Accountable {
     private String mobileNumber;
 
     @Column(name = "version", nullable = false)
-    private BigDecimal version;
+    @Version
+    private Long version;
 
     @Column(name = "user_name", nullable = false)
     @Size(max = 250)

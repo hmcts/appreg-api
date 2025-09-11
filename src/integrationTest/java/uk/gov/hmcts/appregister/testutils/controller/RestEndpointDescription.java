@@ -35,7 +35,7 @@ public class RestEndpointDescription {
     private Consumer<Response> responseConsumer;
 
     public Response process(RestAssuredClient client, TokenAndJwksKey tokenAndJwksKey)
-        throws URISyntaxException {
+            throws URISyntaxException {
         if (method == HttpMethod.GET) {
             Response response = client.executeGetRequest(url, tokenAndJwksKey);
 

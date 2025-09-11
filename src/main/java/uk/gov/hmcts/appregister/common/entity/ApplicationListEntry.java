@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -36,6 +37,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@SuppressWarnings("javaarchitecture:S7027")
 public class ApplicationListEntry extends BaseChangeableEntity implements Accountable, Versionable {
 
     @Id
@@ -88,6 +90,7 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
     private String notes;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "bulk_upload")
@@ -100,13 +103,13 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
     private Short sequenceNumber;
 
     @Column(name = "tcep_status")
-    private Short tcepStatus;
+    private String tcepStatus;
 
     @Column(name = "message_uuid")
-    private Short messageUuid;
+    private String messageUuid;
 
     @Column(name = "retry_count")
-    private Short retryCount;
+    private String retryCount;
 
     @Column(name = "lodgement_date", nullable = false)
     private OffsetDateTime lodgementDate;

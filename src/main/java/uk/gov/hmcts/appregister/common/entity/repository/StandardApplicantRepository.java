@@ -19,7 +19,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     Optional<StandardApplicant> findByApplicantCode(String applicantCode);
 
     /**
-     * Finds all ApplicationCode entities with IDs greater than or equal to the specified value.
+     * Finds the ids that are greater than this value.
      *
      * @param value the minimum ID value
      * @return a list of ApplicationCode entities with IDs >= value

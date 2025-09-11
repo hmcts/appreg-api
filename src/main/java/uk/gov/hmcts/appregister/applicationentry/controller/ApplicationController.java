@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -42,20 +41,17 @@ public class ApplicationController {
                 "Getting all applications linked to listId: {} and user: {}",
                 listId,
                 jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
-        return ResponseEntity.ok(appService.getAllByListId(listId, userId));
+        return ResponseEntity.ok(appService.getAllByListId(listId));
     }
 
     @Operation(
             summary = "Create a new application within an application list",
             operationId = "createApplication")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Application created successfully"),
-        @ApiResponse(
-                responseCode = "400",
-                description = "Invalid standard applicant or application code"),
-        @ApiResponse(responseCode = "404", description = "Application list not found")
-    })
+    @ApiResponse(responseCode = "201", description = "Application created successfully")
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid standard applicant or application code")
+    @ApiResponse(responseCode = "404", description = "Application list not found")
     @PostMapping
     public ResponseEntity<ApplicationListEntryDto> create(
             @PathVariable Long listId,
@@ -63,17 +59,15 @@ public class ApplicationController {
             @AuthenticationPrincipal Jwt jwt) {
         log.info("Creating new application for user: {}", jwt.getClaimAsString("sub"));
         String userId = jwt.getClaimAsString("oid");
-        ApplicationListEntryDto created = appService.create(listId, application, userId);
+        ApplicationListEntryDto created = appService.create(listId, application);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(
             summary = "Get a specific application by ID within a list",
             operationId = "getApplicationById")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Application retrieved successfully"),
-        @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
-    })
+    @ApiResponse(responseCode = "200", description = "Application retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
     @GetMapping("/{applicationId}")
     public ResponseEntity<ApplicationListEntryDto> getOne(
             @PathVariable Long listId,
@@ -85,17 +79,15 @@ public class ApplicationController {
                 listId,
                 jwt.getClaimAsString("sub"));
         String userId = jwt.getClaimAsString("oid");
-        return ResponseEntity.ok(appService.getByIdForUser(listId, applicationId, userId));
+        return ResponseEntity.ok(appService.getByIdForUser(listId, applicationId));
     }
 
     @Operation(summary = "Update an existing application", operationId = "updateApplication")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Application updated successfully"),
-        @ApiResponse(
-                responseCode = "400",
-                description = "Invalid standard applicant or application code"),
-        @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
-    })
+    @ApiResponse(responseCode = "200", description = "Application updated successfully")
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid standard applicant or application code")
+    @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
     @PutMapping("/{applicationId}")
     public ResponseEntity<ApplicationListEntryDto> update(
             @PathVariable Long listId,
@@ -109,17 +101,15 @@ public class ApplicationController {
                 jwt.getClaimAsString("sub"));
         String userId = jwt.getClaimAsString("oid");
         ApplicationListEntryDto updated =
-                appService.update(listId, applicationId, updatedApplication, userId);
+                appService.update(listId, applicationId, updatedApplication);
         return ResponseEntity.ok(updated);
     }
 
     @Operation(
             summary = "Delete an application by ID within a list",
             operationId = "deleteApplication")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Application deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
-    })
+    @ApiResponse(responseCode = "204", description = "Application deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Application not found or not accessible")
     @DeleteMapping("/{applicationId}")
     public ResponseEntity<Void> delete(
             @PathVariable Long listId,
@@ -131,7 +121,7 @@ public class ApplicationController {
                 applicationId,
                 jwt.getClaimAsString("sub"));
         String userId = jwt.getClaimAsString("oid");
-        appService.delete(listId, applicationId, userId);
+        appService.delete(listId, applicationId);
         return ResponseEntity.noContent().build();
     }
 }

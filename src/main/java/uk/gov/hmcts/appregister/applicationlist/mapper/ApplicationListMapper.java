@@ -16,6 +16,7 @@ public class ApplicationListMapper {
 
     private final NationalCourtHouseMapper courtHouseMapper;
 
+    @SuppressWarnings("java:S1135")
     public ApplicationListDto toReadDto(ApplicationList entity) {
         if (entity == null) {
             return null;

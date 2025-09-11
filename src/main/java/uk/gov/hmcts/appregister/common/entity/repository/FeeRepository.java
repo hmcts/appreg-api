@@ -15,7 +15,13 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
      */
     List<Fee> findByReference(String reference);
 
-    // TODO:No offset in schema
+    /**
+     * Finds a list of Fee entities by their reference and offset status.
+     *
+     * @param reference the reference to search for
+     * @param isOffset the offset status to filter by
+     * @return fee entities matching the reference and offset status
+     */
     // List<Fee> findByReferenceAndIsOffset(String reference, boolean isOffset);
 
     /**

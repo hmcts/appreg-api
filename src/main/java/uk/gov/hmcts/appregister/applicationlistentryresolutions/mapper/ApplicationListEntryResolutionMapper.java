@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationlistentryresolutions.mapper;
 
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlistentryresolutions.dto.ApplicationListEntryResolutionDto;
@@ -34,10 +33,7 @@ public class ApplicationListEntryResolutionMapper {
     }
 
     public AppListEntryResolution createFromWriteDto(
-            ApplicationListEntryResolutionWriteDto dto,
-            String userId,
-            LocalDate changedDate,
-            String wording) {
+            ApplicationListEntryResolutionWriteDto dto, String wording) {
         return AppListEntryResolution.builder()
                 .resolutionWording(wording)
                 .resolutionOfficer(dto.resultOfficer())

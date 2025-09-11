@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 import uk.gov.hmcts.appregister.testutils.data.DataAuditTestData;
 
@@ -17,7 +17,7 @@ public class DataAuditRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private DataAuditRepository dataAuditRepository;
 
-    @Autowired private AuthenticatedUser loggedInUser;
+    @Autowired private UserProvider loggedInUser;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {

@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final FeeRepository feeRepository;
 
+    @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
         List<Fee> fees = feeRepository.findByReference(feeReference);
 

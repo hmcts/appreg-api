@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
 @Component
 public class ApplicationCodeMapper {
 
-    private static final String TRUE_VALUE = "1";
+    public static final String TRUE_VALUE = "1";
 
     public ApplicationCodeDto toReadDto(ApplicationCode entity, FeePair fees) {
         if (entity == null) {
@@ -27,7 +27,7 @@ public class ApplicationCodeMapper {
 
         return new ApplicationCodeDto(
                 entity.getId(),
-                entity.getApplicationCode(),
+                entity.getCode(),
                 entity.getTitle(),
                 entity.getWording(),
                 entity.getLegislation(),
@@ -37,7 +37,7 @@ public class ApplicationCodeMapper {
                 entity.getDestinationEmail2(),
                 entity.getStartDate(),
                 entity.getEndDate(),
-                entity.getBulkRespondentAllowed().equals("1"),
+                entity.getBulkRespondentAllowed().equals(TRUE_VALUE),
                 entity.getFeeReference(),
                 mainFee != null ? mainFee.getDescription() : null,
                 mainFee != null ? mainFee.getAmount() : null,
@@ -58,7 +58,7 @@ public class ApplicationCodeMapper {
 
         return ApplicationCode.builder()
                 .id(dto.id())
-                .applicationCode(dto.applicationCode())
+                .code(dto.applicationCode())
                 .title(dto.title())
                 .wording(dto.wording())
                 .legislation(dto.legislation())

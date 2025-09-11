@@ -90,8 +90,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN.getRole())).build();
 
         String id = "AD99002";
-        Optional<ApplicationCode> expectedRecord =
-                applicationCodeRepository.findByApplicationCode(id);
+        Optional<ApplicationCode> expectedRecord = applicationCodeRepository.findByCode(id);
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + id), tokenGenerator.fetchTokenForRole());
@@ -142,8 +141,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
             throws Exception {
         String id = "doesntexist";
-        Optional<ApplicationCode> expectedRecord =
-                applicationCodeRepository.findByApplicationCode(id);
+        Optional<ApplicationCode> expectedRecord = applicationCodeRepository.findByCode(id);
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + id),

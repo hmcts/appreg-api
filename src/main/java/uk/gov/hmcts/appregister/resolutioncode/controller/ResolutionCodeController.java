@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.resolutioncode.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -97,23 +96,22 @@ public class ResolutionCodeController {
     }
 
     /**
-     * Retrieves full metadata for a single resolution code identified by its code value.
+     * Retrieve a single resolution code by its ID.
      *
-     * <p>On missing entity, the service throws a {@code
-     * ResponseStatusException(HttpStatus.NOT_FOUND)}, which Spring maps to {@code 404 Not Found}.
+     * <p>If the ID does not exist, the service raises a {@code ResponseStatusException(404)} which
+     * Spring maps to {@code 404 Not Found}.
      *
-     * @param code the unique resolution code to look up
-     * @return {@code 200 OK} with {@link ResolutionCodeDto}
+     * @param id database identifier of the resolution code
+     * @return {@code 200 OK} with the resolution code DTO; {@code 404 Not Found} if missing
      */
-    @Operation(summary = "Get a result code by code", operationId = "getResultCodeByCode")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Result code found"),
-        @ApiResponse(responseCode = "404", description = "Result code not found")
-    })
-    @GetMapping("/{code}")
-    public ResponseEntity<ResolutionCodeDto> getByCode(@PathVariable String code) {
-        // Service encapsulates repository and mapping; exceptions bubble up for Spring to
-        // translate.
-        return ResponseEntity.ok(service.findByCode(code));
+    @Operation(
+            summary = "Get a specific resolution code by ID",
+            operationId = "getResolutionCodeById")
+    @ApiResponse(responseCode = "200", description = "Resolution code found")
+    @ApiResponse(responseCode = "404", description = "Resolution code not found")
+    @GetMapping("/{id}")
+    public ResponseEntity<ResolutionCodeDto> getById(@PathVariable Long id) {
+        // Service throws 404 if not found; we simply return 200 with the DTO on success.
+        return ResponseEntity.ok(service.findById(id));
     }
 }

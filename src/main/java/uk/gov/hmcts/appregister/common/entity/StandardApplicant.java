@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,7 @@ public class StandardApplicant extends BaseChangeableEntity implements Accountab
     private LocalDate applicantEndDate;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "user_name", length = 250, nullable = false)

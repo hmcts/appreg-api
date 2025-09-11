@@ -7,9 +7,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 @Getter
 public enum AuditEnum {
     GET_APPLICATION_CODE_AUDIT_EVENT(
-            TableNames.APPLICATION_CODES,
-            ApplicationCode_.APPLICATION_CODE,
-            "Get Application Code"),
+            TableNames.APPLICATION_CODES, ApplicationCode_.CODE, "Get Application Code"),
     GET_APPLICATION_CODES_AUDIT_EVENT(TableNames.APPLICATION_CODES, "N/A", "Get Application Code");
 
     private final String tableName;

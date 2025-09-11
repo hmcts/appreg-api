@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -60,6 +61,7 @@ public class AppListEntryResolution extends BaseChangeableEntity
     private String resolutionOfficer;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "user_name")

@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationlistentryresolutions.service;
 
-import java.time.LocalDate;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,13 +15,9 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.validator.ValidationExceptionHandler;
-
-// import uk.gov.hmcts.appregister.applicationresult.mapper.ApplicationResultMapper;
-// import uk.gov.hmcts.appregister.applicationresult.repository.ApplicationResultRepository;
 
 /** Service implementation for managing application results. */
 @Service
@@ -31,31 +27,27 @@ public class ApplicationListEntryResolutionServiceImpl
 
     private final WordingTemplateParser parser;
 
-    private final ApplicationListRepository applicationListRepository;
     private final ResolutionCodeRepository resolutionCodeRepository;
     private final ApplicationListEntryResolutionMapper mapper;
     private final AppListEntryResolutionRepository appListEntryResolutionRepository;
-    private final AuthenticatedUser authenticatedUser;
     private final ApplicationListEntryRepository applicationListEntryRepository;
+    private final UserProvider userProvider;
 
     @Override
     @Transactional(readOnly = true)
     public ApplicationListEntryResolutionDto getResultForApplication(
-            Long listId, Long applicationId, String userId) {
-        AppListEntryResolution result = findOrThrow(null, applicationId, listId, userId);
+            Long listId, Long applicationId) {
+        AppListEntryResolution result = findOrThrow(null, applicationId, listId);
         return mapper.toReadDto(result);
     }
 
     @Override
     @Transactional
     public ApplicationListEntryResolutionDto create(
-            Long listId,
-            Long applicationId,
-            ApplicationListEntryResolutionWriteDto dto,
-            String userId) {
+            Long listId, Long applicationId, ApplicationListEntryResolutionWriteDto dto) {
         ApplicationListEntry app =
                 applicationListEntryRepository
-                        .findByIdAndCreatedUser(applicationId, userId)
+                        .findByIdAndCreatedUser(applicationId, userProvider.getUser())
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -73,12 +65,13 @@ public class ApplicationListEntryResolutionServiceImpl
                 ValidationExceptionHandler.wrap(
                         () -> parser.generateWording(resultCode.getWording(), dto.textFields()));
 
-        AppListEntryResolution result =
-                mapper.createFromWriteDto(dto, userId, LocalDate.now(), wording);
+        AppListEntryResolution result = mapper.createFromWriteDto(dto, wording);
         result.setApplicationList(app);
 
-        result.setResolutionCode(
-                resolutionCodeRepository.findByResultCode(resultCode.getResultCode()).get());
+        Optional<ResolutionCode> res =
+                resolutionCodeRepository.findByResultCode(resultCode.getResultCode());
+
+        res.ifPresent(result::setResolutionCode);
 
         return mapper.toReadDto(appListEntryResolutionRepository.save(result));
     }
@@ -90,8 +83,7 @@ public class ApplicationListEntryResolutionServiceImpl
             Long applicationId,
             Long resultId,
             ApplicationListEntryResolutionWriteDto dto) {
-        AppListEntryResolution existing =
-                findOrThrow(resultId, applicationId, listId, authenticatedUser.getUser());
+        AppListEntryResolution existing = findOrThrow(resultId, applicationId, listId);
 
         ResolutionCode resultCode =
                 resolutionCodeRepository
@@ -105,8 +97,10 @@ public class ApplicationListEntryResolutionServiceImpl
                 ValidationExceptionHandler.wrap(
                         () -> parser.generateWording(resultCode.getWording(), dto.textFields()));
 
-        existing.setResolutionCode(
-                resolutionCodeRepository.findByResultCode(resultCode.getResultCode()).get());
+        Optional<ResolutionCode> resolutionCode =
+                resolutionCodeRepository.findByResultCode(resultCode.getResultCode());
+
+        resolutionCode.ifPresent(existing::setResolutionCode);
 
         mapper.updateFromWriteDto(dto, existing, wording);
 
@@ -115,16 +109,16 @@ public class ApplicationListEntryResolutionServiceImpl
 
     @Override
     @Transactional
-    public void delete(Long listId, Long applicationId, Long resultId, String userId) {
-        AppListEntryResolution result = findOrThrow(resultId, applicationId, listId, userId);
+    public void delete(Long listId, Long applicationId, Long resultId) {
+        AppListEntryResolution result = findOrThrow(resultId, applicationId, listId);
         appListEntryResolutionRepository.delete(result);
     }
 
-    private AppListEntryResolution findOrThrow(
-            Long resultId, Long appId, Long listId, String userId) {
+    private AppListEntryResolution findOrThrow(Long resultId, Long appId, Long listId) {
         if (resultId != null) {
             return appListEntryResolutionRepository
-                    .findByIdWithApplicationAndListAndCreatedUser(resultId, appId, listId, userId)
+                    .findByIdWithApplicationAndListAndCreatedUser(
+                            resultId, appId, listId, userProvider.getUser())
                     .orElseThrow(
                             () ->
                                     new ResponseStatusException(
@@ -134,7 +128,7 @@ public class ApplicationListEntryResolutionServiceImpl
         return appListEntryResolutionRepository
                 .findById(appId)
                 .filter(r -> r.getApplicationList().getId().equals(listId))
-                .filter(r -> r.getApplicationList().getCreatedUser().equals(userId))
+                .filter(r -> r.getApplicationList().getCreatedUser().equals(userProvider.getUser()))
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
