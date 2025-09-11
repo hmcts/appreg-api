@@ -1,7 +1,9 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
-import java.util.List;
+import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
@@ -25,18 +27,16 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final AuditService auditService;
 
     @Override
-    public List<ApplicationCodeDto> findAll() {
-        final List<ApplicationCode> applicationCodeList = repository.findAll();
-
-        List<ApplicationCodeDto> applicationCodeDtoList =
-                applicationCodeList.stream()
-                        .map(
-                                code -> {
-                                    FeePair feePair =
-                                            feeService.resolveFeePair(code.getFeeReference());
-                                    return applicationCodeMapper.toReadDto(code, feePair);
-                                })
-                        .toList();
+    public Page<ApplicationCodeDto> findAll(
+            String appCode, String appTitle, OffsetDateTime lodgementDate, Pageable pageable) {
+        final Page<ApplicationCode> applicationCodeList =
+                repository.search(appCode, appTitle, lodgementDate, pageable);
+        Page<ApplicationCodeDto> applicationCodeDtoList =
+                applicationCodeList.map(
+                        code -> {
+                            FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
+                            return applicationCodeMapper.toReadDto(code, feePair);
+                        });
 
         /// audit the operation
         auditService.record(AuditEnum.GET_APPLICATION_CODES_AUDIT_EVENT);

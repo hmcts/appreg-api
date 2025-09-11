@@ -1,7 +1,9 @@
 package uk.gov.hmcts.appregister.testutils.client;
 
+import uk.gov.hmcts.appregister.common.security.RoleNames;
+
 public enum RoleEnum {
-    ADMIN("Admin"),
+    ADMIN(RoleNames.ADMIN_ROLE),
     NONE("None");
     private final String role;
 

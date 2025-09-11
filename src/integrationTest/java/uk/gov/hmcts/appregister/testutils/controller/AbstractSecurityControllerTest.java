@@ -8,20 +8,22 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
 /**
- * Tests a set of negative security scenarios for a specific API controller:-
- *
- * <p>- Authentication fails with a 401 when we find an incorrect issuer, audience, invalid
- * signature - Authorisation fals with a 403 when the wrong role is presented.
+ * Tests a set of negative security scenarios for a specific API controller:- - Authentication fails
+ * with a 401 when we find an incorrect issuer, find an incorrect audience, find an incorrect
+ * signature - Authorisation fails with a 403 when the wrong role is presented.
  */
 public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
-    /** The set of negative security contexts to be tested. */
-    protected abstract RestTestParameter[] getNegativeSecurityAssertions()
-            throws MalformedURLException;
+    /**
+     * Returns the rest endpoint descriptions.
+     *
+     * @return The set of rest endpoints to negatively test
+     */
+    protected abstract RestEndpointDescription[] getRestDescriptions() throws MalformedURLException;
 
     @Test
     public void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -40,7 +42,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401()
             throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -54,7 +56,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -68,7 +70,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -82,11 +84,11 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenGetIncorrectRole_thenReturn403() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
-                                    .roles(List.of(context.getInvalidRole().getRole()))
+                                    .roles(List.of(context.getInvalidRole()))
                                     .build()
                                     .fetchTokenForRole())
                     .then()

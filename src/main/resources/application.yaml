@@ -23,11 +23,15 @@ spring:
   data:
     web:
       pageable:
-        one-indexed-parameters: true
+        # When this value is set to true, we cant simply return the Spring Page object as a response from our controllers. The reason being that the response
+        # is always zero indexed for page numbers, so a request of page=2 will return a pageNumber of 1.
+        one-indexed-parameters: false
         page-parameter: page
         size-parameter: pageSize
         default-page-size: 10
         max-page-size: 100
+      sort:
+        sort-parameter: sort
   config:
     import: "optional:configtree:/mnt/secrets/appreg/"
   application:
