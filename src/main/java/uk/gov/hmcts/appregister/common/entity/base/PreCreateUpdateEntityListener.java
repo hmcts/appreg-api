@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.base;
 
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
@@ -22,7 +21,6 @@ public class PreCreateUpdateEntityListener {
 
     /** The logged in user. */
     private final UserProvider userIdentity;
-
 
     @PrePersist
     void beforeSave(Object object) {

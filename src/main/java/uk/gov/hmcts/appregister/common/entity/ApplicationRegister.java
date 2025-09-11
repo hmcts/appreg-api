@@ -17,8 +17,6 @@ import lombok.NoArgsConstructor;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
-import java.math.BigDecimal;
-
 /** Entity representing an application register entry. */
 @Entity
 @Table(name = "application_register")

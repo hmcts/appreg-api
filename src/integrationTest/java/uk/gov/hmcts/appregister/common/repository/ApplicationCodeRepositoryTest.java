@@ -64,7 +64,8 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
                 applicationCodeToAssertAgainst.get().getBulkRespondentAllowed());
         assertEquals(loggedInUser.getUser(), applicationCodeToAssertAgainst.get().getCreatedUser());
         assertEquals(
-            new BigDecimal(loggedInUser.getUserNumber()), applicationCodeToAssertAgainst.get().getChangedBy());
+                new BigDecimal(loggedInUser.getUserNumber()),
+                applicationCodeToAssertAgainst.get().getChangedBy());
         assertNotNull(applicationCodeToAssertAgainst.get().getChangedDate());
         assertEquals(0, applicationCodeToAssertAgainst.get().getVersion());
         assertNull(

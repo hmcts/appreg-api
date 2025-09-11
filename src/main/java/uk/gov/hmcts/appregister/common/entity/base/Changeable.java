@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.base;
 
 import jakarta.persistence.EntityListeners;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 

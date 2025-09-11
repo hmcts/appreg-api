@@ -27,9 +27,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     @Override
     public List<ApplicationListDto> getAll() {
-        return repository.findAll().stream()
-                .map(mapper::toReadDto)
-                .toList();
+        return repository.findAll().stream().map(mapper::toReadDto).toList();
     }
 
     @Override

@@ -29,7 +29,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     public StandardApplicantDto findById(Long id) {
         final StandardApplicant standardApplicant =
                 repository
-                    .findById(id)
+                        .findById(id)
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(

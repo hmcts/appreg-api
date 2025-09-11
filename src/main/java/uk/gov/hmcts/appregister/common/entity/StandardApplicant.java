@@ -1,8 +1,13 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.*;
-
-import java.math.BigDecimal;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

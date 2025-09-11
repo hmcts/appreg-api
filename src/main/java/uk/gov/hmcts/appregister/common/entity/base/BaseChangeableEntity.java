@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.entity.base;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.EqualsAndHashCode;

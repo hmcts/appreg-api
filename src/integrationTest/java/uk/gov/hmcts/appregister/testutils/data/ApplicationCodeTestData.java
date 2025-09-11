@@ -1,14 +1,12 @@
 package uk.gov.hmcts.appregister.testutils.data;
 
+import static uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper.TRUE_VALUE;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
-
-import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.testutils.StringUtil;
-
-import static uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper.TRUE_VALUE;
 
 public class ApplicationCodeTestData
         implements Persistable<ApplicationCode.ApplicationCodeBuilder> {
