@@ -38,8 +38,7 @@ public class ApplicationListController {
     @GetMapping
     public ResponseEntity<List<ApplicationListDto>> getAll(@AuthenticationPrincipal Jwt jwt) {
         log.info("Getting all application lists for user: {}", jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
-        return ResponseEntity.ok(listService.getAllForUser());
+        return ResponseEntity.ok(listService.getAll());
     }
 
     @Operation(
@@ -56,7 +55,6 @@ public class ApplicationListController {
                 "Getting application list with id: {}, for user: {}",
                 id,
                 jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
         return ResponseEntity.ok(listService.getByIdForUser(id));
     }
 

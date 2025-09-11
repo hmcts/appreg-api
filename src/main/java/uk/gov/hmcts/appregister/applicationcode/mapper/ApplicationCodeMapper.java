@@ -10,7 +10,7 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
 @Component
 public class ApplicationCodeMapper {
 
-    private static final String TRUE_VALUE = "1";
+    public static final String TRUE_VALUE = "1";
 
     public ApplicationCodeDto toReadDto(ApplicationCode entity, FeePair fees) {
         if (entity == null) {
@@ -32,7 +32,7 @@ public class ApplicationCodeMapper {
                 entity.getDestinationEmail2(),
                 entity.getStartDate(),
                 entity.getEndDate(),
-                entity.getBulkRespondentAllowed().equals("1"),
+                entity.getBulkRespondentAllowed().equals(TRUE_VALUE),
                 entity.getFeeReference(),
                 mainFee != null ? mainFee.getDescription() : null,
                 mainFee != null ? mainFee.getAmount() : null,

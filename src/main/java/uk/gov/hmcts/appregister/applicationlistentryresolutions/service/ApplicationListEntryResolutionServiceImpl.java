@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.entity.security.UserProvider;
 import uk.gov.hmcts.appregister.exception.ValidationExceptionHandler;
 
 // import uk.gov.hmcts.appregister.applicationresult.mapper.ApplicationResultMapper;
@@ -35,7 +35,7 @@ public class ApplicationListEntryResolutionServiceImpl
     private final ResolutionCodeRepository resolutionCodeRepository;
     private final ApplicationListEntryResolutionMapper mapper;
     private final AppListEntryResolutionRepository appListEntryResolutionRepository;
-    private final AuthenticatedUser authenticatedUser;
+    private final UserProvider authenticatedUser;
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
     @Override

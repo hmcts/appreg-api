@@ -3,6 +3,8 @@ package uk.gov.hmcts.appregister.common.entity.base;
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -21,7 +23,7 @@ import org.springframework.data.annotation.CreatedBy;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class BaseChangeableEntity implements Changeable {
     @Column(name = "changed_by", nullable = false)
-    private Long changedBy;
+    private BigDecimal changedBy;
 
     @CreatedBy
     @UpdateTimestamp

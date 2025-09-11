@@ -1,17 +1,9 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -88,6 +80,7 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
     private String notes;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "bulk_upload")
@@ -100,13 +93,13 @@ public class ApplicationListEntry extends BaseChangeableEntity implements Accoun
     private Short sequenceNumber;
 
     @Column(name = "tcep_status")
-    private Short tcepStatus;
+    private String tcepStatus;
 
     @Column(name = "message_uuid")
-    private Short messageUuid;
+    private String messageUuid;
 
     @Column(name = "retry_count")
-    private Short retryCount;
+    private String retryCount;
 
     @Column(name = "lodgement_date", nullable = false)
     private OffsetDateTime lodgementDate;

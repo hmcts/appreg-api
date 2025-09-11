@@ -1,14 +1,8 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,6 +65,7 @@ public class NationalCourtHouse extends BaseChangeableEntity implements Versiona
 
     // Type of court, such as "CROWN" or "MAGISTRATES".
     @Column(name = "version_number", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "court_type", nullable = false)

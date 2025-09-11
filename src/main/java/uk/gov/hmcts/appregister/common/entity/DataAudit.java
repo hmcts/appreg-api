@@ -8,6 +8,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,7 +74,7 @@ public class DataAudit implements Accountable {
     private String oldClobValue;
 
     @Column(name = "related_key")
-    private Long relatedKey;
+    private BigDecimal relatedKey;
 
     @Column(name = "update_type", nullable = false)
     @Size(max = 1)
@@ -83,7 +85,7 @@ public class DataAudit implements Accountable {
     private String dataType;
 
     @Column(name = "case_id")
-    private Long caseId;
+    private BigDecimal caseId;
 
     @Column(name = "related_items_identifier")
     @Size(max = 30)

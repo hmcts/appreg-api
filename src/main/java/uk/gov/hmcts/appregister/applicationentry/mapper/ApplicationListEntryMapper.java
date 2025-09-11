@@ -21,6 +21,7 @@ public class ApplicationListEntryMapper {
     private final StandardApplicantMapper standardApplicantMapper;
     private final ApplicationCodeMapper applicationCodeMapper;
     private final NameAddressMapper identityDetailsMapper;
+    public static final String TRUE_VALUE = "1";
 
     public ApplicationListEntryDto toReadDto(
             ApplicationListEntry entity, uk.gov.hmcts.appregister.common.entity.FeePair fees) {

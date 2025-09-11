@@ -20,6 +20,8 @@ import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
+import java.math.BigDecimal;
+
 /**
  * Represents an official associated with an application list entry, mapped to the
  * "app_list_entry_official" table in the database.

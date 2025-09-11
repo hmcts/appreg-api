@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.entity.security.UserProvider;
 
 /** Service implementation for managing application lists. */
 @RequiredArgsConstructor
@@ -23,11 +23,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListRepository repository;
     private final ApplicationListMapper mapper;
     private final NationalCourtHouseRepository courtHouseRepository;
-    private final AuthenticatedUser appRegUser;
+    private final UserProvider appRegUser;
 
     @Override
-    public List<ApplicationListDto> getAllForUser() {
-        return repository.findAllByCreatedUser(appRegUser.getUser()).stream()
+    public List<ApplicationListDto> getAll() {
+        return repository.findAll().stream()
                 .map(mapper::toReadDto)
                 .toList();
     }

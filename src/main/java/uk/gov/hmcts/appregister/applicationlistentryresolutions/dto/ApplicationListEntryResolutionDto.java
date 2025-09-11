@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationlistentryresolutions.dto;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 

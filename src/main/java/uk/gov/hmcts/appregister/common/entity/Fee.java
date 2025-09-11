@@ -1,13 +1,8 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,10 +50,11 @@ public class Fee implements Accountable, Changeable, Versionable {
     private OffsetDateTime endDate;
 
     @Column(name = "fee_version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "fee_changed_by", nullable = false)
-    private Long changedBy;
+    private BigDecimal changedBy;
 
     @Column(name = "fee_changed_date", nullable = false)
     private OffsetDateTime changedDate;

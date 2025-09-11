@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
  * to have already taken place
  */
 @Component
-public class AuthenticatedUser {
+public class UserProvider {
 
     private static final String ROLES_CLAIM = "roles";
 

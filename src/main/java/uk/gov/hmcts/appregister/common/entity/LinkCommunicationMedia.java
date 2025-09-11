@@ -1,16 +1,9 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
+
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,6 +47,7 @@ public class LinkCommunicationMedia extends BaseChangeableEntity implements Vers
 
     @Column(name = "version_number", nullable = false)
     @Size(max = 38)
+    @Version
     private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)

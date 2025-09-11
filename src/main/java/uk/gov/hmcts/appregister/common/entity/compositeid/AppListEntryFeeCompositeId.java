@@ -4,7 +4,7 @@ import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 
-/** A composite primary key id containing both the app list id and fee id. */
+/** A composite primary key id containing both the app list entry id and fee id. */
 @Getter
 @Setter
 public class AppListEntryFeeCompositeId implements Serializable {
