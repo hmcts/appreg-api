@@ -16,12 +16,11 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     /** The set of negative security contexts to be tested. */
-    protected abstract RestTestParameter[] getNegativeSecurityAssertions()
-            throws MalformedURLException;
+    protected abstract RestEndpointDescription[] getRestDescriptions() throws MalformedURLException;
 
     @Test
     public void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -40,7 +39,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401()
             throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -54,7 +53,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -68,7 +67,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()
@@ -82,7 +81,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     @Test
     public void givenValidRequest_whenGetIncorrectRole_thenReturn403() throws Exception {
-        for (RestTestParameter context : getNegativeSecurityAssertions()) {
+        for (RestEndpointDescription context : getRestDescriptions()) {
             context.process(
                             restAssuredClient,
                             getATokenWithValidCredentials()

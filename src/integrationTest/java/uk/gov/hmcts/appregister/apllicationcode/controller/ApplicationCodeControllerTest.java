@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestTestParameter;
+import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.stubs.TokenGenerator;
 
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
@@ -164,13 +164,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Override
-    protected RestTestParameter[] getNegativeSecurityAssertions() throws MalformedURLException {
-        return new RestTestParameter[] {
-            RestTestParameter.builder()
+    protected RestEndpointDescription[] getRestDescriptions() throws MalformedURLException {
+        return new RestEndpointDescription[] {
+            RestEndpointDescription.builder()
                     .url(getLocalUrl("application-codes"))
                     .method(HttpMethod.GET)
                     .build(),
-            RestTestParameter.builder()
+            RestEndpointDescription.builder()
                     .url(getLocalUrl("application-codes/2"))
                     .method(HttpMethod.GET)
                     .build(),
