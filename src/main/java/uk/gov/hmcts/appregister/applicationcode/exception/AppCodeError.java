@@ -5,10 +5,11 @@ import uk.gov.hmcts.appregister.common.exception.DefaultErrorCode;
 import uk.gov.hmcts.appregister.common.exception.ErrorCode;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 
+/** The app code errors that will be represented as problem details when exceptions are thrown. */
 public enum AppCodeError implements ErrorCodeEnum {
-    // TODO: We need to apply an application code here
     CODE_NOT_FOUND(
-            DefaultErrorCode.create(HttpStatus.NOT_FOUND, "Application Code not found", "appcode"));
+            DefaultErrorCode.create(
+                    HttpStatus.NOT_FOUND, "Application Code not found", "APPCODE-1"));
 
     private final DefaultErrorCode defaultErrorCode;
 

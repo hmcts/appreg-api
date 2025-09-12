@@ -52,7 +52,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                         .orElseThrow(
                                 () -> {
                                     throw new AppRegistryException(
-                                            AppCodeError.CODE_NOT_FOUND, "", null);
+                                            AppCodeError.CODE_NOT_FOUND,
+                                            "No code found for: " + code);
                                 });
 
         FeePair feePair = feeService.resolveFeePair(applicationCode.getFeeReference());
