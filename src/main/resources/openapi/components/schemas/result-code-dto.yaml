@@ -1,0 +1,45 @@
+type: object
+description: Immutable DTO representing a Result Code.
+required:
+  - id
+  - resultCode
+  - title
+  - wording
+  - startDate
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Primary key identifier.
+  resultCode:
+    type: string
+    description: Code that identifies the result.
+  title:
+    type: string
+    description: Human-readable title.
+  wording:
+    type: string
+    description: Full descriptive wording, potentially with blank fields to be inputted by the user.
+  legislation:
+    type: string
+    nullable: true
+    description: Full description of the relevant Legislation (optional).
+  destinationEmail1:
+    type: string
+    format: email
+    nullable: true
+    description: First destination email (optional).
+  destinationEmail2:
+    type: string
+    format: email
+    nullable: true
+    description: Second destination email (optional).
+  startDate:
+    type: string
+    format: date
+    description: Start date from which the code is valid.
+  endDate:
+    type: string
+    format: date
+    nullable: true
+    description: End date until which the code is valid.

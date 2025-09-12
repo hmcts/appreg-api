@@ -1,0 +1,64 @@
+get:
+  operationId: listResultCodes
+  tags: [ result-codes ]
+  summary: Get result codes (paginated, filterable)
+  description: |
+    Returns a paginated list of result codes.
+    - Filters:
+      - `code` – case-insensitive partial match
+      - `title` – case-insensitive partial match
+      - `startDateFrom`/`startDateTo` – inclusive range on startDate
+      - `endDateFrom`/`endDateTo` – inclusive range on endDate
+    - Dates use ISO-8601 (yyyy-MM-dd).
+  parameters:
+    - in: query
+      name: code
+      schema: { type: string }
+      description: Filter by business code (contains, case-insensitive).
+    - in: query
+      name: title
+      schema: { type: string }
+      description: Filter by title (contains, case-insensitive).
+    - in: query
+      name: startDateFrom
+      schema: { type: string, format: date }
+    - in: query
+      name: startDateTo
+      schema: { type: string, format: date }
+    - in: query
+      name: endDateFrom
+      schema: { type: string, format: date }
+    - in: query
+      name: endDateTo
+      schema: { type: string, format: date }
+    - in: query
+      name: page
+      schema: { type: integer, format: int32, minimum: 0, default: 0 }
+      description: Zero-based page index.
+    - in: query
+      name: size
+      schema: { type: integer, format: int32, minimum: 1, default: 20 }
+      description: Page size.
+    - in: query
+      name: sort
+      description: >
+        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
+        Example: `?sort=title,asc&sort=code,desc`.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items: { type: string }
+        example: [ "title,asc", "code,desc" ]
+  responses:
+    "200":
+      description: Page of result codes
+      content:
+        application/json:
+          schema: { $ref: "../components/schemas/page-result-code-list-item.yaml" }
+    "400": { $ref: "../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../components/responses/internal-server-error.yaml" }

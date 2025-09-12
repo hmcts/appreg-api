@@ -1,0 +1,9 @@
+description: Invalid request parameters.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/problem.yaml'

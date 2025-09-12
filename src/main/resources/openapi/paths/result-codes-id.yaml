@@ -1,0 +1,25 @@
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema:
+      type: integer
+      format: int64
+    description: Database identifier of the result code.
+get:
+  operationId: getResultCodeById
+  tags: [result-codes]
+  summary: Get a specific result code by ID
+  responses:
+    "200":
+      description: Result code found
+      content:
+        application/json:
+          schema:
+            $ref: "../components/schemas/result-code-dto.yaml"
+    "400": { $ref: "../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../components/responses/internal-server-error.yaml" }

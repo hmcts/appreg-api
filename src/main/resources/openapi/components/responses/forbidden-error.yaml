@@ -1,0 +1,16 @@
+description: Authenticated but not permitted to perform this action.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/problem.yaml'
+    examples:
+      forbidden:
+        value:
+          type: https://errors.hmcts.net/common/forbidden
+          title: Forbidden
+          status: 403
+          detail: You do not have permission to access this resource

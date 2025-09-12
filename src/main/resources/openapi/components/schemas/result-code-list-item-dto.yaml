@@ -1,0 +1,14 @@
+type: object
+description: Lightweight DTO used in list/search views.
+required: [id, code, title]
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Database identifier.
+  code:
+    type: string
+    description: Code that identifies the result.
+  title:
+    type: string
+    description: Human-readable title.

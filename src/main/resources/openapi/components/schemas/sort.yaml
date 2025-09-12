@@ -1,0 +1,7 @@
+Sort:
+  type: object
+  description: Sorting state.
+  properties:
+    sorted:   { type: boolean }
+    unsorted: { type: boolean }
+    empty:    { type: boolean }

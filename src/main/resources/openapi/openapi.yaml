@@ -1,0 +1,45 @@
+openapi: 3.0.4
+
+info:
+  title: Applications Register API
+  description:
+    REST API for managing Applications Lists, Application List Entries and getting important,
+    reference data including application codes, result codes, fees, court locations, criminal justice areas
+    and standard applicants.
+  version: 1.0.0
+
+tags:
+  - name: result-codes
+    description:
+      Retrieve result codes. Result codes are reference data, not managed in App Reg. They are required to provide a set
+      of ways an Application List Entry can be resulted. e.g. Approved/Denied.
+
+paths:
+  /result-codes:           { $ref: './paths/result-codes.yaml' }
+  /result-codes/{code-id}: { $ref: './paths/result-codes-id.yaml' }
+
+components:
+  schemas:
+    result-code-dto:             { $ref: './components/schemas/result-code-dto.yaml' }
+    result-code-list-item-dto:   { $ref: './components/schemas/result-code-list-item-dto.yaml' }
+    problem:                     { $ref: './components/schemas/problem.yaml'}
+    page:                        { $ref: './components/schemas/page.yaml' }
+    sort:                        { $ref: './components/schemas/sort.yaml' }
+  responses:
+     bad-request-error:      { $ref: './components/responses//bad-request-error.yaml' }
+     unauthorized-error:     { $ref: './components/responses/unauthorized-error.yaml' }
+     forbidden-error:        { $ref: './components/responses/forbidden-error.yaml' }
+     not-found-error:        { $ref: './components/responses/not-found-error.yaml' }
+     internal-server-error:  { $ref: './components/responses/internal-server-error.yaml' }
+     not-acceptable-error:   { $ref: './components/responses/not-acceptable-error.yaml' }
+  parameters:
+    AcceptVersion:
+      name: Accept
+      in: header
+      required: true
+      description: >
+        API version is negotiated via the Accept header.
+        Use: `application/vnd.hmcts.appreg.v1+json`
+      schema:
+        type: string
+        example: application/vnd.hmcts.appreg.v1+json
