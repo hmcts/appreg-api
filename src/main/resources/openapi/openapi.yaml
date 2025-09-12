@@ -13,18 +13,27 @@ tags:
     description:
       Retrieve result codes. Result codes are reference data, not managed in App Reg. They are required to provide a set
       of ways an Application List Entry can be resulted. e.g. Approved/Denied.
+  - name: application-codes
+    description:
+      Retrieve application codes. Application codes are reference data, not managed in App Reg. They are required to
+      provide a set repeatable data that can be used by Application List Entries, such as the title, wording or whether
+      an application has an associated fee.
 
 paths:
-  /result-codes:           { $ref: './paths/result-codes.yaml' }
-  /result-codes/{code-id}: { $ref: './paths/result-codes-id.yaml' }
+  /application-codes:           { $ref: './paths/application-codes.yaml'}
+  /application-codes/{id}:      { $ref: './paths/application-codes-id.yaml'}
+  /result-codes:                { $ref: './paths/result-codes.yaml' }
+  /result-codes/{code-id}:      { $ref: './paths/result-codes-id.yaml' }
 
 components:
   schemas:
-    result-code-dto:             { $ref: './components/schemas/result-code-dto.yaml' }
-    result-code-list-item-dto:   { $ref: './components/schemas/result-code-list-item-dto.yaml' }
-    problem:                     { $ref: './components/schemas/problem.yaml'}
-    page:                        { $ref: './components/schemas/page.yaml' }
-    sort:                        { $ref: './components/schemas/sort.yaml' }
+    application-code-dto:           { $ref: './components/schemas/application-code-dto.yaml'}
+    application-code-list-item-dto: { $ref: './components/schemas/application-code-list-item-dto.yaml'}
+    result-code-dto:                { $ref: './components/schemas/result-code-dto.yaml' }
+    result-code-list-item-dto:      { $ref: './components/schemas/result-code-list-item-dto.yaml' }
+    problem:                        { $ref: './components/schemas/problem.yaml'}
+    page:                           { $ref: './components/schemas/page.yaml' }
+    sort:                           { $ref: './components/schemas/sort.yaml' }
   responses:
      bad-request-error:      { $ref: './components/responses//bad-request-error.yaml' }
      unauthorized-error:     { $ref: './components/responses/unauthorized-error.yaml' }

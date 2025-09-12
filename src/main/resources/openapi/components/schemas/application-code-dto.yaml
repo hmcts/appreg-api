@@ -1,0 +1,67 @@
+type: object
+description: Immutable DTO representing an Application Code.
+required:
+  - id
+  - applicationCode
+  - title
+  - wording
+  - isFeeDue
+  - requiresRespondent
+  - bulkRespondentAllowed
+  - startDate
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Primary key identifier.
+  applicationCode:
+    type: string
+    description: Code that identifies the application type.
+  title:
+    type: string
+    description: Human-readable title.
+  wording:
+    type: string
+    description: Full descriptive wording, potentially with blank fields to be inputted by the user.
+  isFeeDue:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code require an
+      Application List Entry Fee Status to be created and linked.
+  requiresRespondent:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code require a
+      respondent to be created and linked.
+  startDate:
+    type: string
+    format: date
+    description: Start date from which the code is valid.
+  endDate:
+    type: string
+    format: date
+    nullable: true
+    description: End date until which the code is valid.
+  bulkRespondentAllowed:
+    type: boolean
+    description: > # TODO - Check what a bulk respondent looks like.
+      True if Application List Entries using this Application Code allow multiple
+      respondents to be created and linked.
+  feeReference:
+    type: string
+    nullable: true
+    description: A short reference code that identifies a Fee.
+  feeAmount:
+    allOf:
+      - $ref: "./money-gbp.yaml"
+    nullable: true
+    description: Fee amount for this application code, expressed in pence (GBP minor units).
+  feeDescription:
+    type: string
+    nullable: true
+    description: Descriptive text for the fee.
+  offsiteFeeAmount:
+    allOf:
+      - $ref: "./money-gbp.yaml"
+    nullable: true
+    description: Offsite fee amount, expressed in pence (GBP minor units).
