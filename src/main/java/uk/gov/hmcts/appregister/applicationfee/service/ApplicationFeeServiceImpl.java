@@ -1,41 +1,26 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.applicationfee.model.ApplicationFee;
-import uk.gov.hmcts.appregister.applicationfee.model.FeePair;
-import uk.gov.hmcts.appregister.applicationfee.repository.ApplicationFeeRepository;
+import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
+/** Service to handle application fee operations. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
-    private final ApplicationFeeRepository feeRepository;
+    private final FeeRepository feeRepository;
 
-    public Optional<ApplicationFee> findMainFee(String feeReference) {
-        return feeRepository.findByReferenceAndIsOffset(feeReference, false).stream().findFirst();
-    }
-
-    public Optional<ApplicationFee> findOffsetFee(String feeReference) {
-        return feeRepository.findByReferenceAndIsOffset(feeReference, true).stream().findFirst();
-    }
-
+    @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
-        List<ApplicationFee> fees = feeRepository.findByReference(feeReference);
+        List<Fee> fees = feeRepository.findByReference(feeReference);
 
-        ApplicationFee mainFee =
-                fees.stream()
-                        .filter(f -> !Boolean.TRUE.equals(f.isOffset()))
-                        .findFirst()
-                        .orElse(null);
+        Fee mainFee = fees.stream().findFirst().orElse(null);
 
-        ApplicationFee offsetFee =
-                fees.stream()
-                        .filter(f -> Boolean.TRUE.equals(f.isOffset()))
-                        .findFirst()
-                        .orElse(null);
-
+        // TODO: No offset fee in the DB yet so second fee will always be offset
+        Fee offsetFee = fees.size() > 1 ? fees.get(1) : null;
         return new FeePair(mainFee, offsetFee);
     }
 }

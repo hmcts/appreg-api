@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
-import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicant;
 
+/** Mapper for StandardApplicant entity to StandardApplicantDto. */
 @Component
 public class StandardApplicantMapper {
 
@@ -16,7 +17,7 @@ public class StandardApplicantMapper {
                 entity.getId(),
                 entity.getApplicantCode(),
                 entity.getApplicantTitle(),
-                entity.getApplicantName(),
+                entity.getName(),
                 entity.getApplicantForename1(),
                 entity.getApplicantForename2(),
                 entity.getApplicantForename3(),

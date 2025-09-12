@@ -5,11 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
-import uk.gov.hmcts.appregister.standardapplicant.model.StandardApplicant;
-import uk.gov.hmcts.appregister.standardapplicant.repository.StandardApplicantRepository;
 
+/** Service implementation for managing standard applicants. */
 @Service
 @RequiredArgsConstructor
 public class StandardApplicationServiceImpl implements StandardApplicantService {

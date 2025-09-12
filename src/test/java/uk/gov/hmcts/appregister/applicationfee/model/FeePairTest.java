@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationfee.model;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 
 /**
  * Unit tests for {@link FeePair}.

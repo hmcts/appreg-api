@@ -1,7 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentry.dto;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
+/** DTO for writing identity details. */
 public record IdentityDetailsWriteDto(
         String code,
         String name,
@@ -19,4 +20,4 @@ public record IdentityDetailsWriteDto(
         String emailAddress,
         String telephoneNumber,
         String mobileNumber,
-        LocalDate dateOfBirth) {}
+        OffsetDateTime dateOfBirth) {}

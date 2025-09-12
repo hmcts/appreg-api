@@ -8,6 +8,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +25,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
 import uk.gov.hmcts.appregister.resolutioncode.mapper.ResolutionCodeMapper;
-import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
-import uk.gov.hmcts.appregister.resolutioncode.repository.ResolutionCodeRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ResolutionCodeServiceImplTest {
@@ -201,7 +203,7 @@ class ResolutionCodeServiceImplTest {
                 "legislation",
                 "dest1@example.com",
                 "dest2@example.com",
-                LocalDate.of(2024, 1, 1),
-                LocalDate.of(2025, 1, 1));
+                OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
     }
 }

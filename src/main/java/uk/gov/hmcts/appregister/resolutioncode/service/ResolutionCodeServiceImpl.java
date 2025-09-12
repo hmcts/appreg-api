@@ -11,11 +11,11 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
 import uk.gov.hmcts.appregister.resolutioncode.mapper.ResolutionCodeMapper;
-import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
-import uk.gov.hmcts.appregister.resolutioncode.repository.ResolutionCodeRepository;
 
 /**
  * Concrete service for read-only operations on {@link ResolutionCode} data.

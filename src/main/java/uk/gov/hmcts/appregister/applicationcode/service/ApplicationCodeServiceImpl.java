@@ -7,11 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
-import uk.gov.hmcts.appregister.applicationcode.model.ApplicationCode;
-import uk.gov.hmcts.appregister.applicationcode.repository.ApplicationCodeRepository;
-import uk.gov.hmcts.appregister.applicationfee.model.FeePair;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 
+/** Service implementation for managing application codes. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationCodeServiceImpl implements ApplicationCodeService {
@@ -37,7 +38,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     public ApplicationCodeDto findByCode(String code) {
         final ApplicationCode applicationCode =
                 repository
-                        .findByApplicationCode(code)
+                        .findByCode(code)
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(

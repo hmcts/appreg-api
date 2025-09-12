@@ -5,8 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.LocalDate;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.PettySessionalArea;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
-import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 class NationalCourtHouseMapperTest {
 
@@ -33,7 +34,7 @@ class NationalCourtHouseMapperTest {
                         .startDate(LocalDate.of(2020, 1, 1))
                         .endDate(LocalDate.of(2025, 12, 31))
                         .locationId(100L)
-                        .psaId(200L)
+                        .psaId(PettySessionalArea.builder().id(200L).build())
                         .courtLocationCode("CCC01")
                         .welshName("Llys y Goron Caerdydd")
                         .orgId(300L)
@@ -52,7 +53,7 @@ class NationalCourtHouseMapperTest {
         assertThat(dto.startDate()).isEqualTo(entity.getStartDate());
         assertThat(dto.endDate()).isEqualTo(entity.getEndDate());
         assertThat(dto.locationId()).isEqualTo(entity.getLocationId());
-        assertThat(dto.psaId()).isEqualTo(entity.getPsaId());
+        assertThat(dto.psaId()).isEqualTo(entity.getPsaId().getId());
         assertThat(dto.courtLocationCode()).isEqualTo(entity.getCourtLocationCode());
         assertThat(dto.welshName()).isEqualTo(entity.getWelshName());
         assertThat(dto.orgId()).isEqualTo(entity.getOrgId());

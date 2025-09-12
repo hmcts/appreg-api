@@ -1,14 +1,15 @@
 package uk.gov.hmcts.appregister.applicationentry.dto;
 
 import java.util.List;
-import uk.gov.hmcts.appregister.applicationentry.model.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
+/** DTO for writing application data. */
 public record ApplicationWriteDto(
         Long standardApplicantId,
         Long applicationCodeId,
         IdentityDetailsWriteDto applicant,
         IdentityDetailsWriteDto respondent,
-        Integer numberOfBulkRespondents,
+        Short numberOfBulkRespondents,
         List<String> textFields,
         String caseReference,
         String accountNumber,

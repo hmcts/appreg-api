@@ -6,23 +6,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-import uk.gov.hmcts.appregister.applicationentry.model.Application;
-import uk.gov.hmcts.appregister.applicationentry.repository.ApplicationRepository;
-import uk.gov.hmcts.appregister.applicationlist.model.ApplicationList;
-import uk.gov.hmcts.appregister.applicationlist.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 
+/** Service for handling application actions such as moving applications between lists. */
 @Service
 @RequiredArgsConstructor
 public class ApplicationActionsServiceImpl implements ApplicationActionsService {
 
-    private final ApplicationRepository applicationRepository;
+    private final ApplicationListEntryRepository applicationListEntryRepository;
     private final ApplicationListRepository applicationListRepository;
+    private final UserProvider userProvider;
 
     @Override
     @Transactional
-    public void moveApplications(List<Long> applicationIds, Long targetListId, String userId) {
-        List<Application> applications =
-                applicationRepository.findByIdInAndApplicationListUserId(applicationIds, userId);
+    public void moveApplications(List<Long> applicationIds, Long targetListId) {
+        List<ApplicationListEntry> applications =
+                applicationListEntryRepository.findByIdInAndCreatedUser(
+                        applicationIds, userProvider.getUser());
 
         if (applications.size() != applicationIds.size()) {
             throw new ResponseStatusException(
@@ -33,7 +37,7 @@ public class ApplicationActionsServiceImpl implements ApplicationActionsService 
         // TODO: Should we all user to create a new list if the target list doesn't exist?
         ApplicationList targetList =
                 applicationListRepository
-                        .findByIdAndUserId(targetListId, userId)
+                        .findByIdAndCreatedUser(targetListId, userProvider.getUser())
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -41,6 +45,6 @@ public class ApplicationActionsServiceImpl implements ApplicationActionsService 
                                                 "Target application list not found"));
 
         applications.forEach(app -> app.setApplicationList(targetList));
-        applicationRepository.saveAll(applications);
+        applicationListEntryRepository.saveAll(applications);
     }
 }

@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
+/** Service to parse wording templates and inject input fields. */
 @Service
 public class WordingTemplateParser {
 
@@ -22,6 +23,7 @@ public class WordingTemplateParser {
     private static final int NAME = 2;
     private static final int MAX_LENGTH = 3;
 
+    /** Generates the final wording by injecting input fields into the template. */
     public String generateWording(String template, List<String> inputFields) {
         List<TemplateToken> tokens = extractTokens(template);
         if (!hasCorrectNumberOfTexts(tokens, inputFields)) {

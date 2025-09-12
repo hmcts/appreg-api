@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.dto.BulkUploadResponseDto;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadService;
 
+/** Controller for handling bulk upload of application entries via CSV files. */
 @RestController
 @RequestMapping("/application-lists")
 @RequiredArgsConstructor
@@ -29,11 +29,9 @@ public class BulkUploadController {
     @Operation(
             summary = "Bulk upload application entries for a specific list",
             operationId = "bulkUploadEntries")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "CSV processed successfully"),
-        @ApiResponse(responseCode = "400", description = "Malformed file or invalid data"),
-        @ApiResponse(responseCode = "404", description = "Application list not found")
-    })
+    @ApiResponse(responseCode = "200", description = "CSV processed successfully")
+    @ApiResponse(responseCode = "400", description = "Malformed file or invalid data")
+    @ApiResponse(responseCode = "404", description = "Application list not found")
     @PostMapping("/{listId}/applications/bulk-upload")
     public ResponseEntity<BulkUploadResponseDto> uploadEntries(
             @PathVariable Long listId,
@@ -41,7 +39,7 @@ public class BulkUploadController {
             @AuthenticationPrincipal Jwt jwt) {
         log.info("Bulk uploading entries to listId: {}", listId);
         String userId = jwt.getClaimAsString("oid");
-        BulkUploadResponseDto response = bulkUploadService.uploadCsv(listId, file, userId);
+        BulkUploadResponseDto response = bulkUploadService.uploadCsv(listId, file);
         return ResponseEntity.ok(response);
     }
 }

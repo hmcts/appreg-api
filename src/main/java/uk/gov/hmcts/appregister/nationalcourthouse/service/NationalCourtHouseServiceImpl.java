@@ -11,10 +11,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
 import uk.gov.hmcts.appregister.nationalcourthouse.mapper.NationalCourtHouseMapper;
-import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
-import uk.gov.hmcts.appregister.nationalcourthouse.repository.NationalCourtHouseRepository;
 
 /**
  * Service implementation for interacting with {@link NationalCourtHouse} data.

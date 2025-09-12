@@ -1,0 +1,8 @@
+# Flyway configuration for local environment. Useful for functional testing as well as integration testing.
+spring:
+  flyway:
+    enabled: true
+    locations: classpath:/migrations,/baseline
+    default-schema: ${spring.jpa.properties.hibernate.default_schema}
+    mixed: true
+    baseline-on-migrate: true

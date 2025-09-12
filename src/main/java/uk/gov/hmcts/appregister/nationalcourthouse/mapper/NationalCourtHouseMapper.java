@@ -2,8 +2,8 @@ package uk.gov.hmcts.appregister.nationalcourthouse.mapper;
 
 import java.util.Optional;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.nationalcourthouse.dto.NationalCourtHouseDto;
-import uk.gov.hmcts.appregister.nationalcourthouse.model.NationalCourtHouse;
 
 /**
  * Mapper component responsible for converting {@link NationalCourtHouse} JPA entities into their
@@ -39,7 +39,7 @@ public class NationalCourtHouseMapper {
                                         e.getStartDate(),
                                         e.getEndDate(),
                                         e.getLocationId(),
-                                        e.getPsaId(),
+                                        e.getPsaId() != null ? e.getPsaId().getId() : null,
                                         e.getCourtLocationCode(),
                                         e.getWelshName(),
                                         e.getOrgId()));

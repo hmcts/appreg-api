@@ -1,0 +1,29 @@
+version: '2.1'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: app_register_postgres
+    environment:
+      - POSTGRES_USER=app_reg_user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=appreg-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init/001_init.sql:/docker-entrypoint-initdb.d/init.sql
+  postgres-admin:
+    image: "dpage/pgadmin4"
+    ports:
+      - "8080:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+
+volumes:
+  pgdata:
+  pgadmin_data:

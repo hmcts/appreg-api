@@ -11,6 +11,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -146,8 +148,8 @@ class ResolutionCodeControllerTest {
                         "legislation",
                         "dest1@ex.com",
                         "dest2@ex.com",
-                        LocalDate.of(2024, 1, 1),
-                        LocalDate.of(2025, 1, 1));
+                        OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
+                        OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
         when(service.findById(10L)).thenReturn(dto);
 
         // Act
