@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -65,6 +66,7 @@ public class Address extends BaseChangeableEntity implements Versionable {
     private OffsetDateTime endDate;
 
     @Column(name = "version_number", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "mcc_mcc_id")

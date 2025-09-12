@@ -26,35 +26,39 @@ VALUES
 ----------------------- APPLICATION FEE -----------------------
 --
 -- CO1.1 - Main Fee and Offset Fee.
-INSERT INTO fee (fee_id, fee_reference, fee_description, fee_value, fee_start_date, fee_end_date, fee_version, fee_changed_by, fee_changed_date, fee_user_name) VALUES
-        (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 50.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 30.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+INSERT INTO fee (fee_id, fee_reference, fee_description, fee_value, fee_start_date, fee_end_date, fee_version, fee_changed_by, fee_changed_date, fee_user_name, is_offsite) VALUES
+        (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 50.00, DATE '2014-07-25',  '2019-07-25', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 100.00, DATE '2022-07-25',  NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 200.00, DATE '2022-07-25',  NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 30.00, DATE '2021-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
+        (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 40.00, DATE '2021-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
+        (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 70.00, DATE '2015-07-25', '2020-07-25', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO2.1 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO2.1', 'Application to state a case for the High Court', 515.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO2.1', 'Application to state a case for the High Court', 155.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO2.1', 'Application to state a case for the High Court', 515.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO2.1', 'Application to state a case for the High Court', 155.00, CURRENT_TIMESTAMP, NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO2.2 - Main Fee only.
-        (nextval('fee_seq'), 'CO2.2', 'Appeal against DEO – Child Support Act 1991', 100.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO2.2', 'Appeal against DEO – Child Support Act 1991', 100.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
         -- CO2.3 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO2.3', 'Appeal under Sch 5 Licensing Act 2003', 410.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO2.3', 'Appeal under Sch 5 Licensing Act 2003', 70.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO2.3', 'Appeal under Sch 5 Licensing Act 2003', 410.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO2.3', 'Appeal under Sch 5 Licensing Act 2003', 70.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO2.4 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO2.4', 'Other appeal where no fee specified', 205.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO2.4', 'Other appeal where no fee specified', 70.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO2.4', 'Other appeal where no fee specified', 205.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO2.4', 'Other appeal where no fee specified', 70.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO3.1 - Main Fee only.
-        (nextval('fee_seq'), 'CO3.1', 'Certificate of refusal to state a case.', 105.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO3.1', 'Certificate of refusal to state a case.', 105.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
         -- CO3.2 - Main Fee only.
-        (nextval('fee_seq'), 'CO3.2', 'Certificate of satisfaction under Register of judgments, orders and fines', 15.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO3.2', 'Certificate of satisfaction under Register of judgments, orders and fines', 15.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
         -- CO3.3 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO3.3', 'Certified copy of a memorandum of conviction.', 60.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO3.3', 'Certified copy of a memorandum of conviction.', 60.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO3.3', 'Certified copy of a memorandum of conviction.', 60.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO3.3', 'Certified copy of a memorandum of conviction.', 60.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO3.4 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO3.4', 'Certificate or certified document where no other fee is specified.', 60.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO3.4', 'Certificate or certified document where no other fee is specified.', 25.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO3.4', 'Certificate or certified document where no other fee is specified.', 60.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO3.4', 'Certificate or certified document where no other fee is specified.', 25.00, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO4.1 - Main Fee and Offset Fee.
-        (nextval('fee_seq'), 'CO4.1', 'Liability Order – Council Tax and NDR', 325.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
-        (nextval('fee_seq'), 'CO4.1', 'Liability Order – Council Tax and NDR', 0.50, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload'),
+        (nextval('fee_seq'), 'CO4.1', 'Liability Order – Council Tax and NDR', 325.00, DATE '2016-07-25', DATE '2018-07-24', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
+        (nextval('fee_seq'), 'CO4.1', 'Liability Order – Council Tax and NDR', 0.50, DATE '2018-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
         -- CO4.2 - Main Fee only.
-        (nextval('fee_seq'), 'CO4.2', 'Liability Order – Child Support Act 1991', 40.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload');
+        (nextval('fee_seq'), 'CO4.2', 'Liability Order – Child Support Act 1991', 40.00, DATE '2016-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false);
     --
     --
 --
@@ -86,7 +90,7 @@ VALUES
 INSERT INTO application_codes (ac_id, application_code, application_code_title, application_code_wording, application_legislation,fee_due, application_code_respondent, ac_destination_email_address_1, ac_destination_email_address_2, application_code_start_date, application_code_end_date, bulk_respondent_allowed, version, changed_by, changed_date, user_name, ac_fee_reference)
 VALUES
         (1, 'AD99001','Copy documents','Request to copy documents','',1,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0, '2016-01-01 00:00:00', 'admin', 'CO1.1'),
-        (2, 'AD99002','Copy documents (electronic)','Request for copy documents on computer disc or in electronic form','',1,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,  '2016-01-01 00:00:00', 'admin', 'CO1.1'),
+        (2, 'AD99002','Copy documents (electronic)','Request for copy documents on computer disc or in electronic form','',1,0,'address1@cgi.com','address2@cgi.com',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,  '2016-01-01 00:00:00', 'admin', 'CO1.1'),
         (3, 'AD99003','Extract from the Court Register','Certified extract from the court register','',1,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0, '2016-01-01 00:00:00','admin','CO1.1'),
         (4, 'AD99004','Certificate of Satisfaction','Request for a certificate of satisfaction of debt registered in the register of judgements, orders and fines','',0,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,  '2016-01-01 00:00:00','admin',NULL),
         (5, 'AD99005','Certified genuine copy document','Request for a copy of a document certified as a genuine copy of the original document','',0,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0, '2016-01-01 00:00:00','admin',NULL),

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -54,6 +55,7 @@ public class LinkCommunicationMedia extends BaseChangeableEntity implements Vers
 
     @Column(name = "version_number", nullable = false)
     @Size(max = 38)
+    @Version
     private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)

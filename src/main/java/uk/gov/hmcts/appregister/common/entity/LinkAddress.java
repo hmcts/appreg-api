@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -51,6 +52,7 @@ public class LinkAddress extends BaseChangeableEntity implements Versionable {
     private OffsetDateTime endDate;
 
     @Column(name = "version_number", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "head_office_indicator")

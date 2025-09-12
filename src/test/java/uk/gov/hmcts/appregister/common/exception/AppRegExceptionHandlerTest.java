@@ -39,7 +39,9 @@ public class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 AppCodeError.CODE_NOT_FOUND.getCode().getMessage(),
                 problemDetail.getBody().getDetail());
-        Assertions.assertEquals(new URI("appcode"), problemDetail.getBody().getType());
+        Assertions.assertEquals(
+                new URI(AppCodeError.CODE_NOT_FOUND.getCode().getAppCode()),
+                problemDetail.getBody().getType());
     }
 
     @Test

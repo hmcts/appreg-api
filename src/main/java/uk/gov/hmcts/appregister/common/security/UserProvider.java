@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.entity.security;
+package uk.gov.hmcts.appregister.common.security;
 
 import com.nimbusds.jwt.JWTClaimNames;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -6,9 +6,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 
 /**
- * Represents the logged in user
+ * Represents the logged-in user in the form of JWT token.
  *
- * <p>This class can be injecting anywhere that needs to find out the current user and their roles.
+ * <p>This class can be injected anywhere that needs to find out the current user and their roles.
  * This class assumes that we authenticated using a JWT token and that the token contains a suitable
  * claim
  *
@@ -16,7 +16,8 @@ import org.springframework.stereotype.Component;
  * to have already taken place
  */
 @Component
-public class AuthenticatedUser {
+@SuppressWarnings({"java:S1135", "java:S3516"})
+public class UserProvider {
 
     private static final String ROLES_CLAIM = "roles";
 
@@ -29,7 +30,7 @@ public class AuthenticatedUser {
     }
 
     /**
-     * Gets the user from the subject claim.
+     * Gets the user in the best way possible.
      *
      * @return The user
      */

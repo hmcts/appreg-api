@@ -13,7 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -25,7 +25,7 @@ public class AppListRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private ApplicationListRepository applicationListRepository;
 
-    @Autowired private AuthenticatedUser loggedInUser;
+    @Autowired private UserProvider loggedInUser;
 
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 

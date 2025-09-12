@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 
 /** Service handling bulk upload of application entries via CSV files. */
 @Service
@@ -38,11 +39,12 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     private final ApplicationCodeRepository applicationCodeRepository;
 
     private final ApplicationListEntrySaveService saveService;
+    private final UserProvider userProvider;
 
     @Override
-    public BulkUploadResponseDto uploadCsv(Long listId, MultipartFile file, String userId) {
-        log.info("Bulk upload started for listId={} by user={}", listId, userId);
-        ApplicationList list = findList(listId, userId);
+    public BulkUploadResponseDto uploadCsv(Long listId, MultipartFile file) {
+        log.info("Bulk upload started for listId={} by user={}", listId, userProvider.getUser());
+        ApplicationList list = findList(listId);
 
         List<CsvRowDto> rows = csvParser.parse(file);
         List<BulkUploadErrorDto> errors = new ArrayList<>();
@@ -53,11 +55,10 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             int rowNumber = i + 2; // Account for header + 0-index
 
             try {
-                StandardApplicant applicant =
-                        resolveStandardApplicant(row.standardApplicantCode(), userId);
+                StandardApplicant applicant = resolveStandardApplicant(row.standardApplicantCode());
                 ApplicationCode applicationCode = resolveApplicationCode(row.applicationCode());
                 ApplicationListEntry entry =
-                        mapToEntity(row, list, applicant, applicationCode, userId);
+                        mapToEntity(row, list, applicant, applicationCode, userProvider.getUser());
                 saveService.saveApplication(entry);
                 validEntries++;
 
@@ -76,9 +77,9 @@ public class BulkUploadServiceImpl implements BulkUploadService {
         return new BulkUploadResponseDto(validEntries, errors);
     }
 
-    private ApplicationList findList(Long listId, String userId) {
+    private ApplicationList findList(Long listId) {
         return listRepository
-                .findByIdAndCreatedUser(listId, userId)
+                .findByIdAndCreatedUser(listId, userProvider.getUser())
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
@@ -86,7 +87,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                                         "Application list not found or you do not have permission to access it."));
     }
 
-    private StandardApplicant resolveStandardApplicant(String code, String userId) {
+    private StandardApplicant resolveStandardApplicant(String code) {
         return standardApplicantRepository
                 .findByApplicantCode(code)
                 .orElseThrow(
@@ -97,7 +98,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     private ApplicationCode resolveApplicationCode(String code) {
         return applicationCodeRepository
-                .findByApplicationCode(code)
+                .findByCode(code)
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
 import uk.gov.hmcts.appregister.testutils.data.FeeTestData;
@@ -21,9 +21,9 @@ public class FeeRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private FeeRepository applicationFeeRepository;
 
-    @Autowired private AuthenticatedUser loggedInUser;
+    @Autowired private UserProvider loggedInUser;
 
-    private static final int BASELINE_TEST_COUNT = 18;
+    private static final int BASELINE_TEST_COUNT = 22;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {

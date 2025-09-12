@@ -8,14 +8,14 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.audit.AuditEnum;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
-import uk.gov.hmcts.appregister.common.entity.security.AuthenticatedUser;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 
 @Component
 @RequiredArgsConstructor
 public class AuditServiceImpl implements AuditService {
     private final DataAuditRepository dataAuditRepository;
 
-    private final AuthenticatedUser authenticatedUser;
+    private final UserProvider authenticatedUser;
 
     @Value("${spring.sql.init.schema-locations}")
     private String sqlInitSchemaLocations;

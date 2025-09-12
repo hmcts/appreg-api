@@ -206,7 +206,8 @@ CREATE TABLE fee (
 	fee_version NUMERIC NOT NULL,
 	fee_changed_by NUMERIC NOT NULL,
 	fee_changed_date timestamp NOT NULL,
-	fee_user_name varchar(250) NOT NULL
+	fee_user_name varchar(250) NOT NULL,
+  is_offsite boolean NOT NULL DEFAULT false
 );
 
 CREATE INDEX fee_reference_idx ON fee (fee_reference);

@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.testutils.controller;
 
-import java.net.MalformedURLException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
 /**
@@ -12,87 +14,87 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
  * with a 401 when we find an incorrect issuer, find an incorrect audience, find an incorrect
  * signature - Authorisation fails with a 403 when the wrong role is presented.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
-    /**
-     * Returns the rest endpoint descriptions.
-     *
-     * @return The set of rest endpoints to negatively test
-     */
-    protected abstract RestEndpointDescription[] getRestDescriptions() throws MalformedURLException;
+    /** The stream of negative security contexts to be tested. */
+    protected abstract Stream<RestEndpointDescription> getDescriptions() throws Exception;
 
-    @Test
-    public void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401() throws Exception {
-        for (RestEndpointDescription context : getRestDescriptions()) {
-            context.process(
-                            restAssuredClient,
-                            getATokenWithValidCredentials()
-                                    .expiredDate(
-                                            Date.from(
-                                                    Instant.now()
-                                                            .minusSeconds(20 * 60L))) // expired 20
-                                    // minutes ago
-                                    .build()
-                                    .fetchTokenForRole())
-                    .then()
-                    .statusCode(401);
-        }
+    @ParameterizedTest
+    @MethodSource("getDescriptions")
+    public void givenValidRequest_whenCalledWithAnExpiredToken_thenReturn401(
+            RestEndpointDescription restEndpointDescription) throws Exception {
+        restEndpointDescription
+                .process(
+                        restAssuredClient,
+                        getATokenWithValidCredentials()
+                                .expiredDate(
+                                        Date.from(
+                                                Instant.now().minusSeconds(20 * 60L))) // expired 20
+                                // minutes ago
+                                .build()
+                                .fetchTokenForRole())
+                .then()
+                .statusCode(401);
     }
 
-    @Test
-    public void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401()
-            throws Exception {
-        for (RestEndpointDescription context : getRestDescriptions()) {
-            context.process(
-                            restAssuredClient,
-                            getATokenWithValidCredentials()
-                                    .invalidToken(true)
-                                    .build()
-                                    .fetchTokenForRole())
-                    .then()
-                    .statusCode(401);
-        }
+    @ParameterizedTest
+    @MethodSource("getDescriptions")
+    public void givenValidRequest_whenCalledWithAnInvalidSignature_thenReturn401(
+            RestEndpointDescription restEndpointDescription) throws Exception {
+        restEndpointDescription
+                .process(
+                        restAssuredClient,
+                        getATokenWithValidCredentials()
+                                .invalidToken(true)
+                                .build()
+                                .fetchTokenForRole())
+                .then()
+                .statusCode(401);
     }
 
-    @Test
-    public void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401() throws Exception {
-        for (RestEndpointDescription context : getRestDescriptions()) {
-            context.process(
-                            restAssuredClient,
-                            getATokenWithValidCredentials()
-                                    .issuer("invalid-issuer")
-                                    .build()
-                                    .fetchTokenForRole())
-                    .then()
-                    .statusCode(401);
-        }
+    @ParameterizedTest
+    @MethodSource("getDescriptions")
+    public void givenValidRequest_whenCalledWithAnInvalidIssuer_thenReturn401(
+            RestEndpointDescription restEndpointDescription) throws Exception {
+        restEndpointDescription
+                .process(
+                        restAssuredClient,
+                        getATokenWithValidCredentials()
+                                .issuer("invalid-issuer")
+                                .build()
+                                .fetchTokenForRole())
+                .then()
+                .statusCode(401);
     }
 
-    @Test
-    public void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401() throws Exception {
-        for (RestEndpointDescription context : getRestDescriptions()) {
-            context.process(
-                            restAssuredClient,
-                            getATokenWithValidCredentials()
-                                    .audience("invalid-audience")
-                                    .build()
-                                    .fetchTokenForRole())
-                    .then()
-                    .statusCode(401);
-        }
+    @ParameterizedTest
+    @MethodSource("getDescriptions")
+    public void givenValidRequest_whenCalledWithAnInvalidAudience_thenReturn401(
+            RestEndpointDescription restEndpointDescription) throws Exception {
+        restEndpointDescription
+                .process(
+                        restAssuredClient,
+                        getATokenWithValidCredentials()
+                                .audience("invalid-audience")
+                                .build()
+                                .fetchTokenForRole())
+                .then()
+                .statusCode(401);
     }
 
-    @Test
-    public void givenValidRequest_whenGetIncorrectRole_thenReturn403() throws Exception {
-        for (RestEndpointDescription context : getRestDescriptions()) {
-            context.process(
-                            restAssuredClient,
-                            getATokenWithValidCredentials()
-                                    .roles(List.of(context.getInvalidRole()))
-                                    .build()
-                                    .fetchTokenForRole())
-                    .then()
-                    .statusCode(403);
-        }
+    @ParameterizedTest
+    @MethodSource("getDescriptions")
+    public void givenValidRequest_whenGetIncorrectRole_thenReturn403(
+            RestEndpointDescription restEndpointDescription) throws Exception {
+        restEndpointDescription
+                .process(
+                        restAssuredClient,
+                        getATokenWithValidCredentials()
+                                .roles(List.of(restEndpointDescription.getInvalidRole()))
+                                .build()
+                                .fetchTokenForRole())
+                .then()
+                .statusCode(403);
     }
 }

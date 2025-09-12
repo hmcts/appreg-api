@@ -48,11 +48,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     public ApplicationCodeDto findByCode(String code) {
         final ApplicationCode applicationCode =
                 repository
-                        .findByApplicationCode(code)
+                        .findByCode(code)
                         .orElseThrow(
                                 () -> {
                                     throw new AppRegistryException(
-                                            AppCodeError.CODE_NOT_FOUND, "", null);
+                                            AppCodeError.CODE_NOT_FOUND,
+                                            "No code found for: " + code);
                                 });
 
         FeePair feePair = feeService.resolveFeePair(applicationCode.getFeeReference());

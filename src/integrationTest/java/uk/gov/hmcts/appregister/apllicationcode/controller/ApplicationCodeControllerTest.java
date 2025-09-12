@@ -1,19 +1,26 @@
 package uk.gov.hmcts.appregister.apllicationcode.controller;
 
+import static org.mockito.Mockito.when;
+
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.net.MalformedURLException;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.audit.AuditEnum;
@@ -44,9 +51,19 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     @Value("${spring.data.web.pageable.max-page-size}")
     private Integer maxPageSize;
 
-    @Test
-    public void givenValidRequest_whenGetApplicationCodes_thenReturn200() throws Exception {
+    @MockitoBean private Clock clock; // replaces Clock bean in Spring context
 
+    @BeforeEach
+    public void before() {
+        // a date that is without range for the main but out of range for the offsite fee
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetApplicationCodesWithWithMultipleFeesForMainAndOffsite_thenReturn200()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -65,49 +82,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         responseSpec, ApplicationCodeDto[].class);
         Assertions.assertEquals(defaultPageSize, responseContent.length);
 
-        // assert the second auth code record
-        ApplicationCodeDto firstEntry = responseContent[2];
+        // assert
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(200.0),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(40.0));
 
-        Assertions.assertEquals("AD99003", firstEntry.applicationCode());
-        Assertions.assertEquals("Extract from the Court Register", firstEntry.title());
-        Assertions.assertEquals("Certified extract from the court register", firstEntry.wording());
-        Assertions.assertTrue(firstEntry.feeDue());
-        Assertions.assertFalse(firstEntry.requiresRespondent());
-        Assertions.assertEquals(OffsetDateTime.parse("2016-01-01T00:00Z"), firstEntry.startDate());
-        Assertions.assertFalse(firstEntry.bulkRespondentAllowed());
-        Assertions.assertEquals("CO1.1", firstEntry.feeReference());
-        Assertions.assertEquals(
-                "JP perform function away from court", firstEntry.mainFeeDescription());
-        Assertions.assertEquals(50.0, firstEntry.mainFeeAmount());
-        Assertions.assertEquals(
-                "JP perform function away from court", firstEntry.offsetFeeDescription());
-        Assertions.assertEquals(30.0, firstEntry.offsetFeeAmount());
-        Assertions.assertTrue(
-                DateUtil.equalsIgnoreMillis(
-                        OffsetDateTime.parse("2022-01-30T10:00Z"), firstEntry.lodgementDate()));
-        Assertions.assertEquals("Jane Doe", firstEntry.applicantName());
-
-        // assert the first record
-        ApplicationCodeDto secondEntry = responseContent[3];
-        Assertions.assertEquals("AD99004", secondEntry.applicationCode());
-        Assertions.assertEquals("Certificate of Satisfaction", secondEntry.title());
-        Assertions.assertEquals(
-                "Request for a certificate of satisfaction of debt registered "
-                        + "in the register of judgements, orders and fines",
-                secondEntry.wording());
-        Assertions.assertFalse(secondEntry.feeDue());
-        Assertions.assertFalse(secondEntry.requiresRespondent());
-        Assertions.assertEquals(OffsetDateTime.parse("2016-01-01T00:00Z"), secondEntry.startDate());
-        Assertions.assertFalse(secondEntry.bulkRespondentAllowed());
-        Assertions.assertNull(secondEntry.feeReference());
-        Assertions.assertNull(secondEntry.mainFeeDescription());
-        Assertions.assertNull(secondEntry.mainFeeAmount());
-        Assertions.assertNull(secondEntry.offsetFeeDescription());
-        Assertions.assertNull(secondEntry.offsetFeeAmount());
-        Assertions.assertTrue(
-                DateUtil.equalsIgnoreMillis(
-                        OffsetDateTime.parse("2021-01-01T00:00Z"), secondEntry.lodgementDate()));
-        Assertions.assertEquals("John Smith", secondEntry.applicantName());
+        assertApplicationCode(responseContent[1], applicationCodeDto);
 
         // assert the data audit record has been created
         DataAudit dataAudit = dataAuditRepository.findAll().get(0);
@@ -125,46 +108,215 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesForCode_thenReturn200() throws Exception {
+    public void givenValidRequest_whenGetApplicationCodesWithoutOffsiteFee_thenReturn200()
+            throws Exception {
+        // a date that is within range for the main but out of range for the offsite fee
+        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, 41);
+        ApplicationCodeDto[] responseContent =
+                PagingUtil.getResponseContentFromPagingResponse(
+                        responseSpec, ApplicationCodeDto[].class);
+        Assertions.assertEquals(defaultPageSize, responseContent.length);
+
+        // assert
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(50.0),
+                        Optional.empty(),
+                        Optional.empty());
+
+        assertApplicationCode(responseContent[1], applicationCodeDto);
+
+        // assert the data audit record has been created
+        DataAudit dataAudit = dataAuditRepository.findAll().get(0);
+        Assertions.assertEquals(1, dataAuditRepository.findAll().size());
+        Assertions.assertEquals(
+                AuditEnum.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName(),
+                dataAudit.getEventName());
+        Assertions.assertEquals(
+                AuditEnum.GET_APPLICATION_CODES_AUDIT_EVENT.getColumnName(),
+                dataAudit.getColumnName());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getCreatedUser());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getUserName());
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT));
+        Assertions.assertEquals(sqlInitSchemaLocations, dataAudit.getSchemaName());
+    }
+
+    @Test
+    public void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
+            throws Exception {
+        // a date that is within range for the offset but out of range for the main fee
+        when(clock.instant()).thenReturn(Instant.parse("2020-07-25T00:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
+        responseSpec.then().statusCode(200);
+
+        // assert
+        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, 41);
+        ApplicationCodeDto[] responseContent =
+                PagingUtil.getResponseContentFromPagingResponse(
+                        responseSpec, ApplicationCodeDto[].class);
+        Assertions.assertEquals(defaultPageSize, responseContent.length);
+
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(70.0));
+
+        assertApplicationCode(responseContent[1], applicationCodeDto);
+
+        // assert the data audit record has been created
+        DataAudit dataAudit = dataAuditRepository.findAll().get(0);
+        Assertions.assertEquals(1, dataAuditRepository.findAll().size());
+        Assertions.assertEquals(
+                AuditEnum.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName(),
+                dataAudit.getEventName());
+        Assertions.assertEquals(
+                AuditEnum.GET_APPLICATION_CODES_AUDIT_EVENT.getColumnName(),
+                dataAudit.getColumnName());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getCreatedUser());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getUserName());
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT));
+        Assertions.assertEquals(sqlInitSchemaLocations, dataAudit.getSchemaName());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetApplicationCodesForCodeWithMultipleFeesForMainAndOffsite_thenReturn200()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
         String id = "AD99002";
-        Optional<ApplicationCode> expectedRecord =
-                applicationCodeRepository.findByApplicationCode(id);
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + id), tokenGenerator.fetchTokenForRole());
 
         // make the assertions
         responseSpec.then().statusCode(200);
-        ApplicationCodeDto codeDto = responseSpec.as(ApplicationCodeDto.class);
 
-        // assert the second auth code record
-        Assertions.assertEquals(id, codeDto.applicationCode());
-        Assertions.assertEquals("Copy documents (electronic)", codeDto.title());
+        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(200.0),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(40.0));
+
+        assertApplicationCode(responseContent, applicationCodeDto);
+
+        // assert the data audit record has been created
+        DataAudit dataAudit = dataAuditRepository.findAll().get(0);
+        Assertions.assertEquals(1, dataAuditRepository.findAll().size());
         Assertions.assertEquals(
-                "Request for copy documents on computer disc or in electronic form",
-                codeDto.wording());
-        Assertions.assertTrue(codeDto.feeDue());
-        Assertions.assertFalse(codeDto.requiresRespondent());
-        Assertions.assertNotNull(codeDto.startDate());
-        Assertions.assertFalse(codeDto.bulkRespondentAllowed());
-        Assertions.assertEquals("CO1.1", codeDto.feeReference());
+                AuditEnum.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName(),
+                dataAudit.getEventName());
         Assertions.assertEquals(
-                "JP perform function away from court", codeDto.mainFeeDescription());
-        Assertions.assertEquals(50.0, codeDto.mainFeeAmount());
+                AuditEnum.GET_APPLICATION_CODE_AUDIT_EVENT.getColumnName(),
+                dataAudit.getColumnName());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getCreatedUser());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getUserName());
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT + "/" + id));
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT + "/" + id));
+        Assertions.assertEquals(sqlInitSchemaLocations, dataAudit.getSchemaName());
+    }
+
+    @Test
+    public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
+            throws Exception {
+        // a date that is within range for the main but out of range for the offsite fee
+        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        String id = "AD99002";
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+
+        // assert
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.of("JP perform function away from court"),
+                        Optional.of(50.0),
+                        Optional.empty(),
+                        Optional.empty());
+
+        assertApplicationCode(responseContent, applicationCodeDto);
+
+        // assert the data audit record has been created
+        DataAudit dataAudit = dataAuditRepository.findAll().get(0);
+        Assertions.assertEquals(1, dataAuditRepository.findAll().size());
         Assertions.assertEquals(
-                "JP perform function away from court", codeDto.offsetFeeDescription());
-        Assertions.assertEquals(30.0, codeDto.offsetFeeAmount());
-        Assertions.assertNotNull(codeDto.lodgementDate());
-        Assertions.assertEquals("Jane Doe", codeDto.applicantName());
+                AuditEnum.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName(),
+                dataAudit.getEventName());
         Assertions.assertEquals(
-                "Request for copy documents on computer disc or in electronic form",
-                codeDto.wording());
+                AuditEnum.GET_APPLICATION_CODE_AUDIT_EVENT.getColumnName(),
+                dataAudit.getColumnName());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getCreatedUser());
+        Assertions.assertEquals(tokenGenerator.getEmail(), dataAudit.getUserName());
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT + "/" + id));
+        Assertions.assertTrue(dataAudit.getLink().endsWith(WEB_CONTEXT + "/" + id));
+        Assertions.assertEquals(sqlInitSchemaLocations, dataAudit.getSchemaName());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
+                    throws Exception {
+        // a date that is within range for the offset but out of range for the main fee
+        when(clock.instant()).thenReturn(Instant.parse("2020-07-25T00:00:00Z"));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        String id = "AD99002";
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        // assert
+        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+
+        ApplicationCodeDto applicationCodeDto =
+                generateDefaultApplicationCodeDtoAssertionPayload(
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of("Offsite: JP perform function away from court"),
+                        Optional.of(70.0));
+
+        assertApplicationCode(responseContent, applicationCodeDto);
 
         // assert the data audit record has been created
         DataAudit dataAudit = dataAuditRepository.findAll().get(0);
@@ -223,10 +375,10 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals("CO1.1", firstEntry.feeReference());
         Assertions.assertEquals(
                 "JP perform function away from court", firstEntry.mainFeeDescription());
-        Assertions.assertEquals(50.0, firstEntry.mainFeeAmount());
+        Assertions.assertEquals(200.0, firstEntry.mainFeeAmount());
         Assertions.assertEquals(
-                "JP perform function away from court", firstEntry.offsetFeeDescription());
-        Assertions.assertEquals(30.0, firstEntry.offsetFeeAmount());
+                "Offsite: JP perform function away from court", firstEntry.offsetFeeDescription());
+        Assertions.assertEquals(40.0, firstEntry.offsetFeeAmount());
         Assertions.assertTrue(
                 DateUtil.equalsIgnoreMillis(
                         OffsetDateTime.parse("2022-01-30T10:00Z"), firstEntry.lodgementDate()));
@@ -603,8 +755,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // execute the functionality
         String id = "doesntexist";
-        Optional<ApplicationCode> expectedRecord =
-                applicationCodeRepository.findByApplicationCode(id);
+        Optional<ApplicationCode> expectedRecord = applicationCodeRepository.findByCode(id);
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + id),
@@ -625,18 +776,80 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals("/" + WEB_CONTEXT + "/" + id, codeDto.getInstance().toString());
     }
 
+    private ApplicationCodeDto generateDefaultApplicationCodeDtoAssertionPayload(
+            Optional<String> mainFeeDesc,
+            Optional<Double> mainFeeAmt,
+            Optional<String> offsiteFeeDesc,
+            Optional<Double> offsiteFeeAmt) {
+        return new ApplicationCodeDto(
+                1L,
+                "AD99002",
+                "Copy documents (electronic)",
+                "Request for copy documents on computer" + " disc or in electronic form",
+                "",
+                true,
+                false,
+                "address1@cgi.com",
+                "address2@cgi.com",
+                OffsetDateTime.now(),
+                OffsetDateTime.now(),
+                false,
+                "CO1.1",
+                mainFeeDesc.orElse(null),
+                mainFeeAmt.orElse(null),
+                offsiteFeeDesc.orElse(null),
+                offsiteFeeAmt.orElse(null),
+                OffsetDateTime.now(),
+                "Jane Doe",
+                "Code wording");
+    }
+
+    private void assertApplicationCode(ApplicationCodeDto actual, ApplicationCodeDto expected) {
+        Assertions.assertEquals(expected.applicationCode(), actual.applicationCode());
+        Assertions.assertEquals(expected.title(), actual.title());
+        Assertions.assertEquals(expected.wording(), actual.wording());
+        Assertions.assertEquals(expected.feeDue(), actual.feeDue());
+        Assertions.assertEquals(expected.requiresRespondent(), actual.requiresRespondent());
+
+        if (expected.startDate() == null) {
+            Assertions.assertNull(actual.startDate());
+        } else {
+            Assertions.assertNotNull(expected.startDate());
+        }
+
+        if (expected.endDate() == null) {
+            Assertions.assertNull(actual.endDate());
+        } else {
+            Assertions.assertNotNull(expected.endDate());
+        }
+
+        Assertions.assertEquals(expected.bulkRespondentAllowed(), actual.bulkRespondentAllowed());
+        Assertions.assertEquals(expected.feeReference(), actual.feeReference());
+        Assertions.assertEquals(expected.mainFeeAmount(), actual.mainFeeAmount());
+        Assertions.assertEquals(expected.offsetFeeDescription(), actual.offsetFeeDescription());
+        Assertions.assertEquals(expected.offsetFeeAmount(), actual.offsetFeeAmount());
+
+        if (expected.lodgementDate() == null) {
+            Assertions.assertNull(actual.lodgementDate());
+        } else {
+            Assertions.assertNotNull(expected.lodgementDate());
+        }
+        Assertions.assertEquals(expected.applicantName(), actual.applicantName());
+        Assertions.assertEquals(expected.destinationEmail1(), actual.destinationEmail1());
+        Assertions.assertEquals(expected.destinationEmail2(), actual.destinationEmail2());
+    }
+
     @Override
-    protected RestEndpointDescription[] getRestDescriptions() throws MalformedURLException {
-        return new RestEndpointDescription[] {
-            RestEndpointDescription.builder()
-                    .url(getLocalUrl("application-codes"))
-                    .method(HttpMethod.GET)
-                    .build(),
-            RestEndpointDescription.builder()
-                    .url(getLocalUrl("application-codes/2"))
-                    .method(HttpMethod.GET)
-                    .build(),
-        };
+    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        return Stream.of(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl("application-codes"))
+                        .method(HttpMethod.GET)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl("application-codes/2"))
+                        .method(HttpMethod.GET)
+                        .build());
     }
 
     /**

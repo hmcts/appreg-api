@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.common.entity.base;
 
-import jakarta.persistence.EntityListeners;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 /** This interface should be implemented by entities that need to track changes. */
-@EntityListeners(PreCreateUpdateEntityListener.class)
 public interface Changeable {
 
     /**
@@ -12,7 +11,7 @@ public interface Changeable {
      *
      * @return Changed by user number
      */
-    Long getChangedBy();
+    BigDecimal getChangedBy();
 
     /**
      * Gets the date and time when the last change was made.
@@ -26,7 +25,7 @@ public interface Changeable {
      *
      * @param changedBy Changed by user number
      */
-    void setChangedBy(Long changedBy);
+    void setChangedBy(BigDecimal changedBy);
 
     /**
      * Sets the date and time when the last change was made.

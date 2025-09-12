@@ -36,14 +36,16 @@ public interface ResolutionCodeService {
     List<ResolutionCodeDto> findAll();
 
     /**
-     * Finds a single result code by its short business code (e.g., {@code RC123}).
+     * Find a single resolution code by its identifier.
      *
-     * @param code exact result code value (column {@code resolution_code})
+     * <p>Implementations should translate a missing entity to a {@code 404} (e.g., by throwing
+     * {@code ResponseStatusException(HttpStatus.NOT_FOUND)}).
+     *
+     * @param id unique identifier of the resolution code
      * @return the matching {@link ResolutionCodeDto}
-     * @throws org.springframework.web.server.ResponseStatusException (404 NOT_FOUND) if no record
-     *     exists for the given code
+     * @throws org.springframework.web.server.ResponseStatusException with status 404 if not found
      */
-    ResolutionCodeDto findByCode(String code);
+    ResolutionCodeDto findById(Long id);
 
     /**
      * Searches result codes with optional filters and pagination.

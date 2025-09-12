@@ -12,5 +12,5 @@ public interface BulkUploadService {
      * @param file the CSV file to upload
      * @return a BulkUploadResponseDto containing the result of the upload
      */
-    BulkUploadResponseDto uploadCsv(Long listId, MultipartFile file, String userId);
+    BulkUploadResponseDto uploadCsv(Long listId, MultipartFile file);
 }

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationlistentryresolutions.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +34,8 @@ public class ApplicationListEntryResolutionController {
     @Operation(
             summary = "Get the result for a specific application",
             operationId = "getApplicationResult")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Result retrieved successfully"),
-        @ApiResponse(responseCode = "404", description = "Result not found or not accessible")
-    })
+    @ApiResponse(responseCode = "200", description = "Result retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Result not found or not accessible")
     @GetMapping("/{applicationId}/results")
     public ResponseEntity<ApplicationListEntryResolutionDto> getResult(
             @PathVariable Long listId,
@@ -48,18 +45,14 @@ public class ApplicationListEntryResolutionController {
                 "Getting result for application: {}, owned by this user: {}",
                 applicationId,
                 jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
-        return ResponseEntity.ok(
-                resultService.getResultForApplication(listId, applicationId, userId));
+        return ResponseEntity.ok(resultService.getResultForApplication(listId, applicationId));
     }
 
     @Operation(
             summary = "Create a result for a specific application",
             operationId = "createApplicationResult")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Result created successfully"),
-        @ApiResponse(responseCode = "404", description = "Application or result code not found")
-    })
+    @ApiResponse(responseCode = "201", description = "Result created successfully")
+    @ApiResponse(responseCode = "404", description = "Application or result code not found")
     @PostMapping("/{applicationId}/results")
     public ResponseEntity<ApplicationListEntryResolutionDto> createResult(
             @PathVariable Long listId,
@@ -70,21 +63,18 @@ public class ApplicationListEntryResolutionController {
                 "Creating result for application: {}, owned by this user: {}",
                 applicationId,
                 jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
         ApplicationListEntryResolutionDto created =
-                resultService.create(listId, applicationId, dto, userId);
+                resultService.create(listId, applicationId, dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @Operation(
             summary = "Update an existing application result",
             operationId = "updateApplicationResult")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Result updated successfully"),
-        @ApiResponse(
-                responseCode = "404",
-                description = "Result or result code not found or not accessible")
-    })
+    @ApiResponse(responseCode = "200", description = "Result updated successfully")
+    @ApiResponse(
+            responseCode = "404",
+            description = "Result or result code not found or not accessible")
     @PutMapping("/{applicationId}/results/{resultId}")
     public ResponseEntity<ApplicationListEntryResolutionDto> updateResult(
             @PathVariable Long listId,
@@ -102,10 +92,8 @@ public class ApplicationListEntryResolutionController {
     @Operation(
             summary = "Delete a result from an application",
             operationId = "deleteApplicationResult")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Result deleted successfully"),
-        @ApiResponse(responseCode = "404", description = "Result not found or not accessible")
-    })
+    @ApiResponse(responseCode = "204", description = "Result deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Result not found or not accessible")
     @DeleteMapping("/{applicationId}/results/{resultId}")
     public ResponseEntity<Void> deleteResult(
             @PathVariable Long listId,
@@ -116,8 +104,7 @@ public class ApplicationListEntryResolutionController {
                 "Deleting result for application: {}, owned by this user: {}",
                 applicationId,
                 jwt.getClaimAsString("sub"));
-        String userId = jwt.getClaimAsString("oid");
-        resultService.delete(listId, applicationId, resultId, userId);
+        resultService.delete(listId, applicationId, resultId);
         return ResponseEntity.noContent().build();
     }
 }

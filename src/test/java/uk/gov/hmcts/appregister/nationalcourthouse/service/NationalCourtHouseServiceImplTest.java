@@ -57,8 +57,8 @@ class NationalCourtHouseServiceImplTest {
                 new NationalCourtHouseDto(
                         1L, "Alpha", "CROWN", LocalDate.now(), null, null, null, null, null, null);
 
-        when(mapper.toReadDto(eq(e1))).thenReturn(Optional.of(d1));
-        when(mapper.toReadDto(eq(e2))).thenReturn(Optional.empty()); // simulate declined mapping
+        when(mapper.toReadDto(e1)).thenReturn(Optional.of(d1));
+        when(mapper.toReadDto(e2)).thenReturn(Optional.empty()); // simulate declined mapping
 
         // Act
         List<NationalCourtHouseDto> out = service.findAll();

@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.validator.ValidationExceptionHandler;
 
 /** Service Implementation for managing Applications. */
@@ -38,26 +39,27 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
     private final ApplicationListEntryMapper applicationMapper;
     private final AppListEntryFeeStatusMapper feeRecordMapper;
     private final AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    private final UserProvider userProvider;
 
     @Override
-    public List<ApplicationListEntryDto> getAllByListId(Long listId, String userId) {
-        ensureUserOwnsList(listId, userId);
+    public List<ApplicationListEntryDto> getAllByListId(Long listId) {
+        ensureUserOwnsList(listId);
 
         List<ApplicationListEntry> applications =
                 applicationListEntryRepository.findByApplicationListIdAndCreatedUser(
-                        listId, userId);
+                        listId, userProvider.getUser());
         return applications.stream().map(this::toDtoWithFees).toList();
     }
 
     @Override
-    public ApplicationListEntryDto getByIdForUser(Long listId, Long appId, String userId) {
-        return toDtoWithFees(getApplicationForUserOrThrow(listId, appId, userId));
+    public ApplicationListEntryDto getByIdForUser(Long listId, Long appId) {
+        return toDtoWithFees(getApplicationForUserOrThrow(listId, appId));
     }
 
     @Override
     @Transactional
-    public ApplicationListEntryDto create(Long listId, ApplicationWriteDto dto, String userId) {
-        ApplicationList list = findListOrThrow(listId, userId);
+    public ApplicationListEntryDto create(Long listId, ApplicationWriteDto dto) {
+        ApplicationList list = findListOrThrow(listId, userProvider.getUser());
         StandardApplicant applicant = resolveStandardApplicant(dto.standardApplicantId());
         ApplicationCode code = findApplicationCodeOrThrow(dto.applicationCodeId());
         String wording = generateWording(code, dto);
@@ -75,9 +77,8 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
 
     @Override
     @Transactional
-    public ApplicationListEntryDto update(
-            Long listId, Long appId, ApplicationWriteDto dto, String userId) {
-        ApplicationListEntry existing = getApplicationForUserOrThrow(listId, appId, userId);
+    public ApplicationListEntryDto update(Long listId, Long appId, ApplicationWriteDto dto) {
+        ApplicationListEntry existing = getApplicationForUserOrThrow(listId, appId);
         StandardApplicant applicant = resolveStandardApplicant(dto.standardApplicantId());
         ApplicationCode code = findApplicationCodeOrThrow(dto.applicationCodeId());
         String wording = generateWording(code, dto);
@@ -93,8 +94,8 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
     }
 
     @Override
-    public void delete(Long listId, Long appId, String userId) {
-        ApplicationListEntry app = getApplicationForUserOrThrow(listId, appId, userId);
+    public void delete(Long listId, Long appId) {
+        ApplicationListEntry app = getApplicationForUserOrThrow(listId, appId);
         applicationListEntryRepository.delete(app);
     }
 
@@ -110,14 +111,14 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
             app.getEntryFeeStatuses()
                     .add(
                             appListEntryFeeStatusRepository.save(
-                                    feeRecordMapper.createEntity(dto, app, feePair.mainFee())));
+                                    feeRecordMapper.createEntity(dto, app)));
         }
 
         if (Boolean.TRUE.equals(dto.includesOffsetPayment()) && feePair.offsetFee() != null) {
             app.getEntryFeeStatuses()
                     .add(
                             appListEntryFeeStatusRepository.save(
-                                    feeRecordMapper.createEntity(dto, app, feePair.offsetFee())));
+                                    feeRecordMapper.createEntity(dto, app)));
         }
     }
 
@@ -144,10 +145,9 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
                                         HttpStatus.NOT_FOUND, "Application List not found"));
     }
 
-    private ApplicationListEntry getApplicationForUserOrThrow(
-            Long listId, Long appId, String userId) {
+    private ApplicationListEntry getApplicationForUserOrThrow(Long listId, Long appId) {
         return applicationListEntryRepository
-                .findByIdAndApplicationListIdAndCreatedUser(appId, listId, userId)
+                .findByIdAndApplicationListIdAndCreatedUser(appId, listId, userProvider.getUser())
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
@@ -155,8 +155,8 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
                                         "Application not found or not accessible"));
     }
 
-    private void ensureUserOwnsList(Long listId, String userId) {
-        if (!listRepository.existsByIdAndCreatedUser(listId, userId)) {
+    private void ensureUserOwnsList(Long listId) {
+        if (!listRepository.existsByIdAndCreatedUser(listId, userProvider.getUser())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "List not found for user");
         }
     }

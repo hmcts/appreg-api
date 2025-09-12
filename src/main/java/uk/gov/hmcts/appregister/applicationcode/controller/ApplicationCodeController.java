@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationcode.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,7 +41,7 @@ public class ApplicationCodeController {
                     String appTitle,
             @RequestParam(required = false) OffsetDateTime lodgementDate,
             @org.springframework.data.web.PageableDefault(
-                            sort = ApplicationCode_.APPLICATION_CODE,
+                            sort = ApplicationCode_.CODE,
                             direction = org.springframework.data.domain.Sort.Direction.ASC)
                     Pageable pageable) {
 
@@ -54,10 +53,8 @@ public class ApplicationCodeController {
     }
 
     @Operation(summary = "Get a single application code by its code")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Application code found"),
-        @ApiResponse(responseCode = "404", description = "Application code not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Application code found")
+    @ApiResponse(responseCode = "404", description = "Application code not found")
     @GetMapping("/{code}")
     @AdminRestricted
     public ResponseEntity<ApplicationCodeDto> getByCode(@PathVariable String code) {

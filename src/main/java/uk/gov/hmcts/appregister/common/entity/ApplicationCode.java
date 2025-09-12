@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -47,7 +48,7 @@ public class ApplicationCode extends BaseChangeableEntity implements Accountable
 
     @Column(name = "application_code", nullable = false)
     @Size(max = 10)
-    private String applicationCode;
+    private String code;
 
     @Column(name = "application_code_title", nullable = false)
     @Size(max = 500)
@@ -86,6 +87,7 @@ public class ApplicationCode extends BaseChangeableEntity implements Accountable
     private String bulkRespondentAllowed;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "user_name")

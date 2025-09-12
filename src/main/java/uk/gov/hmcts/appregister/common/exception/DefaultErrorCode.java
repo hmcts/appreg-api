@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
+/** Describes a default error code containing http status, message and application code. */
 @RequiredArgsConstructor
 @Getter
 @EqualsAndHashCode

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -25,18 +24,16 @@ public class ApplicationActionsController {
     @Operation(
             summary = "Move multiple applications to a different application list",
             operationId = "moveApplications")
-    @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Applications moved successfully"),
-        @ApiResponse(
-                responseCode = "403",
-                description = "User is not allowed to move one or more applications"),
-        @ApiResponse(responseCode = "404", description = "Target application list not found")
-    })
+    @ApiResponse(responseCode = "204", description = "Applications moved successfully")
+    @ApiResponse(
+            responseCode = "403",
+            description = "User is not allowed to move one or more applications")
+    @ApiResponse(responseCode = "404", description = "Target application list not found")
     @PostMapping("/move")
     public ResponseEntity<Void> moveApplications(
             @RequestBody ApplicationMoveRequestDto request, @AuthenticationPrincipal Jwt jwt) {
         String userId = jwt.getClaimAsString("oid");
-        actionsService.moveApplications(request.applicationIds(), request.targetListId(), userId);
+        actionsService.moveApplications(request.applicationIds(), request.targetListId());
         return ResponseEntity.noContent().build();
     }
 }

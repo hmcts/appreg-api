@@ -14,9 +14,7 @@ import uk.gov.hmcts.appregister.common.validator.Validator;
  */
 @Component
 public class ApplicationCodeSortValidator implements Validator<String> {
-    public static String[] VALID_SORT_VALUES = {
-        ApplicationCode_.APPLICATION_CODE, ApplicationCode_.TITLE
-    };
+    public static String[] VALID_SORT_VALUES = {ApplicationCode_.CODE, ApplicationCode_.TITLE};
 
     @Override
     public void validate(String sortValue) {

@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -33,6 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@SuppressWarnings("javaarchitecture:S7027")
 public class ApplicationList extends BaseChangeableEntity implements Accountable, Versionable {
     @Id
     @Column(name = "al_id", nullable = false, updatable = false)
@@ -72,6 +74,7 @@ public class ApplicationList extends BaseChangeableEntity implements Accountable
     private String courthouseName;
 
     @Column(name = "version")
+    @Version
     private Long version;
 
     @Column(name = "duration_hour")

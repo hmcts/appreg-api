@@ -8,6 +8,7 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,6 +48,7 @@ public class AppListEntryFeeId extends BaseChangeableEntity implements Accountab
     private Fee feeId;
 
     @Column(name = "version", nullable = false)
+    @Version
     private Long version;
 
     @Column(name = "user_name", nullable = false)
