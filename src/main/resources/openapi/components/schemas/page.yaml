@@ -5,18 +5,18 @@ properties:
   content:
     type: array
     items: {}   # left open; specialize in child schemas
-  number:
+  pageNumber:
     type: integer
     format: int32
     description: Zero-based page index.
-  size:
+  pageSize:
     type: integer
     format: int32
     description: Page size.
   totalElements:
     type: integer
     format: int64
-    description: Total number of elements.
+    description: Total number of elements across all pages.
   totalPages:
     type: integer
     format: int32
@@ -27,6 +27,7 @@ properties:
     type: boolean
   last:
     type: boolean
-  numberOfElements:
+  elementsOnPage:
     type: integer
     format: int32
+    description: Total number of elements in the current page.
