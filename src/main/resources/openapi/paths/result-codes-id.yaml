@@ -5,7 +5,7 @@ parameters:
     schema:
       type: integer
       format: int64
-    description: Database identifier of the result code.
+    description: Identifier of the result code.
 get:
   operationId: getResultCodeById
   tags: [result-codes]
@@ -13,8 +13,12 @@ get:
   responses:
     "200":
       description: Result code found
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
       content:
-        application/json:
+        application/vnd.hmcts.appreg.v1+json:
           schema:
             $ref: "../components/schemas/result-code-dto.yaml"
     "400": { $ref: "../components/responses/bad-request-error.yaml" }

@@ -53,12 +53,15 @@ get:
   responses:
     "200":
       description: Page of result codes
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
       content:
-        application/json:
+        application/vnd.hmcts.appreg.v1+json:
           schema: { $ref: "../components/schemas/page-result-code-list-item.yaml" }
     "400": { $ref: "../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../components/responses/forbidden-error.yaml" }
-    "404": { $ref: "../components/responses/not-found-error.yaml" }
     "406": { $ref: "../components/responses/not-acceptable-error.yaml" }
     "500": { $ref: "../components/responses/internal-server-error.yaml" }
