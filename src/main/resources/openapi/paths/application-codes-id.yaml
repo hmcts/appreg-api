@@ -5,7 +5,7 @@ parameters:
     schema:
       type: integer
       format: int64
-    description: Database identifier of the application code.
+    description: Identifier of the application code.
 get:
   operationId: getApplicationCodeById
   tags: [application-codes]
@@ -13,8 +13,12 @@ get:
   responses:
     "200":
       description: Application code found
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
       content:
-        application/json:
+        application/vnd.hmcts.appreg.v1+json:
           schema:
             $ref: "../components/schemas/application-code-dto.yaml"
     "400": { $ref: "../components/responses/bad-request-error.yaml" }
