@@ -1,0 +1,19 @@
+description: Authentication required or token invalid.
+headers:
+  www-authenticate:
+    description: Auth challenge details.
+    schema: { type: string }
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      unauthenticated:
+        value:
+          type: https://errors.hmcts.net/common/unauthorized
+          title: Unauthorized
+          status: 401
+          detail: Missing or invalid credentials

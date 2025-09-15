@@ -1,0 +1,16 @@
+description: The requested resource was not found.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      missing:
+        value:
+          type: https://errors.hmcts.net/appreg/not-found
+          title: Not Found
+          status: 404
+          detail: Result code with id=123 was not found
