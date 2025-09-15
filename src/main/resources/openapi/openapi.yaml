@@ -20,29 +20,32 @@ tags:
       an application has an associated fee.
 
 paths:
-  /application-codes:      { $ref: './paths/application-codes.yaml' }
-  /application-codes/{id}: { $ref: './paths/application-codes-id.yaml' }
-  /result-codes:           { $ref: './paths/result-codes.yaml' }
-  /result-codes/{id}: { $ref: './paths/result-codes-id.yaml' }
+  # APPLICATION-CODES
+  /application-codes:      { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{id}: { $ref: './paths/application-codes/application-codes-id.yaml' }
+  # RESULT-CODES
+  /result-codes:           { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{id}:      { $ref: './paths/result-codes/result-codes-id.yaml' }
 
 components:
   schemas:
-    result-code-dto:             { $ref: './components/schemas/result-codes/result-code-dto.yaml' }
-    result-code-list-item-dto:   { $ref: './components/schemas/result-codes/result-code-list-item-dto.yaml' }
-    problem:                     { $ref: './components/schemas/common/problem.yaml'}
-    page:                        { $ref: './components/schemas/common/page.yaml' }
-    sort:                        { $ref: './components/schemas/common/sort.yaml' }
-    application-code-dto:           { $ref: './components/schemas/application-code-dto.yaml' }
-    application-code-list-item-dto: { $ref: './components/schemas/application-code-list-item-dto.yaml' }
-    result-code-dto:                { $ref: './components/schemas/result-code-dto.yaml' }
-    result-code-list-item-dto:      { $ref: './components/schemas/result-code-list-item-dto.yaml' }
-    problem:                        { $ref: './components/schemas/problem.yaml'}
-    page:                           { $ref: './components/schemas/page.yaml' }
-    sort:                           { $ref: './components/schemas/sort.yaml' }
+    # APPLICATION-CODES
+    application-code-dto:           { $ref: './components/schemas/application-codes/application-code-dto.yaml' }
+    application-code-list-item-dto: { $ref: './components/schemas/application-codes/application-code-list-item-dto.yaml' }
+    # COMMON
+    problem:                        { $ref: './components/schemas/common/problem.yaml' }
+    page:                           { $ref: './components/schemas/common/page.yaml' }
+    sort:                           { $ref: './components/schemas/common/sort.yaml' }
+    # RESULT-CODES
+    result-code-dto:                { $ref: './components/schemas/result-codes/result-code-dto.yaml' }
+    result-code-list-item-dto:      { $ref: './components/schemas/result-codes/result-code-list-item-dto.yaml' }
+
+
   responses:
-     bad-request-error:      { $ref: './components/responses//bad-request-error.yaml' }
-     unauthorized-error:     { $ref: './components/responses/unauthorized-error.yaml' }
-     forbidden-error:        { $ref: './components/responses/forbidden-error.yaml' }
-     not-found-error:        { $ref: './components/responses/not-found-error.yaml' }
-     internal-server-error:  { $ref: './components/responses/internal-server-error.yaml' }
-     not-acceptable-error:   { $ref: './components/responses/not-acceptable-error.yaml' }
+    # ERRORS
+     bad-request-error:     { $ref: './components/responses//bad-request-error.yaml' }
+     unauthorized-error:    { $ref: './components/responses/unauthorized-error.yaml' }
+     forbidden-error:       { $ref: './components/responses/forbidden-error.yaml' }
+     not-found-error:       { $ref: './components/responses/not-found-error.yaml' }
+     internal-server-error: { $ref: './components/responses/internal-server-error.yaml' }
+     not-acceptable-error:  { $ref: './components/responses/not-acceptable-error.yaml' }

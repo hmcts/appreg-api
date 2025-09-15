@@ -1,20 +1,20 @@
 get:
-  operationId: getApplicationCodes
-  tags: [ application-codes ]
-  summary: Get application codes (paginated, filterable)
+  operationId: listResultCodes
+  tags: [ result-codes ]
+  summary: Get result codes (paginated, filterable)
   description: |
-    Returns a paginated list of application codes.
+    Returns a paginated list of result codes.
     - Filters:
       - `code` – case-insensitive partial match
       - `title` – case-insensitive partial match
-      - `startDateFrom`/`startDateTo`
-      - `endDateFrom`/`endDateTo`
+      - `startDateFrom`/`startDateTo` – inclusive range on startDate
+      - `endDateFrom`/`endDateTo` – inclusive range on endDate
     - Dates use ISO-8601 (yyyy-MM-dd).
   parameters:
     - in: query
       name: code
       schema: { type: string }
-      description: Filter by code (contains, case-insensitive).
+      description: Filter by business code (contains, case-insensitive).
     - in: query
       name: title
       schema: { type: string }
@@ -37,7 +37,7 @@ get:
       description: Zero-based page index.
     - in: query
       name: size
-      schema: { type: integer, format: int32, minimum: 1, default: 20, maximum: 100}
+      schema: { type: integer, format: int32, minimum: 1, default: 20 }
       description: Page size.
     - in: query
       name: sort
@@ -52,19 +52,16 @@ get:
         example: [ "title,asc", "code,desc" ]
   responses:
     "200":
-      description: Page of application codes
+      description: Page of result codes
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../components/schemas/page-application-code-list-item.yaml" }
-    "400": { $ref: "../components/responses/bad-request-error.yaml" }
-    "401": { $ref: "../components/responses/unauthorized-error.yaml" }
-    "403": { $ref: "../components/responses/forbidden-error.yaml" }
-    "404": { $ref: "../components/responses/not-found-error.yaml" }
-    "406": { $ref: "../components/responses/not-acceptable-error.yaml" }
-    "500": { $ref: "../components/responses/internal-server-error.yaml" }
-
-
+          schema: { $ref: "../../components/schemas/result-codes/result-code-list-page.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

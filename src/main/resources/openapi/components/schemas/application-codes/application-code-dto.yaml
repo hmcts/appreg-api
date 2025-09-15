@@ -53,7 +53,7 @@ properties:
     description: A short reference code that identifies a Fee.
   feeAmount:
     allOf:
-      - $ref: "./money-gbp.yaml"
+      - $ref: "../common/money-gbp.yaml"
     nullable: true
     description: Fee amount for this application code, expressed in pence (GBP minor units).
   feeDescription:
@@ -62,6 +62,6 @@ properties:
     description: Descriptive text for the fee.
   offsiteFeeAmount:
     allOf:
-      - $ref: "./money-gbp.yaml"
+      - $ref: "../common/money-gbp.yaml"
     nullable: true
     description: Offsite fee amount, expressed in pence (GBP minor units).

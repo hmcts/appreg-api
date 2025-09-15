@@ -20,10 +20,10 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../components/schemas/application-code-dto.yaml"
-    "400": { $ref: "../components/responses/bad-request-error.yaml" }
-    "401": { $ref: "../components/responses/unauthorized-error.yaml" }
-    "403": { $ref: "../components/responses/forbidden-error.yaml" }
-    "404": { $ref: "../components/responses/not-found-error.yaml" }
-    "406": { $ref: "../components/responses/not-acceptable-error.yaml" }
-    "500": { $ref: "../components/responses/internal-server-error.yaml" }
+            $ref: "../../components/schemas/application-codes/application-code-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

@@ -1,5 +1,5 @@
 allOf:
-  - $ref: './page.yaml'
+  - $ref: '../common/page.yaml'
   - type: object
     properties:
       content:
