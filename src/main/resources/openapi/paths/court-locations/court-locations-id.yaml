@@ -5,21 +5,22 @@ parameters:
     schema:
       type: integer
       format: int64
-    description: Identifier of the result code.
+    description: Identifier of the court location.
 get:
-  operationId: getResultCodeById
-  tags: [result-codes]
-  summary: Get a specific result code by ID
+  operationId: getCourtLocationById
+  tags: [court-location]
+  summary: Get a specific court locations by ID
   responses:
     "200":
-      description: Result code found
+      description: Court location found
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/result-codes/result-code-detail-dto.yaml" }
+          schema:
+            $ref: "../../components/schemas/court-locations/court-location-detail-dto.yaml"
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

@@ -44,7 +44,7 @@ get:
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/criminal-justice-areas/criminal-justice-area-list-page.yaml" }
+          schema: { $ref: "../../components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

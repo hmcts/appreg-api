@@ -1,0 +1,17 @@
+type: object
+description: Immutable DTO representing the summary of a Court Location.
+required:
+  - id
+  - name
+  - locationCode
+properties:
+  id:
+    type: integer
+    format: int64
+    description: Primary key identifier.
+  name:
+    type: string
+    description: Human-readable court name.
+  locationCode:
+    type: string
+    description: Code that identifies the court location.
