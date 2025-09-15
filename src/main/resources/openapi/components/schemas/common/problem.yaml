@@ -1,0 +1,31 @@
+type: object
+description: RFC 9457/7807 problem details.
+required: [type, title, status]
+properties:
+  type:
+    type: string
+    format: uri
+    description: Problem type identifier (URI).
+    example: https://errors.hmcts.net/appreg/bad-request
+  title:
+    type: string
+    description: Short, human-readable summary.
+    example: Invalid request parameters
+  status:
+    type: integer
+    format: int32
+    description: HTTP status code.
+    example: 400
+  detail:
+    type: string
+    description: Human-readable explanation specific to this occurrence.
+    example: startDateFrom must be on or before startDateTo
+  instance:
+    type: string
+    format: uri
+    description: URI reference to the specific occurrence (if applicable).
+    example: urn:request:2f9c3d8a-1b3a-4a1e-9b7f-6b2a6a0a2b2f
+  correlationId:
+    type: string
+    description: Server-side correlation ID for tracing.
+    example: 3e1a2c95a7d84a5fb3e1a2c95a7d84a5

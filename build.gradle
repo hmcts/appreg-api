@@ -318,3 +318,10 @@ rootProject.tasks.named("processIntegrationTestResources") {
 wrapper {
   distributionType = Wrapper.DistributionType.ALL
 }
+
+processResources {
+  filesMatching("**/openapi.yaml") {
+    expand(version: project.version)
+    filteringCharset = 'UTF-8'
+  }
+}
