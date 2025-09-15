@@ -20,11 +20,11 @@ paths:
 
 components:
   schemas:
-    result-code-dto:             { $ref: './components/schemas/result-code-dto.yaml' }
-    result-code-list-item-dto:   { $ref: './components/schemas/result-code-list-item-dto.yaml' }
-    problem:                     { $ref: './components/schemas/problem.yaml'}
-    page:                        { $ref: './components/schemas/page.yaml' }
-    sort:                        { $ref: './components/schemas/sort.yaml' }
+    result-code-dto:             { $ref: './components/schemas/result-codes/result-code-dto.yaml' }
+    result-code-list-item-dto:   { $ref: './components/schemas/result-codes/result-code-list-item-dto.yaml' }
+    problem:                     { $ref: './components/schemas/common/problem.yaml'}
+    page:                        { $ref: './components/schemas/common/page.yaml' }
+    sort:                        { $ref: './components/schemas/common/sort.yaml' }
   responses:
      bad-request-error:      { $ref: './components/responses//bad-request-error.yaml' }
      unauthorized-error:     { $ref: './components/responses/unauthorized-error.yaml' }

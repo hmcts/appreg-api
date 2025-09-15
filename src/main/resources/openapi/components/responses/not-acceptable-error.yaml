@@ -6,7 +6,7 @@ headers:
 content:
   application/problem+json:
     schema:
-      $ref: '../schemas/problem.yaml'
+      $ref: '../schemas/common/problem.yaml'
     examples:
       notAcceptable:
         value:

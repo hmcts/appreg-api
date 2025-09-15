@@ -20,7 +20,7 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../components/schemas/result-code-dto.yaml"
+            $ref: "../components/schemas/result-codes/result-code-dto.yaml"
     "400": { $ref: "../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../components/responses/forbidden-error.yaml" }

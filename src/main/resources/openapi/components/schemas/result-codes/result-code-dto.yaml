@@ -20,20 +20,6 @@ properties:
   wording:
     type: string
     description: Full descriptive wording, potentially with blank fields to be inputted by the user.
-  legislation:
-    type: string
-    nullable: true
-    description: Full description of the relevant Legislation (optional).
-  destinationEmail1:
-    type: string
-    format: email
-    nullable: true
-    description: First destination email (optional).
-  destinationEmail2:
-    type: string
-    format: email
-    nullable: true
-    description: Second destination email (optional).
   startDate:
     type: string
     format: date
