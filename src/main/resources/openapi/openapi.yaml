@@ -6,7 +6,10 @@ info:
     REST API for managing Applications Lists, Application List Entries and getting important,
     reference data including application codes, result codes, fees, court locations, criminal justice areas
     and standard applicants.
-  version: ${version}
+  # We use @version@ here so Gradle can inject the project version at build time.
+  # DO NOT change this to $version — Groovy template expansion conflicts with $ref
+  # entries elsewhere in the file and will break the build.
+  version: "@version@"
 
 tags:
   - name: result-codes
