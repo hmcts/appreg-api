@@ -1,22 +1,16 @@
 type: object
 description: Immutable DTO representing an Application Code.
 required:
-  - id
   - applicationCode
   - title
   - wording
   - isFeeDue
   - requiresRespondent
   - bulkRespondentAllowed
-  - startDate
 properties:
-  id:
-    type: integer
-    format: int64
-    description: Primary key identifier.
   applicationCode:
     type: string
-    description: Code that identifies the application type.
+    description: Code that identifies the application.
   title:
     type: string
     description: Human-readable title.
@@ -33,18 +27,9 @@ properties:
     description: >
       True if Application List Entries using this Application Code require a
       respondent to be created and linked.
-  startDate:
-    type: string
-    format: date
-    description: Start date from which the code is valid.
-  endDate:
-    type: string
-    format: date
-    nullable: true
-    description: End date until which the code is valid.
   bulkRespondentAllowed:
     type: boolean
-    description: > # TODO - Check what a bulk respondent looks like.
+    description: >
       True if Application List Entries using this Application Code allow multiple
       respondents to be created and linked.
   feeReference:

@@ -1,17 +1,12 @@
 type: object
 description: Immutable DTO representing an Application Code.
 required:
-  - id
   - applicationCode
   - title
   - wording
   - isFeeDue
   - bulkRespondentAllowed
 properties:
-  id:
-    type: integer
-    format: int64
-    description: Primary key identifier.
   applicationCode:
     type: string
     description: Code that identifies the application type.

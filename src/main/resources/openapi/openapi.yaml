@@ -24,11 +24,11 @@ tags:
 
 paths:
   # APPLICATION-CODES
-  /application-codes:      { $ref: './paths/application-codes/application-codes.yaml' }
-  /application-codes/{id}: { $ref: './paths/application-codes/application-codes-id.yaml' }
+  /application-codes:        { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{code}: { $ref: './paths/application-codes/application-codes-by-code.yaml' }
   # RESULT-CODES
-  /result-codes:           { $ref: './paths/result-codes/result-codes.yaml' }
-  /result-codes/{id}:      { $ref: './paths/result-codes/result-codes-id.yaml' }
+  /result-codes:             { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{code}:      { $ref: './paths/result-codes/result-codes-by-code.yaml' }
 
 components:
   schemas:
