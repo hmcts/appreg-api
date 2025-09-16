@@ -1,17 +1,12 @@
 type: object
 description: Immutable DTO representing a Criminal Justice Area.
 required:
-  - id
   - code
   - description
 properties:
-  id:
-    type: integer
-    format: int64
-    description: Primary key identifier.
   code:
     type: string
-    description: Code that identifies the criminal justice area.
+    description: Code that identifies the Criminal Justice Area.
   description:
     type: string
-    description: Human-readable name of the criminal justice area.
+    description: Human-readable name of the Criminal Justice Area.

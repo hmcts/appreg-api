@@ -1,15 +1,13 @@
 parameters:
   - in: path
-    name: id
+    name: code
     required: true
-    schema:
-      type: integer
-      format: int64
-    description: Identifier of the criminal justice area.
+    schema: { type: string }
+    description: Code used to identify the Result Code (case-insensitive).
 get:
-  operationId: getCriminalJusticeAreaById
+  operationId: getCriminalJusticeAreaByCode
   tags: [criminal-justice-areas]
-  summary: Get a specific criminal justice area by ID
+  summary: Get a specific Criminal Justice Area by code.
   responses:
     "200":
       description: Criminal Justice Area found

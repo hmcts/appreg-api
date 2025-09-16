@@ -1,12 +1,12 @@
 get:
   operationId: getCriminalJusticeAreas
   tags: [ criminal-justice-areas ]
-  summary: Get criminal justice areas (paginated, filterable)
+  summary: Get Criminal Justice Areas (paginated, filterable)
   description: |
-    Returns a paginated list of criminal justice areas.
+    Returns a paginated list of Criminal Justice Areas.
     - Filters:
-      - `code` – case-insensitive partial match
-      - `description` – case-insensitive partial match
+      - `code` – case-insensitive partial match.
+      - `description` – case-insensitive partial match.
   parameters:
     - in: query
       name: code
@@ -37,7 +37,7 @@ get:
         example: [ "description,asc", "code,desc" ]
   responses:
     "200":
-      description: Page of criminal justice areas
+      description: Page of Criminal Justice Areas
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
