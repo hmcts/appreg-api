@@ -1,0 +1,13 @@
+type: object
+description: Immutable DTO representing a detailed Court Location.
+required:
+  - name
+  - locationCode
+properties:
+  name:
+    type: string
+    description: Human-readable court name.
+  locationCode:
+    type: string
+    description: Code that identifies the Court Location.
+

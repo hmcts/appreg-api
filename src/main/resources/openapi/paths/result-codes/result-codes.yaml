@@ -1,5 +1,5 @@
 get:
-  operationId: listResultCodes
+  operationId: getResultCodes
   tags: [ result-codes ]
   summary: Get result codes (paginated, filterable)
   description: |
@@ -7,37 +7,29 @@ get:
     - Filters:
       - `code` – case-insensitive partial match
       - `title` – case-insensitive partial match
-      - `startDateFrom`/`startDateTo` – inclusive range on startDate
-      - `endDateFrom`/`endDateTo` – inclusive range on endDate
+      - `date` - a single ISO-8601 date (`yyyy-MM-dd`); returns records whose validity window includes that date.
     - Dates use ISO-8601 (yyyy-MM-dd).
   parameters:
     - in: query
       name: code
       schema: { type: string }
-      description: Filter by business code (contains, case-insensitive).
+      description: Filter by code (contains, case-insensitive).
     - in: query
       name: title
       schema: { type: string }
       description: Filter by title (contains, case-insensitive).
     - in: query
-      name: startDateFrom
+      name: date
       schema: { type: string, format: date }
-    - in: query
-      name: startDateTo
-      schema: { type: string, format: date }
-    - in: query
-      name: endDateFrom
-      schema: { type: string, format: date }
-    - in: query
-      name: endDateTo
-      schema: { type: string, format: date }
+      description: |
+        ISO date (yyyy-MM-dd) on which the result code must be valid.
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
       description: Zero-based page index.
     - in: query
       name: size
-      schema: { type: integer, format: int32, minimum: 1, default: 20 }
+      schema: { type: integer, format: int32, minimum: 1, default: 20, maximum: 100 }
       description: Page size.
     - in: query
       name: sort

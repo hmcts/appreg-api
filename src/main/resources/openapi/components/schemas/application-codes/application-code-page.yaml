@@ -5,4 +5,4 @@ allOf:
       content:
         type: array
         items:
-          $ref: './application-code-summary-dto.yaml'
+          $ref: './application-code-dto.yaml'

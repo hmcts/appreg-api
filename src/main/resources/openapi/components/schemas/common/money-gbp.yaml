@@ -10,3 +10,10 @@ properties:
       minimum: 0
       description: Amount in pence.
       example: 1299   # £12.99
+    currency:
+      type: string
+      description: ISO 4217 currency code (always "GBP" for now).
+      example: GBP
+      default: GBP
+      enum: [ GBP ]
+

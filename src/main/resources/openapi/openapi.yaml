@@ -32,23 +32,22 @@ tags:
 
 paths:
   # APPLICATION-CODES
-  /application-codes:           { $ref: './paths/application-codes/application-codes.yaml' }
-  /application-codes/{id}:      { $ref: './paths/application-codes/application-codes-id.yaml' }
+  /application-codes:             { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{code}:      { $ref: './paths/application-codes/application-codes-by-code.yaml' }
   # COURT LOCATIONS
-  /court-locations:             { $ref: './paths/court-locations/court-locations.yaml' }
-  /court-locations/{id}:        { $ref: './paths/court-locations/court-locations-id.yaml' }
+  /ccourt-locations:              { $ref: './paths/court-locations/court-locations.yaml' }
+  /court-locations/{code}:        { $ref: './paths/court-locations/court-locations-by-code.yaml' }
   # CRIMINAL JUSTICE AREAS
-  /criminal-justice-areas:      { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
-  /criminal-justice-areas/{id}: { $ref: './paths/criminal-justice-areas/criminal-justice-areas-id.yaml' }
+  /criminal-justice-areas:        { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
+  /criminal-justice-areas/{code}: { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
   # RESULT-CODES
-  /result-codes:                { $ref: './paths/result-codes/result-codes.yaml' }
-  /result-codes/{id}:           { $ref: './paths/result-codes/result-codes-id.yaml' }
+  /result-codes:                  { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{code}:           { $ref: './paths/result-codes/result-codes-by-code.yaml' }
 
 components:
   schemas:
     # APPLICATION-CODES
-    application-code-detail-dto:  { $ref: './components/schemas/application-codes/application-code-detail-dto.yaml' }
-    application-code-summary-dto: { $ref: './components/schemas/application-codes/application-code-summary-dto.yaml' }
+    application-code-dto:         { $ref: './components/schemas/application-codes/application-code-dto.yaml' }
     application-code-page:        { $ref: './components/schemas/application-codes/application-code-page.yaml' }
     # COMMON
     problem:                      { $ref: './components/schemas/common/problem.yaml' }
@@ -56,8 +55,7 @@ components:
     sort:                         { $ref: './components/schemas/common/sort.yaml' }
     money-gbp:                    { $ref: './components/schemas/common/money-gbp.yaml' }
     # COURT LOCATIONS
-    court-location-detail-dto:    { $ref: './components/schemas/court-locations/court-location-detail-dto.yaml' }
-    court-location-summary-dto:   { $ref: './components/schemas/court-locations/court-location-summary-dto.yaml' }
+    court-location-detail-dto:    { $ref: './components/schemas/court-locations/court-location-dto.yaml' }
     court-location-page:          { $ref: './components/schemas/court-locations/court-location-page.yaml' }
     # CRIMINAL JUSTICE AREAS
     criminal-justice-area-dto:    { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-dto.yaml'}

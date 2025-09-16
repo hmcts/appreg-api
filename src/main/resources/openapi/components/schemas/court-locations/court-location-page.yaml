@@ -5,4 +5,4 @@ allOf:
       content:
         type: array
         items:
-          $ref: './court-location-summary-dto.yaml'
+          $ref: './court-location-dto.yaml'

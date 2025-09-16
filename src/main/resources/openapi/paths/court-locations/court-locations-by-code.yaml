@@ -1,18 +1,22 @@
 parameters:
   - in: path
-    name: id
+    name: code
     required: true
-    schema:
-      type: integer
-      format: int64
-    description: Identifier of the application code.
+    schema: { type: string }
+    description: Code used to identify the Court Location (case-insensitive).
+  - in: query
+    name: date
+    required: true
+    schema: { type: string, format: date }
+    description: |
+      ISO date (yyyy-MM-dd) on which the Court Location must be valid.
 get:
-  operationId: getApplicationCodeById
-  tags: [application-codes]
-  summary: Get a specific application code by ID
+  operationId: getCourtLocationByCodeAndDate
+  tags: [court-location]
+  summary: Get a specific Court Location by code and date.
   responses:
     "200":
-      description: Application code found
+      description: Court Location found
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -20,7 +24,7 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../components/schemas/application-codes/application-code-detail-dto.yaml"
+            $ref: "../../components/schemas/court-locations/court-location-dto.yaml"
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
