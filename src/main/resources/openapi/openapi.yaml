@@ -17,6 +17,10 @@ tags:
       Application Codes are reference data, not managed in App Reg. They are required to provide a set repeatable data
       that can be used by Application List Entries, such as the title, wording or whether an application has an
       associated fee.
+  - name: application-lists
+    description:
+      An Application List records the date, time and location at which one or more Applications is to be considered by a
+      magistrate or delegated authority.
   - name: court-locations
     description:
       Court Locations are reference data, not managed in App Reg. They are a consolidation of both crown and magistrates
