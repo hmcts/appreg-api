@@ -129,7 +129,9 @@ VALUES
     (38, 'SW99010','Approval of Use of Directed Surveillance','Approval of an authorisation issued by the applicant for the use of directed surveillance reference {TEXT|Reference|100}','Sections 28 and 32A Regulation of Investigatory Powers Act 2000',0,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,  '2016-01-01 00:00:00','admin', NULL),
     (39, 'SW99011','Approval of Use of Covert Human Intelligence Source','Approval of an authorisation issued by the applicant for the use of covert human intelligence sources reference {TEXT|Reference|100}','Sections 29 and 32A Regulation of Investigatory Powers Act 2000',0,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,  '2016-01-01 00:00:00','admin', NULL),
     (40, 'MS99005','Statutory Decalration - Non-standard Civil','Attends to make a statutory declaration in relation to  {TEXT|Specify Nature of Declaration|200}','Section 18 Statutory Declarations Act 1835',0,0,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0, '2016-01-01 00:00:00', 'admin', NULL),
-    (41, 'MS99006','Condemnation of Unfit Food','Application for the condemnation of food, namely  {TEXT|Describe Seized Food|100}','Section 9 Food Safety Act 1990',0,1,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,'2016-01-01 00:00:00', 'admin', NULL);
+    (41, 'MS99006','Condemnation of Unfit Food','Application for the condemnation of food, namely  {TEXT|Describe Seized Food|100}','Section 9 Food Safety Act 1990',0,1,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0,'2016-01-01 00:00:00', 'admin', NULL),
+    (42, 'AD99002','Copy documents (electronic)','Request for copy documents on computer disc or in electronic form','',1,0,'address1@cgi.com','address2@cgi.com',TIMESTAMP '2016-01-01 00:00:00',CURRENT_TIMESTAMP,0, 0, 0,  '2016-01-01 00:00:00', 'admin', 'CO1.1');
+
 --
 --
 --

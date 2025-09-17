@@ -97,12 +97,13 @@ public class BulkUploadServiceImpl implements BulkUploadService {
     }
 
     private ApplicationCode resolveApplicationCode(String code) {
-        return applicationCodeRepository
-                .findByCode(code)
-                .orElseThrow(
-                        () ->
-                                new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND, "Application code not found"));
+        List<ApplicationCode> applicationCodes =
+                applicationCodeRepository.findByCodeAndDate(code, OffsetDateTime.now());
+        if (applicationCodes.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Application code not found");
+        }
+
+        return applicationCodes.stream().findFirst().get();
     }
 
     private ApplicationListEntry mapToEntity(

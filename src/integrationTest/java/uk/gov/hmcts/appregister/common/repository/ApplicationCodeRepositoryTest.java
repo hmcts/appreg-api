@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -25,13 +27,14 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private UserProvider loggedInUser;
 
-    private static final int BASELINE_TEST_COUNT = 41;
+    /** The total app codes inserted by flyway scripts. See V6__InitialTestData.sql */
+    private static final int TOTAL_APP_CODES_COUNT = 42;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {
         // assert that the save has occurred
         long count = applicationCodeRepository.count();
-        Assertions.assertEquals(BASELINE_TEST_COUNT, count);
+        Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
 
         // test save
         ApplicationCode code =
@@ -39,7 +42,7 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
 
         // assert that the save has occurred
         count = applicationCodeRepository.count();
-        Assertions.assertEquals(BASELINE_TEST_COUNT + 1, count);
+        Assertions.assertEquals(TOTAL_APP_CODES_COUNT + 1, count);
 
         // test get
         Optional<ApplicationCode> applicationCodeToAssertAgainst =
@@ -72,5 +75,12 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
         assertNull(
                 code.getDestinationEmail2(),
                 applicationCodeToAssertAgainst.get().getDestinationEmail2());
+    }
+
+    @Test
+    public void testGetByCodeAndDate() throws Exception {
+        List<ApplicationCode> applicationCodeToAssertAgainst =
+                applicationCodeRepository.findByCodeAndDate("AD99002", OffsetDateTime.now());
+        Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
     }
 }

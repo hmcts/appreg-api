@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 
@@ -7,5 +8,5 @@ import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 public interface ApplicationCodeService {
     List<ApplicationCodeDto> findAll();
 
-    ApplicationCodeDto findByCode(String code);
+    ApplicationCodeDto findByCode(String code, OffsetDateTime dateTime);
 }
