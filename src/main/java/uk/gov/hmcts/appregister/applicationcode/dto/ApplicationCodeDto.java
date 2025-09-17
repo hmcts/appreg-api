@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.dto;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record ApplicationCodeDto(
         Long id,
@@ -13,11 +12,11 @@ public record ApplicationCodeDto(
         Boolean requiresRespondent,
         String destinationEmail1,
         String destinationEmail2,
-        LocalDateTime startDate,
-        LocalDateTime endDate,
+        OffsetDateTime startDate,
+        OffsetDateTime endDate,
         Boolean bulkRespondentAllowed,
         String feeReference,
         String mainFeeDescription,
-        BigDecimal mainFeeAmount,
+        Double mainFeeAmount,
         String offsetFeeDescription,
-        BigDecimal offsetFeeAmount) {}
+        Double offsetFeeAmount) {}

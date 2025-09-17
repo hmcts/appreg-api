@@ -9,6 +9,7 @@ Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/displ
 - HMCTS.NET account
 - GitHub account linked to HMCTS.NET, and Git installed
 - Access to required GitHub repositories (see internal guide)
+- Postgres database (local or remote) - see [Database setup]#DatabaseSetup) below
 
 ## Guide
 
@@ -33,9 +34,9 @@ The steps work on Windows, macOS, and Linux.
 4. **Configure run settings.**
    After indexing completes, open `.run/appreg-api-bootRun.run.xml` and set these environment variables:
   - `OIDC_TENANT_ID`
-  - `POSTGRES_HOST`
-  - `POSTGRES_PASS`
-
+  - `POSTGRES_HOST` - Only required if the database was not setup using the ./docker-compose.yml file, otherwise it defaults to `localhost`
+  - `POSTGRES_PASS` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `password`
+ -  `POSTGRES_DATABASE` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `appreg`
 Ask an existing developer for values.
 
 If the file is missing, create a new Run/Debug configuration in IntelliJ:
@@ -50,7 +51,7 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
    Or use the IntelliJ *appreg-api-bootRun* configuration by clicking the dropdown on the top right.
 
 6. **Expected first-run errors.**
-   PostgreSQL, SQL, or JDBC errors are expected until the database is provisioned and reachable. See **Database setup** below.
+   PostgreSQL, SQL, or JDBC errors are expected until the database is provisioned and reachable. See [Database setup](#Database-setup) below.
 ## Common tasks
 
 - **Build and test**
@@ -102,7 +103,15 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 
 ## Database setup
 
-TODO: Add DB provisioning and local connection instructions here. Until then, startup may log PostgreSQL/JDBC connection errors.
+### Local Execution
+Run the local docker compose file [`docker-compose.yml`](docker-compose.yml) to start a PostgreSQL instance with thd default schema
+
+The database can be configured using the flyway migration CLI tool. The configuration is located at ./flyway. Or the
+app register service can launch the baseline flyway content automatically by being run.
+
+#### Baseline data setup
+Baseline data is typically setup when running locally for the first time. The baseline data can be used by applying the
+_SPRING_PROFILE_ACTIVE=local_ environment variable (see ./docker-compose-local.yaml.
 
 ## License
 

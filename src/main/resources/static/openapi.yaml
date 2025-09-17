@@ -36,18 +36,18 @@ components:
         wording:
           type: string
       required:
-      - applicationCode
-      - title
-      - wording
-      - legislation
-      - feeDue
-      - requiresRespondent
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
-      - bulkRespondentAllowed
-      - feeReference
+        - applicationCode
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
       type: object
     ApplicationCodeGetDto:
       properties:
@@ -86,23 +86,23 @@ components:
         wording:
           type: string
       required:
-      - id
-      - code
-      - title
-      - wording
-      - legislation
-      - feeDue
-      - requiresRespondent
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
-      - bulkRespondentAllowed
-      - feeReference
-      - mainFeeDescription
-      - mainFeeAmount
-      - offsetFeeDescription
-      - offsetFeeAmount
+        - id
+        - code
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
+        - mainFeeDescription
+        - mainFeeAmount
+        - offsetFeeDescription
+        - offsetFeeAmount
       type: object
     ApplicationCodeUpdateDto:
       properties:
@@ -143,24 +143,24 @@ components:
         wording:
           type: string
       required:
-      - id
-      - code
-      - title
-      - wording
-      - legislation
-      - feeDue
-      - requiresRespondent
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
-      - bulkRespondentAllowed
-      - feeReference
-      - mainFeeDescription
-      - mainFeeAmount
-      - offsetFeeDescription
-      - offsetFeeAmount
-      - version
+        - id
+        - code
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
+        - mainFeeDescription
+        - mainFeeAmount
+        - offsetFeeDescription
+        - offsetFeeAmount
+        - version
       type: object
     ApplicationEntryOfficialCreateDto:
       properties:
@@ -175,11 +175,11 @@ components:
         title:
           type: string
       required:
-      - applicationEntryId
-      - title
-      - forename
-      - surname
-      - officialType
+        - applicationEntryId
+        - title
+        - forename
+        - surname
+        - officialType
       type: object
     ApplicationEntryOfficialGetDto:
       properties:
@@ -196,12 +196,12 @@ components:
         title:
           type: string
       required:
-      - id
-      - applicationEntryId
-      - title
-      - forename
-      - surname
-      - officialType
+        - id
+        - applicationEntryId
+        - title
+        - forename
+        - surname
+        - officialType
       type: object
     ApplicationEntryOfficialUpdateDto:
       properties:
@@ -218,12 +218,12 @@ components:
         version:
           type: integer
       required:
-      - id
-      - title
-      - forename
-      - surname
-      - officialType
-      - version
+        - id
+        - title
+        - forename
+        - surname
+        - officialType
+        - version
       type: object
     ApplicationFeeCreateDto:
       properties:
@@ -236,10 +236,10 @@ components:
         value:
           type: string
       required:
-      - reference
-      - description
-      - value
-      - startDate
+        - reference
+        - description
+        - value
+        - startDate
       type: object
     ApplicationFeeGetDto:
       properties:
@@ -256,12 +256,12 @@ components:
         value:
           type: string
       required:
-      - id
-      - reference
-      - description
-      - value
-      - startDate
-      - endDate
+        - id
+        - reference
+        - description
+        - value
+        - startDate
+        - endDate
       type: object
     ApplicationFeeStatusDto:
       properties:
@@ -274,10 +274,10 @@ components:
         statusCreationDate:
           type: string
       required:
-      - paymentReference
-      - feeStatus
-      - D
-      - statusCreationDate
+        - paymentReference
+        - feeStatus
+        - D
+        - statusCreationDate
       type: object
     ApplicationFeeUpdateDto:
       properties:
@@ -294,12 +294,12 @@ components:
         value:
           type: string
       required:
-      - id
-      - reference
-      - description
-      - value
-      - startDate
-      - endDate
+        - id
+        - reference
+        - description
+        - value
+        - startDate
+        - endDate
       type: object
     ApplicationListCreateDto:
       properties:
@@ -322,15 +322,15 @@ components:
         time:
           type: string
       required:
-      - status
-      - date
-      - time
-      - description
-      - courthouseCode
-      - otherCourthouse
-      - durationHour
-      - durationMinute
-      - criminalJusticeAreaId
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - otherCourthouse
+        - durationHour
+        - durationMinute
+        - criminalJusticeAreaId
       type: object
     ApplicationListEntryCreateDto:
       properties:
@@ -365,21 +365,21 @@ components:
         userName:
           type: string
       required:
-      - applicationListId
-      - standardApplicantId
-      - applicant
-      - entryWording
-      - caseReference
-      - accountNumber
-      - rescheduled
-      - notes
-      - bulkUpload
-      - userName
-      - sequenceNumber
-      - messageUuid
-      - retryCount
-      - lodgementDate
-      - feeStatuses
+        - applicationListId
+        - standardApplicantId
+        - applicant
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - sequenceNumber
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - feeStatuses
       type: object
     ApplicationListEntryGetDto:
       properties:
@@ -418,23 +418,23 @@ components:
         userName:
           type: string
       required:
-      - entryId
-      - applicationListId
-      - standardApplicantId
-      - applicant
-      - numberOfBulkRespondents
-      - entryWording
-      - caseReference
-      - accountNumber
-      - rescheduled
-      - notes
-      - bulkUpload
-      - userName
-      - sequenceNumber
-      - messageUuid
-      - retryCount
-      - lodgementDate
-      - feeStatuses
+        - entryId
+        - applicationListId
+        - standardApplicantId
+        - applicant
+        - numberOfBulkRespondents
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - sequenceNumber
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - feeStatuses
       type: object
     ApplicationListEntryResultCreateDto:
       properties:
@@ -445,9 +445,9 @@ components:
         resultWording:
           type: string
       required:
-      - resultCodeId
-      - resultOfficer
-      - resultWording
+        - resultCodeId
+        - resultOfficer
+        - resultWording
       type: object
     ApplicationListEntryResultGetDto:
       properties:
@@ -460,10 +460,10 @@ components:
         resultWording:
           type: string
       required:
-      - id
-      - resultCode
-      - resultWording
-      - resultOfficer
+        - id
+        - resultCode
+        - resultWording
+        - resultOfficer
       type: object
     ApplicationListEntryResultUpdateDto:
       properties:
@@ -478,11 +478,11 @@ components:
         version:
           type: integer
       required:
-      - id
-      - version
-      - resultCodeId
-      - resultOfficer
-      - resultWording
+        - id
+        - version
+        - resultCodeId
+        - resultOfficer
+        - resultWording
       type: object
     ApplicationListEntryUpdateDto:
       properties:
@@ -517,21 +517,21 @@ components:
         version:
           type: integer
       required:
-      - entryId
-      - standardApplicantId
-      - applicant
-      - entryWording
-      - caseReference
-      - accountNumber
-      - rescheduled
-      - notes
-      - bulkUpload
-      - userName
-      - messageUuid
-      - retryCount
-      - lodgementDate
-      - version
-      - feeStatuses
+        - entryId
+        - standardApplicantId
+        - applicant
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - version
+        - feeStatuses
       type: object
     ApplicationListGetDto:
       properties:
@@ -560,21 +560,21 @@ components:
         time:
           type: string
       required:
-      - id
-      - status
-      - date
-      - time
-      - description
-      - courthouseCode
-      - courthouseName
-      - otherCourthouse
-      - durationHour
-      - durationMinute
-      - cjaCode
-      - cjaDescription
+        - id
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - courthouseName
+        - otherCourthouse
+        - durationHour
+        - durationMinute
+        - cjaCode
+        - cjaDescription
       type: object
     ApplicationListStatus:
-      properties: {}
+      properties: { }
       type: object
     ApplicationListUpdateDto:
       properties:
@@ -597,18 +597,18 @@ components:
         version:
           type: integer
       required:
-      - id
-      - version
-      - status
-      - date
-      - time
-      - description
-      - courthouseCode
-      - durationMinute
-      - criminalJusticeAreaId
+        - id
+        - version
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - durationMinute
+        - criminalJusticeAreaId
       type: object
     CourtLocationGetDto:
-      properties: {}
+      properties: { }
       type: object
     CourtLocationUpdateDto:
       properties:
@@ -641,20 +641,20 @@ components:
         welshName:
           type: string
       required:
-      - id
-      - version
-      - name
-      - courtType
-      - courtLocationCode
-      - startDate
-      - endDate
-      - welshName
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - telephoneNumber
+        - id
+        - version
+        - name
+        - courtType
+        - courtLocationCode
+        - startDate
+        - endDate
+        - welshName
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - telephoneNumber
       type: object
     CourtLocationsCreateDto:
       properties:
@@ -675,14 +675,14 @@ components:
         telephoneNumber:
           type: string
       required:
-      - name
-      - courtType
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - telephoneNumber
+        - name
+        - courtType
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - telephoneNumber
       type: object
     CriminalJusticeAreGetDto:
       properties:
@@ -693,9 +693,9 @@ components:
         id:
           type: integer
       required:
-      - id
-      - code
-      - description
+        - id
+        - code
+        - description
       type: object
     CriminalJusticeAreaCreateDto:
       properties:
@@ -704,8 +704,8 @@ components:
         description:
           type: string
       required:
-      - code
-      - description
+        - code
+        - description
       type: object
     CriminalJusticeAreaUpdateDto:
       properties:
@@ -718,10 +718,10 @@ components:
         version:
           type: integer
       required:
-      - id
-      - code
-      - description
-      - version
+        - id
+        - code
+        - description
+        - version
       type: object
     NameAddressDto:
       properties:
@@ -764,28 +764,28 @@ components:
         version:
           type: integer
       required:
-      - title
-      - name
-      - forename1
-      - forename2
-      - forename3
-      - surname
-      - dateOfBirth
-      - addressLine1
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - emailAddress
-      - telephoneNumber
-      - mobileNumber
-      - dmsId
-      - version
-      - userName
+        - title
+        - name
+        - forename1
+        - forename2
+        - forename3
+        - surname
+        - dateOfBirth
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - dmsId
+        - version
+        - userName
       type: object
     OfficialType:
-      properties: {}
+      properties: { }
       type: object
     ResultCodeCreateDto:
       properties:
@@ -806,14 +806,14 @@ components:
         wording:
           type: string
       required:
-      - resultCode
-      - title
-      - wording
-      - legislation
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
       type: object
     ResultCodeGetDto:
       properties:
@@ -836,15 +836,15 @@ components:
         wording:
           type: string
       required:
-      - id
-      - resultCode
-      - title
-      - wording
-      - legislation
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
+        - id
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
       type: object
     ResultCodeUpdateDto:
       properties:
@@ -869,16 +869,16 @@ components:
         wording:
           type: string
       required:
-      - id
-      - version
-      - resultCode
-      - title
-      - wording
-      - legislation
-      - destinationEmail1
-      - destinationEmail2
-      - startDate
-      - endDate
+        - id
+        - version
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
       type: object
     StandardApplicantCreateDto:
       properties:
@@ -919,24 +919,24 @@ components:
         telephoneNumber:
           type: string
       required:
-      - applicantCode
-      - applicantTitle
-      - applicantName
-      - applicantForename1
-      - applicantForename2
-      - applicantForename3
-      - applicantSurname
-      - addressLine1
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - emailAddress
-      - telephoneNumber
-      - mobileNumber
-      - applicantStartDate
-      - applicantEndDate
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
       type: object
     StandardApplicantGetDto:
       properties:
@@ -979,25 +979,25 @@ components:
         telephoneNumber:
           type: string
       required:
-      - id
-      - applicantCode
-      - applicantTitle
-      - applicantName
-      - applicantForename1
-      - applicantForename2
-      - applicantForename3
-      - applicantSurname
-      - addressLine1
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - emailAddress
-      - telephoneNumber
-      - mobileNumber
-      - applicantStartDate
-      - applicantEndDate
+        - id
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
       type: object
     StandardApplicantUpdateDto:
       properties:
@@ -1042,26 +1042,26 @@ components:
         version:
           type: integer
       required:
-      - id
-      - version
-      - applicantCode
-      - applicantTitle
-      - applicantName
-      - applicantForename1
-      - applicantForename2
-      - applicantForename3
-      - applicantSurname
-      - addressLine1
-      - addressLine2
-      - addressLine3
-      - addressLine4
-      - addressLine5
-      - postcode
-      - emailAddress
-      - telephoneNumber
-      - mobileNumber
-      - applicantStartDate
-      - applicantEndDate
+        - id
+        - version
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
       type: object
 info:
   description: RESTful API for managing the Applications Register business processes.
@@ -1094,11 +1094,11 @@ paths:
       summary: Delete application code
     get:
       parameters:
-      - in: path
-        name: code-id
-        required: true
-        schema:
-          type: string
+        - in: path
+          name: code-id
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Application code detail
@@ -1140,22 +1140,22 @@ paths:
   /application-fees/{id}:
     delete:
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
       responses:
         '204':
           description: Application fee deleted
       summary: Delete an application fee by ID
     get:
       parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: integer
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
       responses:
         '200':
           content:
@@ -1165,18 +1165,18 @@ paths:
           description: Application fee details
       summary: Get an application fee by ID
     parameters:
-    - in: path
-      name: id
-      required: true
-      schema:
-        type: string
-    put:
-      parameters:
       - in: path
         name: id
         required: true
         schema:
-          type: integer
+          type: string
+    put:
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
       requestBody:
         content:
           application/json:
@@ -1383,11 +1383,11 @@ paths:
       summary: Delete court location
     get:
       parameters:
-      - in: path
-        name: location-id
-        required: true
-        schema:
-          type: string
+        - in: path
+          name: location-id
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Court location detail
@@ -1470,11 +1470,11 @@ paths:
       summary: Delete result code
     get:
       parameters:
-      - in: path
-        name: code-id
-        required: true
-        schema:
-          type: string
+        - in: path
+          name: code-id
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Result code detail
@@ -1518,4 +1518,4 @@ paths:
           description: Standard applicant updated
       summary: Update standard applicant
 servers:
-- url: /
+  - url: /

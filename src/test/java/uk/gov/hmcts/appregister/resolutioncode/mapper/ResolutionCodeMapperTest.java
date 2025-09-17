@@ -2,13 +2,14 @@ package uk.gov.hmcts.appregister.resolutioncode.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto;
-import uk.gov.hmcts.appregister.resolutioncode.model.ResolutionCode;
 
 class ResolutionCodeMapperTest {
 
@@ -38,8 +39,8 @@ class ResolutionCodeMapperTest {
                         .legislation("Some Act 1998 s.10")
                         .destinationEmail1("primary@example.com")
                         .destinationEmail2("secondary@example.com")
-                        .startDate(LocalDate.of(2024, 1, 1))
-                        .endDate(LocalDate.of(2025, 12, 31))
+                        .startDate(OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC))
+                        .endDate(OffsetDateTime.of(2025, 12, 31, 0, 0, 0, 0, ZoneOffset.UTC))
                         .build();
 
         ResolutionCodeDto dto = mapper.toReadDto(entity).orElseThrow();
@@ -51,8 +52,10 @@ class ResolutionCodeMapperTest {
         assertThat(dto.legislation()).isEqualTo("Some Act 1998 s.10");
         assertThat(dto.destinationEmail1()).isEqualTo("primary@example.com");
         assertThat(dto.destinationEmail2()).isEqualTo("secondary@example.com");
-        assertThat(dto.startDate()).isEqualTo(LocalDate.of(2024, 1, 1));
-        assertThat(dto.endDate()).isEqualTo(LocalDate.of(2025, 12, 31));
+        assertThat(dto.startDate())
+                .isEqualTo(OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
+        assertThat(dto.endDate())
+                .isEqualTo(OffsetDateTime.of(2025, 12, 31, 0, 0, 0, 0, ZoneOffset.UTC));
     }
 
     @Test
@@ -66,7 +69,7 @@ class ResolutionCodeMapperTest {
                         .legislation(null) // intentionally null
                         .destinationEmail1("owner@example.com")
                         .destinationEmail2(null) // intentionally null
-                        .startDate(LocalDate.of(2024, 6, 1))
+                        .startDate(OffsetDateTime.of(2024, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC))
                         .endDate(null) // intentionally null
                         .build();
 
@@ -97,8 +100,8 @@ class ResolutionCodeMapperTest {
                         "Regulation 2020/1",
                         "approvals@example.com",
                         "audit@example.com",
-                        LocalDate.of(2023, 5, 10),
-                        LocalDate.of(2024, 5, 10));
+                        OffsetDateTime.of(2023, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC),
+                        OffsetDateTime.of(2024, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC));
 
         ResolutionCode entity = mapper.toEntityFromReadDto(dto).orElseThrow();
 
@@ -109,8 +112,10 @@ class ResolutionCodeMapperTest {
         assertThat(entity.getLegislation()).isEqualTo("Regulation 2020/1");
         assertThat(entity.getDestinationEmail1()).isEqualTo("approvals@example.com");
         assertThat(entity.getDestinationEmail2()).isEqualTo("audit@example.com");
-        assertThat(entity.getStartDate()).isEqualTo(LocalDate.of(2023, 5, 10));
-        assertThat(entity.getEndDate()).isEqualTo(LocalDate.of(2024, 5, 10));
+        assertThat(entity.getStartDate())
+                .isEqualTo(OffsetDateTime.of(2023, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC));
+        assertThat(entity.getEndDate())
+                .isEqualTo(OffsetDateTime.of(2024, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC));
     }
 
     @Test
@@ -156,8 +161,8 @@ class ResolutionCodeMapperTest {
                         .legislation("Irrelevant here")
                         .destinationEmail1("x@y.com")
                         .destinationEmail2("z@y.com")
-                        .startDate(LocalDate.of(2022, 2, 2))
-                        .endDate(LocalDate.of(2023, 3, 3))
+                        .startDate(OffsetDateTime.of(2022, 2, 2, 0, 0, 0, 0, ZoneOffset.UTC))
+                        .endDate(OffsetDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneOffset.UTC))
                         .build();
 
         ResolutionCodeListItemDto item = mapper.toListItem(entity).orElseThrow();
@@ -181,7 +186,7 @@ class ResolutionCodeMapperTest {
                         .legislation("Supervision Act 2012")
                         .destinationEmail1("supervisor@example.com")
                         .destinationEmail2(null)
-                        .startDate(LocalDate.of(2024, 9, 1))
+                        .startDate(OffsetDateTime.of(2024, 9, 1, 0, 0, 0, 0, ZoneOffset.UTC))
                         .endDate(null)
                         .build();
 

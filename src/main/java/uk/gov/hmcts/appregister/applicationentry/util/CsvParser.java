@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import uk.gov.hmcts.appregister.applicationentry.dto.CsvRowDto;
 
+/** Parser for CSV files with pipe (|) delimiter. */
 @Component
 public class CsvParser implements Parser<CsvRowDto> {
 

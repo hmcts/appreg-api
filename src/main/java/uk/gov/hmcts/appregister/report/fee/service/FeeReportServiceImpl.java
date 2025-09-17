@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.report.fee.dto.FeeReportRowDto;
 import uk.gov.hmcts.appregister.report.fee.repository.FeeReportJdbcRepository;
 import uk.gov.hmcts.appregister.report.shared.CsvReportGenerator;
 
+/** Service implementation for generating fee reports. */
 @Service
 @RequiredArgsConstructor
 public class FeeReportServiceImpl implements FeeReportService {

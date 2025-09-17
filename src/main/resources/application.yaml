@@ -34,7 +34,7 @@ spring:
     name: Application Registration API
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DATABASE:appreg-db}
-    username: ${POSTGRES_USER:appreg_user}
+    username: ${POSTGRES_USER:app_reg_user}
     password: ${POSTGRES_PASS:password}
     driver-class-name: org.postgresql.Driver
   jpa:
@@ -42,23 +42,29 @@ spring:
       ddl-auto: none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        default_schema: appreg
+        default_schema: ${spring.sql.init.schema-locations}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: ${ENABLE_DB_MIGRATE:true}
+    locations: classpath:/migrations
+    default-schema: ${spring.sql.init.schema-locations}
+    mixed: true
   sql:
     init:
       mode: never
+      schema-locations: appreg
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${azure-tenant-id}/v2.0
-          audiences: ${azure-audience-id}
-
+          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}/v2.0
+          audiences: ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
+  mvc:
+    static-path-pattern: /specs/**
 logging:
   level:
     org.springframework.security: DEBUG
@@ -67,3 +73,6 @@ logging:
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+
+
+

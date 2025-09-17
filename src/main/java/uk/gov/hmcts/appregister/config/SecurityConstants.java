@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.config;
 
+/** Security-related constants used across the application. */
 public final class SecurityConstants {
 
     private SecurityConstants() {
@@ -15,6 +16,7 @@ public final class SecurityConstants {
     // Endpoint patterns
     public static final String SWAGGER_UI = "/swagger-ui/**";
     public static final String OPENAPI_DOCS = "/v3/api-docs/**";
+    public static final String OPENAPI = "/specs/**";
     public static final String HEALTH = "/health/**";
 
     // Error codes

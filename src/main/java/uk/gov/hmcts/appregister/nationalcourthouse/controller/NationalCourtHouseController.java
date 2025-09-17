@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.nationalcourthouse.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -140,10 +139,8 @@ public class NationalCourtHouseController {
     @Operation(
             summary = "Get a specific court location by ID",
             operationId = "getCourtLocationById")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Court location found"),
-        @ApiResponse(responseCode = "404", description = "Court location not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Court location found")
+    @ApiResponse(responseCode = "404", description = "Court location not found")
     @GetMapping("/{id}")
     public ResponseEntity<NationalCourtHouseDto> getById(@PathVariable Long id) {
         // Service throws 404 if not found; we simply return 200 with the DTO on success.

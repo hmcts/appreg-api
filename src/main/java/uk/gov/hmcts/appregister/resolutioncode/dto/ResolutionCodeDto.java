@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.resolutioncode.dto;
 
-import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 /**
  * Immutable Data Transfer Object (DTO) representing a Resolution (Result) Code.
@@ -26,32 +26,12 @@ import java.time.LocalDate;
  * from {@code ResolutionCode} JPA entities.
  */
 public record ResolutionCodeDto(
-
-        /**
-         * Primary key identifier of the resolution code (maps to {@code rc_id} in the database).
-         */
         Long id,
-
-        /** Business code string (e.g., "RC123") used for identification in logic and UI. */
         String resultCode,
-
-        /** Human-readable title of the resolution code. */
         String title,
-
-        /** Full descriptive wording or explanation of the resolution code. */
         String wording,
-
-        /** Optional legislation reference associated with the code. */
         String legislation,
-
-        /** First destination email address for notifications linked to this code, if defined. */
         String destinationEmail1,
-
-        /** Second destination email address for notifications linked to this code, if defined. */
         String destinationEmail2,
-
-        /** Start date (inclusive) from which this code is valid. */
-        LocalDate startDate,
-
-        /** End date (inclusive) until which this code is valid, or {@code null} if ongoing. */
-        LocalDate endDate) {}
+        OffsetDateTime startDate,
+        OffsetDateTime endDate) {}

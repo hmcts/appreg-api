@@ -1,123 +1,155 @@
 plugins {
-  id 'application'
-  id 'jacoco'
-  id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.5.5'
-  id 'com.github.ben-manes.versions' version '0.52.0'
-  id 'org.sonarqube' version '6.3.1.5724'
-  /*
-    Applies analysis tools including checkstyle and OWASP Dependency checker.
-    See https://github.com/hmcts/gradle-java-plugin
- */
-  id 'uk.gov.hmcts.java' version '0.12.67'
-  id 'com.diffplug.spotless' version '7.2.1'
-  id 'checkstyle'
-  id 'org.openrewrite.rewrite' version 'latest.release'
+    id 'application'
+    id 'jacoco'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'com.github.ben-manes.versions' version '0.52.0'
+    id 'org.sonarqube' version '6.3.1.5724'
+    id "io.freefair.lombok" version "8.13.1"
+    /*
+      Applies analysis tools including checkstyle and OWASP Dependency checker.
+      See https://github.com/hmcts/gradle-java-plugin
+   */
+    id 'uk.gov.hmcts.java' version '0.12.67'
+    id 'com.diffplug.spotless' version '7.2.1'
+    id 'org.openrewrite.rewrite' version 'latest.release'
+}
+
+checkstyle {
+    toolVersion = '11.0.1'                // or a version that matches your rules
 }
 
 application {
-  mainClass = 'uk.gov.hmcts.appregister.Application'
-  group = 'uk.gov.hmcts.appregister'
-  version = '0.0.1'
+    mainClass = 'uk.gov.hmcts.appregister.Application'
+    group = 'uk.gov.hmcts.appregister'
+    version = '0.0.1'
 }
 
 java {
-  toolchain {
-    languageVersion = JavaLanguageVersion.of(21)
-  }
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 
 spotless {
-  java {
-    // files to format
-    target 'src/**/*.java'
-    googleJavaFormat('1.22.0').aosp()
-    trimTrailingWhitespace()
-    endWithNewline()
-  }
+    java {
+        // files to format
+        target 'src/**/*.java'
+        googleJavaFormat('1.22.0').aosp()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
 
 rewrite {
-  activeRecipes = [
-    'org.openrewrite.staticanalysis.NeedBraces',
-    'org.openrewrite.java.OrderImports'
-  ]
+    activeRecipes = [
+        'org.openrewrite.staticanalysis.NeedBraces',
+        'org.openrewrite.java.OrderImports'
+    ]
 }
 
 def configureSourceSet(String name) {
-  sourceSets.create(name) { sourceSet ->
-    sourceSet.java {
-      compileClasspath += sourceSets.main.output + sourceSets.test.output
-      runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-      srcDir "src/${name}/java"
+    sourceSets.create(name) { sourceSet ->
+        sourceSet.java {
+            compileClasspath += sourceSets.main.output + sourceSets.test.output
+            runtimeClasspath += sourceSets.main.output + sourceSets.test.output
+            srcDir "src/${name}/java"
+        }
+        sourceSet.resources.srcDir "src/${name}/resources"
     }
-    sourceSet.resources.srcDir "src/${name}/resources"
-  }
 }
 
-//['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
-['smokeTest', 'functionalTest'].each { configureSourceSet(it) }
+['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
 
 configurations {
-  functionalTestImplementation.extendsFrom testImplementation
-  functionalTestRuntimeOnly.extendsFrom runtimeOnly
+    functionalTestImplementation.extendsFrom testImplementation
+    functionalTestRuntimeOnly.extendsFrom runtimeOnly
 
-//  integrationTestImplementation.extendsFrom testImplementation
-//  integrationTestRuntimeOnly.extendsFrom runtimeOnly
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly
 
-  smokeTestImplementation.extendsFrom testImplementation
-  smokeTestRuntimeOnly.extendsFrom runtimeOnly
+    smokeTestImplementation.extendsFrom testImplementation
+    smokeTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
 tasks.withType(JavaCompile).configureEach {
-  options.compilerArgs << "-Xlint:unchecked" << "-Werror"
+    options.compilerArgs << "-Xlint:unchecked" << "-Werror"
 }
 
 // https://github.com/gradle/gradle/issues/16791
 tasks.withType(JavaExec).configureEach {
-  javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
+    javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
 }
 
 tasks.withType(Test).configureEach {
-  enabled = true
-  useJUnitPlatform()
-  failFast = true
+    enabled = true
+    useJUnitPlatform()
+    failFast = true
 
-  testLogging {
-    exceptionFormat = 'full'
-  }
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/java', 'src/main/resources', 'flyway']
+        }
+    }
+
+    // Ensure main source set includes resources from flyway directory
+    functionalTest {
+        java {
+            compileClasspath += main.output
+
+            runtimeClasspath += main.output
+            srcDir file('src/functionalTest/java')
+        }
+        resources.srcDir file('src/functionalTest/resources')
+    }
+
+    integrationTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/integrationTest/java')
+        }
+        resources.srcDir file('src/integrationTest/resources')
+    }
+
+    smokeTest {
+        java {
+            compileClasspath += main.output
+            runtimeClasspath += main.output
+            srcDir file('src/smokeTest/java')
+        }
+        resources.srcDir file('src/smokeTest/resources')
+    }
 }
 
 tasks.register('functional', Test) {
-  //AD disabled
-  enabled = true
-  description = "Runs functional tests"
-  group = "Verification"
-  testClassesDirs = sourceSets.functionalTest.output.classesDirs
-  classpath = sourceSets.functionalTest.runtimeClasspath
+    description = "Runs functional tests"
+    group = "Verification"
+    testClassesDirs = sourceSets.functionalTest.output.classesDirs
+    classpath = sourceSets.functionalTest.runtimeClasspath
 }
 
-/* tasks.register('integration', Test) {
-  //AD disabled
-  enabled = false
-  description = "Runs integration tests"
-  group = "Verification"
-  testClassesDirs = sourceSets.integrationTest.output.classesDirs
-  classpath = sourceSets.integrationTest.runtimeClasspath
-  failFast = true
-} */
+tasks.register('integration', Test) {
+    description = "Runs integration tests"
+    group = "Verification"
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
 
 tasks.register('smoke', Test) {
-  //AD disabled
-  enabled = true
-  description = "Runs Smoke Tests"
-  group = "Verification"
-  testClassesDirs = sourceSets.smokeTest.output.classesDirs
-  classpath = sourceSets.smokeTest.runtimeClasspath
+    description = "Runs Smoke Tests"
+    testClassesDirs = sourceSets.smokeTest.output.classesDirs
+    classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
-/* 
+/*
 jacocoTestReport {
   executionData(test, integration)
   reports {
@@ -127,116 +159,166 @@ jacocoTestReport {
   }
 } */
 jacocoTestReport {
-  //AD disabled
-  enabled = true
-  //executionData(test, integration)
-  executionData(test)
-  reports {
-    xml.getRequired().set(true)
-    csv.getRequired().set(false)
-    html.getRequired().set(true)
-  }
+    //AD disabled
+    enabled = true
+    //executionData(test, integration)
+    executionData(test)
+    reports {
+        xml.getRequired().set(true)
+        csv.getRequired().set(false)
+        html.getRequired().set(true)
+    }
 }
 //AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
-//tasks.check.dependsOn(integration)
+tasks['check'].finalizedBy integration
+
 
 sonarqube {
-  properties {
-    property "sonar.projectName", "AppReg :: appreg-api"
-    property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
-  }
+    properties {
+        property "sonar.projectName", "AppReg :: appreg-api"
+        property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
+    }
 }
 
 // before committing a change, make sure task still works
 dependencyUpdates {
-  def isNonStable = { String version ->
-    def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { qualifier -> version.toUpperCase().contains(qualifier) }
-    def regex = /^[0-9,.v-]+$/
-    return !stableKeyword && !(version ==~ regex)
-  }
-  rejectVersionIf { selection -> // <---- notice how the closure argument is named
-    return isNonStable(selection.candidate.version) && !isNonStable(selection.currentVersion)
-  }
+    def isNonStable = { String version ->
+        def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { qualifier -> version.toUpperCase().contains(qualifier) }
+        def regex = /^[0-9,.v-]+$/
+        return !stableKeyword && !(version ==~ regex)
+    }
+    rejectVersionIf { selection -> // <---- notice how the closure argument is named
+        return isNonStable(selection.candidate.version) && !isNonStable(selection.currentVersion)
+    }
 }
 
 // https://jeremylong.github.io/DependencyCheck/dependency-check-gradle/configuration.html
 dependencyCheck {
-  suppressionFile = 'config/owasp/suppressions.xml'
+    // Specifies if the build should be failed if a CVSS score above a specified level is identified.
+    // range of 0-10 fails the build, anything greater and it doesn't fail the build
+    failBuildOnCVSS = 0
+    suppressionFile = 'config/owasp/suppressions.xml'
+
+    analyzers {
+        // Disable scanning of .NET related binaries
+        assemblyEnabled = false
+    }
+    skipConfigurations = [
+        "compileOnly",
+        "pmd",
+        "integrationTest",
+        "functionalTest",
+        "smokeTest",
+        "contractTestRuntimeClasspath",
+        "contractTestCompileClasspath"
+    ]
 }
 
 repositories {
-  mavenLocal()
-  mavenCentral()
-  maven {
-    url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
-  }
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
+    }
 }
 
 ext {
-  log4JVersion = "2.25.1"
-  logbackVersion = "1.5.18"
+    log4JVersion = "2.25.1"
+    logbackVersion = "1.5.18"
 }
 
 ext['snakeyaml.version'] = '2.0'
 
 dependencies {
-  // Core Spring Boot Starters
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
+    // Core Spring Boot Starters
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
 
-  // OAuth2 support
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
+    // OAuth2 support
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
 
-  // SpringDoc OpenAPI
-  implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.13'
+    // SpringDoc OpenAPI
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.13'
 
-  // Logging
-  implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
-  implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
-  implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
-  implementation group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
-  implementation group: 'ch.qos.logback', name: 'logback-core', version: logbackVersion
-  implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
+    // Logging
+    implementation group: 'com.github.hmcts.java-logging', name: 'logging', version: '6.1.9'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
 
-  // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
+    // get flyway core
+    implementation 'org.flywaydb:flyway-core:11.11.2'
+    implementation 'org.flywaydb:flyway-database-postgresql:11.11.2'
 
-  // Database
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
+    // Lombok
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
+    annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
 
-  // Testing
-  testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
-  testImplementation 'org.springframework.security:spring-security-test'
-  testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // Database
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
 
-  rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
+    // Testing
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
+    testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation 'io.github.hakky54:logcaptor:2.11.0'
+    testImplementation 'org.testcontainers:testcontainers:1.21.0'
+    testImplementation 'org.testcontainers:postgresql:1.20.0'
+    testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {
+        exclude group: 'junit', module: 'junit'
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
 
-  // Updated Third-Party Dependencies
-  implementation 'org.apache.commons:commons-lang3:3.18.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.45'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.45'
+
+    testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.2.1'
+    rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
+
+    // Updated Third-Party Dependencies
+    implementation 'org.apache.commons:commons-lang3:3.18.0'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.44'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.44'
 }
 
 bootJar {
-  archiveFileName = "app-register.jar"
+    archiveFileName = "app-register.jar"
 
-  manifest {
-    attributes('Implementation-Version': project.version.toString())
-  }
+    manifest {
+        attributes('Implementation-Version': project.version.toString())
+    }
 }
 
 // Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
 rootProject.tasks.named("processSmokeTestResources") {
-  duplicatesStrategy = 'include'
+    duplicatesStrategy = 'include'
+}
+
+
+// Gradle 7.x issue, workaround from: https://github.com/gradle/gradle/issues/17236#issuecomment-894768083
+rootProject.tasks.named("processSmokeTestResources") {
+    duplicatesStrategy = 'include'
+}
+
+rootProject.tasks.named("processFunctionalTestResources") {
+    duplicatesStrategy = 'include'
+}
+
+rootProject.tasks.named("processIntegrationTestResources") {
+    duplicatesStrategy = 'include'
 }
 
 wrapper {
     distributionType = Wrapper.DistributionType.ALL
+}
+
+processResources {
+  filesMatching("**/openapi.yaml") {
+    expand(version: project.version)
+    filteringCharset = 'UTF-8'
+  }
 }

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.resolutioncode.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -108,10 +107,8 @@ public class ResolutionCodeController {
     @Operation(
             summary = "Get a specific resolution code by ID",
             operationId = "getResolutionCodeById")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Resolution code found"),
-        @ApiResponse(responseCode = "404", description = "Resolution code not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Resolution code found")
+    @ApiResponse(responseCode = "404", description = "Resolution code not found")
     @GetMapping("/{id}")
     public ResponseEntity<ResolutionCodeDto> getById(@PathVariable Long id) {
         // Service throws 404 if not found; we simply return 200 with the DTO on success.
