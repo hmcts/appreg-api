@@ -3,7 +3,11 @@ id = "47161b4c-2c1b-43de-8867-c86eefa449c3"
 name = "appreg"
 
 [flyway]
-locations = [ "filesystem:migrations","filesystem:callbacks" ]
+locations = [
+  "filesystem:migrations",
+  "filesystem:data_population",
+  "filesystem:callbacks"
+]
 mixed = true
 outOfOrder = true
 schemaModelLocation = "schema-model"
@@ -26,7 +30,7 @@ detectRenames = "identical-only"
 [redgateCompare.postgresql.options.ignores]
 ignoreNewlinesInTextObjects = "off"
 
-[environments.target1]
+[environments.development]
 url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
 schemas = [ "appreg" ]
 displayName = "Development"

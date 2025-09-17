@@ -1,4 +1,4 @@
-[environments.target1]
+[environments.development]
 user = "hmcts"
 password = "${localSecret.Flyway Desktop 9e85f9ee-6296-4b98-950e-d5414cf738ae}"
 
