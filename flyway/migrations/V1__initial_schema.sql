@@ -2,7 +2,7 @@
 
 -- Version Control
 -- V1.0  	Matthew Harman  31/07/2025	Initial Version
---
+-- V2.0  	Matthew Harman  16/09/2025	Added code for testing script applied
 --
 
 SET client_encoding TO 'UTF8';
@@ -574,7 +574,95 @@ DROP SEQUENCE IF EXISTS rc_seq;
 CREATE SEQUENCE rc_seq INCREMENT 1 MINVALUE 1 NO MAXVALUE START 221 CACHE 20;
 DROP SEQUENCE IF EXISTS sa_seq;
 CREATE SEQUENCE sa_seq INCREMENT 1 MINVALUE 1 NO MAXVALUE START 9723 CACHE 20;
-DROP SEQUENCE IF EXISTS ale_seq;
-CREATE SEQUENCE ale_seq INCREMENT 1 MINVALUE 1 NO MAXVALUE START 2975601 CACHE 20;
-DROP SEQUENCE IF EXISTS nch_seq;
-CREATE SEQUENCE nch_seq INCREMENT 1 MINVALUE 1 NO MAXVALUE START 9230 CACHE 20;
+
+-- Create a TEST_SUPPORT schema
+CREATE SCHEMA IF NOT EXISTS test_support;
+
+-- Drop the registry table if it exists
+DROP TABLE IF EXISTS test_support.test_registry CASCADE;
+
+-- Create a TEST_SUPPORT registry to store Flyway test metadata
+CREATE TABLE IF NOT EXISTS test_support.test_registry (
+	id BIGSERIAL PRIMARY KEY,
+	version text NOT NULL,  -- e.g. '1,0', '1.1', '2.0'
+	routine_schema text NOT NULL, -- e.g. 'test_support'
+	routine_name text NOT NULL,   -- e.g. 'test_table_exists'
+	UNIQUE (version, routine_schema, routine_name)
+);
+
+-- Helper to compare versions using string-to-array
+CREATE OR REPLACE FUNCTION test_support.version_le(v text, w text) 
+RETURNS boolean LANGUAGE sql IMMUTABLE AS $$
+  SELECT string_to_array(v, '.')::int[] <= string_to_array(w, '.')::int[];
+  $$;
+
+-- Insert our test data for V1
+INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
+VALUES ('1', 'test_support', 'check_schema_objects_v1_present')
+ON CONFLICT DO NOTHING;
+
+-- Create the test as a function that RAISES EXCEPTION on failure
+CREATE OR REPLACE FUNCTION test_support.check_schema_objects_v1_present()
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+	-- Check for existence of tables
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'addresses') THEN
+		RAISE EXCEPTION 'Table addresses is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'application_codes') THEN
+		RAISE EXCEPTION 'Table application_codes is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'application_lists') THEN
+		RAISE EXCEPTION 'Table application_lists is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'application_list_entries') THEN
+		RAISE EXCEPTION 'Table application_list_entries is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'application_register') THEN
+		RAISE EXCEPTION 'Table application_register is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_list_entry_fee_id') THEN
+		RAISE EXCEPTION 'Table app_list_entry_fee_id is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_list_entry_fee_status') THEN
+		RAISE EXCEPTION 'Table app_list_entry_fee_status is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_list_entry_official') THEN
+		RAISE EXCEPTION 'Table app_list_entry_official is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_list_entry_resolutions') THEN
+		RAISE EXCEPTION 'Table app_list_entry_resolutions is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'communication_media') THEN
+		RAISE EXCEPTION 'Table communication_media is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'criminal_justice_area') THEN
+		RAISE EXCEPTION 'Table criminal_justice_area is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'fee') THEN
+		RAISE EXCEPTION 'Table fee is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'link_addresses') THEN
+		RAISE EXCEPTION 'Table link_addresses is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'link_communication_media') THEN
+		RAISE EXCEPTION 'Table link_communication_media is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'name_address') THEN
+		RAISE EXCEPTION 'Table name_address is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'national_court_houses') THEN
+		RAISE EXCEPTION 'Table national_court_houses is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'petty_sessional_areas') THEN
+		RAISE EXCEPTION 'Table petty_sessional_areas is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'resolution_codes') THEN
+		RAISE EXCEPTION 'Table resolution_codes is missing';
+	END IF;
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'standard_applicants') THEN
+		RAISE EXCEPTION 'Table standard_applicants is missing';
+	END IF;
+
+	-- If all checks pass, do nothing (test passes)
+END $$;

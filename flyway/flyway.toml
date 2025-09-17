@@ -3,7 +3,7 @@ id = "47161b4c-2c1b-43de-8867-c86eefa449c3"
 name = "appreg"
 
 [flyway]
-locations = [ "filesystem:migrations" ]
+locations = [ "filesystem:migrations","filesystem:callbacks" ]
 mixed = true
 outOfOrder = true
 schemaModelLocation = "schema-model"
