@@ -1,0 +1,19 @@
+type: object
+description: >
+  Monetary amount in GBP, expressed in pence (minor units).
+  Always use integer values; 1 GBP = 100 pence.
+required: [value]
+properties:
+    value:
+      type: integer
+      format: int64
+      minimum: 0
+      description: Amount in pence.
+      example: 1299   # £12.99
+    currency:
+      type: string
+      description: ISO 4217 currency code (always "GBP" for now).
+      example: GBP
+      default: GBP
+      enum: [ GBP ]
+

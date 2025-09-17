@@ -1,0 +1,32 @@
+parameters:
+  - in: path
+    name: code
+    required: true
+    schema: { type: string }
+    description: Code used to identify the Result Code (case-insensitive).
+  - in: query
+    name: date
+    required: true
+    schema: { type: string, format: date }
+    description: |
+      ISO date (yyyy-MM-dd) on which the Result Code must be valid.
+get:
+  operationId: getResultCodeByCodeAndDate
+  tags: [result-codes]
+  summary: Get a specific Result Code by code and date.
+  responses:
+    "200":
+      description: Result code found
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/result-codes/result-code-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

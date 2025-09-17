@@ -316,9 +316,14 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
 
-processResources {
-  filesMatching("**/openapi.yaml") {
-    expand(version: project.version)
+// Put this near the top-level of the file (outside any block)
+import org.apache.tools.ant.filters.ReplaceTokens
+
+tasks.named('processResources', Copy) {
+  inputs.property("version", project.version.toString())
+
+  filesMatching("openapi/openapi.yaml") {
     filteringCharset = 'UTF-8'
+    filter { String line -> line.replace('@version@', project.version.toString()) }
   }
 }

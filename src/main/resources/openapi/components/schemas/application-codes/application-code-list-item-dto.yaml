@@ -1,0 +1,25 @@
+type: object
+description: Immutable DTO representing an Application Code.
+required:
+  - applicationCode
+  - title
+  - wording
+  - isFeeDue
+  - bulkRespondentAllowed
+properties:
+  applicationCode:
+    type: string
+    description: Code that identifies the application type.
+  title:
+    type: string
+    description: Human-readable title.
+  isFeeDue:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code require an
+      Application List Entry Fee Status to be created and linked.
+  bulkRespondentAllowed:
+    type: boolean
+    description: > # TODO - Check what a bulk respondent looks like.
+      True if Application List Entries using this Application Code allow multiple
+      respondents to be created and linked.

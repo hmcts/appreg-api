@@ -1,16 +1,10 @@
 type: object
 description: Immutable DTO representing a Result Code.
 required:
-  - id
   - resultCode
   - title
   - wording
-  - startDate
 properties:
-  id:
-    type: integer
-    format: int64
-    description: Primary key identifier.
   resultCode:
     type: string
     description: Code that identifies the result.
@@ -20,12 +14,3 @@ properties:
   wording:
     type: string
     description: Full descriptive wording, potentially with blank fields to be inputted by the user.
-  startDate:
-    type: string
-    format: date
-    description: Start date from which the code is valid.
-  endDate:
-    type: string
-    format: date
-    nullable: true
-    description: End date until which the code is valid.

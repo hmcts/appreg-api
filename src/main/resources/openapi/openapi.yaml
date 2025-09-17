@@ -6,29 +6,49 @@ info:
     REST API for managing Applications Lists, Application List Entries and getting important,
     reference data including application codes, result codes, fees, court locations, criminal justice areas
     and standard applicants.
-  version: ${version}
+  # We use @version@ here so Gradle can inject the project version at build time.
+  # DO NOT change this to $version — Groovy template expansion conflicts with $ref
+  # entries elsewhere in the file and will break the build.
+  version: "@version@"
 
 tags:
   - name: result-codes
     description:
       Retrieve result codes. Result codes are reference data, not managed in App Reg. They are required to provide a set
       of ways an Application List Entry can be resulted. e.g. Approved/Denied.
+  - name: application-codes
+    description:
+      Retrieve application codes. Application codes are reference data, not managed in App Reg. They are required to
+      provide a set repeatable data that can be used by Application List Entries, such as the title, wording or whether
+      an application has an associated fee.
 
 paths:
-  /result-codes:           { $ref: './paths/result-codes.yaml' }
-  /result-codes/{id}: { $ref: './paths/result-codes-id.yaml' }
+  # APPLICATION-CODES
+  /application-codes:        { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{code}: { $ref: './paths/application-codes/application-codes-by-code.yaml' }
+  # RESULT-CODES
+  /result-codes:             { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{code}:      { $ref: './paths/result-codes/result-codes-by-code.yaml' }
 
 components:
   schemas:
-    result-code-dto:             { $ref: './components/schemas/result-codes/result-code-dto.yaml' }
-    result-code-list-item-dto:   { $ref: './components/schemas/result-codes/result-code-list-item-dto.yaml' }
-    problem:                     { $ref: './components/schemas/common/problem.yaml'}
-    page:                        { $ref: './components/schemas/common/page.yaml' }
-    sort:                        { $ref: './components/schemas/common/sort.yaml' }
+    # APPLICATION-CODES
+    application-code-dto:           { $ref: './components/schemas/application-codes/application-code-dto.yaml' }
+    application-code-list-item-dto: { $ref: './components/schemas/application-codes/application-code-list-item-dto.yaml' }
+    # COMMON
+    problem:                        { $ref: './components/schemas/common/problem.yaml' }
+    page:                           { $ref: './components/schemas/common/page.yaml' }
+    sort:                           { $ref: './components/schemas/common/sort.yaml' }
+    # RESULT-CODES
+    result-code-dto:                { $ref: './components/schemas/result-codes/result-code-dto.yaml' }
+    result-code-list-item-dto:      { $ref: './components/schemas/result-codes/result-code-list-item-dto.yaml' }
+
+
   responses:
-     bad-request-error:      { $ref: './components/responses//bad-request-error.yaml' }
-     unauthorized-error:     { $ref: './components/responses/unauthorized-error.yaml' }
-     forbidden-error:        { $ref: './components/responses/forbidden-error.yaml' }
-     not-found-error:        { $ref: './components/responses/not-found-error.yaml' }
-     internal-server-error:  { $ref: './components/responses/internal-server-error.yaml' }
-     not-acceptable-error:   { $ref: './components/responses/not-acceptable-error.yaml' }
+    # ERRORS
+     bad-request-error:     { $ref: './components/responses//bad-request-error.yaml' }
+     unauthorized-error:    { $ref: './components/responses/unauthorized-error.yaml' }
+     forbidden-error:       { $ref: './components/responses/forbidden-error.yaml' }
+     not-found-error:       { $ref: './components/responses/not-found-error.yaml' }
+     internal-server-error: { $ref: './components/responses/internal-server-error.yaml' }
+     not-acceptable-error:  { $ref: './components/responses/not-acceptable-error.yaml' }
