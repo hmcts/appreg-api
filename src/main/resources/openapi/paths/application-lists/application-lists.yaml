@@ -1,0 +1,71 @@
+get:
+  operationId: listApplicationLists
+  tags: [ application-lists ]
+  summary: Get Application Lists (paginated, filterable)
+  description: Returns a paginated list of Application Lists.
+  parameters:
+    - in: query
+      name: dateFrom
+      schema: { type: string, format: date }
+      description: Earliest date of Application List (inclusive).
+    - in: query
+      name: dateTo
+      schema: { type: string, format: date }
+      description: Latest date of Application List (inclusive).
+    - in: query
+      name: courtLocationCode
+      schema: { type: string }
+      description: Filter by Court Location code.
+    - in: query
+      name: status
+      schema: { $ref: "../../components/schemas/application-lists/application-list-status.yaml" }
+      description: Filter by Application List status (OPEN/CLOSED).
+    - in: query
+      name: page
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    - in: query
+      name: sort
+      style: form
+      explode: true
+      schema:
+        type: array
+        items: { type: string }
+        example: [ "date,asc", "courtLocationCode,desc" ]
+  responses:
+    "200":
+      description: Page of Application Lists
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-page.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
+post:
+  operationId: createApplicationList
+  tags: [ application-lists ]
+  summary: Create an Application List
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: "../../components/schemas/application-lists/application-list-create-request.yaml" }
+  responses:
+    "201":
+      description: Application List created
+      headers:
+        Location:
+          description: URL of the created Application List
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

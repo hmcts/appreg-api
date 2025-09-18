@@ -42,25 +42,32 @@ tags:
 paths:
   # APPLICATION CODES
   /application-codes:             { $ref: './paths/application-codes/application-codes.yaml' }
-  /application-codes/{code}:      { $ref: './paths/application-codes/application-code-by-code.yaml' }
+  /application-codes/{code}:      { $ref: './paths/application-codes/application-codes-by-code.yaml' }
+  # APPLICATION LISTS
+  /application-lists:             { $ref: './paths/application-lists/application-lists.yaml' }
+  /application-codes/{id}:        { $ref: './paths/application-lists/application-lists-by-id.yaml' }
   # COURT LOCATIONS
   /ccourt-locations:              { $ref: './paths/court-locations/court-locations.yaml' }
-  /court-locations/{code}:        { $ref: './paths/court-locations/court-location-by-code.yaml' }
+  /court-locations/{code}:        { $ref: './paths/court-locations/court-locations-by-code.yaml' }
   # CRIMINAL JUSTICE AREAS
   /criminal-justice-areas:        { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
-  /criminal-justice-areas/{code}: { $ref: './paths/criminal-justice-areas/criminal-justice-area-by-code.yaml' }
+  /criminal-justice-areas/{code}: { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
   # RESULT CODES
   /result-codes:                  { $ref: './paths/result-codes/result-codes.yaml' }
-  /result-codes/{code}:           { $ref: './paths/result-codes/result-code-by-code.yaml' }
+  /result-codes/{code}:           { $ref: './paths/result-codes/result-codes-by-code.yaml' }
   # STANDARD APPLICANTS
   /standard-applicants:           { $ref: './paths/standard-applicants/standard-applicants.yaml' }
-  /standard-applicants/{code}:    { $ref: './paths/standard-applicants/standard-applicant-by-code.yaml' }
+  /standard-applicants/{code}:    { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
 
 components:
   schemas:
     # APPLICATION CODES
     application-code-dto:           { $ref: './components/schemas/application-codes/application-code-dto.yaml' }
     application-code-page:          { $ref: './components/schemas/application-codes/application-code-page.yaml' }
+    # APPLICATION CODES
+    application-list-detail-dto:    { $ref: './components/schemas/application-lists/application-list-detail-dto.yaml' }
+    application-list-summary-page:  { $ref: './components/schemas/application-lists/application-list-summary-dto.yaml' }
+    application-list-page:          { $ref: './components/schemas/application-lists/application-list-page.yaml' }
     # COMMON
     problem:                        { $ref: './components/schemas/common/problem.yaml' }
     page:                           { $ref: './components/schemas/common/page.yaml' }

@@ -10,4 +10,3 @@ properties:
   locationCode:
     type: string
     description: Code that identifies the Court Location.
-

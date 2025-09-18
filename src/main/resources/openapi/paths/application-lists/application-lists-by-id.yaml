@@ -1,0 +1,44 @@
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+
+get:
+  operationId: getApplicationList
+  tags: [ application-lists ]
+  summary: Get an Application List by id
+  responses:
+    "200":
+      description: Application List detail
+      content:
+        application/json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+
+put:
+  operationId: updateApplicationList
+  tags: [ application-lists ]
+  summary: Update an Application List
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema: { $ref: "../../components/schemas/application-lists/application-list-update-request.yaml" }
+  responses:
+    "200":
+      description: Updated Application List
+      content:
+        application/json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+
+delete:
+  operationId: deleteApplicationList
+  tags: [ application-lists ]
+  summary: Delete an Application List
+  responses:
+    "204": { description: No Content }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
