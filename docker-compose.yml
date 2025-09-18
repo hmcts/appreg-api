@@ -16,6 +16,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/app_reg_db
       - SPRING_DATASOURCE_USERNAME=app_reg_user
       - SPRING_DATASOURCE_PASSWORD=password
+      - ENABLE_DB_MIGRATE=true
     ports:
       - "4550:4550"
       - "5005:5005"

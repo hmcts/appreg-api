@@ -49,7 +49,7 @@ spring:
         default_schema: ${spring.sql.init.schema-locations}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: ${ENABLE_DB_MIGRATE:true}
+    enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations
     default-schema: ${spring.sql.init.schema-locations}
     mixed: true
