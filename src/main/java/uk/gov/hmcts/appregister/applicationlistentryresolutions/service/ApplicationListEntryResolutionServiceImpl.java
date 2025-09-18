@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.exception.ValidationExceptionHandler;
+import uk.gov.hmcts.appregister.common.validator.ValidationExceptionHandler;
 
 /** Service implementation for managing application results. */
 @Service

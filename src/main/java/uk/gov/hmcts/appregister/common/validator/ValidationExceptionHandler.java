@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.exception;
+package uk.gov.hmcts.appregister.common.validator;
 
 import java.util.function.Supplier;
 import org.springframework.http.HttpStatus;

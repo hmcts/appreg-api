@@ -22,6 +22,8 @@ public class PreCreateUpdateEntityListener {
     /** The logged in user. */
     private final UserProvider userIdentity;
 
+    private final Clock clock;
+
     @PrePersist
     void beforeSave(Object object) {
         log.debug("Saving object of type: {}", object.getClass().getName());
@@ -47,7 +49,7 @@ public class PreCreateUpdateEntityListener {
 
     void updateModifiedBy(Object object) {
         if (object instanceof Changeable entity) {
-            entity.setChangedDate(OffsetDateTime.now(Clock.systemUTC()));
+            entity.setChangedDate(OffsetDateTime.now(clock));
             entity.setChangedBy(new BigDecimal(userIdentity.getUserNumber()));
         }
     }

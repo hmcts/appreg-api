@@ -23,7 +23,7 @@ public class FeeRepositoryTest extends BasePostgresIntegrationTest {
 
     @Autowired private UserProvider loggedInUser;
 
-    private static final int BASELINE_TEST_COUNT = 18;
+    private static final int BASELINE_TEST_COUNT = 22;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {

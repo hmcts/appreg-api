@@ -7,14 +7,12 @@ import uk.gov.hmcts.appregister.applicationlistentryresolutions.dto.ApplicationL
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto;
 import uk.gov.hmcts.appregister.resolutioncode.mapper.ResolutionCodeMapper;
-import uk.gov.hmcts.appregister.util.VersionManager;
 
 @RequiredArgsConstructor
 @Component
 public class ApplicationListEntryResolutionMapper {
 
     private final ResolutionCodeMapper resolutionCodeMapper;
-    private final VersionManager versionManager;
 
     public ApplicationListEntryResolutionDto toReadDto(AppListEntryResolution entity) {
         if (entity == null) {

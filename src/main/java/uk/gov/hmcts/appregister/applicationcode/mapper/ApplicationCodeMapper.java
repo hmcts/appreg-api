@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 
@@ -19,6 +21,9 @@ public class ApplicationCodeMapper {
 
         Fee mainFee = fees != null ? fees.mainFee() : null;
         Fee offsetFee = fees != null ? fees.offsetFee() : null;
+
+        Optional<ApplicationListEntry> listEntryOptional =
+                entity.getApplicationListEntryList().stream().findFirst();
 
         return new ApplicationCodeDto(
                 entity.getId(),
@@ -37,7 +42,13 @@ public class ApplicationCodeMapper {
                 mainFee != null ? mainFee.getDescription() : null,
                 mainFee != null ? mainFee.getAmount() : null,
                 offsetFee != null ? offsetFee.getDescription() : null,
-                offsetFee != null ? offsetFee.getAmount() : null);
+                offsetFee != null ? offsetFee.getAmount() : null,
+                listEntryOptional.map(ApplicationListEntry::getLodgementDate).orElse(null),
+                listEntryOptional.isPresent()
+                                && listEntryOptional.get().getStandardApplicant() != null
+                        ? listEntryOptional.get().getStandardApplicant().getName()
+                        : null,
+                entity.getWording());
     }
 
     public ApplicationCode toEntityFromReadDto(ApplicationCodeDto dto) {

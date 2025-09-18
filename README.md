@@ -101,6 +101,7 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 - **Gradle Versions Plugin**
   Reports dependency updates. Docs: https://github.com/ben-manes/gradle-versions-plugin
 
+
 ## Database setup
 
 ### Local Execution
@@ -110,8 +111,14 @@ The database can be configured using the flyway migration CLI tool. The configur
 app register service can launch the baseline flyway content automatically by being run.
 
 #### Baseline data setup
+
 Baseline data is typically setup when running locally for the first time. The baseline data can be used by applying the
 _SPRING_PROFILE_ACTIVE=local_ environment variable (see ./docker-compose-local.yaml.
+
+## Calling the Rest API
+
+The postman file can be located here [App Registration.postman_collection.json](App Registration.postman_collection.json). Import this
+and set the environment variables to match your local setup. The postman suite can then be used to drive the application registration API.
 
 ## License
 

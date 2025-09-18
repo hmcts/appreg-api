@@ -30,7 +30,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /** Represents an ApplicationCode entity mapped to the "application_codes" table in the database. */
 @Entity
-@Table(name = "application_codes")
+@Table(name = TableNames.APPLICATION_CODES)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -38,6 +38,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 public class ApplicationCode extends BaseChangeableEntity implements Accountable, Versionable {
+
     @Id
     @Column(name = "ac_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ac_gen")

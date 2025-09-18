@@ -52,6 +52,7 @@ public class DatabaseReset {
                 applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationListRepository.deleteAll(
                 applicationListRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        dataAuditRepository.deleteAll();
     }
 
     @Transactional

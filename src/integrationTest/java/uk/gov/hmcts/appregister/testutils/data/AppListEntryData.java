@@ -16,14 +16,12 @@ public class AppListEntryData
         UUID uniqueId = UUID.randomUUID();
         ApplicationList list = new AppListData().someMinimal().build();
         ApplicationCode code = new ApplicationCodeTestData().someMinimal().build();
-        ApplicationListEntry.ApplicationListEntryBuilder applicationListEntryBuilder =
-                ApplicationListEntry.builder()
-                        .applicationCode(code)
-                        .applicationList(list)
-                        .applicationListEntryWording("Wording " + uniqueId)
-                        .entryRescheduled(ApplicationListEntryMapper.TRUE_VALUE)
-                        .sequenceNumber(Short.MIN_VALUE)
-                        .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")));
-        return applicationListEntryBuilder;
+        return ApplicationListEntry.builder()
+                .applicationCode(code)
+                .applicationList(list)
+                .applicationListEntryWording("Wording " + uniqueId)
+                .entryRescheduled(ApplicationListEntryMapper.TRUE_VALUE)
+                .sequenceNumber(Short.MIN_VALUE)
+                .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")));
     }
 }

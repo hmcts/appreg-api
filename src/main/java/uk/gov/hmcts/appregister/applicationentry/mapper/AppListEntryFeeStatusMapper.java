@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.dto.AppListEntryFeeStatusDto;
 import uk.gov.hmcts.appregister.applicationentry.dto.ApplicationWriteDto;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
@@ -19,16 +21,24 @@ public class AppListEntryFeeStatusMapper {
                 FeeStatusType.fromDisplayName(entity.getAlefsFeeStatus()),
                 entity.getAlefsFeeStatusDate(),
                 entity.getAlefsStatusCreationDate(),
-                entity.getAppListEntry().getEntryFeeIds().stream()
-                        .findFirst()
-                        .get()
-                        .getFee()
-                        .getAmount(),
-                entity.getAppListEntry().getEntryFeeIds().stream()
-                        .findFirst()
-                        .get()
-                        .getFee()
-                        .getDescription());
+                getAmount(entity),
+                getDescription(entity));
+    }
+
+    private Double getAmount(AppListEntryFeeStatus entity) {
+        Optional<AppListEntryFeeId> doubleOptional =
+                entity.getAppListEntry().getEntryFeeIds().stream().findFirst();
+        return doubleOptional
+                .map(appListEntryFeeId -> appListEntryFeeId.getFeeId().getAmount())
+                .orElse(null);
+    }
+
+    private String getDescription(AppListEntryFeeStatus entity) {
+        Optional<AppListEntryFeeId> doubleOptional =
+                entity.getAppListEntry().getEntryFeeIds().stream().findFirst();
+        return doubleOptional
+                .map(appListEntryFeeId -> appListEntryFeeId.getFeeId().getDescription())
+                .orElse(null);
     }
 
     @SuppressWarnings("java:S1135")

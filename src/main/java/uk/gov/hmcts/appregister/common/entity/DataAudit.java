@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,6 +18,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
+import uk.gov.hmcts.appregister.common.entity.base.Changeable;
+import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 
 /** Entity for Data Audit table. */
 @Entity
@@ -27,7 +30,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Getter
 @Setter
-public class DataAudit implements Accountable {
+@EntityListeners(PreCreateUpdateEntityListener.class)
+public class DataAudit implements Accountable, Changeable {
     @Id
     @Column(name = "data_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
@@ -67,7 +71,7 @@ public class DataAudit implements Accountable {
     private String link;
 
     @Column(name = "created_date", nullable = false)
-    private OffsetDateTime createdDate;
+    private OffsetDateTime changedDate;
 
     @Column(name = "old_clob_value")
     private String oldClobValue;
@@ -99,6 +103,16 @@ public class DataAudit implements Accountable {
     private String eventName;
 
     @Column(name = "user_name")
-    @Size(max = 20)
+    @Size(max = 250)
     private String userName;
+
+    @Override
+    public BigDecimal getChangedBy() {
+        return new BigDecimal(0L);
+    }
+
+    @Override
+    public void setChangedBy(BigDecimal changedBy) {
+        // no implementation required. Entity does not track user by id.
+    }
 }

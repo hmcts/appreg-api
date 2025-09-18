@@ -1,11 +1,14 @@
 package uk.gov.hmcts.appregister.testutils;
 
-import java.util.function.BiConsumer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.time.OffsetDateTime;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -13,7 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
-import uk.gov.hmcts.appregister.testutils.stub.DatabasePersistance;
+import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 
 /**
  * A base class that loads postgres test container and resets any data inserted before each test
@@ -23,7 +26,7 @@ import uk.gov.hmcts.appregister.testutils.stub.DatabasePersistance;
  * the data is reset before each test.
  */
 // load the local profile that will bootstrap the base line data
-@ActiveProfiles({"local"})
+@ActiveProfiles({"int"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
 public abstract class BasePostgresIntegrationTest {
@@ -32,6 +35,8 @@ public abstract class BasePostgresIntegrationTest {
     @Autowired private DatabaseReset reset;
 
     @Autowired protected DatabasePersistance persistance;
+
+    @LocalServerPort protected String port;
 
     @BeforeEach
     public void beforeEachTest() {
@@ -73,16 +78,12 @@ public abstract class BasePostgresIntegrationTest {
         }
     }
 
-    /**
-     * assert the common entity fields.
-     *
-     * @param expected The expected value
-     * @param actual the actual value
-     * @param consumer The consumer with an expected and actual
-     */
-    public void assertCommonEntityFields(
-            Object expected, Object actual, BiConsumer<Object, Object> consumer) {
-        consumer.accept(expected, actual);
-        expectAllCommonEntityFields(expected, actual);
+    protected URL getLocalUrlWithDate(String context, OffsetDateTime date)
+            throws MalformedURLException {
+        return new URL("http://localhost:" + port + "/" + context + "?date=" + date);
+    }
+
+    protected URL getLocalUrl(String context) throws MalformedURLException {
+        return new URL("http://localhost:" + port + "/" + context);
     }
 }

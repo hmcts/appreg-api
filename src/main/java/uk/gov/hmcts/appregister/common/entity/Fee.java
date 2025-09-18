@@ -68,4 +68,7 @@ public class Fee implements Accountable, Changeable, Versionable {
 
     @Column(name = "fee_user_name", nullable = false)
     private String createdUser;
+
+    @Column(name = "is_offsite")
+    private boolean isOffsite;
 }

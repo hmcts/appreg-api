@@ -19,4 +19,7 @@ public record ApplicationCodeDto(
         String mainFeeDescription,
         Double mainFeeAmount,
         String offsetFeeDescription,
-        Double offsetFeeAmount) {}
+        Double offsetFeeAmount,
+        OffsetDateTime lodgementDate,
+        String applicantName,
+        String applicationCodeWording) {}

@@ -49,7 +49,7 @@ spring:
         default_schema: ${spring.sql.init.schema-locations}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: ${ENABLE_DB_MIGRATE:true}
+    enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations
     default-schema: ${spring.sql.init.schema-locations}
     mixed: true
@@ -61,18 +61,22 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}/v2.0
+          issuer-uri: https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0
           audiences: ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
+          tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:
     static-path-pattern: /specs/**
 logging:
   level:
-    org.springframework.security: DEBUG
-    org.springframework.security.oauth2: DEBUG
+    org.springframework.*: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
+    correlation: "[%X{traceId}/%X{spanId}]"
 
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
+
 
 
 

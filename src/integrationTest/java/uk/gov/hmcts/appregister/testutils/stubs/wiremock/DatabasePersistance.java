@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.testutils.stub;
+package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;

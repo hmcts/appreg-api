@@ -2,6 +2,7 @@
 
 -- Version Control
 -- V1.0  	Matthew Harman  12/08/2025	Initial Version
+-- V2.0  	Matthew Harman  16/09/2025	Added code for testing script applied
 --
 --
 
@@ -34,3 +35,20 @@ ALTER TABLE data_audit ADD CONSTRAINT data_audit_pk PRIMARY KEY (data_id);
 
 DROP SEQUENCE IF EXISTS add_dataaudit_event;
 CREATE SEQUENCE add_dataaudit_event INCREMENT 1 MINVALUE 1 NO MAXVALUE START 807035 CACHE 20;
+
+-- Insert our test data for V2
+INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
+VALUES ('2', 'test_support', 'check_schema_objects_v2_present')
+ON CONFLICT DO NOTHING;
+
+-- Create the test as a function that RAISES EXCEPTION on failure
+CREATE OR REPLACE FUNCTION test_support.check_schema_objects_v2_present()
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+	-- Check for existence of tables
+	IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'data_audit') THEN
+		RAISE EXCEPTION 'Table data_audit is missing';
+	END IF;
+
+	-- If all checks pass, do nothing (test passes)
+END $$;

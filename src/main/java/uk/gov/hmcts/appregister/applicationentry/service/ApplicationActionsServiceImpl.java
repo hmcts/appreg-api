@@ -23,6 +23,7 @@ public class ApplicationActionsServiceImpl implements ApplicationActionsService 
 
     @Override
     @Transactional
+    @SuppressWarnings("java:S1135")
     public void moveApplications(List<Long> applicationIds, Long targetListId) {
         List<ApplicationListEntry> applications =
                 applicationListEntryRepository.findByIdInAndCreatedUser(
