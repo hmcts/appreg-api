@@ -37,6 +37,12 @@ get:
   responses:
     "200":
       description: Page of Application Lists
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema: { $ref: "../../components/schemas/application-lists/application-list-page.yaml" }
@@ -54,7 +60,8 @@ post:
     required: true
     content:
       application/json:
-        schema: { $ref: "../../components/schemas/application-lists/application-list-create-request.yaml" }
+        schema:
+          $ref: "../../components/schemas/application-lists/application-list-create-dto.yaml"
   responses:
     "201":
       description: Application List created
@@ -62,9 +69,15 @@ post:
         Location:
           description: URL of the created Application List
           schema: { type: string }
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
       content:
-        application/json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml"
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

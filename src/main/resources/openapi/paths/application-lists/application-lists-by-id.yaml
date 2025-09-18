@@ -12,33 +12,71 @@ get:
   responses:
     "200":
       description: Application List detail
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
       content:
-        application/json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 put:
   operationId: updateApplicationList
   tags: [ application-lists ]
   summary: Update an Application List
+  description: >
+    Full replacement (PUT) of an existing Application List. The `id` is taken from
+    the path; the request body must satisfy the same constraints as create
+    (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)).
+    The request must include the current `version` for optimistic concurrency; a mismatch results in 409 Conflict.
   requestBody:
     required: true
     content:
       application/json:
-        schema: { $ref: "../../components/schemas/application-lists/application-list-update-request.yaml" }
+        schema: { $ref: "../../components/schemas/application-lists/application-list-update-dto.yaml" }
   responses:
     "200":
       description: Updated Application List
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
       content:
-        application/json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-detail-dto.yaml" }
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 delete:
   operationId: deleteApplicationList
   tags: [ application-lists ]
   summary: Delete an Application List
+  description: Permanently deletes the Application List identified by `id`.
   responses:
-    "204": { description: No Content }
+    "204":
+      description: Application List deleted (no content)
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

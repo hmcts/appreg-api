@@ -1,0 +1,47 @@
+type: object
+description: Request payload to create an Application List.
+required:
+  - date
+  - time
+  - description
+  - status
+
+properties:
+
+  date:
+    type: string
+    format: date
+
+  time:
+    type: string
+    format: time
+
+  description:
+    type: string
+
+  status:
+    $ref: './application-list-status.yaml'
+
+  courtLocation:
+    $ref: '../court-locations/court-location-dto.yaml'
+
+  otherLocationDescription:
+    type: string
+
+  criminalJusticeAreaCode:
+    $ref: '../criminal-justice-areas/criminal-justice-area-dto.yaml'
+
+  durationHours:
+    type: integer
+    format: int32
+    minimum: 0
+
+  durationMinutes:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 59
+
+    oneOf:
+      - required: [ courtLocation ]
+      - required: [ otherLocationDescription, criminalJusticeAreaCode ]
