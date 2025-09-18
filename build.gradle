@@ -13,6 +13,7 @@ plugins {
   id 'uk.gov.hmcts.java' version '0.12.67'
   id 'com.diffplug.spotless' version '7.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
+  id 'org.openapi.generator' version '7.5.0'
 }
 
 ext {
@@ -105,7 +106,10 @@ tasks.withType(Test).configureEach {
 sourceSets {
   main {
     resources {
-      srcDirs = ['src/main/java', 'src/main/resources', 'flyway']
+      srcDirs = ["$buildDir/generated/openapi/src/main/java",'src/main/java', 'src/main/resources', 'flyway']
+    }
+    java {
+      java.srcDirs files("$buildDir/generated/openapi/src/main/java")
     }
   }
 
@@ -248,6 +252,7 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
+  implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
 
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
@@ -344,3 +349,30 @@ tasks.named('processResources', Copy) {
     filter { String line -> line.replace('@version@', project.version.toString()) }
   }
 }
+
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$rootDir/src/main/resources/openapi/openapi.yaml"
+    outputDir = layout.buildDirectory.dir("generated/openapi").get().asFile.toString()
+    apiPackage = "uk.gov.hmcts.appregister.generated.api"
+    modelPackage = "uk.gov.hmcts.appregister.generated.model"
+    skipOperationExample = true
+    openapiNormalizer = [
+            REF_AS_PARENT_IN_ALLOF: "true"
+    ]
+    configOptions = [
+            dateLibrary                         : "java8",
+            interfaceOnly                       : "true",
+            useTags                             : "true",
+            useSpringBoot3                      : "true",
+            containerDefaultToNull              : "true",
+            generatedConstructorWithRequiredArgs: "false",
+            additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor"
+    ]
+}
+
+processResources.dependsOn tasks.openApiGenerate
+compileJava.dependsOn tasks.openApiGenerate
+
+
+
