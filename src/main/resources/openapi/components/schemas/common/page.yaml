@@ -2,9 +2,6 @@ type: object
 description: Generic Spring Data page.
 required: [content, number, size, totalElements, totalPages]
 properties:
-  content:
-    type: array
-    items: {}   # left open; specialize in child schemas
   pageNumber:
     type: integer
     format: int32
