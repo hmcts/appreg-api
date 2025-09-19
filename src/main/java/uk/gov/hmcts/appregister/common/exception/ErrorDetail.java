@@ -5,10 +5,10 @@ import java.util.Optional;
 import org.springframework.http.HttpStatus;
 
 /**
- * Describes an application error code. Typically we will use {@link
- * uk.gov.hmcts.appregister.common.exception.DefaultErrorCode}
+ * Describes an application error code. Typically will be used with the concrete implementation
+ * {@link DefaultErrorDetail}.
  */
-public interface ErrorCode {
+public interface ErrorDetail {
 
     /**
      * The http code.

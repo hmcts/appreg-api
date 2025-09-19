@@ -1,10 +1,10 @@
 type: object
 description: Lightweight DTO used in list/search views.
 required:
-  - code
+  - resultCode
   - title
 properties:
-  code:
+  resultCode:
     type: string
     description: Code that identifies the result.
   title:

@@ -1,0 +1,33 @@
+parameters:
+  - in: path
+    name: code
+    required: true
+    schema: { type: string }
+    description: Code used to identify the Application Code (case-insensitive).
+  - in: query
+    name: date
+    required: true
+    schema: { type: string, format: date }
+    description: |
+      ISO date (yyyy-MM-dd) on which the Application Code must be valid.
+get:
+  operationId: getApplicationCodeByCodeAndDate
+  tags: [application-codes]
+  summary: Get a specific Application Code by code
+  responses:
+    "200":
+      description: Application Code found
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/application-codes/application-code-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

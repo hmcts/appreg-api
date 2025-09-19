@@ -1,5 +1,5 @@
 type: object
-description: Immutable DTO representing an Application Code.
+description: Immutable DTO representing a detailed Application Code.
 required:
   - applicationCode
   - title
@@ -40,7 +40,7 @@ properties:
     allOf:
       - $ref: "../common/money-gbp.yaml"
     nullable: true
-    description: Fee amount for this application code, expressed in pence (GBP minor units).
+    description: Fee amount for this Application Code, expressed in pence (GBP minor units).
   feeDescription:
     type: string
     nullable: true

@@ -1,0 +1,67 @@
+type: object
+description: Immutable DTO representing a detailed Standard Applicant.
+required:
+  - code
+  - title
+  - addressLine1
+  - startDate
+  - endDate
+properties:
+  code:
+    type: string
+    description: Code that identifies the Standard Applicant.
+  title:
+    type: string
+    description: Honorific prefix for a person’s name (e.g., Mr, Mrs, Ms, Dr, Prof).
+  name:
+    type: string
+    description: Full name of the applicant (may include forenames and surname).
+  forename1:
+    type: string
+    description: First forename of the applicant.
+  forename2:
+    type: string
+    description: Second forename of the applicant, if any.
+  forename3:
+    type: string
+    description: Third forename of the applicant, if any.
+  surname:
+    type: string
+    description: Family name or last name of the applicant.
+  addressLine1:
+    type: string
+    description: First line of the applicant's address.
+  addressLine2:
+    type: string
+    description: Second line of the applicant's address.
+  addressLine3:
+    type: string
+    description: Third line of the applicant's address.
+  addressLine4:
+    type: string
+    description: Fourth line of the applicant's address.
+  addressLine5:
+    type: string
+    description: Fifth line of the applicant's address.
+  postcode:
+    type: string
+    description: Post code of the applicant's address.
+  emailAddress:
+    type: string
+    format: email
+    description: Email address of the applicant.
+  telephoneNumber:
+    type: string
+    description: Landline telephone number of the applicant.
+  mobileNumber:
+    type: string
+    description: Mobile phone number of the applicant.
+  startDate:
+    type: string
+    format: date
+    description: Date the applicant record became active.
+  endDate:
+    type: string
+    format: date
+    description: Date the applicant record became inactive (if applicable).
+    nullable: true

@@ -3,28 +3,27 @@ parameters:
     name: code
     required: true
     schema: { type: string }
-    description: Code used to identify the Application Code (case-insensitive).
+    description: Code used to identify the Standard Applicant (case-insensitive).
   - in: query
     name: date
     required: true
     schema: { type: string, format: date }
     description: |
-      ISO date (yyyy-MM-dd) on which the application code must be valid.
+      ISO date (yyyy-MM-dd) on which the Standard Applicant must be valid.
 get:
-  operationId: getApplicationCodeByCodeAndDate
-  tags: [application-codes]
-  summary: Get a specific Application Code by code
+  operationId: getStandardApplicantByCodeAndDate
+  tags: [standard-applicants]
+  summary: Get a specific Standard Applicant by code and date.
   responses:
     "200":
-      description: Application Code found
+      description: Standard Applicant found
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema:
-            $ref: "../../components/schemas/application-codes/application-code-dto.yaml"
+          schema: { $ref: "../../components/schemas/standard-applicants/standard-applicant-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

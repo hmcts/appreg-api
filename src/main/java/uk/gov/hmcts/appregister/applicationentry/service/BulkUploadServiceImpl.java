@@ -103,7 +103,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Application code not found");
         }
 
-        return applicationCodes.stream().findFirst().get();
+        return applicationCodes.getFirst();
     }
 
     private ApplicationListEntry mapToEntity(

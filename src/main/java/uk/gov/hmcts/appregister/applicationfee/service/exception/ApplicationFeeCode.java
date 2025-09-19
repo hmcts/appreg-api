@@ -1,26 +1,26 @@
 package uk.gov.hmcts.appregister.applicationfee.service.exception;
 
 import org.springframework.http.HttpStatus;
-import uk.gov.hmcts.appregister.common.exception.DefaultErrorCode;
-import uk.gov.hmcts.appregister.common.exception.ErrorCode;
+import uk.gov.hmcts.appregister.common.exception.DefaultErrorDetail;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
+import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 
 public enum ApplicationFeeCode implements ErrorCodeEnum {
     AMBIGUOUS_FEE(
-            DefaultErrorCode.create(
+            DefaultErrorDetail.create(
                     HttpStatus.INTERNAL_SERVER_ERROR, "To many fees returned", "FEE-1")),
     NO_MAIN_FEE(
-            DefaultErrorCode.create(
+            DefaultErrorDetail.create(
                     HttpStatus.INTERNAL_SERVER_ERROR, "No main fee returned", "FEE-2"));
 
-    private final DefaultErrorCode defaultErrorCode;
+    private final DefaultErrorDetail defaultErrorCode;
 
-    ApplicationFeeCode(DefaultErrorCode defaultErrorCode) {
+    ApplicationFeeCode(DefaultErrorDetail defaultErrorCode) {
         this.defaultErrorCode = defaultErrorCode;
     }
 
     @Override
-    public ErrorCode getCode() {
+    public ErrorDetail getCode() {
         return defaultErrorCode;
     }
 }

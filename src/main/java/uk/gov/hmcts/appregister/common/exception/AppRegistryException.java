@@ -6,7 +6,7 @@ import lombok.Getter;
 @Getter
 public class AppRegistryException extends RuntimeException {
 
-    private final ErrorCodeEnum code;
+    private final transient ErrorCodeEnum code;
 
     /**
      * Construct exception.

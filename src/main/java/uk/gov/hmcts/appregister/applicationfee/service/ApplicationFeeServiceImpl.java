@@ -36,16 +36,11 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
 
         // if we do not have a main but have an offset then error
         if (main.isEmpty() && !offsite.isEmpty()) {
-            // TODO: Do we need to throw an exception? Is this a misconfiguration?
-            // throw new AppRegistryException(ApplicationFeeCode.NO_MAIN_FEE, "Too many fees");
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 
         // if we have more than one main or offset then we have an issue
         if (main.size() > 1 || offsite.size() > 1) {
-            // TODO: Do we need to throw an exception? Is this a misconfiguration?
-            // throw new AppRegistryException(ApplicationFeeCode.AMBIGUOUS_FEE, "Too many fees",
-            // null);
             log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
         }
 

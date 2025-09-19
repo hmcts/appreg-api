@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
-import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 
 /**
@@ -17,12 +16,12 @@ public abstract class AuditOperationLifecycleListenerAdapter
 
     @Override
     public void eventPerformed(BaseAuditEvent event) {
-        if (event.getMessageStatus() == OperationStatus.STARTED) {
-            started((StartEvent) event);
-        } else if (event.getMessageStatus() == OperationStatus.COMPLETED) {
-            finished((CompleteEvent) event);
-        } else if (event.getMessageStatus() == OperationStatus.FAILED) {
-            finishFail((FailEvent) event);
+        if (event instanceof StartEvent startEvent) {
+            started(startEvent);
+        } else if (event instanceof CompleteEvent completeEvent) {
+            finished(completeEvent);
+        } else if (event instanceof FailEvent failEvent) {
+            finishFail(failEvent);
         }
     }
 

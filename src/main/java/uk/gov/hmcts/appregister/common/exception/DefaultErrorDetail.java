@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -7,24 +8,25 @@ import org.springframework.http.HttpStatus;
 /** Describes a default error code containing http status, message and application code. */
 @RequiredArgsConstructor
 @Getter
-public class DefaultErrorCode implements ErrorCode {
+@EqualsAndHashCode
+public class DefaultErrorDetail implements ErrorDetail {
     private final HttpStatus httpCode;
     private final String message;
     private final String appCode;
 
-    public static DefaultErrorCode createNotFoundRequest(ErrorCodeEnum detail) {
-        return new DefaultErrorCode(
+    public static DefaultErrorDetail createNotFoundRequest(ErrorCodeEnum detail) {
+        return new DefaultErrorDetail(
                 HttpStatus.NOT_FOUND, detail.getCode().getMessage(), detail.getCode().getAppCode());
     }
 
-    public static DefaultErrorCode create(HttpStatus status, String message, String appCode) {
-        return new DefaultErrorCode(status, message, appCode);
+    public static DefaultErrorDetail create(HttpStatus status, String message, String appCode) {
+        return new DefaultErrorDetail(status, message, appCode);
     }
 
-    public static ErrorCodeEnum getEnumEntry(ErrorCode code) {
+    public static ErrorCodeEnum getEnumEntry(ErrorDetail code) {
         return new ErrorCodeEnum() {
             @Override
-            public ErrorCode getCode() {
+            public ErrorDetail getCode() {
                 return code;
             }
         };

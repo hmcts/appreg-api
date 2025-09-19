@@ -32,7 +32,6 @@ public class ApplicationActionsController {
     @PostMapping("/move")
     public ResponseEntity<Void> moveApplications(
             @RequestBody ApplicationMoveRequestDto request, @AuthenticationPrincipal Jwt jwt) {
-        String userId = jwt.getClaimAsString("oid");
         actionsService.moveApplications(request.applicationIds(), request.targetListId());
         return ResponseEntity.noContent().build();
     }

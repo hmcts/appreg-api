@@ -14,10 +14,9 @@ import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
 /**
- * Tests a set of negative security scenarios for a specific API controller:-
- *
- * <p>- Authentication fails with a 401 when we find an incorrect issuer, audience, invalid
- * signature - Authorisation fals with a 403 when the wrong role is presented.
+ * Tests a set of negative security scenarios for a specific API controller:- - Authentication fails
+ * with a 401 when we find an incorrect issuer, find an incorrect audience, find an incorrect
+ * signature - Authorisation fails with a 403 when the wrong role is presented.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractSecurityControllerTest extends BaseIntegration {
@@ -96,7 +95,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
                 .process(
                         restAssuredClient,
                         getATokenWithValidCredentials()
-                                .roles(List.of(restEndpointDescription.getInvalidRole().getRole()))
+                                .roles(List.of(restEndpointDescription.getInvalidRole()))
                                 .build()
                                 .fetchTokenForRole())
                 .then()
@@ -111,7 +110,7 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
                 .process(
                         restAssuredClient,
                         getATokenWithValidCredentials()
-                                .roles(List.of(restEndpointDescription.getSuccessRole().getRole()))
+                                .roles(List.of(restEndpointDescription.getSuccessRole()))
                                 .build()
                                 .fetchTokenForRole())
                 .then()

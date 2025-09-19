@@ -7,5 +7,5 @@ public interface ErrorCodeEnum {
      *
      * @return The error code
      */
-    ErrorCode getCode();
+    ErrorDetail getCode();
 }

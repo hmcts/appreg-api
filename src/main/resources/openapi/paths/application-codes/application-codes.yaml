@@ -1,9 +1,9 @@
 get:
   operationId: getApplicationCodes
   tags: [ application-codes ]
-  summary: Get application codes (paginated, filterable)
+  summary: Get Application Codes (paginated, filterable)
   description: |
-    Returns a paginated list of application codes.
+    Returns a paginated list of Application Codes.
     - Filters:
       - `code` – case-insensitive partial match
       - `title` – case-insensitive partial match
@@ -22,7 +22,7 @@ get:
       name: date
       schema: { type: string, format: date }
       description: |
-        ISO date (yyyy-MM-dd) on which the result code must be valid.
+        ISO date (yyyy-MM-dd) on which the Application Code must be valid.
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
@@ -44,14 +44,14 @@ get:
         example: [ "title,asc", "code,desc" ]
   responses:
     "200":
-      description: Page of application codes
+      description: Page of Application Codes
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/application-codes/application-code-list-page.yaml" }
+          schema: { $ref: "../../components/schemas/application-codes/application-code-page.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

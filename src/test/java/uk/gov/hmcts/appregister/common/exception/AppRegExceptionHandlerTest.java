@@ -10,16 +10,16 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 
-public class AppRegExceptionHandlerTest {
+class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         exceptionHandler = new AppRegExceptionHandler();
     }
 
     @Test
-    public void
+    void
             givenAnAppRegisterExceptionWithoutAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
         // setup
@@ -55,7 +55,7 @@ public class AppRegExceptionHandlerTest {
         AppRegistryException exception =
                 new AppRegistryException(
                         () ->
-                                new DefaultErrorCode(
+                                new DefaultErrorDetail(
                                         HttpStatus.BAD_REQUEST, customMessage, customType),
                         "Test message",
                         null);

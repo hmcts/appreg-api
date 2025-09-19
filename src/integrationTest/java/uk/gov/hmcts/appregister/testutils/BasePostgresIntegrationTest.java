@@ -80,7 +80,7 @@ public abstract class BasePostgresIntegrationTest {
 
     protected URL getLocalUrlWithDate(String context, OffsetDateTime date)
             throws MalformedURLException {
-        return new URL("http://localhost:" + port + "/" + context + "?date=" + date);
+        return new URL("http://localhost:" + port + "/" + context + "?date=" + date.toLocalDate());
     }
 
     protected URL getLocalUrl(String context) throws MalformedURLException {

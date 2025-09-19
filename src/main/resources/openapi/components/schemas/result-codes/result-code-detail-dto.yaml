@@ -1,5 +1,5 @@
 type: object
-description: Immutable DTO representing a Result Code.
+description: Immutable DTO representing a detailed Result Code.
 required:
   - resultCode
   - title

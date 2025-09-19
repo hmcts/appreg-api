@@ -9,11 +9,9 @@ public class AppListData implements Persistable<ApplicationList.ApplicationListB
     @Override
     public ApplicationList.ApplicationListBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
-        ApplicationList.ApplicationListBuilder applicationListBuilder =
-                ApplicationList.builder()
-                        .date(OffsetDateTime.now(ZoneId.of("UTC")))
-                        .time(OffsetDateTime.now(ZoneId.of("UTC")))
-                        .listDescription("Description" + uniqueId);
-        return applicationListBuilder;
+        return ApplicationList.builder()
+                .date(OffsetDateTime.now(ZoneId.of("UTC")))
+                .time(OffsetDateTime.now(ZoneId.of("UTC")))
+                .listDescription("Description" + uniqueId);
     }
 }

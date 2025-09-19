@@ -23,11 +23,15 @@ spring:
   data:
     web:
       pageable:
-        one-indexed-parameters: true
+        # When this value is set to true, we cant simply return the Spring Page object as a response from our controllers. The reason being that the response
+        # is always zero indexed for page numbers, so a request of page=2 will return a pageNumber of 1.
+        one-indexed-parameters: false
         page-parameter: page
         size-parameter: pageSize
         default-page-size: 10
         max-page-size: 100
+      sort:
+        sort-parameter: sort
   config:
     import: "optional:configtree:/mnt/secrets/appreg/"
   application:
@@ -49,19 +53,19 @@ spring:
         default_schema: ${spring.sql.init.schema-locations}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
-    enabled: ${ENABLE_DB_MIGRATE:true}
+    enabled: ${ENABLE_DB_MIGRATE:false}
     locations: classpath:/migrations
     default-schema: ${spring.sql.init.schema-locations}
     mixed: true
   sql:
     init:
       mode: never
-      schema-locations: appreg
+      schema-locations: ${APP_REG_SCHEMA:appreg}
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0
+          issuer-uri: ${AZURE_ISSUER:https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0}
           audiences: ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:

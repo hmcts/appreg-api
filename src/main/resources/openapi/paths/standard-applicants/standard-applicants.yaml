@@ -1,50 +1,57 @@
 get:
-  operationId: getCriminalJusticeAreas
-  tags: [ criminal-justice-areas ]
-  summary: Get Criminal Justice Areas (paginated, filterable)
+  operationId: getStandardApplicants
+  tags: [ standard-applicants ]
+  summary: Get Standard Applicants (paginated, filterable)
   description: |
-    Returns a paginated list of Criminal Justice Areas.
+    Returns a paginated list of Standard Applicants.
     - Filters:
-      - `code` – case-insensitive partial match.
-      - `description` – case-insensitive partial match.
+      - `code` – case-insensitive partial match
+      - `name` – case-insensitive partial match
+      - `date` - a single ISO-8601 date (`yyyy-MM-dd`); returns records whose validity window includes that date.
+    - Dates use ISO-8601 (yyyy-MM-dd).
   parameters:
     - in: query
       name: code
       schema: { type: string }
       description: Filter by code (contains, case-insensitive).
     - in: query
-      name: description
+      name: title
       schema: { type: string }
-      description: Filter by description (contains, case-insensitive).
+      description: Filter by title (contains, case-insensitive).
+    - in: query
+      name: date
+      schema: { type: string, format: date }
+      description: |
+        ISO date (yyyy-MM-dd) on which the Standard Applicant must be valid.
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
       description: Zero-based page index.
     - in: query
       name: size
-      schema: { type: integer, format: int32, minimum: 1, default: 20, maximum: 100}
+      schema: { type: integer, format: int32, minimum: 1, default: 20, maximum: 100 }
       description: Page size.
     - in: query
       name: sort
       description: >
         Repeatable sort parameter. Format per item: `property,(asc|desc)`.
-        Example: `?sort=description,asc&sort=code,desc`.
+        Example: `?sort=title,asc&sort=code,desc`.
       style: form
       explode: true
       schema:
         type: array
         items: { type: string }
-        example: [ "description,asc", "code,desc" ]
+        example: [ "title,asc", "code,desc" ]
   responses:
     "200":
-      description: Page of Criminal Justice Areas
+      description: Page of Standard Applicants.
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml" }
+          schema: { $ref: "../../components/schemas/standard-applicants/standard-applicant-page.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

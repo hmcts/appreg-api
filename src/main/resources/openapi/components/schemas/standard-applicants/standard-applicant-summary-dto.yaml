@@ -1,0 +1,27 @@
+type: object
+description: Lightweight DTO for Standard Applicants, used in list/search views.
+required:
+  - code,
+  - name,
+  - addressLine1
+  - startDate
+  - endDate
+properties:
+  code:
+    type: string
+    description: Code that identifies the Standard Applicant.
+  name:
+    type: string
+    description: Name of the Standard Applicant.
+  addressLine1:
+    type: string
+    description: First line of the applicant's address.
+  startDate:
+    type: string
+    format: date
+    description: Date the applicant record became active.
+  endDate:
+    type: string
+    format: date
+    nullable: true
+    description: Date the applicant record became inactive (if applicable).

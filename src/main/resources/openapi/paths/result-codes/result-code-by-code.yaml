@@ -16,14 +16,14 @@ get:
   summary: Get a specific Result Code by code and date.
   responses:
     "200":
-      description: Result code found
+      description: Result Code found
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema: { type: string, example: Accept }
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/result-codes/result-code-dto.yaml" }
+          schema: { $ref: "../../components/schemas/result-codes/result-code-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
