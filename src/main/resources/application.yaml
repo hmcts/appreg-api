@@ -65,7 +65,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0
+          issuer-uri: ${AZURE_ISSUER:https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0}
           audiences: ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:

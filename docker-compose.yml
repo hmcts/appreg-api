@@ -1,14 +1,14 @@
 include:
   - docker-compose-deps.yml
 services:
-  app-reg-poc-backend-functional:
+  app-reg-backend-functional:
     build:
       context: .
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    image: app-reg-poc-backend:latest
+    image: app-reg-backend:latest
     container_name: app-reg-poc-backend
     environment:
       # these environment variables are used by java-logging library
@@ -19,7 +19,7 @@ services:
       - APP_REG_SCHEMA=functionalschema
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}
-      - spring_security_oauth2_resourceserver_jwt_issuer-uri=${spring_security_oauth2_resourceserver_jwt_issuer-uri}
+      - AZURE_ISSUER=${AZURE_ISSUER}
     ports:
       - "4550:4550"
       - "5005:5005"
@@ -27,14 +27,14 @@ services:
       - postgres
     profiles: [functionaltesting]
 
-  app-reg-poc-backend-testing:
+  app-reg-backend-testing:
     build:
       context: .
       args:
         - http_proxy
         - https_proxy
         - no_proxy
-    image: app-reg-poc-backend:latest
+    image: app-reg-backend:latest
     container_name: app-reg-poc-backend
     environment:
       # these environment variables are used by java-logging library
@@ -45,7 +45,7 @@ services:
       - APP_REG_SCHEMA=testingschema
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}
-      - spring_security_oauth2_resourceserver_jwt_issuer-uri=${spring_security_oauth2_resourceserver_jwt_issuer-uri}
+      - AZURE_ISSUER=${AZURE_ISSUER}
     ports:
       - "4550:4550"
       - "5005:5005"
