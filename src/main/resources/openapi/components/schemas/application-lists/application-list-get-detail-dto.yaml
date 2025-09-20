@@ -37,7 +37,7 @@ properties:
     $ref: './application-list-status.yaml'
 
   courtLocation:
-    $ref: '../court-locations/court-location-dto.yaml'
+    $ref: '../court-locations/court-location-get-detail-dto.yaml'
 
   otherLocationDescription:
     type: string
@@ -45,7 +45,7 @@ properties:
     example: "Temporary Courtroom at Town Hall"
 
   criminalJusticeAreaCode:
-    $ref: '../criminal-justice-areas/criminal-justice-area-dto.yaml'
+    $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
 
   durationHours:
     type: integer
@@ -68,6 +68,6 @@ properties:
     description: Current resource version for optimistic concurrency.
     example: 3
 
-    oneOf:
-      - required: [ courtLocation ]
-      - required: [ otherLocationDescription, criminalJusticeAreaCode ]
+oneOf:
+  - required: [ courtLocation ]
+  - required: [ otherLocationDescription, criminalJusticeAreaCode ]

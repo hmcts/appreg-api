@@ -45,3 +45,6 @@ properties:
     example: 12
 
   status: { $ref: './application-list-status.yaml' }
+
+additionalProperties: false
+

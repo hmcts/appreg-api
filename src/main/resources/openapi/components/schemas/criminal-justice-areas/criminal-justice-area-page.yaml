@@ -5,4 +5,4 @@ allOf:
       content:
         type: array
         items:
-          $ref: './criminal-justice-area-dto.yaml'
+          $ref: './criminal-justice-area-get-dto.yaml'

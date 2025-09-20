@@ -23,13 +23,13 @@ properties:
     $ref: './application-list-status.yaml'
 
   courtLocation:
-    $ref: '../court-locations/court-location-dto.yaml'
+    $ref: '../court-locations/court-location-get-summary-dto.yaml'
 
   otherLocationDescription:
     type: string
 
   criminalJusticeAreaCode:
-    $ref: '../criminal-justice-areas/criminal-justice-area-dto.yaml'
+    $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
 
   durationHours:
     type: integer
@@ -42,6 +42,8 @@ properties:
     minimum: 0
     maximum: 59
 
-    oneOf:
-      - required: [ courtLocation ]
-      - required: [ otherLocationDescription, criminalJusticeAreaCode ]
+additionalProperties: false
+
+oneOf:
+  - required: [ courtLocation ]
+  - required: [ otherLocationDescription, criminalJusticeAreaCode ]
