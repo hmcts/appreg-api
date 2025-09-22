@@ -5,4 +5,5 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class TableNames {
     public static final String APPLICATION_CODES = "application_codes";
+    public static final String CRIMINAL_JUSTICE_AREA = "criminal_justice_area";
 }

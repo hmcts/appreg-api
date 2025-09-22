@@ -305,6 +305,11 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3:3.18.0'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.44'
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.44'
+
+  // Mapstruct dependency
+  implementation 'org.mapstruct:mapstruct:1.5.5.Final' // your version
+  annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+  testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
 }
 
 bootJar {
@@ -350,6 +355,12 @@ tasks.named('processResources', Copy) {
   }
 }
 
+checkstyle {
+  checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
+  maxWarnings = 0
+}
+
+// Generate spring annotated methods inside a generated java package for ease of identification
 openApiGenerate {
     generatorName = "spring"
     inputSpec = "$rootDir/src/main/resources/openapi/openapi.yaml"

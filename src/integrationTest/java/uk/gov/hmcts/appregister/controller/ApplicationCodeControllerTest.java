@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.apllicationcode.controller;
+package uk.gov.hmcts.appregister.controller;
 
 import static org.mockito.Mockito.when;
 
@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.PagingUtil;
+import uk.gov.hmcts.appregister.testutils.util.PagingAssertUtil;
 
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-codes";
@@ -92,9 +92,10 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // assert the response
         responseSpec.then().statusCode(200);
 
-        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         Assertions.assertEquals(defaultPageSize, responseContent.length);
 
@@ -129,9 +130,10 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
 
-        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
 
         // assert
@@ -171,9 +173,10 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         responseSpec.then().statusCode(200);
 
-        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         Assertions.assertEquals(defaultPageSize, responseContent.length);
 
@@ -221,9 +224,10 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // assert
-        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         Assertions.assertEquals(defaultPageSize, responseContent.length);
 
@@ -458,7 +462,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // make the assertions
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 14, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, pageSize, pageNumber, 14, TOTAL_APP_CODES_COUNT);
 
         ApplicationCodeDto[] responseContent =
                 responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
@@ -531,7 +536,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // assert the response
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 21, TOTAL_APP_CODES_COUNT);
+        PagingAssertUtil.assertPageDetails(
+                responseSpec, pageSize, pageNumber, 21, TOTAL_APP_CODES_COUNT);
 
         ApplicationCodeDto[] responseContent =
                 responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
@@ -574,7 +580,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response is successful with no content
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 0, 0);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 0, 0);
     }
 
     @Test
@@ -601,7 +607,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
         ApplicationCodeDto[] responseContent =
                 responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
         ApplicationCodeDto firstEntry = responseContent[0];
@@ -633,9 +639,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         ApplicationCodeDto firstEntry = responseContent[0];
         Assertions.assertEquals("AD99004", firstEntry.applicationCode());
@@ -670,9 +676,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         ApplicationCodeDto firstEntry = responseContent[0];
         Assertions.assertEquals("AP99002", firstEntry.applicationCode());
@@ -706,9 +712,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         ApplicationCodeDto firstEntry = responseContent[0];
         Assertions.assertEquals("AP99004", firstEntry.applicationCode());
@@ -743,9 +749,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
         ApplicationCodeDto[] responseContent =
-                PagingUtil.getResponseContentFromPagingResponse(
+                PagingAssertUtil.getResponseContentFromPagingResponse(
                         responseSpec, ApplicationCodeDto[].class);
         Assertions.assertEquals(0, responseContent.length);
     }
@@ -802,7 +808,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // The page size defaults if it is incorrect in the request
-        PagingUtil.assertPageDetails(responseSpec, defaultPageSize, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, defaultPageSize, pageNumber, 1, 1);
     }
 
     @Test
@@ -836,7 +842,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // The page size response defaults to the max size if we try and increase it beyond
-        PagingUtil.assertPageDetails(responseSpec, pageSize - 1, pageNumber, 1, 1);
+        PagingAssertUtil.assertPageDetails(responseSpec, pageSize - 1, pageNumber, 1, 1);
     }
 
     @Test

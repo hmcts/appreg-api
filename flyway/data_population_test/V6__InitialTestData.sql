@@ -64,7 +64,10 @@ INSERT INTO fee (fee_id, fee_reference, fee_description, fee_value, fee_start_da
 --
 
 INSERT INTO criminal_justice_area (cja_id, cja_code, cja_description) VALUES
-    (1, 'CJ', 'CJA_DESCRIPTION');
+    (1, 'CJ', 'CJA_DESCRIPTION'),
+    (2, 'CJ', 'CJA_DESCRIPTION'),
+    (3, 'CD', 'CJA_CD_DESCRIPTION');
+
 
 
 ----------------------- APPLICATION LIST -----------------------
