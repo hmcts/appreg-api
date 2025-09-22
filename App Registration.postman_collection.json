@@ -23,15 +23,19 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:4550/application-codes/1",
-					"protocol": "http",
+					"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=2012-07-25",
 					"host": [
-						"localhost"
+						"{{APP_REG_HOST}}"
 					],
-					"port": "4550",
 					"path": [
 						"application-codes",
-						"1"
+						"AP99001"
+					],
+					"query": [
+						{
+							"key": "date",
+							"value": "2012-07-25"
+						}
 					]
 				}
 			},
@@ -53,15 +57,26 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:4550/application-codes/1",
-					"protocol": "http",
+					"raw": "{{APP_REG_HOST}}/application-codes?code=CT99002&title=Issue%20of%20liability%20order%20summons%20-%20council%20tax&date=2025-09-19",
 					"host": [
-						"localhost"
+						"{{APP_REG_HOST}}"
 					],
-					"port": "4550",
 					"path": [
-						"application-codes",
-						"1"
+						"application-codes"
+					],
+					"query": [
+						{
+							"key": "code",
+							"value": "CT99002"
+						},
+						{
+							"key": "title",
+							"value": "Issue%20of%20liability%20order%20summons%20-%20council%20tax"
+						},
+						{
+							"key": "date",
+							"value": "2025-09-19"
+						}
 					]
 				}
 			},
@@ -83,7 +98,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:4550/application-codes",
+					"raw": "http://localhost:4550/application-codes?page=2&pageSize=5&sort=code,desc",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -91,6 +106,20 @@
 					"port": "4550",
 					"path": [
 						"application-codes"
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "2"
+						},
+						{
+							"key": "pageSize",
+							"value": "5"
+						},
+						{
+							"key": "sort",
+							"value": "code,desc"
+						}
 					]
 				}
 			},
@@ -126,7 +155,7 @@
 					"urlencoded": [
 						{
 							"key": "grant_type",
-							"value": "client_credentials",
+							"value": "password",
 							"type": "text"
 						},
 						{
@@ -141,7 +170,17 @@
 						},
 						{
 							"key": "scope",
-							"value": "api://cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default",
+							"value": "{{SCOPE}}",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "{{USER_NAME}}",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "{{PASSWORD}}",
 							"type": "text"
 						}
 					]
