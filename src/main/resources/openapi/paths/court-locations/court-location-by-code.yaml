@@ -12,7 +12,7 @@ parameters:
       ISO date (yyyy-MM-dd) on which the Court Location must be valid.
 get:
   operationId: getCourtLocationByCodeAndDate
-  tags: [court-location]
+  tags: [court-locations]
   summary: Get a specific Court Location by code and date.
   responses:
     "200":
