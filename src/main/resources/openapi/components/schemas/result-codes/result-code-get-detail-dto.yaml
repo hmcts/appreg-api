@@ -1,0 +1,29 @@
+type: object
+description: Immutable DTO representing a detailed Result Code.
+required:
+  - resultCode
+  - title
+  - wording
+  - startDate
+  - endDate
+properties:
+  resultCode:
+    type: string
+    description: Code that identifies the result.
+  title:
+    type: string
+    description: Human-readable title.
+  wording:
+    type: string
+    description: Full descriptive wording, potentially with blank fields to be inputted by the user.
+  startDate:
+    type: string
+    format: date
+    description: Date the Result Code became active.
+  endDate:
+    type: string
+    format: date
+    description: Date the Result Code became inactive. `null` indicates that this row is still active.
+    nullable: true
+
+additionalProperties: false

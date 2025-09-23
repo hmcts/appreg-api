@@ -1,9 +1,8 @@
 type: object
-description: Immutable DTO representing a detailed Result Code.
+description: Lightweight DTO used in list/search views.
 required:
   - resultCode
   - title
-  - wording
 properties:
   resultCode:
     type: string
@@ -11,6 +10,5 @@ properties:
   title:
     type: string
     description: Human-readable title.
-  wording:
-    type: string
-    description: Full descriptive wording, potentially with blank fields to be inputted by the user.
+
+additionalProperties: false
