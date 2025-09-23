@@ -10,5 +10,3 @@ properties:
   title:
     type: string
     description: Human-readable title.
-
-additionalProperties: false
