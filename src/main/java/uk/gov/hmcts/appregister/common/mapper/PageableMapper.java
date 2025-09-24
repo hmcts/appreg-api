@@ -73,9 +73,9 @@ public class PageableMapper {
         for (String raw : sort) {
             String token = raw != null ? raw.trim() : "";
 
-            // set the default direction to be asynchronous
+            // set the default direction to be ascending
             Sort.Direction dir = Sort.Direction.ASC;
-            String prop = token;
+            String prop;
 
             // split the token by the comma to get the property and direction
             if (token.contains(",")) {
@@ -99,6 +99,6 @@ public class PageableMapper {
             }
         }
 
-        return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
+        return Sort.by(orders);
     }
 }

@@ -2,6 +2,9 @@ package uk.gov.hmcts.appregister.common.mapper;
 
 import org.springframework.stereotype.Component;
 
+import uk.gov.hmcts.appregister.generated.model.Sort;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+
 /** A mapper that allows us to between Spring and our custom pagination format. */
 @Component
 public class PageMapper {
@@ -14,12 +17,13 @@ public class PageMapper {
     public void toPage(
             org.springframework.data.domain.Page<?> from,
             uk.gov.hmcts.appregister.generated.model.Page to) {
-        to.setTotalElements(Long.valueOf(from.getTotalElements()));
+        to.setTotalElements(from.getTotalElements());
+        to.setElementsOnPage(from.getNumberOfElements());
         to.setTotalPages(from.getTotalPages());
         to.setPageNumber(from.getPageable().getPageNumber());
         to.setPageSize(from.getPageable().getPageSize());
         to.setFirst(from.isFirst());
-        to.setFirst(from.isLast());
+        to.setLast(from.isLast());
         to.setSort(toSort(from.getSort()));
     }
 
@@ -29,30 +33,24 @@ public class PageMapper {
      * @param from The spring sort object
      * @return The sort object
      */
-    private uk.gov.hmcts.appregister.generated.model.Sort toSort(
-            org.springframework.data.domain.Sort from) {
-        uk.gov.hmcts.appregister.generated.model.Sort to =
-                new uk.gov.hmcts.appregister.generated.model.Sort();
-        ;
-        if (from.isUnsorted()) {
+    private Sort toSort(org.springframework.data.domain.Sort from) {
+
+        if (from == null || from.isUnsorted()) {
+            // Open API Schema allows null for sort.
             return null;
         }
-        from.stream()
-                .forEach(
-                        order -> {
-                            uk.gov.hmcts.appregister.generated.model.SortOrdersInner orderModel =
-                                    new uk.gov.hmcts.appregister.generated.model.SortOrdersInner();
-                            orderModel.setDirection(
-                                    order.getDirection()
-                                                    == org.springframework.data.domain.Sort
-                                                            .Direction.ASC
-                                            ? uk.gov.hmcts.appregister.generated.model
-                                                    .SortOrdersInner.DirectionEnum.ASC
-                                            : uk.gov.hmcts.appregister.generated.model
-                                                    .SortOrdersInner.DirectionEnum.DESC);
-                            orderModel.setProperty(order.getProperty());
-                            to.addOrdersItem(orderModel);
-                        });
-        return to;
+
+        var s = new Sort();
+        for (org.springframework.data.domain.Sort.Order o : from) {
+            var item = new SortOrdersInner();
+            item.setProperty(o.getProperty());
+            item.setDirection(
+                o.getDirection() == org.springframework.data.domain.Sort.Direction.ASC
+                    ? SortOrdersInner.DirectionEnum.ASC
+                    : SortOrdersInner.DirectionEnum.DESC
+            );
+            s.addOrdersItem(item);
+        }
+        return s;
     }
 }
