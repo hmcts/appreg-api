@@ -7,8 +7,6 @@ get:
     - Filters:
       - `code` – case-insensitive partial match
       - `title` – case-insensitive partial match
-      - `date` - a single ISO-8601 date (`yyyy-MM-dd`); returns records whose validity window includes that date.
-    - Dates use ISO-8601 (yyyy-MM-dd).
   parameters:
     - in: query
       name: code
@@ -18,11 +16,6 @@ get:
       name: title
       schema: { type: string }
       description: Filter by title (contains, case-insensitive).
-    - in: query
-      name: date
-      schema: { type: string, format: date }
-      description: |
-        ISO date (yyyy-MM-dd) on which the Result Code must be valid.
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
