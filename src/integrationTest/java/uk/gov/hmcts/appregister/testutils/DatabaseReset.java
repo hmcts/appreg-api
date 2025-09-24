@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 /**
@@ -28,6 +29,8 @@ public class DatabaseReset {
     @Autowired private final ApplicationListRepository applicationListRepository;
 
     @Autowired private final ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
 
     @Autowired private final DataAuditRepository dataAuditRepository;
 
@@ -52,6 +55,8 @@ public class DatabaseReset {
                 applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationListRepository.deleteAll(
                 applicationListRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        criminalJusticeAreaRepository.deleteAll(
+                criminalJusticeAreaRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         dataAuditRepository.deleteAll();
     }
 

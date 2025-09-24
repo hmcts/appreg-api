@@ -378,7 +378,8 @@ openApiGenerate {
             useSpringBoot3                      : "true",
             containerDefaultToNull              : "true",
             generatedConstructorWithRequiredArgs: "false",
-            additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor"
+            additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
+            openApiNullable                     : "true"
     ]
 }
 

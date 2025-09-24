@@ -40,9 +40,11 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                 CriminalJusticeAreaError.CODE_NOT_FOUND,
                                 " No code found for code %s".formatted(code));
                     } else {
-                        log.warn(
-                                "Too many records found for code %s. Defaulting to first one"
-                                        .formatted(code));
+                        if (criminalJusticeAreaList.size() > 1) {
+                            log.warn(
+                                    "Too many records found for code %s. Defaulting to first one"
+                                            .formatted(code));
+                        }
                         codeToConsider =
                                 criminalJusticeMapper.toDto(
                                         criminalJusticeAreaList.stream().findFirst().get());
