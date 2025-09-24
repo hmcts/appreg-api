@@ -25,5 +25,3 @@ properties:
     format: date
     description: Date the Result Code became inactive. `null` indicates that this row is still active.
     nullable: true
-
-additionalProperties: false

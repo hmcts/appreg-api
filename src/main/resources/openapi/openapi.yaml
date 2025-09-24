@@ -75,7 +75,6 @@ components:
     problem:                            { $ref: './components/schemas/common/problem.yaml' }
     page:                               { $ref: './components/schemas/common/page.yaml' }
     sort:                               { $ref: './components/schemas/common/sort.yaml' }
-    money-gbp:                          { $ref: './components/schemas/common/money-gbp.yaml' }
     # COURT LOCATIONS
     court-location-get-summary-dto:     { $ref: './components/schemas/court-locations/court-location-get-summary-dto.yaml' }
     court-location-get-detail-dto:      { $ref: './components/schemas/court-locations/court-location-get-detail-dto.yaml' }
