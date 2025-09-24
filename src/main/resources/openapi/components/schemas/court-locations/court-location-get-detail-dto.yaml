@@ -21,6 +21,3 @@ properties:
     format: date
     description: Date the Court Location became inactive. `null` indicates that this row is still active.
     nullable: true
-
-additionalProperties: false
-

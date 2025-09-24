@@ -5,6 +5,9 @@ required:
   - time
   - description
   - status
+  - courtLocation
+  - otherLocationDescription
+  - criminalJusticeArea
 
 properties:
 
@@ -23,13 +26,20 @@ properties:
     $ref: './application-list-status.yaml'
 
   courtLocation:
-    $ref: '../court-locations/court-location-get-summary-dto.yaml'
+    allOf:
+      - $ref: '../court-locations/court-location-get-detail-dto.yaml'
+    nullable: true
 
   otherLocationDescription:
     type: string
+    description: Free-text location if not using a standard court.
+    example: "Temporary Courtroom at Town Hall"
+    nullable: true
 
-  criminalJusticeAreaCode:
-    $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
+  criminalJusticeArea:
+    allOf:
+      - $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
+    nullable: true
 
   durationHours:
     type: integer
@@ -41,9 +51,3 @@ properties:
     format: int32
     minimum: 0
     maximum: 59
-
-additionalProperties: false
-
-oneOf:
-  - required: [ courtLocation ]
-  - required: [ otherLocationDescription, criminalJusticeAreaCode ]
