@@ -13,6 +13,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 
 /** Entity representing a Criminal Justice Area (CJA). */
 @Entity
@@ -23,7 +24,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class CriminalJusticeArea {
+public class CriminalJusticeArea implements Identifiable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")
@@ -32,8 +33,8 @@ public class CriminalJusticeArea {
     private Long id;
 
     @Column(name = "cja_code", nullable = false)
-    private String cjaCode;
+    private String code;
 
     @Column(name = "cja_description", nullable = false)
-    private String cjaDescription;
+    private String description;
 }

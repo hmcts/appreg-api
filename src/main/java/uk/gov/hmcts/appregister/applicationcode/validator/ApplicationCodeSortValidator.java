@@ -1,11 +1,8 @@
 package uk.gov.hmcts.appregister.applicationcode.validator;
 
-import java.util.Arrays;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.common.validator.AbstractSortValidator;
 
 /**
  * An explicit sort to ensure that the sort parameter being passed through is expected. If we do not
@@ -13,20 +10,9 @@ import uk.gov.hmcts.appregister.common.validator.Validator;
  * blindly onto the backend JPA query
  */
 @Component
-public class ApplicationCodeSortValidator implements Validator<String> {
-    public static String[] VALID_SORT_VALUES = {ApplicationCode_.CODE, ApplicationCode_.TITLE};
-
+public class ApplicationCodeSortValidator extends AbstractSortValidator {
     @Override
-    public void validate(String sortValue) {
-        if (Arrays.stream(VALID_SORT_VALUES)
-                .sorted()
-                .filter(val -> val.equals(sortValue))
-                .toList()
-                .isEmpty()) {
-            throw new AppRegistryException(
-                    AppCodeError.SORT_NOT_SUITABLE,
-                    "Sort value %s is not suitable".formatted(sortValue),
-                    null);
-        }
+    protected String[] getValidSortProperties() {
+        return new String[] {ApplicationCode_.CODE, ApplicationCode_.TITLE};
     }
 }

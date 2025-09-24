@@ -31,6 +31,7 @@ INSERT INTO fee (fee_id, fee_reference, fee_description, fee_value, fee_start_da
                                                                                                                                                                                 (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 100.00, DATE '2022-07-25',  NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
                                                                                                                                                                                 (nextval('fee_seq'), 'CO1.1', 'JP perform function away from court', 200.00, DATE '2022-07-25',  NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', false),
                                                                                                                                                                                 (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 30.00, DATE '2021-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
+                                                                                                                                                                                (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 30.00, DATE '2021-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
                                                                                                                                                                                 (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 40.00, DATE '2021-07-25', NULL, 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
                                                                                                                                                                                 (nextval('fee_seq'), 'CO1.1', 'Offsite: JP perform function away from court', 70.00, DATE '2015-07-25', '2020-07-25', 1, -125, DATE '2025-03-25', 'AR4.Initial.SQL.Upload', true),
                                                                                                                                                                                 -- CO2.1 - Main Fee and Offset Fee.
@@ -66,7 +67,8 @@ INSERT INTO fee (fee_id, fee_reference, fee_description, fee_value, fee_start_da
 INSERT INTO criminal_justice_area (cja_id, cja_code, cja_description) VALUES
     (1, 'CJ', 'CJA_DESCRIPTION'),
     (2, 'CJ', 'CJA_DESCRIPTION'),
-    (3, 'CD', 'CJA_CD_DESCRIPTION');
+    (3, 'CD', 'CJA_CD_DESCRIPTION'),
+    (4, 'CE', 'CJA_CE_DESCRIPTION');
 
 
 

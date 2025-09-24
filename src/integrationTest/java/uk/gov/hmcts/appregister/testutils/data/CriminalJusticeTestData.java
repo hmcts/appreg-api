@@ -10,8 +10,8 @@ public class CriminalJusticeTestData
     public CriminalJusticeArea.CriminalJusticeAreaBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
         CriminalJusticeArea.CriminalJusticeAreaBuilder data = CriminalJusticeArea.builder();
-        data.cjaCode(StringUtil.stripToMax(uniqueId.toString(), 2))
-                .cjaDescription(StringUtil.stripToMax("description" + uniqueId, 35))
+        data.code(StringUtil.stripToMax(uniqueId.toString(), 2))
+                .description(StringUtil.stripToMax("description" + uniqueId, 35))
                 .build();
 
         return data;

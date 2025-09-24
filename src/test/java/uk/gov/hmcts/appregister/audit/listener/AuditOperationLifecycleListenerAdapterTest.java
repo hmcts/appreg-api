@@ -10,7 +10,7 @@ import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 
-public class AuditOperationLifecycleListenerAdapterTest {
+class AuditOperationLifecycleListenerAdapterTest {
 
     @Test
     void testStart() {

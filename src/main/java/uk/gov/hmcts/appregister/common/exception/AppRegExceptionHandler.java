@@ -19,12 +19,12 @@ public class AppRegExceptionHandler {
 
     @ExceptionHandler
     @SuppressWarnings({"java:S2259"})
-    ResponseEntity<ProblemDetail> handleDartsApiException(AppRegistryException exception) {
+    ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
         // gets the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
-        log.error("A darts exception occurred", exception);
+        log.error("A app register exception occurred", exception);
 
         ProblemDetail problemDetail =
                 ProblemDetail.forStatusAndDetail(

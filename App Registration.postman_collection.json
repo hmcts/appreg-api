@@ -42,34 +42,6 @@
 			"response": []
 		},
 		{
-			"name": "Criminal Justice Area Code",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{APP_REG_HOST}}/criminal-justice-areas/CJ",
-					"host": [
-						"{{APP_REG_HOST}}"
-					],
-					"path": [
-						"criminal-justice-areas",
-						"CJ"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "Get Application Codes Filter",
 			"request": {
 				"auth": {

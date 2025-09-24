@@ -3,7 +3,13 @@ package uk.gov.hmcts.appregister.testutils.util;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 
-/** A utility that allows us to help with the parsing and asserting around paging responses. */
+/**
+ * A utility that allows us to help with the parsing and asserting around paging responses.
+ *
+ * @deprecated in favour of {@link PagingAssertionUtil} which asserts for our custom open api paging
+ *     model
+ */
+@Deprecated
 public class PagingAssertUtil {
     // The paging json keys. These are bound to the Spring paging API.
     private static final String PAGE_SIZE_JSON_KEY = "pageable.pageSize";

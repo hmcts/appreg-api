@@ -13,8 +13,8 @@ public class CriminalJusticeAreaMapperTest {
 
         // test
         CriminalJusticeArea area = new CriminalJusticeArea();
-        area.setCjaCode(code);
-        area.setCjaDescription(description);
+        area.setCode(code);
+        area.setDescription(description);
 
         CriminalJusticeMapperImpl criminalJusticeMapper = new CriminalJusticeMapperImpl();
         CriminalJusticeAreaGetDto actual = criminalJusticeMapper.toDto(area);

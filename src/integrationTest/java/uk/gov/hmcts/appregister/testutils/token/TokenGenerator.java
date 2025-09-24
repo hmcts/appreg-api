@@ -77,7 +77,7 @@ public class TokenGenerator {
     }
 
     /**
-     * builds an official jwt token that can be used to test the darts api end to end.
+     * builds an official jwt token that can be used to test the app register api end to end.
      *
      * @param rsaKey The rsa key to sign the token with
      * @return The token as well as the jwks key payload to validate the token.

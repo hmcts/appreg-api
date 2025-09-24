@@ -16,6 +16,11 @@ plugins {
   id 'org.openapi.generator' version '7.5.0'
 }
 
+tasks.withType(JavaCompile).configureEach {
+  // Show deprecation warnings
+  options.warnings = false
+}
+
 ext {
   releaseTrainVersion = '2025.0.0' // Example: "2021.0.x" corresponds to Spring Boot 2.6.x or 2.7.x
 }

@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,6 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
@@ -27,8 +26,6 @@ import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
@@ -38,10 +35,6 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertUtil;
 
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-codes";
-
-    @Autowired private ApplicationCodeRepository applicationCodeRepository;
-
-    @Autowired private DataAuditRepository dataAuditRepository;
 
     @Value("${spring.sql.init.schema-locations}")
     private String sqlInitSchemaLocations;
@@ -456,7 +449,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.empty(),
+                        List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
@@ -530,7 +523,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
@@ -566,7 +559,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -599,7 +592,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -629,7 +622,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -663,7 +656,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -698,7 +691,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -735,7 +728,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("title"),
+                        List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -770,7 +763,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.of("incorrect"),
+                        List.of("incorrect"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -796,7 +789,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.empty(),
+                        List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -826,7 +819,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
-                        Optional.empty(),
+                        List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
@@ -1071,8 +1064,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
      * codes.
      */
     @RequiredArgsConstructor
-    static class ApplicationCodeRequestFilter
-            implements Function<RequestSpecification, RequestSpecification> {
+    static class ApplicationCodeRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> appCode;
         private final Optional<String> appTitle;
         private final Optional<String> lodgementDate;

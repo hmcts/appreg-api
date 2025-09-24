@@ -1,6 +1,6 @@
 type: object
 description: Generic Spring Data page.
-required: [content, number, size, totalElements, totalPages]
+required: [content, pageNumber, pageSize, totalElements, elementsOnPage]
 properties:
   pageNumber:
     type: integer

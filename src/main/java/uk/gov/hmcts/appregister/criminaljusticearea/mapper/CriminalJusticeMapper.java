@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
  */
 @Mapper(componentModel = "spring")
 public interface CriminalJusticeMapper {
-    @Mapping(target = "code", source = "cjaCode")
-    @Mapping(target = "description", source = "cjaDescription")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "description", source = "description")
     CriminalJusticeAreaGetDto toDto(CriminalJusticeArea criminalJusticeArea);
 }

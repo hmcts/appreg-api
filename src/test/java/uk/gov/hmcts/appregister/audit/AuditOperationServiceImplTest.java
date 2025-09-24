@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class AuditOperationServiceImplTest {
+class AuditOperationServiceImplTest {
 
     private AuditOperationServiceImpl auditOperationServiceImpl;
 
@@ -31,14 +31,14 @@ public class AuditOperationServiceImplTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new JSR310Module());
+        objectMapper.registerModule(new JavaTimeModule());
         auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper);
     }
 
     @Test
-    public void testAuditOperationFlowWithResponsePayload() throws Exception {
+    void testAuditOperationFlowWithResponsePayload() throws Exception {
         ApplicationCodeDto applicationCodeDto =
                 new ApplicationCodeDto(
                         1L,
@@ -93,7 +93,7 @@ public class AuditOperationServiceImplTest {
     }
 
     @Test
-    public void testAuditOperationFlowWithResponseWithoutPayload() throws Exception {
+    void testAuditOperationFlowWithResponseWithoutPayload() throws Exception {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
@@ -130,7 +130,7 @@ public class AuditOperationServiceImplTest {
     }
 
     @Test
-    public void testAuditOperationFlowWithResponseWithPayloadFailure() throws Exception {
+    void testAuditOperationFlowWithResponseWithPayloadFailure() throws Exception {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
 

@@ -9,18 +9,18 @@ import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 
-public class AuditOperationSlf4jLoggerTest {
+class AuditOperationSlf4jLoggerTest {
 
     private LogCaptor logCaptor;
 
     @BeforeEach
-    public void before() {
+    void before() {
         logCaptor = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
         logCaptor.clearLogs();
     }
 
     @Test
-    public void testFailOperationLog() throws Exception {
+    void testFailOperationLog() {
         StartEvent startEvent =
                 new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
         FailEvent auditRequest = new FailEvent(startEvent);
@@ -33,7 +33,7 @@ public class AuditOperationSlf4jLoggerTest {
     }
 
     @Test
-    public void testBeforeOperationLog() throws Exception {
+    void testBeforeOperationLog() {
         StartEvent startEvent =
                 new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
 
@@ -45,7 +45,7 @@ public class AuditOperationSlf4jLoggerTest {
     }
 
     @Test
-    public void testCompletedOperationLog() throws Exception {
+    void testCompletedOperationLog() {
         StartEvent startEvent =
                 new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null);

@@ -84,9 +84,13 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                 AppCodeError.CODE_NOT_FOUND,
                                 " No code found for code %s and date %s".formatted(code, date));
                     } else {
-                        log.warn(
-                                "Too many records found for code %s and date %s. Defaulting to first one"
-                                        .formatted(code, date));
+
+                        if (applicationCodeResults.size() > 1) {
+                            log.warn(
+                                    "Too many records found for code %s and date %s. Defaulting to first one"
+                                            .formatted(code, date));
+                        }
+
                         codeToConsider = applicationCodeResults.stream().findFirst().get();
                     }
 
