@@ -10,6 +10,15 @@ import uk.gov.hmcts.appregister.audit.event.StartEvent;
 @Slf4j
 public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAdapter {
 
+    /** A prefix when starting an audit event. */
+    public static final String START_AUDIT_LOG = "Start audit";
+
+    /** A suffix when ending an audit event. */
+    public static final String COMPLETION_AUDIT_LOG = "Completion audit";
+
+    /** A suffix when failing an audit event. */
+    public static final String FAILED_CFOMPLETION_AUDIT_LOG = "Completion fail audit";
+
     /** The message uuid. */
     private static final String MESSAGE_UUID = "p_messageuuid";
 
@@ -24,17 +33,17 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
 
     @Override
     protected void started(StartEvent request) {
-        log.info("Start audit {}", getLog(request));
+        log.info("%s {}".formatted(START_AUDIT_LOG), getLog(request));
     }
 
     @Override
     protected void finished(CompleteEvent request) {
-        log.info("Completion audit {}", getLog(request));
+        log.info("%s {}".formatted(COMPLETION_AUDIT_LOG), getLog(request));
     }
 
     @Override
     protected void finishFail(FailEvent request) {
-        log.info("Completion fail audit {}", getLog(request));
+        log.info("%s {}".formatted(FAILED_CFOMPLETION_AUDIT_LOG), getLog(request));
     }
 
     public static String getLog(BaseAuditEvent event) {

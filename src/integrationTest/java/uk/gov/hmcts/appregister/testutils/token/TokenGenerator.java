@@ -17,6 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 
 @Builder
 @Slf4j
@@ -35,7 +36,7 @@ public class TokenGenerator {
 
     @Builder.Default private Date expiredDate = Date.from(Instant.now().plusSeconds(SECONDS));
 
-    @Builder.Default private List<String> roles = List.of();
+    @Builder.Default private List<RoleEnum> roles = List.of();
 
     private boolean useGlobalKey;
 
@@ -101,7 +102,13 @@ public class TokenGenerator {
                         .expirationTime(expiredDate)
                         .claim("emails", List.of(email))
                         .claim("sub", email)
-                        .claim("roles", StringUtils.join(roles, ","))
+                        .claim(
+                                "roles",
+                                StringUtils.join(
+                                        roles.stream()
+                                                .map(RoleEnum::getRole)
+                                                .toArray(String[]::new),
+                                        ","))
                         .claim("aud", audience)
                         .build();
 

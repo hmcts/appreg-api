@@ -1,10 +1,14 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
-import java.time.OffsetDateTime;
+import jakarta.transaction.Transactional;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
@@ -31,35 +35,46 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
-    public List<ApplicationCodeDto> findAll() {
+    @Transactional
+    public Page<ApplicationCodeDto> findAll(
+            String appCode, String appTitle, LocalDate lodgementDate, Pageable pageable) {
         return auditService.processAudit(
                 AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT,
-                req -> {
-                    final List<ApplicationCode> applicationCodeList = repository.findAll();
-                    List<ApplicationCodeDto> applicationCodeDtoList =
-                            applicationCodeList.stream()
-                                    .map(
-                                            code -> {
-                                                FeePair feePair =
-                                                        feeService.resolveFeePair(
-                                                                code.getFeeReference());
-                                                return applicationCodeMapper.toReadDto(
-                                                        code, feePair);
-                                            })
-                                    .toList();
-
-                    return Optional.of(applicationCodeDtoList);
+                (req) -> {
+                    final Page<ApplicationCode> applicationCodeList =
+                            repository.search(
+                                    appCode,
+                                    appTitle,
+                                    lodgementDate != null,
+                                    lodgementDate != null
+                                            ? lodgementDate.atStartOfDay().atOffset(ZoneOffset.UTC)
+                                            : null,
+                                    lodgementDate != null
+                                            ? lodgementDate
+                                                    .plusDays(1)
+                                                    .atStartOfDay()
+                                                    .atOffset(ZoneOffset.UTC)
+                                            : null,
+                                    pageable);
+                    return Optional.of(
+                            applicationCodeList.map(
+                                    code -> {
+                                        FeePair feePair =
+                                                feeService.resolveFeePair(code.getFeeReference());
+                                        return applicationCodeMapper.toReadDto(code, feePair);
+                                    }));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     @Override
-    public ApplicationCodeDto findByCode(String code, OffsetDateTime date) {
+    public ApplicationCodeDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
                 AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     final List<ApplicationCode> applicationCodeResults =
-                            repository.findByCodeAndDate(code, date);
+                            repository.findByCodeAndDate(
+                                    code, date.atStartOfDay().atOffset(ZoneOffset.UTC));
 
                     ApplicationCode codeToConsider = null;
 

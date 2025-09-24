@@ -9,7 +9,10 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 public enum AppCodeError implements ErrorCodeEnum {
     CODE_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "Application Code not found", "APPCODE-1"));
+                    HttpStatus.NOT_FOUND, "Application code not found", "APPCODE-1")),
+    SORT_NOT_SUITABLE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Sort key not suitable", "APPCODE-2"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

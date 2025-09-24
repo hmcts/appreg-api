@@ -1,6 +1,9 @@
 package uk.gov.hmcts.appregister.testutils;
 
+import lombok.experimental.UtilityClass;
+
 /** Utility class for string operations. */
+@UtilityClass
 public class StringUtil {
     /**
      * Strips a string down to a maximum length.

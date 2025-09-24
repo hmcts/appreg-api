@@ -6,11 +6,13 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
@@ -28,6 +30,8 @@ public class DatabasePersistance {
     @Autowired private ApplicationListRepository applicationListRepository;
 
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private CriminalJusticeAreaRepository criminalJusticeAreaRepository;
 
     @Transactional
     public ApplicationCode save(ApplicationCode data) {
@@ -53,6 +57,11 @@ public class DatabasePersistance {
     @Transactional
     public DataAudit save(DataAudit data) {
         return dataAuditRepository.save(data);
+    }
+
+    @Transactional
+    public CriminalJusticeArea save(CriminalJusticeArea data) {
+        return criminalJusticeAreaRepository.save(data);
     }
 
     @Transactional

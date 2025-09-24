@@ -31,7 +31,7 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
     private static final int TOTAL_APP_CODES_COUNT = 42;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    public void testBasicInsertionUpdate() {
         // assert that the save has occurred
         long count = applicationCodeRepository.count();
         Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
@@ -42,7 +42,7 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
 
         // assert that the save has occurred
         count = applicationCodeRepository.count();
-        Assertions.assertEquals(TOTAL_APP_CODES_COUNT + 1, count);
+        Assertions.assertEquals(TOTAL_APP_CODES_COUNT + 1L, count);
 
         // test get
         Optional<ApplicationCode> applicationCodeToAssertAgainst =
@@ -78,7 +78,7 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
     }
 
     @Test
-    public void testGetByCodeAndDate() throws Exception {
+    public void testGetByCodeAndDate() {
         List<ApplicationCode> applicationCodeToAssertAgainst =
                 applicationCodeRepository.findByCodeAndDate("AD99002", OffsetDateTime.now());
         Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
