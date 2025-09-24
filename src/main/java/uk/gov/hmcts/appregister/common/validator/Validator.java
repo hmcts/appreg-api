@@ -7,8 +7,9 @@ public interface Validator<T> {
     /**
      * Validate the provided {@code validatable}.
      *
-     * <p>The general convention is to throw a {@code DartsApiException} if validation fails, but
-     * this is not enforced by this interface.
+     * <p>The general convention is to throw a {@link
+     * uk.gov.hmcts.appregister.common.exception.AppRegistryException} if validation fails, but this
+     * is not enforced by this interface.
      *
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails
      */

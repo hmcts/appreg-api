@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -34,6 +35,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
+    @Transactional
     public Page<ApplicationCodeDto> findAll(
             String appCode, String appTitle, LocalDate lodgementDate, Pageable pageable) {
         return auditService.processAudit(
