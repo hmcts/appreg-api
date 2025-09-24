@@ -1,0 +1,70 @@
+type: object
+description: Request payload to fully replace an existing Application List.
+required:
+  - date
+  - time
+  - description
+  - status
+  - version
+
+properties:
+
+  date:
+    type: string
+    format: date
+    description: The calendar date on which the Application List is scheduled.
+    example: "2025-09-17"
+
+  time:
+    type: string
+    format: time
+    description: The time of day at which the Application List is scheduled.
+    example: "10:30:00"
+
+  description:
+    type: string
+    description: Human-readable description of the Application List (e.g. session title or purpose).
+    example: "Morning session for traffic-related applications"
+
+  status:
+    $ref: './application-list-status.yaml'
+
+  courtLocation:
+    $ref: '../court-locations/court-location-get-detail-dto.yaml'
+
+  otherLocationDescription:
+    type: string
+    description: Free-text location if not using a standard court.
+    example: "Temporary Courtroom at Town Hall"
+
+  criminalJusticeAreaCode:
+    $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
+
+  durationHours:
+    type: integer
+    format: int32
+    minimum: 0
+    description: Duration hours component.
+    example: 2
+
+  durationMinutes:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 59
+    description: Duration minutes component.
+    example: 30
+
+  version:
+    type: integer
+    format: int64
+    description: >
+      Resource version for optimistic concurrency. Must match the current version on the server,
+      otherwise the update will be rejected with 409 Conflict.
+    example: 3
+
+oneOf:
+  - required: [ courtLocation ]
+  - required: [ otherLocationDescription, criminalJusticeAreaCode ]
+
+additionalProperties: false

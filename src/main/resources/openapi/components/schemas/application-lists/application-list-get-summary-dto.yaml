@@ -1,0 +1,50 @@
+type: object
+description: Immutable DTO representing a summerised Application List.
+required:
+  - id
+  - date
+  - time
+  - location
+  - description
+  - numberOfEntries
+  - status
+properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier of the Application List.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+  date:
+
+    type: string
+    format: date
+    description: The calendar date on which the Application List is scheduled.
+    example: "2025-09-17"
+  time:
+
+    type: string
+    format: time
+    description: The time of day at which the Application List is scheduled.
+    example: "10:30:00"
+  location:
+
+    type: string
+    description: Location where the applications will be considered.
+    example: "Bath Magistrates Court"
+  description:
+
+    type: string
+    description: Human-readable description of the Application List (e.g. session title or purpose).
+    example: "Morning session for traffic-related applications"
+  numberOfEntries:
+
+    type: integer
+    format: int32
+    description: Total number of Application List Entries associated with this Application List.
+    example: 12
+
+  status: { $ref: './application-list-status.yaml' }
+
+additionalProperties: false
+

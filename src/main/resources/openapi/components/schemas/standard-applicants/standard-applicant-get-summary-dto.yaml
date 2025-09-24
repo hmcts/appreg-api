@@ -25,3 +25,6 @@ properties:
     format: date
     nullable: true
     description: Date the applicant record became inactive (if applicable).
+
+additionalProperties: false
+

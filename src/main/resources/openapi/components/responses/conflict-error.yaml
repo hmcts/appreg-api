@@ -1,0 +1,16 @@
+description: Conflict with the current state of the resource.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      generic:
+        value:
+          type: https://errors.hmcts.net/common/conflict
+          title: Conflict
+          status: 409
+          detail: The Application List could not be modified due to a conflict with its current state
