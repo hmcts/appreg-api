@@ -21,7 +21,7 @@ public class AppListEntryRepositoryTest extends BasePostgresIntegrationTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    public void testBasicInsertionUpdate() {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     // assert

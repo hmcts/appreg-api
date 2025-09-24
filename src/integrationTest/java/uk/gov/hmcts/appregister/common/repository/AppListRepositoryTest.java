@@ -32,7 +32,7 @@ public class AppListRepositoryTest extends BasePostgresIntegrationTest {
     private static final int BASELINE_TEST_COUNT = 10;
 
     @Test
-    public void testBasicInsertionUpdate() throws Exception {
+    public void testBasicInsertionUpdate() {
 
         transactionalUnitOfWork.inTransaction(
                 () -> {

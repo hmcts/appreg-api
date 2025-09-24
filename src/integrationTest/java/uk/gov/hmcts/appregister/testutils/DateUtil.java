@@ -2,8 +2,10 @@ package uk.gov.hmcts.appregister.testutils;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
+import lombok.experimental.UtilityClass;
 
 /** Utility class for date operations. */
+@UtilityClass
 public class DateUtil {
     public static boolean equalsIgnoreMillis(OffsetDateTime i1, OffsetDateTime i2) {
         if (i1 == null || i2 == null) {

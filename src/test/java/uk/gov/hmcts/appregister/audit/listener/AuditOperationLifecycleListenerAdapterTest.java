@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.audit.event.StartEvent;
 public class AuditOperationLifecycleListenerAdapterTest {
 
     @Test
-    public void testStart() {
+    void testStart() {
         AuditOperationLifecycleListenerAdapter my =
                 Mockito.mock(
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
@@ -22,7 +22,7 @@ public class AuditOperationLifecycleListenerAdapterTest {
     }
 
     @Test
-    public void testComplete() {
+    void testComplete() {
         AuditOperationLifecycleListenerAdapter my =
                 Mockito.mock(
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
@@ -34,7 +34,7 @@ public class AuditOperationLifecycleListenerAdapterTest {
     }
 
     @Test
-    public void testFail() {
+    void testFail() {
         AuditOperationLifecycleListenerAdapter my =
                 Mockito.mock(
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);

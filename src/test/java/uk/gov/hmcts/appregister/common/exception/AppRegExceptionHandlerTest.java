@@ -45,7 +45,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    public void
+    void
             givenAnAppRegisterExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
         String customMessage = "Custom message";
