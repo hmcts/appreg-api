@@ -43,7 +43,7 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
         SELECT nch
         FROM NationalCourtHouse nch
         WHERE nch.courtType = 'CHOA'
-          AND LOWER(nch.courtLocationCode) = LOWER(:code)
+          AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
           AND nch.startDate <= :date
           AND nch.endDate IS NULL
         """)
@@ -71,8 +71,8 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
         FROM NationalCourtHouse nch
         WHERE nch.courtType = 'CHOA'
           AND nch.endDate IS NULL
-          AND (:code IS NULL OR LOWER(nch.courtLocationCode) LIKE LOWER(CONCAT('%', :code, '%')))
-          AND (:name IS NULL OR LOWER(nch.name) LIKE LOWER(CONCAT('%', :name, '%')))
+          AND (:code IS NULL OR LOWER(nch.courtLocationCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%'))
+          AND (:name IS NULL OR LOWER(nch.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%'))
         """)
     Page<NationalCourtHouse> findAllActiveCourts(
             @Param("code") String code, @Param("name") String name, Pageable pageable);
