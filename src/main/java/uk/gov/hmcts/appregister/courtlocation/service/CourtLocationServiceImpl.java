@@ -96,7 +96,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
      * @return a page of Court Location summaries
      */
     @Override
-    public CourtLocationPage getPage(String codeFilter, String nameFilter, Pageable pageable) {
+    public CourtLocationPage getPage(String nameFilter, String codeFilter, Pageable pageable) {
         return auditService.processAudit(
                 AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {

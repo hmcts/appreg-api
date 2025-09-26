@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.courtlocation.controller;
 
-import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
@@ -34,7 +32,6 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
  * {@link RoleNames#USER_ROLE_OR_ADMIN_ROLE_RESTRICTION}.
  */
 @RestController
-@Validated
 @RequiredArgsConstructor
 public class CourtLocationController implements CourtLocationsApi {
 
@@ -59,7 +56,7 @@ public class CourtLocationController implements CourtLocationsApi {
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<@Valid CourtLocationGetDetailDto> getCourtLocationByCodeAndDate(
+    public ResponseEntity<CourtLocationGetDetailDto> getCourtLocationByCodeAndDate(
             String code, LocalDate date) {
         var courtLocationGetDetailDto = courtLocationService.findByCodeAndDate(code, date);
         return ResponseEntity.ok().body(courtLocationGetDetailDto);
@@ -87,7 +84,7 @@ public class CourtLocationController implements CourtLocationsApi {
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<@Valid CourtLocationPage> getCourtLocations(
+    public ResponseEntity<CourtLocationPage> getCourtLocations(
             String name, String code, Integer page, Integer size, List<String> sort) {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
