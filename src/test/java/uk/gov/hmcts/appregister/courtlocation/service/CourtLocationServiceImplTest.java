@@ -146,7 +146,6 @@ public class CourtLocationServiceImplTest {
 
         when(repository.findAllActiveCourts(codeFilter, nameFilter, pageable)).thenReturn(dbPage);
 
-        // Let the mapper do real mapping (it's a @Spy), just ensure page meta is copied.
         // Simulate page meta copy so assertions have values.
         doAnswer(
                         inv -> {
@@ -160,7 +159,7 @@ public class CourtLocationServiceImplTest {
                 .when(pageMapper)
                 .toPage(eq(dbPage), ArgumentMatchers.any(CourtLocationPage.class));
 
-        CourtLocationPage pageDto = service.getPage(codeFilter, nameFilter, pageable);
+        CourtLocationPage pageDto = service.getPage(nameFilter, codeFilter, pageable);
 
         Assertions.assertEquals(5, pageDto.getTotalElements());
         Assertions.assertEquals(3, pageDto.getTotalPages());

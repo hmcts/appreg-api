@@ -10,7 +10,7 @@ public class JacksonConfig {
 
     /**
      * Registers Jackson modules required for OpenAPI-generated models. JsonNullableModule: supports
-     * fields of type JsonNullable<T>
+     * fields of type JsonNullable
      */
     @Bean
     Jackson2ObjectMapperBuilderCustomizer jsonNullableCustomizer() {
