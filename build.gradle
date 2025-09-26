@@ -395,6 +395,10 @@ openApiGenerate {
     ]
 }
 
+openApiValidate {
+  inputSpec = file('src/main/resources/openapi/openapi.yaml').toURI().toString()
+}
+
 processResources.dependsOn tasks.openApiGenerate
 compileJava.dependsOn tasks.openApiGenerate
 
