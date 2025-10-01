@@ -1,7 +1,7 @@
 java:
   applicationPort: 4550
   image: 'sdshmctspublic.azurecr.io/appreg/api:latest'
-  ingressHost: appreg-api-{{ .Values.global.environment }}.platform.hmcts.net
+  ingressHost: appreg-api.{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: appreg
   keyVaults:
     appreg:
@@ -23,7 +23,7 @@ java:
         - name: azure-tenant-id
           alias: azure-tenant-id
         - name: azure-client-secret
-          alias: azure-client-secret	
+          alias: azure-client-secret
         - name: azure-app-id
           alias: azure-app-id
 
