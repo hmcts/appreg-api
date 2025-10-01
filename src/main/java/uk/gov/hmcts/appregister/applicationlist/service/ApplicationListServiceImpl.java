@@ -23,14 +23,13 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 /**
  * Service implementation for managing Application Lists.
  *
- * <p>Handles persistence, validation, and entity-to-DTO mapping logic.</p>
+ * <p>Handles persistence, validation, and entity-to-DTO mapping logic. Responsibilities:
  *
- * Responsibilities:
  * <ul>
- *   <li>Validate input data before persistence.</li>
- *   <li>Persist application lists associated with a Court or Criminal Justice Area.</li>
- *   <li>Handle duplicate and not-found scenarios gracefully via {@link AppRegistryException}.</li>
- *   <li>Map between entities and DTOs using {@link ApplicationListMapper}.</li>
+ *   <li>Validate input data before persistence.
+ *   <li>Persist application lists associated with a Court or Criminal Justice Area.
+ *   <li>Handle duplicate and not-found scenarios gracefully via {@link AppRegistryException}.
+ *   <li>Map between entities and DTOs using {@link ApplicationListMapper}.
  * </ul>
  */
 @RequiredArgsConstructor
@@ -47,9 +46,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     /**
      * {@inheritDoc}
      *
-     * <p>Delegates to either {@link #createWithCourt(ApplicationListCreateDto)} or
-     * {@link #createWithCja(ApplicationListCreateDto)} depending on whether
-     * a Court Location Code is present in the DTO.</p>
+     * <p>Delegates to either {@link #createWithCourt(ApplicationListCreateDto)} or {@link
+     * #createWithCja(ApplicationListCreateDto)} depending on whether a Court Location Code is
+     * present in the DTO.
      */
     @Override
     @Transactional
@@ -65,9 +64,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     /**
      * Creates an Application List associated with a Court.
      *
-     * <p>Validates that exactly one active court exists for the provided code.
-     * If multiple or none exist, an exception is thrown. Otherwise, the list is
-     * persisted and returned as a DTO.</p>
+     * <p>Validates that exactly one active court exists for the provided code. If multiple or none
+     * exist, an exception is thrown. Otherwise, the list is persisted and returned as a DTO.
      *
      * @param dto the DTO containing court-based application list details
      * @return the created Application List DTO
@@ -95,9 +93,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     /**
      * Creates an Application List associated with a Criminal Justice Area.
      *
-     * <p>Validates that exactly one CJA exists for the provided code.
-     * If multiple or none exist, an exception is thrown. Otherwise, the list is
-     * persisted and returned as a DTO.</p>
+     * <p>Validates that exactly one CJA exists for the provided code. If multiple or none exist, an
+     * exception is thrown. Otherwise, the list is persisted and returned as a DTO.
      *
      * @param dto the DTO containing CJA-based application list details
      * @return the created Application List DTO

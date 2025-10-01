@@ -7,7 +7,6 @@ public class AppListData implements Persistable<ApplicationList.ApplicationListB
     @Override
     public ApplicationList.ApplicationListBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
-        return ApplicationList.builder()
-            .description("Description " + uniqueId);
+        return ApplicationList.builder().description("Description " + uniqueId);
     }
 }
