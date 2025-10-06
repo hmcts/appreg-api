@@ -37,6 +37,10 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Value("${spring.security.oauth2.resourceserver.jwt.audiences}")
     protected String audience;
 
+    private static final String TID = "00000000-0000-0000-0000-000000000000";
+    private static final String OID = "11111111-1111-1111-1111-111111111111";
+    private static final String EMAIL = "test_user@mail.com";
+
     @Autowired protected WireMockServer wireMockServer;
 
     protected static PostgresCommand postgresCommand = new PostgresCommand();
@@ -69,6 +73,11 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
      * @return The token builder
      */
     public TokenGenerator.TokenGeneratorBuilder getATokenWithValidCredentials() {
-        return TokenGenerator.builder().issuer(issuer).audience(audience);
+        return TokenGenerator.builder()
+                .issuer(issuer)
+                .audience(audience)
+                .tid(TID)
+                .oid(OID)
+                .email(EMAIL);
     }
 }

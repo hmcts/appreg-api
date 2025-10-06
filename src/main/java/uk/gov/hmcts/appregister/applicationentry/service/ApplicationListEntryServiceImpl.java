@@ -49,7 +49,7 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
 
         List<ApplicationListEntry> applications =
                 applicationListEntryRepository.findByApplicationListPkAndCreatedUser(
-                        listId, userProvider.getUser());
+                        listId, userProvider.getUserId());
         return applications.stream().map(this::toDtoWithFees).toList();
     }
 
@@ -61,7 +61,7 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
     @Override
     @Transactional
     public ApplicationListEntryDto create(Long listId, ApplicationWriteDto dto) {
-        ApplicationList list = findListOrThrow(listId, userProvider.getUser());
+        ApplicationList list = findListOrThrow(listId, userProvider.getUserId());
         StandardApplicant applicant = resolveStandardApplicant(dto.standardApplicantId());
         ApplicationCode code = findApplicationCodeOrThrow(dto.applicationCodeId());
         String wording = generateWording(code, dto);
@@ -149,7 +149,7 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
 
     private ApplicationListEntry getApplicationForUserOrThrow(Long listId, Long appId) {
         return applicationListEntryRepository
-                .findByIdAndApplicationListPkAndCreatedUser(appId, listId, userProvider.getUser())
+                .findByIdAndApplicationListPkAndCreatedUser(appId, listId, userProvider.getUserId())
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(
@@ -158,7 +158,7 @@ public class ApplicationListEntryServiceImpl implements ApplicationListEntryServ
     }
 
     private void ensureUserOwnsList(Long listId) {
-        if (!listRepository.existsByPkAndCreatedUser(listId, userProvider.getUser())) {
+        if (!listRepository.existsByPkAndCreatedUser(listId, userProvider.getUserId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "List not found for user");
         }
     }

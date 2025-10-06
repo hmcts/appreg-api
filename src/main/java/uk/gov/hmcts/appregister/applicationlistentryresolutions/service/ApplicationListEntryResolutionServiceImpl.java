@@ -49,7 +49,7 @@ public class ApplicationListEntryResolutionServiceImpl
             Long listId, Long applicationId, ApplicationListEntryResolutionWriteDto dto) {
         ApplicationListEntry app =
                 applicationListEntryRepository
-                        .findByIdAndCreatedUser(applicationId, userProvider.getUser())
+                        .findByIdAndCreatedUser(applicationId, userProvider.getUserId())
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
@@ -120,7 +120,7 @@ public class ApplicationListEntryResolutionServiceImpl
         if (resultId != null) {
             return appListEntryResolutionRepository
                     .findByIdWithApplicationAndListAndCreatedUser(
-                            resultId, appId, listId, userProvider.getUser())
+                            resultId, appId, listId, userProvider.getUserId())
                     .orElseThrow(
                             () ->
                                     new ResponseStatusException(
@@ -130,7 +130,11 @@ public class ApplicationListEntryResolutionServiceImpl
         return appListEntryResolutionRepository
                 .findById(appId)
                 .filter(r -> r.getApplicationList().getId().equals(listId))
-                .filter(r -> r.getApplicationList().getCreatedUser().equals(userProvider.getUser()))
+                .filter(
+                        r ->
+                                r.getApplicationList()
+                                        .getCreatedUser()
+                                        .equals(userProvider.getUserId()))
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

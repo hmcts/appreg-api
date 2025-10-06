@@ -11,9 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
-import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
+import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
-public class NationalCourtHouseRepositoryTest extends BasePostgresIntegrationTest {
+public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private NationalCourtHouseRepository repository;
 

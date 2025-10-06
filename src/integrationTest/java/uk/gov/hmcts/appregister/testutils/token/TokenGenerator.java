@@ -27,12 +27,18 @@ public class TokenGenerator {
     public static final String DEFAULT_AUDIENCE = "audience";
     public static final String DEFAULT_ISSUER = "issuer";
     public static final String DEFAULT_USERNAME = "app.registry@hmcts.net";
+    public static final String DEFAULT_TID = "00000000-0000-0000-0000-000000000000";
+    public static final String DEFAULT_OID = "11111111-1111-1111-1111-111111111111";
 
     @Builder.Default private String issuer = DEFAULT_ISSUER;
 
     @Builder.Default private String audience = DEFAULT_AUDIENCE;
 
     @Builder.Default private String email = DEFAULT_USERNAME;
+
+    @Builder.Default private String tid = DEFAULT_TID;
+
+    @Builder.Default private String oid = DEFAULT_OID;
 
     @Builder.Default private Date expiredDate = Date.from(Instant.now().plusSeconds(SECONDS));
 
@@ -102,6 +108,9 @@ public class TokenGenerator {
                         .expirationTime(expiredDate)
                         .claim("emails", List.of(email))
                         .claim("sub", email)
+                        .claim("preferred_username", email)
+                        .claim("tid", tid)
+                        .claim("oid", oid)
                         .claim(
                                 "roles",
                                 StringUtils.join(

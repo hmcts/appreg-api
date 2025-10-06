@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.common.entity.base;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 /**
@@ -9,11 +8,11 @@ import java.time.OffsetDateTime;
 public interface Changeable {
 
     /**
-     * Gets the ID of the user who made the last change.
+     * Gets the OID + TID of the user who made the last change.
      *
      * @return Changed by user number
      */
-    BigDecimal getChangedBy();
+    String getChangedBy();
 
     /**
      * Gets the date and time when the last change was made.
@@ -23,11 +22,11 @@ public interface Changeable {
     OffsetDateTime getChangedDate();
 
     /**
-     * Sets the ID of the user who made the last change.
+     * Sets the OID + TID of the user who made the last change.
      *
      * @param changedBy Changed by user number
      */
-    void setChangedBy(BigDecimal changedBy);
+    void setChangedBy(String changedBy);
 
     /**
      * Sets the date and time when the last change was made.

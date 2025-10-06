@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.dto;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
@@ -22,6 +21,6 @@ public record ApplicationListEntryDto(
         String notes,
         String bulkUpload,
         Long resultId,
-        BigDecimal changedBy,
+        String changedBy,
         OffsetDateTime changedDate,
         Long version) {}

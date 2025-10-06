@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
+import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 
-class ApplicationListRepositoryTest extends BasePostgresIntegrationTest {
+class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationListRepository repository;
 
@@ -24,7 +24,6 @@ class ApplicationListRepositoryTest extends BasePostgresIntegrationTest {
                 .time(LocalDateTime.of(2025, 1, 1, 9, 0))
                 .durationHours((short) 1)
                 .durationMinutes((short) 30)
-                .createdUser("tester")
                 .build();
     }
 
@@ -40,5 +39,10 @@ class ApplicationListRepositoryTest extends BasePostgresIntegrationTest {
         var reloaded = repository.findById(saved.getPk()).orElseThrow();
         assertThat(reloaded.getUuid()).isEqualTo(saved.getUuid());
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
+        assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
+        assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
+        assertThat(reloaded.getStatus()).isEqualTo("OPEN");
+        assertThat(reloaded.getCreatedUser()).isEqualTo(EMAIL_CLAIM);
+        assertThat(reloaded.getChangedBy()).isEqualTo(TID_CLAIM + ":" + OID_CLAIM);
     }
 }
