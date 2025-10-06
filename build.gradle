@@ -175,26 +175,15 @@ tasks.register('smoke', Test) {
   classpath = sourceSets.smokeTest.runtimeClasspath
 }
 
-/*
 jacocoTestReport {
-  executionData(test, integration)
+  dependsOn test, integration
   reports {
-    xml.getRequired().set(true)
-    csv.getRequired().set(false)
-    html.getRequired().set(true)
-  }
-} */
-jacocoTestReport {
-  //AD disabled
-  enabled = true
-  //executionData(test, integration)
-  executionData(test)
-  reports {
-    xml.getRequired().set(true)
-    csv.getRequired().set(false)
-    html.getRequired().set(true)
+    xml.required = true
+    csv.required = true
+    html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
   }
 }
+
 //AD disabled
 tasks.sonarqube.dependsOn(jacocoTestReport)
 tasks['check'].finalizedBy integration
@@ -204,6 +193,7 @@ sonarqube {
   properties {
     property "sonar.projectName", "AppReg :: appreg-api"
     property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
+    property "sonar.exclusions", "**/Dto/*.java"
   }
 }
 
