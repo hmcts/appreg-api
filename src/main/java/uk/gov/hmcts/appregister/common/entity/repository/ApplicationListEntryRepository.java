@@ -55,4 +55,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
+
+    long countByApplicationListPk(Long applicationListPk);
+
 }

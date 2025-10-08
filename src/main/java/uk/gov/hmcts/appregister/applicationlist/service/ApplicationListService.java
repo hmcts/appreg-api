@@ -1,7 +1,11 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
+import org.springframework.data.domain.Pageable;
+
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
  * Service interface for managing Application Lists.
@@ -25,4 +29,6 @@ public interface ApplicationListService {
      *     or the associated Court/CJA entity is not found or duplicated
      */
     ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
+
+    ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable);
 }

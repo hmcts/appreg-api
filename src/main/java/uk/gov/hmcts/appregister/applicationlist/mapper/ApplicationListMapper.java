@@ -110,4 +110,16 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
     ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
+
+    @Mapping(target = "id", source = "appList.uuid")
+    @Mapping(target = "date", expression = "java(appList.getDate().toLocalDate())")
+    @Mapping(target = "time", expression = "java(toTimeString(appList.getTime()))")
+    @Mapping(target = "location", source = "location")
+    @Mapping(target = "description", source = "appList.description")
+    @Mapping(target = "numberOfEntries", source = "entryCount")
+    @Mapping(target = "status", source = "appList.status")
+    ApplicationListGetSummaryDto toGetSummaryDto(
+        ApplicationList appList,
+        long entryCount,
+        String location);
 }

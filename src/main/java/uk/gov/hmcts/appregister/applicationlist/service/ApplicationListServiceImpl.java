@@ -2,8 +2,19 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
@@ -11,14 +22,18 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocatio
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
  * Service implementation for managing Application Lists.
@@ -39,9 +54,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListRepository repository;
     private final NationalCourtHouseRepository courtHouseRepository;
     private final CriminalJusticeAreaRepository cjaRepository;
+    private final ApplicationListEntryRepository aleRepository;
     private final ApplicationListMapper mapper;
     private final ApplicationListLocationValidator validator;
     private final EntityManager entityManager;
+    private final PageMapper pageMapper;
 
     /**
      * {@inheritDoc}
@@ -55,6 +72,74 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     public ApplicationListGetDetailDto create(ApplicationListCreateDto dto) {
         validator.validate(dto);
         return hasCourt(dto) ? createWithCourt(dto) : createWithCja(dto);
+    }
+
+    @Override
+    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+
+        CriminalJusticeArea cja = null;
+
+        if (dto.getCjaCode() != null) {
+            final List<CriminalJusticeArea> criminalJusticeAreas = cjaRepository.findByCode(dto.getCjaCode());
+
+            // =======
+            // TODO - This code is copied across the app. Split out into it's own service.
+            var cjaCode = dto.getCjaCode().trim();
+            if (criminalJusticeAreas.isEmpty()) {
+                throw new AppRegistryException(
+                    CriminalJusticeAreaError.CJA_NOT_FOUND,
+                    "No Criminal Justice Areas found for code '%s'".formatted(cjaCode));
+            } else if (criminalJusticeAreas.size() > 1) {
+                throw new AppRegistryException(
+                    CriminalJusticeAreaError.DUPLICATE_CJA_FOUND,
+                    "Multiple Criminal Justice Areas found for code '%s'".formatted(cjaCode));
+            }
+            cja = criminalJusticeAreas.getFirst();
+            // ========
+        }
+
+        // TODO - Date/Time converter needs to be consistent across the app - split into it's own service
+        LocalDate date = dto.getDate();
+        LocalTime time = LocalTime.parse(dto.getTime());
+        LocalDateTime dateTime = date.atTime(time);
+
+        // TODO - Pass in dto as single object?
+        final Page<ApplicationList> dbPage = repository.findAllByFilter(
+            dto.getStatus(),
+            dto.getCourtLocationCode(),
+            cja,
+            dto.getDate().atStartOfDay(),
+            dateTime,
+            dto.getDescription(),
+            dto.getOtherLocationDescription(),
+            pageable
+            );
+
+        var responsePage = new ApplicationListPage();
+
+        if (responsePage.getContent() == null) {
+            responsePage.setContent(new ArrayList<>());
+        }
+
+        pageMapper.toPage(dbPage, responsePage);
+
+        dbPage.forEach(applicationList -> {
+
+            String location = "Location not set";
+
+            if (applicationList.getCourtName() != null) {
+                location = applicationList.getCourtName();
+            // TODO - check in the legacy app if the location for CJA is a combo of Other Location and CJA
+            } else if (applicationList.getCja() != null) {
+                location = applicationList.getCja().getDescription();
+            }
+
+            // TODO - This count is going to be called for every application list - can we optimise?
+            long entryCount = aleRepository.countByApplicationListPk(applicationList.getPk());
+            responsePage.addContentItem(mapper.toGetSummaryDto(applicationList, entryCount, location));
+        });
+
+        return responsePage;
     }
 
     private static boolean hasCourt(ApplicationListCreateDto dto) {

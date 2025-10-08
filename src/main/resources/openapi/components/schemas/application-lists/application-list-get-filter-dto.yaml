@@ -1,0 +1,41 @@
+type: object
+description: Filter criteria for GET /application-lists.
+properties:
+
+  date:
+    type: string
+    format: date
+    description: Single date of the Application List.
+    example: "2025-10-07"
+
+  time:
+    type: string
+    format: time
+    description: Single time of the Application List.
+    example: "10:30"
+    pattern: '^(?:[01]\d|2[0-3]):[0-5]\d$'
+
+  courtLocationCode:
+    type: string
+    description: Court Location code (exact match).
+    example: "LOC123"
+
+  cjaCode:
+    type: string
+    description: CJA code (exact match).
+    example: "52"
+
+  description:
+    type: string
+    description: Case-insensitive contains match on description.
+    example: "morning session"
+
+  otherLocationDescription:
+    type: string
+    description: Case-insensitive contains match on other location description.
+    example: "town hall"
+
+  status:
+    $ref: "./application-list-status.yaml"
+
+required: []

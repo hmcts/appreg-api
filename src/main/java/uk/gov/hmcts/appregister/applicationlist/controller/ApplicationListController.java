@@ -4,9 +4,16 @@ import static org.springframework.http.HttpStatus.CREATED;
 
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,11 +21,19 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListSortValidator;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
+import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
  * REST controller for managing Application Lists.
@@ -48,6 +63,11 @@ public class ApplicationListController implements ApplicationListsApi {
 
     private final ApplicationListService service;
 
+    // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
+    private final PageableMapper pageableMapper;
+
+    private final ApplicationListSortMapper sortMapper;
+
     /**
      * Creates a new Application List.
      *
@@ -74,6 +94,21 @@ public class ApplicationListController implements ApplicationListsApi {
                 .contentType(VND_JSON_V1)
                 .headers(h -> h.setLocation(locationOf(created.getId())))
                 .body(created);
+    }
+
+    @Override
+    public ResponseEntity<ApplicationListPage> getApplicationLists(ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
+
+        List<String> mappedSort = sortMapper.mapAndValidate(sort);
+
+        // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
+        Pageable pageInfo = pageableMapper.from(page, size, mappedSort,
+                                                ApplicationList_.DESCRIPTION, Sort.Direction.ASC);
+
+        // Fetch paginated results from service layer
+        var applicationListPage = service.getPage(filter, pageInfo);
+
+        return ResponseEntity.ok(applicationListPage);
     }
 
     /**
