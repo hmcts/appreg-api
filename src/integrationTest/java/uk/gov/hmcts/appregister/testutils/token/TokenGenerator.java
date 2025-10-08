@@ -138,6 +138,11 @@ public class TokenGenerator {
         return token;
     }
 
+    /**
+     * A convenience method to return a spring jwt object for the token generated.
+     *
+     * @return The jwt token
+     */
     public Jwt getJwtFromToken() throws JOSEException, ParseException {
         com.nimbusds.jwt.SignedJWT signedJwt =
                 com.nimbusds.jwt.SignedJWT.parse(fetchTokenForRole().getToken());

@@ -219,8 +219,7 @@ tasks.register('jacocoUnitReport', JacocoReport) {
   reports { xml.required = true; html.required = false }
   executionData file("$buildDir/jacoco/test.exec")
   classDirectories.from files(sourceSets.main.output).asFileTree.matching {
-    exclude "uk/gov/hmcts/appregister/**/dto/*.class",
-            "uk/gov/hmcts/appregister/generated/api/**/*.class"
+
   }
   sourceDirectories.from sourceSets.main.allSource.srcDirs
 }
@@ -230,8 +229,8 @@ tasks.register('jacocoIntegrationReport', JacocoReport) {
   reports { xml.required = true; html.required = false }
   executionData file("$buildDir/jacoco/integration.exec")
   classDirectories.from files(sourceSets.main.output).asFileTree.matching {
-    exclude "uk/gov/hmcts/appregister/**/dto/*.class",
-            "uk/gov/hmcts/appregister/generated/api/**/*.class"
+
+
   }
   sourceDirectories.from sourceSets.main.allSource.srcDirs
 }
@@ -262,7 +261,13 @@ sonarqube {
   properties {
     property "sonar.projectName", "AppReg :: appreg-api"
     property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
-
+    property "sonar.coverage.exclusions", [
+            "src/main/java/uk/gov/hmcts/appregister/**/dto/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/applicationentry/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/report/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*"
+    ]
     if (gradle.startParameter.taskNames.contains("localSonarqube")) {
       property 'sonar.host.url', 'http://localhost:9000'
       property 'sonar.login', System.getenv('SONAR_TOKEN') ?: 'admin'
