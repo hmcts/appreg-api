@@ -3,9 +3,9 @@ package uk.gov.hmcts.appregister.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum JwtError implements ErrorCodeEnum {
-    MISSING_CLAIMS(
+    INVALID_TOKEN(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Not all claims are present in the token", "JWT-1"));
+                    HttpStatus.BAD_REQUEST, "Invalid authentication token", "JWT-1"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

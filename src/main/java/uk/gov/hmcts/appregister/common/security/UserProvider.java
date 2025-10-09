@@ -41,7 +41,7 @@ public class UserProvider {
 
         if (tid == null || oid == null) {
             throw new AppRegistryException(
-                    JwtError.MISSING_CLAIMS, "Both tid and oid claims are required in the token");
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
 
         return tid + ":" + oid;
@@ -54,7 +54,7 @@ public class UserProvider {
 
         if (email == null) {
             throw new AppRegistryException(
-                    JwtError.MISSING_CLAIMS, "The users email is required in the token");
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
 
         return email;

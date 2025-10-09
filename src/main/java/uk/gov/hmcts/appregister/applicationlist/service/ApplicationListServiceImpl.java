@@ -39,6 +39,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
 
+    private static final int SINGLE_RECORD = 1;
+
     private final ApplicationListRepository repository;
     private final NationalCourtHouseRepository courtHouseRepository;
     private final CriminalJusticeAreaRepository cjaRepository;
@@ -83,7 +85,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             throw new AppRegistryException(
                     CourtLocationError.COURT_NOT_FOUND,
                     "No court found for code '%s'".formatted(courtCode));
-        } else if (courts.size() > 1) {
+        } else if (courts.size() > SINGLE_RECORD) {
             throw new AppRegistryException(
                     CourtLocationError.DUPLICATE_COURT_FOUND,
                     "Multiple courts found for code '%s'".formatted(courtCode));
@@ -112,7 +114,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             throw new AppRegistryException(
                     CriminalJusticeAreaError.CJA_NOT_FOUND,
                     "No Criminal Justice Areas found for code '%s'".formatted(cjaCode));
-        } else if (criminalJusticeAreas.size() > 1) {
+        } else if (criminalJusticeAreas.size() > SINGLE_RECORD) {
             throw new AppRegistryException(
                     CriminalJusticeAreaError.DUPLICATE_CJA_FOUND,
                     "Multiple Criminal Justice Areas found for code '%s'".formatted(cjaCode));
