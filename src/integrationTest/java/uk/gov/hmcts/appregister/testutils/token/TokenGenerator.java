@@ -17,6 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 
 @Builder
@@ -108,7 +109,7 @@ public class TokenGenerator {
                         .expirationTime(expiredDate)
                         .claim("emails", List.of(email))
                         .claim("sub", email)
-                        .claim("preferred_username", email)
+                        .claim(StandardClaimNames.PREFERRED_USERNAME, email)
                         .claim("tid", tid)
                         .claim("oid", oid)
                         .claim(

@@ -42,7 +42,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
         assertThat(reloaded.getStatus()).isEqualTo("OPEN");
-        assertThat(reloaded.getCreatedUser()).isEqualTo(EMAIL_CLAIM);
-        assertThat(reloaded.getChangedBy()).isEqualTo(TID_CLAIM + ":" + OID_CLAIM);
+        assertThat(reloaded.getCreatedUser()).isEqualTo(EMAIL);
+        assertThat(reloaded.getChangedBy()).isEqualTo(TID + ":" + OID);
     }
 }
