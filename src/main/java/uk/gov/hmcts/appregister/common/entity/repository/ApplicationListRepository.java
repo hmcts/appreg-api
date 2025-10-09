@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 
@@ -44,4 +45,12 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      *     value
      */
     List<ApplicationList> findByPkGreaterThanEqual(Integer value);
+
+    /**
+     * Finds all entries with the given IDs.
+     *
+     * @param ids An id to look up
+     * @return A list of matching application entries
+     */
+    Optional<ApplicationList> findByUuid(UUID ids);
 }

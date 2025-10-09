@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -38,6 +41,7 @@ public class ApplicationListServiceImplTest {
     @Mock private ApplicationListMapper mapper;
     @Mock private ApplicationListLocationValidator validator;
     @Mock private EntityManager entityManager;
+    @Mock private ApplicationListDeletionValidator deletionValidator;
 
     private ApplicationListServiceImpl service;
 
@@ -50,7 +54,8 @@ public class ApplicationListServiceImplTest {
                         cjaRepository,
                         mapper,
                         validator,
-                        entityManager);
+                        entityManager,
+                        deletionValidator);
     }
 
     @Test
@@ -185,5 +190,17 @@ public class ApplicationListServiceImplTest {
 
         verify(validator).validate(dto);
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void delete_validId_deletesEntry() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(new ApplicationList()));
+
+        service.delete(id);
+
+        verify(deletionValidator).validate(id);
+        verify(repository).findByUuid(id);
+        verify(repository).save(any(ApplicationList.class));
     }
 }

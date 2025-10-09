@@ -2,17 +2,21 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationListRepository repository;
+
+    @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     private ApplicationList buildEntity() {
         return ApplicationList.builder()
@@ -45,5 +49,44 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
         assertThat(reloaded.getChangedBy())
                 .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
+        assertThat(reloaded.isDeleted()).isFalse();
+        assertThat(reloaded.getDeletedBy()).isNull();
+        assertThat(reloaded.getDeletedDate()).isNull();
+    }
+
+    @Test
+    @Transactional
+    void deleteApplicationList() {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    // save a new entity
+                    var saved = repository.saveAndFlush(buildEntity());
+                    var reloaded = repository.findById(saved.getPk()).orElseThrow();
+
+                    reloaded.setDeleted(true);
+
+                    // delete the entity
+                    repository.saveAndFlush(reloaded);
+
+                    // prove the deletion attributes are set
+                    assertThat(reloaded.getDeletedBy())
+                            .isEqualTo(
+                                    TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
+                    assertThat(reloaded.getDeletedDate()).isNotNull();
+                    assertThat(reloaded.isDeleted()).isTrue();
+
+                    // prove the core entity values have not changed
+                    assertThat(reloaded.getUuid()).isEqualTo(saved.getUuid());
+                    assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
+                    assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
+                    assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
+                    assertThat(reloaded.getStatus()).isEqualTo("OPEN");
+                    assertThat(reloaded.getCreatedUser())
+                            .isEqualTo(TokenGenerator.DEFAULT_USERNAME);
+                    assertThat(reloaded.getChangedBy())
+                            .isEqualTo(
+                                    TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
+                });
+        System.out.println();
     }
 }

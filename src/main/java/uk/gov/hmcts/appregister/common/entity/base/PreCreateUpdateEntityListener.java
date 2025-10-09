@@ -38,6 +38,15 @@ public class PreCreateUpdateEntityListener {
         updateModifiedBy(object);
 
         log.debug("Updated object of type: {}", object.getClass().getName());
+
+        // if the record is set to be deleted then set the deleted date and deleted by fields
+        if (object instanceof Deletable deletable) {
+            // ensure that if we only change the deleted date and by once
+            if (deletable.isDeleted() && deletable.getDeletedDate() == null) {
+                deletable.setDeletedDate(OffsetDateTime.now(clock));
+                deletable.setDeletedBy(userIdentity.getUserId());
+            }
+        }
     }
 
     void updateCreatedBy(Object object) {

@@ -77,6 +77,25 @@ public class ApplicationListController implements ApplicationListsApi {
     }
 
     /**
+     * Deletes a new Application List.
+     *
+     * <p>This endpoint deletes the provided id and returns a 204 response
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id The application list id to delete
+     * @return {@link ResponseEntity} The 204 response
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> deleteApplicationList(UUID id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Builds the resource location URI for a given Application List ID.
      *
      * @param id the unique identifier of the Application List

@@ -11,8 +11,17 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
                             + " and 'otherLocationDescription' must be supplied.",
-                    "AL-1"));
-
+                    "AL-1")),
+    DELETION_ID_NOT_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.NOT_FOUND,
+                    "The id provided is not in a suitable state for deletion",
+                    "AL-2")),
+    DELETION_ALREADY_IN_DELETABLE_STATE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The application list is not in a deletable state",
+                    "AL-3"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

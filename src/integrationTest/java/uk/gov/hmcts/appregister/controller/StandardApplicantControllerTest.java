@@ -5,9 +5,9 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
-import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class StandardApplicantControllerTest extends BaseIntegration {

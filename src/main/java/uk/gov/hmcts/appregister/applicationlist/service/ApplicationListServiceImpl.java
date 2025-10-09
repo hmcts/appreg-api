@@ -3,10 +3,13 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -42,6 +45,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListMapper mapper;
     private final ApplicationListLocationValidator validator;
     private final EntityManager entityManager;
+    private final ApplicationListDeletionValidator deletionValidator;
 
     /**
      * {@inheritDoc}
@@ -120,6 +124,18 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var hydrated = refreshEntity(savedEntity);
 
         return mapper.toGetDetailDto(hydrated, cja);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID idToDelete) {
+        deletionValidator.validate(idToDelete);
+        Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
+
+        if (applicationList.isPresent()) {
+            applicationList.get().setDeleted(true);
+            repository.save(applicationList.get());
+        }
     }
 
     /**
