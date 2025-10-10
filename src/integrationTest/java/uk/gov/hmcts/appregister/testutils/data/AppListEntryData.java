@@ -14,8 +14,13 @@ public class AppListEntryData
     @Override
     public ApplicationListEntry.ApplicationListEntryBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
+<<<<<<< Updated upstream:src/integrationTest/java/uk/gov/hmcts/appregister/testutils/data/AppListEntryData.java
         ApplicationList list = new AppListData().someMinimal().build();
         ApplicationCode code = new ApplicationCodeTestData().someMinimal().build();
+=======
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        ApplicationCode code = new ApplicationCodeTestData().someComplete();
+>>>>>>> Stashed changes:src/testCommon/java/uk.gov.hmcts.appregister/data/AppListEntryTestData.java
         return ApplicationListEntry.builder()
                 .applicationCode(code)
                 .applicationList(list)

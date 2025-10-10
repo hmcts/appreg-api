@@ -17,7 +17,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -52,7 +52,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-public class NationalCourtHouse extends BaseChangeableEntity implements Versionable {
+public class NationalCourtHouse extends BaseUnmanagedChangeableEntity implements Versionable {
 
     // Primary key identifier for the courthouse record.
     @Id

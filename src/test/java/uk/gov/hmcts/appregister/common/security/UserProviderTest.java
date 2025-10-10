@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.security;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
@@ -10,11 +9,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.JwtError;
 
 public class UserProviderTest {
 
@@ -34,9 +35,9 @@ public class UserProviderTest {
     @Test
     void getRoles_returnsEmptyArray_whenNoAuthenticationPresent() {
         SecurityContextHolder.clearContext();
-        String[] roles = userProvider.getRoles();
-        assertNotNull(roles);
-        assertEquals(0, roles.length);
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(AppRegistryException.class, () -> userProvider.getRoles());
+        assertEquals(JwtError.INVALID_TOKEN, appRegistryException.getCode());
     }
 
     @Test

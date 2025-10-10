@@ -16,7 +16,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -31,7 +31,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
-public class CommunicationMedia extends BaseChangeableEntity implements Versionable {
+public class CommunicationMedia extends BaseUnmanagedChangeableEntity implements Versionable {
     @Id
     @Column(name = "comm_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "comm_gen")

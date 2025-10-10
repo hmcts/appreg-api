@@ -1,7 +1,12 @@
 package uk.gov.hmcts.appregister.testutils.data;
 
+import static org.instancio.Select.field;
+
 import java.time.LocalDate;
 import java.util.UUID;
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.testutils.StringUtil;
 
@@ -23,5 +28,15 @@ public class NationalCourtHouseData
     @Override
     public NationalCourtHouse.NationalCourtHouseBuilder someMaximal() {
         return Persistable.super.someMaximal();
+    }
+
+    @Override
+    public NationalCourtHouse someComplete() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        return Instancio.of(NationalCourtHouse.class)
+                .ignore(field(NationalCourtHouse::getId))
+                .ignore(field(NationalCourtHouse::getVersion))
+                .withSettings(settings)
+                .create();
     }
 }

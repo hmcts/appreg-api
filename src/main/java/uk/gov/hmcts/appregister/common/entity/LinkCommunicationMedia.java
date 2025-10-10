@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
-public class LinkCommunicationMedia extends BaseChangeableEntity implements Versionable {
+public class LinkCommunicationMedia extends BaseUnmanagedChangeableEntity implements Versionable {
 
     @Id
     @Column(name = "lcm_id", nullable = false, updatable = false)
