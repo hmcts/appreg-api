@@ -5,7 +5,8 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.testutils.StringUtil;
 
 public class CriminalJusticeTestData
-        implements Persistable<CriminalJusticeArea.CriminalJusticeAreaBuilder> {
+        implements Persistable<
+                CriminalJusticeArea, CriminalJusticeArea.CriminalJusticeAreaBuilder> {
     @Override
     public CriminalJusticeArea.CriminalJusticeAreaBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();

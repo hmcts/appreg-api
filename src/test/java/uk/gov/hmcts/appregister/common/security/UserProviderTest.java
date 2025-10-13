@@ -2,20 +2,20 @@ package uk.gov.hmcts.appregister.common.security;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.JwtError;
 
 public class UserProviderTest {
 
@@ -35,9 +35,9 @@ public class UserProviderTest {
     @Test
     void getRoles_returnsEmptyArray_whenNoAuthenticationPresent() {
         SecurityContextHolder.clearContext();
-        String[] roles = userProvider.getRoles();
-        assertNotNull(roles);
-        assertEquals(0, roles.length);
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(AppRegistryException.class, () -> userProvider.getRoles());
+        assertEquals(JwtError.INVALID_TOKEN, appRegistryException.getCode());
     }
 
     @Test
@@ -71,9 +71,6 @@ public class UserProviderTest {
                         "oid", OID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
         AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
-        assertTrue(
-                ex.getMessage().toLowerCase().contains("tid")
-                        && ex.getMessage().toLowerCase().contains("oid"));
     }
 
     @Test
@@ -83,9 +80,6 @@ public class UserProviderTest {
                         "tid", TID_CLAIM,
                         "preferred_username", EMAIL_CLAIM));
         AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getUserId);
-        assertTrue(
-                ex.getMessage().toLowerCase().contains("tid")
-                        && ex.getMessage().toLowerCase().contains("oid"));
     }
 
     // ---------- getEmail ----------
@@ -107,7 +101,6 @@ public class UserProviderTest {
                         "tid", TID_CLAIM,
                         "oid", OID_CLAIM));
         AppRegistryException ex = assertThrows(AppRegistryException.class, userProvider::getEmail);
-        assertTrue(ex.getMessage().toLowerCase().contains("email"));
     }
 
     // ---------- helpers ----------

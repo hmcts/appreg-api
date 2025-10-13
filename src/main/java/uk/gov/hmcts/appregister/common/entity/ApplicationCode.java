@@ -19,7 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /*
@@ -39,7 +39,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
 @Setter
-public class ApplicationCode extends BaseChangeableEntity implements Accountable, Versionable {
+public class ApplicationCode extends BaseUnmanagedChangeableEntity
+        implements Accountable, Versionable {
 
     @Id
     @Column(name = "ac_id", nullable = false, updatable = false)

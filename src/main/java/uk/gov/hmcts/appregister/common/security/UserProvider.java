@@ -26,22 +26,17 @@ public class UserProvider {
     private static final String EMAIL_CLAIM = "preferred_username";
 
     public String[] getRoles() {
-        if (getJwt() == null) {
-            return new String[0];
-        }
-
         return getJwt().getClaimAsStringList(ROLES_CLAIM).toArray(new String[0]);
     }
 
     public String getUserId() {
         Jwt jwt = getJwt();
-        assert jwt != null;
         String tid = jwt.getClaimAsString(TENET_ID_CLAIM);
         String oid = jwt.getClaimAsString(OBJECT_ID_CLAIM);
 
         if (tid == null || oid == null) {
             throw new AppRegistryException(
-                    JwtError.MISSING_CLAIMS, "Both tid and oid claims are required in the token");
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
 
         return tid + ":" + oid;
@@ -49,12 +44,11 @@ public class UserProvider {
 
     public String getEmail() {
         Jwt jwt = getJwt();
-        assert jwt != null;
         String email = jwt.getClaimAsString(EMAIL_CLAIM);
 
         if (email == null) {
             throw new AppRegistryException(
-                    JwtError.MISSING_CLAIMS, "The users email is required in the token");
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
 
         return email;
@@ -63,7 +57,7 @@ public class UserProvider {
     /**
      * gets the token from thread local using {@link} SecurityContextHolder}.
      *
-     * @return The jwt or null if not found
+     * @return The jwt or an exception is thrown if null
      */
     private Jwt getJwt() {
         if (SecurityContextHolder.getContext().getAuthentication() != null
@@ -72,6 +66,6 @@ public class UserProvider {
             return jwt;
         }
 
-        return null;
+        throw new AppRegistryException(JwtError.INVALID_TOKEN, "The token was not found");
     }
 }

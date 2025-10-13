@@ -22,20 +22,17 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
  * <p>Usage: extend this class in repository tests to get an authenticated context out of the box—no
  * need to re-create tokens in each test.
  */
-public class BaseRepositoryTest extends BasePostgresIntegrationTest {
-
-    protected static final String EMAIL_CLAIM = "test.user@example.com";
-    protected static final String TID_CLAIM = "00000000-0000-0000-0000-000000000000";
-    protected static final String OID_CLAIM = "11111111-1111-1111-1111-111111111111";
+public class BaseRepositoryTest extends BaseIntegration {
 
     @BeforeEach
     public void setUp() {
+
         Jwt jwt =
                 Jwt.withTokenValue("test-token")
                         .header("alg", "none")
-                        .claim("tid", TID_CLAIM)
-                        .claim("oid", OID_CLAIM)
-                        .claim("preferred_username", EMAIL_CLAIM)
+                        .claim("tid", TID)
+                        .claim("oid", OID)
+                        .claim("preferred_username", EMAIL)
                         .build();
 
         var auth = new JwtAuthenticationToken(jwt, Collections.emptyList());

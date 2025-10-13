@@ -9,13 +9,14 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 
 public class AppListEntryData
-        implements Persistable<ApplicationListEntry.ApplicationListEntryBuilder> {
+        implements Persistable<
+                ApplicationListEntry, ApplicationListEntry.ApplicationListEntryBuilder> {
 
     @Override
     public ApplicationListEntry.ApplicationListEntryBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
         ApplicationList list = new AppListData().someMinimal().build();
-        ApplicationCode code = new ApplicationCodeTestData().someMinimal().build();
+        ApplicationCode code = new ApplicationCodeTestData().someComplete();
         return ApplicationListEntry.builder()
                 .applicationCode(code)
                 .applicationList(list)

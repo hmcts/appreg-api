@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -11,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
@@ -43,6 +44,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
 
+    private static final int SINGLE_RECORD = 1;
     private static final long ZERO_ENTITIES = 0L;
 
     private final ApplicationListRepository repository;
