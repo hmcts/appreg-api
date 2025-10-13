@@ -12,6 +12,7 @@
 --					                                  APP_LIST_ENTRY_OFFICIAL
 --					                                  APPLICATION_LISTS
 --					                                  APPLICATION_REGISTER
+-- V5.0 	Matthew Harman	10/10/2025	ARCPOC-620 - Changed NAME_ADDRESS Changed_By fileds
 --
 
 SET client_encoding TO 'UTF8';
@@ -39,6 +40,8 @@ ALTER TABLE app_list_entry_official ALTER COLUMN changed_by TYPE VARCHAR(73);
 ALTER TABLE application_lists ALTER COLUMN changed_by TYPE VARCHAR(73);
 ALTER TABLE application_register ALTER COLUMN changed_by TYPE VARCHAR(73);
 
+-- ARCPOC-620 - Change NAME_ADDRESS Changed_By fields to VARCHAR(73)
+ALTER TABLE name_address ALTER COLUMN changed_by TYPE VARCHAR(73);
 
 
 -- Insert our test data for V3

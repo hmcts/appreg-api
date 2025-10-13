@@ -3,6 +3,7 @@
 -- Matthew Harman       V1.1    11/09/2025      Expanded data set
 -- Matthew Harman       V2.0    16/09/2025	Added code for testing script applied
 -- Matthew Harman       V3.0    02/10/2025	Modified data for changed_by to be varchar(73)
+-- Matthew Harman       V4.0    13/10/2025      Modified data for Name_Address as changed_by now varchar(73)
 --
 -- ----------------------- PETTY SESSIONAL AREA -----------------------
 --
@@ -345,10 +346,10 @@ VALUES
 --
 INSERT INTO name_address (na_id, code, name, title, forename_1, forename_2, forename_3, surname, address_l1, address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number, version, changed_by, changed_date, user_name, date_of_birth, dms_id)
 VALUES
-        (1, 'RE', 'Jack Turner', 'Mr', 'John', NULL, NULL, 'Turner', '1 Market Street', NULL, NULL, NULL, NULL, 'AB11 2CD', 'john.smith@example.com', '01234567890', NULL,  0, 0, TIMESTAMP '2016-01-01 00:00:00' , NULL, NULL, NULL),
-        (2, 'RE', 'Sarah Johnson', 'Mrs', 'Sarah', NULL, NULL, 'Johnson', '12 The Avenue', NULL, NULL, NULL, NULL, 'XY9 8ZZ', 's.johnson@example.com', NULL, '07700900000',  0, 0, TIMESTAMP' 2016-01-01 00:00:00' , NULL, NULL, NULL),
-        (3, 'RE', 'Sam Burton', NULL, 'Sam', NULL, NULL, 'Burton', 'Flat 4, 22 Hillside', NULL, NULL, NULL, NULL, 'SN12 1ZZ', NULL, NULL, NULL, 0, 0, '2016-01-01 00:00:00' , NULL, NULL, NULL),
-        (4, 'AP', 'Legal Aid Board', NULL, NULL, NULL, NULL, NULL, '100 Legal Street', NULL, NULL, NULL, NULL, 'BA15 1LA', 'info@legalaid.example.com', NULL, NULL, 0, 0, TIMESTAMP '2016-01-01 00:00:00', NULL, NULL, NULL);
+        (1, 'RE', 'Jack Turner', 'Mr', 'John', NULL, NULL, 'Turner', '1 Market Street', NULL, NULL, NULL, NULL, 'AB11 2CD', 'john.smith@example.com', '01234567890', NULL,  0, gen_random_uuid() || ':72f988bf-86f1-41af-91ab-2d7cd011db47', TIMESTAMP '2016-01-01 00:00:00' , NULL, NULL, NULL),
+        (2, 'RE', 'Sarah Johnson', 'Mrs', 'Sarah', NULL, NULL, 'Johnson', '12 The Avenue', NULL, NULL, NULL, NULL, 'XY9 8ZZ', 's.johnson@example.com', NULL, '07700900000',  0, gen_random_uuid() || ':72f988bf-86f1-41af-91ab-2d7cd011db47', TIMESTAMP' 2016-01-01 00:00:00' , NULL, NULL, NULL),
+        (3, 'RE', 'Sam Burton', NULL, 'Sam', NULL, NULL, 'Burton', 'Flat 4, 22 Hillside', NULL, NULL, NULL, NULL, 'SN12 1ZZ', NULL, NULL, NULL, 0, gen_random_uuid() || ':72f988bf-86f1-41af-91ab-2d7cd011db47', '2016-01-01 00:00:00' , NULL, NULL, NULL),
+        (4, 'AP', 'Legal Aid Board', NULL, NULL, NULL, NULL, NULL, '100 Legal Street', NULL, NULL, NULL, NULL, 'BA15 1LA', 'info@legalaid.example.com', NULL, NULL, 0, gen_random_uuid() || ':72f988bf-86f1-41af-91ab-2d7cd011db47', TIMESTAMP '2016-01-01 00:00:00', NULL, NULL, NULL);
 --
 --
 --
