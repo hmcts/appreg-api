@@ -12,8 +12,10 @@
 --					                                  APP_LIST_ENTRY_OFFICIAL
 --					                                  APPLICATION_LISTS
 --					                                  APPLICATION_REGISTER
--- V5.0 	Matthew Harman	10/10/2025	ARCPOC-620 - Changed NAME_ADDRESS Changed_By fileds
---
+-- V5.0 	Matthew Harman	13/10/2025	ARCPOC-620 - Changed NAME_ADDRESS Changed_By fileds
+-- V6.0 	Matthew Harman	13/10/2025	ARCPOC-619 - Changed APPLICATION_LISTS:
+--														APPLICATION_LIST_DATE to DATE
+--														APPLICATION_LIST_TIME to TIME
 
 SET client_encoding TO 'UTF8';
 
@@ -43,6 +45,11 @@ ALTER TABLE application_register ALTER COLUMN changed_by TYPE VARCHAR(73);
 -- ARCPOC-620 - Change NAME_ADDRESS Changed_By fields to VARCHAR(73)
 ALTER TABLE name_address ALTER COLUMN changed_by TYPE VARCHAR(73);
 
+-- ARCPOC-619 - Change APPLICATION_LISTS:
+-- APPLICATION_LIST_DATE to DATE		
+-- APPLICATION_LIST_TIME to TIME
+ALTER TABLE application_lists ALTER COLUMN application_list_date TYPE DATE;
+ALTER TABLE application_lists ALTER COLUMN application_list_time TYPE TIME;	
 
 -- Insert our test data for V3
 INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
@@ -101,6 +108,21 @@ BEGIN
 	-- Check application_register.changed_by is varchar(73)
 	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'application_register' and column_name = 'changed_by' and data_type = 'character varying' and character_maximum_length = 73) THEN
 		RAISE EXCEPTION 'Table: application_register  Column: changed_by is not a varchar(73)';
+	END IF;
+
+	-- Check name_address.changed_by is varchar(73)
+	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'name_address' and column_name = 'changed_by' and data_type = 'character varying' and character_maximum_length = 73) THEN
+		RAISE EXCEPTION 'Table: name_address  Column: changed_by is not a varchar(73)';
+	END IF;
+
+	-- Check application_lists.application_list_date is DATE
+	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'application_lists' and column_name = 'application_list_date' and data_type = 'date') THEN
+		RAISE EXCEPTION 'Table: application_lists  Column: application_list_date is not a date field';
+	END IF;
+
+	-- Check application_lists.application_list_time is TIME
+	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'application_lists' and column_name = 'application_list_time' and data_type = 'time without time zone') THEN
+		RAISE EXCEPTION 'Table: application_lists  Column: application_list_time is not a time field';
 	END IF;
 
 	-- If all checks pass, do nothing (test passes)
