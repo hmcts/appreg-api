@@ -41,6 +41,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(saved.getVersion()).isZero();
 
         var reloaded = repository.findById(saved.getPk()).orElseThrow();
+        expectAllCommonEntityFields(saved, reloaded);
         assertThat(reloaded.getUuid()).isEqualTo(saved.getUuid());
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
@@ -72,6 +73,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                     assertThat(reloaded.getDeletedBy())
                             .isEqualTo(
                                     TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
+
+                    expectAllCommonEntityFields(saved, reloaded);
                     assertThat(reloaded.getDeletedDate()).isNotNull();
                     assertThat(reloaded.isDeleted()).isTrue();
 

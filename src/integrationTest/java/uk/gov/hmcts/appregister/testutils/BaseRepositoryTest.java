@@ -10,8 +10,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
+import uk.gov.hmcts.appregister.common.entity.base.Deletable;
 import uk.gov.hmcts.appregister.common.entity.base.UnmanagedChangeable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
@@ -48,7 +50,9 @@ public class BaseRepositoryTest extends BasePostgresIntegrationTest {
     }
 
     public void expectChangeable(Changeable expected, Changeable actual) {
-        Assertions.assertEquals(expected.getChangedBy(), actual.getChangedBy());
+        Assertions.assertEquals(
+                TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID,
+                actual.getChangedBy());
         Assertions.assertTrue(
                 DateUtil.equalsIgnoreMillis(expected.getChangedDate(), actual.getChangedDate()));
     }
@@ -76,6 +80,24 @@ public class BaseRepositoryTest extends BasePostgresIntegrationTest {
                     DateUtil.equalsIgnoreMillis(
                             expectedUnmanagedChangeable.getChangedDate(),
                             actualUnmanagedChangeable.getChangedDate()));
+        }
+
+        if (expected instanceof Deletable expectedDeletable
+                && actual instanceof Deletable actualUnmanagedChangeable) {
+            assertThat(actualUnmanagedChangeable.getDeleted())
+                    .isEqualTo(actualUnmanagedChangeable.getDeleted());
+
+            if (actualUnmanagedChangeable.getDeleted() == YesOrNo.YES) {
+                Assertions.assertTrue(
+                        DateUtil.equalsIgnoreMillis(
+                                expectedDeletable.getDeletedDate(),
+                                actualUnmanagedChangeable.getDeletedDate()));
+                assertThat(actualUnmanagedChangeable.getDeletedBy())
+                        .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
+            } else {
+                assertThat(actualUnmanagedChangeable.getDeleted()).isNull();
+                assertThat(actualUnmanagedChangeable.getDeletedBy()).isNull();
+            }
         }
     }
 }
