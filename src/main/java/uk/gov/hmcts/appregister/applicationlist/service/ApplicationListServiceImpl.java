@@ -1,17 +1,13 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
-
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,7 +21,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.service.DateTimeService;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -57,7 +52,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final EntityManager entityManager;
     private final PageMapper pageMapper;
     private final LocationLookupService locationLookupService;
-    private final DateTimeService dateTimeService;
 
     /**
      * {@inheritDoc}
@@ -123,7 +117,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     /**
-     * Retrieves a paginated list of application lists based on the given filter and paging parameters.
+     * Retrieves a paginated list of application lists based on the given filter and paging
+     * parameters.
      *
      * <p>Resolves and normalizes input filters (including CJA lookup and date/time normalization),
      * queries the repository for matching records, retrieves associated entry counts, and maps the
@@ -137,62 +132,47 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
 
-        // 1) Date -> [start, end) range (calendar day only)
-        LocalDateTime dateStart = null;
-        LocalDateTime dateEnd = null;
-        if (dto.getDate() != null) {
-            dateStart = dateTimeService.normalizeDate(dto.getDate());
-            dateEnd   = dateStart.plusDays(1);
-        }
-
-        // 2) Time string -> hour/minute (ignore seconds)
-        Integer hour = null;
-        Integer minute = null;
-        if (StringUtils.hasText(dto.getTime())) {
-            LocalDateTime anchor = dateTimeService.normalizeTime(dto.getTime());
-            hour = anchor.getHour();
-            minute = anchor.getMinute();
-        }
-
         CriminalJusticeArea cja = resolveCja(dto.getCjaCode()).orElse(null);
 
-        final Page<ApplicationList> dbPage = repository.findAllByFilter(
-            dto.getStatus(),
-            dto.getCourtLocationCode(),
-            cja,
-            dateStart,   // inclusive lower bound (or null)
-            dateEnd,     // exclusive upper bound (or null)
-            hour,        // or null
-            minute,
-            dto.getDescription(),
-            dto.getOtherLocationDescription(),
-            pageable
-        );
+        final Page<ApplicationList> dbPage =
+                repository.findAllByFilter(
+                        dto.getStatus(),
+                        dto.getCourtLocationCode(),
+                        cja,
+                        dto.getDate(),
+                        dto.getTime(),
+                        dto.getDescription(),
+                        dto.getOtherLocationDescription(),
+                        pageable);
 
         // Pre-fetch the number of entries linked to each list in the page.
         // Avoids having to do a separate count query per list when mapping to DTOs.
-        Map<UUID, Long> entriesPerListCounter = dbPage.isEmpty()
-            ? Map.of()
-            : fetchEntryCounts(dbPage.map(ApplicationList::getUuid).toList());
+        Map<UUID, Long> entriesPerListCounter =
+                dbPage.isEmpty()
+                        ? Map.of()
+                        : fetchEntryCounts(dbPage.map(ApplicationList::getUuid).toList());
 
         return assembleResponsePage(dbPage, entriesPerListCounter);
     }
 
     private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {
-        return cjaCode == null ? Optional.empty() : Optional.of(locationLookupService.getCjaOrThrow(cjaCode));
+        return cjaCode == null
+                ? Optional.empty()
+                : Optional.of(locationLookupService.getCjaOrThrow(cjaCode));
     }
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
         return aleRepository.countByApplicationListUuids(uuids).stream()
-            .collect(Collectors.toMap(
-                ApplicationListEntryRepository.EntryCount::getPk,
-                ApplicationListEntryRepository.EntryCount::getCnt
-            ));
+                .collect(
+                        Collectors.toMap(
+                                ApplicationListEntryRepository.EntryCount::getPk,
+                                ApplicationListEntryRepository.EntryCount::getCnt));
     }
 
-    private ApplicationListPage assembleResponsePage(Page<ApplicationList> dbPage, Map<UUID, Long> entriesPerListCounter) {
+    private ApplicationListPage assembleResponsePage(
+            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter) {
         var responsePage = new ApplicationListPage();
-        pageMapper.toPage(dbPage, responsePage);
+        pageMapper.toPage(appLists, responsePage);
 
         // Ensure content is never null:
         // API spec requires an array, so return an empty one instead of null.
@@ -200,12 +180,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             responsePage.setContent(new ArrayList<>());
         }
 
-        for (ApplicationList al : dbPage) {
+        for (ApplicationList al : appLists) {
             long entryCount = entriesPerListCounter.getOrDefault(al.getUuid(), ZERO_ENTITIES);
             String location = deriveLocation(al);
-            responsePage.addContentItem(
-                mapper.toGetSummaryDto(al, entryCount, location)
-            );
+            responsePage.addContentItem(mapper.toGetSummaryDto(al, entryCount, location));
         }
         return responsePage;
     }

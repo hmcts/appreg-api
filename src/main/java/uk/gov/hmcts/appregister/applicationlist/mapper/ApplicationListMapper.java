@@ -1,24 +1,16 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
-import uk.gov.hmcts.appregister.common.service.DateTimeService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 
-@Mapper(
-    componentModel = "spring",
-    uses = {DateTimeService.class},
-    unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ApplicationListMapper {
 
     @Mapping(target = "pk", ignore = true)
@@ -30,8 +22,8 @@ public interface ApplicationListMapper {
     @Mapping(target = "courtCode", source = "court.courtLocationCode")
     @Mapping(target = "courtName", source = "court.name")
     @Mapping(target = "description", source = "dto.description")
-    @Mapping(target = "date", source = "dto.date", qualifiedByName = "normalizeDate")
-    @Mapping(target = "time", source = "dto.time", qualifiedByName = "normalizeTime")
+    @Mapping(target = "date", source = "dto.date")
+    @Mapping(target = "time", source = "dto.time")
     ApplicationList toCreateEntityWithCourt(ApplicationListCreateDto dto, NationalCourtHouse court);
 
     @Mapping(target = "pk", ignore = true)
@@ -42,13 +34,13 @@ public interface ApplicationListMapper {
     @Mapping(target = "courtName", ignore = true)
     @Mapping(target = "otherLocation", source = "dto.otherLocationDescription")
     @Mapping(target = "description", source = "dto.description")
-    @Mapping(target = "date", source = "dto.date", qualifiedByName = "normalizeDate")
-    @Mapping(target = "time", source = "dto.time", qualifiedByName = "normalizeTime")
+    @Mapping(target = "date", source = "dto.date")
+    @Mapping(target = "time", source = "dto.time")
     ApplicationList toCreateEntityWithCja(ApplicationListCreateDto dto, CriminalJusticeArea cja);
 
     @Mapping(target = "id", source = "appList.uuid")
-    @Mapping(target = "date", expression = "java(appList.getDate().toLocalDate())")
-    @Mapping(target = "time", source = "appList.time", qualifiedByName = "toTimeString")
+    @Mapping(target = "date", source = "appList.date")
+    @Mapping(target = "time", source = "appList.time")
     @Mapping(target = "description", source = "appList.description")
     @Mapping(target = "status", source = "appList.status")
     @Mapping(target = "cjaCode", expression = "java(cja != null ? cja.getCode() : null)")
@@ -61,14 +53,12 @@ public interface ApplicationListMapper {
     ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
 
     @Mapping(target = "id", source = "appList.uuid")
-    @Mapping(target = "date", expression = "java(appList.getDate().toLocalDate())")
-    @Mapping(target = "time", source = "appList.time", qualifiedByName = "toTimeString")
+    @Mapping(target = "date", source = "appList.date")
+    @Mapping(target = "time", source = "appList.time")
     @Mapping(target = "location", source = "location")
     @Mapping(target = "description", source = "appList.description")
     @Mapping(target = "numberOfEntries", source = "entryCount")
     @Mapping(target = "status", source = "appList.status")
     ApplicationListGetSummaryDto toGetSummaryDto(
-        ApplicationList appList,
-        long entryCount,
-        String location);
+            ApplicationList appList, long entryCount, String location);
 }

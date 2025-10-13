@@ -14,7 +14,8 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -77,10 +78,10 @@ public class ApplicationList extends BaseChangeableEntity implements Accountable
     private String otherLocation;
 
     @Column(name = "application_list_date", nullable = false)
-    private LocalDateTime date;
+    private LocalDate date;
 
     @Column(name = "application_list_time", nullable = false)
-    private LocalDateTime time;
+    private LocalTime time;
 
     @Column(name = "duration_hour")
     private short durationHours;

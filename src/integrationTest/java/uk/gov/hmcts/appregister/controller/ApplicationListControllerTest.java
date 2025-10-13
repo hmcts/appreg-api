@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.restassured.response.Response;
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -14,15 +14,10 @@ import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
-import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
-import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
@@ -41,7 +36,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final String UNKNOWN_CJA_CODE = "99X";
 
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
-    private static final String TEST_TIME = "10:30";
+    private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
     // --- POST ---------------------------------------------------------------------
     @Test
@@ -209,27 +204,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .CJA_NOT_FOUND
                         .getCode(),
                 resp);
-    }
-
-    @Test
-    void givenBadTimeFormat_whenCreate_then400() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        var req =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time("25:61") // invalid
-                        .description("Bad time")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
-        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
-
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
 
     @Test
