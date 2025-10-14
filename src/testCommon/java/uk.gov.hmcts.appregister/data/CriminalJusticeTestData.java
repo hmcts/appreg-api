@@ -1,11 +1,11 @@
-package uk.gov.hmcts.appregister.testutils.data;
+package uk.gov.hmcts.appregister.data;
 
 import java.util.UUID;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.testutils.StringUtil;
+import uk.gov.hmcts.appregister.util.StringUtil;
 
 public class CriminalJusticeTestData
-        implements Persistable<
+        implements uk.gov.hmcts.appregister.testutils.data.Persistable<
                 CriminalJusticeArea, CriminalJusticeArea.CriminalJusticeAreaBuilder> {
     @Override
     public CriminalJusticeArea.CriminalJusticeAreaBuilder someMinimal() {
@@ -20,6 +20,6 @@ public class CriminalJusticeTestData
 
     @Override
     public CriminalJusticeArea.CriminalJusticeAreaBuilder someMaximal() {
-        return Persistable.super.someMaximal();
+        return uk.gov.hmcts.appregister.testutils.data.Persistable.super.someMaximal();
     }
 }

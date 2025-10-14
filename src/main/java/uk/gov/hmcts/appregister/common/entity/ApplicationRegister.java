@@ -13,7 +13,9 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
@@ -25,6 +27,8 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Getter
+@Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class ApplicationRegister extends BaseChangeableEntity implements Accountable {
     @Id

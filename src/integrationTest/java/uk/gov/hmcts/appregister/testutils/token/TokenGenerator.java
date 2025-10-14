@@ -10,6 +10,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +19,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.oauth2.core.oidc.StandardClaimNames;
+import org.springframework.security.oauth2.jwt.Jwt;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 
 @Builder
@@ -107,9 +109,12 @@ public class TokenGenerator {
                         .issuer(issuer)
                         .audience(audience)
                         .expirationTime(expiredDate)
-                        .claim("emails", List.of(email))
-                        .claim("sub", email)
-                        .claim(StandardClaimNames.PREFERRED_USERNAME, email)
+                        .claim(StandardClaimNames.EMAIL, List.of(email))
+                        .claim(StandardClaimNames.SUB, email)
+                        .claim(
+                                org.springframework.security.oauth2.core.oidc.StandardClaimNames
+                                        .PREFERRED_USERNAME,
+                                email)
                         .claim("tid", tid)
                         .claim("oid", oid)
                         .claim(
@@ -119,7 +124,6 @@ public class TokenGenerator {
                                                 .map(RoleEnum::getRole)
                                                 .toArray(String[]::new),
                                         ","))
-                        .claim("aud", audience)
                         .build();
 
         // create a signed token using the private key
@@ -132,6 +136,24 @@ public class TokenGenerator {
         token.setJwksKey(key.toPublicJWK().toJSONString());
 
         return token;
+    }
+
+    /**
+     * A convenience method to return a spring jwt object for the token generated.
+     *
+     * @return The jwt token
+     */
+    public Jwt getJwtFromToken() throws JOSEException, ParseException {
+        com.nimbusds.jwt.SignedJWT signedJwt =
+                com.nimbusds.jwt.SignedJWT.parse(fetchTokenForRole().getToken());
+        return new Jwt(
+                fetchTokenForRole().getToken(),
+                signedJwt.getJWTClaimsSet().getIssueTime() == null
+                        ? Instant.now()
+                        : signedJwt.getJWTClaimsSet().getIssueTime().toInstant(),
+                signedJwt.getJWTClaimsSet().getExpirationTime().toInstant(),
+                signedJwt.getHeader().toJSONObject(),
+                signedJwt.getJWTClaimsSet().getClaims());
     }
 
     public String getGlobalKey() {

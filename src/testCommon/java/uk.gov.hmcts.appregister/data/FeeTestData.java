@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.testutils.data;
+package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
@@ -9,9 +9,10 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.testutils.StringUtil;
+import uk.gov.hmcts.appregister.util.StringUtil;
 
-public class FeeTestData implements Persistable<Fee, Fee.FeeBuilder> {
+public class FeeTestData
+        implements uk.gov.hmcts.appregister.testutils.data.Persistable<Fee, Fee.FeeBuilder> {
     @Override
     public Fee.FeeBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();

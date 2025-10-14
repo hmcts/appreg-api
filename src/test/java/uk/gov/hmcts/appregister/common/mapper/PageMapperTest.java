@@ -16,9 +16,8 @@ public class PageMapperTest {
     @Test
     public void testBasicMappingAll() {
         PageRequest pageable = PageRequest.of(0, 10);
-        Sort sort = pageable.getSort();
         Sort.Order order = new Sort.Order(Sort.Direction.DESC, "testSortField");
-        sort = sort.by(order);
+        Sort sort = Sort.by(order);
         pageable = pageable.withSort(sort);
 
         PageMapper mapper = new PageMapper();

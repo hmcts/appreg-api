@@ -1,12 +1,14 @@
 package uk.gov.hmcts.appregister.config;
 
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.GenericConverter;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -22,6 +24,11 @@ public class AppConfig implements WebMvcConfigurer {
     @Bean
     public Clock getClock() {
         return Clock.systemUTC();
+    }
+
+    @Bean
+    DateTimeProvider utcDateTimeProvider(Clock clock) {
+        return () -> java.util.Optional.of(OffsetDateTime.now(clock));
     }
 
     /**

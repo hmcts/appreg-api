@@ -1,21 +1,22 @@
-package uk.gov.hmcts.appregister.testutils.data;
+package uk.gov.hmcts.appregister.data;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.UUID;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 
-public class AppListEntryData
-        implements Persistable<
+public class AppListEntryTestData
+        implements uk.gov.hmcts.appregister.testutils.data.Persistable<
                 ApplicationListEntry, ApplicationListEntry.ApplicationListEntryBuilder> {
 
     @Override
     public ApplicationListEntry.ApplicationListEntryBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
-        ApplicationList list = new AppListData().someMinimal().build();
+        ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationCode code = new ApplicationCodeTestData().someComplete();
         return ApplicationListEntry.builder()
                 .applicationCode(code)
@@ -23,6 +24,7 @@ public class AppListEntryData
                 .applicationListEntryWording("Wording " + uniqueId)
                 .entryRescheduled(ApplicationListEntryMapper.TRUE_VALUE)
                 .sequenceNumber(Short.MIN_VALUE)
-                .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")));
+                .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")))
+                .entryFeeIds(List.of(new AppListEntryFeeIdTestData().someComplete()));
     }
 }

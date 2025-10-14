@@ -12,7 +12,8 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 /**
- * A parser class that allows parsing of pageable parameters from a custom open api format.
+ * A parser class that allows mapping of pageable parameters to the {@link
+ * org.springframework.data.domain.Pageable}.
  */
 @Component
 @Getter

@@ -1,7 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
+import org.mapstruct.InjectionStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.dto.AppListEntryFeeStatusDto;
 import uk.gov.hmcts.appregister.applicationentry.dto.ApplicationWriteDto;
@@ -10,32 +15,41 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
-@RequiredArgsConstructor
 @Component
-public class AppListEntryFeeStatusMapper {
+@Mapper(
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public abstract class AppListEntryFeeStatusMapper {
 
-    public AppListEntryFeeStatusDto toReadDto(AppListEntryFeeStatus entity) {
-        return new AppListEntryFeeStatusDto(
-                entity.getId(),
-                entity.getAlefsPaymentReference(),
-                FeeStatusType.fromDisplayName(entity.getAlefsFeeStatus()),
-                entity.getAlefsFeeStatusDate(),
-                entity.getAlefsStatusCreationDate(),
-                getAmount(entity),
-                getDescription(entity));
+    @Mapping(target = "paymentReference", source = "alefsPaymentReference")
+    @Mapping(target = "feeStatus", source = "alefsFeeStatus", qualifiedByName = "mapFeeStatus")
+    @Mapping(target = "amount", source = "appListEntry", qualifiedByName = "entryToAmount")
+    @Mapping(
+            target = "feeDescription",
+            source = "appListEntry",
+            qualifiedByName = "statusToDescription")
+    @Mapping(target = "statusDate", source = "alefsFeeStatusDate")
+    @Mapping(target = "creationDate", source = "alefsStatusCreationDate")
+    public abstract AppListEntryFeeStatusDto toReadDto(AppListEntryFeeStatus entity);
+
+    @Named("mapFeeStatus")
+    public FeeStatusType mapFeeStatus(String alefsFeeStatus) {
+        return FeeStatusType.fromDisplayName(alefsFeeStatus);
     }
 
-    private Double getAmount(AppListEntryFeeStatus entity) {
-        Optional<AppListEntryFeeId> doubleOptional =
-                entity.getAppListEntry().getEntryFeeIds().stream().findFirst();
+    @Named("entryToAmount")
+    public Double entryToAmount(ApplicationListEntry entry) {
+        Optional<AppListEntryFeeId> doubleOptional = entry.getEntryFeeIds().stream().findFirst();
         return doubleOptional
                 .map(appListEntryFeeId -> appListEntryFeeId.getFeeId().getAmount())
                 .orElse(null);
     }
 
-    private String getDescription(AppListEntryFeeStatus entity) {
-        Optional<AppListEntryFeeId> doubleOptional =
-                entity.getAppListEntry().getEntryFeeIds().stream().findFirst();
+    @Named("statusToDescription")
+    public String statusToDescription(ApplicationListEntry entity) {
+        Optional<AppListEntryFeeId> doubleOptional = entity.getEntryFeeIds().stream().findFirst();
         return doubleOptional
                 .map(appListEntryFeeId -> appListEntryFeeId.getFeeId().getDescription())
                 .orElse(null);

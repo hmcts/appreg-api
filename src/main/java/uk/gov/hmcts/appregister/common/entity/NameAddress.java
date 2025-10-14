@@ -17,7 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 
 /**
  * Represents a Name and Address entity mapped to the "name_address" table in the database.
@@ -30,8 +30,7 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-// TODO: Readd BaseChangeableEntity when database changed are made
-public class NameAddress extends BaseUnmanagedChangeableEntity implements Accountable {
+public class NameAddress extends BaseChangeableEntity implements Accountable {
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
@@ -112,7 +111,7 @@ public class NameAddress extends BaseUnmanagedChangeableEntity implements Accoun
 
     @Column(name = "dms_id")
     @Size(max = 20)
-    private Long dmsId;
+    private String dmsId;
 
     @Override
     public String getCreatedUser() {

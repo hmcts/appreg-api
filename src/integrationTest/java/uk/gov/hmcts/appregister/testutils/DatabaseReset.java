@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
@@ -34,6 +35,8 @@ public class DatabaseReset {
 
     @Autowired private final DataAuditRepository dataAuditRepository;
 
+    @Autowired private final ApplicationRegisterRepository applicationRegisterRepository;
+
     @Value("${spring.sql.init.schema-locations}")
     private String sqlInitSchema;
 
@@ -41,12 +44,13 @@ public class DatabaseReset {
      * A bit crude but a sequence number that manages the data beyond all the baseline data sequence
      * numbers. This means we can manage data targeted around specific tests.
      */
-    private static final int SEQUENCE_START_VALUE = 321364044;
+    public static final int SEQUENCE_START_VALUE = 321364044;
 
     @Transactional
     public void resetDbData() {
         resetSequences();
-
+        applicationRegisterRepository.deleteAll(
+                applicationRegisterRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationListEntryRepository.deleteAll(
                 applicationListEntryRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationCodeRepository.deleteAll(
@@ -70,7 +74,7 @@ public class DatabaseReset {
                                     + "WHERE sequence_schema = '"
                                     + sqlInitSchema
                                     + "'");
-            final List sequences = query.getResultList();
+            final List<?> sequences = query.getResultList();
             for (Object seqName : sequences) {
                 em.createNativeQuery(
                                 "ALTER SEQUENCE "

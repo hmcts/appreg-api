@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.testutils;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.OffsetDateTime;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,9 +12,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.Changeable;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 
@@ -49,41 +46,14 @@ public abstract class BasePostgresIntegrationTest {
         postgresCommand.start(registry);
     }
 
-    public void expectAccountable(Accountable expected, Accountable actual) {
-        Assertions.assertEquals(expected.getCreatedUser(), actual.getCreatedUser());
-    }
-
-    public void expectVersionable(Versionable expected, Versionable actual) {
-        Assertions.assertEquals(expected.getVersion(), actual.getVersion());
-    }
-
-    public void expectChangeable(Changeable expected, Changeable actual) {
-        Assertions.assertEquals(expected.getChangedBy(), actual.getChangedBy());
-        Assertions.assertTrue(
-                DateUtil.equalsIgnoreMillis(expected.getChangedDate(), actual.getChangedDate()));
-    }
-
-    public void expectAllCommonEntityFields(Object expected, Object actual) {
-        if (expected instanceof Accountable expectedAccountable
-                && actual instanceof Accountable actualAccountable) {
-            expectAccountable(expectedAccountable, actualAccountable);
-        }
-        if (expected instanceof Versionable expectedVersionable
-                && actual instanceof Versionable actualVersionable) {
-            expectVersionable(expectedVersionable, actualVersionable);
-        }
-        if (expected instanceof Changeable expectedChangeable
-                && actual instanceof Changeable actualChangeable) {
-            expectChangeable(expectedChangeable, actualChangeable);
-        }
-    }
-
     protected URL getLocalUrlWithDate(String context, OffsetDateTime date)
             throws MalformedURLException {
-        return new URL("http://localhost:" + port + "/" + context + "?date=" + date.toLocalDate());
+        return URI.create(
+                        "http://localhost:" + port + "/" + context + "?date=" + date.toLocalDate())
+                .toURL();
     }
 
     protected URL getLocalUrl(String context) throws MalformedURLException {
-        return new URL("http://localhost:" + port + "/" + context);
+        return URI.create("http://localhost:" + port + "/" + context).toURL();
     }
 }

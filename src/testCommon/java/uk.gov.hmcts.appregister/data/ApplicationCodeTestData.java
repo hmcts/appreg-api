@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.testutils.data;
+package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 import static uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper.TRUE_VALUE;
@@ -10,10 +10,11 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.testutils.StringUtil;
+import uk.gov.hmcts.appregister.util.StringUtil;
 
 public class ApplicationCodeTestData
-        implements Persistable<ApplicationCode, ApplicationCode.ApplicationCodeBuilder> {
+        implements uk.gov.hmcts.appregister.testutils.data.Persistable<
+                ApplicationCode, ApplicationCode.ApplicationCodeBuilder> {
     @Override
     public ApplicationCode.ApplicationCodeBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
@@ -36,10 +37,5 @@ public class ApplicationCodeTestData
                 .ignore(field(ApplicationCode::getApplicationListEntryList))
                 .withSettings(settings)
                 .create();
-    }
-
-    @Override
-    public ApplicationCode.ApplicationCodeBuilder someMaximal() {
-        return Persistable.super.someMaximal();
     }
 }

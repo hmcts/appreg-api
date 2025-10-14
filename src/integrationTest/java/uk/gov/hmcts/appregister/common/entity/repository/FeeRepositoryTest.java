@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -10,18 +10,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
-import uk.gov.hmcts.appregister.testutils.DateUtil;
-import uk.gov.hmcts.appregister.testutils.data.FeeTestData;
+import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
 public class FeeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private FeeRepository applicationFeeRepository;
-
-    @Autowired private UserProvider loggedInUser;
 
     private static final int BASELINE_TEST_COUNT = 23;
 
@@ -35,17 +31,16 @@ public class FeeRepositoryTest extends BaseRepositoryTest {
         Fee fee = persistance.save(new FeeTestData().someComplete());
 
         // test get
-        Optional<Fee> applicationCodeToAssertAgainst =
-                applicationFeeRepository.findById(fee.getId());
+        Optional<Fee> feeToAssertAgainst = applicationFeeRepository.findById(fee.getId());
 
         // assert that the data that has been retrieved aligns with the data that we have stored
-        expectAllCommonEntityFields(fee, applicationFeeRepository);
-        assertNotNull(applicationCodeToAssertAgainst.get());
-        assertEquals(fee.getAmount(), applicationCodeToAssertAgainst.get().getAmount());
-        assertEquals(fee.getReference(), applicationCodeToAssertAgainst.get().getReference());
-        assertEquals(fee.getDescription(), applicationCodeToAssertAgainst.get().getDescription());
+        expectAllCommonEntityFields(fee, feeToAssertAgainst.get());
+        assertNotNull(feeToAssertAgainst.get());
+        assertEquals(fee.getAmount(), feeToAssertAgainst.get().getAmount());
+        assertEquals(fee.getReference(), feeToAssertAgainst.get().getReference());
+        assertEquals(fee.getDescription(), feeToAssertAgainst.get().getDescription());
         assertTrue(
                 DateUtil.equalsIgnoreMillis(
-                        fee.getStartDate(), applicationCodeToAssertAgainst.get().getStartDate()));
+                        fee.getStartDate(), feeToAssertAgainst.get().getStartDate()));
     }
 }

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,8 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
@@ -42,7 +42,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
         assertThat(reloaded.getStatus()).isEqualTo("OPEN");
-        assertThat(reloaded.getCreatedUser()).isEqualTo(EMAIL);
-        assertThat(reloaded.getChangedBy()).isEqualTo(TID + ":" + OID);
+        assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
+        assertThat(reloaded.getChangedBy())
+                .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
     }
 }
