@@ -38,14 +38,6 @@ get:
       name: includeSummaries
       schema: { type: boolean, default: false }
       description: Include entriesCount and entriesSummary for each list item.
-    - in: query
-      name: summaryLimit
-      schema: { type: integer, minimum: 1 }
-      description: Page size for per-list summaries when includeSummaries=true.
-    - in: query
-      name: summaryOffset
-      schema: { type: integer, minimum: 0, default: 0 }
-      description: Offset for per-list summaries when includeSummaries=true.
   responses:
     "200":
       description: Page of Application Lists

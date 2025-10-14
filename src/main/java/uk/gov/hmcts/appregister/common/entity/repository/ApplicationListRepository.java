@@ -2,7 +2,12 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.lang.NonNull;
+
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 
 /**
@@ -44,4 +49,18 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      *     value
      */
     List<ApplicationList> findByPkGreaterThanEqual(Integer value);
+
+    /**
+     * Find an ApplicationList entity by its UUID.
+     *
+     * @param uuid the UUID of the ApplicationList
+     * @return an Optional containing the ApplicationList if found, or empty if not found
+     */
+    @Query(
+        """
+        SELECT l
+        FROM ApplicationList l
+        WHERE l.uuid = :uuid
+        """)
+    Optional<ApplicationList> findByUuid(UUID uuid);
 }

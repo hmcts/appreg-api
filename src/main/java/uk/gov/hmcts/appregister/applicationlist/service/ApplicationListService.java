@@ -3,6 +3,8 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
+import java.util.UUID;
+
 /**
  * Service interface for managing Application Lists.
  *
@@ -25,4 +27,21 @@ public interface ApplicationListService {
      *     or the associated Court/CJA entity is not found or duplicated
      */
     ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
+
+    /**
+     * Gets a new Application List.
+     *
+     * <p>
+     * This method encapsulates all business logic required to:
+     * <ul>
+     *   <li>Fetch the list metadata and total entry count</li>
+     *   <li>Query a lightweight projection of entry summaries ordered by sequence number</li>
+     * </ul>
+     * The operation is read-only and does not modify any data.
+     * </p>
+     *
+     * @param id the unique identifier of the application list to retrieve
+     * @return a detailed DTO representing the retrieved application list
+     */
+    ApplicationListGetDetailDto get(UUID id, Boolean includeSummaries);
 }

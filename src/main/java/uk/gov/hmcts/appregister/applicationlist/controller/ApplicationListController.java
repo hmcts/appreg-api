@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.controller;
 
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -11,7 +12,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
@@ -74,6 +77,32 @@ public class ApplicationListController implements ApplicationListsApi {
                 .contentType(VND_JSON_V1)
                 .headers(h -> h.setLocation(locationOf(created.getId())))
                 .body(created);
+    }
+
+    /**
+     * Gets a new Application List by id.
+     *
+     * <p>This endpoint returns both the list metadata and a paginated summary of its entries.
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id the unique identifier of the application list
+     * @return {@link ResponseEntity} containing the application list details
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
+        @PathVariable("id") UUID id,
+        @Valid @RequestParam(value = "includeSummaries", required = false, defaultValue = "false") Boolean includeSummaries) {
+
+        ApplicationListGetDetailDto retrieved = service.get(id, includeSummaries);
+
+        return ResponseEntity.status(OK)
+            .varyBy("Accept")
+            .contentType(VND_JSON_V1)
+            .body(retrieved);
     }
 
     /**

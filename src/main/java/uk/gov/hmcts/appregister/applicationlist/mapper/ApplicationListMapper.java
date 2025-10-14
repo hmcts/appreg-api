@@ -109,5 +109,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationHours", source = "appList.durationHours")
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
+    @Mapping(target = "entriesCount", ignore = true)
+    @Mapping(target = "entriesSummary", ignore = true)
     ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
 }
