@@ -12,7 +12,6 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ApplicationListMapper {
@@ -32,7 +31,9 @@ public interface ApplicationListMapper {
      */
     default LocalTime toTime(String time) {
         // DTO has @NotNull + @Pattern, but this keeps things defensive
-        if (time == null || time.isBlank()) return null;
+        if (time == null || time.isBlank()) {
+            return null;
+        }
         return LocalTime.parse(time, TIME_FORMAT);
     }
 

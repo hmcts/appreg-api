@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -45,7 +44,7 @@ public class ApplicationListMapperTest {
 
         @Test
         void emitsHHmmssWhenSecondsPresent() {
-            LocalTime lt = LocalTime.of(8 ,5, 07);
+            LocalTime lt = LocalTime.of(8, 5, 07);
             assertEquals("08:05:07", mapper.toTimeString(lt));
         }
     }
@@ -88,7 +87,7 @@ public class ApplicationListMapperTest {
             assertEquals("Morning session", entity.getDescription());
             assertEquals("OPEN", entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
-            assertEquals(LocalTime.of( 10, 30, 0), entity.getTime());
+            assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
             assertEquals(45, entity.getDurationMinutes());
         }

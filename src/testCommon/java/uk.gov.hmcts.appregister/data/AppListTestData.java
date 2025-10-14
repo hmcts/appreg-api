@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.data;
 import static org.instancio.Select.field;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 import org.instancio.Instancio;
@@ -13,7 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 
 public class AppListTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<
-        ApplicationList, ApplicationList.ApplicationListBuilder> {
+                ApplicationList, ApplicationList.ApplicationListBuilder> {
     @Override
     public ApplicationList.ApplicationListBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
