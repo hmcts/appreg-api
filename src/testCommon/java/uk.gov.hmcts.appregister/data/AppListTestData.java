@@ -2,7 +2,9 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -11,14 +13,14 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 
 public class AppListTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<
-                ApplicationList, ApplicationList.ApplicationListBuilder> {
+        ApplicationList, ApplicationList.ApplicationListBuilder> {
     @Override
     public ApplicationList.ApplicationListBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
         return ApplicationList.builder()
                 .description("Description " + uniqueId)
-                .date(LocalDateTime.now())
-                .time(LocalDateTime.now())
+                .date(LocalDate.now())
+                .time(LocalTime.now())
                 .cja(new CriminalJusticeTestData().someMinimal().build());
     }
 
