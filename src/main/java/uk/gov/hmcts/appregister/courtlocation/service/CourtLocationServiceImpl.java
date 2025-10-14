@@ -64,7 +64,8 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
-                    final List<NationalCourtHouse> rows = repository.findActiveCourt(code, date);
+                    final List<NationalCourtHouse> rows =
+                            repository.findActiveCourtsWithDate(code, date);
 
                     if (rows.isEmpty()) {
                         throw new AppRegistryException(

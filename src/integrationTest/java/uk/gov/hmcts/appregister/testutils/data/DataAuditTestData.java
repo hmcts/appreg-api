@@ -6,7 +6,7 @@ import java.util.UUID;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.testutils.StringUtil;
 
-public class DataAuditTestData implements Persistable<DataAudit.DataAuditBuilder> {
+public class DataAuditTestData implements Persistable<DataAudit, DataAudit.DataAuditBuilder> {
 
     @Override
     public DataAudit.DataAuditBuilder someMinimal() {

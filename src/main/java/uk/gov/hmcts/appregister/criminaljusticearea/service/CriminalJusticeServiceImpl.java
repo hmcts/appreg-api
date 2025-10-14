@@ -41,8 +41,8 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                     // if empty throw an exception
                     if (criminalJusticeAreaList.isEmpty()) {
                         throw new AppRegistryException(
-                                CriminalJusticeAreaError.CODE_NOT_FOUND,
-                                " No code found for code %s".formatted(code));
+                                CriminalJusticeAreaError.CJA_NOT_FOUND,
+                                " No Criminal Justice Area found for code %s".formatted(code));
                     } else {
                         if (criminalJusticeAreaList.size() > 1) {
                             log.warn(

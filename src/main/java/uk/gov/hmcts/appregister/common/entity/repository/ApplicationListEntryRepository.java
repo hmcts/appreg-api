@@ -26,7 +26,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param userId The ID of the user who owns the list
      * @return The application, if found and accessible
      */
-    Optional<ApplicationListEntry> findByIdAndApplicationListIdAndCreatedUser(
+    Optional<ApplicationListEntry> findByIdAndApplicationListPkAndCreatedUser(
             Long id, Long listId, String userId);
 
     /**
@@ -47,7 +47,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param userId The ID of the user who must own the associated lists
      * @return A list of matching applications that the user is authorized to access
      */
-    List<ApplicationListEntry> findByApplicationListIdAndCreatedUser(Long ids, String userId);
+    List<ApplicationListEntry> findByApplicationListPkAndCreatedUser(Long ids, String userId);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.

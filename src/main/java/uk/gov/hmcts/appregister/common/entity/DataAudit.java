@@ -18,7 +18,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 
 /**
@@ -33,7 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener
 @Getter
 @Setter
 @EntityListeners(PreCreateUpdateEntityListener.class)
-public class DataAudit implements Accountable, Changeable {
+public class DataAudit implements Accountable {
     @Id
     @Column(name = "data_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
@@ -66,7 +65,7 @@ public class DataAudit implements Accountable, Changeable {
 
     @Column(name = "user_id")
     @Size(max = 32)
-    private String createdUser;
+    private String userId;
 
     @Column(name = "link")
     @Size(max = 100)
@@ -106,15 +105,5 @@ public class DataAudit implements Accountable, Changeable {
 
     @Column(name = "user_name")
     @Size(max = 250)
-    private String userName;
-
-    @Override
-    public BigDecimal getChangedBy() {
-        return new BigDecimal(0L);
-    }
-
-    @Override
-    public void setChangedBy(BigDecimal changedBy) {
-        // no implementation required. Entity does not track user by id.
-    }
+    private String createdUser;
 }

@@ -45,7 +45,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     @Override
     public BulkUploadResponseDto uploadCsv(Long listId, MultipartFile file) {
-        log.info("Bulk upload started for listId={} by user={}", listId, userProvider.getUser());
+        log.info("Bulk upload started for listId={} by user={}", listId, userProvider.getUserId());
         ApplicationList list = findList(listId);
 
         List<CsvRowDto> rows = csvParser.parse(file);
@@ -60,7 +60,8 @@ public class BulkUploadServiceImpl implements BulkUploadService {
                 StandardApplicant applicant = resolveStandardApplicant(row.standardApplicantCode());
                 ApplicationCode applicationCode = resolveApplicationCode(row.applicationCode());
                 ApplicationListEntry entry =
-                        mapToEntity(row, list, applicant, applicationCode, userProvider.getUser());
+                        mapToEntity(
+                                row, list, applicant, applicationCode, userProvider.getUserId());
                 saveService.saveApplication(entry);
                 validEntries++;
 
@@ -81,7 +82,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     private ApplicationList findList(Long listId) {
         return listRepository
-                .findByIdAndCreatedUser(listId, userProvider.getUser())
+                .findByPkAndCreatedUser(listId, userProvider.getUserId())
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

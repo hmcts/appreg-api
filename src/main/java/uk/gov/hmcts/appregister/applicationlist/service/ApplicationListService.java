@@ -1,20 +1,28 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
-import java.util.List;
-import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListDto;
-import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListWriteDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
 /**
- * Service interface for managing application lists.
+ * Service interface for managing Application Lists.
+ *
+ * <p>This service defines the contract for creating and retrieving application lists within the
+ * registry system. Implementations must ensure validation, persistence, and appropriate mapping of
+ * domain entities to DTOs.
  */
 public interface ApplicationListService {
-    List<ApplicationListDto> getAll();
 
-    ApplicationListDto getByIdForUser(Long id);
-
-    ApplicationListDto create(ApplicationListWriteDto dto);
-
-    ApplicationListDto update(Long id, ApplicationListWriteDto dto);
-
-    void delete(Long id);
+    /**
+     * Creates a new Application List.
+     *
+     * <p>The input DTO is validated and then persisted. Depending on the presence of a Court
+     * Location Code or a Criminal Justice Area (CJA) Code, the Application List is associated with
+     * either a {@code NationalCourtHouse} or a {@code CriminalJusticeArea}.
+     *
+     * @param dto the data transfer object containing details for the application list to create
+     * @return a detailed DTO representing the newly created application list
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
+     *     or the associated Court/CJA entity is not found or duplicated
+     */
+    ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
 }

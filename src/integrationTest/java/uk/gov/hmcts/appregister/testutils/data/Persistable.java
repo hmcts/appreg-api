@@ -9,7 +9,7 @@ package uk.gov.hmcts.appregister.testutils.data;
  *
  * @param <T> the type of the entity
  */
-public interface Persistable<T> {
+public interface Persistable<T, T1> {
 
     /**
      * Return an entity that has only its non-null fields populated. All other fields should be
@@ -23,7 +23,9 @@ public interface Persistable<T> {
      *
      * @return a minimally persistent instance of M
      */
-    T someMinimal();
+    default T1 someMinimal() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
     /**
      * Return an entity that has all of its fields populated.
@@ -36,7 +38,17 @@ public interface Persistable<T> {
      *
      * @return a maximally persistent instance of M
      */
-    default T someMaximal() {
+    default T1 someMaximal() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Return a bean entity that has all of its fields populated. Typically achieved using {@link
+     * org.instancio.Instancio}
+     *
+     * @return A complete maximal object bean
+     */
+    default T someComplete() {
         throw new UnsupportedOperationException("Not implemented");
     }
 }

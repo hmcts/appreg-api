@@ -100,7 +100,7 @@ class CriminalJusticeAreaServiceImplTest {
 
         AppRegistryException exception =
                 Assertions.assertThrows(AppRegistryException.class, () -> service.findByCode(code));
-        Assertions.assertEquals(CriminalJusticeAreaError.CODE_NOT_FOUND, exception.getCode());
+        Assertions.assertEquals(CriminalJusticeAreaError.CJA_NOT_FOUND, exception.getCode());
         verify(auditOperationService)
                 .processAudit(
                         eq(AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());

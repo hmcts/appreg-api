@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 public enum CourtLocationError implements ErrorCodeEnum {
 
     /**
-     * No active Court Location was found for the requested code/date.
+     * No active Court Location was found for the requested code.
      *
      * <p>HTTP 404 Not Found <br>
      * Business code: CL-1

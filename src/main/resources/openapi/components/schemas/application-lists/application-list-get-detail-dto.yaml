@@ -25,8 +25,9 @@ properties:
   time:
     type: string
     format: time
-    description: The time of day at which the Application List is scheduled.
-    example: "10:30:00"
+    description: The time of day at which the Application List is scheduled, seconds are optional.
+    example: "10:30:00, 10:30"
+    pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
 
   description:
     type: string
@@ -36,16 +37,25 @@ properties:
   status:
     $ref: './application-list-status.yaml'
 
-  courtLocation:
-    $ref: '../court-locations/court-location-get-detail-dto.yaml'
+  courtCode:
+    type: string
+    description: Code that identifies the Court Location.
+    example: "LOC123"
+
+  courtName:
+    type: string
+    description: Name that identifies the Court Location.
+    example: "Bath Magistrates Court"
+
+  cjaCode:
+    type: string
+    description: Criminal Justice Area code.
+    example: "CJA001"
 
   otherLocationDescription:
     type: string
     description: Free-text location if not using a standard court.
     example: "Temporary Courtroom at Town Hall"
-
-  criminalJusticeArea:
-    $ref: '../criminal-justice-areas/criminal-justice-area-get-dto.yaml'
 
   durationHours:
     type: integer

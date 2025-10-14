@@ -26,8 +26,9 @@ properties:
   time:
     type: string
     format: time
-    description: The time of day at which the Application List is scheduled.
-    example: "10:30:00"
+    description: The time of day at which the Application List is scheduled, seconds are optional.
+    example: "10:30:00, 10:30"
+    pattern: '^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$'
 
   location:
     type: string

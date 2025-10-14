@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.common.security;
 
-import com.nimbusds.jwt.JWTClaimNames;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.JwtError;
 
 /**
  * Represents the logged-in user in the form of JWT token.
@@ -20,45 +21,43 @@ import org.springframework.stereotype.Component;
 public class UserProvider {
 
     private static final String ROLES_CLAIM = "roles";
+    private static final String TENET_ID_CLAIM = "tid";
+    private static final String OBJECT_ID_CLAIM = "oid";
+    private static final String EMAIL_CLAIM = "preferred_username";
 
     public String[] getRoles() {
-        if (getJwt() == null) {
-            return new String[0];
-        }
-
         return getJwt().getClaimAsStringList(ROLES_CLAIM).toArray(new String[0]);
     }
 
-    /**
-     * Gets the user in the best way possible.
-     *
-     * @return The user
-     */
-    public String getUser() {
-        if (getJwt() == null) {
-            return "unknown";
+    public String getUserId() {
+        Jwt jwt = getJwt();
+        String tid = jwt.getClaimAsString(TENET_ID_CLAIM);
+        String oid = jwt.getClaimAsString(OBJECT_ID_CLAIM);
+
+        if (tid == null || oid == null) {
+            throw new AppRegistryException(
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
-        return getJwt().getClaimAsString(JWTClaimNames.SUBJECT);
+
+        return tid + ":" + oid;
     }
 
-    /**
-     * Returns a number that uniquely identifies the user.
-     *
-     * @return The user number
-     */
-    // TODO: We need a number to insert into the database. Not sure where we get the number from
-    public Long getUserNumber() {
-        if (getJwt() == null) {
-            return 0L;
+    public String getEmail() {
+        Jwt jwt = getJwt();
+        String email = jwt.getClaimAsString(EMAIL_CLAIM);
+
+        if (email == null) {
+            throw new AppRegistryException(
+                    JwtError.INVALID_TOKEN, "The token was malformed or invalid");
         }
-        // TODO: What is the users number
-        return 0L;
+
+        return email;
     }
 
     /**
      * gets the token from thread local using {@link} SecurityContextHolder}.
      *
-     * @return The jwt or null if not found
+     * @return The jwt or an exception is thrown if null
      */
     private Jwt getJwt() {
         if (SecurityContextHolder.getContext().getAuthentication() != null
@@ -66,6 +65,7 @@ public class UserProvider {
                         instanceof Jwt jwt) {
             return jwt;
         }
-        return null;
+
+        throw new AppRegistryException(JwtError.INVALID_TOKEN, "The token was not found");
     }
 }

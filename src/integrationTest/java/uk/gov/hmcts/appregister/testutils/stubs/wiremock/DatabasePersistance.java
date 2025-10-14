@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
@@ -80,29 +79,10 @@ public class DatabasePersistance {
             save(entry.getApplicationCode());
         }
 
-        if (entry.getApplicationList() != null && entry.getApplicationList().getId() == null) {
+        if (entry.getApplicationList() != null && entry.getApplicationList().getUuid() == null) {
             applicationListRepository.save(entry.getApplicationList());
         }
 
         return applicationListEntryRepository.save(entry);
-    }
-
-    @Transactional
-    public ApplicationList save(ApplicationList entry) {
-        ApplicationList savedEntry = applicationListRepository.save(entry);
-
-        // save all entries
-        if (savedEntry.getEntries() != null) {
-            savedEntry
-                    .getEntries()
-                    .forEach(
-                            e -> {
-                                if (savedEntry.getId() == null) {
-                                    applicationListEntryRepository.save(e);
-                                }
-                            });
-        }
-
-        return entry;
     }
 }

@@ -8,19 +8,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
-import java.util.List;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
@@ -43,55 +43,53 @@ public class ApplicationList extends BaseChangeableEntity implements Accountable
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
     @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    private Long id;
+    private Long pk;
+
+    @Generated(event = EventType.INSERT)
+    @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
+    private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
     @Size(max = 6)
     private String status;
 
-    @Column(name = "application_list_date", nullable = false)
-    private OffsetDateTime date;
-
-    @Column(name = "application_list_time", nullable = false)
-    private OffsetDateTime time;
-
-    @Column(name = "courthouse_code")
-    @Size(max = 10)
-    private String courthouseCode;
-
-    @Column(name = "other_courthouse")
+    @Column(name = "list_description", nullable = false)
     @Size(max = 200)
     private String description;
 
-    @Column(name = "list_description", nullable = false)
-    @Size(max = 200)
-    private String listDescription;
-
-    @Column(name = "user_name")
-    @Size(max = 250)
-    private String createdUser;
-
     @Column(name = "courthouse_name")
     @Size(max = 200)
-    private String courthouseName;
+    private String courtName;
 
-    @Column(name = "version")
-    @Version
-    private Long version;
-
-    @Column(name = "duration_hour")
-    private short durationHour;
-
-    @Column(name = "duration_minute")
-    private short durationMinute;
+    @Column(name = "courthouse_code")
+    @Size(max = 10)
+    private String courtCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cja_cja_id")
     private CriminalJusticeArea cja;
 
-    @OneToMany(mappedBy = "applicationList")
-    private List<ApplicationListEntry> entries;
+    @Column(name = "other_courthouse")
+    @Size(max = 200)
+    private String otherLocation;
 
-    @OneToMany(mappedBy = "applicationList")
-    private List<ApplicationRegister> registers;
+    @Column(name = "application_list_date", nullable = false)
+    private LocalDateTime date;
+
+    @Column(name = "application_list_time", nullable = false)
+    private LocalDateTime time;
+
+    @Column(name = "duration_hour")
+    private short durationHours;
+
+    @Column(name = "duration_minute")
+    private short durationMinutes;
+
+    @Column(name = "user_name")
+    @Size(max = 250)
+    private String createdUser;
+
+    @Column(name = "version")
+    @Version
+    private Long version;
 }

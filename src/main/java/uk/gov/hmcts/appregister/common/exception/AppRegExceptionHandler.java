@@ -1,24 +1,16 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-/**
- * Defines a catch all for all exceptions in the system and converts them to ProblemDetails (RFC
- * 7807).
- */
-@ControllerAdvice
-@EnableAutoConfiguration(exclude = ErrorMvcAutoConfiguration.class)
 @Slf4j
+@RestControllerAdvice
 public class AppRegExceptionHandler {
 
-    @ExceptionHandler
-    @SuppressWarnings({"java:S2259"})
+    @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
         // gets the core exception code that we used to apply the application specific code

@@ -2,10 +2,8 @@ package uk.gov.hmcts.appregister.common.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,12 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
+import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
 import uk.gov.hmcts.appregister.testutils.data.ApplicationCodeTestData;
 
 @Slf4j
-public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
+public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
@@ -36,9 +34,10 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
         long count = applicationCodeRepository.count();
         Assertions.assertEquals(TOTAL_APP_CODES_COUNT, count);
 
+        ApplicationCode codeToSave = new ApplicationCodeTestData().someComplete();
+
         // test save
-        ApplicationCode code =
-                persistance.save(new ApplicationCodeTestData().someMinimal().build());
+        ApplicationCode code = persistance.save(codeToSave);
 
         // assert that the save has occurred
         count = applicationCodeRepository.count();
@@ -63,16 +62,14 @@ public class ApplicationCodeRepositoryTest extends BasePostgresIntegrationTest {
         assertEquals(
                 code.getBulkRespondentAllowed(),
                 applicationCodeToAssertAgainst.get().getBulkRespondentAllowed());
-        assertEquals(loggedInUser.getUser(), applicationCodeToAssertAgainst.get().getCreatedUser());
-        assertEquals(
-                new BigDecimal(loggedInUser.getUserNumber()),
-                applicationCodeToAssertAgainst.get().getChangedBy());
+        assertEquals(code.getCreatedUser(), applicationCodeToAssertAgainst.get().getCreatedUser());
+        assertEquals(code.getChangedBy(), applicationCodeToAssertAgainst.get().getChangedBy());
         assertNotNull(applicationCodeToAssertAgainst.get().getChangedDate());
         assertEquals(0, applicationCodeToAssertAgainst.get().getVersion());
-        assertNull(
+        assertEquals(
                 code.getDestinationEmail1(),
                 applicationCodeToAssertAgainst.get().getDestinationEmail1());
-        assertNull(
+        assertEquals(
                 code.getDestinationEmail2(),
                 applicationCodeToAssertAgainst.get().getDestinationEmail2());
     }

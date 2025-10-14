@@ -47,8 +47,35 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
           AND nch.startDate <= :date
           AND nch.endDate IS NULL
         """)
-    List<NationalCourtHouse> findActiveCourt(
+    List<NationalCourtHouse> findActiveCourtsWithDate(
             @Param("code") String code, @Param("date") LocalDate date);
+
+    /**
+     * Find an active Court Location of type CHOA by code.
+     *
+     * <p>Matches records where:
+     *
+     * <ul>
+     *   <li>{@code courtType} = CHOA
+     *   <li>{@code courtLocationCode} equals {@code code}, case-insensitive
+     *   <li>{@code endDate} is {@code null} (still active)
+     * </ul>
+     *
+     * <p>This query may return zero, one, or multiple results. Service layer is responsible for
+     * enforcing uniqueness.
+     *
+     * @param code business identifier for the Court Location
+     * @return list of matching active courts
+     */
+    @Query(
+            """
+    SELECT nch
+    FROM NationalCourtHouse nch
+    WHERE nch.courtType = 'CHOA'
+      AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
+      AND nch.endDate IS NULL
+        """)
+    List<NationalCourtHouse> findActiveCourts(@Param("code") String code);
 
     /**
      * Retrieve a paginated list of active Court Locations of type CHOA.

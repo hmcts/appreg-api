@@ -21,20 +21,20 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
     /**
      * Find an ApplicationList entity by its ID and associated user.
      *
-     * @param id the ID of the ApplicationList
+     * @param primaryKey the PK of the ApplicationList
      * @param userId the ID of the user
      * @return an Optional containing the ApplicationList if found, or empty if not found
      */
-    Optional<ApplicationList> findByIdAndCreatedUser(Long id, String userId);
+    Optional<ApplicationList> findByPkAndCreatedUser(Long primaryKey, String userId);
 
     /**
      * Check if an ApplicationList entity exists by its ID and associated user.
      *
-     * @param id the ID of the ApplicationList
+     * @param primaryKey the PK of the ApplicationList
      * @param userId the ID of the user
      * @return true if the ApplicationList exists, false otherwise
      */
-    boolean existsByIdAndCreatedUser(Long id, String userId);
+    boolean existsByPkAndCreatedUser(Long primaryKey, String userId);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
@@ -43,5 +43,5 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      * @return a list of ApplicationCode entities with IDs greater than or equal to the specified
      *     value
      */
-    List<ApplicationList> findByIdGreaterThanEqual(Integer value);
+    List<ApplicationList> findByPkGreaterThanEqual(Integer value);
 }

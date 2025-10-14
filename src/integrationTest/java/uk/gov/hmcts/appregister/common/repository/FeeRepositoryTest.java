@@ -12,12 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
+import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.DateUtil;
 import uk.gov.hmcts.appregister.testutils.data.FeeTestData;
 
 @Slf4j
-public class FeeRepositoryTest extends BasePostgresIntegrationTest {
+public class FeeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private FeeRepository applicationFeeRepository;
 
@@ -32,7 +32,7 @@ public class FeeRepositoryTest extends BasePostgresIntegrationTest {
         Assertions.assertEquals(BASELINE_TEST_COUNT, count);
 
         // test save
-        Fee fee = persistance.save(new FeeTestData().someMinimal().build());
+        Fee fee = persistance.save(new FeeTestData().someComplete());
 
         // test get
         Optional<Fee> applicationCodeToAssertAgainst =

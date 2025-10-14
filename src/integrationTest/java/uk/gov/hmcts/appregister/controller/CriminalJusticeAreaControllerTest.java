@@ -100,7 +100,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         // assert the response
         responseSpec.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
-                CriminalJusticeAreaError.CODE_NOT_FOUND.getCode(), responseSpec);
+                CriminalJusticeAreaError.CJA_NOT_FOUND.getCode(), responseSpec);
 
         // assert the audit log message
         AuditAssertUtil.assertStart(

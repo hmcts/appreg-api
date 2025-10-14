@@ -1,102 +1,91 @@
 package uk.gov.hmcts.appregister.applicationlist.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import java.util.List;
+import static org.springframework.http.HttpStatus.CREATED;
+
+import jakarta.validation.Valid;
+import java.net.URI;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListDto;
-import uk.gov.hmcts.appregister.applicationlist.dto.ApplicationListWriteDto;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
+import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
+/**
+ * REST controller for managing Application Lists.
+ *
+ * <p>This controller provides endpoints for creating and retrieving application lists. It leverages
+ * {@link ApplicationListService} for business logic and ensures request validation and
+ * authorization via Spring Security annotations.
+ *
+ * <p>Responses are served in versioned JSON media type: {@code
+ * application/vnd.hmcts.appreg.v1+json}. Annotations:
+ *
+ * <ul>
+ *   <li>{@code @RestController} - Marks this as a REST controller.
+ *   <li>{@code @Validated} - Enables validation on method parameters.
+ *   <li>{@code @RequiredArgsConstructor} - Generates a constructor for final fields.
+ *   <li>{@code @Slf4j} - Provides logging support.
+ * </ul>
+ */
 @RestController
-@RequestMapping("/application-lists")
+@Validated
 @RequiredArgsConstructor
-public class ApplicationListController {
+@Slf4j
+public class ApplicationListController implements ApplicationListsApi {
 
-    private static final Logger log = LoggerFactory.getLogger(ApplicationListController.class);
-    private final ApplicationListService listService;
+    private static final MediaType VND_JSON_V1 =
+            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
 
-    @Operation(
-            summary = "Get all application lists for the authenticated user",
-            operationId = "getAllApplicationLists")
-    @ApiResponse(responseCode = "200", description = "Application lists successfully retrieved")
-    @GetMapping
-    public ResponseEntity<List<ApplicationListDto>> getAll(@AuthenticationPrincipal Jwt jwt) {
-        log.info("Getting all application lists for user: {}", jwt.getClaimAsString("sub"));
-        return ResponseEntity.ok(listService.getAll());
+    private final ApplicationListService service;
+
+    /**
+     * Creates a new Application List.
+     *
+     * <p>This endpoint persists the provided {@link ApplicationListCreateDto} and returns the
+     * created entity as {@link ApplicationListGetDetailDto}. The response includes a {@code
+     * Location} header pointing to the newly created resource URI. Security:
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param applicationListCreateDto the request payload containing application list details
+     * @return {@link ResponseEntity} containing the created application list details
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> createApplicationList(
+            @Valid @RequestBody ApplicationListCreateDto applicationListCreateDto) {
+
+        ApplicationListGetDetailDto created = service.create(applicationListCreateDto);
+
+        return ResponseEntity.status(CREATED)
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(created.getId())))
+                .body(created);
     }
 
-    @Operation(
-            summary = "Get a single application list by ID for the authenticated user",
-            operationId = "getApplicationListById")
-    @ApiResponse(responseCode = "200", description = "Application list found")
-    @ApiResponse(responseCode = "404", description = "Application list not found")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApplicationListDto> getById(
-            @PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        log.info(
-                "Getting application list with id: {}, for user: {}",
-                id,
-                jwt.getClaimAsString("sub"));
-        return ResponseEntity.ok(listService.getByIdForUser(id));
-    }
-
-    @Operation(
-            summary = "Create a new application list for the authenticated user",
-            operationId = "createApplicationList")
-    @ApiResponse(responseCode = "201", description = "Application list created successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid input")
-    @PostMapping
-    public ResponseEntity<ApplicationListDto> create(
-            @RequestBody ApplicationListWriteDto listDto, @AuthenticationPrincipal Jwt jwt) {
-        log.info("Creating new application list for user: {}", jwt.getClaimAsString("sub"));
-        ApplicationListDto created = listService.create(listDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    @Operation(
-            summary = "Update an existing application list for the authenticated user",
-            operationId = "updateApplicationList")
-    @ApiResponse(responseCode = "200", description = "Application list updated successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid input")
-    @ApiResponse(responseCode = "404", description = "Application list not found")
-    @PutMapping("/{id}")
-    public ResponseEntity<ApplicationListDto> update(
-            @PathVariable Long id,
-            @RequestBody ApplicationListWriteDto listDto,
-            @AuthenticationPrincipal Jwt jwt) {
-        log.info(
-                "Updating application list with id: {}, for user: {}",
-                id,
-                jwt.getClaimAsString("sub"));
-        ApplicationListDto updated = listService.update(id, listDto);
-        return ResponseEntity.ok(updated);
-    }
-
-    @Operation(summary = "Delete an application list by ID", operationId = "deleteApplicationList")
-    @ApiResponse(responseCode = "204", description = "Application list deleted successfully")
-    @ApiResponse(responseCode = "404", description = "Application list not found")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
-        log.info(
-                "Deleting application list with id: {}, for user: {}",
-                id,
-                jwt.getClaimAsString("sub"));
-        listService.delete(id);
-        return ResponseEntity.noContent().build();
+    /**
+     * Builds the resource location URI for a given Application List ID.
+     *
+     * @param id the unique identifier of the Application List
+     * @return a {@link URI} pointing to the resource location
+     */
+    private static URI locationOf(UUID id) {
+        return ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(id)
+                .toUri();
     }
 }

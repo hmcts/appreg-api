@@ -12,7 +12,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -63,7 +62,7 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     private Long version;
 
     @Column(name = "alefs_changed_by", nullable = false)
-    private BigDecimal changedBy;
+    private String changedBy;
 
     @Column(name = "fee_changed_date", nullable = false)
     private OffsetDateTime changedDate;

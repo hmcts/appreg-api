@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,8 +17,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
+import uk.gov.hmcts.appregister.common.entity.base.UnmanagedChangeable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -34,7 +33,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Fee implements Accountable, Changeable, Versionable {
+public class Fee implements Accountable, UnmanagedChangeable, Versionable {
 
     @Id
     @Column(name = "fee_id", nullable = false, updatable = false)
@@ -63,7 +62,7 @@ public class Fee implements Accountable, Changeable, Versionable {
     private Long version;
 
     @Column(name = "fee_changed_by", nullable = false)
-    private BigDecimal changedBy;
+    private Long changedBy;
 
     @Column(name = "fee_changed_date", nullable = false)
     private OffsetDateTime changedDate;

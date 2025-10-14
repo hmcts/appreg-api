@@ -312,6 +312,7 @@ dependencies {
   testImplementation 'io.github.hakky54:logcaptor:2.12.1'
 
   testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.2.1'
+  testImplementation 'org.instancio:instancio-junit:5.5.1'
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
 
   // Updated Third-Party Dependencies
@@ -394,6 +395,10 @@ openApiGenerate {
             additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
             openApiNullable                     : "true"
     ]
+}
+
+openApiValidate {
+  inputSpec = file('src/main/resources/openapi/openapi.yaml').toURI().toString()
 }
 
 processResources.dependsOn tasks.openApiGenerate

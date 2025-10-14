@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.base;
 
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
@@ -42,15 +41,15 @@ public class PreCreateUpdateEntityListener {
     }
 
     void updateCreatedBy(Object object) {
-        if (object instanceof Accountable entity) {
-            entity.setCreatedUser(userIdentity.getUser());
+        if (!(object instanceof UnmanagedChangeable) && object instanceof Accountable entity) {
+            entity.setCreatedUser(userIdentity.getEmail());
         }
     }
 
     void updateModifiedBy(Object object) {
-        if (object instanceof Changeable entity) {
+        if (!(object instanceof UnmanagedChangeable) && object instanceof Changeable entity) {
             entity.setChangedDate(OffsetDateTime.now(clock));
-            entity.setChangedBy(new BigDecimal(userIdentity.getUserNumber()));
+            entity.setChangedBy(userIdentity.getUserId());
         }
     }
 }

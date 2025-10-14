@@ -69,7 +69,7 @@ public class CourtLocationServiceImplTest {
         entity.setStartDate(LocalDate.parse("2020-01-01"));
         // endDate is being left as null => still active
 
-        when(repository.findActiveCourt(code, date)).thenReturn(List.of(entity));
+        when(repository.findActiveCourtsWithDate(code, date)).thenReturn(List.of(entity));
 
         CourtLocationGetDetailDto dto = service.findByCodeAndDate(code, date);
 
@@ -91,7 +91,7 @@ public class CourtLocationServiceImplTest {
         String code = "MISSING";
         LocalDate date = LocalDate.parse("2025-01-01");
 
-        when(repository.findActiveCourt(code, date)).thenReturn(List.of());
+        when(repository.findActiveCourtsWithDate(code, date)).thenReturn(List.of());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -114,7 +114,8 @@ public class CourtLocationServiceImplTest {
 
         var courtHouse1 = new NationalCourtHouse();
         var courtHouse2 = new NationalCourtHouse();
-        when(repository.findActiveCourt(code, date)).thenReturn(List.of(courtHouse1, courtHouse2));
+        when(repository.findActiveCourtsWithDate(code, date))
+                .thenReturn(List.of(courtHouse1, courtHouse2));
 
         AppRegistryException ex =
                 Assertions.assertThrows(

@@ -29,7 +29,7 @@ public class ApplicationActionsServiceImpl implements ApplicationActionsService 
     public void moveApplications(List<Long> applicationIds, Long targetListId) {
         List<ApplicationListEntry> applications =
                 applicationListEntryRepository.findByIdInAndCreatedUser(
-                        applicationIds, userProvider.getUser());
+                        applicationIds, userProvider.getUserId());
 
         if (applications.size() != applicationIds.size()) {
             throw new ResponseStatusException(
@@ -40,7 +40,7 @@ public class ApplicationActionsServiceImpl implements ApplicationActionsService 
         // TODO: Should we all user to create a new list if the target list doesn't exist?
         ApplicationList targetList =
                 applicationListRepository
-                        .findByIdAndCreatedUser(targetListId, userProvider.getUser())
+                        .findByPkAndCreatedUser(targetListId, userProvider.getUserId())
                         .orElseThrow(
                                 () ->
                                         new ResponseStatusException(
