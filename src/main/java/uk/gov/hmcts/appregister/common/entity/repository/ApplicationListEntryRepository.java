@@ -3,7 +3,9 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
     /**
@@ -55,4 +57,39 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
+
+    /**
+     * Retrieves a lightweight, paginated list of entry summaries for a given application list.
+     *
+     * @param id the ID of the ApplicationList
+     * @return an Optional containing the ApplicationListEntrySummaryProjection if found, or empty
+     *     if not found
+     */
+    @Query(
+            """
+            SELECT
+                ale.accountNumber AS accountNumber,
+                COALESCE(ana.name, sa.name) AS applicant,
+                rna.name AS respondent,
+                rna.postcode AS postCode,
+                ac.title AS applicationTitle,
+                CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
+                rc.resultCode AS result
+            FROM ApplicationListEntry ale
+            LEFT JOIN ale.anamedaddress ana
+            LEFT JOIN ale.standardApplicant sa
+            LEFT JOIN ale.rnameaddress rna
+            INNER JOIN ale.applicationCode ac
+            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                AND aler.changedBy = (
+                    SELECT MAX(sub.changedBy)
+                    FROM AppListEntryResolution sub
+                    WHERE sub.applicationList = ale
+                )
+            JOIN aler.resolutionCode rc
+            WHERE ale.applicationList.id = :id
+            ORDER BY ale.sequenceNumber ASC
+            LIMIT :limit OFFSET :offset
+            """)
+    Optional<ApplicationListEntrySummaryProjection> findById(Long id, int limit, int offset);
 }

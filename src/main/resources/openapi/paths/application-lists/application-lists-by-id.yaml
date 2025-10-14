@@ -4,6 +4,18 @@ parameters:
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
+  - in: query
+    name: includeSummaries
+    schema: { type: boolean, default: false }
+    description: Include entriesCount and entriesSummary for the list item.
+  - in: query
+    name: summaryLimit
+    schema: { type: integer, minimum: 1, maximum: 200, default: 25 }
+    description: Page size for list summaries when includeSummaries=true.
+  - in: query
+    name: summaryOffset
+    schema: { type: integer, minimum: 0, default: 0 }
+    description: Offset for list summaries when includeSummaries=true.
 
 get:
   operationId: getApplicationList

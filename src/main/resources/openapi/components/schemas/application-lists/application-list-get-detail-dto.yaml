@@ -67,3 +67,16 @@ properties:
     format: int64
     description: Current resource version for optimistic concurrency.
     example: 3
+
+  entriesCount:
+    type: integer
+    format: int32
+    minimum: 0
+    description: The total number of entries on the list.
+    example: 4
+
+  entriesSummary:
+    type: array
+    items: { $ref: 'application-list-entry-summary.yaml' }
+    description: A list of lightweight summaries of entries.
+    example: 4
