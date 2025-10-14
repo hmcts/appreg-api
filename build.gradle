@@ -219,7 +219,16 @@ def commonJacocoExclusionsIntegration = [
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
         "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
         "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class"
+        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
+
+        // We need to reduce the code under mappers by using MapStruct
+        "**/uk/gov/hmcts/appregister/**/mapper/*.class",
+
+        // Do not include entity tests
+        "**/uk/gov/hmcts/appregister/**/entity/*.class",
+
+        // undo this when we have reimplemented it to reflect the open api
+        "**/uk/gov/hmcts/appregister/resolutioncode/**/*.class"
 ]
 
 def commonJacocoExclusionsUnit = [

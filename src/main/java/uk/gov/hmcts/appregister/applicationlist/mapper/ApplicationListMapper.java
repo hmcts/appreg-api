@@ -93,32 +93,4 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
     ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
-
-    @Mapping(target = "pk", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "version", ignore = true)
-    @Mapping(target = "createdUser", ignore = true)
-    @Mapping(target = "courtCode", ignore = true)
-    @Mapping(target = "courtName", ignore = true)
-    @Mapping(target = "otherLocation", source = "dto.otherLocationDescription")
-    @Mapping(target = "durationMinutes", source = "dto.durationMinutes")
-    @Mapping(target = "durationHours", source = "dto.durationHours")
-    @Mapping(target = "date", source = "dto.date")
-    @Mapping(target = "description", source = "dto.description")
-    @Mapping(target = "status", source = "dto.status.value")
-    @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
-    ApplicationList toUpdateEntityWithCja(ApplicationListUpdateDto dto, CriminalJusticeArea cja);
-
-    @Mapping(target = "pk", ignore = true)
-    @Mapping(target = "uuid", ignore = true)
-    @Mapping(target = "version", ignore = true)
-    @Mapping(target = "createdUser", ignore = true)
-    @Mapping(target = "cja", ignore = true)
-    @Mapping(target = "otherLocation", ignore = true)
-    @Mapping(target = "courtCode", source = "court.courtLocationCode")
-    @Mapping(target = "courtName", source = "court.name")
-    @Mapping(target = "description", source = "dto.description")
-    @Mapping(target = "date", source = "dto.date")
-    @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
-    ApplicationList toUpdateEntityWithCourt(ApplicationListUpdateDto dto, NationalCourtHouse court);
 }
