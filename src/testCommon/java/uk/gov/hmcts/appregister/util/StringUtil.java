@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.testutils;
+package uk.gov.hmcts.appregister.util;
 
 import lombok.experimental.UtilityClass;
 

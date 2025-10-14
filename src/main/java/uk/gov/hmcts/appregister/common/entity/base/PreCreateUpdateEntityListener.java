@@ -24,7 +24,7 @@ public class PreCreateUpdateEntityListener {
     private final Clock clock;
 
     @PrePersist
-    void beforeSave(Object object) {
+    public void beforeSave(Object object) {
         log.debug("Saving object of type: {}", object.getClass().getName());
         updateCreatedBy(object);
         updateModifiedBy(object);
@@ -32,7 +32,7 @@ public class PreCreateUpdateEntityListener {
     }
 
     @PreUpdate
-    void beforeUpdate(Object object) {
+    public void beforeUpdate(Object object) {
         log.debug("Updating object of type: {}", object.getClass().getName());
 
         updateModifiedBy(object);
@@ -41,13 +41,13 @@ public class PreCreateUpdateEntityListener {
     }
 
     void updateCreatedBy(Object object) {
-        if (!(object instanceof UnmanagedChangeable) && object instanceof Accountable entity) {
+        if (object instanceof Accountable entity) {
             entity.setCreatedUser(userIdentity.getEmail());
         }
     }
 
     void updateModifiedBy(Object object) {
-        if (!(object instanceof UnmanagedChangeable) && object instanceof Changeable entity) {
+        if (object instanceof Changeable entity) {
             entity.setChangedDate(OffsetDateTime.now(clock));
             entity.setChangedBy(userIdentity.getUserId());
         }

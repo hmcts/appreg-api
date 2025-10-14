@@ -1,5 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import org.mapstruct.InjectionStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.dto.IdentityDetailsDto;
 import uk.gov.hmcts.appregister.applicationentry.dto.IdentityDetailsWriteDto;
@@ -12,53 +17,31 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
  * Mapper for converting between NameAddress entity and its DTOs.
  */
 @Component
-public class NameAddressMapper {
+@Mapper(
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public abstract class NameAddressMapper {
+    @Mapping(target = "addressLine1", source = "address1")
+    @Mapping(target = "addressLine2", source = "address2")
+    @Mapping(target = "addressLine3", source = "address3")
+    @Mapping(target = "addressLine4", source = "address4")
+    @Mapping(target = "addressLine5", source = "address5")
+    abstract IdentityDetailsDto toReadDto(NameAddress entity);
 
-    public IdentityDetailsDto toReadDto(NameAddress entity) {
-        return new IdentityDetailsDto(
-                entity.getId(),
-                entity.getCode(),
-                entity.getName(),
-                entity.getTitle(),
-                entity.getForename1(),
-                entity.getForename2(),
-                entity.getForename3(),
-                entity.getSurname(),
-                entity.getAddress1(),
-                entity.getAddress2(),
-                entity.getAddress3(),
-                entity.getAddress4(),
-                entity.getAddress5(),
-                entity.getPostcode(),
-                entity.getEmailAddress(),
-                entity.getTelephoneNumber(),
-                entity.getTelephoneNumber(),
-                entity.getDateOfBirth());
-    }
+    @Mapping(target = "address1", source = "addressLine1")
+    @Mapping(target = "address2", source = "addressLine2")
+    @Mapping(target = "address3", source = "addressLine3")
+    @Mapping(target = "address4", source = "addressLine4")
+    @Mapping(target = "address5", source = "addressLine5")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "userName", ignore = true)
+    @Mapping(target = "dmsId", ignore = true)
+    abstract NameAddress createFromWriteDto(IdentityDetailsWriteDto dto);
 
-    public NameAddress createFromWriteDto(IdentityDetailsWriteDto dto) {
-        return NameAddress.builder()
-                .code(dto.code())
-                .name(dto.name())
-                .title(dto.title())
-                .forename1(dto.forename1())
-                .forename2(dto.forename2())
-                .forename3(dto.forename3())
-                .surname(dto.surname())
-                .address1(dto.addressLine1())
-                .address2(dto.addressLine2())
-                .address3(dto.addressLine3())
-                .address4(dto.addressLine4())
-                .address5(dto.addressLine5())
-                .postcode(dto.postcode())
-                .emailAddress(dto.emailAddress())
-                .telephoneNumber(dto.telephoneNumber())
-                .mobileNumber(dto.mobileNumber())
-                .dateOfBirth(dto.dateOfBirth())
-                .build();
-    }
-
-    public void updateFromWriteDto(IdentityDetailsWriteDto dto, NameAddress entity) {
+    void updateFromWriteDto(IdentityDetailsWriteDto dto, NameAddress entity) {
         entity.setCode(dto.code());
         entity.setName(dto.name());
         entity.setTitle(dto.title());

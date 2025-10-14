@@ -52,26 +52,4 @@ public class ApplicationCodeMapper {
                         : null,
                 entity.getWording());
     }
-
-    public ApplicationCode toEntityFromReadDto(ApplicationCodeDto dto) {
-        if (dto == null) {
-            return null;
-        }
-
-        return ApplicationCode.builder()
-                .id(dto.id())
-                .code(dto.applicationCode())
-                .title(dto.title())
-                .wording(dto.wording())
-                .legislation(dto.legislation())
-                .feeDue(dto.feeDue().toString())
-                .requiresRespondent(dto.requiresRespondent().toString())
-                .destinationEmail1(dto.destinationEmail1())
-                .destinationEmail2(dto.destinationEmail2())
-                .startDate(dto.startDate())
-                .endDate(dto.endDate())
-                .bulkRespondentAllowed(dto.bulkRespondentAllowed().toString())
-                .feeReference(dto.feeReference())
-                .build();
-    }
 }

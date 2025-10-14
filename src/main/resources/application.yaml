@@ -51,6 +51,8 @@ spring:
       hibernate:
         format_sql: true
         default_schema: ${spring.sql.init.schema-locations}
+        jdbc:
+          time_zone: UTC
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     enabled: ${ENABLE_DB_MIGRATE:false}

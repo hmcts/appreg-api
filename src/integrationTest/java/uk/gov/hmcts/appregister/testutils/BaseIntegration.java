@@ -73,11 +73,6 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
      * @return The token builder
      */
     public TokenGenerator.TokenGeneratorBuilder getATokenWithValidCredentials() {
-        return TokenGenerator.builder()
-                .issuer(issuer)
-                .audience(audience)
-                .tid(TID)
-                .oid(OID)
-                .email(EMAIL);
+        return TokenGenerator.builder().issuer(issuer).audience(audience);
     }
 }

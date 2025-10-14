@@ -72,30 +72,6 @@ rewrite {
   ]
 }
 
-def configureSourceSet(String name) {
-  sourceSets.create(name) { sourceSet ->
-    sourceSet.java {
-      compileClasspath += sourceSets.main.output + sourceSets.test.output
-      runtimeClasspath += sourceSets.main.output + sourceSets.test.output
-      srcDir "src/${name}/java"
-    }
-    sourceSet.resources.srcDir "src/${name}/resources"
-  }
-}
-
-['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
-
-configurations {
-  functionalTestImplementation.extendsFrom testImplementation
-  functionalTestRuntimeOnly.extendsFrom runtimeOnly
-
-  integrationTestImplementation.extendsFrom testImplementation
-  integrationTestRuntimeOnly.extendsFrom runtimeOnly
-
-  smokeTestImplementation.extendsFrom testImplementation
-  smokeTestRuntimeOnly.extendsFrom runtimeOnly
-}
-
 tasks.withType(JavaCompile).configureEach {
   options.compilerArgs << "-Xlint:unchecked" << "-Werror"
 }
@@ -115,7 +91,21 @@ tasks.withType(Test).configureEach {
   }
 }
 
+def configureSourceSet(String name) {
+  sourceSets.create(name) { sourceSet ->
+    sourceSet.java {
+      compileClasspath += sourceSets.main.output
+      runtimeClasspath += sourceSets.main.output
+      srcDir "src/${name}/java"
+    }
+    sourceSet.resources.srcDir "src/${name}/resources"
+  }
+}
+
+['smokeTest', 'integrationTest', 'functionalTest'].each { configureSourceSet(it) }
+
 sourceSets {
+
   main {
     resources {
       srcDirs = ["$buildDir/generated/openapi/src/main/java",'src/main/java', 'src/main/resources', 'flyway']
@@ -125,12 +115,33 @@ sourceSets {
     }
   }
 
+  /**
+   * Sets up the java compiler to warn of errors but crucially not to stop compiling as a result of these errors. This is essential to determine
+   * visibility of issues i.e. mapstruct warnings
+   */
+  tasks.withType(JavaCompile).configureEach {
+    options.warnings = true           // show warnings
+    options.deprecation = true        // show deprecation
+    options.compilerArgs.removeAll(["-Werror"]) // drop -Werror for now
+    options.compilerArgs += ["-Xlint:all", "-Xdiags:verbose"] // verbose diagnostics
+  }
+
+  testCommon {
+    java {
+      compileClasspath += main.output
+      runtimeClasspath += main.output
+      srcDir file('src/testCommon/java')
+    }
+    resources.srcDir file('src/testCommon/resources')
+  }
+
   // Ensure main source set includes resources from flyway directory
   functionalTest {
     java {
       compileClasspath += main.output
-
       runtimeClasspath += main.output
+      compileClasspath += testCommon.output
+      runtimeClasspath += testCommon.output
       srcDir file('src/functionalTest/java')
     }
     resources.srcDir file('src/functionalTest/resources')
@@ -140,6 +151,8 @@ sourceSets {
     java {
       compileClasspath += main.output
       runtimeClasspath += main.output
+      compileClasspath += testCommon.output
+      runtimeClasspath += testCommon.output
       srcDir file('src/integrationTest/java')
     }
     resources.srcDir file('src/integrationTest/resources')
@@ -149,61 +162,198 @@ sourceSets {
     java {
       compileClasspath += main.output
       runtimeClasspath += main.output
+      compileClasspath += testCommon.output
+      runtimeClasspath += testCommon.output
       srcDir file('src/smokeTest/java')
     }
     resources.srcDir file('src/smokeTest/resources')
   }
+
+  test {
+    java {
+      compileClasspath += main.output
+      compileClasspath += testCommon.output
+      runtimeClasspath += main.output
+      runtimeClasspath += testCommon.output
+      srcDir file('src/test/java')
+    }
+    resources.srcDir file('src/test/resources')
+  }
+}
+
+configurations {
+  testCommonImplementation.extendsFrom testImplementation
+
+  functionalTestImplementation.extendsFrom testImplementation
+  functionalTestRuntimeOnly.extendsFrom runtimeOnly
+
+  integrationTestImplementation.extendsFrom testCommonImplementation
+  integrationTestRuntimeOnly.extendsFrom runtimeOnly
+
+  smokeTestImplementation.extendsFrom testImplementation
+  smokeTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
 tasks.register('functional', Test) {
   description = "Runs functional tests"
   group = "Verification"
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
-  classpath = sourceSets.functionalTest.runtimeClasspath
+  classpath = files(sourceSets.functionalTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath )
 }
 
 tasks.register('integration', Test) {
   description = "Runs integration tests"
   group = "Verification"
   testClassesDirs = sourceSets.integrationTest.output.classesDirs
-  classpath = sourceSets.integrationTest.runtimeClasspath
+  classpath = files(sourceSets.integrationTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
 }
 
 tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
-  classpath = sourceSets.smokeTest.runtimeClasspath
+  classpath = files(sourceSets.smokeTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
 }
 
-/*
-jacocoTestReport {
-  executionData(test, integration)
-  reports {
-    xml.getRequired().set(true)
-    csv.getRequired().set(false)
-    html.getRequired().set(true)
-  }
-} */
-jacocoTestReport {
-  //AD disabled
-  enabled = true
-  //executionData(test, integration)
-  executionData(test)
-  reports {
-    xml.getRequired().set(true)
-    csv.getRequired().set(false)
-    html.getRequired().set(true)
-  }
+def commonJacocoExclusionsIntegration = [
+        "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
+        "**/uk/gov/hmcts/appregister/generated/**/*.class",
+        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
+        "**/uk/gov/hmcts/appregister/report/**/*.class",
+        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class"
+]
+
+def commonJacocoExclusionsUnit = [
+        "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
+        "**/uk/gov/hmcts/appregister/generated/**/*.class",
+        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
+        "**/uk/gov/hmcts/appregister/report/**/*.class",
+        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
+
+        // These are packages in which I do not envisage tests. These would be tested more appropriately in
+        // integration tests or other types of tests
+        "**/uk/gov/hmcts/appregister/**/controller/*.class",
+        "**/uk/gov/hmcts/appregister/**/dao/*.class",
+        "**/uk/gov/hmcts/appregister/**/config/*.class",
+        "**/uk/gov/hmcts/appregister/**/entity/*.class",
+
+        // If we use MapStruct, we don't need to test the generated mappers or we test them as part of integration tests
+        "**/uk/gov/hmcts/appregister/**/mapper/*.class"
+]
+
+tasks.register('jacocoUnitReport', JacocoReport) {
+  dependsOn test
+  reports { xml.required = true; html.required = true }
+  executionData file("$buildDir/jacoco/test.exec")
+  sourceDirectories.from sourceSets.main.allSource.srcDirs
+
+  classDirectories.setFrom(
+          files(sourceSets.main.output).asFileTree.matching {
+            exclude(commonJacocoExclusionsUnit)
+          }
+  )
 }
+
+// ✅ thresholds go here (NOT on JacocoReport)
+tasks.register('jacocoUnitCoverageVerification', JacocoCoverageVerification) {
+  dependsOn jacocoUnitReport
+  executionData.setFrom(file("$buildDir/jacoco/test.exec"))
+  sourceDirectories.from sourceSets.main.allSource.srcDirs
+  violationRules {
+    failOnViolation = true
+    rule {
+      // optional: choose counter/value explicitly
+      // counter = 'INSTRUCTION' // or BRANCH, CLASS, LINE, METHOD
+      // value   = 'COVEREDRATIO'
+      limit { minimum = 0.8 } // 80%
+    }
+  }
+
+  classDirectories.setFrom(
+          files(sourceSets.main.output).asFileTree.matching {
+            exclude(
+                    commonJacocoExclusionsUnit)
+          }
+  )
+}
+
+tasks.register('jacocoIntegrationReport', JacocoReport) {
+  dependsOn integration
+  reports { xml.required = true; html.required = true }
+  executionData file("$buildDir/jacoco/integration.exec")
+  sourceDirectories.from sourceSets.main.allSource.srcDirs
+  classDirectories.setFrom(
+          files(sourceSets.main.output).asFileTree.matching {
+            exclude(
+                    commonJacocoExclusionsIntegration)
+          }
+  )
+}
+
+tasks.register('jacocoIntegrationCoverageVerification', JacocoCoverageVerification) {
+  dependsOn jacocoIntegrationReport
+  executionData.setFrom(file("$buildDir/jacoco/integration.exec"))
+  sourceDirectories.from sourceSets.main.allSource.srcDirs
+  violationRules {
+    failOnViolation = true
+    rule {
+      // optional: choose counter/value explicitly
+      // counter = 'INSTRUCTION' // or BRANCH, CLASS, LINE, METHOD
+      // value   = 'COVEREDRATIO'
+      limit { minimum = 0.8 } // 80%
+    }
+  }
+
+  classDirectories.setFrom(
+          files(sourceSets.main.output).asFileTree.matching {
+            exclude(
+                    commonJacocoExclusionsIntegration)
+          }
+  )
+}
+
+
 //AD disabled
-tasks.sonarqube.dependsOn(jacocoTestReport)
+tasks.sonarqube.dependsOn(jacocoIntegrationCoverageVerification).dependsOn(jacocoUnitCoverageVerification)
 tasks['check'].finalizedBy integration
 
+
+def xmls = [
+        layout.buildDirectory.file("reports/jacoco/jacocoUnitReport/jacocoUnitReport.xml").get().asFile,
+        layout.buildDirectory.file("reports/jacoco/jacocoIntegrationReport/jacocoIntegrationReport.xml").get().asFile
+]
+
+""" A useful function to run a local SonarQube analysis against a local SonarQube server instance."
+    'You can run a local SonarQube server using Docker: docker run -d --name sonarqube -p 9000:9000 sonarqube'
+    'Once the server is running, you can execute this task using: ./gradlew localSonar'
+    'Default login credentials are admin/admin. You can change these in the properties below.
+"""
+import org.sonarqube.gradle.SonarTask;
+import org.sonarqube.gradle.SonarExtension
+// Register a brand-new task that runs a local analysis
+tasks.register('localSonarqube', GradleBuild) {
+  dependsOn('sonarqube')
+}
 
 sonarqube {
   properties {
     property "sonar.projectName", "AppReg :: appreg-api"
     property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
+    property "sonar.coverage.exclusions", [
+            "src/main/java/uk/gov/hmcts/appregister/**/dto/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/applicationentry/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/report/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*"
+    ]
+    if (gradle.startParameter.taskNames.contains("localSonarqube")) {
+      property 'sonar.host.url', 'http://localhost:9000'
+      property 'sonar.login', System.getenv('SONAR_TOKEN') ?: 'admin'
+    }
+
+    property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            xmls.collect { it.absolutePath }.join(',')
+    )
   }
 }
 

@@ -18,7 +18,8 @@ public class PostgresCommand implements Command {
     private static final String PASSWORD = "password";
     private static final String DATABASE_NAME = "appreg-db";
 
-    private final PostgreSQLContainer<?> container = new PostgreSQLContainer("postgres:17-alpine");
+    private final PostgreSQLContainer<?> container =
+            new PostgreSQLContainer<>("postgres:17-alpine");
 
     {
         container

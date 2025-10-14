@@ -38,7 +38,7 @@ services:
     container_name: app-reg-poc-backend
     environment:
       # these environment variables are used by java-logging library
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres/appreg_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres/appreg-db
       - SPRING_DATASOURCE_USERNAME=app_reg_user
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_PROFILES_ACTIVE=testing

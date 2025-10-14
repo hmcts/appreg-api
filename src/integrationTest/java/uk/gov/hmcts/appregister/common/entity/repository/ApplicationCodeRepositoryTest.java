@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,11 +12,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
-import uk.gov.hmcts.appregister.testutils.DateUtil;
-import uk.gov.hmcts.appregister.testutils.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
 public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
@@ -48,7 +47,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                 applicationCodeRepository.findById(code.getId());
 
         // assert that the data that has been retrieved aligns with the data that we have stored
-        expectAllCommonEntityFields(code, applicationCodeToAssertAgainst);
+        expectAllCommonEntityFields(code, applicationCodeToAssertAgainst.get());
         assertNotNull(applicationCodeToAssertAgainst.get());
         assertEquals(code.getCreatedUser(), applicationCodeToAssertAgainst.get().getCreatedUser());
         assertEquals(code.getCode(), applicationCodeToAssertAgainst.get().getCode());

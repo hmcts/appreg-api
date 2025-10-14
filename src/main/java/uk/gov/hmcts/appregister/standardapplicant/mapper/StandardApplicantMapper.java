@@ -1,5 +1,10 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
+import org.mapstruct.InjectionStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
@@ -8,32 +13,12 @@ import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
  * Mapper for StandardApplicant entity to StandardApplicantDto.
  */
 @Component
-public class StandardApplicantMapper {
-
-    public StandardApplicantDto toReadDto(StandardApplicant entity) {
-        if (entity == null) {
-            return null;
-        }
-
-        return new StandardApplicantDto(
-                entity.getId(),
-                entity.getApplicantCode(),
-                entity.getApplicantTitle(),
-                entity.getName(),
-                entity.getApplicantForename1(),
-                entity.getApplicantForename2(),
-                entity.getApplicantForename3(),
-                entity.getApplicantSurname(),
-                entity.getAddressLine1(),
-                entity.getAddressLine2(),
-                entity.getAddressLine3(),
-                entity.getAddressLine4(),
-                entity.getAddressLine5(),
-                entity.getPostcode(),
-                entity.getEmailAddress(),
-                entity.getTelephoneNumber(),
-                entity.getMobileNumber(),
-                entity.getApplicantStartDate(),
-                entity.getApplicantEndDate());
-    }
+@Mapper(
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public interface StandardApplicantMapper {
+    @Mapping(target = "applicantName", source = "name")
+    StandardApplicantDto toReadDto(StandardApplicant entity);
 }

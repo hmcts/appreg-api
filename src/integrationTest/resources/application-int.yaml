@@ -14,5 +14,6 @@ spring:
     baseline-on-migrate: true
 logging:
   level:
-      org.springframework.security: TRACE
-      org.springframework.*: DEBUG
+    org.springframework.security: TRACE
+    org.springframework.*: DEBUG
+    root: debug

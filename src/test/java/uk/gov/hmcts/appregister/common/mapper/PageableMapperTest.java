@@ -23,6 +23,21 @@ class PageableMapperTest {
     }
 
     @Test
+    void testPageableDefaultPageTest() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setDefaultPageSize(11);
+
+        org.springframework.data.domain.Pageable pageable =
+                appPageable.from(
+                        null, null, List.of("field, 4334"), "defaultField", Sort.Direction.ASC);
+        Assertions.assertEquals(0, pageable.getPageNumber());
+        Assertions.assertEquals(11, pageable.getPageSize());
+        Assertions.assertEquals("field", pageable.getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.ASC, pageable.getSort().get().findFirst().get().getDirection());
+    }
+
+    @Test
     void testPageableDefaultSort() {
         PageableMapper appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);
@@ -30,6 +45,22 @@ class PageableMapperTest {
 
         org.springframework.data.domain.Pageable pageable =
                 appPageable.from(10, 2, null, "defaultField", Sort.Direction.ASC);
+        Assertions.assertEquals(10, pageable.getPageNumber());
+        Assertions.assertEquals(2, pageable.getPageSize());
+        Assertions.assertEquals(
+                "defaultField", pageable.getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.ASC, pageable.getSort().get().findFirst().get().getDirection());
+    }
+
+    @Test
+    void testPageableDefaultSort2() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        org.springframework.data.domain.Pageable pageable =
+                appPageable.from(10, 2, List.of(), "defaultField", Sort.Direction.ASC);
         Assertions.assertEquals(10, pageable.getPageNumber());
         Assertions.assertEquals(2, pageable.getPageSize());
         Assertions.assertEquals(

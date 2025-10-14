@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -7,10 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.DataAuditTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
-import uk.gov.hmcts.appregister.testutils.data.DataAuditTestData;
 
 @Slf4j
 public class DataAuditRepositoryTest extends BaseRepositoryTest {
@@ -28,7 +27,7 @@ public class DataAuditRepositoryTest extends BaseRepositoryTest {
         Optional<DataAudit> dataAuditToAssertAgainst =
                 dataAuditRepository.findById(dataAudit.getId());
 
-        expectAllCommonEntityFields(dataAudit, dataAuditToAssertAgainst);
+        expectAllCommonEntityFields(dataAudit, dataAuditToAssertAgainst.get());
 
         // assert that the data that has been retrieved aligns with the data that we have stored
         assertEquals(dataAudit.getSchemaName(), dataAuditToAssertAgainst.get().getSchemaName());

@@ -69,11 +69,11 @@ public interface NationalCourtHouseRepository extends JpaRepository<NationalCour
      */
     @Query(
             """
-    SELECT nch
-    FROM NationalCourtHouse nch
-    WHERE nch.courtType = 'CHOA'
-      AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
-      AND nch.endDate IS NULL
+        SELECT nch
+        FROM NationalCourtHouse nch
+        WHERE nch.courtType = 'CHOA'
+          AND LOWER(nch.courtLocationCode) = LOWER(CAST(:code AS string))
+          AND nch.endDate IS NULL
         """)
     List<NationalCourtHouse> findActiveCourts(@Param("code") String code);
 

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -8,11 +8,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
-import uk.gov.hmcts.appregister.testutils.data.CriminalJusticeTestData;
 
 public class CriminalJusticeRepositoryTest extends BaseRepositoryTest {
 

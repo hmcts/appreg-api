@@ -16,22 +16,8 @@ public class DefaultErrorDetail implements ErrorDetail {
     private final String message;
     private final String appCode;
 
-    public static DefaultErrorDetail createNotFoundRequest(ErrorCodeEnum detail) {
-        return new DefaultErrorDetail(
-                HttpStatus.NOT_FOUND, detail.getCode().getMessage(), detail.getCode().getAppCode());
-    }
-
     public static DefaultErrorDetail create(HttpStatus status, String message, String appCode) {
         return new DefaultErrorDetail(status, message, appCode);
-    }
-
-    public static ErrorCodeEnum getEnumEntry(ErrorDetail code) {
-        return new ErrorCodeEnum() {
-            @Override
-            public ErrorDetail getCode() {
-                return code;
-            }
-        };
     }
 
     @Override

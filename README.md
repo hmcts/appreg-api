@@ -80,6 +80,29 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew dependencyUpdates -Drevision=release
   ```
 
+- **Spotless format correction**
+  ```bash
+  ./gradlew spotlessApply
+  ```
+
+## Running Sonarqube locally
+
+1. Ensure you have Docker installed and running 
+
+`docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community`
+
+2. Access Sonarqube at http://localhost:9000 (default credentials: admin/admin)
+
+3. Navigate to the administrative section of the SonarQube dashboard and create a token
+
+4. Define an environment variable in your shell called SONAR_TOKEN with the value of the token you created
+
+5. Now run gradle task
+
+`gradlew localSonarqube`
+
+Once successful you can view the Jacoco coverage results in Sonarqube at http://localhost:9000
+
 ## Plugins
 
 - **HMCTS Gradle Java plugin**
@@ -105,15 +128,11 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 ## Database setup
 
 ### Local Execution
-Run the local docker compose file [`docker-compose.yml`](docker-compose.yml) to start a PostgreSQL instance with thd default schema
+Run the local docker compose file [`docker-compose.yml`](docker-compose.yml) to start a PostgreSQL instance with the default schemas. One of two profiles 
+needs to be used in order to populate the baseline data:-
 
-The database can be configured using the flyway migration CLI tool. The configuration is located at ./flyway. Or the
-app register service can launch the baseline flyway content automatically by being run.
-
-#### Baseline data setup
-
-Baseline data is typically setup when running locally for the first time. The baseline data can be used by applying the
-_SPRING_PROFILE_ACTIVE=local_ environment variable (see ./docker-compose-local.yaml.
+`functionaltesting` - for applying ([test data](./flyway/data_population)
+`testing` - for applying ([test data](./flyway/data_population_test)
 
 ## Calling the Rest API
 

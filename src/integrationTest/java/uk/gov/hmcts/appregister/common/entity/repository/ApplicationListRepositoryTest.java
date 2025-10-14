@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.repository;
+package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
@@ -58,12 +59,12 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     private ApplicationList buildEntity() {
         return ApplicationList.builder()
-                .status(ApplicationListStatus.OPEN)
+                .status("OPEN")
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")
-                .date(DEFAULT_DATE)
-                .time(DEFAULT_TIME)
+                .date(LocalDateTime.of(2025, 1, 1, 9, 0))
+                .time(LocalDateTime.of(2025, 1, 1, 9, 0))
                 .durationHours((short) 1)
                 .durationMinutes((short) 30)
                 .build();
@@ -83,6 +84,10 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
+        assertThat(reloaded.getStatus()).isEqualTo("OPEN");
+        assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
+        assertThat(reloaded.getChangedBy())
+                .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
         assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(reloaded.getCreatedUser()).isEqualTo(EMAIL);
         assertThat(reloaded.getChangedBy()).isEqualTo(TID + ":" + OID);
