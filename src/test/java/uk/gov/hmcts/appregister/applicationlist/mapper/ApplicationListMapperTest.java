@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,44 +28,10 @@ public class ApplicationListMapperTest {
     // ---------- Helper method tests ----------
 
     @Nested
-    class ToMidnightTests {
-        @Test
-        void toMidnight_inputNull_returnNull() {
-            assertNull(mapper.toMidnight(null));
-        }
-
-        @Test
-        void toMidnight_validLocalDate_convertsToValidLocalDateTimeAtMidnight() {
-            LocalDate d = LocalDate.of(2025, 9, 17);
-            String expected = "2025-09-17T00:00";
-            assertEquals(expected, mapper.toMidnight(d).toString());
-        }
-    }
-
-    @Nested
-    class CombineTests {
+    class ToTimeTests {
         @Test
         void combine_nullDateParam_returnsNull() {
-            assertNull(mapper.combine(null, "10:30"));
-        }
-
-        @Test
-        void combine_nullTimeParam_returnsNull() {
-            assertNull(mapper.combine(LocalDate.of(2025, 9, 17), null));
-        }
-
-        @Test
-        void combine_validDateAndTimeWithNoSecs_returnsValidLocalDateTime() {
-            LocalDate date = LocalDate.of(2025, 9, 17);
-            LocalDateTime ldt = mapper.combine(date, "10:30");
-            assertEquals(LocalDateTime.of(2025, 9, 17, 10, 30, 0), ldt);
-        }
-
-        @Test
-        void combine_validDateAndTimeWithSecs_returnsValidLocalDateTime() {
-            LocalDate date = LocalDate.of(2025, 9, 17);
-            LocalDateTime ldt = mapper.combine(date, "23:59:58");
-            assertEquals(LocalDateTime.of(2025, 9, 17, 23, 59, 58), ldt);
+            assertEquals(LocalTime.of(10, 30), mapper.toTime("10:30"));
         }
     }
 
@@ -77,15 +43,9 @@ public class ApplicationListMapperTest {
         }
 
         @Test
-        void emitsHHmmWhenSecondsAreZero() {
-            LocalDateTime ldt = LocalDateTime.of(2025, 9, 17, 8, 5, 0);
-            assertEquals("08:05", mapper.toTimeString(ldt));
-        }
-
-        @Test
         void emitsHHmmssWhenSecondsPresent() {
-            LocalDateTime ldt = LocalDateTime.of(2025, 9, 17, 8, 5, 7);
-            assertEquals("08:05:07", mapper.toTimeString(ldt));
+            LocalTime lt = LocalTime.of(8, 5, 07);
+            assertEquals("08:05:07", mapper.toTimeString(lt));
         }
     }
 
@@ -126,8 +86,8 @@ public class ApplicationListMapperTest {
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
             assertEquals("OPEN", entity.getStatus());
-            assertEquals(LocalDateTime.of(2025, 9, 17, 0, 0), entity.getDate());
-            assertEquals(LocalDateTime.of(2025, 9, 17, 10, 30, 0), entity.getTime());
+            assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
+            assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
             assertEquals(45, entity.getDurationMinutes());
         }
@@ -170,8 +130,8 @@ public class ApplicationListMapperTest {
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
             assertEquals("OPEN", entity.getStatus());
-            assertEquals(LocalDateTime.of(2025, 9, 18, 0, 0), entity.getDate());
-            assertEquals(LocalDateTime.of(2025, 9, 18, 14, 5, 7), entity.getTime());
+            assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
+            assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
             assertEquals(15, entity.getDurationMinutes());
         }
@@ -194,8 +154,8 @@ public class ApplicationListMapperTest {
                             .status("OPEN")
                             .courtCode("LOC123")
                             .courtName("Bath Magistrates Court")
-                            .date(LocalDateTime.of(2025, 9, 17, 0, 0))
-                            .time(LocalDateTime.of(2025, 9, 17, 10, 30, 0))
+                            .date(LocalDate.of(2025, 9, 17))
+                            .time(LocalTime.of(10, 30, 0))
                             .durationHours((short) 2)
                             .durationMinutes((short) 30)
                             .version(3L)
