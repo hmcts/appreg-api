@@ -63,8 +63,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")
-                .date(LocalDateTime.of(2025, 1, 1, 9, 0))
-                .time(LocalDateTime.of(2025, 1, 1, 9, 0))
+                .date(LocalDate.of(2025, 1, 1))
+                .time(LocalTime.of(9, 0))
                 .durationHours((short) 1)
                 .durationMinutes((short) 30)
                 .build();
