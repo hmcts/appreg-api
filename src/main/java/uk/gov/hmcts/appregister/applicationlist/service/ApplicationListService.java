@@ -28,9 +28,9 @@ public interface ApplicationListService {
     ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
 
     /**
-     * Deletes a new Application List.
+     * Deletes an Application List.
      *
-     * @param idToDelete the is to delete
+     * @param idToDelete the id to delete
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails
      *     due to the id not existing, the id already being deleted, the id having application
      *     entries

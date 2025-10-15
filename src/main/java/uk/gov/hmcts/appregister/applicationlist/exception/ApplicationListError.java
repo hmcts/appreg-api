@@ -15,7 +15,7 @@ public enum ApplicationListError implements ErrorCodeEnum {
     DELETION_ID_NOT_FOUND(
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND,
-                    "The id provided is not in a suitable state for deletion",
+                    "No application list found with the provided id for deletion",
                     "AL-2")),
     DELETION_ALREADY_IN_DELETABLE_STATE(
             DefaultErrorDetail.create(

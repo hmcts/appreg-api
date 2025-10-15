@@ -2,7 +2,8 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -17,8 +18,8 @@ public class AppListTestData
         UUID uniqueId = UUID.randomUUID();
         return ApplicationList.builder()
                 .description("Description " + uniqueId)
-                .date(LocalDateTime.now())
-                .time(LocalDateTime.now())
+                .date(LocalDate.now())
+                .time(LocalTime.now())
                 .cja(new CriminalJusticeTestData().someMinimal().build());
     }
 

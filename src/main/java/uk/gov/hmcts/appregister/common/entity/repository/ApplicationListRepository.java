@@ -47,10 +47,10 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
     List<ApplicationList> findByPkGreaterThanEqual(Integer value);
 
     /**
-     * Finds all entries with the given IDs.
+     * Finds all entities with the given IDs.
      *
      * @param ids An id to look up
-     * @return A list of matching application entries
+     * @return A single matching application entry
      */
     Optional<ApplicationList> findByUuid(UUID ids);
 }
