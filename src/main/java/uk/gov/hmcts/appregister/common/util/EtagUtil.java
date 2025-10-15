@@ -23,7 +23,7 @@ public class EtagUtil {
                             + versionable.getClass().getCanonicalName();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(base.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest); // quotes required
+            return "\"" + HexFormat.of().formatHex(digest) + "\""; // quotes required
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate ETag", e);
         }
