@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -32,7 +33,9 @@ public interface ApplicationListMapper {
      */
     default LocalTime toTime(String time) {
         // DTO has @NotNull + @Pattern, but this keeps things defensive
-        if (time == null || time.isBlank()) return null;
+        if (time == null || time.isBlank()) {
+            return null;
+        }
         return LocalTime.parse(time, TIME_FORMAT);
     }
 
@@ -98,8 +101,12 @@ public interface ApplicationListMapper {
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
-    @Mapping(target = "courtCode", ignore = true)
-    @Mapping(target = "courtName", ignore = true)
+
+    // make sure we null out the existing court
+    @Mapping(target = "courtCode", source = "dto.courtLocation.locationCode")
+    @Mapping(target = "courtName", source = "dto.courtLocation.locationCode")
+    @Mapping(target = "changedBy", ignore = true)
+    @Mapping(target = "changedDate", ignore = true)
     @Mapping(target = "otherLocation", source = "dto.otherLocationDescription")
     @Mapping(target = "durationMinutes", source = "dto.durationMinutes")
     @Mapping(target = "durationHours", source = "dto.durationHours")
@@ -107,18 +114,21 @@ public interface ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "status", source = "dto.status.value")
     @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
-    ApplicationList toUpdateEntityWithCja(ApplicationListUpdateDto dto, CriminalJusticeArea cja);
+    @Mapping(target = "cja", source = "cja")
+    void toUpdateEntityWithCja(ApplicationListUpdateDto dto, CriminalJusticeArea cja, @MappingTarget ApplicationList entity);
 
     @Mapping(target = "pk", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
-    @Mapping(target = "cja", ignore = true)
     @Mapping(target = "otherLocation", ignore = true)
+    @Mapping(target = "changedBy", ignore = true)
+    @Mapping(target = "changedDate", ignore = true)
     @Mapping(target = "courtCode", source = "court.courtLocationCode")
     @Mapping(target = "courtName", source = "court.name")
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
-    ApplicationList toUpdateEntityWithCourt(ApplicationListUpdateDto dto, NationalCourtHouse court);
+    @Mapping(target = "cja", source = "cja")
+    void toUpdateEntityWithCourt(ApplicationListUpdateDto dto, CriminalJusticeArea cja, NationalCourtHouse court, @MappingTarget ApplicationList entity);
 }

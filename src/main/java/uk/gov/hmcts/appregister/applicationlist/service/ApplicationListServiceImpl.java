@@ -49,10 +49,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationUpdateListLocationValidator applicationUpdateListLocationValidator;
 
     private final EntityManager entityManager;
-
-    // Lifecycle listeners invoked during audit processing.
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
-
     private final MatchService matchService;
 
     /**
@@ -100,9 +96,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      */
     private MatchResponse<ApplicationListGetDetailDto> createWithCourt(ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
-        var courtCode = success.getNationalCourtHouse().getCourtLocationCode().trim();
-        final List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(courtCode);
-        var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, courts.getFirst()));
+        var court = success.getNationalCourtHouse();
+        var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
         return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
     }
@@ -118,10 +113,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      */
     private MatchResponse<ApplicationListGetDetailDto> createWithCja(ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
-        var cjaCode = success.getCriminalJusticeArea().getCode().trim();
-        final List<CriminalJusticeArea> criminalJusticeAreas = cjaRepository.findByCode(cjaCode);
-
-        var cja = criminalJusticeAreas.getFirst();
+        var cja = success.getCriminalJusticeArea();
 
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
         var hydrated = refreshEntity(savedEntity);
@@ -137,15 +129,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      */
     private MatchResponse<ApplicationListGetDetailDto> updateWithCourt(PayloadForUpdate<ApplicationListUpdateDto> updateDto, ListUpdateValidationSuccess success) {
-        var courtCode = success.getNationalCourtHouse().getCourtLocationCode().trim();
-        final List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(courtCode);
+        var court = success.getNationalCourtHouse();
 
-        var savedEntity = repository.save(mapper.toUpdateEntityWithCourt(updateDto.getData(), courts.getFirst()));
+        mapper.toUpdateEntityWithCourt(updateDto.getData(), null, court, success.getApplicationList());
 
-        var hydrated = refreshEntity(savedEntity);
-
-        return matchService.matchOnRequest(hydrated.getUuid(), hydrated, () ->
-           MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null)));
+        return matchService.matchOnRequest(success.getApplicationList().getUuid(), success.getApplicationList(), () -> {
+            var savedEntity = repository.save(success.getApplicationList());
+            var hydrated = refreshEntity(savedEntity);
+            return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
+        });
     }
 
     /**
@@ -159,16 +151,17 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      */
     private MatchResponse<ApplicationListGetDetailDto> updateWithCja(PayloadForUpdate<ApplicationListUpdateDto> updateDto, ListUpdateValidationSuccess success) {
-        var cjaCode = success.getCriminalJusticeArea().getCode().trim();
-        final List<CriminalJusticeArea> criminalJusticeAreas = cjaRepository.findByCode(cjaCode);
+        var cja = success.getCriminalJusticeArea();
+        ApplicationList applicationList = success.getApplicationList();
 
-        var cja = criminalJusticeAreas.getFirst();
+        mapper.toUpdateEntityWithCja(updateDto.getData(), cja, applicationList);
 
-        var savedEntity = repository.save(mapper.toUpdateEntityWithCja(updateDto.getData(), cja));
-        var hydrated = refreshEntity(savedEntity);
+        return matchService.matchOnRequest(success.getApplicationList().getUuid(), success.getApplicationList(), () -> {
+            var savedEntity = repository.save(applicationList);
+            var hydrated = refreshEntity(savedEntity);
 
-        return matchService.matchOnRequest(hydrated.getUuid(), hydrated, () ->
-                MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null)));
+            return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, cja));
+        });
     }
 
     /**

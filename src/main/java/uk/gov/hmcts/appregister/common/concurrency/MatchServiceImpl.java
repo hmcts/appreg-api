@@ -12,19 +12,20 @@ import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * A match service that applies the match etag from the request to the matches in the database.
+ * A match service that applies the match etag from the request to the etag of the entity.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MatchServiceImpl implements MatchService{
-    private uk.gov.hmcts.appregister.common.concurrency.MatchRequest request;
+    private final MatchProvider request;
 
     /**
      * matches on the request etag if present. throws an exception if a match has not been found
      * @param id The id of the entity
      * @param entity The versionable entity to match against
      * @param supplier The supplier to return the updated etag
+     * @return The match response with the updated etag
      */
     public <T> MatchResponse<T> matchOnRequest(UUID id,
                                                    Versionable entity,

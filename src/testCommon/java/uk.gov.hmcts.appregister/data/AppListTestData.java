@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.data;
 import static org.instancio.Select.field;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 import org.instancio.Instancio;

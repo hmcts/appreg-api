@@ -7,20 +7,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import io.restassured.internal.common.assertion.Assertion;
+import org.assertj.core.api.AbstractThrowableAssert;
+import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.Extensions;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 import java.util.List;
+import java.util.function.BiFunction;
 
+@ExtendWith(MockitoExtension.class)
 public class ApplicationListCreateValidatorTest {
 
     @Mock
@@ -63,8 +76,52 @@ public class ApplicationListCreateValidatorTest {
         assertThatThrownBy(() -> validator.validate(dto))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("No court found");
+    }
 
-        verify(validator).validate(dto);
+    @Test
+    void create_multipleCourtsReturnedFromRepository_throwsAppRegException() {
+        // given
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        when(dto.getCourtLocationCode()).thenReturn("DUPE");
+
+        NationalCourtHouse c1 = new NationalCourtHouse();
+        NationalCourtHouse c2 = new NationalCourtHouse();
+        when(courtHouseRepository.findActiveCourts("DUPE")).thenReturn(List.of(c1, c2));
+
+        // expect
+        assertThatThrownBy(() -> validator.validate(dto))
+                .isInstanceOf(AppRegistryException.class)
+                .hasMessageContaining("Multiple courts found");
+    }
+
+    @Test
+    void create_noCjaReturnedFromRepository_throwsAppRegException() {
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        when(dto.getCourtLocationCode()).thenReturn(null);
+        when(dto.getCjaCode()).thenReturn("X1");
+        when(dto.getOtherLocationDescription()).thenReturn("Y2");
+
+        when(cjaRepository.findByCode("X1")).thenReturn(List.of());
+
+        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(dto));
+        Assertions.assertEquals(ApplicationListError.CJA_NOT_FOUND, exception.getCode());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void create_multipleCjaReturnedFromRepository_throwsAppRegException() {
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        when(dto.getCourtLocationCode()).thenReturn("");
+        when(dto.getCjaCode()).thenReturn("Y2");
+        when(dto.getOtherLocationDescription()).thenReturn("Y2");
+
+        CriminalJusticeArea a = new CriminalJusticeArea();
+        CriminalJusticeArea b = new CriminalJusticeArea();
+        when(cjaRepository.findByCode("Y2")).thenReturn(List.of(a, b));
+
+        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(dto));
+        Assertions.assertEquals(ApplicationListError.DUPLICATE_CJA_FOUND, exception.getCode());
+
         verify(repository, never()).save(any());
     }
 
@@ -75,13 +132,34 @@ public class ApplicationListCreateValidatorTest {
         @Test
         void valid_whenCourtLocationPresent_only() {
             var appList = buildDto(Field.COURT);
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
             assertDoesNotThrow(() -> validator.validate(appList));
+        }
+
+        @Test
+        void valid_whenCourtLocationPresentWithCallback_only() {
+            var appList = buildDto(Field.COURT);
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
+
+            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback = (dto, success) -> "result";
+            Assertions.assertEquals("result", validator.validate(appList, callback));
         }
 
         @Test
         void valid_whenCjaAndNonBlankOtherLocation_andNoCourtLocation() {
             var appList = buildDto(Field.CJA, Field.OTHER);
+            when(cjaRepository.findByCode(appList.getCjaCode())).thenReturn(List.of(new CriminalJusticeArea()));
+
             assertDoesNotThrow(() -> validator.validate(appList));
+        }
+
+        @Test
+        void valid_whenCjaAndNonBlankOtherLocationWithCallback_andNoCourtLocation() {
+            var appList = buildDto(Field.CJA, Field.OTHER);
+            when(cjaRepository.findByCode(appList.getCjaCode())).thenReturn(List.of(new CriminalJusticeArea()));
+
+            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback = (dto, success) -> "result";
+            Assertions.assertEquals("result", validator.validate(appList, callback));
         }
     }
 

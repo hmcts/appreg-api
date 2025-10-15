@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Nested;
@@ -32,7 +31,7 @@ public class ApplicationListMapperTest {
     class ToTimeTests {
         @Test
         void combine_nullDateParam_returnsNull() {
-            assertNull(mapper.toTime("10:30"));
+            assertEquals(LocalTime.of(10, 30), mapper.toTime("10:30"));
         }
     }
 
@@ -45,7 +44,7 @@ public class ApplicationListMapperTest {
 
         @Test
         void emitsHHmmssWhenSecondsPresent() {
-            LocalTime lt = LocalTime.of(8 ,5, 07);
+            LocalTime lt = LocalTime.of(8, 5, 07);
             assertEquals("08:05:07", mapper.toTimeString(lt));
         }
     }
@@ -87,8 +86,8 @@ public class ApplicationListMapperTest {
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
             assertEquals("OPEN", entity.getStatus());
-            assertEquals(LocalDateTime.of(2025, 9, 17, 0, 0), entity.getDate());
-            assertEquals(LocalDateTime.of(2025, 9, 17, 10, 30, 0), entity.getTime());
+            assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
+            assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
             assertEquals(45, entity.getDurationMinutes());
         }
@@ -131,8 +130,8 @@ public class ApplicationListMapperTest {
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
             assertEquals("OPEN", entity.getStatus());
-            assertEquals(LocalDateTime.of(2025, 9, 18, 0, 0), entity.getDate());
-            assertEquals(LocalDateTime.of(2025, 9, 18, 14, 5, 7), entity.getTime());
+            assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
+            assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
             assertEquals(15, entity.getDurationMinutes());
         }

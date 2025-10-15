@@ -29,16 +29,7 @@ public class ApplicationUpdateListLocationValidator extends AbstractApplicationL
 
     @Override
     public void validate(PayloadForUpdate<ApplicationListUpdateDto> dto) {
-        List<ApplicationList> applicationListList = applicationListRepository.findByUuid(dto.getId());
-
-        // if there is more than one record with the same UUID, it is an error
-        if (applicationListList.isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListError.APPLICATION_LIST_NOT_FOUND,
-                    "The application list id does not exist : %s".formatted(dto.getId()));
-        }
-
-        super.validate(dto);
+        validate(dto, null);
     }
 
     @Override
@@ -60,7 +51,10 @@ public class ApplicationUpdateListLocationValidator extends AbstractApplicationL
         //validate the location fields
         return super.validate(dto, (payload, updateLocatedList) -> {
             updateLocatedList.setApplicationList(applicationListList.getFirst());
-            return createApplicationSupplier.apply(payload, updateLocatedList);
+            if (createApplicationSupplier != null) {
+                return createApplicationSupplier.apply(payload, updateLocatedList);
+            }
+            return null;
         });
     }
 

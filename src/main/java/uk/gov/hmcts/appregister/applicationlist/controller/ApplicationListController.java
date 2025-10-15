@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.controller;
 
-import static javax.security.auth.callback.ConfirmationCallback.OK;
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import jakarta.validation.Valid;
 import java.net.URI;
