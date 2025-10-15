@@ -1,19 +1,17 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.BiFunction;
-
 import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +34,6 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -49,14 +46,19 @@ public class ApplicationListServiceImplTest {
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
-    @Spy private DummyApplicationCreateListLocationValidator validator
-            = new DummyApplicationCreateListLocationValidator(repository, courtHouseRepository, cjaRepository);
-    @Spy private DummyApplicationUpdateListLocationValidator updateValidator
-            = new DummyApplicationUpdateListLocationValidator(repository, courtHouseRepository, cjaRepository);
+
+    @Spy
+    private DummyApplicationCreateListLocationValidator validator =
+            new DummyApplicationCreateListLocationValidator(
+                    repository, courtHouseRepository, cjaRepository);
+
+    @Spy
+    private DummyApplicationUpdateListLocationValidator updateValidator =
+            new DummyApplicationUpdateListLocationValidator(
+                    repository, courtHouseRepository, cjaRepository);
 
     @Mock private EntityManager entityManager;
-    @Spy
-    private MatchService matchService = new MatchServiceImpl(null);
+    @Spy private MatchService matchService = new MatchServiceImpl(null);
 
     private ApplicationListServiceImpl service;
 
@@ -114,8 +116,6 @@ public class ApplicationListServiceImplTest {
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
         // given
-        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
-
         NationalCourtHouse court = new NationalCourtHouse();
 
         // the app list that is updated
@@ -134,9 +134,11 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
         when(mapper.toGetDetailDto(saved, null)).thenReturn(expectedDto);
 
+        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
 
-        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate = new PayloadForUpdate<>(dto, UUID.randomUUID());
+        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
+                new PayloadForUpdate<>(dto, UUID.randomUUID());
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(result.getPayload(), expectedDto);
@@ -186,9 +188,6 @@ public class ApplicationListServiceImplTest {
 
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
-
-        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
-
         CriminalJusticeArea cja = new CriminalJusticeArea();
 
         // the app list that is updated
@@ -208,7 +207,9 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
         when(mapper.toGetDetailDto(saved, cja)).thenReturn(expected);
 
-        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate = new PayloadForUpdate<>(dto, UUID.randomUUID());
+        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
+        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
+                new PayloadForUpdate<>(dto, UUID.randomUUID());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -223,36 +224,46 @@ public class ApplicationListServiceImplTest {
     }
 
     @Setter
-    class DummyApplicationCreateListLocationValidator extends ApplicationCreateListLocationValidator {
+    class DummyApplicationCreateListLocationValidator
+            extends ApplicationCreateListLocationValidator {
         private ListLocationValidationSuccess success;
+
         public DummyApplicationCreateListLocationValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository
-        ) {
+                CriminalJusticeAreaRepository cjaRepository) {
             super(repository, courtHouseRepository, cjaRepository);
         }
 
         @Override
-        public <R> R validate(ApplicationListCreateDto dto, BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, R> createApplicationSupplier) {
+        public <R> R validate(
+                ApplicationListCreateDto dto,
+                BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, R>
+                        createApplicationSupplier) {
             return createApplicationSupplier.apply(dto, success);
         }
     }
 
-
     @Setter
-    class DummyApplicationUpdateListLocationValidator extends ApplicationUpdateListLocationValidator {
+    class DummyApplicationUpdateListLocationValidator
+            extends ApplicationUpdateListLocationValidator {
         private ListUpdateValidationSuccess success;
+
         public DummyApplicationUpdateListLocationValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository
-        ) {
+                CriminalJusticeAreaRepository cjaRepository) {
             super(repository, courtHouseRepository, cjaRepository);
         }
 
         @Override
-        public <R> R validate(PayloadForUpdate<ApplicationListUpdateDto> dto, BiFunction<PayloadForUpdate<ApplicationListUpdateDto>, ListUpdateValidationSuccess, R> createApplicationSupplier) {
+        public <R> R validate(
+                PayloadForUpdate<ApplicationListUpdateDto> dto,
+                BiFunction<
+                                PayloadForUpdate<ApplicationListUpdateDto>,
+                                ListUpdateValidationSuccess,
+                                R>
+                        createApplicationSupplier) {
             return createApplicationSupplier.apply(dto, success);
         }
     }

@@ -2,8 +2,6 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
@@ -11,12 +9,9 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListL
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
@@ -54,35 +49,42 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     /**
      * {@inheritDoc}
      *
-     * <p>Delegates to either {@link #createWithCourt(ApplicationListCreateDto, ListLocationValidationSuccess)} or {@link
-     * #createWithCja(ApplicationListCreateDto, ListLocationValidationSuccess)} depending on whether a Court Location Code is
-     * present in the DTO.
+     * <p>Delegates to either {@link #createWithCourt(ApplicationListCreateDto,
+     * ListLocationValidationSuccess)} or {@link #createWithCja(ApplicationListCreateDto,
+     * ListLocationValidationSuccess)} depending on whether a Court Location Code is present in the
+     * DTO.
      *
-     * @reurn
      * @throws AppRegistryException if no court or multiple courts are found for the given code
      */
     @Override
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto) {
-        return applicationCreateListLocationValidator.validate(dto, (listCreateDto,
-                                                                           success) ->
-                                success.hasCourt() ? createWithCourt(listCreateDto, success) :
-                                createWithCja(listCreateDto, success));
+        return applicationCreateListLocationValidator.validate(
+                dto,
+                (listCreateDto, success) ->
+                        success.hasCourt()
+                                ? createWithCourt(listCreateDto, success)
+                                : createWithCja(listCreateDto, success));
     }
 
     /**
      * {@inheritDoc}
-     *s
-     * <p>Delegates to either {@link #updateWithCourt(PayloadForUpdate, ListUpdateValidationSuccess)} or {@link
-     * #updateWithCja(PayloadForUpdate, ListUpdateValidationSuccess)} depending on whether a Court Location Code is
-     * present in the DTO.
+     *
+     * <p>Delegates to either {@link #updateWithCourt(PayloadForUpdate,
+     * ListUpdateValidationSuccess)} or {@link #updateWithCja(PayloadForUpdate,
+     * ListUpdateValidationSuccess)} depending on whether a Court Location Code is present in the
+     * DTO.
      */
     @Override
     @Transactional
-    public MatchResponse<ApplicationListGetDetailDto> update(PayloadForUpdate<ApplicationListUpdateDto> dto) {
-        return applicationUpdateListLocationValidator.validate(dto, (updateDto,
-                                                                              success) ->
-                success.hasCourt() ? updateWithCourt(updateDto, success) : updateWithCja(updateDto, success));
+    public MatchResponse<ApplicationListGetDetailDto> update(
+            PayloadForUpdate<ApplicationListUpdateDto> dto) {
+        return applicationUpdateListLocationValidator.validate(
+                dto,
+                (updateDto, success) ->
+                        success.hasCourt()
+                                ? updateWithCourt(updateDto, success)
+                                : updateWithCja(updateDto, success));
     }
 
     /**
@@ -95,11 +97,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCourt(ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private MatchResponse<ApplicationListGetDetailDto> createWithCourt(
+            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var court = success.getNationalCourtHouse();
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
-        return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
+        return MatchResponse.of(
+                hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
     }
 
     /**
@@ -112,7 +116,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCja(ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private MatchResponse<ApplicationListGetDetailDto> createWithCja(
+            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var cja = success.getCriminalJusticeArea();
 
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
@@ -128,16 +133,23 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> updateWithCourt(PayloadForUpdate<ApplicationListUpdateDto> updateDto, ListUpdateValidationSuccess success) {
+    private MatchResponse<ApplicationListGetDetailDto> updateWithCourt(
+            PayloadForUpdate<ApplicationListUpdateDto> updateDto,
+            ListUpdateValidationSuccess success) {
         var court = success.getNationalCourtHouse();
 
-        mapper.toUpdateEntityWithCourt(updateDto.getData(), null, court, success.getApplicationList());
+        mapper.toUpdateEntityWithCourt(
+                updateDto.getData(), null, court, success.getApplicationList());
 
-        return matchService.matchOnRequest(success.getApplicationList().getUuid(), success.getApplicationList(), () -> {
-            var savedEntity = repository.save(success.getApplicationList());
-            var hydrated = refreshEntity(savedEntity);
-            return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
-        });
+        return matchService.matchOnRequest(
+                success.getApplicationList().getUuid(),
+                success.getApplicationList(),
+                () -> {
+                    var savedEntity = repository.save(success.getApplicationList());
+                    var hydrated = refreshEntity(savedEntity);
+                    return MatchResponse.of(
+                            hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null));
+                });
     }
 
     /**
@@ -150,18 +162,24 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> updateWithCja(PayloadForUpdate<ApplicationListUpdateDto> updateDto, ListUpdateValidationSuccess success) {
+    private MatchResponse<ApplicationListGetDetailDto> updateWithCja(
+            PayloadForUpdate<ApplicationListUpdateDto> updateDto,
+            ListUpdateValidationSuccess success) {
         var cja = success.getCriminalJusticeArea();
         ApplicationList applicationList = success.getApplicationList();
 
         mapper.toUpdateEntityWithCja(updateDto.getData(), cja, applicationList);
 
-        return matchService.matchOnRequest(success.getApplicationList().getUuid(), success.getApplicationList(), () -> {
-            var savedEntity = repository.save(applicationList);
-            var hydrated = refreshEntity(savedEntity);
+        return matchService.matchOnRequest(
+                success.getApplicationList().getUuid(),
+                success.getApplicationList(),
+                () -> {
+                    var savedEntity = repository.save(applicationList);
+                    var hydrated = refreshEntity(savedEntity);
 
-            return MatchResponse.of(hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, cja));
-        });
+                    return MatchResponse.of(
+                            hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, cja));
+                });
     }
 
     /**

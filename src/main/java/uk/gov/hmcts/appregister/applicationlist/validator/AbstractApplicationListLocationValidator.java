@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -11,43 +14,45 @@ import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepos
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 /**
  * Validator component for location fields.
  *
  * <p>Enforces the business rule that exactly one valid location option is provided: either a court
  * location code, or a combination of criminal justice area code and other location description.
  *
- * This class should be provided with method references to the relevant getters of the DTO to be validated. In this way it
- * can be shared
+ * <p>This class should be provided with method references to the relevant getters of the DTO to be
+ * validated. In this way it can be shared
  */
 @RequiredArgsConstructor
-public abstract class AbstractApplicationListLocationValidator<T, O extends ListLocationValidationSuccess> implements Validator<T, O> {
+public abstract class AbstractApplicationListLocationValidator<
+                T, O extends ListLocationValidationSuccess>
+        implements Validator<T, O> {
 
     /**
-     * gets the court location from the underlying dto
+     * gets the court location from the underlying dto.
+     *
      * @return the court location
      */
     abstract Function<T, String> getCourtLocation();
 
     /**
-     * gets the cja code from the underlying dto
+     * gets the cja code from the underlying dto.
+     *
      * @return The cja code
      */
     abstract Function<T, String> getCjaCode();
 
     /**
-     * gets the location description from the underlying dto
+     * gets the location description from the underlying dto.
+     *
      * @return The location description
      */
     abstract Function<T, String> getLocationDescription();
 
     /**
-     * creates the result the validator success that. Always a sub class of {@link ListLocationValidationSuccess}
+     * creates the result the validator success that. Always a sub class of {@link
+     * ListLocationValidationSuccess}
+     *
      * @return The validation result
      */
     abstract O getResult();
@@ -60,7 +65,8 @@ public abstract class AbstractApplicationListLocationValidator<T, O extends List
     protected static final int SINGLE_RECORD = 1;
 
     /**
-     * Validates the location fields of the given {@link uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto}.
+     * Validates the location fields of the given {@link
+     * uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto}.
      *
      * <p>A DTO is considered valid if and only if one of the following holds (exclusive OR):
      *
@@ -72,7 +78,8 @@ public abstract class AbstractApplicationListLocationValidator<T, O extends List
      * <p>Supplying neither option, or supplying both options at the same time, is invalid.
      *
      * @param dto the DTO to validate (must not be {@code null})
-     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if the location combination does not satisfy the XOR rule
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if the location
+     *     combination does not satisfy the XOR rule
      */
     @Override
     public void validate(T dto) {
@@ -114,7 +121,8 @@ public abstract class AbstractApplicationListLocationValidator<T, O extends List
     }
 
     /**
-     * validates the court
+     * validates the court.
+     *
      * @param dto The dto type top validate
      */
     private void validateCourt(T dto, O createApplication) {
@@ -135,12 +143,14 @@ public abstract class AbstractApplicationListLocationValidator<T, O extends List
     }
 
     /**
-     * Validate the court justice area
+     * Validate the court justice area.
+     *
      * @param dto The dto being validated
      */
     private void validateCja(T dto, O createApplication) {
-        var cjaCode =getCjaCode().apply(dto).trim();
-        final List<CriminalJusticeArea> criminalJusticeAreas = criminalJusticeAreaRepository.findByCode(cjaCode);
+        var cjaCode = getCjaCode().apply(dto).trim();
+        final List<CriminalJusticeArea> criminalJusticeAreas =
+                criminalJusticeAreaRepository.findByCode(cjaCode);
 
         if (criminalJusticeAreas.isEmpty()) {
             throw new AppRegistryException(

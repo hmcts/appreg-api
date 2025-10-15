@@ -115,7 +115,10 @@ public interface ApplicationListMapper {
     @Mapping(target = "status", source = "dto.status.value")
     @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
     @Mapping(target = "cja", source = "cja")
-    void toUpdateEntityWithCja(ApplicationListUpdateDto dto, CriminalJusticeArea cja, @MappingTarget ApplicationList entity);
+    void toUpdateEntityWithCja(
+            ApplicationListUpdateDto dto,
+            CriminalJusticeArea cja,
+            @MappingTarget ApplicationList entity);
 
     @Mapping(target = "pk", ignore = true)
     @Mapping(target = "uuid", ignore = true)
@@ -130,5 +133,9 @@ public interface ApplicationListMapper {
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", expression = "java(toTime(dto.getTime()))")
     @Mapping(target = "cja", source = "cja")
-    void toUpdateEntityWithCourt(ApplicationListUpdateDto dto, CriminalJusticeArea cja, NationalCourtHouse court, @MappingTarget ApplicationList entity);
+    void toUpdateEntityWithCourt(
+            ApplicationListUpdateDto dto,
+            CriminalJusticeArea cja,
+            NationalCourtHouse court,
+            @MappingTarget ApplicationList entity);
 }

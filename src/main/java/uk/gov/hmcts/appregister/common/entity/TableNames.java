@@ -8,5 +8,4 @@ public class TableNames {
     public static final String CRIMINAL_JUSTICE_AREA = "criminal_justice_area";
     public static final String NATIONAL_COURT_HOUSES = "national_court_houses";
     public static final String APPLICATION_LISTS = "application_lists";
-
 }

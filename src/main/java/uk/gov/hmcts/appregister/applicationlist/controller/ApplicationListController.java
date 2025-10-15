@@ -71,22 +71,27 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListGetDetailDto> createApplicationList(
             @Valid @RequestBody ApplicationListCreateDto applicationListCreateDto) {
 
-        MatchResponse<ApplicationListGetDetailDto> created = service.create(applicationListCreateDto);
+        MatchResponse<ApplicationListGetDetailDto> created =
+                service.create(applicationListCreateDto);
 
         return ResponseEntity.status(CREATED)
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)
-                .headers(h -> h.setLocation(locationOf(created.getPayload().getId()))).eTag(created.getEtag())
+                .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                .eTag(created.getEtag())
                 .body(created.getPayload());
     }
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<ApplicationListGetDetailDto> updateApplicationList(UUID id, ApplicationListUpdateDto applicationListUpdateDto) {
-        MatchResponse<ApplicationListGetDetailDto> updated = service.update(PayloadForUpdate.<ApplicationListUpdateDto>builder()
-                .id(id)
-                .data(applicationListUpdateDto)
-                .build());
+    public ResponseEntity<ApplicationListGetDetailDto> updateApplicationList(
+            UUID id, ApplicationListUpdateDto applicationListUpdateDto) {
+        MatchResponse<ApplicationListGetDetailDto> updated =
+                service.update(
+                        PayloadForUpdate.<ApplicationListUpdateDto>builder()
+                                .id(id)
+                                .data(applicationListUpdateDto)
+                                .build());
 
         return ResponseEntity.status(OK)
                 .varyBy("Accept")

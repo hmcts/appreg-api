@@ -1,5 +1,18 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -8,41 +21,26 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
-import uk.gov.hmcts.appregister.common.entity.*;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
-import uk.gov.hmcts.appregister.generated.model.*;
-
-import java.util.List;
-
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
-
-import java.util.UUID;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListUpdateValidatorTest {
 
-    @Mock
-    private ApplicationListRepository repository;
+    @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
 
-    @InjectMocks
-    private ApplicationUpdateListLocationValidator validator;
+    @InjectMocks private ApplicationUpdateListLocationValidator validator;
 
     private enum Field {
         COURT,
@@ -126,7 +124,8 @@ public class ApplicationListUpdateValidatorTest {
         when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         Assertions.assertEquals(ApplicationListError.CJA_NOT_FOUND, exception.getCode());
         verify(repository, never()).save(any());
     }
@@ -148,7 +147,8 @@ public class ApplicationListUpdateValidatorTest {
         when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         Assertions.assertEquals(ApplicationListError.DUPLICATE_CJA_FOUND, exception.getCode());
 
         verify(repository, never()).save(any());
@@ -161,8 +161,10 @@ public class ApplicationListUpdateValidatorTest {
         UUID uuid = UUID.randomUUID();
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(payload));
-        Assertions.assertEquals(ApplicationListError.APPLICATION_LIST_NOT_FOUND, exception.getCode());
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+        Assertions.assertEquals(
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND, exception.getCode());
     }
 
     // ---- TESTS ----
@@ -172,11 +174,14 @@ public class ApplicationListUpdateValidatorTest {
         @Test
         void valid_whenCourtLocationPresent_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocation().getLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
+            when(courtHouseRepository.findActiveCourts(
+                            appList.getCourtLocation().getLocationCode()))
+                    .thenReturn(List.of(new NationalCourtHouse()));
 
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
             assertDoesNotThrow(() -> validator.validate(payload));
         }
@@ -184,24 +189,30 @@ public class ApplicationListUpdateValidatorTest {
         @Test
         void valid_whenCourtLocationPresentWithCallback_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocation().getLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
+            when(courtHouseRepository.findActiveCourts(
+                            appList.getCourtLocation().getLocationCode()))
+                    .thenReturn(List.of(new NationalCourtHouse()));
 
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
-            BiFunction<PayloadForUpdate<ApplicationListUpdateDto>, ListUpdateValidationSuccess, ?> callback = (dto, success) -> "result";
+            BiFunction<PayloadForUpdate<ApplicationListUpdateDto>, ListUpdateValidationSuccess, ?>
+                    callback = (dto, success) -> "result";
             assertEquals("result", validator.validate(payload, callback));
         }
 
         @Test
         void valid_whenCjaAndNonBlankOtherLocation_andNoCourtLocation() {
             var appList = buildDto(Field.CJA, Field.OTHER);
-            when(cjaRepository.findByCode(appList.getCriminalJusticeArea().getCode())).thenReturn(List.of(new CriminalJusticeArea()));
+            when(cjaRepository.findByCode(appList.getCriminalJusticeArea().getCode()))
+                    .thenReturn(List.of(new CriminalJusticeArea()));
 
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
             assertDoesNotThrow(() -> validator.validate(payload));
         }
@@ -209,13 +220,16 @@ public class ApplicationListUpdateValidatorTest {
         @Test
         void valid_whenCjaAndNonBlankOtherLocationWithCallback_andNoCourtLocation() {
             var appList = buildDto(Field.CJA, Field.OTHER);
-            when(cjaRepository.findByCode(appList.getCriminalJusticeArea().getCode())).thenReturn(List.of(new CriminalJusticeArea()));
+            when(cjaRepository.findByCode(appList.getCriminalJusticeArea().getCode()))
+                    .thenReturn(List.of(new CriminalJusticeArea()));
 
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
-            BiFunction<PayloadForUpdate<ApplicationListUpdateDto>, ListUpdateValidationSuccess, ?> callback = (dto, success) -> "result";
+            BiFunction<PayloadForUpdate<ApplicationListUpdateDto>, ListUpdateValidationSuccess, ?>
+                    callback = (dto, success) -> "result";
             assertEquals("result", validator.validate(payload, callback));
         }
     }
@@ -228,7 +242,8 @@ public class ApplicationListUpdateValidatorTest {
             var appList = buildDto();
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
             AppRegistryException ex =
                     assertThrows(AppRegistryException.class, () -> validator.validate(payload));
@@ -240,7 +255,8 @@ public class ApplicationListUpdateValidatorTest {
             var appList = buildDto(Field.CJA);
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
             assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         }
@@ -250,7 +266,8 @@ public class ApplicationListUpdateValidatorTest {
             var appList = buildDto(Field.OTHER);
             UUID uuid = UUID.randomUUID();
             when(repository.findByUuid(uuid)).thenReturn(List.of(new ApplicationList()));
-            PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(appList, uuid);
+            PayloadForUpdate<ApplicationListUpdateDto> payload =
+                    new PayloadForUpdate<>(appList, uuid);
 
             assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         }
@@ -267,4 +284,3 @@ public class ApplicationListUpdateValidatorTest {
         }
     }
 }
-

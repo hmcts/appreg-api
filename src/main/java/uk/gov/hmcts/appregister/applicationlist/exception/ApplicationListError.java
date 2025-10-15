@@ -7,31 +7,28 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 
 public enum ApplicationListError implements ErrorCodeEnum {
     INVALID_LOCATION_COMBINATION(
-        DefaultErrorDetail.create(
-                HttpStatus.BAD_REQUEST,
-                "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
-                        + " and 'otherLocationDescription' must be supplied.",
-                "AL-1")),
-        CJA_NOT_FOUND(
-                DefaultErrorDetail.create(
-                        HttpStatus.NOT_FOUND, "Criminal Justice Area not found", "AL-2")),
-        DUPLICATE_CJA_FOUND(
-                DefaultErrorDetail.create(
-                        HttpStatus.CONFLICT,
-                        "Multiple Criminal Justice Areas found when only one was expected",
-                        "AL-3")),
-        COURT_NOT_FOUND(
-                DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Court Location not found", "AL-4")),
-        DUPLICATE_COURT_FOUND(
-                DefaultErrorDetail.create(
-                        HttpStatus.CONFLICT,
-                        "Multiple Court Locations found when only one was expected",
-                        "CL-5")),
-        APPLICATION_LIST_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND,
-                    "Application list not found",
-                    "CL-6"));
+                    HttpStatus.BAD_REQUEST,
+                    "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
+                            + " and 'otherLocationDescription' must be supplied.",
+                    "AL-1")),
+    CJA_NOT_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.NOT_FOUND, "Criminal Justice Area not found", "AL-2")),
+    DUPLICATE_CJA_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "Multiple Criminal Justice Areas found when only one was expected",
+                    "AL-3")),
+    COURT_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Court Location not found", "AL-4")),
+    DUPLICATE_COURT_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "Multiple Court Locations found when only one was expected",
+                    "CL-5")),
+    APPLICATION_LIST_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application list not found", "CL-6"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

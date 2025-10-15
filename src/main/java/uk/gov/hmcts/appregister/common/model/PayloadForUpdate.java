@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.common.model;
 
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
-import java.util.UUID;
 
 /**
  * A payload that represents both the id and the incoming payload content.

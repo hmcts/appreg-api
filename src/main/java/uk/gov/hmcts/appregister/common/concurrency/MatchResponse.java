@@ -1,16 +1,15 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
+import java.util.UUID;
 import lombok.Getter;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 
-import java.util.UUID;
-
 /**
- * The etag that will be returned with the associated operation payload
+ * The etag that will be returned with the associated operation payload.
  */
 @Getter
-public class MatchResponse<T>{
+public class MatchResponse<T> {
     private final String etag;
     private final T payload;
 

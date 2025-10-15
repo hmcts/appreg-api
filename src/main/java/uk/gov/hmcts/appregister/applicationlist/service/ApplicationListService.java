@@ -23,9 +23,10 @@ public interface ApplicationListService {
      * either a {@code NationalCourtHouse} or a {@code CriminalJusticeArea}.
      *
      * @param dto the data transfer object containing details for the application list to create
-     * @return a detailed DTO representing the newly created application list. Each DTO is wrapped in a
-     * {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that can be used in update or delete operations
-     * match response which contains the etag information that can then be used for concurrency control in
+     * @return a detailed DTO representing the newly created application list. Each DTO is wrapped
+     *     in a {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that can be used
+     *     in update or delete operations match response which contains the etag information that
+     *     can then be used for concurrency control in
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
      *     or the associated Court/CJA entity is not found or duplicated
      */
@@ -39,10 +40,12 @@ public interface ApplicationListService {
      * either a {@code NationalCourtHouse} or a {@code CriminalJusticeArea}.
      *
      * @param dto the data transfer object containing details for the application list to update
-     * @return a detailed DTO representing the newly created application list.  Each DTO is wrapped in a
-     * {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that can be used in update or delete operations
+     * @return a detailed DTO representing the newly created application list. Each DTO is wrapped
+     *     in a {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that canontains an
+     *     etag that can be used in update or delete operations
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
      *     or the associated Court/CJA entity is not found or duplicated
      */
-    MatchResponse<ApplicationListGetDetailDto> update(PayloadForUpdate<ApplicationListUpdateDto> dto);
+    MatchResponse<ApplicationListGetDetailDto> update(
+            PayloadForUpdate<ApplicationListUpdateDto> dto);
 }

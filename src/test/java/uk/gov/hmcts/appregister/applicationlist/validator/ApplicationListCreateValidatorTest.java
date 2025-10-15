@@ -5,17 +5,17 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import io.restassured.internal.common.assertion.Assertion;
-import org.assertj.core.api.AbstractThrowableAssert;
-import org.junit.Assert;
+import java.util.List;
+import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.Extensions;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -26,23 +26,16 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
-
-import java.util.List;
-import java.util.function.BiFunction;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListCreateValidatorTest {
 
-    @Mock
-    private ApplicationListRepository repository;
+    @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
 
-    @InjectMocks
-    private ApplicationCreateListLocationValidator validator;
+    @InjectMocks private ApplicationCreateListLocationValidator validator;
 
     private enum Field {
         COURT,
@@ -103,7 +96,8 @@ public class ApplicationListCreateValidatorTest {
 
         when(cjaRepository.findByCode("X1")).thenReturn(List.of());
 
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(dto));
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(dto));
         Assertions.assertEquals(ApplicationListError.CJA_NOT_FOUND, exception.getCode());
         verify(repository, never()).save(any());
     }
@@ -119,7 +113,8 @@ public class ApplicationListCreateValidatorTest {
         CriminalJusticeArea b = new CriminalJusticeArea();
         when(cjaRepository.findByCode("Y2")).thenReturn(List.of(a, b));
 
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> validator.validate(dto));
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(dto));
         Assertions.assertEquals(ApplicationListError.DUPLICATE_CJA_FOUND, exception.getCode());
 
         verify(repository, never()).save(any());
@@ -132,23 +127,27 @@ public class ApplicationListCreateValidatorTest {
         @Test
         void valid_whenCourtLocationPresent_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                    .thenReturn(List.of(new NationalCourtHouse()));
             assertDoesNotThrow(() -> validator.validate(appList));
         }
 
         @Test
         void valid_whenCourtLocationPresentWithCallback_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode())).thenReturn(List.of(new NationalCourtHouse()));
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                    .thenReturn(List.of(new NationalCourtHouse()));
 
-            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback = (dto, success) -> "result";
+            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback =
+                    (dto, success) -> "result";
             Assertions.assertEquals("result", validator.validate(appList, callback));
         }
 
         @Test
         void valid_whenCjaAndNonBlankOtherLocation_andNoCourtLocation() {
             var appList = buildDto(Field.CJA, Field.OTHER);
-            when(cjaRepository.findByCode(appList.getCjaCode())).thenReturn(List.of(new CriminalJusticeArea()));
+            when(cjaRepository.findByCode(appList.getCjaCode()))
+                    .thenReturn(List.of(new CriminalJusticeArea()));
 
             assertDoesNotThrow(() -> validator.validate(appList));
         }
@@ -156,9 +155,11 @@ public class ApplicationListCreateValidatorTest {
         @Test
         void valid_whenCjaAndNonBlankOtherLocationWithCallback_andNoCourtLocation() {
             var appList = buildDto(Field.CJA, Field.OTHER);
-            when(cjaRepository.findByCode(appList.getCjaCode())).thenReturn(List.of(new CriminalJusticeArea()));
+            when(cjaRepository.findByCode(appList.getCjaCode()))
+                    .thenReturn(List.of(new CriminalJusticeArea()));
 
-            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback = (dto, success) -> "result";
+            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback =
+                    (dto, success) -> "result";
             Assertions.assertEquals("result", validator.validate(appList, callback));
         }
     }

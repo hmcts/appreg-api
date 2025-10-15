@@ -5,13 +5,10 @@ import static org.instancio.Select.field;
 
 import io.restassured.response.Response;
 import java.net.URI;
-import java.net.URL;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
-
 import org.apache.http.HttpHeaders;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -21,11 +18,13 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
-import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
-import uk.gov.hmcts.appregister.generated.model.*;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -219,11 +218,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEquals(
-                ApplicationListError
-                        .CJA_NOT_FOUND
-                        .getCode(),
-                resp);
+        ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
     }
 
     // --- Bad DTO validation (example: bad time format) ----------------------------------------
@@ -292,7 +287,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationMinutes(32)
                         .version(2L);
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -342,7 +339,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationMinutes(32)
                         .version(2L);
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req, "never going to match");
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, "never going to match");
 
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         ProblemAssertUtil.assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
@@ -374,7 +373,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationMinutes(32)
                         .version(2L);
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req, createdLocation[1]);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -397,7 +398,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
     }
-
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
@@ -426,7 +426,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .version(2L)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().contentType(VND_JSON_V1);
 
@@ -472,7 +474,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .version(2L)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req, createdLocation[1]);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
 
         resp.then().contentType(VND_JSON_V1);
 
@@ -517,7 +521,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .version(2L)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req, "no match");
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, "no match");
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         ProblemAssertUtil.assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
     }
@@ -547,26 +553,20 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .version(2L)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
 
         // AL-1 (INVALID_LOCATION_COMBINATION)
         ProblemAssertUtil.assertEquals(
-                ApplicationListError
-                        .APPLICATION_LIST_NOT_FOUND
-                        .getCode(),
-                resp);
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
     }
 
     // --- Validation: XOR rule (both supplied) -------------------------------------------------
     @Test
     void givenInvalidLocationCombination_whenUpdate_then400() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
 
         CriminalJusticeAreaGetDto criminalJusticeAreaGetDto = new CriminalJusticeAreaGetDto();
         criminalJusticeAreaGetDto.setCode(VALID_CJA_CODE);
@@ -590,8 +590,16 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .courtLocation(courtLocationGetDetailDto)
                         .otherLocationDescription("Updated other location");
 
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
         String[] createdLocation = createAppListUsingRestApi();
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
 
@@ -612,7 +620,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .build()
                         .fetchTokenForRole();
 
-
         String[] createdLocation = createAppListUsingRestApi();
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setName("Court Location");
@@ -631,7 +638,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .courtLocation(courtLocationGetDetailDto)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         ProblemAssertUtil.assertEquals(ApplicationListError.COURT_NOT_FOUND.getCode(), resp);
@@ -663,16 +672,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .criminalJusticeArea(criminalJusticeAreaGetDto)
                         .otherLocationDescription("Updated other location");
 
-        Response resp = restAssuredClient.executePutRequest(new URL(createdLocation[0]), token, req);
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEquals(
-                ApplicationListError
-                        .CJA_NOT_FOUND
-                        .getCode(),
-                resp);
+        ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
     }
-
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -726,10 +732,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     /**
-     * A utility method to create a new record
-     * @return A two part array:-
-     * [0] - the uuid that can be used to fetch or update the record
-     * [1] - the etag
+     * A utility method to create a new record.
+     *
+     * @return A two part array:- [0] - the uuid that can be used to fetch or update the record [1]-
+     *     the etag for optimistic locking at the api level
      */
     private String[] createAppListUsingRestApi() throws Exception {
         var token =
@@ -749,7 +755,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationMinutes(30);
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
-        return new String[]{resp.header(HttpHeaders.LOCATION), resp.header(HttpHeaders.ETAG)};
+        return new String[] {resp.header(HttpHeaders.LOCATION), resp.header(HttpHeaders.ETAG)};
     }
-
 }

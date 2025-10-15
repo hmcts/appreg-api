@@ -1,5 +1,9 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,19 +15,12 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
-import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @ExtendWith(MockitoExtension.class)
 public class MatchServiceImplTest {
 
-    @Mock
-    private MatchProvider matchRequest;
+    @Mock private MatchProvider matchRequest;
 
-    @InjectMocks
-    public MatchServiceImpl matchService;
+    @InjectMocks public MatchServiceImpl matchService;
 
     @Test
     public void testProcessMatchSuccess() {
@@ -36,9 +33,13 @@ public class MatchServiceImplTest {
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
-        matchService.matchOnRequest(id, versionable, () -> {;
-            return matchResponse;
-        });
+        matchService.matchOnRequest(
+                id,
+                versionable,
+                () -> {
+                    ;
+                    return matchResponse;
+                });
     }
 
     @Test
@@ -56,11 +57,18 @@ public class MatchServiceImplTest {
         Versionable versionable1 = mock(Versionable.class);
         when(versionable1.getVersion()).thenReturn(2L);
 
-        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class,
-                () -> matchService.matchOnRequest(id, versionable1, () -> {;
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                matchService.matchOnRequest(
+                                        id,
+                                        versionable1,
+                                        () -> {
+                                            ;
 
-            return MatchResponse.of(id, versionable1, "test");
-        }));
+                                            return MatchResponse.of(id, versionable1, "test");
+                                        }));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 
@@ -76,8 +84,14 @@ public class MatchServiceImplTest {
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
         // change the id to simulate a conflict
-        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class,
-                () -> matchService.matchOnRequest(UUID.randomUUID(), versionable, () -> MatchResponse.of(id, versionable, payload)));
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                matchService.matchOnRequest(
+                                        UUID.randomUUID(),
+                                        versionable,
+                                        () -> MatchResponse.of(id, versionable, payload)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 
@@ -93,9 +107,14 @@ public class MatchServiceImplTest {
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
         // change the id to simulate a conflict
-        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class,
-                () -> matchService.matchOnRequest(id, new ApplicationList(), () -> MatchResponse.of(id, versionable, payload)));
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                matchService.matchOnRequest(
+                                        id,
+                                        new ApplicationList(),
+                                        () -> MatchResponse.of(id, versionable, payload)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
-
 }
