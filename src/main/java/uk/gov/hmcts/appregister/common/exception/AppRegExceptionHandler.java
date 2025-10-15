@@ -1,6 +1,9 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class AppRegExceptionHandler {
+
+    public record ApiError(String code, String message, String correlationId) {}
 
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
@@ -32,5 +37,11 @@ public class AppRegExceptionHandler {
         }
 
         return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    ResponseEntity<ApiError> handle(NotFoundException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ApiError(ex.code, ex.getMessage(), (String) req.getAttribute("correlationId")));
     }
 }

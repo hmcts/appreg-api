@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
+import org.springframework.data.domain.Pageable;
+
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
@@ -37,11 +39,13 @@ public interface ApplicationListService {
      *   <li>Fetch the list metadata and total entry count</li>
      *   <li>Query a lightweight projection of entry summaries ordered by sequence number</li>
      * </ul>
-     * The operation is read-only and does not modify any data.
+     * The operation is read-only and does not modify any data. Pagination and sorting are handled via the supplied
+     * {@link Pageable}, which is typically created from OpenAPI paging parameters by a mapper.
      * </p>
      *
      * @param id the unique identifier of the application list to retrieve
+     * @param pageable Spring Data paging and sorting configuration
      * @return a detailed DTO representing the retrieved application list
      */
-    ApplicationListGetDetailDto get(UUID id, Boolean includeSummaries);
+    ApplicationListGetDetailDto get(UUID id, Boolean paginateSummaries, Pageable pageable);
 }

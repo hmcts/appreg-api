@@ -2,6 +2,10 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -59,11 +63,11 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Retrieves a lightweight, paginated list of entry summaries for a given application list.
+     * Retrieves paginated list of entry summaries for a given application list.
      *
      * @param id the ID of the ApplicationList
-     * @return an Optional containing the ApplicationListEntrySummaryProjection if found, or empty
-     *     if not found
+     * @param pageable Spring Data paging and sorting configuration
+     * @return a page of summary projections
      */
     @Query(
             """
@@ -87,9 +91,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     WHERE sub.applicationList = ale
                 )
             JOIN aler.resolutionCode rc
-            WHERE ale.applicationList.id = :id
-            ORDER BY ale.sequenceNumber ASC
-            LIMIT :limit OFFSET :offset
+            WHERE ale.applicationList.uuid = :id
             """)
-    Optional<ApplicationListEntrySummaryProjection> findById(Long id, int limit, int offset);
+    Page<ApplicationListEntrySummaryProjection> findPagedSummariesById(UUID id, Pageable pageable);
 }

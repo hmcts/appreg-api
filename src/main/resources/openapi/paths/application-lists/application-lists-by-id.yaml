@@ -5,9 +5,29 @@ parameters:
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
   - in: query
-    name: includeSummaries
+    name: paginateSummaries
     schema: { type: boolean, default: false }
-    description: Include entriesCount and entriesSummary for the list item.
+    description: Add pagination for summaries.
+  - in: query
+    name: page
+    schema: { type: integer, format: int32, minimum: 0, default: 0 }
+    description: Zero-based page index.
+  - in: query
+    name: size
+    schema: { type: integer, format: int32, minimum: 1, default: 10, maximum: 100}
+    description: Page size.
+  - in: query
+    name: sort
+    description: >
+      Repeatable sort parameter. Format per item: `property,(asc|desc)`.
+      Example: `?sort=name,asc&sort=code,desc`.
+    style: form
+    explode: true
+    schema:
+      type: array
+      items: { type: string }
+      example: [ "name,asc", "code,desc" ]
+
 
 get:
   operationId: getApplicationList

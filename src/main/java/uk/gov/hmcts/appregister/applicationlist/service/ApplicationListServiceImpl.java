@@ -2,22 +2,36 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.NotFoundException;
+import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
 /**
@@ -41,7 +55,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListRepository repository;
     private final NationalCourtHouseRepository courtHouseRepository;
     private final CriminalJusticeAreaRepository cjaRepository;
+    private final ApplicationListEntryRepository entryRepository;
     private final ApplicationListMapper mapper;
+    // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
+    private final PageMapper pageMapper;
+    private final ApplicationListEntryMapStructMapper entryMapper;
     private final ApplicationListLocationValidator validator;
     private final EntityManager entityManager;
 
@@ -57,6 +75,24 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     public ApplicationListGetDetailDto create(ApplicationListCreateDto dto) {
         validator.validate(dto);
         return hasCourt(dto) ? createWithCourt(dto) : createWithCja(dto);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationListGetDetailDto get(UUID id, Boolean paginateSummaries, Pageable pageable) {
+        ApplicationList list = repository.findByUuid(id)
+            .orElseThrow(() -> new NotFoundException("list_not_found", "List not found"));
+
+        // Fetch results from the repository using pagination
+        Page<ApplicationListEntrySummaryProjection> dbPage = entryRepository.findPagedSummariesById(id, pageable);
+
+        //List<ApplicationListEntrySummaryProjection> summaryProjections = dbPage.getContent();
+        List<ApplicationListEntrySummary> summaries = new ArrayList<>();
+
+        // Map each projection to a summary model
+        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryModel(projection)));
+
+        return buildDto(list, summaries.size(), summaries);
     }
 
     private static boolean hasCourt(ApplicationListCreateDto dto) {
@@ -133,5 +169,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         entityManager.flush();
         entityManager.refresh(entity);
         return entity;
+    }
+
+    private ApplicationListGetDetailDto buildDto(ApplicationList list, Integer entriesCount,
+                                                 List<ApplicationListEntrySummary> entriesSummary) {
+        ApplicationListGetDetailDto dto = mapper.toGetDetailDto(list, null);
+        dto.setEntriesCount(entriesCount);
+        dto.setEntriesSummary(entriesSummary);
+
+        return dto;
     }
 }
