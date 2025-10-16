@@ -72,6 +72,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     @Query(
             """
             SELECT
+                ale.sequenceNumber,
                 ale.accountNumber AS accountNumber,
                 COALESCE(ana.name, sa.name) AS applicant,
                 rna.name AS respondent,
@@ -93,5 +94,5 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             JOIN aler.resolutionCode rc
             WHERE ale.applicationList.uuid = :id
             """)
-    Page<ApplicationListEntrySummaryProjection> findPagedSummariesById(UUID id, Pageable pageable);
+    Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 }

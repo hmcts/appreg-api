@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -25,7 +26,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.exception.NotFoundException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
@@ -79,14 +79,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     @Override
     @Transactional
-    public ApplicationListGetDetailDto get(UUID id, Boolean paginateSummaries, Pageable pageable) {
+    public ApplicationListGetDetailDto get(UUID id, Pageable pageable) {
         ApplicationList list = repository.findByUuid(id)
-            .orElseThrow(() -> new NotFoundException("list_not_found", "List not found"));
+            .orElseThrow(() -> new AppRegistryException(
+                ApplicationListError.LIST_NOT_FOUND,
+                "No application list found for UUID '%s'".formatted(id)));
 
         // Fetch results from the repository using pagination
-        Page<ApplicationListEntrySummaryProjection> dbPage = entryRepository.findPagedSummariesById(id, pageable);
+        Page<ApplicationListEntrySummaryProjection> dbPage = entryRepository.findSummariesById(id, pageable);
 
-        //List<ApplicationListEntrySummaryProjection> summaryProjections = dbPage.getContent();
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
         // Map each projection to a summary model

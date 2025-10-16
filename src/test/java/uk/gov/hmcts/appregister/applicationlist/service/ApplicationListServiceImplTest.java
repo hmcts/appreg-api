@@ -17,15 +17,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 
@@ -35,7 +39,10 @@ public class ApplicationListServiceImplTest {
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
+    @Mock private ApplicationListEntryRepository entryRepository;
     @Mock private ApplicationListMapper mapper;
+    @Mock private PageMapper pageMapper;
+    @Mock private ApplicationListEntryMapStructMapper entryMapper;
     @Mock private ApplicationListLocationValidator validator;
     @Mock private EntityManager entityManager;
 
@@ -48,7 +55,10 @@ public class ApplicationListServiceImplTest {
                         repository,
                         courtHouseRepository,
                         cjaRepository,
+                        entryRepository,
                         mapper,
+                        pageMapper,
+                        entryMapper,
                         validator,
                         entityManager);
     }

@@ -3,15 +3,10 @@ package uk.gov.hmcts.appregister.applicationlist.controller;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
-
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,19 +16,15 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import uk.gov.hmcts.appregister.applicationentry.validator.ApplicationListEntrySortValidator;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.courtlocation.validator.CourtLocationsSortValidator;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -115,7 +106,7 @@ public class ApplicationListController implements ApplicationListsApi {
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
-        UUID id, Boolean paginateSummaries, Integer page, Integer size, List<String> sort) {
+        UUID id, Integer page, Integer size, List<String> sort) {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number ascending
         Pageable pageable =
@@ -124,7 +115,7 @@ public class ApplicationListController implements ApplicationListsApi {
         // Validate resolved sort properties to prevent invalid/unsafe sort fields
         pageable.getSort().forEach(o -> sortValidator.validate(o.getProperty()));
 
-        ApplicationListGetDetailDto retrieved = service.get(id, paginateSummaries, pageable);
+        ApplicationListGetDetailDto retrieved = service.get(id, pageable);
 
         return ResponseEntity.status(OK)
                 .varyBy("Accept")

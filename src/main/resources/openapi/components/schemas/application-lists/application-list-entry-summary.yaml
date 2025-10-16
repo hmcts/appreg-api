@@ -1,6 +1,7 @@
 type: object
 description: Lightweight summary of an entry.
 required:
+  - sequenceNumber
   - accountNumber
   - applicant
   - respondent
@@ -10,6 +11,10 @@ required:
   - resulted
 
 properties:
+
+  sequenceNumber:
+    type: integer
+    format: int32
 
   accountNumber:
     type: string

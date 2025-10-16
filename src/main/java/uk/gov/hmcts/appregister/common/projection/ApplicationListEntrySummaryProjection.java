@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.projection;
 
 public interface ApplicationListEntrySummaryProjection {
 
+    short getSequenceNumber();
+
     String getAccountNumber();
 
     String getApplicant();
@@ -14,5 +16,6 @@ public interface ApplicationListEntrySummaryProjection {
 
     boolean isFeeRequired();
 
-    String result();
+    String getResult();
+
 }

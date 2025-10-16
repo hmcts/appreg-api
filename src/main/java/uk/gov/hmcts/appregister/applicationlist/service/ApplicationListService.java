@@ -47,5 +47,5 @@ public interface ApplicationListService {
      * @param pageable Spring Data paging and sorting configuration
      * @return a detailed DTO representing the retrieved application list
      */
-    ApplicationListGetDetailDto get(UUID id, Boolean paginateSummaries, Pageable pageable);
+    ApplicationListGetDetailDto get(UUID id, Pageable pageable);
 }

@@ -5,10 +5,6 @@ parameters:
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
   - in: query
-    name: paginateSummaries
-    schema: { type: boolean, default: false }
-    description: Add pagination for summaries.
-  - in: query
     name: page
     schema: { type: integer, format: int32, minimum: 0, default: 0 }
     description: Zero-based page index.
