@@ -18,7 +18,6 @@ import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -76,8 +75,7 @@ public class ApplicationListServiceImplTest {
                         validator,
                         entityManager,
                         pageMapper,
-                        locationLookupService);
-                        entityManager,
+                        locationLookupService,
                         deletionValidator);
     }
 

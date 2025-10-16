@@ -1,9 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_OID;
-import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_TID;
-import static uk.gov.hmcts.appregister.testutils.token.TokenGenerator.DEFAULT_USERNAME;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
@@ -90,7 +87,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-        assertThat(reloaded.getStatus()).isEqualTo("OPEN");
+        assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
         assertThat(reloaded.getChangedBy())
                 .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
@@ -127,7 +124,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                     assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
                     assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
                     assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-                    assertThat(reloaded.getStatus()).isEqualTo("OPEN");
+                    assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
                     assertThat(reloaded.getCreatedUser())
                             .isEqualTo(TokenGenerator.DEFAULT_USERNAME);
                     assertThat(reloaded.getChangedBy())
@@ -135,12 +132,6 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                                     TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
                 });
         System.out.println();
-        assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
-        assertThat(reloaded.getCreatedUser()).isEqualTo(DEFAULT_USERNAME);
-        assertThat(reloaded.getChangedBy()).isEqualTo(DEFAULT_TID + ":" + DEFAULT_OID);
-        assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
-        assertThat(reloaded.getCreatedUser()).isEqualTo(DEFAULT_USERNAME);
-        assertThat(reloaded.getChangedBy()).isEqualTo(DEFAULT_TID + ":" + DEFAULT_OID);
     }
 
     @Test
