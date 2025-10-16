@@ -92,6 +92,7 @@ public class ApplicationListController implements ApplicationListsApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> deleteApplicationList(UUID id) {
         service.delete(id);
+        log.info("Deleted Application List with id: {}", id);
         return ResponseEntity.noContent().build();
     }
 
