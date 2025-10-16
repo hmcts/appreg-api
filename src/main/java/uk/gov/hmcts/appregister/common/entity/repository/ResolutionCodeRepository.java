@@ -120,45 +120,47 @@ public interface ResolutionCodeRepository
     List<ResolutionCode> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Find an active Resolution Codes by code and date.
+     * Find active Resolution Codes by code on a given date window.
      *
-     * <p>Matches records where:
+     * <p>Active if: {@code rc.startDate < :tomorrowStart} and
+     * ({@code rc.endDate IS NULL} or {@code rc.endDate >= :todayStart}).
+     * Code match is case-insensitive equality on {@code rc.resultCode}.
      *
-     * <ul>
-     *   <li>{@code courtLocationCode} equals {@code code}, case-insensitive
-     *   <li>{@code startDate} is on or before {@code date}
-     *   <li>{@code endDate} is {@code null} (still active)
-     * </ul>
-     *
-     * <p>This query may return zero, one, or multiple results. Service layer is responsible for
-     * enforcing uniqueness.
-     *
-     * @param code business identifier for the Court Location
-     * @return list of matching active courts
+     * @param code case-insensitive business code (e.g. "ABC123")
+     * @param todayStart inclusive window start (local day start)
+     * @param tomorrowStart exclusive window end (next day start)
+     * @return zero, one, or many rows; service layer enforces uniqueness
      */
     @Query("""
           SELECT rc
           FROM ResolutionCode rc
           WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
-          AND rc.startDate < :dateEnd
-          AND (rc.endDate IS NULL OR rc.endDate >= :dateStart)
+          AND rc.startDate < :tomorrowStart
+          AND (rc.endDate IS NULL OR rc.endDate >= :todayStart)
           """)
     List<ResolutionCode> findActiveResolutionCodesOnDateByCode(
         @Param("code")      String code,
-        @Param("dateStart") LocalDateTime dateStart,
-        @Param("dateEnd")   LocalDateTime dateEnd);
+        @Param("todayStart") LocalDateTime todayStart,
+        @Param("tomorrowStart")   LocalDateTime tomorrowStart);
 
     /**
-     * Retrieve a paginated list of active Resolution Codes (a.k.a. result codes).
+     * Retrieve a page of active Resolution Codes filtered by code/title (case-insensitive).
      *
-     * <p>Filters applied if non-null:
+     * <p>Filters (applied when non-null):
      * <ul>
-     *   <li>{@code code}  — case-insensitive partial match on code
-     *   <li>{@code title} — case-insensitive partial match on title/name
+     *   <li>{@code code}: partial match on {@code rc.resultCode}</li>
+     *   <li>{@code title}: partial match on {@code rc.title}</li>
      * </ul>
      *
-     * Active means:
-     *   (endDate IS NULL AND startDate <= :asOf) OR (:asOf BETWEEN startDate AND endDate)
+     * <p>Active if: {@code rc.startDate < :tomorrowStart} and
+     * ({@code rc.endDate IS NULL} or {@code rc.endDate >= :todayStart}).
+     *
+     * @param code optional partial code filter (case-insensitive)
+     * @param title optional partial title filter (case-insensitive)
+     * @param todayStart inclusive window start (local day start)
+     * @param tomorrowStart exclusive window end (next day start)
+     * @param pageable paging/sorting
+     * @return page of matching entities
      */
     @Query("""
          SELECT rc

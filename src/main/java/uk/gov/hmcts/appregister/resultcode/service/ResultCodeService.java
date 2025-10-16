@@ -1,9 +1,7 @@
-package uk.gov.hmcts.appregister.resolutioncode.service;
+package uk.gov.hmcts.appregister.resultcode.service;
 
 import org.springframework.data.domain.Pageable;
 
-import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
-import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 
@@ -43,10 +41,10 @@ public interface ResultCodeService {
      * <p>Pagination and sorting are handled via the supplied {@link Pageable}, which is typically
      * created from OpenAPI paging parameters by a mapper.
      *
-     * @param title optional filter for Result Code - title
-     * @param code optional filter for Result Code - code
+     * @param codeFilter optional filter for Result Code
+     * @param titleFilter optional filter for Result Code
      * @param pageable Spring Data paging and sorting configuration
      * @return a page of summarised Result Codes with metadata
      */
-    ResultCodePage getPage(String title, String code, Pageable pageable);
+    ResultCodePage getPage(String codeFilter, String titleFilter, Pageable pageable);
 }

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.resolutioncode.controller;
+package uk.gov.hmcts.appregister.resultcode.controller;
 
 import lombok.RequiredArgsConstructor;
 
@@ -8,20 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
 
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.courtlocation.service.CourtLocationService;
-import uk.gov.hmcts.appregister.courtlocation.validator.CourtLocationsSortValidator;
 import uk.gov.hmcts.appregister.generated.api.ResultCodesApi;
-import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
-import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-import uk.gov.hmcts.appregister.resolutioncode.service.ResultCodeService;
-import uk.gov.hmcts.appregister.resolutioncode.validator.ResultCodeSortValidator;
+import uk.gov.hmcts.appregister.resultcode.service.ResultCodeService;
+import uk.gov.hmcts.appregister.resultcode.validator.ResultCodeSortValidator;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -42,6 +36,7 @@ import java.util.List;
  */
 @RestController
 @RequiredArgsConstructor
+@PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 public class ResultCodeController implements ResultCodesApi {
 
     // Service layer providing Result Code business logic.
@@ -64,10 +59,9 @@ public class ResultCodeController implements ResultCodesApi {
      * @return HTTP 200 response containing a {@link ResultCodeGetDetailDto}
      */
     @Override
-    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ResultCodeGetDetailDto> getResultCodeByCodeAndDate(String code, LocalDate date) {
         var dto = resultCodeService.findByCodeAndDate(code, date);
-        return ResponseEntity.ok().body(dto);
+        return ResponseEntity.ok(dto);
     }
 
     /**

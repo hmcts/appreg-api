@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.resolutioncode.mapper;
+package uk.gov.hmcts.appregister.resultcode.mapper;
 
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -6,9 +6,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
+import org.openapitools.jackson.nullable.JsonNullable;
+
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
  * MapStruct mapper for converting between {@link ResolutionCode} entities and Result Code
@@ -53,4 +58,19 @@ public interface ResultCodeMapper {
     @Mapping(target = "resultCode", source = "resultCode")
     @Mapping(target = "title", source = "title")
     ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
+
+    /**
+     * Utility mapping method to wrap a {@link LocalDateTime} in a {@link JsonNullable<LocalDate>}.
+     *
+     * <p>Converts the timestamp to a date (drops time component) and wraps it in a JsonNullable
+     * so that OpenAPI DTOs can distinguish between {@code null} and undefined fields.
+     *
+     * @param dateTime the LocalDateTime value from the entity
+     * @return a JsonNullable containing the corresponding LocalDate, or an empty JsonNullable if null
+     */
+    default JsonNullable<LocalDate> map(LocalDateTime dateTime) {
+        return dateTime != null
+            ? JsonNullable.of(dateTime.toLocalDate())
+            : JsonNullable.undefined();
+    }
 }

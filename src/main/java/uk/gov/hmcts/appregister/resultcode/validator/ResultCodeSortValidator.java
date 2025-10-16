@@ -1,10 +1,9 @@
-package uk.gov.hmcts.appregister.resolutioncode.validator;
+package uk.gov.hmcts.appregister.resultcode.validator;
 
 import org.springframework.stereotype.Component;
 
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 import uk.gov.hmcts.appregister.common.validator.AbstractSortValidator;
-import uk.gov.hmcts.appregister.resolutioncode.api.ResultCodeApiFields;
+import uk.gov.hmcts.appregister.resultcode.api.ResultCodeApiFields;
 
 /**
  * Sort validator for Result Code queries.

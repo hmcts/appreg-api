@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.resolutioncode.exception;
+package uk.gov.hmcts.appregister.resultcode.exception;
 
 import org.springframework.http.HttpStatus;
 

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.resolutioncode.api;
+package uk.gov.hmcts.appregister.resultcode.api;
 
 import lombok.experimental.UtilityClass;
 

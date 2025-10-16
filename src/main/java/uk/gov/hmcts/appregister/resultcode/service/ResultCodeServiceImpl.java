@@ -1,11 +1,13 @@
-package uk.gov.hmcts.appregister.resolutioncode.service;
+package uk.gov.hmcts.appregister.resultcode.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Component;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -14,21 +16,16 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.service.UkDayWindowService;
+import uk.gov.hmcts.appregister.common.time.DateBoundaryCalculator;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-import uk.gov.hmcts.appregister.resolutioncode.exception.ResultCodeError;
-import uk.gov.hmcts.appregister.resolutioncode.mapper.ResultCodeMapper;
+import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
+import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static com.fasterxml.jackson.databind.type.LogicalType.DateTime;
 
 /**
  * Service implementation for Result Code operations.
@@ -37,9 +34,10 @@ import static com.fasterxml.jackson.databind.type.LogicalType.DateTime;
  * ResultCodeService} and mapping entities into API DTOs. All operations are executed
  * within an audited context using {@link AuditOperationService}.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class ResultCodeServiceImpl implements ResultCodeService {
 
     private static final int SINGLE_RECORD = 1;
@@ -59,7 +57,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final PageMapper pageMapper;
 
-    private final UkDayWindowService ukDayWindowService;
+    private final DateBoundaryCalculator dateBoundaryCalculator;
 
     /**
      * Retrieve a Result Code by its code and effective date.
@@ -77,8 +75,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         return auditService.processAudit(
             AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
             unused -> {
-                var dateStart = ukDayWindowService.startOf(date);
-                var dateEnd = ukDayWindowService.startOfNext(date);
+                var dateStart = dateBoundaryCalculator.startOfDay(date);
+                var dateEnd = dateBoundaryCalculator.startOfNextDay(date);
                 final List<ResolutionCode> rows =
                     repository.findActiveResolutionCodesOnDateByCode(code, dateStart, dateEnd);
 
@@ -116,9 +114,9 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         return auditService.processAudit(
             AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
             unused -> {
-                var ukToday = ukDayWindowService.todayUk();
-                var startOfToday = ukDayWindowService.startOf(ukToday);
-                var startOfTomorrow = ukDayWindowService.startOfNext(ukToday);
+                var ukToday = dateBoundaryCalculator.getToday();
+                var startOfToday = dateBoundaryCalculator.startOfDay(ukToday);
+                var startOfTomorrow = dateBoundaryCalculator.startOfNextDay(ukToday);
 
                 Page<ResolutionCode> dbPage =
                     repository.findActiveOnDate(codeFilter, titleFilter, startOfToday, startOfTomorrow, pageable);

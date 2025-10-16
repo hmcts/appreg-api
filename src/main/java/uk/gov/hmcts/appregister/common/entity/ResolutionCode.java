@@ -8,7 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.time.OffsetDateTime;
+
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,8 +29,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * legislation references, destination email addresses, and validity dates. It is the
  * persistence-layer model that maps directly to the database schema and should not be exposed
  * directly in API responses. For API exposure, use {@link
- * uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeDto} or {@link
- * uk.gov.hmcts.appregister.resolutioncode.dto.ResolutionCodeListItemDto} created via a mapper
+ * uk.gov.hmcts.appregister.resultcode.dto.ResolutionCodeDto} or {@link
+ * uk.gov.hmcts.appregister.resultcode.dto.ResolutionCodeListItemDto} created via a mapper
  * component.
  *
  * <p><strong>Lombok annotations:</strong>
@@ -93,12 +95,12 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Start date (inclusive) from which this resolution code is valid.
     @Column(name = "resolution_code_start_date", nullable = false)
-    private OffsetDateTime startDate;
+    private LocalDateTime startDate;
 
     // End date (inclusive) until which this resolution code remains valid, or {@code null} if
     // ongoing.
     @Column(name = "resolution_code_end_date")
-    private OffsetDateTime endDate;
+    private LocalDateTime endDate;
 
     @Column(name = "version")
     @Version
