@@ -1,13 +1,13 @@
 package uk.gov.hmcts.appregister.resultcode.controller;
 
+import java.time.LocalDate;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
-
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
@@ -16,9 +16,6 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.service.ResultCodeService;
 import uk.gov.hmcts.appregister.resultcode.validator.ResultCodeSortValidator;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * REST controller for retrieving Result Codes.
@@ -51,15 +48,16 @@ public class ResultCodeController implements ResultCodesApi {
     /**
      * Retrieve a single Result Code by its code and a date where the Result Code is "Active".
      *
-     * <p>Delegates to {@link ResultCodeService#findByCodeAndDate(String, LocalDate)}. If no
-     * active court is found, the service layer throws a domain-specific exception.
+     * <p>Delegates to {@link ResultCodeService#findByCodeAndDate(String, LocalDate)}. If no active
+     * court is found, the service layer throws a domain-specific exception.
      *
      * @param code identifier for the Result Code (case-insensitive)
      * @param date ISO date (yyyy-MM-dd) on which the Result Code must be "Active"
      * @return HTTP 200 response containing a {@link ResultCodeGetDetailDto}
      */
     @Override
-    public ResponseEntity<ResultCodeGetDetailDto> getResultCodeByCodeAndDate(String code, LocalDate date) {
+    public ResponseEntity<ResultCodeGetDetailDto> getResultCodeByCodeAndDate(
+            String code, LocalDate date) {
         var dto = resultCodeService.findByCodeAndDate(code, date);
         return ResponseEntity.ok(dto);
     }
@@ -85,11 +83,13 @@ public class ResultCodeController implements ResultCodesApi {
      * @return HTTP 200 response containing a {@link ResultCodePage} with metadata and content
      */
     @Override
-    public ResponseEntity<ResultCodePage> getResultCodes(String code, String title, Integer page, Integer size, List<String> sort) {
+    public ResponseEntity<ResultCodePage> getResultCodes(
+            String code, String title, Integer page, Integer size, List<String> sort) {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
         Pageable pageable =
-            pageableMapper.from(page, size, sort, ResolutionCode_.RESULT_CODE, Sort.Direction.ASC);
+                pageableMapper.from(
+                        page, size, sort, ResolutionCode_.RESULT_CODE, Sort.Direction.ASC);
 
         // Validate resolved sort properties to prevent invalid/unsafe sort fields
         pageable.getSort().forEach(o -> sortValidator.validate(o.getProperty()));

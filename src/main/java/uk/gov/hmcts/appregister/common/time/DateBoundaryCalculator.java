@@ -1,20 +1,18 @@
 package uk.gov.hmcts.appregister.common.time;
 
-import lombok.RequiredArgsConstructor;
-
-import org.springframework.stereotype.Component;
-
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
 /**
  * Utility service for calculating date and time boundaries based on a configured {@link ZoneId}.
  *
- * <p>Provides consistent "start of day" and "next day" calculations used across the
- * application for date-window–based queries (e.g. active-from/until filtering).
- * Backed by an injected {@link Clock} to allow deterministic testing.
+ * <p>Provides consistent "start of day" and "next day" calculations used across the application for
+ * date-window–based queries (e.g. active-from/until filtering). Backed by an injected {@link Clock}
+ * to allow deterministic testing.
  */
 @Component
 @RequiredArgsConstructor
@@ -26,8 +24,8 @@ public class DateBoundaryCalculator {
     /**
      * Returns the start of the specified local date in the configured time zone.
      *
-     * <p>Example: for date {@code 2025-10-16} and zone {@code Europe/London},
-     * this returns {@code 2025-10-16T00:00} in that zone, converted to a {@link LocalDateTime}.
+     * <p>Example: for date {@code 2025-10-16} and zone {@code Europe/London}, this returns {@code
+     * 2025-10-16T00:00} in that zone, converted to a {@link LocalDateTime}.
      *
      * @param date the date for which to determine the start-of-day boundary
      * @return a {@link LocalDateTime} at midnight of the given date in the configured zone

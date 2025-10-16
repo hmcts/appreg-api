@@ -1,14 +1,15 @@
 package uk.gov.hmcts.appregister.resultcode.service;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -22,17 +23,12 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 /**
  * Service implementation for Result Code operations.
  *
  * <p>Provides business logic for retrieving Result Codes by delegating to the {@link
- * ResultCodeService} and mapping entities into API DTOs. All operations are executed
- * within an audited context using {@link AuditOperationService}.
+ * ResultCodeService} and mapping entities into API DTOs. All operations are executed within an
+ * audited context using {@link AuditOperationService}.
  */
 @Service
 @RequiredArgsConstructor
@@ -73,29 +69,31 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     @Override
     public ResultCodeGetDetailDto findByCodeAndDate(String code, LocalDate date) {
         return auditService.processAudit(
-            AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
-            unused -> {
-                var dateStart = dateBoundaryCalculator.startOfDay(date);
-                var dateEnd = dateBoundaryCalculator.startOfNextDay(date);
-                final List<ResolutionCode> rows =
-                    repository.findActiveResolutionCodesOnDateByCode(code, dateStart, dateEnd);
+                AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
+                unused -> {
+                    var dateStart = dateBoundaryCalculator.startOfDay(date);
+                    var dateEnd = dateBoundaryCalculator.startOfNextDay(date);
+                    final List<ResolutionCode> rows =
+                            repository.findActiveResolutionCodesOnDateByCode(
+                                    code, dateStart, dateEnd);
 
-                if (rows.isEmpty()) {
-                    throw new AppRegistryException(
-                        ResultCodeError.RESULT_CODE_NOT_FOUND,
-                        "No result code found for code '%s' on date %s".formatted(code, date));
-                } else if (rows.size() > SINGLE_RECORD) {
-                    throw new AppRegistryException(
-                        ResultCodeError.DUPLICATE_RESULT_CODE_FOUND,
-                        "Multiple result codes found for code '%s' on date %s"
-                            .formatted(code, date));
-                }
+                    if (rows.isEmpty()) {
+                        throw new AppRegistryException(
+                                ResultCodeError.RESULT_CODE_NOT_FOUND,
+                                "No result code found for code '%s' on date %s"
+                                        .formatted(code, date));
+                    } else if (rows.size() > SINGLE_RECORD) {
+                        throw new AppRegistryException(
+                                ResultCodeError.DUPLICATE_RESULT_CODE_FOUND,
+                                "Multiple result codes found for code '%s' on date %s"
+                                        .formatted(code, date));
+                    }
 
-                // Map the single matching entity to a detail DTO
-                return Optional.of(mapper.toDetailDto(rows.getFirst()));
-            },
-            // Spring injects all AuditOperationLifecycleListener beans as a List;
-            auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    // Map the single matching entity to a detail DTO
+                    return Optional.of(mapper.toDetailDto(rows.getFirst()));
+                },
+                // Spring injects all AuditOperationLifecycleListener beans as a List;
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     /**
@@ -112,33 +110,37 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     @Override
     public ResultCodePage getPage(String codeFilter, String titleFilter, Pageable pageable) {
         return auditService.processAudit(
-            AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
-            unused -> {
-                var ukToday = dateBoundaryCalculator.getToday();
-                var startOfToday = dateBoundaryCalculator.startOfDay(ukToday);
-                var startOfTomorrow = dateBoundaryCalculator.startOfNextDay(ukToday);
+                AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
+                unused -> {
+                    var ukToday = dateBoundaryCalculator.getToday();
+                    var startOfToday = dateBoundaryCalculator.startOfDay(ukToday);
+                    var startOfTomorrow = dateBoundaryCalculator.startOfNextDay(ukToday);
 
-                Page<ResolutionCode> dbPage =
-                    repository.findActiveOnDate(codeFilter, titleFilter, startOfToday, startOfTomorrow, pageable);
+                    Page<ResolutionCode> dbPage =
+                            repository.findActiveOnDate(
+                                    codeFilter,
+                                    titleFilter,
+                                    startOfToday,
+                                    startOfTomorrow,
+                                    pageable);
 
-                // Populate the API page response with metadata
-                var responsePage = new ResultCodePage();
+                    // Populate the API page response with metadata
+                    var responsePage = new ResultCodePage();
 
-                // Ensure content is never null: API spec requires an array, so return []
-                // instead of null
-                if (responsePage.getContent() == null) {
-                    responsePage.setContent(new ArrayList<>());
-                }
+                    // Ensure content is never null: API spec requires an array, so return []
+                    // instead of null
+                    if (responsePage.getContent() == null) {
+                        responsePage.setContent(new ArrayList<>());
+                    }
 
-                pageMapper.toPage(dbPage, responsePage);
+                    pageMapper.toPage(dbPage, responsePage);
 
-                // Map each entity to a summary DTO and add to the page content
-                dbPage.forEach(
-                    code -> responsePage.addContentItem(mapper.toSummaryDto(code)));
+                    // Map each entity to a summary DTO and add to the page content
+                    dbPage.forEach(code -> responsePage.addContentItem(mapper.toSummaryDto(code)));
 
-                return Optional.of(responsePage);
-            },
-            // Spring injects all AuditOperationLifecycleListener beans as a List;
-            auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                    return Optional.of(responsePage);
+                },
+                // Spring injects all AuditOperationLifecycleListener beans as a List;
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }

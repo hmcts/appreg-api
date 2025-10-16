@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.resultcode.validator;
 
 import org.springframework.stereotype.Component;
-
 import uk.gov.hmcts.appregister.common.validator.AbstractSortValidator;
 import uk.gov.hmcts.appregister.resultcode.api.ResultCodeApiFields;
 

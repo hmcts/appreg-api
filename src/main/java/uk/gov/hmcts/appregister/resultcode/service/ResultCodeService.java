@@ -1,11 +1,9 @@
 package uk.gov.hmcts.appregister.resultcode.service;
 
+import java.time.LocalDate;
 import org.springframework.data.domain.Pageable;
-
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-
-import java.time.LocalDate;
 
 /**
  * Service interface for Result Code operations.
@@ -18,9 +16,9 @@ public interface ResultCodeService {
     /**
      * Find a specific Result Code by its code and effective date.
      *
-     * <p>Searches for an active Result Code matches the provided {@code code}
-     * and is valid on the given {@code date}. If no match is found or multiple matches exist, the
-     * implementation will raise a domain-specific exception.
+     * <p>Searches for an active Result Code matches the provided {@code code} and is valid on the
+     * given {@code date}. If no match is found or multiple matches exist, the implementation will
+     * raise a domain-specific exception.
      *
      * @param code business identifier for the Result Code (case-insensitive)
      * @param date ISO date (yyyy-MM-dd) on which the Result Code must be valid

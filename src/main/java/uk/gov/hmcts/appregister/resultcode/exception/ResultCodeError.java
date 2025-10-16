@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.resultcode.exception;
 
 import org.springframework.http.HttpStatus;
-
 import uk.gov.hmcts.appregister.common.exception.DefaultErrorDetail;
-import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
+import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 
 /**
  * Domain-specific error codes for Result Code operations.
@@ -23,7 +22,7 @@ public enum ResultCodeError implements ErrorCodeEnum {
      * Business code: RC-1
      */
     RESULT_CODE_NOT_FOUND(
-        DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Result Code not found", "RC-1")),
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Result Code not found", "RC-1")),
 
     /**
      * More than one Result Code was found when only one was expected.
@@ -32,10 +31,10 @@ public enum ResultCodeError implements ErrorCodeEnum {
      * Business code: RC-2
      */
     DUPLICATE_RESULT_CODE_FOUND(
-        DefaultErrorDetail.create(
-            HttpStatus.CONFLICT,
-            "Multiple Result Codes found when only one was expected",
-            "RC-2"));
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "Multiple Result Codes found when only one was expected",
+                    "RC-2"));
 
     /** Backing detail for the error code. */
     private final DefaultErrorDetail defaultErrorCode;

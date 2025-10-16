@@ -1,14 +1,13 @@
 package uk.gov.hmcts.appregister.common.time;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DateBoundaryCalculatorTest {
 
@@ -18,11 +17,8 @@ public class DateBoundaryCalculatorTest {
     @BeforeEach
     void setUp() {
         // Fixed clock: 2025-10-16T10:00 in London
-        Clock fixedClock = Clock.fixed(
-            LocalDateTime.of(2025, 10, 16, 10, 0)
-                .atZone(ZONE)
-                .toInstant(),
-            ZONE);
+        Clock fixedClock =
+                Clock.fixed(LocalDateTime.of(2025, 10, 16, 10, 0).atZone(ZONE).toInstant(), ZONE);
         calculator = new DateBoundaryCalculator(ZONE, fixedClock);
     }
 
