@@ -33,6 +33,8 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 @Slf4j
 public class CourtLocationServiceImpl implements CourtLocationService {
 
+    private static final int SINGLE_RECORD = 1;
+
     // Service for wrapping operations in an auditable context.
     private final AuditOperationService auditService;
 
@@ -71,7 +73,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                         throw new AppRegistryException(
                                 CourtLocationError.COURT_NOT_FOUND,
                                 "No court found for code '%s' on date %s".formatted(code, date));
-                    } else if (rows.size() > 1) {
+                    } else if (rows.size() > SINGLE_RECORD) {
                         throw new AppRegistryException(
                                 CourtLocationError.DUPLICATE_COURT_FOUND,
                                 "Multiple courts found for code '%s' on date %s"

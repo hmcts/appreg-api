@@ -43,7 +43,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 @Service
 public class ApplicationListServiceImpl implements ApplicationListService {
 
-    private static final int SINGLE_RECORD = 1;
     private static final long ZERO_ENTITIES = 0L;
 
     private final ApplicationListRepository repository;

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -9,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
+
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 
 /**
@@ -115,4 +118,60 @@ public interface ResolutionCodeRepository
     Optional<ResolutionCode> findById(Long id);
 
     List<ResolutionCode> findByIdGreaterThanEqual(Integer value);
+
+    /**
+     * Find an active Resolution Codes by code and date.
+     *
+     * <p>Matches records where:
+     *
+     * <ul>
+     *   <li>{@code courtLocationCode} equals {@code code}, case-insensitive
+     *   <li>{@code startDate} is on or before {@code date}
+     *   <li>{@code endDate} is {@code null} (still active)
+     * </ul>
+     *
+     * <p>This query may return zero, one, or multiple results. Service layer is responsible for
+     * enforcing uniqueness.
+     *
+     * @param code business identifier for the Court Location
+     * @return list of matching active courts
+     */
+    @Query("""
+          SELECT rc
+          FROM ResolutionCode rc
+          WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
+          AND rc.startDate < :dateEnd
+          AND (rc.endDate IS NULL OR rc.endDate >= :dateStart)
+          """)
+    List<ResolutionCode> findActiveResolutionCodesOnDateByCode(
+        @Param("code")      String code,
+        @Param("dateStart") LocalDateTime dateStart,
+        @Param("dateEnd")   LocalDateTime dateEnd);
+
+    /**
+     * Retrieve a paginated list of active Resolution Codes (a.k.a. result codes).
+     *
+     * <p>Filters applied if non-null:
+     * <ul>
+     *   <li>{@code code}  — case-insensitive partial match on code
+     *   <li>{@code title} — case-insensitive partial match on title/name
+     * </ul>
+     *
+     * Active means:
+     *   (endDate IS NULL AND startDate <= :asOf) OR (:asOf BETWEEN startDate AND endDate)
+     */
+    @Query("""
+         SELECT rc
+         FROM ResolutionCode rc
+         WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%'))
+         AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER(CAST(:title as string)), '%'))
+         AND rc.startDate < :tomorrowStart
+         AND (rc.endDate IS NULL OR rc.endDate >= :todayStart)
+         """)
+    Page<ResolutionCode> findActiveOnDate(
+        @Param("code")  String code,
+        @Param("title") String title,
+        @Param("todayStart") LocalDateTime todayStart,
+        @Param("tomorrowStart") LocalDateTime tomorrowStart,
+        Pageable pageable);
 }
