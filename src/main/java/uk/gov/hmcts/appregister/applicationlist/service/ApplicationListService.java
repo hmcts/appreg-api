@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import org.springframework.data.domain.Pageable;
+import java.util.UUID;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
@@ -28,6 +29,16 @@ public interface ApplicationListService {
      *     or the associated Court/CJA entity is not found or duplicated
      */
     ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
+
+    /**
+     * Deletes an Application List.
+     *
+     * @param idToDelete the id to delete
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails
+     *     due to the id not existing, the id already being deleted, the id having application
+     *     entries
+     */
+    void delete(UUID idToDelete);
 
     /**
      * Retrieves a paginated collection of Application Lists matching the specified filter criteria.

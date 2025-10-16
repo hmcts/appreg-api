@@ -181,12 +181,25 @@ public class RestAssuredClient {
      * @param token The bearer token
      * @return The specification of the response
      */
-    public Response executePostRequest(URL url, TokenAndJwksKey token, Object object)
-            throws URISyntaxException {
+    public Response executePostRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/json")
                 .post(url)
+                .andReturn();
+    }
+
+    /**
+     * deletes a request builder that can be used to make requests against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @return The specification of the response
+     */
+    public Response executeDeleteRequest(URL url, TokenAndJwksKey token) {
+        return given().header("Authorization", "Bearer " + token.getToken())
+                .header("Content-Type", "application/json")
+                .delete(url)
                 .andReturn();
     }
 
@@ -197,8 +210,7 @@ public class RestAssuredClient {
      * @param token The bearer token
      * @return The specification of the response
      */
-    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object)
-            throws URISyntaxException {
+    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/json")
