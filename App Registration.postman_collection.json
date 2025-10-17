@@ -35,126 +35,304 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Application Lists",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"date\": \"2025-10-16\",\r\n  \"time\": \"10:30:00\",\r\n  \"description\": \"Wills test List.\",\r\n  \"status\": \"OPEN\",\r\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\r\n  \"courtLocationCode\": \"RCJ001\",\r\n  \"cjaCode\": \"02\",\r\n  \"durationHours\": 2,\r\n  \"durationMinutes\": 30\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Application Lists Sort",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists?sort=date,desc&sort=status,asc&&",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists"
+							],
+							"query": [
+								{
+									"key": "sort",
+									"value": "date,desc"
+								},
+								{
+									"key": "sort",
+									"value": "status,asc"
+								},
+								{
+									"key": "",
+									"value": null
+								},
+								{
+									"key": "",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Application Lists Filter by Date",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists?date=2025-10-25",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-10-25"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Get Application Code",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
+			"name": "result-codes",
+			"item": [
+				{
+					"name": "Result Codes",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"accept": true
 						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=2012-07-25",
-					"host": [
-						"{{APP_REG_HOST}}"
-					],
-					"path": [
-						"application-codes",
-						"AP99001"
-					],
-					"query": [
-						{
-							"key": "date",
-							"value": "2012-07-25"
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.hmcts.appreg.v1+json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/result-codes?page=0&size=21&sort=title,desc&code=nf",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"result-codes"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "21"
+								},
+								{
+									"key": "sort",
+									"value": "title,desc"
+								},
+								{
+									"key": "code",
+									"value": "nf"
+								}
+							]
 						}
-					]
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Get Application Codes Filter",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
+			"name": "application-codes",
+			"item": [
+				{
+					"name": "Get Application Code",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=2012-07-25",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-codes",
+								"AP99001"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2012-07-25"
+								}
+							]
 						}
-					]
+					},
+					"response": []
 				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{APP_REG_HOST}}/application-codes?code=CT99002&title=Issue%20of%20liability%20order%20summons%20-%20council%20tax&date=2025-09-19",
-					"host": [
-						"{{APP_REG_HOST}}"
-					],
-					"path": [
-						"application-codes"
-					],
-					"query": [
-						{
-							"key": "code",
-							"value": "CT99002"
+				{
+					"name": "Get Application Codes Filter",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
 						},
-						{
-							"key": "title",
-							"value": "Issue%20of%20liability%20order%20summons%20-%20council%20tax"
-						},
-						{
-							"key": "date",
-							"value": "2025-09-19"
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-codes?code=CT99002&title=Issue%20of%20liability%20order%20summons%20-%20council%20tax&date=2025-09-19",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-codes"
+							],
+							"query": [
+								{
+									"key": "code",
+									"value": "CT99002"
+								},
+								{
+									"key": "title",
+									"value": "Issue%20of%20liability%20order%20summons%20-%20council%20tax"
+								},
+								{
+									"key": "date",
+									"value": "2025-09-19"
+								}
+							]
 						}
-					]
+					},
+					"response": []
+				},
+				{
+					"name": "Get Application Codes Paging",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:4550/application-codes?page=2&pageSize=5&sort=code,desc",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "4550",
+							"path": [
+								"application-codes"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "2"
+								},
+								{
+									"key": "pageSize",
+									"value": "5"
+								},
+								{
+									"key": "sort",
+									"value": "code,desc"
+								}
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Get Application Codes Paging",
-			"request": {
-				"auth": {
-					"type": "bearer",
-					"bearer": [
-						{
-							"key": "token",
-							"value": "{{access_token}}",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:4550/application-codes?page=2&pageSize=5&sort=code,desc",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "4550",
-					"path": [
-						"application-codes"
-					],
-					"query": [
-						{
-							"key": "page",
-							"value": "2"
-						},
-						{
-							"key": "pageSize",
-							"value": "5"
-						},
-						{
-							"key": "sort",
-							"value": "code,desc"
-						}
-					]
-				}
-			},
-			"response": []
+			"name": "court-locations",
+			"item": []
+		},
+		{
+			"name": "criminal-justice-areas",
+			"item": []
 		},
 		{
 			"name": "Obtain Token",
