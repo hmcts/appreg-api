@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.restassured.response.Response;
 import java.net.URI;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
@@ -18,6 +21,8 @@ import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
+
+import javax.sql.DataSource;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
 
@@ -247,6 +252,37 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    // --- Happy path: get application list -----------------------------------------------------
+    @Test
+    void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
+        var token =
+            getATokenWithValidCredentials()
+                .roles(List.of(RoleEnum.USER))
+                .build()
+                .fetchTokenForRole();
+
+        Response resp =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(WEB_CONTEXT + "/56e22851-9671-4680-b627-6ce1d44dc831"), token);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(0L); // per seed: Version = 0
+
+        // Application list populated
+    }
+
+    @Autowired
+    DataSource dataSource;
+
+    @Test
+    void showDatabase() throws Exception {
+        System.out.println("Database URL = " + dataSource.getConnection().getMetaData().getURL());
     }
 
     @Override

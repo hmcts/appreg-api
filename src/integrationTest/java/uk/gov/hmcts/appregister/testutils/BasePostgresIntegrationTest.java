@@ -4,6 +4,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +54,13 @@ public abstract class BasePostgresIntegrationTest {
                         "http://localhost:" + port + "/" + context + "?date=" + date.toLocalDate())
                 .toURL();
     }
+
+    /*protected URL getLocalUrlWithId(String context, UUID id)
+        throws MalformedURLException {
+        return URI.create(
+                "http://localhost:" + port + "/" + context + "?id=" + id)
+            .toURL();
+    }*/
 
     protected URL getLocalUrl(String context) throws MalformedURLException {
         return URI.create("http://localhost:" + port + "/" + context).toURL();
