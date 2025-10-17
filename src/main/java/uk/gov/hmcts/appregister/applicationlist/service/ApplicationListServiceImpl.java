@@ -182,10 +182,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
         return aleRepository.countByApplicationListUuids(uuids).stream()
-                .collect(
-                        Collectors.toMap(
-                            EntryCount::getPrimaryKey,
-                            EntryCount::getCount));
+                .collect(Collectors.toMap(EntryCount::getPrimaryKey, EntryCount::getCount));
     }
 
     private ApplicationListPage assembleResponsePage(

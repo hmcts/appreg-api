@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.service;
 
 import java.util.List;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

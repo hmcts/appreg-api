@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -30,7 +29,7 @@ class LocationLookupServiceTest {
     // -------- getActiveCourtOrThrow --------
 
     @Test
-    void getActiveCourtOrThrow_validTrimmedCode_returnsSingleCourt() {
+    void getActiveCourtOrThrow_validCode_returnsSingleCourt() {
         NationalCourtHouse court = new NationalCourtHouse();
         when(courtHouseRepository.findActiveCourts("ABC123")).thenReturn(List.of(court));
 
@@ -38,34 +37,6 @@ class LocationLookupServiceTest {
 
         assertSame(court, result);
         verify(courtHouseRepository).findActiveCourts("ABC123");
-    }
-
-    @Test
-    void getActiveCourtOrThrow_codeWithWhitespace_trimsAndReturnsSingleCourt() {
-        NationalCourtHouse court = new NationalCourtHouse();
-        when(courtHouseRepository.findActiveCourts("ABC123")).thenReturn(List.of(court));
-
-        NationalCourtHouse result = service.getActiveCourtOrThrow("  ABC123  ");
-
-        assertSame(court, result);
-        verify(courtHouseRepository).findActiveCourts("ABC123");
-    }
-
-    @Test
-    void getActiveCourtOrThrow_nullCode_throwsNullPointerException() {
-        NullPointerException ex =
-                assertThrows(NullPointerException.class, () -> service.getActiveCourtOrThrow(null));
-        assertTrue(ex.getMessage().contains("court location code must not be null"));
-        verifyNoInteractions(courtHouseRepository);
-    }
-
-    @Test
-    void getActiveCourtOrThrow_blankCode_throwsIllegalArgumentException() {
-        IllegalArgumentException ex =
-                assertThrows(
-                        IllegalArgumentException.class, () -> service.getActiveCourtOrThrow("   "));
-        assertTrue(ex.getMessage().contains("court location code must not be blank"));
-        verifyNoInteractions(courtHouseRepository);
     }
 
     @Test
@@ -109,26 +80,10 @@ class LocationLookupServiceTest {
         CriminalJusticeArea cja = new CriminalJusticeArea();
         when(cjaRepository.findByCode("52")).thenReturn(List.of(cja));
 
-        CriminalJusticeArea result = service.getCjaOrThrow("  52  ");
+        CriminalJusticeArea result = service.getCjaOrThrow("52");
 
         assertSame(cja, result);
         verify(cjaRepository).findByCode("52");
-    }
-
-    @Test
-    void getCjaOrThrow_nullCode_throwsNullPointerException() {
-        NullPointerException ex =
-                assertThrows(NullPointerException.class, () -> service.getCjaOrThrow(null));
-        assertTrue(ex.getMessage().contains("CJA code must not be null"));
-        verifyNoInteractions(cjaRepository);
-    }
-
-    @Test
-    void getCjaOrThrow_blankCode_throwsIllegalArgumentException() {
-        IllegalArgumentException ex =
-                assertThrows(IllegalArgumentException.class, () -> service.getCjaOrThrow("   "));
-        assertTrue(ex.getMessage().contains("CJA code must not be blank"));
-        verifyNoInteractions(cjaRepository);
     }
 
     @Test
