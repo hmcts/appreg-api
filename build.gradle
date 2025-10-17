@@ -555,6 +555,12 @@ openApiGenerate {
             additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
             openApiNullable                     : "true"
     ]
+    typeMappings = [
+      time: "LocalTime"    // Map custom `format: time` → LocalTime
+    ]
+    importMappings = [
+      LocalTime: "java.time.LocalTime"
+    ]
 }
 
 openApiValidate {

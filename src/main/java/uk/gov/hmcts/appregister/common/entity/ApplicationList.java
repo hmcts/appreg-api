@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,6 +27,7 @@ import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
  * The ApplicationList entity represents a list of applications in the system.
@@ -52,8 +55,8 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
-    @Size(max = 6)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ApplicationListStatus status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)
