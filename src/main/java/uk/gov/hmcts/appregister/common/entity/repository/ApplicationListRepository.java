@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -53,6 +54,14 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      *     value
      */
     List<ApplicationList> findByPkGreaterThanEqual(Integer value);
+
+    /**
+     * Finds all entities with the given IDs.
+     *
+     * @param ids An id to look up
+     * @return A single matching application entry
+     */
+    Optional<ApplicationList> findByUuid(UUID ids);
 
     /**
      * Retrieves a paginated list of {@link ApplicationList} entities filtered by the specified

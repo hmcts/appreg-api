@@ -25,7 +25,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -41,7 +41,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-public class ApplicationList extends BaseChangeableEntity implements Accountable, Versionable {
+public class ApplicationList extends BaseChangeableAndDeletableEntity
+        implements Accountable, Versionable {
     @Id
     @Column(name = "al_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")

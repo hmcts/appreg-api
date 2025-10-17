@@ -8,15 +8,18 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -41,6 +44,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
  */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class ApplicationListServiceImpl implements ApplicationListService {
 
     private static final long ZERO_ENTITIES = 0L;
@@ -52,6 +56,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final EntityManager entityManager;
     private final PageMapper pageMapper;
     private final LocationLookupService locationLookupService;
+    private final ApplicationListDeletionValidator deletionValidator;
 
     /**
      * {@inheritDoc}
@@ -103,6 +108,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(dto, cja));
         var hydratedEntity = refreshEntity(savedEntity);
         return mapper.toGetDetailDto(hydratedEntity, cja);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID idToDelete) {
+        log.debug("Start: Deleting Application List with id: {}", idToDelete);
+        deletionValidator.validate(idToDelete);
+        Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
+
+        if (applicationList.isPresent()) {
+            applicationList.get().setDeleted(true);
+            repository.save(applicationList.get());
+        }
+        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**
@@ -165,8 +184,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return aleRepository.countByApplicationListUuids(uuids).stream()
                 .collect(
                         Collectors.toMap(
-                                ApplicationListEntryRepository.EntryCount::getPk,
-                                ApplicationListEntryRepository.EntryCount::getCnt));
+                            EntryCount::getPrimaryKey,
+                            EntryCount::getCount));
     }
 
     private ApplicationListPage assembleResponsePage(

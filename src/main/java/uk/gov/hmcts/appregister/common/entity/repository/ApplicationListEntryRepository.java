@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
     /**
@@ -58,12 +59,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
-
-    interface EntryCount {
-        UUID getPk();
-
-        long getCnt();
-    }
 
     @Query(
             """

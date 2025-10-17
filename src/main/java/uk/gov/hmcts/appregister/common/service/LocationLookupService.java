@@ -34,46 +34,35 @@ public class LocationLookupService {
 
     /** Returns the single active court for the given code, or throws a domain exception. */
     public NationalCourtHouse getActiveCourtOrThrow(String code) {
-        String trimmed = requireNonBlankTrimmed(code, "court location code");
-        List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(trimmed);
+        List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(code);
 
         if (courts.isEmpty()) {
             throw new AppRegistryException(
                     CourtLocationError.COURT_NOT_FOUND,
-                    "No court found for code '%s'".formatted(trimmed));
+                    "No court found for code '%s'".formatted(code));
         }
         if (courts.size() > SINGLE_RECORD) {
             throw new AppRegistryException(
                     CourtLocationError.DUPLICATE_COURT_FOUND,
-                    "Multiple courts found for code '%s'".formatted(trimmed));
+                    "Multiple courts found for code '%s'".formatted(code));
         }
         return courts.getFirst();
     }
 
     /** Returns the single CJA for the given code, or throws a domain exception. */
     public CriminalJusticeArea getCjaOrThrow(String code) {
-        String trimmed = requireNonBlankTrimmed(code, "CJA code");
-        List<CriminalJusticeArea> cjas = cjaRepository.findByCode(trimmed);
+        List<CriminalJusticeArea> cjas = cjaRepository.findByCode(code);
 
         if (cjas.isEmpty()) {
             throw new AppRegistryException(
                     CriminalJusticeAreaError.CJA_NOT_FOUND,
-                    "No Criminal Justice Areas found for code '%s'".formatted(trimmed));
+                    "No Criminal Justice Areas found for code '%s'".formatted(code));
         }
         if (cjas.size() > SINGLE_RECORD) {
             throw new AppRegistryException(
                     CriminalJusticeAreaError.DUPLICATE_CJA_FOUND,
-                    "Multiple Criminal Justice Areas found for code '%s'".formatted(trimmed));
+                    "Multiple Criminal Justice Areas found for code '%s'".formatted(code));
         }
         return cjas.getFirst();
-    }
-
-    private static String requireNonBlankTrimmed(String value, String label) {
-        Objects.requireNonNull(value, () -> label + " must not be null");
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException(label + " must not be blank");
-        }
-        return trimmed;
     }
 }

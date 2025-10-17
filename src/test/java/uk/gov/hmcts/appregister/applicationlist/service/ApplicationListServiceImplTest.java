@@ -18,6 +18,7 @@ import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -57,6 +59,7 @@ public class ApplicationListServiceImplTest {
     @Mock private ApplicationListMapper mapper;
     @Mock private ApplicationListLocationValidator validator;
     @Mock private EntityManager entityManager;
+    @Mock private ApplicationListDeletionValidator deletionValidator;
     @Mock private PageMapper pageMapper;
     @Mock private LocationLookupService locationLookupService;
 
@@ -72,13 +75,15 @@ public class ApplicationListServiceImplTest {
                         validator,
                         entityManager,
                         pageMapper,
-                        locationLookupService);
+                        locationLookupService,
+                        deletionValidator);
     }
 
     // -------- CREATE: COURT PATH --------
 
     @Test
     void create_validCourt_savesAndReturnsDto() {
+
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
@@ -117,6 +122,7 @@ public class ApplicationListServiceImplTest {
                         new AppRegistryException(
                                 CourtLocationError.COURT_NOT_FOUND, "No court found"));
 
+        // expect
         assertThatThrownBy(() -> service.create(dto))
                 .isInstanceOf(AppRegistryException.class)
                 .hasMessageContaining("No court found");
@@ -211,6 +217,18 @@ public class ApplicationListServiceImplTest {
 
         verify(validator).validate(dto);
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void delete_validId_deletesEntry() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(new ApplicationList()));
+
+        service.delete(id);
+
+        verify(deletionValidator).validate(id);
+        verify(repository).findByUuid(id);
+        verify(repository).save(any(ApplicationList.class));
     }
 
     @Test
