@@ -28,6 +28,12 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeA
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class ApplicationCodeMapper {
 
+    /**
+     * A fee to dto mapping rule.
+     *
+     * @param fee Maps a fee to the dto.
+     * @return the fee amount dto
+     */
     public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
         if (fee != null) {
             long mainPennies = Math.round(fee.getAmount() * 100);
@@ -42,6 +48,12 @@ public abstract class ApplicationCodeMapper {
         }
     }
 
+    /**
+     * A yes or no to boolean mapping rule.
+     *
+     * @param yesOrNo Maps yes or no to boolean.
+     * @return the fee amount dto
+     */
     public boolean map(YesOrNo yesOrNo) {
         return yesOrNo.isYes();
     }
@@ -82,6 +94,15 @@ public abstract class ApplicationCodeMapper {
             qualifiedByName = "mapFeeReference")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
+
+    /**
+     * maps the application code entity to summary dto.
+     *
+     * @param entity the application code entity
+     * @param fee the fee (main fee)*
+     * @param offsetFee the offset fee
+     * @return The application code detail dto
+     */
     public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
             ApplicationCode entity, Fee fee, Fee offsetFee);
 
@@ -100,6 +121,15 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "endDate", source = "entity.endDate", qualifiedByName = "mapOffsetDate")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
+
+    /**
+     * maps the application code entity to detail dto.
+     *
+     * @param entity the application code entity
+     * @param fee the fee (main fee)*
+     * @param offsetFee the offset fee
+     * @return The application code detail dto
+     */
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
             ApplicationCode entity, Fee fee, Fee offsetFee);
 }

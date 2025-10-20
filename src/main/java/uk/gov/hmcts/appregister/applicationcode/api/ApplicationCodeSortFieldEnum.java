@@ -25,7 +25,7 @@ public enum ApplicationCodeSortFieldEnum implements SortableOperationEnum {
         this.entityValue = entityValue;
     }
 
-    private static Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();
+    private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();
 
     static {
         for (SortableOperationEnum status : values()) {
