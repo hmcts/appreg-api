@@ -39,3 +39,8 @@ displayName = "Development"
 url = "jdbc:postgresql://appreg-stg.postgres.database.azure.com:5432/appreg-db"
 schemas = [ "appreg" ]
 displayName = "Staging"
+
+[environments.dev_matt_test]
+url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
+schemas = [ "appreg_matt" ]
+displayName = "dev_matt_test"

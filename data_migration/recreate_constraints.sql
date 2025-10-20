@@ -11,6 +11,8 @@ ALTER TABLE appreg.application_list_entries ADD CONSTRAINT ale_r_na_fk FOREIGN K
 
 ALTER TABLE appreg.application_list_entries ADD CONSTRAINT ale_sa_fk FOREIGN KEY (sa_sa_id) REFERENCES appreg.standard_applicants(sa_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
+ALTER TABLE appreg.application_list_entries ADD CONSTRAINT ale_ac_fk FOREIGN KEY (ac_ac_id) REFERENCES appreg.application_codes(ac_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
+
 ALTER TABLE appreg.app_list_entry_fee_id ADD CONSTRAINT alefi_fee_fk FOREIGN KEY (fee_fee_id) REFERENCES appreg.fee(fee_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE appreg.app_list_entry_resolutions ADD CONSTRAINT aler_rc_fk FOREIGN KEY (rc_rc_id) REFERENCES appreg.resolution_codes(rc_id) ON DELETE NO ACTION NOT DEFERRABLE INITIALLY IMMEDIATE;

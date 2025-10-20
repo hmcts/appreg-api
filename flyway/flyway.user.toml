@@ -5,3 +5,7 @@ password = "${localSecret.Flyway Desktop 9e85f9ee-6296-4b98-950e-d5414cf738ae}"
 [environments.staging]
 user = "pgadmin"
 password = "${localSecret.Flyway Desktop c885dcdb-3dcc-427d-b2e4-fa3ef8434d35}"
+
+[environments.dev_matt_test]
+user = "hmcts"
+password = "${localSecret.Flyway Desktop 3b4b6418-6e30-41d7-a37f-0169cce5ae90}"
