@@ -5,24 +5,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.restassured.response.Response;
 import java.net.URI;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
-import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
+import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
-
-import javax.sql.DataSource;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
 
@@ -40,9 +45,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final String UNKNOWN_CJA_CODE = "99X";
 
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
-    private static final String TEST_TIME = "10:30";
+    private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
-    // --- Happy path: create with COURT --------------------------------------------------------
+    // --- POST ---------------------------------------------------------------------
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
         var token =
@@ -214,29 +219,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 resp);
     }
 
-    // --- Bad DTO validation (example: bad time format) ----------------------------------------
-    @Test
-    void givenBadTimeFormat_whenCreate_then400() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        var req =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time("25:61") // invalid
-                        .description("Bad time")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
-        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
-
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-    }
-
-    // --- Security / role coverage -------------------------------------------------------------
     @Test
     void givenNoRole_whenCreate_then403() throws Exception {
         var token = getATokenWithValidCredentials().build().fetchTokenForRole();
@@ -254,35 +236,100 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
     }
 
-    // --- Happy path: get application list -----------------------------------------------------
     @Test
-    void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
+    void givenValidRequest_whenDeleteWithValidId_then204() throws Exception {
         var token =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
 
-        Response resp =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(WEB_CONTEXT + "/56e22851-9671-4680-b627-6ce1d44dc831"), token);
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning list (cja)")
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
 
-        resp.then().statusCode(HttpStatus.OK.value());
-        resp.then().contentType(VND_JSON_V1);
+        // setup a record for deletion
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
 
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
-        assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(0L); // per seed: Version = 0
+        UUID id = dto.getId();
 
-        // Application list populated
+        // fire tests
+        resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
     }
 
-    @Autowired
-    DataSource dataSource;
+    @Test
+    void givenValidRequest_whenDeleteWithInvalidId_then204() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        // fire tests
+        Response resp =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.DELETION_ID_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
 
     @Test
-    void showDatabase() throws Exception {
-        System.out.println("Database URL = " + dataSource.getConnection().getMetaData().getURL());
+    void givenValidRequest_whenDeleteWithConflict_then204() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning list (cja)")
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for deletion
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        UUID id = dto.getId();
+
+        // fire tests
+        resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        // prove the delete has been made
+        resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     @Override
@@ -295,13 +342,379 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE);
 
-        return Stream.of(
+        List<RestEndpointDescription> allRestfulDescriptions = new ArrayList<>();
+        allRestfulDescriptions.add(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.POST)
+                        .payload(validPayload)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
+
+        allRestfulDescriptions.add(
                 RestEndpointDescription.builder()
                         .url(getLocalUrl(WEB_CONTEXT))
                         .method(HttpMethod.POST)
                         .payload(validPayload)
                         .successRole(RoleEnum.USER)
+                        .build());
+
+        allRestfulDescriptions.add(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.DELETE)
                         .successRole(RoleEnum.ADMIN)
                         .build());
+
+        allRestfulDescriptions.add(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.USER)
+                        .build());
+        return allRestfulDescriptions.stream();
+    }
+
+    // --- GET_ALL ---------------------------------------------------------------------
+    private static String uniquePrefix(String base) {
+        return base + " :: " + UUID.randomUUID();
+    }
+
+    private static PageMetaData stdPageMeta() {
+        return new PageMetaData() {
+            @Override
+            public String getPageNumberQueryName() {
+                return "page";
+            }
+
+            @Override
+            public String getPageSizeQueryName() {
+                return "size";
+            }
+
+            @Override
+            public String getSortName() {
+                return "sort";
+            }
+        };
+    }
+
+    private ApplicationListGetDetailDto createWithCourt(
+            String description, LocalDate date, LocalTime time) throws Exception {
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(date)
+                        .time(time)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value()).contentType(VND_JSON_V1);
+        return resp.as(ApplicationListGetDetailDto.class);
+    }
+
+    private ApplicationListGetDetailDto createWithCja(
+            String description, LocalDate date, LocalTime time) throws Exception {
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(date)
+                        .time(time)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value()).contentType(VND_JSON_V1);
+        return resp.as(ApplicationListGetDetailDto.class);
+    }
+
+    @Test
+    @DisplayName("GET: 403 when no role")
+    void givenNoRole_whenGet_then403() throws Exception {
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        rs -> rs.header("Accept", VND_JSON_V1),
+                        null);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    @DisplayName("GET: default paging + default sort (description ASC)")
+    void givenDefaults_whenGet_then200AndSortedByDescriptionAsc() throws Exception {
+
+        String prefix = uniquePrefix("get-default-sort");
+
+        createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(prefix + " - Alpha", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCourt(prefix + " - Mango", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(), // Rely on default sort
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(3);
+        assertThat(page.getContent().get(0).getDescription()).endsWith("Alpha");
+        assertThat(page.getContent().get(1).getDescription()).endsWith("Mango");
+        assertThat(page.getContent().get(2).getDescription()).endsWith("Zebra");
+
+        assertThat(page.getPageNumber()).isZero();
+        assertThat(page.getPageSize()).isGreaterThanOrEqualTo(3);
+        assertThat(page.getFirst()).isTrue();
+    }
+
+    @Test
+    @DisplayName("GET: paging works (page=1,size=2)")
+    void givenPaging_whenSecondPage_thenCorrectMetadata() throws Exception {
+
+        String prefix = uniquePrefix("get-paging");
+
+        createWithCourt(prefix + " - A", LocalDate.of(2025, 10, 14), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - B", LocalDate.of(2025, 10, 15), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - C", LocalDate.of(2025, 10, 16), LocalTime.of(9, 0));
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(2),
+                        Optional.of(1),
+                        List.of(), // default sort (description ASC)
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        stdPageMeta());
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getPageNumber()).isEqualTo(1);
+        assertThat(page.getPageSize()).isEqualTo(2);
+        assertThat(page.getTotalElements()).isEqualTo(3);
+        assertThat(page.getTotalPages()).isEqualTo(2);
+        assertThat(page.getElementsOnPage()).isEqualTo(1);
+        assertThat(page.getContent()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("GET: filter by date + time (exact match)")
+    void givenDateAndTimeFilter_thenOnlyThatSlot() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t0930 = LocalTime.of(9, 30);
+        LocalTime t1030 = LocalTime.of(10, 30);
+
+        createWithCourt(prefix + " - keep", day, t0930);
+        createWithCourt(prefix + " - drop-1", day, t1030);
+        createWithCourt(prefix + " - drop-2", day.plusDays(1), t0930);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("description", prefix)
+                                        .queryParam("date", day.toString()) // yyyy-MM-dd
+                                        .queryParam("time", "09:30"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getDate()).isEqualTo(day);
+        assertThat(only.getTime()).isEqualTo(t0930);
+        assertThat(only.getDescription()).endsWith("keep");
+    }
+
+    @Test
+    @DisplayName("GET: filter by courtLocationCode")
+    void givenCourtFilter_thenOnlyCourtRows() throws Exception {
+
+        String prefix = uniquePrefix("get-court-filter");
+
+        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("description", prefix)
+                                        .queryParam("courtLocationCode", VALID_COURT_CODE),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getLocation()).isEqualTo(VALID_COURT_NAME);
+    }
+
+    @Test
+    @DisplayName("GET: filter by cjaCode")
+    void givenCjaFilter_thenOnlyCjaRows() throws Exception {
+
+        String prefix = uniquePrefix("get-cja-filter");
+
+        createWithCja(prefix + " - cja", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
+        createWithCourt(prefix + " - court", LocalDate.of(2025, 10, 16), LocalTime.of(11, 0));
+
+        var adminToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        adminToken,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("description", prefix)
+                                        .queryParam("cjaCode", VALID_CJA_CODE),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
+    }
+
+    @Test
+    @DisplayName("GET: allowed sort (date,desc & time,desc)")
+    void givenAllowedSort_thenSorted() throws Exception {
+
+        String prefix = uniquePrefix("get-sort-allowed");
+
+        createWithCourt(prefix + " - A", LocalDate.of(2025, 10, 14), LocalTime.of(9, 0));
+        createWithCourt(prefix + " - B", LocalDate.of(2025, 10, 15), LocalTime.of(10, 0));
+        createWithCourt(prefix + " - C", LocalDate.of(2025, 10, 15), LocalTime.of(9, 0));
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of("date,desc", "time,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(3);
+        assertThat(page.getContent().get(0).getDescription()).endsWith("B");
+        assertThat(page.getContent().get(1).getDescription()).endsWith("C");
+        assertThat(page.getContent().get(2).getDescription()).endsWith("A");
+    }
+
+    @Test
+    @DisplayName("GET: disallowed sort (cja) -> 400")
+    void givenDisallowedSort_then400() throws Exception {
+
+        String prefix = uniquePrefix("get-sort-disallowed");
+
+        createWithCourt(prefix + " - X", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of("cja,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
 }

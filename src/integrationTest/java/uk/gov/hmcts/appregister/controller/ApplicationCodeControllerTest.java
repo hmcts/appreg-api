@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
-import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;

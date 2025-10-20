@@ -21,13 +21,17 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import uk.gov.hmcts.appregister.applicationentry.validator.ApplicationListEntrySortValidator;
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
  * REST controller for managing Application Lists.
@@ -62,6 +66,9 @@ public class ApplicationListController implements ApplicationListsApi {
 
     // Validator ensuring requested sort fields are valid for Court Locations.
     private final ApplicationListEntrySortValidator sortValidator;
+
+    // Mapper converting API sort params to internal db fields.
+    private final ApplicationListSortMapper sortMapper;
 
     /**
      * Creates a new Application List.
@@ -121,6 +128,64 @@ public class ApplicationListController implements ApplicationListsApi {
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)
                 .body(retrieved);
+    }
+
+    /**
+     * Deletes a new Application List.
+     *
+     * <p>This endpoint deletes the provided id and returns a 204 response
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id The application list id to delete
+     * @return {@link ResponseEntity} The 204 response
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> deleteApplicationList(UUID id) {
+        service.delete(id);
+        log.info("Deleted Application List with id: {}", id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Retrieves a paginated and optionally sorted list of application lists.
+     *
+     * <p>This endpoint allows clients to fetch existing {@link ApplicationListPage} resources using
+     * pagination, filtering, and sorting options. It converts OpenAPI paging parameters into Spring
+     * Data's {@link Pageable} and applies default sorting by {@code description} in ascending order
+     * when no explicit sort is provided.
+     *
+     * <p>Security:
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param filter an {@link ApplicationListGetFilterDto} containing optional filter criteria such
+     *     as name, status, or other attributes
+     * @param page the page number to retrieve (zero-based)
+     * @param size the number of records per page
+     * @param sort a list of sort parameters (e.g., {@code ["description,asc",
+     *     "createdDate,desc"]}); validated and mapped by {@link ApplicationListSortMapper}
+     * @return {@link ResponseEntity} containing the requested page of application lists wrapped in
+     *     an {@link ApplicationListPage} object
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListPage> getApplicationLists(
+        ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
+
+        List<String> mappedSort = sortMapper.mapAndValidate(sort);
+        Pageable pageInfo =
+                pageableMapper.from(
+                        page, size, mappedSort, ApplicationList_.DESCRIPTION, Sort.Direction.ASC);
+
+        var applicationListPage = service.getPage(filter, pageInfo);
+        log.info("Retrieved Application Lists");
+        return ResponseEntity.ok(applicationListPage);
     }
 
     /**

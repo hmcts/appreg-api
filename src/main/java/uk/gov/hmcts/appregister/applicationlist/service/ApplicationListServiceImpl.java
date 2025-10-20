@@ -1,38 +1,42 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
-import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
+import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
  * Service implementation for managing Application Lists.
@@ -48,20 +52,22 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
  */
 @RequiredArgsConstructor
 @Service
+@Slf4j
 public class ApplicationListServiceImpl implements ApplicationListService {
 
     private static final int SINGLE_RECORD = 1;
+    private static final long ZERO_ENTITIES = 0L;
 
     private final ApplicationListRepository repository;
-    private final NationalCourtHouseRepository courtHouseRepository;
-    private final CriminalJusticeAreaRepository cjaRepository;
-    private final ApplicationListEntryRepository entryRepository;
+    private final ApplicationListEntryRepository aleRepository;
     private final ApplicationListMapper mapper;
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
-    private final PageMapper pageMapper;
     private final ApplicationListEntryMapStructMapper entryMapper;
     private final ApplicationListLocationValidator validator;
     private final EntityManager entityManager;
+    private final PageMapper pageMapper;
+    private final LocationLookupService locationLookupService;
+    private final ApplicationListDeletionValidator deletionValidator;
 
     /**
      * {@inheritDoc}
@@ -86,7 +92,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 "No application list found for UUID '%s'".formatted(id)));
 
         // Fetch results from the repository using pagination
-        Page<ApplicationListEntrySummaryProjection> dbPage = entryRepository.findSummariesById(id, pageable);
+        Page<ApplicationListEntrySummaryProjection> dbPage = aleRepository.findSummariesById(id, pageable);
 
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
@@ -111,22 +117,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @throws AppRegistryException if no court or multiple courts are found for the given code
      */
     private ApplicationListGetDetailDto createWithCourt(ApplicationListCreateDto dto) {
-        var courtCode = dto.getCourtLocationCode().trim();
-        final List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(courtCode);
-
-        if (courts.isEmpty()) {
-            throw new AppRegistryException(
-                    CourtLocationError.COURT_NOT_FOUND,
-                    "No court found for code '%s'".formatted(courtCode));
-        } else if (courts.size() > SINGLE_RECORD) {
-            throw new AppRegistryException(
-                    CourtLocationError.DUPLICATE_COURT_FOUND,
-                    "Multiple courts found for code '%s'".formatted(courtCode));
-        }
-
-        var savedEntity = repository.save(mapper.toCreateEntityWithCourt(dto, courts.getFirst()));
-        var hydrated = refreshEntity(savedEntity);
-        return mapper.toGetDetailDto(hydrated, null);
+        var court = locationLookupService.getActiveCourtOrThrow(dto.getCourtLocationCode());
+        var savedEntity = repository.save(mapper.toCreateEntityWithCourt(dto, court));
+        var hydratedEntity = refreshEntity(savedEntity);
+        return mapper.toGetDetailDto(hydratedEntity, null);
     }
 
     /**
@@ -140,25 +134,24 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @throws AppRegistryException if no CJA or multiple CJAs are found for the given code
      */
     private ApplicationListGetDetailDto createWithCja(ApplicationListCreateDto dto) {
-        var cjaCode = dto.getCjaCode().trim();
-        final List<CriminalJusticeArea> criminalJusticeAreas = cjaRepository.findByCode(cjaCode);
-
-        if (criminalJusticeAreas.isEmpty()) {
-            throw new AppRegistryException(
-                    CriminalJusticeAreaError.CJA_NOT_FOUND,
-                    "No Criminal Justice Areas found for code '%s'".formatted(cjaCode));
-        } else if (criminalJusticeAreas.size() > SINGLE_RECORD) {
-            throw new AppRegistryException(
-                    CriminalJusticeAreaError.DUPLICATE_CJA_FOUND,
-                    "Multiple Criminal Justice Areas found for code '%s'".formatted(cjaCode));
-        }
-
-        var cja = criminalJusticeAreas.getFirst();
-
+        var cja = locationLookupService.getCjaOrThrow(dto.getCjaCode());
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(dto, cja));
-        var hydrated = refreshEntity(savedEntity);
+        var hydratedEntity = refreshEntity(savedEntity);
+        return mapper.toGetDetailDto(hydratedEntity, cja);
+    }
 
-        return mapper.toGetDetailDto(hydrated, cja);
+    @Override
+    @Transactional
+    public void delete(UUID idToDelete) {
+        log.debug("Start: Deleting Application List with id: {}", idToDelete);
+        deletionValidator.validate(idToDelete);
+        Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
+
+        if (applicationList.isPresent()) {
+            applicationList.get().setDeleted(true);
+            repository.save(applicationList.get());
+        }
+        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**
@@ -179,5 +172,84 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         dto.setEntriesSummary(entriesSummary);
 
         return dto;
+    }
+
+    /**
+     * Retrieves a paginated list of application lists based on the given filter and paging
+     * parameters.
+     *
+     * <p>Resolves and normalizes input filters (including CJA lookup and date/time normalization),
+     * queries the repository for matching records, retrieves associated entry counts, and maps the
+     * results into an {@link ApplicationListPage} containing summary DTOs.
+     *
+     * @param dto the filter criteria used to select application lists
+     * @param pageable pagination and sorting information
+     * @return a populated {@link ApplicationListPage} with metadata and summary items
+     */
+    @Transactional(readOnly = true)
+    @Override
+    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+
+        CriminalJusticeArea cja = resolveCja(dto.getCjaCode()).orElse(null);
+
+        final Page<ApplicationList> dbPage =
+                repository.findAllByFilter(
+                        dto.getStatus(),
+                        dto.getCourtLocationCode(),
+                        cja,
+                        dto.getDate(),
+                        dto.getTime(),
+                        dto.getDescription(),
+                        dto.getOtherLocationDescription(),
+                        pageable);
+
+        // Pre-fetch the number of entries linked to each list in the page.
+        // Avoids having to do a separate count query per list when mapping to DTOs.
+        Map<UUID, Long> entriesPerListCounter =
+                dbPage.isEmpty()
+                        ? Map.of()
+                        : fetchEntryCounts(dbPage.map(ApplicationList::getUuid).toList());
+
+        return assembleResponsePage(dbPage, entriesPerListCounter);
+    }
+
+    private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {
+        return cjaCode == null
+                ? Optional.empty()
+                : Optional.of(locationLookupService.getCjaOrThrow(cjaCode));
+    }
+
+    private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
+        return aleRepository.countByApplicationListUuids(uuids).stream()
+                .collect(Collectors.toMap(EntryCount::getPrimaryKey, EntryCount::getCount));
+    }
+
+    private ApplicationListPage assembleResponsePage(
+            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter) {
+        var responsePage = new ApplicationListPage();
+        pageMapper.toPage(appLists, responsePage);
+
+        // Ensure content is never null:
+        // API spec requires an array, so return an empty one instead of null.
+        if (responsePage.getContent() == null) {
+            responsePage.setContent(new ArrayList<>());
+        }
+
+        for (ApplicationList al : appLists) {
+            long entryCount = entriesPerListCounter.getOrDefault(al.getUuid(), ZERO_ENTITIES);
+            String location = deriveLocation(al);
+            responsePage.addContentItem(mapper.toGetSummaryDto(al, entryCount, location));
+        }
+        return responsePage;
+    }
+
+    private String deriveLocation(ApplicationList al) {
+        if (al.getCourtName() != null) {
+            return al.getCourtName();
+        }
+        if (al.getCja() != null) {
+            return al.getCja().getDescription();
+        }
+        return "Location not set";
     }
 }

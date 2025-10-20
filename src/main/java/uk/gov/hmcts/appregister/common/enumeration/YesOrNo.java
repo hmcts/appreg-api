@@ -1,0 +1,25 @@
+package uk.gov.hmcts.appregister.common.enumeration;
+
+public enum YesOrNo {
+    YES("Y"),
+    NO("N");
+
+    private final String value;
+
+    YesOrNo(String value) {
+        this.value = value;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public static YesOrNo fromValue(String value) {
+        for (YesOrNo yesOrNo : YesOrNo.values()) {
+            if (yesOrNo.value.equalsIgnoreCase(value)) {
+                return yesOrNo;
+            }
+        }
+        throw new IllegalArgumentException("Unknown value: " + value);
+    }
+}

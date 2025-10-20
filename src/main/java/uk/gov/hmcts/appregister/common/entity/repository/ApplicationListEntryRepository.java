@@ -8,8 +8,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
     /**
@@ -95,4 +97,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             WHERE ale.applicationList.uuid = :id
             """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
+
+    @Query(
+            """
+        select ale.applicationList.uuid as pk, count(ale) as cnt
+        from ApplicationListEntry ale
+        where ale.applicationList.uuid in :uuids
+        group by ale.applicationList.uuid
+        """)
+    List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
 }

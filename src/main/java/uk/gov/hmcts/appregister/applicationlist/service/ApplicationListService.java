@@ -2,10 +2,12 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import org.springframework.data.domain.Pageable;
 
+import java.util.UUID;
+
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
-
-import java.util.UUID;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
  * Service interface for managing Application Lists.
@@ -48,4 +50,35 @@ public interface ApplicationListService {
      * @return a detailed DTO representing the retrieved application list
      */
     ApplicationListGetDetailDto get(UUID id, Pageable pageable);
+
+    /**
+     * Deletes an Application List.
+     *
+     * @param idToDelete the id to delete
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails
+     *     due to the id not existing, the id already being deleted, the id having application
+     *     entries
+     */
+    void delete(UUID idToDelete);
+
+    /**
+     * Retrieves a paginated collection of Application Lists matching the specified filter criteria.
+     *
+     * <p>This operation supports filtering by status, court location code, Criminal Justice Area
+     * (CJA) code, date, time, and descriptive fields. Pagination and sorting parameters are applied
+     * according to the provided {@link Pageable}.
+     *
+     * <p>The returned {@link ApplicationListPage} includes pagination metadata (page number, total
+     * elements, total pages) and a list of {@link
+     * uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto} items representing
+     * summarized application list entries.
+     *
+     * @param dto the filter parameters used to constrain the search results
+     * @param pageable pagination and sorting configuration
+     * @return an {@link ApplicationListPage} containing a paginated set of application list
+     *     summaries
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if invalid filter
+     *     parameters are provided or underlying data retrieval fails
+     */
+    ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable);
 }

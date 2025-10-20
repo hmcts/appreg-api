@@ -1,25 +1,17 @@
 get:
-  operationId: listApplicationLists
+  operationId: getApplicationLists
   tags: [ application-lists ]
   summary: Get Application Lists (paginated, filterable)
   description: Returns a paginated list of Application Lists.
   parameters:
     - in: query
-      name: dateFrom
-      schema: { type: string, format: date }
-      description: Earliest date of Application List (inclusive).
-    - in: query
-      name: dateTo
-      schema: { type: string, format: date }
-      description: Latest date of Application List (inclusive).
-    - in: query
-      name: courtLocationCode
-      schema: { type: string }
-      description: Filter by Court Location code.
-    - in: query
-      name: status
-      schema: { $ref: "../../components/schemas/application-lists/application-list-status.yaml" }
-      description: Filter by Application List status (OPEN/CLOSED).
+      name: filter
+      description: Filter criteria for Application Lists.
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: "../../components/schemas/application-lists/application-list-get-filter-dto.yaml"
     - in: query
       name: page
       schema: { type: integer, minimum: 0, default: 0 }
@@ -33,11 +25,7 @@ get:
       schema:
         type: array
         items: { type: string }
-        example: [ "date,asc", "courtLocationCode,desc" ]
-    - in: query
-      name: includeSummaries
-      schema: { type: boolean, default: false }
-      description: Include entriesCount and entriesSummary for each list item.
+        example: [ "date,desc", "status,asc" ]
   responses:
     "200":
       description: Page of Application Lists

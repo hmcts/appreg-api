@@ -19,8 +19,18 @@ public enum ApplicationListError implements ErrorCodeEnum {
      * <p>HTTP 404 Not Found <br>
      */
     LIST_NOT_FOUND(
-        DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found"));
+        DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found")),
 
+    DELETION_ID_NOT_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.NOT_FOUND,
+                    "No application list found with the provided id for deletion",
+                    "AL-2")),
+    DELETION_ALREADY_IN_DELETABLE_STATE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The application list is not in a deletable state",
+                    "AL-3"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

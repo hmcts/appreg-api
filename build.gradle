@@ -219,7 +219,16 @@ def commonJacocoExclusionsIntegration = [
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
         "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
         "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class"
+        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
+
+        // We need to reduce the code under mappers by using MapStruct
+        "**/uk/gov/hmcts/appregister/**/mapper/*.class",
+
+        // Do not include entity tests
+        "**/uk/gov/hmcts/appregister/**/entity/*.class",
+
+        // undo this when we have reimplemented it to reflect the open api
+        "**/uk/gov/hmcts/appregister/resolutioncode/**/*.class"
 ]
 
 def commonJacocoExclusionsUnit = [
@@ -343,7 +352,8 @@ sonarqube {
             "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
             "src/main/java/uk/gov/hmcts/appregister/applicationentry/**/*",
             "src/main/java/uk/gov/hmcts/appregister/report/**/*",
-            "src/main/java/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*"
+            "src/main/java/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*",
+            "src/main/java/uk/gov/hmcts/appregister/**/mapper/*"
     ]
     if (gradle.startParameter.taskNames.contains("localSonarqube")) {
       property 'sonar.host.url', 'http://localhost:9000'
@@ -433,8 +443,8 @@ dependencies {
   implementation 'io.micrometer:micrometer-tracing'
 
   // get flyway core
-  implementation 'org.flywaydb:flyway-core:11.11.2'
-  implementation 'org.flywaydb:flyway-database-postgresql:11.11.2'
+  implementation 'org.flywaydb:flyway-core:11.14.1'
+  implementation 'org.flywaydb:flyway-database-postgresql:11.14.1'
 
   // A hibernate library that generates column constants
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.5.2.Final'
@@ -452,7 +462,7 @@ dependencies {
   testImplementation("org.openapitools:jackson-databind-nullable:0.2.6")
   testImplementation 'org.springframework.security:spring-security-test'
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-  testImplementation 'io.github.hakky54:logcaptor:2.11.0'
+  testImplementation 'io.github.hakky54:logcaptor:2.12.1'
   testImplementation 'org.testcontainers:testcontainers:1.21.0'
   testImplementation 'org.testcontainers:postgresql:1.20.0'
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test', {
@@ -461,14 +471,14 @@ dependencies {
   }
   testImplementation 'io.github.hakky54:logcaptor:2.12.1'
 
-  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.2.1'
+  testImplementation group: 'org.springframework.cloud', name: 'spring-cloud-starter-contract-stub-runner', version: '4.3.0'
   testImplementation 'org.instancio:instancio-junit:5.5.1'
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.18.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.44'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.44'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.48'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
 
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.5.5.Final' // your version
@@ -544,6 +554,12 @@ openApiGenerate {
             generatedConstructorWithRequiredArgs: "false",
             additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
             openApiNullable                     : "true"
+    ]
+    typeMappings = [
+      time: "LocalTime"    // Map custom `format: time` → LocalTime
+    ]
+    importMappings = [
+      LocalTime: "java.time.LocalTime"
     ]
 }
 

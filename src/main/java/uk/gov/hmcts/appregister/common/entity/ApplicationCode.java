@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -110,5 +111,5 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     }
 
     @OneToMany(mappedBy = "applicationCode")
-    private List<ApplicationListEntry> applicationListEntryList;
+    private List<ApplicationListEntry> applicationListEntryList = new ArrayList<>();
 }

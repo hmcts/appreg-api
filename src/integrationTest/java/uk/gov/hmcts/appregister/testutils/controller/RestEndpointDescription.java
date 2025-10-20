@@ -7,8 +7,8 @@ import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.http.HttpMethod;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
-import uk.gov.hmcts.appregister.testutils.client.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 /**
@@ -60,6 +60,12 @@ public class RestEndpointDescription {
             }
 
             Response response = client.executePutRequest(url, tokenAndJwksKey, payload);
+            if (responseConsumer != null) {
+                responseConsumer.accept(response);
+            }
+            return response;
+        } else if (method == HttpMethod.DELETE) {
+            Response response = client.executeDeleteRequest(url, tokenAndJwksKey);
             if (responseConsumer != null) {
                 responseConsumer.accept(response);
             }

@@ -37,10 +37,6 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Value("${spring.security.oauth2.resourceserver.jwt.audiences}")
     protected String audience;
 
-    protected static final String TID = "00000000-0000-0000-0000-000000000000";
-    protected static final String OID = "11111111-1111-1111-1111-111111111111";
-    protected static final String EMAIL = "test_user@mail.com";
-
     @Autowired protected WireMockServer wireMockServer;
 
     protected static PostgresCommand postgresCommand = new PostgresCommand();
