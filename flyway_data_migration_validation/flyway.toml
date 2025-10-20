@@ -30,3 +30,8 @@ ignoreNewlinesInTextObjects = "off"
 url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
 schemas = [ "data_validation" ]
 displayName = "Development"
+
+[environments.data_migration_matt]
+url = "jdbc:postgresql://appreg-dev.postgres.database.azure.com:5432/appreg-db"
+schemas = [ "data_validation_matt" ]
+displayName = "data_migration_matt"

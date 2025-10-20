@@ -71,6 +71,7 @@ components:
     application-list-create-dto:        { $ref: './components/schemas/application-lists/application-list-create-dto.yaml' }
     application-list-update-dto:        { $ref: './components/schemas/application-lists/application-list-update-dto.yaml' }
     application-list-page:              { $ref: './components/schemas/application-lists/application-list-page.yaml' }
+    application-list-get-filter-dto:    { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
     # COMMON
     problem:                            { $ref: './components/schemas/common/problem.yaml' }
     page:                               { $ref: './components/schemas/common/page.yaml' }

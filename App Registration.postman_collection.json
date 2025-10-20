@@ -1,12 +1,44 @@
 {
 	"info": {
-		"_postman_id": "a888576b-6f02-4e12-b6df-780e36d0a593",
-		"name": "App Registration Copy",
+		"_postman_id": "7b041384-332c-410b-9bd1-2af8011b6b2f",
+		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-a888576b-6f02-4e12-b6df-780e36d0a593?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-7b041384-332c-410b-9bd1-2af8011b6b2f?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
+		{
+			"name": "application-lists",
+			"item": [
+				{
+					"name": "Application Lists",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Get Application Code",
 			"request": {

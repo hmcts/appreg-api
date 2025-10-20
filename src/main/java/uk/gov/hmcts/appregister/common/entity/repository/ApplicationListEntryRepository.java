@@ -2,8 +2,12 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
     /**
@@ -55,4 +59,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
+
+    @Query(
+            """
+        select ale.applicationList.uuid as pk, count(ale) as cnt
+        from ApplicationListEntry ale
+        where ale.applicationList.uuid in :uuids
+        group by ale.applicationList.uuid
+        """)
+    List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
 }

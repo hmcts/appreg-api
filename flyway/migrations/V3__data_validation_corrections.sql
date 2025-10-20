@@ -16,6 +16,7 @@
 -- V6.0 	Matthew Harman	13/10/2025	ARCPOC-619 - Changed APPLICATION_LISTS:
 --														APPLICATION_LIST_DATE to DATE
 --														APPLICATION_LIST_TIME to TIME
+-- V7.0 	Matthew Harman	20/10/2025	ARCPOC-621 - Changed USER_ID on DATA_AUDIT
 
 SET client_encoding TO 'UTF8';
 
@@ -44,6 +45,9 @@ ALTER TABLE application_register ALTER COLUMN changed_by TYPE VARCHAR(73);
 
 -- ARCPOC-620 - Change NAME_ADDRESS Changed_By fields to VARCHAR(73)
 ALTER TABLE name_address ALTER COLUMN changed_by TYPE VARCHAR(73);
+
+-- ARCPOC-621 - Change USER_ID on DATA_AUDIT to VARCHAR(73)
+ALTER TABLE data_audit ALTER COLUMN user_id TYPE VARCHAR(73);
 
 -- ARCPOC-619 - Change APPLICATION_LISTS:
 -- APPLICATION_LIST_DATE to DATE		
@@ -123,6 +127,11 @@ BEGIN
 	-- Check application_lists.application_list_time is TIME
 	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'application_lists' and column_name = 'application_list_time' and data_type = 'time without time zone') THEN
 		RAISE EXCEPTION 'Table: application_lists  Column: application_list_time is not a time field';
+	END IF;
+
+	-- Check data_audit.user_id is varchar(73)
+	IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'data_audit' and column_name = 'user_id' and data_type = 'character varying' and character_maximum_length = 73) THEN
+		RAISE EXCEPTION 'Table: data_audit  Column: user_id is not a varchar(73)';
 	END IF;
 
 	-- If all checks pass, do nothing (test passes)

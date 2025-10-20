@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
@@ -25,30 +26,6 @@ public class ApplicationListMapperTest {
 
     private final ApplicationListMapper mapper = Mappers.getMapper(ApplicationListMapper.class);
 
-    // ---------- Helper method tests ----------
-
-    @Nested
-    class ToTimeTests {
-        @Test
-        void combine_nullDateParam_returnsNull() {
-            assertEquals(LocalTime.of(10, 30), mapper.toTime("10:30"));
-        }
-    }
-
-    @Nested
-    class ToTimeStringTests {
-        @Test
-        void returnsNullWhenInputIsNull() {
-            assertNull(mapper.toTimeString(null));
-        }
-
-        @Test
-        void emitsHHmmssWhenSecondsPresent() {
-            LocalTime lt = LocalTime.of(8, 5, 07);
-            assertEquals("08:05:07", mapper.toTimeString(lt));
-        }
-    }
-
     // ---------- Mapping: toCreateEntityWithCourt ----------
 
     @Nested
@@ -56,18 +33,18 @@ public class ApplicationListMapperTest {
 
         @Test
         void toCreateEntityWithCourt_validDtoWithCourt_returnsValidEntity() {
-
-            ApplicationListCreateDto dto =
+            // Given
+            var dto =
                     new ApplicationListCreateDto()
                             .date(LocalDate.of(2025, 9, 17))
-                            .time("10:30")
+                            .time(LocalTime.parse("10:30"))
                             .description("Morning session")
                             .status(ApplicationListStatus.OPEN)
                             .courtLocationCode("LOC123")
                             .durationHours(2)
                             .durationMinutes(45);
 
-            NationalCourtHouse court =
+            var court =
                     NationalCourtHouse.builder()
                             .name("Bath Magistrates Court")
                             .courtLocationCode("LOC123")
@@ -85,13 +62,15 @@ public class ApplicationListMapperTest {
             assertNull(entity.getCja());
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
-            assertEquals("OPEN", entity.getStatus());
+            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
             assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
             assertEquals(45, entity.getDurationMinutes());
         }
     }
+
+    // ---------- Mapping: toCreateEntityWithCja ----------
 
     @Nested
     class ToCreateEntityWithCjaTests {
@@ -101,7 +80,7 @@ public class ApplicationListMapperTest {
             ApplicationListCreateDto dto =
                     new ApplicationListCreateDto()
                             .date(LocalDate.of(2025, 9, 18))
-                            .time("14:05:07")
+                            .time(LocalTime.parse("14:05:07"))
                             .description("Afternoon session")
                             .otherLocationDescription("Temporary Courtroom at Town Hall")
                             .status(ApplicationListStatus.OPEN)
@@ -129,7 +108,7 @@ public class ApplicationListMapperTest {
             assertEquals("CJA001", entity.getCja().getCode());
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
-            assertEquals("OPEN", entity.getStatus());
+            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
             assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
@@ -151,7 +130,7 @@ public class ApplicationListMapperTest {
                             .pk(999L)
                             .uuid(id)
                             .description("Morning session for traffic-related applications")
-                            .status("OPEN")
+                            .status(ApplicationListStatus.OPEN)
                             .courtCode("LOC123")
                             .courtName("Bath Magistrates Court")
                             .date(LocalDate.of(2025, 9, 17))
@@ -161,7 +140,7 @@ public class ApplicationListMapperTest {
                             .version(3L)
                             .build();
 
-            // when
+            // When
             ApplicationListGetDetailDto dto = mapper.toGetDetailDto(appList, null);
 
             assertNull(dto.getCjaCode());
@@ -169,7 +148,7 @@ public class ApplicationListMapperTest {
 
             assertEquals(id, dto.getId());
             assertEquals(LocalDate.of(2025, 9, 17), dto.getDate());
-            assertEquals("10:30", dto.getTime());
+            assertEquals(LocalTime.parse("10:30"), dto.getTime());
             assertEquals("Morning session for traffic-related applications", dto.getDescription());
             assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
             assertEquals("LOC123", dto.getCourtCode());
@@ -177,6 +156,44 @@ public class ApplicationListMapperTest {
             assertEquals(2, dto.getDurationHours());
             assertEquals(30, dto.getDurationMinutes());
             assertEquals(3L, dto.getVersion());
+        }
+    }
+
+    // ---------- Mapping: toGetSummaryDto ----------
+
+    @Nested
+    class ToGetSummaryDtoTests {
+
+        @Test
+        void toGetSummaryDto_validEntityAndArgs_returnsValidDto() {
+            // Given
+            UUID id = UUID.fromString("3fa85f64-5717-4562-b3fc-2c963f66afa6");
+
+            var appList =
+                    ApplicationList.builder()
+                            .uuid(id)
+                            .description("Morning session")
+                            .status(ApplicationListStatus.OPEN)
+                            .date(LocalDate.of(2025, 9, 19))
+                            .time(LocalTime.of(9, 0, 0))
+                            .build();
+
+            long entryCount = 5L;
+            String location = "Bath Magistrates Court";
+
+            // When
+            ApplicationListGetSummaryDto dto =
+                    mapper.toGetSummaryDto(appList, entryCount, location);
+
+            // Then
+            assertNotNull(dto);
+            assertEquals(id, dto.getId());
+            assertEquals(LocalDate.of(2025, 9, 19), dto.getDate());
+            assertEquals(LocalTime.of(9, 0, 0), dto.getTime());
+            assertEquals("Bath Magistrates Court", dto.getLocation());
+            assertEquals("Morning session", dto.getDescription());
+            assertEquals(5, dto.getNumberOfEntries());
+            assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
         }
     }
 }
