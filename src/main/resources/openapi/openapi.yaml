@@ -21,6 +21,10 @@ tags:
     description:
       An Application List records the date, time and location at which one or more Applications is to be considered by a
       magistrate or delegated authority.
+  - name: application-lists-entries
+    description:
+      An Application List Entry records all details of an individual Application. This will always belong to an
+      Application List.
   - name: court-locations
     description:
       Court Locations are reference data, not managed in App Reg. They are a consolidation of both crown and magistrates
@@ -41,23 +45,27 @@ tags:
 
 paths:
   # APPLICATION CODES
-  /application-codes:             { $ref: './paths/application-codes/application-codes.yaml' }
-  /application-codes/{code}:      { $ref: './paths/application-codes/application-codes-by-code.yaml' }
+  /application-codes:                   { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{code}:            { $ref: './paths/application-codes/application-codes-by-code.yaml' }
   # APPLICATION LISTS
-  /application-lists:             { $ref: './paths/application-lists/application-lists.yaml' }
-  /application-lists/{id}:        { $ref: './paths/application-lists/application-lists-by-id.yaml' }
+  /application-lists:                   { $ref: './paths/application-lists/application-lists.yaml' }
+  /application-lists/{id}:              { $ref: './paths/application-lists/application-lists-by-id.yaml' }
+  # APPLICATION LIST Entries
+  /application-list-entries/:           { $ref: './paths/application-lists-entries/entries.yaml' }
+  /application-lists/{id}/entries:      { $ref: './paths/application-lists-entries/entry-through-list-by-id.yaml' }
+  /application-lists/{id}/entries/{id}: { $ref: './paths/application-lists-entries/entries-through-list.yaml' }
   # COURT LOCATIONS
-  /court-locations:              { $ref: './paths/court-locations/court-locations.yaml' }
-  /court-locations/{code}:        { $ref: './paths/court-locations/court-locations-by-code.yaml' }
+  /court-locations:                     { $ref: './paths/court-locations/court-locations.yaml' }
+  /court-locations/{code}:              { $ref: './paths/court-locations/court-locations-by-code.yaml' }
   # CRIMINAL JUSTICE AREAS
-  /criminal-justice-areas:        { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
-  /criminal-justice-areas/{code}: { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
+  /criminal-justice-areas:              { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
+  /criminal-justice-areas/{code}:       { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
   # RESULT CODES
-  /result-codes:                  { $ref: './paths/result-codes/result-codes.yaml' }
-  /result-codes/{code}:           { $ref: './paths/result-codes/result-codes-by-code.yaml' }
+  /result-codes:                        { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{code}:                 { $ref: './paths/result-codes/result-codes-by-code.yaml' }
   # STANDARD APPLICANTS
-  /standard-applicants:           { $ref: './paths/standard-applicants/standard-applicants.yaml' }
-  /standard-applicants/{code}:    { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
+  /standard-applicants:                 { $ref: './paths/standard-applicants/standard-applicants.yaml' }
+  /standard-applicants/{code}:          { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
 
 components:
   schemas:
@@ -72,6 +80,12 @@ components:
     application-list-update-dto:        { $ref: './components/schemas/application-lists/application-list-update-dto.yaml' }
     application-list-page:              { $ref: './components/schemas/application-lists/application-list-page.yaml' }
     application-list-get-filter-dto:    { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
+    # APPLICATION LIST ENTRIES
+    entry-get-detail-dto:               { $ref: './components/schemas/application-lists-entries/entry-get-detail-dto.yaml' }
+    entry-get-summary-dto:              { $ref: './components/schemas/application-lists-entries/entry-get-summary-dto.yaml' }
+    entry-create-dto:                   { $ref: './components/schemas/application-lists-entries/entry-create-dto.yaml' }
+    entry-update-dto:                   { $ref: './components/schemas/application-lists-entries/entry-update-dto.yaml' }
+    entry-page:                         { $ref: './components/schemas/application-lists-entries/entry-page.yaml' }
     # COMMON
     problem:                            { $ref: './components/schemas/common/problem.yaml' }
     page:                               { $ref: './components/schemas/common/page.yaml' }

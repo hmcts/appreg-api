@@ -1,0 +1,196 @@
+type: object
+description: Request payload to create an Application List Entry.
+required:
+  - date
+  - time
+  - description
+  - status
+
+properties:
+
+  listId:
+    type: string
+    format: uuid
+    description: The Unique identifier of the Application List this Entry belongs to.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  standardApplicantCode:
+    type: string
+    description: Code that identifies the Standard Applicant.
+    example: "APP001"
+
+  applicationCode:
+    type: string
+    description: Code that identifies the Application Code.
+    example: "APP001"
+
+  applicantTitle:
+    type: String
+    description: Prefix before a persons name.
+    example: "Mr, Mrs"
+
+  applicantSurname:
+    type: String
+    description: The applicants family name.
+    example: "Smith"
+
+  applicantFirstForename:
+    type: String
+    description: The applicants first name.
+    example: "John"
+
+  applicantSecondForename:
+    type: String
+    description: The applicants optional second name.
+
+  applicantThirdForename:
+    type: String
+    description: The applicants optional third name.
+
+  applicantAddressLine1:
+    type: String
+    description: Line one of the applicants address.
+    example: "10 Downing Street"
+
+  applicantAddressLine2:
+    type: String
+    description: Line two of the applicants address.
+    example: "Westminster"
+
+  applicantAddressLine3:
+    type: String
+    description: Line three of the applicants address.
+    example: "London"
+
+  applicantAddressLine4:
+    type: String
+    description: Line four of the applicants address.
+    example: "Greater London"
+
+  applicantAddressLine5:
+    type: String
+    description: Line five of the applicants address.
+    example: "United Kingdom"
+
+  applicantPostcode:
+    type: String
+    description: The applicants postcode.
+    example: "SW1A 2AA"
+
+  applicantPhone:
+    type: String
+    description: The applicants home-phone number.
+    example: "SW1A 2AA"
+
+  applicantMobile:
+    type: String
+    description: The applicants mobile number.
+    example: "SW1A 2AA"
+
+  applicantEmail:
+    type: String
+    format: email
+    description: The applicants email address.
+    example: "SW1A 2AA"
+
+  organisationName:
+    type: String
+    description: The name of the organisation.
+    example: "ACME Industries Ltd"
+
+  organisationAddressLine1:
+    type: String
+    description: Line one of the organisations address.
+    example: "100 Innovation Drive"
+
+  organisationAddressLine2:
+    type: String
+    description: Line two of the organisations address.
+    example: "Tech Park"
+
+  organisationAddressLine3:
+    type: String
+    description: Line three of the organisations address.
+    example: "Cambridge"
+
+  organisationAddressLine4:
+    type: String
+    description: Line four of the organisations address.
+    example: "Cambridgeshire"
+
+  organisationAddressLine5:
+    type: String
+    description: Line five of the organisations address.
+    example: "United Kingdom"
+
+  organisationPostcode:
+    type: String
+    description: The organisations postcode.
+    example: "CB4 0FN"
+
+  organisationPhone:
+    type: String
+    description: The organisations land-line phone number.
+    example: "01225 123456"
+
+  organisationMobile:
+    type: String
+    description: The organisations mobile number.
+    example: "+07123456789"
+
+  organisationEmail:
+    type: String
+    format: email
+    description: The organisations email address.
+    example: "info@acme-industries.co.uk"
+
+  numberOfRespondents:
+    type: integer
+    description: Number of respondents required by the Application.
+    example: "0"
+
+  wordingFields:
+    type: array
+    items: {type: String}
+    description: An array of user-provided values used to populate placeholders in the entry wording template, applied in the order they are provided.
+    example: ["25 October 2025", "London"]
+
+  date:
+    type: string
+    format: date
+
+  time:
+    type: string
+    format: time
+
+  description:
+    type: string
+
+  status:
+    $ref: './application-list-status.yaml'
+
+  courtLocationCode:
+    type: string
+    description: Code that identifies the Court Location.
+    example: "LOC123"
+
+  otherLocationDescription:
+    type: string
+    description: Free-text location if not using a standard court.
+    example: "Temporary Courtroom at Town Hall"
+
+  cjaCode:
+    type: string
+    description: Criminal Justice Area code.
+    example: "CJA001"
+
+  durationHours:
+    type: integer
+    format: int32
+    minimum: 0
+
+  durationMinutes:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 59
