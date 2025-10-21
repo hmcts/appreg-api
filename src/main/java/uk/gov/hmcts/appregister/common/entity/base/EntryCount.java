@@ -6,5 +6,5 @@ public interface EntryCount {
 
     UUID getPrimaryKey();
 
-    long getCount();
+    Long getCount();
 }
