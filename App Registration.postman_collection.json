@@ -164,7 +164,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (court) update\",\r\n  \"status\" : \"CLOSED\",\r\n  \"courtLocation\" : {\r\n    \"name\" : \"Manchester Crown Court\",\r\n    \"locationCode\" : \"BCC006\",\r\n    \"startDate\" : [ 2025, 10, 15 ],\r\n    \"endDate\" : {\r\n      \"present\" : true\r\n    }\r\n  },\r\n  \"otherLocationDescription\" : null,\r\n  \"criminalJusticeArea\" : null,\r\n  \"durationHours\" : 4,\r\n  \"durationMinutes\" : 32,\r\n  \"version\" : 2\r\n}",
+							"raw": "{\r\n  \"date\" : [ 2025, 10, 19 ],\r\n  \"time\" : [ 10, 30 ],\r\n  \"description\" : \"Morning list (court) update\",\r\n  \"status\" : \"CLOSED\",\r\n  \"otherLocationDescription\" : \"Updated other location\",\r\n  \"courtLocationCode\" : null,\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 4,\r\n  \"durationMinutes\" : 32,\r\n  \"version\" : 2\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
