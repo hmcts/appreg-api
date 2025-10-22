@@ -9,7 +9,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,7 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * database.
  */
 @Entity
-@Table(name = "petty_sessional_areas")
+@Table(name = TableNames.PETTY_SESSIONAL_AREAS)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -60,10 +60,10 @@ public class PettySessionalArea extends BaseUnmanagedChangeableEntity implements
     private String psaCode;
 
     @Column(name = "start_date")
-    private OffsetDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private OffsetDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "jc_name")
     @Size(max = 200)

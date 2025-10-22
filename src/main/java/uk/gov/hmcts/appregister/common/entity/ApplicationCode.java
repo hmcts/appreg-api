@@ -10,7 +10,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -81,10 +81,10 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     private String destinationEmail2;
 
     @Column(name = "application_code_start_date", nullable = false)
-    private OffsetDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "application_code_end_date")
-    private OffsetDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "bulk_respondent_allowed", nullable = false)
     @Size(max = 1)
@@ -111,5 +111,6 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     }
 
     @OneToMany(mappedBy = "applicationCode")
+    @Builder.Default
     private List<ApplicationListEntry> applicationListEntryList = new ArrayList<>();
 }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.dto;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 public record ApplicationCodeDto(
@@ -12,8 +13,8 @@ public record ApplicationCodeDto(
         Boolean requiresRespondent,
         String destinationEmail1,
         String destinationEmail2,
-        OffsetDateTime startDate,
-        OffsetDateTime endDate,
+        LocalDate startDate,
+        LocalDate endDate,
         Boolean bulkRespondentAllowed,
         String feeReference,
         String mainFeeDescription,
