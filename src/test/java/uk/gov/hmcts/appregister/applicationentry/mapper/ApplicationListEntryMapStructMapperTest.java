@@ -88,25 +88,78 @@ class ApplicationListEntryMapStructMapperTest {
         private boolean feeRequired;
         private String result;
 
-        ProjectionStub withSequenceNumber(short sequenceNumber) { this.sequenceNumber = sequenceNumber; return this; }
-        ProjectionStub withAccountNumber(String accountNumber) { this.accountNumber = accountNumber; return this; }
-        ProjectionStub withApplicant(String applicant) { this.applicant = applicant; return this; }
-        ProjectionStub withRespondent(String respondent) { this.respondent = respondent; return this; }
-        ProjectionStub withPostCode(String postCode) { this.postCode = postCode; return this; }
+        ProjectionStub withSequenceNumber(short sequenceNumber) {
+            this.sequenceNumber = sequenceNumber;
+            return this;
+        }
+
+        ProjectionStub withAccountNumber(String accountNumber) {
+            this.accountNumber = accountNumber;
+            return this;
+        }
+
+        ProjectionStub withApplicant(String applicant) {
+            this.applicant = applicant;
+            return this;
+        }
+
+        ProjectionStub withRespondent(String respondent) {
+            this.respondent = respondent;
+            return this;
+        }
+
+        ProjectionStub withPostCode(String postCode) {
+            this.postCode = postCode;
+            return this;
+        }
+
         ProjectionStub withApplicationTitle(String applicationTitle) {
-            this.applicationTitle = applicationTitle; return this; }
-        ProjectionStub withFeeRequired(boolean feeRequired) { this.feeRequired = feeRequired; return this; }
-        ProjectionStub withResult(String result) { this.result = result; return this; }
+            this.applicationTitle = applicationTitle;
+            return this;
+        }
+
+        ProjectionStub withFeeRequired(boolean feeRequired) {
+            this.feeRequired = feeRequired;
+            return this;
+        }
+
+        ProjectionStub withResult(String result) {
+            this.result = result;
+            return this;
+        }
 
         // --- Implement projection getters ---
-        @Override public short getSequenceNumber() { return sequenceNumber; }
-        @Override public String getAccountNumber() { return accountNumber; }
-        @Override public String getApplicant() { return applicant; }
-        @Override public String getRespondent() { return respondent; }
-        @Override public String getPostCode() { return postCode; }
-        @Override public String getApplicationTitle() { return applicationTitle; }
-        @Override public boolean isFeeRequired() { return feeRequired; }
-        @Override public String getResult() { return result; }
+        @Override public short getSequenceNumber() {
+            return sequenceNumber;
+        }
+
+        @Override public String getAccountNumber() {
+            return accountNumber;
+        }
+
+        @Override public String getApplicant() {
+            return applicant;
+        }
+
+        @Override public String getRespondent() {
+            return respondent;
+        }
+
+        @Override public String getPostCode() {
+            return postCode;
+        }
+
+        @Override public String getApplicationTitle() {
+            return applicationTitle;
+        }
+
+        @Override public boolean isFeeRequired() {
+            return feeRequired;
+        }
+
+        @Override public String getResult() {
+            return result;
+        }
     }
 
     private ProjectionStub createProjectionStub(

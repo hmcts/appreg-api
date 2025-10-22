@@ -12,25 +12,13 @@ import java.util.UUID;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
-import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -42,14 +30,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
-
-    @Autowired
-    private ApplicationListRepository repository;
-
-    @Autowired
-    private ApplicationListEntryRepository aleRepository;
 
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
@@ -767,15 +748,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         UUID id = dto.getId();
 
-        ApplicationList applicationList = repository.findByUuid(id)
-            .orElseThrow(() -> new AssertionError("Application list not found"));
-
-        Long pk = applicationList.getPk();
-
-        ApplicationListEntry applicationListEntry = getApplicationListEntry(applicationList);
-
-        aleRepository.save(applicationListEntry);
-
         // fire test
         resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
 
@@ -787,33 +759,33 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
             .isEqualToIgnoringCase(description);
     }
 
-    private static @NotNull ApplicationListEntry getApplicationListEntry(ApplicationList applicationList) {
-        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
-        applicationListEntry.setApplicationList(applicationList);
-        applicationListEntry.setSequenceNumber((short) 1);
-        applicationListEntry.setAccountNumber("1234567890");
+    @Test
+    @DisplayName("GET Application List: 403 when no role")
+    void givenNoRole_whenGetApplicationList_then403() throws Exception {
+        var token =
+            getATokenWithValidCredentials()
+                .build()
+                .fetchTokenForRole();
 
-        StandardApplicant standardApplicant = new StandardApplicant();
-        standardApplicant.setName("Mustafa's Org");
-        applicationListEntry.setStandardApplicant(standardApplicant);
+        String description = "List for testing get application list without role";
 
-        NameAddress nameAddress = new NameAddress();
-        nameAddress.setName("Ahmed, Mustafa, His Majesty");
-        nameAddress.setPostcode("SW1A 1AA");
-        applicationListEntry.setRnameaddress(nameAddress);
+        var req =
+            new ApplicationListCreateDto()
+                .date(TEST_DATE)
+                .time(TEST_TIME)
+                .description(description)
+                .status(ApplicationListStatus.OPEN)
+                .cjaCode(VALID_CJA_CODE)
+                .otherLocationDescription(VALID_OTHER_LOCATION)
+                .durationHours(1)
+                .durationMinutes(0);
 
-        ApplicationCode applicationCode = new ApplicationCode();
-        applicationCode.setTitle("Request for Certificate of Refusal to State a Case (Civil)");
-        applicationCode.setFeeDue("1");
-        applicationListEntry.setApplicationCode(applicationCode);
+        Response resp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        req);
 
-        List<AppListEntryResolution> resolutions = new ArrayList<>();
-        AppListEntryResolution appListEntryResolution = new AppListEntryResolution();
-        ResolutionCode resolutionCode = new ResolutionCode();
-        resolutionCode.setResultCode("APPC");
-        appListEntryResolution.setResolutionCode(resolutionCode);
-        resolutions.add(appListEntryResolution);
-        applicationListEntry.setResolutions(resolutions);
-        return applicationListEntry;
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
     }
 }

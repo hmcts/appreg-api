@@ -104,7 +104,7 @@ public class ApplicationListServiceImplTest {
         when(repository.save(toSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
 
         ApplicationListGetDetailDto result = service.create(dto);
 
@@ -115,7 +115,7 @@ public class ApplicationListServiceImplTest {
         verify(repository).save(toSave);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
-        verify(mapper).toGetDetailDto(saved, null);
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     @Test
@@ -173,14 +173,14 @@ public class ApplicationListServiceImplTest {
         when(repository.save(toSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, cja)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         ApplicationListGetDetailDto result = service.create(dto);
 
         verify(validator).validate(dto);
         verify(locationLookupService).getCjaOrThrow("CJA-42");
         verify(repository).save(toSave);
-        verify(mapper).toGetDetailDto(saved, cja);
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
         assertThat(result).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
@@ -288,7 +288,7 @@ public class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -336,7 +336,7 @@ public class ApplicationListServiceImplTest {
                         .time(DEFAULT_TIME);
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -384,7 +384,7 @@ public class ApplicationListServiceImplTest {
                         .cjaCode("52")
                         .otherLocationDescription("town");
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -414,7 +414,7 @@ public class ApplicationListServiceImplTest {
 
         doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -455,7 +455,7 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("CJA Name"));
@@ -489,7 +489,7 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Some Court"));
@@ -521,7 +521,7 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));

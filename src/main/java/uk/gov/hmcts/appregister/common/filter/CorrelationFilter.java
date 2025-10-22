@@ -20,13 +20,17 @@ import java.util.UUID;
 @Component
 public class CorrelationFilter implements Filter {
 
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
+        ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         String cid = Optional.ofNullable(req.getHeader("X-Correlation-Id")).orElse(UUID.randomUUID().toString());
         req.setAttribute("correlationId", cid);
         MDC.put("correlationId", cid);
-        try { chain.doFilter(request, response); }
-        finally { MDC.remove("correlationId"); }
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove("correlationId");
+        }
     }
 
 }

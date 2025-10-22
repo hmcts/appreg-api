@@ -26,6 +26,24 @@ get:
         type: array
         items: { type: string }
         example: [ "date,desc", "status,asc" ]
+    - in: query
+      name: includeSummaries
+      schema: { type: boolean, default: false }
+      description: Include entriesCount and entriesSummary for each list item.
+    - in: query
+      name: entriesPage
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: entriesSize
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+    - in: query
+      name: entriesSort
+      style: form
+      explode: true
+      schema:
+        type: array
+        items: { type: string }
+        example: [ "sequenceNumber,asc" ]
   responses:
     "200":
       description: Page of Application Lists

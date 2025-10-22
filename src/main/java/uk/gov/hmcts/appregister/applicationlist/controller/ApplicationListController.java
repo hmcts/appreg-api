@@ -108,6 +108,10 @@ public class ApplicationListController implements ApplicationListsApi {
      * </ul>
      *
      * @param id the unique identifier of the application list
+     * @param page the page number to retrieve (zero-based)
+     * @param size the number of records per page
+     * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and mapped by
+     *     {@link ApplicationListSortMapper}
      * @return {@link ResponseEntity} containing the application list details
      */
     @Override
@@ -170,20 +174,30 @@ public class ApplicationListController implements ApplicationListsApi {
      * @param size the number of records per page
      * @param sort a list of sort parameters (e.g., {@code ["description,asc",
      *     "createdDate,desc"]}); validated and mapped by {@link ApplicationListSortMapper}
+     * @param entriesPage the entries page number to retrieve (zero-based)
+     * @param entriesSize the number of entries per page
+     * @param entriesSort a list of sort parameters for entries (e.g., {@code ["sequenceNumber,asc"]}); validated and
+     *     mapped by {@link ApplicationListSortMapper}
      * @return {@link ResponseEntity} containing the requested page of application lists wrapped in
      *     an {@link ApplicationListPage} object
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationListPage> getApplicationLists(
-        ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
+        ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort, Boolean includeSummaries,
+        Integer entriesPage, Integer entriesSize, List<String> entriesSort) {
 
         List<String> mappedSort = sortMapper.mapAndValidate(sort);
         Pageable pageInfo =
                 pageableMapper.from(
                         page, size, mappedSort, ApplicationList_.DESCRIPTION, Sort.Direction.ASC);
 
-        var applicationListPage = service.getPage(filter, pageInfo);
+        List<String> entriesMappedSort = sortMapper.mapAndValidate(sort);
+        Pageable entriesPageInfo =
+            pageableMapper.from(
+                entriesPage, entriesSize, entriesMappedSort, ApplicationListEntry_.SEQUENCE_NUMBER, Sort.Direction.ASC);
+
+        var applicationListPage = service.getPage(filter, pageInfo, includeSummaries, entriesPageInfo);
         log.info("Retrieved Application Lists");
         return ResponseEntity.ok(applicationListPage);
     }

@@ -74,7 +74,7 @@ spring:
     static-path-pattern: /specs/**
 logging:
   level:
-    org.springframework.boot.context.config: DEBUG
+    org.springframework.*: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
     correlation: "[%X{traceId}/%X{spanId}]"

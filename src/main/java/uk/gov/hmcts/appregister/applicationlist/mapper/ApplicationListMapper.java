@@ -50,17 +50,18 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationHours", source = "appList.durationHours")
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
-    @Mapping(target = "entriesCount", ignore = true)
+    @Mapping(target = "entriesCount", source = "entryCount")
     @Mapping(target = "entriesSummary", ignore = true)
-    ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
+    ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja, long entryCount);
 
     @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")
     @Mapping(target = "location", source = "location")
     @Mapping(target = "description", source = "appList.description")
-    @Mapping(target = "numberOfEntries", source = "entryCount")
+    @Mapping(target = "entriesCount", source = "entryCount")
     @Mapping(target = "status", source = "appList.status")
+    @Mapping(target = "entriesSummary", ignore = true)
     ApplicationListGetSummaryDto toGetSummaryDto(
             ApplicationList appList, long entryCount, String location);
 }

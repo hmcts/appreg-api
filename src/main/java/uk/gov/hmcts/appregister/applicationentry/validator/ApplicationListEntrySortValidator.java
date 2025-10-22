@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 import uk.gov.hmcts.appregister.common.validator.AbstractSortValidator;
 
 import org.springframework.stereotype.Component;

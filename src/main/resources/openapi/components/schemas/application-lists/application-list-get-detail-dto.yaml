@@ -81,8 +81,8 @@ properties:
     type: integer
     format: int32
     minimum: 0
-    description: The total number of entries on the list.
-    example: 4
+    description: Total number of Application List Entries associated with this Application List.
+    example: 12
 
   entriesSummary:
     type: array
