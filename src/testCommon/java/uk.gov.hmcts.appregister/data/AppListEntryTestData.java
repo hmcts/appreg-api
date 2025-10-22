@@ -13,6 +13,7 @@ public class AppListEntryTestData
                 ApplicationListEntry, ApplicationListEntry.ApplicationListEntryBuilder> {
 
     public static final String TRUE_VALUE = "1";
+
     @Override
     public ApplicationListEntry.ApplicationListEntryBuilder someMinimal() {
         UUID uniqueId = UUID.randomUUID();
