@@ -2,7 +2,7 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.5.5'
+  id 'org.springframework.boot' version '3.5.6'
   id 'com.github.ben-manes.versions' version '0.52.0'
   id 'org.sonarqube' version '6.3.1.5724'
   id "io.freefair.lombok" version "8.13.1"
@@ -441,11 +441,11 @@ dependencies {
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.5.2.Final'
 
   // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
   // Database
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.8'
 
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
