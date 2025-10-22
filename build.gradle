@@ -217,9 +217,6 @@ tasks.register('smoke', Test) {
 def commonJacocoExclusionsIntegration = [
         "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
-        "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
 
         // We need to reduce the code under mappers by using MapStruct
         "**/uk/gov/hmcts/appregister/**/mapper/*.class",
@@ -234,9 +231,6 @@ def commonJacocoExclusionsIntegration = [
 def commonJacocoExclusionsUnit = [
         "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
-        "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
 
         // These are packages in which I do not envisage tests. These would be tested more appropriately in
         // integration tests or other types of tests
@@ -244,9 +238,6 @@ def commonJacocoExclusionsUnit = [
         "**/uk/gov/hmcts/appregister/**/dao/*.class",
         "**/uk/gov/hmcts/appregister/**/config/*.class",
         "**/uk/gov/hmcts/appregister/**/entity/*.class",
-
-        // If we use MapStruct, we don't need to test the generated mappers or we test them as part of integration tests
-        "**/uk/gov/hmcts/appregister/**/mapper/*.class"
 ]
 
 tasks.register('jacocoUnitReport', JacocoReport) {

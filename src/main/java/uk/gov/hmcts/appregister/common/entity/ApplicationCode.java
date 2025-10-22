@@ -111,5 +111,6 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     }
 
     @OneToMany(mappedBy = "applicationCode")
+    @Builder.Default
     private List<ApplicationListEntry> applicationListEntryList = new ArrayList<>();
 }
