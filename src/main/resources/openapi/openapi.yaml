@@ -81,11 +81,11 @@ components:
     application-list-page:              { $ref: './components/schemas/application-lists/application-list-page.yaml' }
     application-list-get-filter-dto:    { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
     # APPLICATION LIST ENTRIES
-    entry-get-detail-dto:               { $ref: './components/schemas/application-lists-entries/entry-get-detail-dto.yaml' }
-    entry-get-summary-dto:              { $ref: './components/schemas/application-lists-entries/entry-get-summary-dto.yaml' }
-    entry-create-dto:                   { $ref: './components/schemas/application-lists-entries/entry-create-dto.yaml' }
-    entry-update-dto:                   { $ref: './components/schemas/application-lists-entries/entry-update-dto.yaml' }
-    entry-page:                         { $ref: './components/schemas/application-lists-entries/entry-page.yaml' }
+    entry-get-detail-dto:               { $ref: './components/schemas/application-list-entries/entry-get-detail-dto.yaml' }
+    entry-create-dto:                   { $ref: './components/schemas/application-list-entries/entry-create-dto.yaml' }
+    entry-get-filter-dto:               { $ref: './components/schemas/application-list-entries/entry-create-dto.yaml' }
+    entry-update-dto:                   { $ref: './components/schemas/application-list-entries/entry-update-dto.yaml' }
+    entry-page:                         { $ref: './components/schemas/application-list-entries/entry-page.yaml' }
     # COMMON
     problem:                            { $ref: './components/schemas/common/problem.yaml' }
     page:                               { $ref: './components/schemas/common/page.yaml' }
@@ -97,6 +97,8 @@ components:
     # CRIMINAL JUSTICE AREAS
     criminal-justice-area-get-dto:      { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-get-dto.yaml'}
     criminal-justice-area-page:         { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml' }
+    # FEE STATUS
+    fee-status:                         { $ref: '/components/schemas/fee-status/fee-status.yaml'}
     # RESULT CODES
     result-code-get-detail-dto:         { $ref: './components/schemas/result-codes/result-code-get-detail-dto.yaml' }
     result-code-get-summary-dto:        { $ref: './components/schemas/result-codes/result-code-get-summary-dto.yaml' }

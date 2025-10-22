@@ -1,0 +1,17 @@
+type: object
+description: The respondent to the application.
+required:
+
+properties:
+
+  person:
+    $ref: './person.yaml'
+
+  dateOfBirth:
+    type: string
+    format: date
+    description: The DOB of the respondent, can be included if respondent is a person.
+    example: "1990-01-01"
+
+  organisation:
+    $ref: './organisation.yaml'

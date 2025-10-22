@@ -1,0 +1,20 @@
+type: object
+description: The status of the fee linked to the application.
+required:
+  - name
+  - contactDetails
+
+properties:
+
+  paymentReference:
+    type: string
+    description: The name of the organisation.
+    example: "PAY-001"
+
+  paymentStatus:
+    $ref: './payment-status.yaml'
+
+  statusDate:
+    type: string
+    format: date
+    description: The date when the payment status was updated.

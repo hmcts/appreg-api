@@ -1,0 +1,51 @@
+type: object
+description: A participant's contact details.
+required:
+  - addressLine1
+properties:
+
+  addressLine1:
+    type: String
+    description: Line one of the participant's address.
+    example: "10 Downing Street"
+
+  addressLine2:
+    type: String
+    description: Line two of the participant's address.
+    example: "Westminster"
+
+  addressLine3:
+    type: String
+    description: Line three of the participant's address.
+    example: "London"
+
+  addressLine4:
+    type: String
+    description: Line four of the participant's address.
+    example: "Greater London"
+
+  addressLine5:
+    type: String
+    description: Line five of the participant's address.
+    example: "United Kingdom"
+
+  postcode:
+    type: String
+    description: The participant's postcode.
+    example: "SW1A 2AA"
+
+  phone:
+    type: String
+    description: The participant's home-phone number.
+    example: "SW1A 2AA"
+
+  mobile:
+    type: String
+    description: The participant's mobile number.
+    example: "SW1A 2AA"
+
+  email:
+    type: String
+    format: email
+    description: The participant's email address.
+    example: "SW1A 2AA"

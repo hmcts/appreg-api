@@ -1,0 +1,30 @@
+type: object
+description: A persons full name.
+required:
+  -surname
+  -firstForename
+
+properties:
+
+  title:
+    type: String
+    description: Prefix before a persons name.
+    example: "Mr, Mrs"
+
+  surname:
+    type: String
+    description: The persons family name.
+    example: "Smith"
+
+  firstForename:
+    type: String
+    description: The persons first name.
+    example: "John"
+
+  secondForename:
+    type: String
+    description: The persons optional second name.
+
+  thirdForename:
+    type: String
+    description: The persons optional third name.

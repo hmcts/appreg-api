@@ -1,0 +1,11 @@
+type: object
+description: The applicant making the application.
+required:
+
+properties:
+
+  person:
+    $ref: './person.yaml'
+
+  organisation:
+    $ref: './organisation.yaml'

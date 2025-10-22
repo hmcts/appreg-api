@@ -1,0 +1,15 @@
+type: object
+description: The organisation making, or responding to, the application.
+required:
+  - name
+  - contactDetails
+
+properties:
+
+  name:
+    type: string
+    description: The name of the organisation.
+    example: "ACME Industries LTD"
+
+  contactDetails:
+    $ref: './contact-details.yaml'
