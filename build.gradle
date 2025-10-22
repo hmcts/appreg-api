@@ -450,8 +450,8 @@ dependencies {
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.5.2.Final'
 
   // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.40'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.7'
