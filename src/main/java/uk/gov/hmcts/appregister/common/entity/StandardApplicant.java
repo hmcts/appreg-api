@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * Represents a StandardApplicant entity mapped to the "standard_applicants" table in the database.
  */
 @Entity
-@Table(name = "standard_applicants")
+@Table(name = TableNames.STANDARD_APPLICANTS)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

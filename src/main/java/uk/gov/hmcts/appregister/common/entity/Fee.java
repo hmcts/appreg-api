@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * Represents a Fee entity mapped to the "fee" table in the database.
  */
 @Entity
-@Table(name = "fee")
+@Table(name = TableNames.FEE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -52,10 +53,10 @@ public class Fee implements Accountable, UnmanagedChangeable, Versionable {
     private Double amount;
 
     @Column(name = "fee_start_date", nullable = false)
-    private OffsetDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "fee_end_date")
-    private OffsetDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "fee_version", nullable = false)
     @Version

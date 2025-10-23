@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationcode.service;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -90,8 +89,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     log.debug("Start: Find Application for app code: {} date: {}", code, date);
 
                     final List<ApplicationCode> applicationCodeResults =
-                            repository.findByCodeAndDate(
-                                    code, date.atStartOfDay().atOffset(ZoneOffset.UTC));
+                            repository.findByCodeAndDate(code, date);
 
                     ApplicationCode codeToConsider = null;
 

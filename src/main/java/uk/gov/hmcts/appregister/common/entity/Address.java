@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * Represents an Address entity mapped to the "addresses" table in the database.
  */
 @Entity
-@Table(name = "addresses")
+@Table(name = TableNames.ADDRESSES)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

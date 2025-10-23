@@ -5,7 +5,6 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -65,8 +64,7 @@ public class ApplicationCodeServiceImplTest {
     void findByCode() throws Exception {
         String code = "code";
         LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
-        OffsetDateTime offsetDateTime =
-                LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC);
+        LocalDate offsetDateTime = LocalDate.now();
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 

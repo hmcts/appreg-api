@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -28,8 +28,8 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(OffsetDateTime.now());
-        code.setStartDate(OffsetDateTime.now());
+        code.setEndDate(LocalDate.now());
+        code.setStartDate(LocalDate.now());
         code.setFeeReference("reference");
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
@@ -58,8 +58,8 @@ public class ApplicationCodeMapperTest {
     public void testWithoutFeesMapApplicationCodeGetSummaryDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(OffsetDateTime.now());
-        code.setStartDate(OffsetDateTime.now());
+        code.setEndDate(LocalDate.now());
+        code.setStartDate(LocalDate.now());
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
@@ -91,8 +91,8 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(OffsetDateTime.now());
-        code.setStartDate(OffsetDateTime.now());
+        code.setEndDate(LocalDate.now());
+        code.setStartDate(LocalDate.now());
         code.setFeeReference("reference");
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
@@ -121,8 +121,8 @@ public class ApplicationCodeMapperTest {
     public void testWithoutFeesMapApplicationCodeGetDetailDto() {
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
-        code.setEndDate(OffsetDateTime.now());
-        code.setStartDate(OffsetDateTime.now());
+        code.setEndDate(LocalDate.now());
+        code.setStartDate(LocalDate.now());
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);

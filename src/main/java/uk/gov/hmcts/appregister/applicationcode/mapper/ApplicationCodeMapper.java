@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -67,15 +66,10 @@ public abstract class ApplicationCodeMapper {
         return JsonNullable.of(feeReference);
     }
 
-    @Named("mapStartDate")
-    public LocalDate mapStartDate(OffsetDateTime offsetDateTime) {
-        return offsetDateTime.toLocalDate();
-    }
-
     @Named("mapOffsetDate")
-    public JsonNullable<LocalDate> mapOffset(OffsetDateTime offsetDateTime) {
-        if (offsetDateTime != null) {
-            return JsonNullable.of(offsetDateTime.toLocalDate());
+    public JsonNullable<LocalDate> mapOffset(LocalDate localDate) {
+        if (localDate != null) {
+            return JsonNullable.of(localDate);
         }
 
         return JsonNullable.undefined();
@@ -117,7 +111,7 @@ public abstract class ApplicationCodeMapper {
             target = "feeReference",
             source = "entity.feeReference",
             qualifiedByName = "mapFeeReference")
-    @Mapping(target = "startDate", source = "entity.startDate", qualifiedByName = "mapStartDate")
+    @Mapping(target = "startDate", source = "entity.startDate")
     @Mapping(target = "endDate", source = "entity.endDate", qualifiedByName = "mapOffsetDate")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")

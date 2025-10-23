@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
 import org.instancio.Instancio;
@@ -24,7 +24,7 @@ public class ApplicationCodeTestData
                 .wording("wording" + uniqueId)
                 .feeDue(YesOrNo.YES)
                 .requiresRespondent(YesOrNo.YES)
-                .startDate(OffsetDateTime.now(ZoneOffset.UTC))
+                .startDate(LocalDate.now(ZoneOffset.UTC))
                 .bulkRespondentAllowed(YesOrNo.YES);
     }
 

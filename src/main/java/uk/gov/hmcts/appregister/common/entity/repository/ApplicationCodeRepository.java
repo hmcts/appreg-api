@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,7 +30,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
               AND c.startDate <= :dateTime
               AND (c.endDate IS NULL OR c.endDate >= :dateTime)
             """)
-    List<ApplicationCode> findByCodeAndDate(String applicationCode, OffsetDateTime dateTime);
+    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.

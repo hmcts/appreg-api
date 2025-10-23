@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,7 +102,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     private ApplicationCode resolveApplicationCode(String code) {
         List<ApplicationCode> applicationCodes =
-                applicationCodeRepository.findByCodeAndDate(code, OffsetDateTime.now());
+                applicationCodeRepository.findByCodeAndDate(code, LocalDate.now());
         if (applicationCodes.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Application code not found");
         }

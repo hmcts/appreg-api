@@ -12,7 +12,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * Represents a LinkAddress entity mapped to the "link_addresses" table in the database.
  */
 @Entity
-@Table(name = "link_addresses")
+@Table(name = TableNames.LINK_ADDRESSES)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -48,10 +48,10 @@ public class LinkAddress extends BaseUnmanagedChangeableEntity implements Versio
     private String laType;
 
     @Column(name = "start_date", nullable = false)
-    private OffsetDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private OffsetDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "version_number", nullable = false)
     @Version
