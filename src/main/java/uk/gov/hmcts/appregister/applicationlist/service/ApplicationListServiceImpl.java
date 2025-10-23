@@ -267,7 +267,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             String location = deriveLocation(al);
 
             ApplicationListGetSummaryDto dto = mapper.toGetSummaryDto(al, entryCount, location);
-            dto.setEntriesSummary(entrySummariesPerList.get(al.getUuid()));
+
+            if (dto != null) {
+                dto.setEntriesSummary(entrySummariesPerList.get(al.getUuid()));
+            }
+
             responsePage.addContentItem(dto);
         }
         return responsePage;

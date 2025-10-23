@@ -27,10 +27,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.http.HttpStatus;
+
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
@@ -41,13 +44,14 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -525,5 +529,232 @@ public class ApplicationListServiceImplTest {
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
+    }
+
+    @Test
+    void getPage_includeSummaries_success_returnsMappedPage() {
+
+        // Resolve CJA
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+        String cjaDescription = "CJA Desc";
+        cja.setDescription(cjaDescription);
+        when(locationLookupService.getCjaOrThrow("52")).thenReturn(cja);
+
+        // DB results
+        ApplicationList row = new ApplicationList();
+        row.setUuid(UUID.randomUUID());
+        row.setCja(cja);
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
+
+        Pageable pageable = mock(Pageable.class);
+        when(repository.findAllByFilter(
+            eq(ApplicationListStatus.OPEN),
+            isNull(),
+            eq(cja),
+            eq(DEFAULT_DATE),
+            eq(DEFAULT_TIME),
+            eq("morning"),
+            eq("town hall"),
+            eq(pageable)))
+            .thenReturn(dbPage);
+
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+            .thenReturn(List.of());
+
+        // Page metadata mapping
+        doAnswer(
+            inv -> {
+                ApplicationListPage target = inv.getArgument(1);
+                target.totalPages(1);
+                target.elementsOnPage(1);
+                return null;
+            })
+            .when(pageMapper)
+            .toPage(eq(dbPage), any(ApplicationListPage.class));
+
+        // Given a filter with CJA + otherLocation (court is null)
+        ApplicationListGetFilterDto filter =
+            new ApplicationListGetFilterDto()
+                .status(ApplicationListStatus.OPEN)
+                .courtLocationCode(null)
+                .cjaCode("52")
+                .date(DEFAULT_DATE)
+                .time(DEFAULT_TIME)
+                .description("morning")
+                .otherLocationDescription("town hall");
+
+        mockFindSummariesById(row.getUuid(), pageable);
+
+        ApplicationListGetSummaryDto applicationListGetSummaryDto = new ApplicationListGetSummaryDto();
+        when(mapper.toGetSummaryDto(row, 0, cjaDescription)).thenReturn(applicationListGetSummaryDto);
+
+        // When
+        ApplicationListPage result = service.getPage(filter, pageable, true, pageable);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).isNotNull();
+        assertThat(result.getContent().size()).isEqualTo(1);
+
+        verify(locationLookupService).getCjaOrThrow("52");
+        verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
+        verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
+    }
+
+    @Test
+    void get_returnsDto() {
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        Pageable pageable = mock(Pageable.class);
+
+        mockFindSummariesById(id, pageable);
+
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+
+        ApplicationListGetDetailDto actual = service.get(id, pageable);
+
+        Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void get_returns404_whenApplicationListRepositoryEmpty() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.empty());
+
+        Pageable pageable = mock(Pageable.class);
+        assertThatThrownBy(() -> service.get(id, pageable))
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Minimal test double of the projection interface.
+     */
+    private static class ProjectionStub implements ApplicationListEntrySummaryProjection {
+        private short sequenceNumber;
+        private String accountNumber;
+        private String applicant;
+        private String respondent;
+        private String postCode;
+        private String applicationTitle;
+        private boolean feeRequired;
+        private String result;
+
+        ProjectionStub withSequenceNumber(short sequenceNumber) {
+            this.sequenceNumber = sequenceNumber;
+            return this;
+        }
+
+        ProjectionStub withAccountNumber(String accountNumber) {
+            this.accountNumber = accountNumber;
+            return this;
+        }
+
+        ProjectionStub withApplicant(String applicant) {
+            this.applicant = applicant;
+            return this;
+        }
+
+        ProjectionStub withRespondent(String respondent) {
+            this.respondent = respondent;
+            return this;
+        }
+
+        ProjectionStub withPostCode(String postCode) {
+            this.postCode = postCode;
+            return this;
+        }
+
+        ProjectionStub withApplicationTitle(String applicationTitle) {
+            this.applicationTitle = applicationTitle;
+            return this;
+        }
+
+        ProjectionStub withFeeRequired(boolean feeRequired) {
+            this.feeRequired = feeRequired;
+            return this;
+        }
+
+        ProjectionStub withResult(String result) {
+            this.result = result;
+            return this;
+        }
+
+        // --- Implement projection getters ---
+        @Override public short getSequenceNumber() {
+            return sequenceNumber;
+        }
+
+        @Override public String getAccountNumber() {
+            return accountNumber;
+        }
+
+        @Override public String getApplicant() {
+            return applicant;
+        }
+
+        @Override public String getRespondent() {
+            return respondent;
+        }
+
+        @Override public String getPostCode() {
+            return postCode;
+        }
+
+        @Override public String getApplicationTitle() {
+            return applicationTitle;
+        }
+
+        @Override public boolean isFeeRequired() {
+            return feeRequired;
+        }
+
+        @Override public String getResult() {
+            return result;
+        }
+    }
+
+    private ApplicationListServiceImplTest.ProjectionStub createProjectionStub(
+        int sequenceNumber,
+        String accountNumber,
+        String applicant,
+        String respondent,
+        String postCode,
+        String applicationTitle,
+        boolean feeRequired,
+        String result) {
+
+        return new ApplicationListServiceImplTest.ProjectionStub()
+            .withSequenceNumber((short) sequenceNumber)
+            .withAccountNumber(accountNumber)
+            .withApplicant(applicant)
+            .withRespondent(respondent)
+            .withPostCode(postCode)
+            .withApplicationTitle(applicationTitle)
+            .withFeeRequired(feeRequired)
+            .withResult(result);
+    }
+
+    private void mockFindSummariesById(UUID id, Pageable pageable) {
+        var sequenceNumber = 1;
+        var accountNumber = "1234567890";
+        var applicant = "Mustafa's Org";
+        var respondent = "Ahmed, Mustafa, His Majesty";
+        var postCode = "SW1A 1AA";
+        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
+        var feeRequired = true;
+        var result = "APPC";
+        var projection = createProjectionStub(sequenceNumber, accountNumber, applicant, respondent, postCode,
+                                              applicationTitle, feeRequired, result);
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
+
+        when(aleRepository.findSummariesById(
+            eq(id),
+            eq(pageable)))
+            .thenReturn(dbPage);
     }
 }
