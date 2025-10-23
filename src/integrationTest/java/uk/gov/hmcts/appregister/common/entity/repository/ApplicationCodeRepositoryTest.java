@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -76,7 +76,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testGetByCodeAndDate() {
         List<ApplicationCode> applicationCodeToAssertAgainst =
-                applicationCodeRepository.findByCodeAndDate("AD99002", OffsetDateTime.now());
+                applicationCodeRepository.findByCodeAndDate("AD99002", LocalDate.now());
         Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
     }
 }

@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
 import java.time.Clock;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +27,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
         List<Fee> fee =
-                feeRepository.findByReferenceBetweenDate(feeReference, OffsetDateTime.now(clock));
+                feeRepository.findByReferenceBetweenDate(feeReference, LocalDate.now(clock));
         return resolveFeePair(fee);
     }
 

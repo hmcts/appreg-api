@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
 import jakarta.transaction.Transactional;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.List;
@@ -35,6 +36,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final ApplicationFeeService feeService;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+    private final Clock clock;
 
     @Override
     @Transactional
@@ -75,8 +77,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                 AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     final List<ApplicationCode> applicationCodeResults =
-                            repository.findByCodeAndDate(
-                                    code, date.atStartOfDay().atOffset(ZoneOffset.UTC));
+                            repository.findByCodeAndDate(code, date);
 
                     ApplicationCode codeToConsider = null;
 
