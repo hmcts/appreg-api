@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -93,12 +93,12 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Start date (inclusive) from which this resolution code is valid.
     @Column(name = "resolution_code_start_date", nullable = false)
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     // End date (inclusive) until which this resolution code remains valid, or {@code null} if
     // ongoing.
     @Column(name = "resolution_code_end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "version")
     @Version

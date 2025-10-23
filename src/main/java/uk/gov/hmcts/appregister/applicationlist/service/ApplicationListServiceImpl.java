@@ -47,7 +47,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 @Slf4j
 public class ApplicationListServiceImpl implements ApplicationListService {
 
-    private static final long ZERO_ENTITIES = 0L;
+    private static final int SINGLE_RECORD = 1;
+    private static final Long ZERO_ENTITIES = 0L;
 
     private final ApplicationListRepository repository;
     private final ApplicationListEntryRepository aleRepository;
@@ -182,7 +183,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
         return aleRepository.countByApplicationListUuids(uuids).stream()
-                .collect(Collectors.toMap(EntryCount::getPrimaryKey, EntryCount::getCount));
+                .collect(
+                        Collectors.toMap(
+                                EntryCount::getPrimaryKey,
+                                ec -> ec.getCount() == null ? ZERO_ENTITIES : ec.getCount()));
     }
 
     private ApplicationListPage assembleResponsePage(

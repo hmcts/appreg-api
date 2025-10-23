@@ -6,6 +6,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -470,7 +471,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals("Certified extract from the court register", firstEntry.wording());
         Assertions.assertTrue(firstEntry.feeDue());
         Assertions.assertFalse(firstEntry.requiresRespondent());
-        Assertions.assertEquals(OffsetDateTime.parse("2016-01-01T00:00Z"), firstEntry.startDate());
+        Assertions.assertEquals(LocalDate.parse("2016-01-01"), firstEntry.startDate());
         Assertions.assertFalse(firstEntry.bulkRespondentAllowed());
         Assertions.assertEquals("CO1.1", firstEntry.feeReference());
         Assertions.assertEquals(
@@ -494,7 +495,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 secondEntry.wording());
         Assertions.assertFalse(secondEntry.feeDue());
         Assertions.assertFalse(secondEntry.requiresRespondent());
-        Assertions.assertEquals(OffsetDateTime.parse("2016-01-01T00:00Z"), secondEntry.startDate());
+        Assertions.assertEquals(LocalDate.parse("2016-01-01"), secondEntry.startDate());
         Assertions.assertFalse(secondEntry.bulkRespondentAllowed());
         Assertions.assertNull(secondEntry.feeReference());
         Assertions.assertNull(secondEntry.mainFeeDescription());
@@ -989,8 +990,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 false,
                 "address1@cgi.com",
                 "address2@cgi.com",
-                OffsetDateTime.now(),
-                OffsetDateTime.now(),
+                LocalDate.now(),
+                LocalDate.now(),
                 false,
                 "CO1.1",
                 mainFeeDesc.orElse(null),
