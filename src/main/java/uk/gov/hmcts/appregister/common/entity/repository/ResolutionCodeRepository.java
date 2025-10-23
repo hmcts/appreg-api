@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -21,29 +22,26 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
     List<ResolutionCode> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Find active Resolution Codes by code on a given date window.
+     * Find active Resolution Codes by code on a given date.
      *
-     * <p>Active if: {@code rc.startDate < :tomorrowStart} and ({@code rc.endDate IS NULL} or {@code
-     * rc.endDate >= :todayStart}). Code match is case-insensitive equality on {@code
-     * rc.resultCode}.
+     * <p>Active if: {@code rc.startDate <= :date}
+     * and ({@code rc.endDate IS NULL} or {@code rc.endDate >= :date}).
+     * Code match is case-insensitive equality on {@code rc.resultCode}.
      *
      * @param code case-insensitive business code (e.g. "ABC123")
-     * @param todayStart inclusive window start (local day start)
-     * @param tomorrowStart exclusive window end (next day start)
+     * @param date local date to check for active codes
      * @return zero, one, or many rows; service layer enforces uniqueness
      */
-    @Query(
-            """
-          SELECT rc
-          FROM ResolutionCode rc
-          WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
-          AND rc.startDate < :tomorrowStart
-          AND (rc.endDate IS NULL OR rc.endDate >= :todayStart)
-          """)
-    List<ResolutionCode> findActiveResolutionCodesOnDateByCode(
-            @Param("code") String code,
-            @Param("todayStart") LocalDateTime todayStart,
-            @Param("tomorrowStart") LocalDateTime tomorrowStart);
+    @Query("""
+      SELECT rc
+      FROM ResolutionCode rc
+      WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
+      AND rc.startDate <= :date
+      AND (rc.endDate IS NULL OR rc.endDate >= :date)
+      """)
+    List<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
+        @Param("code") String code,
+        @Param("date") LocalDate date);
 
     /**
      * Retrieve a page of active Resolution Codes filtered by code/title (case-insensitive).

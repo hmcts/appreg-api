@@ -35,8 +35,8 @@ public interface ResultCodeMapper {
     @Mapping(target = "resultCode", source = "resultCode")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "wording", source = "wording")
-    @Mapping(target = "startDate", source = "startDate", qualifiedByName = "toLocalDate")
-    @Mapping(target = "endDate", source = "endDate", qualifiedByName = "toJsonNullableLocalDate")
+    @Mapping(target = "startDate", source = "startDate")
+    @Mapping(target = "endDate", source = "endDate")
     ResultCodeGetDetailDto toDetailDto(ResolutionCode entity);
 
     // Map a {@link ResolutionCode} entity to a summary DTO.
@@ -44,17 +44,7 @@ public interface ResultCodeMapper {
     @Mapping(target = "title", source = "title")
     ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
 
-    // Convert LocalDateTime -> LocalDate (date-only) for startDate.
-    @Named("toLocalDate")
-    default LocalDate toLocalDate(LocalDateTime dateTime) {
-        return dateTime != null ? dateTime.toLocalDate() : null;
-    }
-
-    /** Convert LocalDateTime -> JsonNullable for endDate. null -> JsonNullable.undefined() */
-    @Named("toJsonNullableLocalDate")
-    default JsonNullable<LocalDate> toJsonNullableLocalDate(LocalDateTime dateTime) {
-        return dateTime != null
-                ? JsonNullable.of(dateTime.toLocalDate())
-                : JsonNullable.undefined();
+    default JsonNullable<LocalDate> map(LocalDate value) {
+        return value != null ? JsonNullable.of(value) : JsonNullable.undefined();
     }
 }

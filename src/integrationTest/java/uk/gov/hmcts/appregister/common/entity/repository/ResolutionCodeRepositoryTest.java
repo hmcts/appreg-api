@@ -17,13 +17,6 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private ResolutionCodeRepository repository;
 
-    private static LocalDateTime startOf(LocalDate d) {
-        return d.atStartOfDay();
-    }
-
-    private final LocalDate windowDate = LocalDate.of(2025, 1, 1);
-    private final LocalDateTime todayStart = startOf(windowDate);
-    private final LocalDateTime tomorrowStart = startOf(windowDate.plusDays(1));
 
     @Nested
     @DisplayName("findActiveResolutionCodesOnDateByCode")
