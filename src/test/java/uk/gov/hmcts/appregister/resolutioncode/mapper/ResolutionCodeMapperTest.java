@@ -41,7 +41,7 @@ class ResolutionCodeMapperTest {
                         .destinationEmail1("primary@example.com")
                         .destinationEmail2("secondary@example.com")
                         .startDate(LocalDate.of(2024, 1, 1))
-                        .endDate(LocalDate.of(2025, 12, 1))
+                        .endDate(LocalDate.of(2025, 12, 31))
                         .build();
 
         ResolutionCodeDto dto = mapper.toReadDto(entity).orElseThrow();
@@ -54,9 +54,9 @@ class ResolutionCodeMapperTest {
         assertThat(dto.destinationEmail1()).isEqualTo("primary@example.com");
         assertThat(dto.destinationEmail2()).isEqualTo("secondary@example.com");
         assertThat(dto.startDate())
-                .isEqualTo(OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
+                .isEqualTo(LocalDate.of(2024, 1, 1));
         assertThat(dto.endDate())
-                .isEqualTo(OffsetDateTime.of(2025, 12, 31, 0, 0, 0, 0, ZoneOffset.UTC));
+                .isEqualTo(LocalDate.of(2025, 12, 31));
     }
 
     @Test
@@ -114,9 +114,9 @@ class ResolutionCodeMapperTest {
         assertThat(entity.getDestinationEmail1()).isEqualTo("approvals@example.com");
         assertThat(entity.getDestinationEmail2()).isEqualTo("audit@example.com");
         assertThat(entity.getStartDate())
-                .isEqualTo(OffsetDateTime.of(2023, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC));
+                .isEqualTo(LocalDate.of(2023, 5, 10));
         assertThat(entity.getEndDate())
-                .isEqualTo(OffsetDateTime.of(2024, 5, 10, 0, 0, 0, 0, ZoneOffset.UTC));
+                .isEqualTo(LocalDate.of(2024, 5, 10));
     }
 
     @Test
