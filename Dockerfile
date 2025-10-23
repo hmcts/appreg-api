@@ -1,6 +1,24 @@
  # renovate: datasource=github-releases depName=microsoft/ApplicationInsights-Java
 ARG APP_INSIGHTS_AGENT_VERSION=3.7.5
+
+FROM busybox:1.36.1-musl AS bb
+
 FROM hmctspublic.azurecr.io/base/java:21-distroless
+
+
+#DEBUG - Remove everything between here 
+WORKDIR /opt/app
+
+COPY --from=bb /bin/busybox /busybox
+
+USER root
+RUN ["/busybox","mkdir","-p","/usr/bin"]
+RUN ["/busybox","ln","-sf","/busybox","/usr/bin/ls"]
+RUN ["/busybox","ln","-sf","/busybox","/usr/bin/cat"]
+RUN ["/busybox","ln","-sf","/busybox","/usr/bin/sh"]
+USER nonroot
+
+##### And here in final image
 
 COPY lib/applicationinsights.json /opt/app/
 COPY build/libs/app-register.jar /opt/app/
