@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,7 +33,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
           ((f.endDate IS NULL OR  f.endDate >= :dateTime)
                   AND f.startDate <= :dateTime)
         """)
-    List<Fee> findByReferenceBetweenDate(String reference, OffsetDateTime dateTime);
+    List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
 
     /**
      * Finds ApplicationCode entities with IDs greater than or equal to the specified value.

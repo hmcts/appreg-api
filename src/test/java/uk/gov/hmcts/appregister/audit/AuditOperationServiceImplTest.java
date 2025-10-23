@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -50,8 +51,8 @@ class AuditOperationServiceImplTest {
                         false,
                         "address1@cgi.com",
                         "address2@cgi.com",
-                        OffsetDateTime.now(),
-                        OffsetDateTime.now(),
+                        LocalDate.now(),
+                        LocalDate.now(),
                         false,
                         "CO1.1",
                         null,
