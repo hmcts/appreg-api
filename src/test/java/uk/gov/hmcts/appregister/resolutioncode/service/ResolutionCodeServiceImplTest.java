@@ -8,8 +8,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -203,7 +201,7 @@ class ResolutionCodeServiceImplTest {
                 "legislation",
                 "dest1@example.com",
                 "dest2@example.com",
-                OffsetDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC),
-                OffsetDateTime.of(2025, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC));
+                LocalDate.of(2024, 1, 1),
+                LocalDate.of(2025, 1, 1));
     }
 }
