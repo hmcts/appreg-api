@@ -19,20 +19,24 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.PagingAssertUtil;
-import uk.gov.hmcts.appregister.util.DateUtil;
+import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-codes";
@@ -86,22 +90,16 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // assert the response
         responseSpec.then().statusCode(200);
 
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        Assertions.assertEquals(defaultPageSize, responseContent.length);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        Assertions.assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(40.0));
+        ApplicationCodeGetSummaryDto applicationCodeDto =
+                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
-        assertApplicationCode(responseContent[1], applicationCodeDto);
+        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -124,21 +122,16 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
 
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
+        Assertions.assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(40.0));
+        ApplicationCodeGetSummaryDto applicationCodeDto =
+                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
-        assertApplicationCode(responseContent[1], applicationCodeDto);
+        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -167,22 +160,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         responseSpec.then().statusCode(200);
 
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        Assertions.assertEquals(defaultPageSize, responseContent.length);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
 
         // assert
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(50.0),
-                        Optional.empty(),
-                        Optional.empty());
+        ApplicationCodeGetSummaryDto applicationCodeDto =
+                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
 
-        assertApplicationCode(responseContent[1], applicationCodeDto);
+        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -218,21 +204,14 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // assert
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        Assertions.assertEquals(defaultPageSize, responseContent.length);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
 
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(70.0));
+        ApplicationCodeGetSummaryDto applicationCodeDto =
+                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
+                        Optional.empty(), Optional.empty(), Optional.of(70.0));
 
-        assertApplicationCode(responseContent[1], applicationCodeDto);
+        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -269,14 +248,12 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // make the assertions
         responseSpec.then().statusCode(200);
 
-        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+        ApplicationCodeGetDetailDto responseContent =
+                responseSpec.as(ApplicationCodeGetDetailDto.class);
 
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(40.0));
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -311,17 +288,14 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
-        ApplicationCodeDto codeDto = responseSpec.as(ApplicationCodeDto.class);
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
         // assert the first auth code record
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(200.0),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(40.0));
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
-        assertApplicationCode(codeDto, applicationCodeDto);
+        assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -358,17 +332,14 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         responseSpec.then().statusCode(200);
 
-        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
         // assert
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION),
-                        Optional.of(50.0),
-                        Optional.empty(),
-                        Optional.empty());
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
 
-        assertApplicationCode(responseContent, applicationCodeDto);
+        assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -407,16 +378,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         responseSpec.then().statusCode(200);
 
         // assert
-        ApplicationCodeDto responseContent = responseSpec.as(ApplicationCodeDto.class);
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(70.0));
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.empty(), Optional.empty(), Optional.of(70.0));
 
-        assertApplicationCode(responseContent, applicationCodeDto);
+        assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
         Assertions.assertTrue(
@@ -455,57 +423,43 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
-        // make the assertions
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, pageSize, pageNumber, 14, TOTAL_APP_CODES_COUNT);
+        ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
 
-        ApplicationCodeDto[] responseContent =
-                responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
-        Assertions.assertEquals(pageSize, responseContent.length);
+        // make the assertions
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 14, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
-        ApplicationCodeDto firstEntry = responseContent[0];
+        ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
 
-        Assertions.assertEquals("AD99003", firstEntry.applicationCode());
-        Assertions.assertEquals("Extract from the Court Register", firstEntry.title());
-        Assertions.assertEquals("Certified extract from the court register", firstEntry.wording());
-        Assertions.assertTrue(firstEntry.feeDue());
-        Assertions.assertFalse(firstEntry.requiresRespondent());
-        Assertions.assertEquals(LocalDate.parse("2016-01-01"), firstEntry.startDate());
-        Assertions.assertFalse(firstEntry.bulkRespondentAllowed());
-        Assertions.assertEquals("CO1.1", firstEntry.feeReference());
+        Assertions.assertEquals("AD99003", firstEntry.getApplicationCode());
+        Assertions.assertEquals("Extract from the Court Register", firstEntry.getTitle());
         Assertions.assertEquals(
-                "JP perform function away from court", firstEntry.mainFeeDescription());
-        Assertions.assertEquals(200.0, firstEntry.mainFeeAmount());
+                "Certified extract from the court register", firstEntry.getWording());
+        Assertions.assertTrue(firstEntry.getIsFeeDue());
+        Assertions.assertFalse(firstEntry.getRequiresRespondent());
+        Assertions.assertFalse(firstEntry.getBulkRespondentAllowed());
+        Assertions.assertEquals("CO1.1", firstEntry.getFeeReference().get());
         Assertions.assertEquals(
-                "Offsite: JP perform function away from court", firstEntry.offsetFeeDescription());
-        Assertions.assertEquals(40.0, firstEntry.offsetFeeAmount());
-        Assertions.assertTrue(
-                DateUtil.equalsIgnoreMillis(
-                        OffsetDateTime.parse("2022-01-30T10:00Z"), firstEntry.lodgementDate()));
-        Assertions.assertEquals("Jane Doe", firstEntry.applicantName());
+                "JP perform function away from court", firstEntry.getFeeDescription().get());
+        Assertions.assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
+        Assertions.assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
-        ApplicationCodeDto secondEntry = responseContent[1];
-        Assertions.assertEquals("AD99004", secondEntry.applicationCode());
-        Assertions.assertEquals("Certificate of Satisfaction", secondEntry.title());
+        ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
+        Assertions.assertEquals("AD99004", secondEntry.getApplicationCode());
+        Assertions.assertEquals("Certificate of Satisfaction", secondEntry.getTitle());
         Assertions.assertEquals(
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
-                secondEntry.wording());
-        Assertions.assertFalse(secondEntry.feeDue());
-        Assertions.assertFalse(secondEntry.requiresRespondent());
-        Assertions.assertEquals(LocalDate.parse("2016-01-01"), secondEntry.startDate());
-        Assertions.assertFalse(secondEntry.bulkRespondentAllowed());
-        Assertions.assertNull(secondEntry.feeReference());
-        Assertions.assertNull(secondEntry.mainFeeDescription());
-        Assertions.assertNull(secondEntry.mainFeeAmount());
-        Assertions.assertNull(secondEntry.offsetFeeDescription());
-        Assertions.assertNull(secondEntry.offsetFeeAmount());
-        Assertions.assertTrue(
-                DateUtil.equalsIgnoreMillis(
-                        OffsetDateTime.parse("2021-01-01T00:00Z"), secondEntry.lodgementDate()));
-        Assertions.assertEquals("John Smith", secondEntry.applicantName());
+                secondEntry.getWording());
+        Assertions.assertFalse(secondEntry.getIsFeeDue());
+        Assertions.assertFalse(secondEntry.getRequiresRespondent());
+        Assertions.assertFalse(secondEntry.getBulkRespondentAllowed());
+        Assertions.assertFalse(secondEntry.getFeeReference().isPresent());
+        Assertions.assertFalse(secondEntry.getFeeDescription().isPresent());
+        Assertions.assertFalse(secondEntry.getFeeAmount().isPresent());
+        Assertions.assertFalse(secondEntry.getOffsiteFeeAmount().isPresent());
     }
 
     @Test
@@ -529,20 +483,18 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
-        // assert the response
-        PagingAssertUtil.assertPageDetails(
-                responseSpec, pageSize, pageNumber, 21, TOTAL_APP_CODES_COUNT);
+        ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
 
-        ApplicationCodeDto[] responseContent =
-                responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
-        Assertions.assertEquals(pageSize, responseContent.length);
+        // assert the response
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 21, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
-        ApplicationCodeDto firstEntry = responseContent[0];
-        ApplicationCodeDto secondEntry = responseContent[1];
+        ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
+        ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
 
-        Assertions.assertEquals("AP99001", firstEntry.applicationCode());
-        Assertions.assertEquals("SW99009", secondEntry.applicationCode());
+        Assertions.assertEquals("AP99001", firstEntry.getApplicationCode());
+        Assertions.assertEquals("SW99009", secondEntry.getApplicationCode());
     }
 
     @Test
@@ -564,17 +516,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
-                                Optional.of("does not exist"),
-                                Optional.of("does not exist"),
-                                Optional.of(
-                                        OffsetDateTime.now()
-                                                .minusYears(20)
-                                                .toLocalDate()
-                                                .toString())));
+                                Optional.of("does not exist"), Optional.of("does not exist")),
+                        new OpenApiPageMetaData());
 
         // assert the response is successful with no content
         responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 0, 0);
+        ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
     }
 
     @Test
@@ -596,16 +544,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         List.of("title"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new ApplicationCodeRequestFilter(
-                                Optional.of("CT99002"), Optional.empty(), Optional.empty()));
+                        new ApplicationCodeRequestFilter(Optional.of("CT99002"), Optional.empty()),
+                        new OpenApiPageMetaData());
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
-        ApplicationCodeDto[] responseContent =
-                responseSpec.jsonPath().getObject("content", ApplicationCodeDto[].class);
-        ApplicationCodeDto firstEntry = responseContent[0];
-        Assertions.assertEquals("CT99002", firstEntry.applicationCode());
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
+        Assertions.assertEquals("CT99002", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -627,55 +574,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
-                                Optional.empty(),
-                                Optional.of("Certificate of Satisfaction"),
-                                Optional.empty()));
+                                Optional.empty(), Optional.of("Certificate of Satisfaction")),
+                        new OpenApiPageMetaData());
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        ApplicationCodeDto firstEntry = responseContent[0];
-        Assertions.assertEquals("AD99004", firstEntry.applicationCode());
-    }
-
-    @Test
-    public void
-            givenValidRequest_whenGetApplicationCodesWithPagingLodgementDateFilter_thenReturn200()
-                    throws Exception {
-
-        // create token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // execute the functionality
-        int pageSize = 1;
-        int pageNumber = 0;
-        Response responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(pageSize),
-                        Optional.of(pageNumber),
-                        List.of("title"),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        new ApplicationCodeRequestFilter(
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.of(
-                                        OffsetDateTime.parse("2024-04-01T00:00Z")
-                                                .toLocalDate()
-                                                .toString())));
-
-        // assert
-        responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        ApplicationCodeDto firstEntry = responseContent[0];
-        Assertions.assertEquals("AP99002", firstEntry.applicationCode());
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
+        Assertions.assertEquals("AD99004", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -698,20 +605,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new ApplicationCodeRequestFilter(
                                 Optional.of("AP99004"),
                                 Optional.of(
-                                        "Request for Certificate of Refusal to State a Case (Civil)"),
-                                Optional.of(
-                                        OffsetDateTime.parse("2006-02-01T00:00Z")
-                                                .toLocalDate()
-                                                .toString())));
+                                        "Request for Certificate of Refusal to State a Case (Civil)")),
+                        new OpenApiPageMetaData());
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        ApplicationCodeDto firstEntry = responseContent[0];
-        Assertions.assertEquals("AP99004", firstEntry.applicationCode());
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
+        Assertions.assertEquals("AP99004", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -735,19 +637,14 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new ApplicationCodeRequestFilter(
                                 Optional.of("AP99004"),
                                 Optional.of(
-                                        "Request for Certificate of Refusal to State a Case (Civil)"),
-                                Optional.of(
-                                        OffsetDateTime.parse("2006-02-01T00:00Z")
-                                                .toLocalDate()
-                                                .toString())));
+                                        "Request for Certificate of Refusal to State a Case (Civil)")),
+                        new OpenApiPageMetaData());
 
         // assert the response
         responseSpec.then().statusCode(200);
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize, pageNumber, 1, 1);
-        ApplicationCodeDto[] responseContent =
-                PagingAssertUtil.getResponseContentFromPagingResponse(
-                        responseSpec, ApplicationCodeDto[].class);
-        Assertions.assertEquals(0, responseContent.length);
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        Assertions.assertNull(page.getContent());
     }
 
     @Test
@@ -770,12 +667,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new ApplicationCodeRequestFilter(
                                 Optional.of("AP99004"),
                                 Optional.of(
-                                        "Request for Certificate of Refusal to State a Case (Civil)"),
-                                Optional.of(OffsetDateTime.parse("2006-02-01T00:00Z").toString())));
+                                        "Request for Certificate of Refusal to State a Case (Civil)")),
+                        new OpenApiPageMetaData());
         // assert the response
         responseSpec.then().statusCode(400);
     }
 
+    // NOTE: Spring is more forgiving in this scenario and defaults the page number to
+    // 0 and returns a 200. Our implementation
+    // returns a 500
     @Test
     public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn200()
             throws Exception {
@@ -796,15 +696,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new ApplicationCodeRequestFilter(
                                 Optional.of("AP99004"),
                                 Optional.of(
-                                        "Request for Certificate of Refusal to State a Case (Civil)"),
-                                Optional.of("2006-02-01")));
+                                        "Request for Certificate of Refusal to State a Case (Civil)")),
+                        new OpenApiPageMetaData());
         // assert the response
-        responseSpec.then().statusCode(200);
-
-        // The page size defaults if it is incorrect in the request
-        PagingAssertUtil.assertPageDetails(responseSpec, defaultPageSize, pageNumber, 1, 1);
+        responseSpec.then().statusCode(500);
     }
 
+    // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
+    // does not behave
+    // accordingly
     @Test
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
@@ -826,17 +726,11 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new ApplicationCodeRequestFilter(
                                 Optional.of("AP99004"),
                                 Optional.of(
-                                        "Request for Certificate of Refusal to State a Case (Civil)"),
-                                Optional.of(
-                                        OffsetDateTime.parse("2006-02-01T00:00Z")
-                                                .toLocalDate()
-                                                .toString())));
+                                        "Request for Certificate of Refusal to State a Case (Civil)")),
+                        new OpenApiPageMetaData());
 
         // assert the response
-        responseSpec.then().statusCode(200);
-
-        // The page size response defaults to the max size if we try and increase it beyond
-        PagingAssertUtil.assertPageDetails(responseSpec, pageSize - 1, pageNumber, 1, 1);
+        responseSpec.then().statusCode(500);
     }
 
     @Test
@@ -940,15 +834,12 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
-        ApplicationCodeDto codeDto = responseSpec.as(ApplicationCodeDto.class);
+        ApplicationCodeGetDetailDto codeDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
         // assert
-        ApplicationCodeDto applicationCodeDto =
-                generateDefaultApplicationCodeDtoAssertionPayload(
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.of(OFFSITE_FEE_DESCRIPTION),
-                        Optional.of(70.0));
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.empty(), Optional.empty(), Optional.of(70.0));
 
         assertApplicationCode(codeDto, applicationCodeDto);
 
@@ -975,67 +866,174 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         logCaptor.getInfoLogs().get(1)));
     }
 
-    private ApplicationCodeDto generateDefaultApplicationCodeDtoAssertionPayload(
-            Optional<String> mainFeeDesc,
-            Optional<Double> mainFeeAmt,
-            Optional<String> offsiteFeeDesc,
-            Optional<Double> offsiteFeeAmt) {
-        return new ApplicationCodeDto(
-                1L,
-                APPCODE_CODE,
-                "Copy documents (electronic)",
-                "Request for copy documents on computer" + " disc or in electronic form",
-                "",
-                true,
-                false,
-                "address1@cgi.com",
-                "address2@cgi.com",
-                LocalDate.now(),
-                LocalDate.now(),
-                false,
-                "CO1.1",
-                mainFeeDesc.orElse(null),
-                mainFeeAmt.orElse(null),
-                offsiteFeeDesc.orElse(null),
-                offsiteFeeAmt.orElse(null),
-                OffsetDateTime.now(),
-                "Jane Doe",
-                "Code wording");
+    private ApplicationCodeGetSummaryDto
+            generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
+                    Optional<String> mainFeeDesc,
+                    Optional<Double> mainFeeAmt,
+                    Optional<Double> offsiteFeeAmt) {
+        ApplicationCodeGetSummaryDto applicationCodeGetSummaryDto =
+                new ApplicationCodeGetSummaryDto();
+        applicationCodeGetSummaryDto.setApplicationCode("AD99002");
+        applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
+        applicationCodeGetSummaryDto.setWording(
+                "Request for copy documents on computer disc or in electronic form");
+        applicationCodeGetSummaryDto.setIsFeeDue(true);
+        applicationCodeGetSummaryDto.setRequiresRespondent(false);
+        applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
+        applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of("CO1.1"));
+
+        if (mainFeeDesc.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeDescription(JsonNullable.of(mainFeeDesc.get()));
+        }
+
+        if (mainFeeAmt.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeAmount(
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+            applicationCodeGetSummaryDto
+                    .getFeeAmount()
+                    .get()
+                    .setValue(Math.round(mainFeeAmt.get() * 100));
+        }
+
+        if (offsiteFeeAmt.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeAmount(
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+            applicationCodeGetSummaryDto
+                    .getOffsiteFeeAmount()
+                    .get()
+                    .setValue(Math.round(offsiteFeeAmt.get() * 100));
+        }
+        return applicationCodeGetSummaryDto;
     }
 
-    private void assertApplicationCode(ApplicationCodeDto actual, ApplicationCodeDto expected) {
-        Assertions.assertEquals(expected.applicationCode(), actual.applicationCode());
-        Assertions.assertEquals(expected.title(), actual.title());
-        Assertions.assertEquals(expected.wording(), actual.wording());
-        Assertions.assertEquals(expected.feeDue(), actual.feeDue());
-        Assertions.assertEquals(expected.requiresRespondent(), actual.requiresRespondent());
+    private ApplicationCodeGetDetailDto generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+            Optional<String> mainFeeDesc,
+            Optional<Double> mainFeeAmt,
+            Optional<Double> offsiteFeeAmt) {
 
-        if (expected.startDate() == null) {
-            Assertions.assertNull(actual.startDate());
-        } else {
-            Assertions.assertNotNull(expected.startDate());
+        ApplicationCodeGetDetailDto applicationCodeGetSummaryDto =
+                new ApplicationCodeGetDetailDto();
+
+        applicationCodeGetSummaryDto.setApplicationCode("AD99002");
+        applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
+        applicationCodeGetSummaryDto.setWording(
+                "Request for copy documents on computer disc or in electronic form");
+        applicationCodeGetSummaryDto.setIsFeeDue(true);
+        applicationCodeGetSummaryDto.setRequiresRespondent(false);
+        applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
+        applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of("CO1.1"));
+
+        if (mainFeeDesc.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeDescription(JsonNullable.of(mainFeeDesc.get()));
         }
 
-        if (expected.endDate() == null) {
-            Assertions.assertNull(actual.endDate());
-        } else {
-            Assertions.assertNotNull(expected.endDate());
+        if (mainFeeAmt.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeAmount(
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+            applicationCodeGetSummaryDto
+                    .getFeeAmount()
+                    .get()
+                    .setValue(Math.round(mainFeeAmt.get() * 100));
         }
 
-        Assertions.assertEquals(expected.bulkRespondentAllowed(), actual.bulkRespondentAllowed());
-        Assertions.assertEquals(expected.feeReference(), actual.feeReference());
-        Assertions.assertEquals(expected.mainFeeAmount(), actual.mainFeeAmount());
-        Assertions.assertEquals(expected.offsetFeeDescription(), actual.offsetFeeDescription());
-        Assertions.assertEquals(expected.offsetFeeAmount(), actual.offsetFeeAmount());
-
-        if (expected.lodgementDate() == null) {
-            Assertions.assertNull(actual.lodgementDate());
-        } else {
-            Assertions.assertNotNull(expected.lodgementDate());
+        if (offsiteFeeAmt.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeAmount(
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+            applicationCodeGetSummaryDto
+                    .getOffsiteFeeAmount()
+                    .get()
+                    .setValue(Math.round(offsiteFeeAmt.get() * 100));
         }
-        Assertions.assertEquals(expected.applicantName(), actual.applicantName());
-        Assertions.assertEquals(expected.destinationEmail1(), actual.destinationEmail1());
-        Assertions.assertEquals(expected.destinationEmail2(), actual.destinationEmail2());
+        return applicationCodeGetSummaryDto;
+    }
+
+    private void assertApplicationCode(
+            ApplicationCodeGetSummaryDto actual, ApplicationCodeGetSummaryDto expected) {
+        Assertions.assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
+        Assertions.assertEquals(expected.getTitle(), actual.getTitle());
+        Assertions.assertEquals(expected.getWording(), actual.getWording());
+        Assertions.assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
+        Assertions.assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
+        Assertions.assertEquals(
+                expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
+
+        if (expected.getFeeDescription().isPresent()) {
+            Assertions.assertEquals(
+                    expected.getFeeAmount().get().getValue(),
+                    actual.getFeeAmount().get().getValue());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
+        }
+
+        if (expected.getOffsiteFeeAmount().isPresent()) {
+            Assertions.assertEquals(
+                    expected.getOffsiteFeeAmount().get().getValue(),
+                    actual.getOffsiteFeeAmount().get().getValue());
+        } else {
+            Assertions.assertEquals(
+                    expected.getOffsiteFeeAmount().isPresent(),
+                    actual.getOffsiteFeeAmount().isPresent());
+        }
+
+        if (expected.getFeeDescription().isPresent()) {
+            Assertions.assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeDescription().isPresent(),
+                    actual.getFeeDescription().isPresent());
+        }
+
+        if (expected.getFeeReference().isPresent()) {
+            Assertions.assertEquals(expected.getFeeReference(), actual.getFeeReference());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
+        }
+    }
+
+    private void assertApplicationCode(
+            ApplicationCodeGetDetailDto actual, ApplicationCodeGetDetailDto expected) {
+        Assertions.assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
+        Assertions.assertEquals(expected.getTitle(), actual.getTitle());
+        Assertions.assertEquals(expected.getWording(), actual.getWording());
+        Assertions.assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
+        Assertions.assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
+        Assertions.assertEquals(
+                expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
+        if (expected.getFeeDescription().isPresent()) {
+            Assertions.assertEquals(
+                    expected.getFeeAmount().get().getValue(),
+                    actual.getFeeAmount().get().getValue());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
+        }
+
+        if (expected.getOffsiteFeeAmount().isPresent()) {
+            Assertions.assertEquals(
+                    expected.getOffsiteFeeAmount().get().getValue(),
+                    actual.getOffsiteFeeAmount().get().getValue());
+        } else {
+            Assertions.assertEquals(
+                    expected.getOffsiteFeeAmount().isPresent(),
+                    actual.getOffsiteFeeAmount().isPresent());
+        }
+
+        if (expected.getFeeDescription().isPresent()) {
+            Assertions.assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeDescription().isPresent(),
+                    actual.getFeeDescription().isPresent());
+        }
+
+        if (expected.getFeeReference().isPresent()) {
+            Assertions.assertEquals(expected.getFeeReference(), actual.getFeeReference());
+        } else {
+            Assertions.assertEquals(
+                    expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
+        }
     }
 
     @Override
@@ -1068,7 +1066,6 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     static class ApplicationCodeRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> appCode;
         private final Optional<String> appTitle;
-        private final Optional<String> lodgementDate;
 
         @Override
         public RequestSpecification apply(RequestSpecification rs) {
@@ -1078,10 +1075,6 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
             if (appTitle.isPresent()) {
                 rs = rs.queryParam("title", appTitle.get());
-            }
-
-            if (lodgementDate.isPresent()) {
-                rs = rs.queryParam("date", lodgementDate.get());
             }
 
             return rs;

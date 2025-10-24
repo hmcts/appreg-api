@@ -2,8 +2,6 @@ package uk.gov.hmcts.appregister.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,10 +11,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 
 @ExtendWith(MockitoExtension.class)
 class AuditOperationServiceImplTest {
@@ -40,28 +38,7 @@ class AuditOperationServiceImplTest {
 
     @Test
     void testAuditOperationFlowWithResponsePayload() throws Exception {
-        ApplicationCodeDto applicationCodeDto =
-                new ApplicationCodeDto(
-                        1L,
-                        "AD99002",
-                        "Copy documents (electronic)",
-                        "Request for copy documents on computer" + " disc or in electronic form",
-                        "",
-                        true,
-                        false,
-                        "address1@cgi.com",
-                        "address2@cgi.com",
-                        LocalDate.now(),
-                        LocalDate.now(),
-                        false,
-                        "CO1.1",
-                        null,
-                        null,
-                        null,
-                        null,
-                        OffsetDateTime.now(),
-                        "Jane Doe",
-                        "Code wording");
+        ApplicationCodeGetSummaryDto applicationCodeDto = new ApplicationCodeGetSummaryDto();
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(

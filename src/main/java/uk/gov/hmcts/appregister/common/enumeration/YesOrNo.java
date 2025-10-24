@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.common.enumeration;
 
 public enum YesOrNo {
-    YES("Y"),
-    NO("N");
+    YES("1"),
+    NO("0");
 
     private final String value;
 
@@ -21,5 +21,9 @@ public enum YesOrNo {
             }
         }
         throw new IllegalArgumentException("Unknown value: " + value);
+    }
+
+    public boolean isYes() {
+        return this == YES;
     }
 }

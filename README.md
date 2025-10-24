@@ -2,7 +2,7 @@
 
 This file contains basic repository information and a setup guide for development.
 
-Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/display/ARM/Backend+development+for+new+users).
+Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/display/ARM/Backend+development+for+new+users). 
 
 ## Prerequisites
 

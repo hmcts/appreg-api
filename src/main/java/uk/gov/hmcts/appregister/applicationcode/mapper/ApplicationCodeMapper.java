@@ -1,55 +1,135 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import org.mapstruct.InjectionStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
 
 /**
  * Mapper for ApplicationCode entity and ApplicationCodeDto.
  */
 @Component
-public class ApplicationCodeMapper {
+@Mapper(
+        componentModel = "spring",
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+public abstract class ApplicationCodeMapper {
 
-    public static final String TRUE_VALUE = "1";
+    /**
+     * A fee to dto mapping rule.
+     *
+     * @param fee Maps a fee to the dto.
+     * @return the fee amount dto
+     */
+    public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
+        if (fee != null) {
+            long mainPennies = Math.round(fee.getAmount() * 100);
 
-    public ApplicationCodeDto toReadDto(ApplicationCode entity, FeePair fees) {
-        if (entity == null) {
-            return null;
+            ApplicationCodeGetSummaryDtoFeeAmount feeDto =
+                    new ApplicationCodeGetSummaryDtoFeeAmount();
+            feeDto.setValue(mainPennies);
+
+            return JsonNullable.of(feeDto);
+        } else {
+            return JsonNullable.undefined();
+        }
+    }
+
+    /**
+     * A yes or no to boolean mapping rule.
+     *
+     * @param yesOrNo Maps yes or no to boolean.
+     * @return the fee amount dto
+     */
+    public boolean map(YesOrNo yesOrNo) {
+        return yesOrNo.isYes();
+    }
+
+    public JsonNullable<String> map(String str) {
+        return JsonNullable.of(str);
+    }
+
+    @Named("mapFeeReference")
+    public JsonNullable<String> mapFeeReference(String feeReference) {
+        return JsonNullable.of(feeReference);
+    }
+
+    @Named("mapStartDate")
+    public LocalDate mapStartDate(OffsetDateTime offsetDateTime) {
+        return offsetDateTime.toLocalDate();
+    }
+
+    @Named("mapOffsetDate")
+    public JsonNullable<LocalDate> mapOffset(OffsetDateTime offsetDateTime) {
+        if (offsetDateTime != null) {
+            return JsonNullable.of(offsetDateTime.toLocalDate());
         }
 
-        Fee mainFee = fees != null ? fees.mainFee() : null;
-        Fee offsetFee = fees != null ? fees.offsetFee() : null;
-
-        Optional<ApplicationListEntry> listEntryOptional =
-                entity.getApplicationListEntryList().stream().findFirst();
-
-        return new ApplicationCodeDto(
-                entity.getId(),
-                entity.getCode(),
-                entity.getTitle(),
-                entity.getWording(),
-                entity.getLegislation(),
-                (entity.getFeeDue().equals(TRUE_VALUE)),
-                entity.getRequiresRespondent().equals(TRUE_VALUE),
-                entity.getDestinationEmail1(),
-                entity.getDestinationEmail2(),
-                entity.getStartDate(),
-                entity.getEndDate(),
-                entity.getBulkRespondentAllowed().equals(TRUE_VALUE),
-                entity.getFeeReference(),
-                mainFee != null ? mainFee.getDescription() : null,
-                mainFee != null ? mainFee.getAmount() : null,
-                offsetFee != null ? offsetFee.getDescription() : null,
-                offsetFee != null ? offsetFee.getAmount() : null,
-                listEntryOptional.map(ApplicationListEntry::getLodgementDate).orElse(null),
-                listEntryOptional.isPresent()
-                                && listEntryOptional.get().getStandardApplicant() != null
-                        ? listEntryOptional.get().getStandardApplicant().getName()
-                        : null,
-                entity.getWording());
+        return JsonNullable.undefined();
     }
+
+    @Mapping(target = "offsiteFeeAmount", source = "offsetFee")
+    @Mapping(target = "feeAmount", source = "fee")
+    @Mapping(target = "applicationCode", source = "entity.code")
+    @Mapping(target = "title", source = "entity.title")
+    @Mapping(target = "wording", source = "entity.wording")
+    @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
+    @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
+    @Mapping(
+            target = "feeReference",
+            source = "entity.feeReference",
+            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "feeDescription", source = "fee.description")
+    @Mapping(target = "isFeeDue", source = "entity.feeDue")
+
+    /**
+     * maps the application code entity to summary dto.
+     *
+     * @param entity the application code entity
+     * @param fee the fee (main fee)*
+     * @param offsetFee the offset fee
+     * @return The application code detail dto
+     */
+    public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
+            ApplicationCode entity, Fee fee, Fee offsetFee);
+
+    @Mapping(target = "offsiteFeeAmount", source = "offsetFee")
+    @Mapping(target = "feeAmount", source = "fee")
+    @Mapping(target = "applicationCode", source = "entity.code")
+    @Mapping(target = "title", source = "entity.title")
+    @Mapping(target = "wording", source = "entity.wording")
+    @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
+    @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
+    @Mapping(
+            target = "feeReference",
+            source = "entity.feeReference",
+            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "startDate", source = "entity.startDate", qualifiedByName = "mapStartDate")
+    @Mapping(target = "endDate", source = "entity.endDate", qualifiedByName = "mapOffsetDate")
+    @Mapping(target = "feeDescription", source = "fee.description")
+    @Mapping(target = "isFeeDue", source = "entity.feeDue")
+
+    /**
+     * maps the application code entity to detail dto.
+     *
+     * @param entity the application code entity
+     * @param fee the fee (main fee)*
+     * @param offsetFee the offset fee
+     * @return The application code detail dto
+     */
+    public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
+            ApplicationCode entity, Fee fee, Fee offsetFee);
 }
