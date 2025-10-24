@@ -100,7 +100,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
 
     @Query(
             """
-        select ale.applicationList.uuid as pk, count(ale) as cnt
+        select ale.applicationList.uuid as primaryKey, count(ale) as count
         from ApplicationListEntry ale
         where ale.applicationList.uuid in :uuids
         group by ale.applicationList.uuid

@@ -68,8 +68,10 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${AZURE_ISSUER:https://login.microsoftonline.com/${spring.security.oauth2.resourceserver.jwt.tenant}/v2.0}
-          audiences: api://cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default
-          tenant: 531ff96d-0ae9-462a-8d2d-bec7c0b42082
+          audiences:
+          - ${AZURE_AUDIENCE_ID:00000000-0000-0000-0000-000000000000}
+          - ${AZURE_AUDIENCE_ID_URI:api://${AZURE_AUDIENCE_ID}}
+          tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:
     static-path-pattern: /specs/**
 logging:

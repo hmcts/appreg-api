@@ -61,8 +61,7 @@ public class ApplicationCodeServiceImplTest {
     void findByCode() throws Exception {
         String code = "code";
         LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
-        OffsetDateTime offsetDateTime =
-                LocalDate.now(ZoneOffset.UTC).atStartOfDay().atOffset(ZoneOffset.UTC);
+        LocalDate offsetDateTime = LocalDate.now();
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
