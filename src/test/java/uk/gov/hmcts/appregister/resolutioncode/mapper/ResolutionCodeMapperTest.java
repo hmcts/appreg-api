@@ -3,8 +3,6 @@ package uk.gov.hmcts.appregister.resolutioncode.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,10 +51,8 @@ class ResolutionCodeMapperTest {
         assertThat(dto.legislation()).isEqualTo("Some Act 1998 s.10");
         assertThat(dto.destinationEmail1()).isEqualTo("primary@example.com");
         assertThat(dto.destinationEmail2()).isEqualTo("secondary@example.com");
-        assertThat(dto.startDate())
-                .isEqualTo(LocalDate.of(2024, 1, 1));
-        assertThat(dto.endDate())
-                .isEqualTo(LocalDate.of(2025, 12, 31));
+        assertThat(dto.startDate()).isEqualTo(LocalDate.of(2024, 1, 1));
+        assertThat(dto.endDate()).isEqualTo(LocalDate.of(2025, 12, 31));
     }
 
     @Test
@@ -113,10 +109,8 @@ class ResolutionCodeMapperTest {
         assertThat(entity.getLegislation()).isEqualTo("Regulation 2020/1");
         assertThat(entity.getDestinationEmail1()).isEqualTo("approvals@example.com");
         assertThat(entity.getDestinationEmail2()).isEqualTo("audit@example.com");
-        assertThat(entity.getStartDate())
-                .isEqualTo(LocalDate.of(2023, 5, 10));
-        assertThat(entity.getEndDate())
-                .isEqualTo(LocalDate.of(2024, 5, 10));
+        assertThat(entity.getStartDate()).isEqualTo(LocalDate.of(2023, 5, 10));
+        assertThat(entity.getEndDate()).isEqualTo(LocalDate.of(2024, 5, 10));
     }
 
     @Test
