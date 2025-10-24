@@ -719,6 +719,39 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
 
+    @Test
+    @DisplayName("GET: with includeSummaries flag set to true")
+    void givenincludeSummariesTrue_whenGet_then200() throws Exception {
+
+        String prefix = uniquePrefix("get-default-sort");
+
+        createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+
+        var userToken =
+            getATokenWithValidCredentials()
+                .roles(List.of(RoleEnum.USER))
+                .build()
+                .fetchTokenForRole();
+
+        Response resp =
+            restAssuredClient.executeGetRequestWithPaging(
+                Optional.empty(),
+                Optional.empty(),
+                List.of(), // Rely on default sort
+                getLocalUrl(WEB_CONTEXT),
+                userToken,
+                rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix)
+                    .queryParam("includeSummaries", true),
+                null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getEntriesCount()).isEqualTo(0);
+        assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
+    }
+
     // --- GET ----------------------------------------------------------------------
     @Test
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
@@ -757,6 +790,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getDescription())
             .isEqualToIgnoringCase(description);
+        assertThat(dto.getEntriesCount()).isEqualTo(0);
+        assertThat(dto.getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -767,25 +802,34 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 .build()
                 .fetchTokenForRole();
 
-        String description = "List for testing get application list without role";
+        UUID id = UUID.randomUUID();
 
-        var req =
-            new ApplicationListCreateDto()
-                .date(TEST_DATE)
-                .time(TEST_TIME)
-                .description(description)
-                .status(ApplicationListStatus.OPEN)
-                .cjaCode(VALID_CJA_CODE)
-                .otherLocationDescription(VALID_OTHER_LOCATION)
-                .durationHours(1)
-                .durationMinutes(0);
-
-        Response resp =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WEB_CONTEXT),
-                        token,
-                        req);
+        // fire test
+        Response resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
 
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    // --- Not found: Application List -------------------------------------------------
+    @Test
+    void givenUnknownApplicationList_whenGetApplicationList_then404() throws Exception {
+        var token =
+            getATokenWithValidCredentials()
+                .roles(List.of(RoleEnum.USER))
+                .build()
+                .fetchTokenForRole();
+
+        UUID id = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+        // fire test
+        Response resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEqualsWithoutAppCode(
+            ApplicationListError
+                .LIST_NOT_FOUND
+                .getCode(),
+            resp);
     }
 }
