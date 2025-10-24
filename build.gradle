@@ -14,6 +14,7 @@ plugins {
   id 'com.diffplug.spotless' version '7.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'org.openapi.generator' version '7.5.0'
+  id 'maven-publish'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -554,12 +555,38 @@ openApiGenerate {
     ]
 }
 
-openApiValidate {
-  inputSpec = file('src/main/resources/openapi/openapi.yaml').toURI().toString()
+// Add a new jar that will be published to maven with the classifier -openapi
+tasks.register('openapiJarArtefact', Jar) {
+  archiveClassifier = 'openapi'
+  from layout.buildDirectory.dir("./resources/main/openapi").get().asFile
 }
 
-processResources.dependsOn tasks.openApiGenerate
+// Add a new jar that will be published to maven with the classifier -flyway
+tasks.register('flywayArtefact', Jar) {
+  archiveClassifier = 'flyway'
+  from new File("./flyway/migrations"), new File("./flyway/data_population")
+}
+
+processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact
 compileJava.dependsOn tasks.openApiGenerate
 
-
+// publishing configuration
+publishing {
+  publications {
+    maven(MavenPublication) {
+      artifact openapiJarArtefact
+      artifact flywayArtefact
+    }
+  }
+  repositories {
+    maven {
+      name = "AzureArtifacts"
+      url = uri("https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1")
+      credentials {
+        username = System.getenv("AZURE_DEVOPS_ARTIFACT_USERNAME")
+        password = System.getenv("AZURE_DEVOPS_ARTIFACT_TOKEN")
+      }
+    }
+  }
+}
 
