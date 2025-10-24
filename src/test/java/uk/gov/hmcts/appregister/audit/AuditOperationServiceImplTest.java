@@ -13,9 +13,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,10 +67,11 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                Optional.empty(),
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
-                    return Optional.of(applicationCodeDto);
+                    return Optional.of(new AuditResult<>(applicationCodeDto));
                 },
                 listener);
 
@@ -98,7 +101,8 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                Optional.empty(),
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
                     return Optional.empty();
@@ -135,17 +139,17 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
 
-        RuntimeException ex =
-                Assertions.assertThrows(
-                        IllegalArgumentException.class,
-                        () ->
-                                auditOperationServiceImpl.processAudit(
-                                        AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
-                                        (req) -> {
-                                            // Simulate some processing and return a response
-                                            throw new IllegalArgumentException("");
-                                        },
-                                        listener));
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        auditOperationServiceImpl.processAudit(
+                                Optional.empty(),
+                                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
+                                (req) -> {
+                                    // Simulate some processing and return a response
+                                    throw new IllegalArgumentException("");
+                                },
+                                listener));
 
         Mockito.verify(listener, Mockito.times(2)).eventPerformed(requestArgumentCaptor.capture());
         Assertions.assertEquals(2, requestArgumentCaptor.getAllValues().size());

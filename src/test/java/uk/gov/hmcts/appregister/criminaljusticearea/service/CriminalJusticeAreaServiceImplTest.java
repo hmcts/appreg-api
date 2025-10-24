@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -23,6 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
+import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapperImpl;
@@ -63,7 +63,8 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(description, dto.getDescription());
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
+                        java.util.Optional.empty(),
+                        eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
     }
 
     @Test
@@ -84,7 +85,8 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(CriminalJusticeAreaError.DUPLICATE_CJA_FOUND, thrown.getCode());
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
+                        java.util.Optional.empty(),
+                        eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
     }
 
     @Test
@@ -105,6 +107,7 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(CriminalJusticeAreaError.CJA_NOT_FOUND, thrown.getCode());
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
+                        java.util.Optional.empty(),
+                        eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT), notNull(), notNull());
     }
 }

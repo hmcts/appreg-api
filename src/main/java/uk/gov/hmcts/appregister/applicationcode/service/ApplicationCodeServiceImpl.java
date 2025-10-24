@@ -11,12 +11,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.dto.ApplicationCodeDto;
 import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -43,7 +44,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     public Page<ApplicationCodeDto> findAll(
             String appCode, String appTitle, LocalDate lodgementDate, Pageable pageable) {
         return auditService.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT,
+                Optional.empty(),
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(
@@ -60,13 +62,18 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                     .atOffset(ZoneOffset.UTC)
                                             : null,
                                     pageable);
-                    return Optional.of(
-                            applicationCodeList.map(
+
+
+                    AuditResult<Page<ApplicationCodeDto>> result = new AuditResult<>
+                            (applicationCodeList.map(
                                     code -> {
                                         FeePair feePair =
                                                 feeService.resolveFeePair(code.getFeeReference());
                                         return applicationCodeMapper.toReadDto(code, feePair);
                                     }));
+
+
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
@@ -74,7 +81,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Override
     public ApplicationCodeDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                Optional.empty(),
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     final List<ApplicationCode> applicationCodeResults =
                             repository.findByCodeAndDate(code, date);
@@ -98,7 +106,9 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     }
 
                     FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
-                    return Optional.of(applicationCodeMapper.toReadDto(codeToConsider, feePair));
+                    AuditResult<ApplicationCodeDto> result = new AuditResult<>
+                            (applicationCodeMapper.toReadDto(codeToConsider, feePair));
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

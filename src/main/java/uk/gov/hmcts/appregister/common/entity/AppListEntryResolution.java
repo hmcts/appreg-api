@@ -19,10 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
-import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.base.*;
 
 /**
  * The AppListEntryResolution entity represents a resolution entry for an application list entry.
@@ -37,7 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
 public class AppListEntryResolution extends BaseChangeableEntity
-        implements Accountable, Versionable {
+        implements Accountable, Versionable, Keyable {
     @Id
     @Column(name = "aler_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aler_gen")

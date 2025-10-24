@@ -52,7 +52,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList entity = mapper.toCreateEntityWithCourt(dto, court);
 
-            assertNull(entity.getPk());
+            assertNull(entity.getId());
             assertNull(entity.getUuid());
             assertNull(entity.getVersion());
             assertNull(entity.getCreatedUser());
@@ -96,7 +96,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList entity = mapper.toCreateEntityWithCja(dto, cja);
 
-            assertNull(entity.getPk());
+            assertNull(entity.getId());
             assertNull(entity.getUuid());
             assertNull(entity.getVersion());
             assertNull(entity.getCreatedUser());
@@ -127,7 +127,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList appList =
                     ApplicationList.builder()
-                            .pk(999L)
+                            .id(999L)
                             .uuid(id)
                             .description("Morning session for traffic-related applications")
                             .status(ApplicationListStatus.OPEN)

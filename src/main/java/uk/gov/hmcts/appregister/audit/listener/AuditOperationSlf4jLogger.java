@@ -34,7 +34,7 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
     private static final String ACTION = "p_requestaction";
 
     @Override
-    protected void started(StartEvent request) {
+    protected  void started(StartEvent request) {
         log.info("%s {}".formatted(START_AUDIT_LOG), getLog(request));
     }
 

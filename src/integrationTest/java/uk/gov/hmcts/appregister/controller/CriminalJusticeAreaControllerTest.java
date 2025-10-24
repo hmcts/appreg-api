@@ -11,9 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
@@ -39,9 +40,9 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
 
     // audit expectations
     private static final String EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION =
-            AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getEventName();
+            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getEventName();
     private static final String EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION =
-            AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName();
+            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName();
 
     private static final Integer DEFAULT_PAGE_SIZE = 10;
 

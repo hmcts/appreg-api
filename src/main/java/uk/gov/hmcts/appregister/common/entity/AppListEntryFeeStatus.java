@@ -19,10 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.Changeable;
-import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.base.*;
 
 /**
  * The AppListEntryFeeStatus entity represents the fee status of an application list entry.
@@ -36,7 +33,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
-public class AppListEntryFeeStatus implements Changeable, Accountable, Versionable {
+public class AppListEntryFeeStatus implements Changeable, Accountable, Versionable, Keyable {
     @Id
     @Column(name = "alefs_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "alefs_gen")

@@ -77,11 +77,11 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     void saveAndReload() {
         var saved = repository.saveAndFlush(buildEntity());
 
-        assertThat(saved.getPk()).isNotNull();
+        assertThat(saved.getId()).isNotNull();
         assertThat(saved.getUuid()).isNotNull();
         assertThat(saved.getVersion()).isZero();
 
-        var reloaded = repository.findById(saved.getPk()).orElseThrow();
+        var reloaded = repository.findById(saved.getId()).orElseThrow();
         expectAllCommonEntityFields(saved, reloaded);
         assertThat(reloaded.getUuid()).isEqualTo(saved.getUuid());
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
@@ -103,7 +103,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                 () -> {
                     // save a new entity
                     var saved = repository.saveAndFlush(buildEntity());
-                    var reloaded = repository.findById(saved.getPk()).orElseThrow();
+                    var reloaded = repository.findById(saved.getId()).orElseThrow();
 
                     reloaded.setDeleted(true);
 

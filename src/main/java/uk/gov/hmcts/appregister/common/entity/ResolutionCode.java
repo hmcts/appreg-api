@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -57,7 +58,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class ResolutionCode extends BaseUnmanagedChangeableEntity
-        implements Accountable, Versionable {
+        implements Accountable, Versionable, Keyable {
 
     // Primary key identifier (maps to {@code rc_id}).
     @Id

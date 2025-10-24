@@ -5,6 +5,7 @@ import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 /**
  * An abstract class that breaks down the {@link AuditOperationLifecycleListener} into seperate well

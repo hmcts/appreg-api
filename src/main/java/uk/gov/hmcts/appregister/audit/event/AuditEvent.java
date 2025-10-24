@@ -3,7 +3,10 @@ package uk.gov.hmcts.appregister.audit.event;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
+import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+
+import java.util.Optional;
 
 /**
  * Encapsulates the audit request and response.
@@ -13,7 +16,7 @@ import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 @ToString
 public class AuditEvent implements BaseAuditEvent {
 
-    protected AuditEventEnum requestAction;
+    protected AuditOperation requestAction;
 
     protected OperationStatus messageStatus;
 
@@ -21,10 +24,20 @@ public class AuditEvent implements BaseAuditEvent {
 
     protected String messageUuid;
 
+    protected Optional<Keyable> newValue;
+
+    protected Optional<Keyable> oldValue;
+
     AuditEvent(BaseAuditEvent baseAuditEvent) {
         requestAction = baseAuditEvent.getRequestAction();
         messageContent = baseAuditEvent.getMessageContent();
         messageStatus = baseAuditEvent.getMessageStatus();
         messageUuid = baseAuditEvent.getMessageUuid();
+        newValue = baseAuditEvent.getNewValue();
+        oldValue = baseAuditEvent.getOldValue();
+    }
+
+    public String getUpdateType() {
+        return "N/A";
     }
 }

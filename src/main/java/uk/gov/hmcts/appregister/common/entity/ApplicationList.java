@@ -48,7 +48,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
     @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    private Long pk;
+    private Long id;
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")

@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -29,6 +28,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapperImpl;
@@ -78,8 +78,8 @@ public class CourtLocationServiceImplTest {
         Assertions.assertEquals(LocalDate.parse("2020-01-01"), dto.getStartDate());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(java.util.Optional.empty(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -99,8 +99,8 @@ public class CourtLocationServiceImplTest {
         Assertions.assertEquals(CourtLocationError.COURT_NOT_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(java.util.Optional.empty(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -123,8 +123,8 @@ public class CourtLocationServiceImplTest {
         Assertions.assertEquals(CourtLocationError.DUPLICATE_COURT_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(java.util.Optional.empty(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -177,7 +177,8 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
+                        java.util.Optional.empty(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -213,6 +214,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
+                        java.util.Optional.empty(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
     }
 }

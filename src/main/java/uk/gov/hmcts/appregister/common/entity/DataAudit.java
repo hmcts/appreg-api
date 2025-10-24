@@ -1,13 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -17,8 +10,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.Accountable;
+import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
+import uk.gov.hmcts.appregister.common.entity.converter.CrudConverter;
+import uk.gov.hmcts.appregister.common.enumeration.CRUDEnum;
 
 /**
  * Entity for Data Audit table.
@@ -32,7 +27,7 @@ import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener
 @Getter
 @Setter
 @EntityListeners(PreCreateUpdateEntityListener.class)
-public class DataAudit implements Accountable {
+public class DataAudit implements Changeable {
     @Id
     @Column(name = "data_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
@@ -78,11 +73,12 @@ public class DataAudit implements Accountable {
     private String oldClobValue;
 
     @Column(name = "related_key")
-    private BigDecimal relatedKey;
+    private Long relatedKey;
 
     @Column(name = "update_type", nullable = false)
     @Size(max = 1)
-    private String updateType;
+    @Convert(converter = CrudConverter.class)
+    private CRUDEnum updateType;
 
     @Column(name = "data_type")
     @Size(max = 1000)
@@ -105,5 +101,8 @@ public class DataAudit implements Accountable {
 
     @Column(name = "user_name")
     @Size(max = 250)
-    private String createdUser;
+    private String changedBy;
+
+    @Column(name = "created_date")
+    private OffsetDateTime changeDate;
 }
