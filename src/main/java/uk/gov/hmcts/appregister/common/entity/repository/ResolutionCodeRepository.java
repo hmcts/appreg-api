@@ -46,36 +46,26 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
     /**
      * Retrieve a page of active Resolution Codes filtered by code/title (case-insensitive).
      *
-     * <p>Filters (applied when non-null):
-     *
-     * <ul>
-     *   <li>{@code code}: partial match on {@code rc.resultCode}
-     *   <li>{@code title}: partial match on {@code rc.title}
-     * </ul>
-     *
-     * <p>Active if: {@code rc.startDate < :tomorrowStart} and ({@code rc.endDate IS NULL} or {@code
-     * rc.endDate >= :todayStart}).
+     * Active if: rc.startDate < :asOfDate AND (rc.endDate IS NULL OR rc.endDate >= :asOfDate)
      *
      * @param code optional partial code filter (case-insensitive)
      * @param title optional partial title filter (case-insensitive)
-     * @param todayStart inclusive window start (local day start)
-     * @param tomorrowStart exclusive window end (next day start)
+     * @param date date to evaluate "active" on
      * @param pageable paging/sorting
      * @return page of matching entities
      */
-    @Query(
-            """
-         SELECT rc
-         FROM ResolutionCode rc
-         WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%'))
-         AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER(CAST(:title as string)), '%'))
-         AND rc.startDate < :tomorrowStart
-         AND (rc.endDate IS NULL OR rc.endDate >= :todayStart)
-         """)
+    @Query("""
+    SELECT rc
+    FROM ResolutionCode rc
+    WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER(:code), '%'))
+      AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER(:title), '%'))
+      AND rc.startDate < :date
+      AND (rc.endDate IS NULL OR rc.endDate >= :date)
+    """)
     Page<ResolutionCode> findActiveOnDate(
-            @Param("code") String code,
-            @Param("title") String title,
-            @Param("todayStart") LocalDateTime todayStart,
-            @Param("tomorrowStart") LocalDateTime tomorrowStart,
-            Pageable pageable);
+        @Param("code") String code,
+        @Param("title") String title,
+        @Param("date") LocalDate date,
+        Pageable pageable
+    );
 }

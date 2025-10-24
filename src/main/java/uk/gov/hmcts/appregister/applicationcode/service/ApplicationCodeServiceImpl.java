@@ -39,7 +39,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final PageMapper pageMapper;
-    private final PageableMapper pageableMapper;
 
     @Override
     @Transactional
@@ -91,7 +90,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
                     final List<ApplicationCode> applicationCodeResults =
                             repository.findByCodeAndDate(
-                                    code, date.atStartOfDay().atOffset(ZoneOffset.UTC));
+                                code, date);
 
                     ApplicationCode codeToConsider = null;
 

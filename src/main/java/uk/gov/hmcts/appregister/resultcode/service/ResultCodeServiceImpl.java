@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.resultcode.service;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,7 +54,11 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final PageMapper pageMapper;
 
-    private final DateBoundaryCalculator dateBoundaryCalculator;
+    // Clock used to obtain the current time.
+    private final Clock clock;
+
+    // Zone identifier representing the UK business timezone (Europe/London).
+    private final ZoneId ukZone;
 
     /**
      * Retrieve a Result Code by its code and effective date.
@@ -70,11 +76,10 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         return auditService.processAudit(
                 AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
-                    var dateStart = dateBoundaryCalculator.startOfDay(date);
-                    var dateEnd = dateBoundaryCalculator.startOfNextDay(date);
+                    log.debug("Start: Find ResultCode using code: {} date: {}", code, date);
                     final List<ResolutionCode> rows =
-                            repository.findActiveResolutionCodesOnDateByCode(
-                                    code, dateStart, dateEnd);
+                            repository.findActiveResolutionCodesByCodeAndDate(
+                                    code, date);
 
                     if (rows.isEmpty()) {
                         throw new AppRegistryException(
@@ -108,19 +113,18 @@ public class ResultCodeServiceImpl implements ResultCodeService {
      */
     @Override
     public ResultCodePage getPage(String codeFilter, String titleFilter, Pageable pageable) {
+
+        // Use today's date to ensure we only return Result Codes that are currently active.
+        var todayUk = LocalDate.now(clock.withZone(ukZone));
+
         return auditService.processAudit(
                 AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
                 unused -> {
-                    var ukToday = dateBoundaryCalculator.getToday();
-                    var startOfToday = dateBoundaryCalculator.startOfDay(ukToday);
-                    var startOfTomorrow = dateBoundaryCalculator.startOfNextDay(ukToday);
-
                     Page<ResolutionCode> dbPage =
                             repository.findActiveOnDate(
                                     codeFilter,
                                     titleFilter,
-                                    startOfToday,
-                                    startOfTomorrow,
+                                    todayUk,
                                     pageable);
 
                     // Populate the API page response with metadata

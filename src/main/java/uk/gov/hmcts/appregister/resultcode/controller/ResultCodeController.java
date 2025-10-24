@@ -3,19 +3,24 @@ package uk.gov.hmcts.appregister.resultcode.controller;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+
+import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
+import uk.gov.hmcts.appregister.common.mapper.SortMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ResultCodesApi;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
+import uk.gov.hmcts.appregister.resultcode.api.ResultCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.resultcode.service.ResultCodeService;
-import uk.gov.hmcts.appregister.resultcode.validator.ResultCodeSortValidator;
 
 /**
  * REST controller for retrieving Result Codes.
@@ -31,6 +36,7 @@ import uk.gov.hmcts.appregister.resultcode.validator.ResultCodeSortValidator;
  * <p>All endpoints require the caller to have either user or admin role restrictions as enforced by
  * {@link RoleNames#USER_ROLE_OR_ADMIN_ROLE_RESTRICTION}.
  */
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
@@ -42,8 +48,7 @@ public class ResultCodeController implements ResultCodesApi {
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
 
-    // Validator ensuring requested sort fields are valid for Result Codes.
-    private final ResultCodeSortValidator sortValidator;
+    private final SortMapper sortMapper;
 
     /**
      * Retrieve a single Result Code by its code and a date where the Result Code is "Active".
@@ -73,7 +78,7 @@ public class ResultCodeController implements ResultCodesApi {
      * </ul>
      *
      * <p>Pagination and sorting parameters follow the OpenAPI contract. Sorting is validated
-     * against allowed properties using {@link ResultCodeSortValidator}.
+     * against allowed properties using {@link ResultCodeSortFieldEnum}.
      *
      * @param code optional filter for ResultCode code (partial, case-insensitive)
      * @param title optional filter for ResultCode title (partial, case-insensitive)
@@ -86,15 +91,25 @@ public class ResultCodeController implements ResultCodesApi {
     public ResponseEntity<ResultCodePage> getResultCodes(
             String code, String title, Integer page, Integer size, List<String> sort) {
 
+        sort = sort == null || sort.isEmpty() ? List.of() : sort;
+
+        // map the sort parameters from OpenAPI to entity fields
+        sort =
+            sortMapper.map(
+                SortableField.of(sort.toArray(new String[0])),
+                ResultCodeSortFieldEnum::getEntityValue);
+
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
         Pageable pageable =
                 pageableMapper.from(
                         page, size, sort, ResolutionCode_.RESULT_CODE, Sort.Direction.ASC);
 
-        // Validate resolved sort properties to prevent invalid/unsafe sort fields
-        pageable.getSort().forEach(o -> sortValidator.validate(o.getProperty()));
-
-        // Fetch paginated results from service layer
+        log.info(
+            "getResultCodes: code: {}, title {}, page: {}, size: {}",
+            code,
+            title,
+            page,
+            size);
         var resultCodePage = resultCodeService.getPage(code, title, pageable);
 
         return ResponseEntity.ok(resultCodePage);
