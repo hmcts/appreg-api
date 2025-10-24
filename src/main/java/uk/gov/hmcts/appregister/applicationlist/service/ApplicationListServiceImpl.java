@@ -14,9 +14,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -58,6 +63,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final PageMapper pageMapper;
     private final LocationLookupService locationLookupService;
     private final ApplicationListDeletionValidator deletionValidator;
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
      * {@inheritDoc}
@@ -69,8 +76,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public ApplicationListGetDetailDto create(ApplicationListCreateDto dto) {
-        validator.validate(dto);
-        return hasCourt(dto) ? createWithCourt(dto) : createWithCja(dto);
+       return auditService.processAudit(
+                Optional.empty(),
+                AppListAuditOperation.CREATE_APP_LIST,
+                req -> {
+                    validator.validate(dto);
+                    return Optional.of(
+                            hasCourt(dto) ? createWithCourt(dto) : createWithCja(dto));
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     private static boolean hasCourt(ApplicationListCreateDto dto) {
@@ -87,11 +101,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      * @throws AppRegistryException if no court or multiple courts are found for the given code
      */
-    private ApplicationListGetDetailDto createWithCourt(ApplicationListCreateDto dto) {
+    private AuditResult<ApplicationListGetDetailDto> createWithCourt(ApplicationListCreateDto dto) {
         var court = locationLookupService.getActiveCourtOrThrow(dto.getCourtLocationCode());
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(dto, court));
         var hydratedEntity = refreshEntity(savedEntity);
-        return mapper.toGetDetailDto(hydratedEntity, null);
+        return new AuditResult<ApplicationListGetDetailDto> (mapper.toGetDetailDto(hydratedEntity, null), Optional.empty(), Optional.of(hydratedEntity));
     }
 
     /**
@@ -104,11 +118,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      * @throws AppRegistryException if no CJA or multiple CJAs are found for the given code
      */
-    private ApplicationListGetDetailDto createWithCja(ApplicationListCreateDto dto) {
+    private AuditResult<ApplicationListGetDetailDto> createWithCja(ApplicationListCreateDto dto) {
         var cja = locationLookupService.getCjaOrThrow(dto.getCjaCode());
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(dto, cja));
         var hydratedEntity = refreshEntity(savedEntity);
-        return mapper.toGetDetailDto(hydratedEntity, cja);
+        return new AuditResult<ApplicationListGetDetailDto> (mapper.toGetDetailDto(hydratedEntity, cja), Optional.empty(), Optional.of(hydratedEntity));
     }
 
     @Override

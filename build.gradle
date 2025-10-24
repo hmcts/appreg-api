@@ -571,4 +571,6 @@ processResources.dependsOn tasks.openApiGenerate
 compileJava.dependsOn tasks.openApiGenerate
 
 
-
+rootProject.tasks.named("processTestResources") {
+  duplicatesStrategy = 'include'
+}

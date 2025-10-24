@@ -14,4 +14,5 @@ public class TableNames {
     public static final String COMMUNICATION_MEDIA = "communication_media";
     public static final String LINK_COMMUNICATION_MEDIA = "link_communication_media";
     public static final String LINK_ADDRESSES = "link_addresses";
+    public static final String APPICATION_LIST = "application_lists";
 }

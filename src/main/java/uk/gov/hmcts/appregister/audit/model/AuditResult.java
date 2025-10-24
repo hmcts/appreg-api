@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.audit.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +13,13 @@ import java.util.Optional;
  */
 @Builder
 @Getter
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class AuditResult<R> {
     private final R resultingValue;
 
     /** The old entity contains the old data prior to the update or soft delete */
-    private final Optional<Keyable> oldEntity = Optional.empty();
+    private final Optional<Keyable> oldEntity;
 
     /** The new entity contains the updates data post update or soft delete*/
-    private final Optional<Keyable> newEntity = Optional.empty();
+    private final Optional<Keyable> newEntity;
 }

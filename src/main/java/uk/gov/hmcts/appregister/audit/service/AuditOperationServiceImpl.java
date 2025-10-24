@@ -60,10 +60,10 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             if (responsePayload.isPresent()) {
                 // fire after the completed operation
                 fireAuditEvent(
-                        new CompleteEvent(event, getBodyAsString(responsePayload.get())), listener);
+                        new CompleteEvent(event, getBodyAsString(responsePayload.get()), responsePayload.get().getNewEntity()), listener);
             } else {
                 // fire after the completed operation
-                fireAuditEvent(new CompleteEvent(event, null), listener);
+                fireAuditEvent(new CompleteEvent(event, null, Optional.empty()), listener);
             }
 
             log.debug("Processed success auditable operation: {}", event);

@@ -43,8 +43,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             // add each audit record for all identifies differences
             for (Difference difference : differenceList) {
                 DataAudit audit = new DataAudit();
-                audit.setRelatedKey(event instanceof Keyable && event.getNewValue().isPresent()
-                        ? event.getNewValue().get().getId() : -1);
+                audit.setRelatedKey(getDataIdOfEvent(event));
                 audit.setColumnName(difference.getFieldName());
                 audit.setNewValue(difference.getNewValue());
                 audit.setOldValue(difference.getOldValue());
@@ -56,6 +55,13 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                 dataAuditRepository.save(audit);
             }
         }
+    }
+
+    private Long getDataIdOfEvent(CompleteEvent event) {
+        Optional<Keyable> nKeyable = event.getNewValue();
+        Optional<Keyable> oKeyable = event.getOldValue();
+        long oldValueId = oKeyable.isPresent() ? oKeyable.get().getId() : -1L;
+        return nKeyable.isPresent() ? nKeyable.get().getId() : oldValueId;
     }
 
     @Override
@@ -70,21 +76,22 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
      */
     private List<Difference> performDifference(AuditEvent event) {
         List<Difference> differenceList = new ArrayList<>();
-
-        if (event.getNewValue().isPresent() && event.getOldValue().isPresent()) {
+        Optional<Keyable> nKeyable = event.getNewValue();
+        Optional<Keyable> oKeyable = event.getOldValue();
+        if (nKeyable.isPresent() &&oKeyable.isPresent()) {
             // check of differentiable is implemented if so use that implementation
-            if (differentiator == null  && event.getNewValue().get() instanceof Differentiable diff) {
-                Keyable o = event.getNewValue().get();
+            if (differentiator == null  && nKeyable.get() instanceof Differentiable diff) {
+                Keyable o = nKeyable.get();
                 differenceList = diff.diff(o);
             }
             else {
-                Keyable o = event.getNewValue().get();
-                Keyable o1 = event.getOldValue().get();
+                Keyable o = nKeyable.get();
+                Keyable o1 = oKeyable.get();
 
                 differenceList = differentiator.diff(o, o1);
             }
         } else if (event.getNewValue().isPresent()) {
-            differenceList = differentiator.diff(event.getNewValue().get());
+            differenceList = differentiator.diff(nKeyable.get());
         }
 
         return differenceList;
