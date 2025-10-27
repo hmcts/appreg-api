@@ -87,8 +87,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             LEFT JOIN ale.rnameaddress rna
             LEFT JOIN ale.applicationCode ac
             LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
-                AND aler.changedBy = (
-                    SELECT MAX(sub.changedBy)
+                AND aler.changedDate = (
+                    SELECT MAX(sub.changedDate)
                     FROM AppListEntryResolution sub
                     WHERE sub.applicationList = ale
                 )
