@@ -86,14 +86,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             LEFT JOIN ale.anamedaddress ana
             LEFT JOIN ale.standardApplicant sa
             LEFT JOIN ale.rnameaddress rna
-            INNER JOIN ale.applicationCode ac
+            LEFT JOIN ale.applicationCode ac
             LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
                 AND aler.changedBy = (
                     SELECT MAX(sub.changedBy)
                     FROM AppListEntryResolution sub
                     WHERE sub.applicationList = ale
                 )
-            JOIN aler.resolutionCode rc
+            LEFT JOIN aler.resolutionCode rc
             WHERE ale.applicationList.uuid = :id
             """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
