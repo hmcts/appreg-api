@@ -27,7 +27,7 @@ import org.springframework.stereotype.Component;
  *   <li>Removes the MDC entry in a {@code finally} block to avoid leaking values across threads.
  * </ul>
  *
- * This enables end-to-end request tracing across services and consistent log correlation.
+ * <p>This enables end-to-end request tracing across services and consistent log correlation.
  */
 @Component
 public class CorrelationFilter implements Filter {

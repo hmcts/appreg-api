@@ -172,10 +172,6 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     private ApplicationListEntry saveApplicationListEntry(
             ApplicationList list, Short sequenceNumber) {
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
-
-        NameAddress nameAddress = new NameAddressTestData().someComplete();
-
         ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         entityManager.persist(resolutionCode);
         entityManager.flush();
@@ -184,7 +180,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 new AppListEntryTestData().createApplicationListEntry(list, sequenceNumber);
 
         listEntryData.setAccountNumber("1234567890");
+        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
         listEntryData.setStandardApplicant(standardApplicant);
+        NameAddress nameAddress = new NameAddressTestData().someComplete();
         listEntryData.setRnameaddress(nameAddress);
 
         AppListEntryResolution appListEntryResolution =

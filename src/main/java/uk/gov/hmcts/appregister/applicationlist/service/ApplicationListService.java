@@ -40,9 +40,9 @@ public interface ApplicationListService {
      *   <li>Query a lightweight projection of entry summaries ordered by sequence number
      * </ul>
      *
-     * The operation is read-only and does not modify any data. Pagination and sorting are handled
-     * via the supplied {@link Pageable}, which is typically created from OpenAPI paging parameters
-     * by a mapper.
+     * <p>The operation is read-only and does not modify any data. Pagination and sorting are
+     * handled via the supplied {@link Pageable}, which is typically created from OpenAPI paging
+     * parameters by a mapper.
      *
      * @param id the unique identifier of the application list to retrieve
      * @param pageable Spring Data paging and sorting configuration for entry summaries
