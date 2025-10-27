@@ -1,14 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 
 class ApplicationListEntryMapStructMapperTest {
 
@@ -23,15 +21,30 @@ class ApplicationListEntryMapStructMapperTest {
         var feeRequired = true;
         var result = "APPC";
 
-        var projection = createProjectionStub(sequenceNumber, accountNumber, applicant, respondent, postCode,
-                                              applicationTitle, feeRequired, result);
+        var projection =
+                createProjectionStub(
+                        sequenceNumber,
+                        accountNumber,
+                        applicant,
+                        respondent,
+                        postCode,
+                        applicationTitle,
+                        feeRequired,
+                        result);
 
         var mapper = new ApplicationListEntryMapStructMapperImpl();
         var model = mapper.toSummaryModel(projection);
 
-        assertApplicationListEntrySummary(sequenceNumber, model, accountNumber, applicant, respondent, postCode,
-            applicationTitle, feeRequired, result
-        );
+        assertApplicationListEntrySummary(
+                sequenceNumber,
+                model,
+                accountNumber,
+                applicant,
+                respondent,
+                postCode,
+                applicationTitle,
+                feeRequired,
+                result);
     }
 
     @Test
@@ -45,8 +58,16 @@ class ApplicationListEntryMapStructMapperTest {
         var feeRequired1 = true;
         var result1 = "APPC";
 
-        var projection1 = createProjectionStub(sequenceNumber1, accountNumber1, applicant1, respondent1, postCode1,
-                                              applicationTitle1, feeRequired1, result1);
+        var projection1 =
+                createProjectionStub(
+                        sequenceNumber1,
+                        accountNumber1,
+                        applicant1,
+                        respondent1,
+                        postCode1,
+                        applicationTitle1,
+                        feeRequired1,
+                        result1);
 
         var sequenceNumber2 = 2;
         var accountNumber2 = "1234567891";
@@ -57,27 +78,47 @@ class ApplicationListEntryMapStructMapperTest {
         var feeRequired2 = false;
         var result2 = "RESP";
 
-        var projection2 = createProjectionStub(sequenceNumber2, accountNumber2, applicant2, respondent2, postCode2,
-                                               applicationTitle2, feeRequired2, result2);
+        var projection2 =
+                createProjectionStub(
+                        sequenceNumber2,
+                        accountNumber2,
+                        applicant2,
+                        respondent2,
+                        postCode2,
+                        applicationTitle2,
+                        feeRequired2,
+                        result2);
 
         var mapper = new ApplicationListEntryMapStructMapperImpl();
         List<ApplicationListEntrySummary> list =
-            mapper.toSummaryModelList(List.of(projection1, projection2));
+                mapper.toSummaryModelList(List.of(projection1, projection2));
 
         assertThat(list).hasSize(2);
 
-        assertApplicationListEntrySummary(sequenceNumber1, list.getFirst(), accountNumber1, applicant1, respondent1,
-                                          postCode1, applicationTitle1, feeRequired1, result1
-        );
+        assertApplicationListEntrySummary(
+                sequenceNumber1,
+                list.getFirst(),
+                accountNumber1,
+                applicant1,
+                respondent1,
+                postCode1,
+                applicationTitle1,
+                feeRequired1,
+                result1);
 
-        assertApplicationListEntrySummary(sequenceNumber2, list.getLast(), accountNumber2, applicant2, respondent2,
-                                          postCode2, applicationTitle2, feeRequired2, result2
-        );
+        assertApplicationListEntrySummary(
+                sequenceNumber2,
+                list.getLast(),
+                accountNumber2,
+                applicant2,
+                respondent2,
+                postCode2,
+                applicationTitle2,
+                feeRequired2,
+                result2);
     }
 
-    /**
-     * Minimal test double of the projection interface.
-     */
+    /** Minimal test double of the projection interface. */
     private static class ProjectionStub implements ApplicationListEntrySummaryProjection {
         private short sequenceNumber;
         private String accountNumber;
@@ -129,64 +170,78 @@ class ApplicationListEntryMapStructMapperTest {
         }
 
         // --- Implement projection getters ---
-        @Override public short getSequenceNumber() {
+        @Override
+        public short getSequenceNumber() {
             return sequenceNumber;
         }
 
-        @Override public String getAccountNumber() {
+        @Override
+        public String getAccountNumber() {
             return accountNumber;
         }
 
-        @Override public String getApplicant() {
+        @Override
+        public String getApplicant() {
             return applicant;
         }
 
-        @Override public String getRespondent() {
+        @Override
+        public String getRespondent() {
             return respondent;
         }
 
-        @Override public String getPostCode() {
+        @Override
+        public String getPostCode() {
             return postCode;
         }
 
-        @Override public String getApplicationTitle() {
+        @Override
+        public String getApplicationTitle() {
             return applicationTitle;
         }
 
-        @Override public boolean isFeeRequired() {
+        @Override
+        public boolean isFeeRequired() {
             return feeRequired;
         }
 
-        @Override public String getResult() {
+        @Override
+        public String getResult() {
             return result;
         }
     }
 
     private ProjectionStub createProjectionStub(
-        int sequenceNumber,
-        String accountNumber,
-        String applicant,
-        String respondent,
-        String postCode,
-        String applicationTitle,
-        boolean feeRequired,
-        String result) {
+            int sequenceNumber,
+            String accountNumber,
+            String applicant,
+            String respondent,
+            String postCode,
+            String applicationTitle,
+            boolean feeRequired,
+            String result) {
 
         return new ProjectionStub()
-            .withSequenceNumber((short) sequenceNumber)
-            .withAccountNumber(accountNumber)
-            .withApplicant(applicant)
-            .withRespondent(respondent)
-            .withPostCode(postCode)
-            .withApplicationTitle(applicationTitle)
-            .withFeeRequired(feeRequired)
-            .withResult(result);
+                .withSequenceNumber((short) sequenceNumber)
+                .withAccountNumber(accountNumber)
+                .withApplicant(applicant)
+                .withRespondent(respondent)
+                .withPostCode(postCode)
+                .withApplicationTitle(applicationTitle)
+                .withFeeRequired(feeRequired)
+                .withResult(result);
     }
 
-    private static void assertApplicationListEntrySummary(int sequenceNumber, ApplicationListEntrySummary model,
-                                                          String accountNumber, String applicant, String respondent,
-                                                          String postCode, String applicationTitle, boolean feeRequired,
-                                                          String result) {
+    private static void assertApplicationListEntrySummary(
+            int sequenceNumber,
+            ApplicationListEntrySummary model,
+            String accountNumber,
+            String applicant,
+            String respondent,
+            String postCode,
+            String applicationTitle,
+            boolean feeRequired,
+            String result) {
         Assertions.assertEquals(sequenceNumber, model.getSequenceNumber());
         Assertions.assertEquals(accountNumber, model.getAccountNumber().orElse(null));
         Assertions.assertEquals(applicant, model.getApplicant().orElse(null));

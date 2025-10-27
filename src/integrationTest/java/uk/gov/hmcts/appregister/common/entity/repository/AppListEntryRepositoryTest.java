@@ -5,24 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.persistence.EntityManager;
-
-import jakarta.persistence.PersistenceContext;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-
 import org.springframework.data.domain.PageRequest;
-
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
-
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -54,8 +47,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testBasicInsertionUpdate() {
         // assert
         // test save
-        ApplicationListEntry listEntryData =
-                new AppListEntryTestData().someMinimal().build();
+        ApplicationListEntry listEntryData = new AppListEntryTestData().someMinimal().build();
 
         ApplicationListEntry data = persistance.save(listEntryData);
 
@@ -65,8 +57,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // assert that the data that has been retrieved aligns with the data that we
         // have stored
-        expectAllCommonEntityFields(
-                listEntryData, applicationListEntryToAssertAgainst.get());
+        expectAllCommonEntityFields(listEntryData, applicationListEntryToAssertAgainst.get());
         assertNotNull(applicationListEntryToAssertAgainst.get());
         assertEquals(
                 listEntryData.getApplicationCode().getId(),
@@ -83,9 +74,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 applicationListEntryToAssertAgainst.get().getEntryRescheduled());
         assertEquals(
                 listEntryData.getApplicationListEntryWording(),
-                applicationListEntryToAssertAgainst
-                        .get()
-                        .getApplicationListEntryWording());
+                applicationListEntryToAssertAgainst.get().getApplicationListEntryWording());
     }
 
     @Test
@@ -95,38 +84,59 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // test get
         Pageable page = PageRequest.of(0, 10);
-        Page<ApplicationListEntrySummaryProjection> applicationListEntrySummaryProjectionsToAssertAgainst =
-            applicationListEntryRepository.findSummariesById(data.getApplicationList().getUuid(), page);
+        Page<ApplicationListEntrySummaryProjection>
+                applicationListEntrySummaryProjectionsToAssertAgainst =
+                        applicationListEntryRepository.findSummariesById(
+                                data.getApplicationList().getUuid(), page);
 
         // assert that the data that has been retrieved aligns with the data that we
         // have stored
-        assertNotNull(applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst());
+        assertNotNull(
+                applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst());
         assertEquals(
-            data.getSequenceNumber(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst()
-                .getSequenceNumber());
+                data.getSequenceNumber(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getSequenceNumber());
         assertEquals(
-            data.getAccountNumber(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst()
-                .getAccountNumber());
+                data.getAccountNumber(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getAccountNumber());
         assertEquals(
-            data.getStandardApplicant().getName(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst().getApplicant());
+                data.getStandardApplicant().getName(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getApplicant());
         assertEquals(
-            data.getRnameaddress().getName(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst().getRespondent());
+                data.getRnameaddress().getName(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getRespondent());
         assertEquals(
-            data.getRnameaddress().getPostcode(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst().getPostCode());
+                data.getRnameaddress().getPostcode(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getPostCode());
         assertEquals(
-            data.getApplicationCode().getTitle(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst()
-                .getApplicationTitle());
+                data.getApplicationCode().getTitle(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getApplicationTitle());
         assertEquals(
-            data.getResolutions().getFirst().getResolutionCode().getResultCode(),
-            applicationListEntrySummaryProjectionsToAssertAgainst.getContent().getFirst().getResult());
-        assertThat(
-            applicationListEntrySummaryProjectionsToAssertAgainst.getTotalElements()).isEqualTo(1);
+                data.getResolutions().getFirst().getResolutionCode().getResultCode(),
+                applicationListEntrySummaryProjectionsToAssertAgainst
+                        .getContent()
+                        .getFirst()
+                        .getResult());
+        assertThat(applicationListEntrySummaryProjectionsToAssertAgainst.getTotalElements())
+                .isEqualTo(1);
     }
 
     @Test
@@ -141,12 +151,14 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 1);
         Page<ApplicationListEntrySummaryProjection> page0 =
-            applicationListEntryRepository.findSummariesById(data1.getApplicationList().getUuid(), page);
+                applicationListEntryRepository.findSummariesById(
+                        data1.getApplicationList().getUuid(), page);
 
         // And: page 1 size 1
         page = PageRequest.of(1, 1);
         Page<ApplicationListEntrySummaryProjection> page1 =
-            applicationListEntryRepository.findSummariesById(data1.getApplicationList().getUuid(), page);
+                applicationListEntryRepository.findSummariesById(
+                        data1.getApplicationList().getUuid(), page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(2);
@@ -158,35 +170,29 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page1.getContent().getFirst().getSequenceNumber()).isEqualTo(sequenceNumber2);
     }
 
-    private ApplicationListEntry saveApplicationListEntry(ApplicationList list, Short sequenceNumber) {
-        StandardApplicant standardApplicant =
-            new StandardApplicantTestData()
-                .someComplete();
+    private ApplicationListEntry saveApplicationListEntry(
+            ApplicationList list, Short sequenceNumber) {
+        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
 
-        NameAddress nameAddress =
-            new NameAddressTestData()
-                .someComplete();
+        NameAddress nameAddress = new NameAddressTestData().someComplete();
 
-        ResolutionCode resolutionCode =
-            new ResolutionCodeTestData()
-                .someComplete();
+        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         entityManager.persist(resolutionCode);
         entityManager.flush();
 
         ApplicationListEntry listEntryData =
-            new AppListEntryTestData()
-                .createApplicationListEntry(list, sequenceNumber);
+                new AppListEntryTestData().createApplicationListEntry(list, sequenceNumber);
 
         listEntryData.setAccountNumber("1234567890");
         listEntryData.setStandardApplicant(standardApplicant);
         listEntryData.setRnameaddress(nameAddress);
 
         AppListEntryResolution appListEntryResolution =
-            new AppListEntryResolutionTestData()
-                .someMinimal()
-                .applicationList(listEntryData)
-                .resolutionCode(resolutionCode)
-                .build();
+                new AppListEntryResolutionTestData()
+                        .someMinimal()
+                        .applicationList(listEntryData)
+                        .resolutionCode(resolutionCode)
+                        .build();
         List<AppListEntryResolution> resolutions = List.of(appListEntryResolution);
         listEntryData.setResolutions(resolutions);
 

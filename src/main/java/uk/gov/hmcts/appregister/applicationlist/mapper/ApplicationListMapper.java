@@ -52,7 +52,8 @@ public interface ApplicationListMapper {
     @Mapping(target = "version", source = "appList.version")
     @Mapping(target = "entriesCount", source = "entryCount")
     @Mapping(target = "entriesSummary", ignore = true)
-    ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja, long entryCount);
+    ApplicationListGetDetailDto toGetDetailDto(
+            ApplicationList appList, CriminalJusticeArea cja, long entryCount);
 
     @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")

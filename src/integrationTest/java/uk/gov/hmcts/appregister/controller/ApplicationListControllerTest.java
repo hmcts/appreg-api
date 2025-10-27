@@ -8,10 +8,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -728,21 +727,23 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
 
         var userToken =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
 
         Response resp =
-            restAssuredClient.executeGetRequestWithPaging(
-                Optional.empty(),
-                Optional.empty(),
-                List.of(), // Rely on default sort
-                getLocalUrl(WEB_CONTEXT),
-                userToken,
-                rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix)
-                    .queryParam("includeSummaries", true),
-                null);
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(), // Rely on default sort
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs ->
+                                rs.header("Accept", VND_JSON_V1)
+                                        .queryParam("description", prefix)
+                                        .queryParam("includeSummaries", true),
+                        null);
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         ApplicationListPage page = resp.as(ApplicationListPage.class);
@@ -756,23 +757,23 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     @Test
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
         var token =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
 
         String description = "List for testing get application list";
 
         var req =
-            new ApplicationListCreateDto()
-                .date(TEST_DATE)
-                .time(TEST_TIME)
-                .description(description)
-                .status(ApplicationListStatus.OPEN)
-                .cjaCode(VALID_CJA_CODE)
-                .otherLocationDescription(VALID_OTHER_LOCATION)
-                .durationHours(1)
-                .durationMinutes(0);
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
 
         // setup a record for retrieval
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
@@ -788,8 +789,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
 
         dto = resp.as(ApplicationListGetDetailDto.class);
-        assertThat(dto.getDescription())
-            .isEqualToIgnoringCase(description);
+        assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
         assertThat(dto.getEntriesSummary()).isNotNull();
     }
@@ -797,15 +797,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     @Test
     @DisplayName("GET Application List: 403 when no role")
     void givenNoRole_whenGetApplicationList_then403() throws Exception {
-        var token =
-            getATokenWithValidCredentials()
-                .build()
-                .fetchTokenForRole();
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
 
         UUID id = UUID.randomUUID();
 
         // fire test
-        Response resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
 
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
     }
@@ -814,22 +812,20 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     @Test
     void givenUnknownApplicationList_whenGetApplicationList_then404() throws Exception {
         var token =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
 
         UUID id = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
 
         // fire test
-        Response resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
 
         // assert success
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         ProblemAssertUtil.assertEqualsWithoutAppCode(
-            ApplicationListError
-                .LIST_NOT_FOUND
-                .getCode(),
-            resp);
+                ApplicationListError.LIST_NOT_FOUND.getCode(), resp);
     }
 }

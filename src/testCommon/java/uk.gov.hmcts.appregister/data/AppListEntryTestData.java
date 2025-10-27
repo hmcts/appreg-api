@@ -29,11 +29,9 @@ public class AppListEntryTestData
                 .entryFeeIds(List.of(new AppListEntryFeeIdTestData().someComplete()));
     }
 
-    public ApplicationListEntry createApplicationListEntry(ApplicationList list, Short sequenceNumber) {
-        ApplicationListEntry listEntryData =
-            new AppListEntryTestData()
-                .someMinimal()
-                .build();
+    public ApplicationListEntry createApplicationListEntry(
+            ApplicationList list, Short sequenceNumber) {
+        ApplicationListEntry listEntryData = new AppListEntryTestData().someMinimal().build();
 
         listEntryData.setApplicationList(list);
         listEntryData.setSequenceNumber(sequenceNumber);

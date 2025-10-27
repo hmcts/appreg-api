@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
@@ -19,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import uk.gov.hmcts.appregister.applicationentry.validator.ApplicationListEntrySortValidator;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
@@ -110,28 +108,31 @@ public class ApplicationListController implements ApplicationListsApi {
      * @param id the unique identifier of the application list
      * @param page the page number to retrieve (zero-based)
      * @param size the number of records per page
-     * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and mapped by
-     *     {@link ApplicationListSortMapper}
+     * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and
+     *     mapped by {@link ApplicationListSortMapper}
      * @return {@link ResponseEntity} containing the application list details
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
-        UUID id, Integer page, Integer size, List<String> sort) {
+            UUID id, Integer page, Integer size, List<String> sort) {
 
-        // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number ascending
+        // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number
+        // ascending
         Pageable pageable =
-                pageableMapper.from(page, size, sort, ApplicationListEntry_.SEQUENCE_NUMBER, Sort.Direction.ASC);
+                pageableMapper.from(
+                        page,
+                        size,
+                        sort,
+                        ApplicationListEntry_.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC);
 
         // Validate resolved sort properties to prevent invalid/unsafe sort fields
         pageable.getSort().forEach(o -> sortValidator.validate(o.getProperty()));
 
         ApplicationListGetDetailDto retrieved = service.get(id, pageable);
 
-        return ResponseEntity.status(OK)
-                .varyBy("Accept")
-                .contentType(VND_JSON_V1)
-                .body(retrieved);
+        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }
 
     /**
@@ -176,16 +177,22 @@ public class ApplicationListController implements ApplicationListsApi {
      *     "createdDate,desc"]}); validated and mapped by {@link ApplicationListSortMapper}
      * @param entriesPage the entries page number to retrieve (zero-based)
      * @param entriesSize the number of entries per page
-     * @param entriesSort a list of sort parameters for entries (e.g., {@code ["sequenceNumber,asc"]}); validated and
-     *     mapped by {@link ApplicationListSortMapper}
+     * @param entriesSort a list of sort parameters for entries (e.g., {@code
+     *     ["sequenceNumber,asc"]}); validated and mapped by {@link ApplicationListSortMapper}
      * @return {@link ResponseEntity} containing the requested page of application lists wrapped in
      *     an {@link ApplicationListPage} object
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationListPage> getApplicationLists(
-        ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort, Boolean includeSummaries,
-        Integer entriesPage, Integer entriesSize, List<String> entriesSort) {
+            ApplicationListGetFilterDto filter,
+            Integer page,
+            Integer size,
+            List<String> sort,
+            Boolean includeSummaries,
+            Integer entriesPage,
+            Integer entriesSize,
+            List<String> entriesSort) {
 
         List<String> mappedSort = sortMapper.mapAndValidate(sort);
         Pageable pageInfo =
@@ -194,10 +201,15 @@ public class ApplicationListController implements ApplicationListsApi {
 
         List<String> entriesMappedSort = sortMapper.mapAndValidate(sort);
         Pageable entriesPageInfo =
-            pageableMapper.from(
-                entriesPage, entriesSize, entriesMappedSort, ApplicationListEntry_.SEQUENCE_NUMBER, Sort.Direction.ASC);
+                pageableMapper.from(
+                        entriesPage,
+                        entriesSize,
+                        entriesMappedSort,
+                        ApplicationListEntry_.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC);
 
-        var applicationListPage = service.getPage(filter, pageInfo, includeSummaries, entriesPageInfo);
+        var applicationListPage =
+                service.getPage(filter, pageInfo, includeSummaries, entriesPageInfo);
         log.info("Retrieved Application Lists");
         return ResponseEntity.ok(applicationListPage);
     }

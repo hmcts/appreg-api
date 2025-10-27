@@ -17,5 +17,4 @@ public interface ApplicationListEntrySummaryProjection {
     boolean isFeeRequired();
 
     String getResult();
-
 }

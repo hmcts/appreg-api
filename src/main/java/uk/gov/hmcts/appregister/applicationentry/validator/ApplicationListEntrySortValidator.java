@@ -1,9 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.validator.AbstractSortValidator;
-
-import org.springframework.stereotype.Component;
 
 /**
  * Sort validator for Application List Entry queries.

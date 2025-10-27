@@ -4,21 +4,17 @@ import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
-
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
@@ -26,8 +22,8 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletio
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -88,13 +84,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public ApplicationListGetDetailDto get(UUID id, Pageable pageable) {
-        ApplicationList list = repository.findByUuid(id)
-            .orElseThrow(() -> new AppRegistryException(
-                ApplicationListError.LIST_NOT_FOUND,
-                "No application list found for UUID '%s'".formatted(id)));
+        ApplicationList list =
+                repository
+                        .findByUuid(id)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListError.LIST_NOT_FOUND,
+                                                "No application list found for UUID '%s'"
+                                                        .formatted(id)));
 
         // Fetch results from the repository using pagination
-        Page<ApplicationListEntrySummaryProjection> dbPage = aleRepository.findSummariesById(id, pageable);
+        Page<ApplicationListEntrySummaryProjection> dbPage =
+                aleRepository.findSummariesById(id, pageable);
 
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
@@ -171,8 +173,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return entity;
     }
 
-    private ApplicationListGetDetailDto buildDto(ApplicationList list, Long entriesCount,
-                                                 List<ApplicationListEntrySummary> entriesSummary) {
+    private ApplicationListGetDetailDto buildDto(
+            ApplicationList list,
+            Long entriesCount,
+            List<ApplicationListEntrySummary> entriesSummary) {
         ApplicationListGetDetailDto dto = mapper.toGetDetailDto(list, null, entriesCount);
         dto.setEntriesSummary(entriesSummary);
 
@@ -195,8 +199,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      */
     @Transactional(readOnly = true)
     @Override
-    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable, Boolean includeSummaries,
-                                       Pageable entriesPageable) {
+    public ApplicationListPage getPage(
+            ApplicationListGetFilterDto dto,
+            Pageable pageable,
+            Boolean includeSummaries,
+            Pageable entriesPageable) {
 
         CriminalJusticeArea cja = resolveCja(dto.getCjaCode()).orElse(null);
 
@@ -223,14 +230,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         if (includeSummaries) {
             for (ApplicationList list : dbPage.getContent()) {
                 // Fetch results from the repository using pagination
-                Page<ApplicationListEntrySummaryProjection> entriesDbPage = aleRepository.findSummariesById(
-                    list.getUuid(), entriesPageable);
+                Page<ApplicationListEntrySummaryProjection> entriesDbPage =
+                        aleRepository.findSummariesById(list.getUuid(), entriesPageable);
 
                 List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
                 // Map each projection to a summary model
-                entriesDbPage.forEach(projection -> summaries.add(
-                    entryMapper.toSummaryModel(projection)));
+                entriesDbPage.forEach(
+                        projection -> summaries.add(entryMapper.toSummaryModel(projection)));
 
                 entrySummariesPerList.put(list.getUuid(), summaries);
             }
@@ -254,7 +261,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     private ApplicationListPage assembleResponsePage(
-            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter,
+            Page<ApplicationList> appLists,
+            Map<UUID, Long> entriesPerListCounter,
             Map<UUID, List<ApplicationListEntrySummary>> entrySummariesPerList) {
         var responsePage = new ApplicationListPage();
         pageMapper.toPage(appLists, responsePage);

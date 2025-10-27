@@ -26,14 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import org.springframework.http.HttpStatus;
-
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-
+import org.springframework.http.HttpStatus;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
@@ -548,45 +545,47 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
-            eq(ApplicationListStatus.OPEN),
-            isNull(),
-            eq(cja),
-            eq(DEFAULT_DATE),
-            eq(DEFAULT_TIME),
-            eq("morning"),
-            eq("town hall"),
-            eq(pageable)))
-            .thenReturn(dbPage);
+                        eq(ApplicationListStatus.OPEN),
+                        isNull(),
+                        eq(cja),
+                        eq(DEFAULT_DATE),
+                        eq(DEFAULT_TIME),
+                        eq("morning"),
+                        eq("town hall"),
+                        eq(pageable)))
+                .thenReturn(dbPage);
 
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
-            .thenReturn(List.of());
+                .thenReturn(List.of());
 
         // Page metadata mapping
         doAnswer(
-            inv -> {
-                ApplicationListPage target = inv.getArgument(1);
-                target.totalPages(1);
-                target.elementsOnPage(1);
-                return null;
-            })
-            .when(pageMapper)
-            .toPage(eq(dbPage), any(ApplicationListPage.class));
+                        inv -> {
+                            ApplicationListPage target = inv.getArgument(1);
+                            target.totalPages(1);
+                            target.elementsOnPage(1);
+                            return null;
+                        })
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class));
 
         // Given a filter with CJA + otherLocation (court is null)
         ApplicationListGetFilterDto filter =
-            new ApplicationListGetFilterDto()
-                .status(ApplicationListStatus.OPEN)
-                .courtLocationCode(null)
-                .cjaCode("52")
-                .date(DEFAULT_DATE)
-                .time(DEFAULT_TIME)
-                .description("morning")
-                .otherLocationDescription("town hall");
+                new ApplicationListGetFilterDto()
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(null)
+                        .cjaCode("52")
+                        .date(DEFAULT_DATE)
+                        .time(DEFAULT_TIME)
+                        .description("morning")
+                        .otherLocationDescription("town hall");
 
         mockFindSummariesById(row.getUuid(), pageable);
 
-        ApplicationListGetSummaryDto applicationListGetSummaryDto = new ApplicationListGetSummaryDto();
-        when(mapper.toGetSummaryDto(row, 0, cjaDescription)).thenReturn(applicationListGetSummaryDto);
+        ApplicationListGetSummaryDto applicationListGetSummaryDto =
+                new ApplicationListGetSummaryDto();
+        when(mapper.toGetSummaryDto(row, 0, cjaDescription))
+                .thenReturn(applicationListGetSummaryDto);
 
         // When
         ApplicationListPage result = service.getPage(filter, pageable, true, pageable);
@@ -626,14 +625,12 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
         assertThatThrownBy(() -> service.get(id, pageable))
-            .isInstanceOf(AppRegistryException.class)
-            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-            .isEqualTo(HttpStatus.NOT_FOUND);
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Minimal test double of the projection interface.
-     */
+    /** Minimal test double of the projection interface. */
     private static class ProjectionStub implements ApplicationListEntrySummaryProjection {
         private short sequenceNumber;
         private String accountNumber;
@@ -685,58 +682,66 @@ public class ApplicationListServiceImplTest {
         }
 
         // --- Implement projection getters ---
-        @Override public short getSequenceNumber() {
+        @Override
+        public short getSequenceNumber() {
             return sequenceNumber;
         }
 
-        @Override public String getAccountNumber() {
+        @Override
+        public String getAccountNumber() {
             return accountNumber;
         }
 
-        @Override public String getApplicant() {
+        @Override
+        public String getApplicant() {
             return applicant;
         }
 
-        @Override public String getRespondent() {
+        @Override
+        public String getRespondent() {
             return respondent;
         }
 
-        @Override public String getPostCode() {
+        @Override
+        public String getPostCode() {
             return postCode;
         }
 
-        @Override public String getApplicationTitle() {
+        @Override
+        public String getApplicationTitle() {
             return applicationTitle;
         }
 
-        @Override public boolean isFeeRequired() {
+        @Override
+        public boolean isFeeRequired() {
             return feeRequired;
         }
 
-        @Override public String getResult() {
+        @Override
+        public String getResult() {
             return result;
         }
     }
 
     private ApplicationListServiceImplTest.ProjectionStub createProjectionStub(
-        int sequenceNumber,
-        String accountNumber,
-        String applicant,
-        String respondent,
-        String postCode,
-        String applicationTitle,
-        boolean feeRequired,
-        String result) {
+            int sequenceNumber,
+            String accountNumber,
+            String applicant,
+            String respondent,
+            String postCode,
+            String applicationTitle,
+            boolean feeRequired,
+            String result) {
 
         return new ApplicationListServiceImplTest.ProjectionStub()
-            .withSequenceNumber((short) sequenceNumber)
-            .withAccountNumber(accountNumber)
-            .withApplicant(applicant)
-            .withRespondent(respondent)
-            .withPostCode(postCode)
-            .withApplicationTitle(applicationTitle)
-            .withFeeRequired(feeRequired)
-            .withResult(result);
+                .withSequenceNumber((short) sequenceNumber)
+                .withAccountNumber(accountNumber)
+                .withApplicant(applicant)
+                .withRespondent(respondent)
+                .withPostCode(postCode)
+                .withApplicationTitle(applicationTitle)
+                .withFeeRequired(feeRequired)
+                .withResult(result);
     }
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
@@ -748,13 +753,18 @@ public class ApplicationListServiceImplTest {
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
         var feeRequired = true;
         var result = "APPC";
-        var projection = createProjectionStub(sequenceNumber, accountNumber, applicant, respondent, postCode,
-                                              applicationTitle, feeRequired, result);
+        var projection =
+                createProjectionStub(
+                        sequenceNumber,
+                        accountNumber,
+                        applicant,
+                        respondent,
+                        postCode,
+                        applicationTitle,
+                        feeRequired,
+                        result);
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
-        when(aleRepository.findSummariesById(
-            eq(id),
-            eq(pageable)))
-            .thenReturn(dbPage);
+        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 }

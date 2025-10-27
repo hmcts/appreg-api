@@ -1,13 +1,13 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 class ApplicationListEntrySortValidatorTest {
     private ApplicationListEntrySortValidator validator;

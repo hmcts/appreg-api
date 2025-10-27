@@ -1,10 +1,15 @@
 package uk.gov.hmcts.appregister.common.filter;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,26 +19,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 
-import java.util.regex.Pattern;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class CorrelationFilterTest {
 
-    @Mock
-    HttpServletRequest request;
+    @Mock HttpServletRequest request;
 
-    @Mock
-    ServletResponse response;
+    @Mock ServletResponse response;
 
-    @Mock
-    FilterChain chain;
+    @Mock FilterChain chain;
 
-    @InjectMocks
-    CorrelationFilter filter;
+    @InjectMocks CorrelationFilter filter;
 
     @AfterEach
     void tearDown() {
@@ -42,15 +37,19 @@ class CorrelationFilterTest {
     }
 
     @Test
-    void usesHeaderCorrelationId_setsAttribute_andPropagatesToMdcDuringChain_thenClears() throws Exception {
+    void usesHeaderCorrelationId_setsAttribute_andPropagatesToMdcDuringChain_thenClears()
+            throws Exception {
         String headerCid = "abc-123";
         when(request.getHeader("X-Correlation-Id")).thenReturn(headerCid);
 
         // During chain execution, MDC should already contain the correlationId
-        doAnswer(invocation -> {
-            assertThat(MDC.get("correlationId")).isEqualTo(headerCid);
-            return null;
-        }).when(chain).doFilter(any(ServletRequest.class), any(ServletResponse.class));
+        doAnswer(
+                        invocation -> {
+                            assertThat(MDC.get("correlationId")).isEqualTo(headerCid);
+                            return null;
+                        })
+                .when(chain)
+                .doFilter(any(ServletRequest.class), any(ServletResponse.class));
 
         filter.doFilter(request, response, chain);
 
@@ -69,13 +68,17 @@ class CorrelationFilterTest {
         ArgumentCaptor<Object> attrValue = ArgumentCaptor.forClass(Object.class);
 
         // Verify MDC contains the same ID that was set as attribute during chain
-        doAnswer(invocation -> {
-            String inMdc = MDC.get("correlationId");
-            // We can't predict the UUID, but it must be non-null and look like a UUID
-            assertThat(inMdc).isNotNull();
-            assertThat(isUuid(inMdc)).isTrue();
-            return null;
-        }).when(chain).doFilter(any(ServletRequest.class), any(ServletResponse.class));
+        doAnswer(
+                        invocation -> {
+                            String inMdc = MDC.get("correlationId");
+                            // We can't predict the UUID, but it must be non-null and look like a
+                            // UUID
+                            assertThat(inMdc).isNotNull();
+                            assertThat(isUuid(inMdc)).isTrue();
+                            return null;
+                        })
+                .when(chain)
+                .doFilter(any(ServletRequest.class), any(ServletResponse.class));
 
         filter.doFilter(request, response, chain);
 
@@ -93,15 +96,18 @@ class CorrelationFilterTest {
         String headerCid = "boom-999";
         when(request.getHeader("X-Correlation-Id")).thenReturn(headerCid);
 
-        doAnswer(invocation -> {
-            // Inside chain, MDC must be set
-            assertThat(MDC.get("correlationId")).isEqualTo(headerCid);
-            throw new ServletException("downstream failure");
-        }).when(chain).doFilter(any(ServletRequest.class), any(ServletResponse.class));
+        doAnswer(
+                        invocation -> {
+                            // Inside chain, MDC must be set
+                            assertThat(MDC.get("correlationId")).isEqualTo(headerCid);
+                            throw new ServletException("downstream failure");
+                        })
+                .when(chain)
+                .doFilter(any(ServletRequest.class), any(ServletResponse.class));
 
         assertThatThrownBy(() -> filter.doFilter(request, response, chain))
-            .isInstanceOf(ServletException.class)
-            .hasMessageContaining("downstream failure");
+                .isInstanceOf(ServletException.class)
+                .hasMessageContaining("downstream failure");
 
         // MDC must be cleared even after exception
         assertThat(MDC.get("correlationId")).isNull();
@@ -109,7 +115,9 @@ class CorrelationFilterTest {
 
     private static boolean isUuid(String s) {
         // Simple UUID v4-ish format check (accepts any UUID format with hyphens)
-        Pattern p = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+        Pattern p =
+                Pattern.compile(
+                        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
         return p.matcher(s).matches();
     }
 }

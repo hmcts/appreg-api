@@ -1,9 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
-import org.springframework.data.domain.Pageable;
-
 import java.util.UUID;
-
+import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
@@ -35,15 +33,16 @@ public interface ApplicationListService {
     /**
      * Gets a new Application List.
      *
-     * <p>
-     * This method encapsulates all business logic required to:
+     * <p>This method encapsulates all business logic required to:
+     *
      * <ul>
-     *   <li>Fetch the list metadata and total entry count</li>
-     *   <li>Query a lightweight projection of entry summaries ordered by sequence number</li>
+     *   <li>Fetch the list metadata and total entry count
+     *   <li>Query a lightweight projection of entry summaries ordered by sequence number
      * </ul>
-     * The operation is read-only and does not modify any data. Pagination and sorting are handled via the supplied
-     * {@link Pageable}, which is typically created from OpenAPI paging parameters by a mapper.
-     * </p>
+     *
+     * The operation is read-only and does not modify any data. Pagination and sorting are handled
+     * via the supplied {@link Pageable}, which is typically created from OpenAPI paging parameters
+     * by a mapper.
      *
      * @param id the unique identifier of the application list to retrieve
      * @param pageable Spring Data paging and sorting configuration for entry summaries
@@ -82,6 +81,9 @@ public interface ApplicationListService {
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if invalid filter
      *     parameters are provided or underlying data retrieval fails
      */
-    ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable, Boolean includeSummaries,
-                                Pageable entriesPageable);
+    ApplicationListPage getPage(
+            ApplicationListGetFilterDto dto,
+            Pageable pageable,
+            Boolean includeSummaries,
+            Pageable entriesPageable);
 }
