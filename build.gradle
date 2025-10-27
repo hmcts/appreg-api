@@ -27,7 +27,7 @@ ext {
 }
 
 checkstyle {
-  toolVersion = '11.0.1'                // or a version that matches your rules
+  toolVersion = '11.1.0'                // or a version that matches your rules
 }
 
 dependencyManagement {
