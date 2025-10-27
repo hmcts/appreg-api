@@ -3,6 +3,7 @@ description: Request payload to create an Application List Entry.
 required:
   - listId
   - applicationCode
+  - lodgementDate
 
 properties:
 

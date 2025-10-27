@@ -5,6 +5,7 @@ required:
   - listId
   - applicationCode
   - numberOfRespondents
+  - lodgementDate
 
 properties:
 

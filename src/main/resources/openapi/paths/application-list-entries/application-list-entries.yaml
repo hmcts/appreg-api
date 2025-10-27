@@ -1,0 +1,2 @@
+# We will be getting all the entries associated with a list using application-lists/id/entries
+# so make frontend call this to get the entries for printing
