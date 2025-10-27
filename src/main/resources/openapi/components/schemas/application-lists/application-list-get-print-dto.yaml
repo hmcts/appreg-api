@@ -1,0 +1,49 @@
+type: object
+description: Immutable DTO representing a detailed Application List.
+required:
+  - date
+  - time
+  - description
+  - status
+  - version
+
+properties:
+
+  date:
+    type: string
+    format: date
+    description: The calendar date on which the Application List is scheduled.
+    example: "2025-09-17"
+
+  time:
+    type: string
+    format: time
+    description: The time of day at which the Application List is scheduled, seconds are optional.
+    example: "10:30:00, 10:30"
+
+  courtName:
+    type: string
+    description: Name that identifies the Court Location.
+    example: "Bath Magistrates Court"
+
+  cja:
+    type: string
+    description: The Criminal Justice Area code and description.
+    example: "52 - Avon & Somerset"
+
+  otherLocationDescription:
+    type: string
+    description: Free-text location if not using a standard court.
+    example: "Temporary Courtroom at Town Hall"
+
+  duration:
+    type: string
+    description: The length of the hearing that heard the Application List.
+    example: "1 hour, 30 minutes"
+
+
+  version:
+    type: integer
+    format: int64
+    description: Current resource version for optimistic concurrency.
+    example: 3
