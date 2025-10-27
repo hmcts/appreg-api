@@ -40,7 +40,7 @@ properties:
   numberOfRespondents:
     type: integer
     description: Number of respondents required by the Application.
-    example: "0"
+    example: 0
 
   wordingFields:
     type: array
@@ -48,7 +48,7 @@ properties:
     description: An array of user-provided values used to populate placeholders in the entry wording template, applied in the order they are provided.
     example: ["25 October 2025", "London"]
 
-  feeStatus:
+  feeStatuses:
     type: array
     items: { $ref: '../fee-status/fee-status.yaml' }
 
@@ -67,7 +67,7 @@ properties:
     type: string
     maxLength: 20
     description: The Applicants account number (maximum 20 characters).
-    example: "CASE-001"
+    example: "ACC-001"
 
   notes:
     type: string
@@ -79,4 +79,4 @@ properties:
     type: string
     format: date
     description: The date on which the application was submitted. Will be set to current date if omitted.
-    example: "2025-15-01"
+    example: "2025-12-01"

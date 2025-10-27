@@ -40,7 +40,7 @@ properties:
     example: "APP001"
 
   status:
-    $ref: "./application-list-status.yaml"
+    $ref: "../application-lists/application-list-status.yaml"
 
   respondentOrganisation:
     type: string

@@ -3,7 +3,6 @@ description: Lightweight DTO for Application Lists Entries, not retrieved throug
 required:
   - id
   - applicantName
-  - respondentName
   - applicationTitle
   - isFeeRequired
   - isResulted

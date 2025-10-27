@@ -1,0 +1,6 @@
+type: string
+description: The type of Official hearing the application.
+enum:
+  - MAGISTRATE
+  - CLERK
+example: MAGISTRATE
