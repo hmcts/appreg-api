@@ -1,7 +1,7 @@
  # renovate: datasource=github-releases depName=microsoft/ApplicationInsights-Java
 ARG APP_INSIGHTS_AGENT_VERSION=3.7.5
 
-FROM busybox:1.36.1-musl AS bb
+FROM busybox:1.37.0-musl AS bb
 
 FROM hmctspublic.azurecr.io/base/java:21-distroless
 
