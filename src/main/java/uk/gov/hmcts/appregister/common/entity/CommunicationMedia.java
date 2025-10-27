@@ -9,7 +9,7 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -24,7 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * database.
  */
 @Entity
-@Table(name = "communication_media")
+@Table(name = TableNames.COMMUNICATION_MEDIA)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -44,10 +44,10 @@ public class CommunicationMedia extends BaseUnmanagedChangeableEntity implements
     private String detail;
 
     @Column(name = "start_date", nullable = false)
-    private OffsetDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private OffsetDateTime endDate;
+    private LocalDate endDate;
 
     @Column(name = "version_number", nullable = false)
     @Size(max = 38)

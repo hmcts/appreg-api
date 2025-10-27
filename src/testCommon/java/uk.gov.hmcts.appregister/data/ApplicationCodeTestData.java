@@ -3,8 +3,7 @@ package uk.gov.hmcts.appregister.data;
 import static org.instancio.Select.field;
 import static uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper.TRUE_VALUE;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.LocalDate;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -24,7 +23,7 @@ public class ApplicationCodeTestData
                 .wording("wording" + uniqueId)
                 .feeDue("1")
                 .requiresRespondent(TRUE_VALUE)
-                .startDate(OffsetDateTime.now(ZoneOffset.UTC))
+                .startDate(LocalDate.now())
                 .bulkRespondentAllowed(TRUE_VALUE);
     }
 

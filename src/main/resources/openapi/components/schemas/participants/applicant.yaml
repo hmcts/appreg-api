@@ -1,7 +1,5 @@
 type: object
 description: The applicant making the application.
-required:
-
 properties:
 
   person:

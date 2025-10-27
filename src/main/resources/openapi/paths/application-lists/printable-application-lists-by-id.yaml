@@ -1,0 +1,32 @@
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+
+get:
+  operationId: printApplicationList
+  tags:
+    - application-lists
+  summary: Get a print-ready JSON payload for an Application List
+  description: >
+    Returns all data required for printing the specified Application List as a single,
+    "print-ready" JSON document.
+  responses:
+    "200":
+      description: Page of Application Lists
+      headers:
+        Vary:
+          description: Print-ready JSON payload for the Application List
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-get-print-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

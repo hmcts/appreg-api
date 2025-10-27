@@ -5,47 +5,56 @@ required:
 properties:
 
   addressLine1:
-    type: String
+    type: string
     description: Line one of the participant's address.
     example: "10 Downing Street"
+    maxLength: 35
 
   addressLine2:
-    type: String
+    type: string
     description: Line two of the participant's address.
     example: "Westminster"
+    maxLength: 35
 
   addressLine3:
-    type: String
+    type: string
     description: Line three of the participant's address.
     example: "London"
+    maxLength: 35
 
   addressLine4:
-    type: String
+    type: string
     description: Line four of the participant's address.
     example: "Greater London"
+    maxLength: 35
 
   addressLine5:
-    type: String
+    type: string
     description: Line five of the participant's address.
     example: "United Kingdom"
+    maxLength: 35
 
   postcode:
-    type: String
+    type: string
     description: The participant's postcode.
     example: "SW1A 2AA"
+    maxLength: 8
 
   phone:
-    type: String
+    type: string
     description: The participant's home-phone number.
-    example: "SW1A 2AA"
+    example: "01225 123456"
+    maxLength: 20
 
   mobile:
-    type: String
+    type: string
     description: The participant's mobile number.
-    example: "SW1A 2AA"
+    example: "07123456789"
+    maxLength: 20
 
   email:
-    type: String
+    type: string
     format: email
     description: The participant's email address.
-    example: "SW1A 2AA"
+    example: "john-doe@gmail.com"
+    maxLength: 253
