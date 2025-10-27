@@ -416,7 +416,7 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
-  implementation 'org.openapitools:jackson-databind-nullable:0.2.7'
+  implementation 'org.openapitools:jackson-databind-nullable:0.2.8'
 
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
@@ -451,7 +451,7 @@ dependencies {
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
   testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
-  testImplementation("org.openapitools:jackson-databind-nullable:0.2.7")
+  testImplementation("org.openapitools:jackson-databind-nullable:0.2.8")
   testImplementation 'org.springframework.security:spring-security-test'
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
   testImplementation 'io.github.hakky54:logcaptor:2.12.1'
