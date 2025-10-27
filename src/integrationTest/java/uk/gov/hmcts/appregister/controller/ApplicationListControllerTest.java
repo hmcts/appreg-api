@@ -753,8 +753,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
     }
 
-    // --- GET ----------------------------------------------------------------------
     @Test
+    @DisplayName("GET Application List")
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -810,6 +810,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     // --- Not found: Application List -------------------------------------------------
     @Test
+    @DisplayName("GET Application List: 404 when list unknown")
     void givenUnknownApplicationList_whenGetApplicationList_then404() throws Exception {
         var token =
                 getATokenWithValidCredentials()

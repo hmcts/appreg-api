@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
@@ -630,120 +631,6 @@ public class ApplicationListServiceImplTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /** Minimal test double of the projection interface. */
-    private static class ProjectionStub implements ApplicationListEntrySummaryProjection {
-        private short sequenceNumber;
-        private String accountNumber;
-        private String applicant;
-        private String respondent;
-        private String postCode;
-        private String applicationTitle;
-        private boolean feeRequired;
-        private String result;
-
-        ProjectionStub withSequenceNumber(short sequenceNumber) {
-            this.sequenceNumber = sequenceNumber;
-            return this;
-        }
-
-        ProjectionStub withAccountNumber(String accountNumber) {
-            this.accountNumber = accountNumber;
-            return this;
-        }
-
-        ProjectionStub withApplicant(String applicant) {
-            this.applicant = applicant;
-            return this;
-        }
-
-        ProjectionStub withRespondent(String respondent) {
-            this.respondent = respondent;
-            return this;
-        }
-
-        ProjectionStub withPostCode(String postCode) {
-            this.postCode = postCode;
-            return this;
-        }
-
-        ProjectionStub withApplicationTitle(String applicationTitle) {
-            this.applicationTitle = applicationTitle;
-            return this;
-        }
-
-        ProjectionStub withFeeRequired(boolean feeRequired) {
-            this.feeRequired = feeRequired;
-            return this;
-        }
-
-        ProjectionStub withResult(String result) {
-            this.result = result;
-            return this;
-        }
-
-        // --- Implement projection getters ---
-        @Override
-        public short getSequenceNumber() {
-            return sequenceNumber;
-        }
-
-        @Override
-        public String getAccountNumber() {
-            return accountNumber;
-        }
-
-        @Override
-        public String getApplicant() {
-            return applicant;
-        }
-
-        @Override
-        public String getRespondent() {
-            return respondent;
-        }
-
-        @Override
-        public String getPostCode() {
-            return postCode;
-        }
-
-        @Override
-        public String getApplicationTitle() {
-            return applicationTitle;
-        }
-
-        @Override
-        public boolean isFeeRequired() {
-            return feeRequired;
-        }
-
-        @Override
-        public String getResult() {
-            return result;
-        }
-    }
-
-    private ApplicationListServiceImplTest.ProjectionStub createProjectionStub(
-            int sequenceNumber,
-            String accountNumber,
-            String applicant,
-            String respondent,
-            String postCode,
-            String applicationTitle,
-            boolean feeRequired,
-            String result) {
-
-        return new ApplicationListServiceImplTest.ProjectionStub()
-                .withSequenceNumber((short) sequenceNumber)
-                .withAccountNumber(accountNumber)
-                .withApplicant(applicant)
-                .withRespondent(respondent)
-                .withPostCode(postCode)
-                .withApplicationTitle(applicationTitle)
-                .withFeeRequired(feeRequired)
-                .withResult(result);
-    }
-
     private void mockFindSummariesById(UUID id, Pageable pageable) {
         var sequenceNumber = 1;
         var accountNumber = "1234567890";
@@ -754,15 +641,16 @@ public class ApplicationListServiceImplTest {
         var feeRequired = true;
         var result = "APPC";
         var projection =
-                createProjectionStub(
-                        sequenceNumber,
-                        accountNumber,
-                        applicant,
-                        respondent,
-                        postCode,
-                        applicationTitle,
-                        feeRequired,
-                        result);
+                applicationListEntrySummaryProjection()
+                        .sequenceNumber(sequenceNumber)
+                        .accountNumber(accountNumber)
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode(postCode)
+                        .applicationTitle(applicationTitle)
+                        .feeRequired(feeRequired)
+                        .result(result)
+                        .build();
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
