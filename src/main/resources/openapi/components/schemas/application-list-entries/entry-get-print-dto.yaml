@@ -1,0 +1,66 @@
+type: object
+description: An application view, used specifically for printing.
+required:
+  - applicant
+  - applicationCode
+  - applicationTitle
+  - applicationWording
+
+properties:
+
+  applicant:
+    $ref: '../participants/applicant.yaml'
+
+  respondent:
+    $ref: '../participants/respondent.yaml'
+
+  applicationCode:
+    type: string
+    description: Code that identifies the application.
+    example: "AD99001"
+
+  applicationTitle:
+    type: string
+    description: The title of the application.
+    example: "Appeal to Crown Court"
+
+  applicationWording:
+    type: string
+    description: Full description of the application.
+    example: "Notice of appeal in respect of a case heard on 10-01-2026"
+
+  resultWordings:
+    type: array
+    description: A list of result wordings for the application.
+    items:
+      type: string
+    example:
+      - "Appeal forwarded to Bristol Crown Court."
+      - "Respondent Attended."
+
+  officials:
+    type: array
+    description: A list of officials that ruled on the application.
+    items:
+      type: string
+    example:
+      - "Judge Alice Green."
+      - "Judge Emma Grey."
+
+  caseReference:
+    type: string
+    maxLength: 15
+    description: A reference code to identify a related case (maximum 15 characters).
+    example: "CASE-001"
+
+  accountReference:
+    type: string
+    maxLength: 20
+    description: The Applicants account number (maximum 20 characters).
+    example: "CCC-001"
+
+  notes:
+    type: string
+    maxLength: 4000
+    description: Notes about the application or the hearing (maximum 4000 characters).
+    example: "Time is 10:31, we have convened to talk about Application..."

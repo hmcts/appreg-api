@@ -3,9 +3,7 @@ description: Immutable DTO representing a detailed Application List.
 required:
   - date
   - time
-  - description
-  - status
-  - version
+  - entries
 
 properties:
 
@@ -19,7 +17,7 @@ properties:
     type: string
     format: time
     description: The time of day at which the Application List is scheduled, seconds are optional.
-    example: "10:30:00, 10:30"
+    example: "10:30"
 
   courtName:
     type: string
@@ -41,9 +39,8 @@ properties:
     description: The length of the hearing that heard the Application List.
     example: "1 hour, 30 minutes"
 
-
-  version:
-    type: integer
-    format: int64
-    description: Current resource version for optimistic concurrency.
-    example: 3
+  entries:
+    type: array
+    description: List of entries (empty when none).
+    items:
+      $ref: '../application-list-entries/entry-get-print-dto.yaml'
