@@ -49,7 +49,6 @@ properties:
     type: array
     items: { $ref: 'application-list-entry-summary.yaml' }
     description: A list of lightweight summaries of entries.
-    example: 4
 
   status: { $ref: './application-list-status.yaml' }
 
