@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,14 +18,14 @@ public class ApplicationCodeMapperTest {
     @Test
     public void testWithCompleteMapApplicationCodeGetSummaryDto() {
         Fee fee = new Fee();
-        fee.setAmount(Double.valueOf(232.34));
+        fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
 
-        Fee offsetfee = new Fee();
-        offsetfee.setAmount(Double.valueOf(23666.34));
-        offsetfee.setDescription("Description offset");
-        offsetfee.setOffsite(true);
+        Fee offsitefee = new Fee();
+        offsitefee.setAmount(BigDecimal.valueOf(23666.34));
+        offsitefee.setDescription("Description offset");
+        offsitefee.setOffsite(true);
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
@@ -35,7 +36,7 @@ public class ApplicationCodeMapperTest {
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         ApplicationCodeGetSummaryDto summaryDto =
-                applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsetfee);
+                applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
         // assert
         Assertions.assertEquals("appcode", summaryDto.getApplicationCode());
@@ -80,12 +81,12 @@ public class ApplicationCodeMapperTest {
     @Test
     public void testWithCompleteMapApplicationCodeGetDetailDto() {
         Fee fee = new Fee();
-        fee.setAmount(Double.valueOf(232.34));
+        fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
 
         Fee offsetfee = new Fee();
-        offsetfee.setAmount(Double.valueOf(23666.34));
+        offsetfee.setAmount(BigDecimal.valueOf(23666.34));
         offsetfee.setDescription("Description offset");
         offsetfee.setOffsite(true);
 
@@ -138,5 +139,35 @@ public class ApplicationCodeMapperTest {
         Assertions.assertEquals(Boolean.TRUE, getDetailDto.getBulkRespondentAllowed());
         Assertions.assertFalse(getDetailDto.getFeeReference().isPresent());
         Assertions.assertFalse(getDetailDto.getFeeDescription().isPresent());
+    }
+
+    @Test
+    void feeWithMoreThan2dpThrows() {
+        Fee fee = new Fee();
+        fee.setAmount(new BigDecimal("10.005")); // 3 dp
+
+        ApplicationCode code = new ApplicationCode();
+        code.setCode("appcode");
+
+        Assertions.assertThrows(
+                ArithmeticException.class,
+                () -> applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, null));
+    }
+
+    @Test
+    void minAndMaxWithinNumeric92() {
+        Fee min = new Fee();
+        min.setAmount(new BigDecimal("0.00"));
+        Fee max = new Fee();
+        max.setAmount(new BigDecimal("9999999.99")); // 9,2 upper bound
+
+        ApplicationCode code = new ApplicationCode();
+        code.setCode("x");
+
+        var dtoMin = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, min, null);
+        var dtoMax = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, max, null);
+
+        Assertions.assertEquals(0L, dtoMin.getFeeAmount().get().getValue());
+        Assertions.assertEquals(999_999_999L, dtoMax.getFeeAmount().get().getValue()); // pence
     }
 }

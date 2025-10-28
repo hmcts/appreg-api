@@ -4,7 +4,10 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +17,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,24 +42,33 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 public class ApplicationCodeServiceImplTest {
 
     @Mock private ApplicationCodeRepository repository;
-
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
-
     @Mock private ApplicationFeeService feeService;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
+    private final ObjectMapper objectMapper = new ObjectMapper();
     @Spy private final AuditOperationService auditService = new DummyAuditOperationService();
-
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();
-
     @Spy private final PageMapper pageMapper = new PageMapper();
 
-    @InjectMocks private ApplicationCodeServiceImpl applicationCodeService;
+    private ZoneId ukZone;
+    private Clock fixedClock;
+    private ApplicationCodeServiceImpl applicationCodeService;
 
     @BeforeEach
     public void setup() {
         objectMapper.registerModule(new JavaTimeModule());
+        ukZone = ZoneId.of("Europe/London");
+        fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
+
+        applicationCodeService =
+                new ApplicationCodeServiceImpl(
+                        repository,
+                        applicationCodeMapper,
+                        feeService,
+                        auditService,
+                        auditLifecycleListeners,
+                        pageMapper,
+                        fixedClock,
+                        ukZone);
     }
 
     @Test
@@ -95,7 +106,8 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String code = "code";
-        when(repository.search(code, null, criteria)).thenReturn(results);
+        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -136,7 +148,8 @@ public class ApplicationCodeServiceImplTest {
                         4);
 
         String title = "title";
-        when(repository.search(null, title, criteria)).thenReturn(results);
+        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -178,7 +191,8 @@ public class ApplicationCodeServiceImplTest {
 
         String title = "title";
         String code = "code";
-        when(repository.search(code, title, criteria)).thenReturn(results);
+        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        when(repository.search(code, title, todayUk, criteria)).thenReturn(results);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -217,7 +231,8 @@ public class ApplicationCodeServiceImplTest {
                                 applicationCode4),
                         Pageable.ofSize(4).withPage(0),
                         4);
-        when(repository.search(null, null, criteria)).thenReturn(results);
+        LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
+        when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =

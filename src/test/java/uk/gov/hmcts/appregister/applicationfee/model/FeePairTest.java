@@ -24,6 +24,6 @@ public class FeePairTest {
         FeePair pair = new FeePair(null, null);
 
         assertNull(pair.mainFee());
-        assertNull(pair.offsetFee());
+        assertNull(pair.offsiteFee());
     }
 }
