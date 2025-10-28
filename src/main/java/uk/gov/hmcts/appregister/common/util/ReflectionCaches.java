@@ -11,10 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A central place for cache to exist to avoid reflection based performance problems
+ * A central place for cache to exist to avoid reflection based performance problems. This cache is simple and lazy (not
+ * called then no memory usage). There is no associated eviction policy like other, more sophisticated  third party solutions.
+ * The cache is based on ClassValue.
  */
 public class ReflectionCaches {
-    public record MethodData(String tableName, String columnName, Method method) {}
+    public record MethodData(String tableName, String columnName, Method method, Field field) {}
     public record ReflectionMeta(List<MethodData> methods) {}
 
     /**
@@ -31,7 +33,7 @@ public class ReflectionCaches {
                         Method get = getGetterForField(type, field.getName());
                         String col = getColumnOrJoinColumnName(field);
                        if (get != null && col!=null) {
-                            returnMethods.add( new MethodData(table, col, get));
+                            returnMethods.add( new MethodData(table, col, get, field));
                         }
                     }
 
@@ -79,19 +81,19 @@ public class ReflectionCaches {
     }
 
     /**
-     * Returns the column name defined on a getter method via @Column or @JoinColumn.
+     * Returns the table name defined on a class @Table
      *
-     * @param method the Java method to inspect (usually a getter)
+     * @param clazz the Java method to inspect (usually a getter)
      * @return the column name if present, otherwise null
      */
-    public  static <T> String getTableName(Class<T> method) {
+    public  static <T> String getTableName(Class<T> clazz) {
         // Try @JoinColumn next
-        Table table = method.getAnnotation(Table.class);
+        Table table = clazz.getAnnotation(Table.class);
         if (table != null) {
             return table.name();
         }
 
-        // No annotation found
+        // No annotation found default the table name
         return "Table not defined";
     }
 
@@ -108,7 +110,6 @@ public class ReflectionCaches {
         while (current != null && current != Object.class) {
             try {
                 Field field = current.getDeclaredField(fieldName);
-                field.setAccessible(true); // allow access to private fields
                 return field;
             } catch (NoSuchFieldException ignored) {
                 current = current.getSuperclass(); // move up the hierarchy
@@ -140,6 +141,6 @@ public class ReflectionCaches {
         }
 
         // No annotation found
-        return null;
+        return "Column Name not defined";
     }
 }

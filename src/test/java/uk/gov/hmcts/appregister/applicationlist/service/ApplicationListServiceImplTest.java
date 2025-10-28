@@ -32,6 +32,8 @@ import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
@@ -63,6 +65,9 @@ public class ApplicationListServiceImplTest {
     @Mock private PageMapper pageMapper;
     @Mock private LocationLookupService locationLookupService;
 
+    @Mock private AuditOperationService auditOperationService;
+    @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
+
     private ApplicationListServiceImpl service;
 
     @BeforeEach
@@ -76,7 +81,9 @@ public class ApplicationListServiceImplTest {
                         entityManager,
                         pageMapper,
                         locationLookupService,
-                        deletionValidator);
+                        deletionValidator,
+                        auditOperationService,
+                        List.of(auditOperationLifecycleListener));
     }
 
     // -------- CREATE: COURT PATH --------

@@ -38,8 +38,8 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                 req -> {
                     var cja = locationLookupService.getCjaOrThrow(code);
 
-                    AuditResult<CriminalJusticeAreaGetDto> result
-                            = new AuditResult<>(criminalJusticeMapper.toDto(cja));
+                    AuditResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result
+                            = new AuditResult<>(criminalJusticeMapper.toDto(cja), Optional.empty(), Optional.empty());
 
                     return Optional.of(result);
                 },
@@ -63,8 +63,8 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             criminalJusticeAreaPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    AuditResult<CriminalJusticeAreaPage> result
-                            = new AuditResult<>(criminalJusticeAreaPage);
+                    AuditResult<CriminalJusticeAreaPage, CriminalJusticeArea> result
+                            = new AuditResult<>(criminalJusticeAreaPage, Optional.empty(), Optional.empty());
 
                     return Optional.of(result);
                 },

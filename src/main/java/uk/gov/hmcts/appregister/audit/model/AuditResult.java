@@ -14,12 +14,12 @@ import java.util.Optional;
 @Builder
 @Getter
 @AllArgsConstructor
-public class AuditResult<R> {
+public class AuditResult<R, E extends Keyable> {
     private final R resultingValue;
 
     /** The old entity contains the old data prior to the update or soft delete */
-    private final Optional<Keyable> oldEntity;
+    private final Optional<E> oldEntity;
 
     /** The new entity contains the updates data post update or soft delete*/
-    private final Optional<Keyable> newEntity;
+    private final Optional<E> newEntity;
 }

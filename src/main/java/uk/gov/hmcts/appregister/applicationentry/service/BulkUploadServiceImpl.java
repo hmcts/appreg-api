@@ -83,7 +83,7 @@ public class BulkUploadServiceImpl implements BulkUploadService {
 
     private ApplicationList findList(Long listId) {
         return listRepository
-                .findByPkAndCreatedUser(listId, userProvider.getUserId())
+                .findByIdAndCreatedUser(listId, userProvider.getUserId())
                 .orElseThrow(
                         () ->
                                 new ResponseStatusException(

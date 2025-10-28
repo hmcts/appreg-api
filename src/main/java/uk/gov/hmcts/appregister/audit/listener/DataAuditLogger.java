@@ -2,14 +2,14 @@ package uk.gov.hmcts.appregister.audit.listener;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditDifferentiator;
 import uk.gov.hmcts.appregister.audit.listener.diff.Difference;
-import uk.gov.hmcts.appregister.audit.listener.diff.Differentiable;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditDifferentiable;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
@@ -23,12 +23,15 @@ import java.util.Optional;
  * for create, update and delete operations to the data audit table.
  */
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
+
+    @Value("${spring.jpa.properties.hibernate.default_schema}")
+    private String schemaName;
+
     private final AuditDifferentiator differentiator;
 
-    private DataAuditRepository dataAuditRepository;
+    private final DataAuditRepository dataAuditRepository;
     @Override
     protected void started(StartEvent event) {
         log.info("Starting data audit operation for {}", event);
@@ -43,25 +46,28 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             // add each audit record for all identifies differences
             for (Difference difference : differenceList) {
                 DataAudit audit = new DataAudit();
-                audit.setRelatedKey(getDataIdOfEvent(event));
+                audit.setRelatedKey(getDataId(event));
                 audit.setColumnName(difference.getFieldName());
                 audit.setNewValue(difference.getNewValue());
                 audit.setOldValue(difference.getOldValue());
                 audit.setEventName(event.getRequestAction().getEventName());
                 audit.setTableName(difference.getTableName());
                 audit.setUpdateType(event.getRequestAction().getType());
+                audit.setSchemaName(schemaName);
 
                 // save the audit record
                 dataAuditRepository.save(audit);
+                log.info("Saved data audit record: {}", audit);
             }
         }
     }
 
-    private Long getDataIdOfEvent(CompleteEvent event) {
-        Optional<Keyable> nKeyable = event.getNewValue();
-        Optional<Keyable> oKeyable = event.getOldValue();
-        long oldValueId = oKeyable.isPresent() ? oKeyable.get().getId() : -1L;
-        return nKeyable.isPresent() ? nKeyable.get().getId() : oldValueId;
+    /**
+     * gets the id of the new object. If we dont have a new object then return -1
+     * @return The data id
+     */
+    private Long getDataId(CompleteEvent event) {
+        return event.getNewValue().isPresent() ? event.getNewValue().get().getId() : -1L;
     }
 
     @Override
@@ -78,20 +84,23 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
         List<Difference> differenceList = new ArrayList<>();
         Optional<Keyable> nKeyable = event.getNewValue();
         Optional<Keyable> oKeyable = event.getOldValue();
-        if (nKeyable.isPresent() &&oKeyable.isPresent()) {
-            // check of differentiable is implemented if so use that implementation
-            if (differentiator == null  && nKeyable.get() instanceof Differentiable diff) {
-                Keyable o = nKeyable.get();
-                differenceList = diff.diff(o);
+        if (nKeyable.isPresent() && oKeyable.isPresent()) {
+            // if we dont have an object differentiable then use the generic differentiator
+            if (nKeyable.get() instanceof AuditDifferentiable diff) {
+                Keyable o = oKeyable.get();
+                differenceList = diff.diff(event.getRequestAction().getType(), o);
+                log.debug("Calling the audit differentiable diff method for new value {}", diff);
             }
             else {
-                Keyable o = nKeyable.get();
-                Keyable o1 = oKeyable.get();
+                Keyable newVal = nKeyable.get();
+                Keyable oldVal = oKeyable.get();
 
-                differenceList = differentiator.diff(o, o1);
+                differenceList = differentiator.diff(event.getRequestAction().getType(), oldVal, newVal);
+                log.debug("Calling the audit differentiator with old value {} and new value {}", oldVal, newVal);
             }
         } else if (event.getNewValue().isPresent()) {
-            differenceList = differentiator.diff(nKeyable.get());
+            differenceList = differentiator.diff(event.getRequestAction().getType(), nKeyable.get());
+            log.debug("Calling the audit differentiator for new value only {}", nKeyable.get());
         }
 
         return differenceList;

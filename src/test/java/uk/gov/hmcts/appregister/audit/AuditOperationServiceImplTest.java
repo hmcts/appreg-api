@@ -19,6 +19,9 @@ import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 @ExtendWith(MockitoExtension.class)
 class AuditOperationServiceImplTest {
@@ -71,7 +74,7 @@ class AuditOperationServiceImplTest {
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
-                    return Optional.of(new AuditResult<>(applicationCodeDto));
+                    return Optional.of(new AuditResult<>(applicationCodeDto, Optional.empty(), Optional.empty()));
                 },
                 listener);
 
@@ -173,5 +176,102 @@ class AuditOperationServiceImplTest {
         Assertions.assertEquals("No Correlation Id Found", failOp.getMessageUuid());
         Assertions.assertEquals(-1, failOp.getMessageStatus().getStatus());
         Assertions.assertEquals("NULL", failOp.getMessageContent());
+    }
+
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateOpNoNewValuebutOldValue() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.CREATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(), Optional.of(new ApplicationList()), Optional.empty()));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateBothNewAndOldValue() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.CREATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(), Optional.of(new ApplicationList()), Optional.of(new ApplicationList())));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateOldValueAndNoNewOrOld() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.CREATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(), Optional.empty(), Optional.empty()));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateNoNewOrOld() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.UPDATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(), Optional.empty(), Optional.empty()));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateNew() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.UPDATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(), Optional.empty(), Optional.of(new ApplicationList())));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateOldNoNew() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception = Assertions.assertThrows(AppRegistryException.class, () -> auditOperationServiceImpl.processAudit(
+                Optional.of(new ApplicationList()),
+                TestAuditOperation.UPDATE,
+                (req) -> {
+                    // Simulate some processing and return a response
+                    return Optional.of(new AuditResult<>(new ApplicationList(),  Optional.of(new ApplicationList()), Optional.empty()));
+                },
+                listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
     }
 }

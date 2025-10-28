@@ -22,9 +22,9 @@ public interface AuditOperationService {
      *     of the operation
      * @param listener The listeners that get executed in the order they are passed
      */
-    <T> T processAudit(
-            Optional<Keyable> oldValue,
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditResult<T>>> execution,
+    <T, E extends Keyable> T processAudit(
+            Optional<E> oldValue,
+            AuditOperation<E> auditType,
+            Function<BaseAuditEvent, Optional<AuditResult<T, E>>> execution,
             AuditOperationLifecycleListener... listener);
 }

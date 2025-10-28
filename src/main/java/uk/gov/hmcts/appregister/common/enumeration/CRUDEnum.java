@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.common.enumeration;
 
+/**
+ * A programmatic means to determine the type of operation that is being performed
+ */
 public enum CRUDEnum {
     CREATE('C'),
     READ('R'),

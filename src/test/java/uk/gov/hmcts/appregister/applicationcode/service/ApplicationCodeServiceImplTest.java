@@ -226,16 +226,15 @@ public class ApplicationCodeServiceImplTest {
     class DummyAuditOperationService implements AuditOperationService {
 
         @Override
-        public <T> T processAudit(Optional<Keyable> oldValue, AuditOperation auditType, Function<BaseAuditEvent, Optional<AuditResult<T>>> execution, AuditOperationLifecycleListener... listener) {
-            Optional<AuditResult<T>> optional =
+        public <T, E extends Keyable> T processAudit(Optional<E> oldValue, AuditOperation<E> auditType, Function<BaseAuditEvent, Optional<AuditResult<T, E>>> execution, AuditOperationLifecycleListener... listener) {
+            Optional<AuditResult<T, E>> optional =
                     execution.apply(
                             new CompleteEvent(
                                     new StartEvent(
                                             AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                                             UUID.randomUUID().toString(),
-                                            Optional.empty(),
                                             Optional.empty()),
-                                    "result"));
+                                    "result", Optional.empty()));
             return optional.get().getResultingValue();
         }
     }

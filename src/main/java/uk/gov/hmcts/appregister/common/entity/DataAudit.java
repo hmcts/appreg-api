@@ -76,7 +76,6 @@ public class DataAudit implements Changeable {
     private Long relatedKey;
 
     @Column(name = "update_type", nullable = false)
-    @Size(max = 1)
     @Convert(converter = CrudConverter.class)
     private CRUDEnum updateType;
 
@@ -102,7 +101,4 @@ public class DataAudit implements Changeable {
     @Column(name = "user_name")
     @Size(max = 250)
     private String changedBy;
-
-    @Column(name = "created_date")
-    private OffsetDateTime changeDate;
 }

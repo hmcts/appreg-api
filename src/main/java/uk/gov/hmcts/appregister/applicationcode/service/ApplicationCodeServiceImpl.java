@@ -64,13 +64,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                     pageable);
 
 
-                    AuditResult<Page<ApplicationCodeDto>> result = new AuditResult<>
-                            (applicationCodeList.map(
+                    AuditResult<Page<ApplicationCodeDto>, ApplicationCode> result = new AuditResult<>(applicationCodeList.map(
                                     code -> {
                                         FeePair feePair =
                                                 feeService.resolveFeePair(code.getFeeReference());
                                         return applicationCodeMapper.toReadDto(code, feePair);
-                                    }));
+                                    }), Optional.empty(), Optional.empty());
 
 
                     return Optional.of(result);
@@ -106,8 +105,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     }
 
                     FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
-                    AuditResult<ApplicationCodeDto> result = new AuditResult<>
-                            (applicationCodeMapper.toReadDto(codeToConsider, feePair));
+                    AuditResult<ApplicationCodeDto, ApplicationCode> result = new AuditResult<>(
+                            applicationCodeMapper.toReadDto(codeToConsider, feePair), Optional.empty(), Optional.empty());
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

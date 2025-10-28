@@ -19,7 +19,7 @@ class AuditOperationLifecycleListenerAdapterTest {
         AuditOperationLifecycleListenerAdapter my =
                 Mockito.mock(
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
-        my.eventPerformed(new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty(), Optional.empty()));
+        my.eventPerformed(new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty()));
         Mockito.verify(my, times(1)).started(Mockito.notNull());
     }
 
@@ -30,8 +30,8 @@ class AuditOperationLifecycleListenerAdapterTest {
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
         my.eventPerformed(
                 new CompleteEvent(
-                        new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty(), Optional.empty()),
-                        null));
+                        new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty()),
+                        null, Optional.empty()));
         Mockito.verify(my, times(1)).finished(Mockito.notNull());
     }
 
@@ -44,8 +44,8 @@ class AuditOperationLifecycleListenerAdapterTest {
                 new FailEvent(
                         new CompleteEvent(
                                 new StartEvent(
-                                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty(), Optional.empty()),
-                                null)));
+                                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", Optional.empty()),
+                                null, Optional.empty())));
         Mockito.verify(my, times(1)).finishFail(Mockito.notNull());
     }
 }

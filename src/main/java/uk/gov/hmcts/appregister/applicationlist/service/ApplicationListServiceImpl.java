@@ -101,11 +101,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      * @throws AppRegistryException if no court or multiple courts are found for the given code
      */
-    private AuditResult<ApplicationListGetDetailDto> createWithCourt(ApplicationListCreateDto dto) {
+    private AuditResult<ApplicationListGetDetailDto, ApplicationList> createWithCourt(ApplicationListCreateDto dto) {
         var court = locationLookupService.getActiveCourtOrThrow(dto.getCourtLocationCode());
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(dto, court));
         var hydratedEntity = refreshEntity(savedEntity);
-        return new AuditResult<ApplicationListGetDetailDto> (mapper.toGetDetailDto(hydratedEntity, null), Optional.empty(), Optional.of(hydratedEntity));
+        return new AuditResult<>(mapper.toGetDetailDto(hydratedEntity, null), Optional.empty(), Optional.of(hydratedEntity));
     }
 
     /**
@@ -118,11 +118,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @return the created Application List DTO
      * @throws AppRegistryException if no CJA or multiple CJAs are found for the given code
      */
-    private AuditResult<ApplicationListGetDetailDto> createWithCja(ApplicationListCreateDto dto) {
+    private AuditResult<ApplicationListGetDetailDto, ApplicationList> createWithCja(ApplicationListCreateDto dto) {
         var cja = locationLookupService.getCjaOrThrow(dto.getCjaCode());
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(dto, cja));
         var hydratedEntity = refreshEntity(savedEntity);
-        return new AuditResult<ApplicationListGetDetailDto> (mapper.toGetDetailDto(hydratedEntity, cja), Optional.empty(), Optional.of(hydratedEntity));
+        return new AuditResult<> (mapper.toGetDetailDto(hydratedEntity, cja), Optional.empty(), Optional.of(hydratedEntity));
     }
 
     @Override

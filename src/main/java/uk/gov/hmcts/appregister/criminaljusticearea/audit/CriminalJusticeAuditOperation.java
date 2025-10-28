@@ -1,26 +1,21 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.audit;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.CRUDEnum;
 
 @RequiredArgsConstructor
-public enum CriminalJusticeAuditOperation implements AuditOperation {
-    GET_CRIMINAL_JUSTICE_AUDIT_EVENT( "Get Court Justice Area",CRUDEnum.READ),
-
-    GET_CRIMINAL_JUSTICE_AUDITS_EVENT("Get Court Justice Areaa", CRUDEnum.READ);
+@Getter
+public enum CriminalJusticeAuditOperation implements AuditOperation<CriminalJusticeArea> {
+    GET_CRIMINAL_JUSTICE_AUDIT_EVENT( "Get Court Justice Area",CRUDEnum.READ, CriminalJusticeArea.class),
+    GET_CRIMINAL_JUSTICE_AUDITS_EVENT("Get Court Justice Areaa", CRUDEnum.READ, CriminalJusticeArea.class);
 
     private final String eventName;
 
-    private final CRUDEnum crudEnum;
+    private final CRUDEnum type;
 
-    @Override
-    public String getEventName() {
-        return eventName;
-    }
-
-    @Override
-    public CRUDEnum getType() {
-        return crudEnum;
-    }
+    private final Class<CriminalJusticeArea> entityClass;
 }

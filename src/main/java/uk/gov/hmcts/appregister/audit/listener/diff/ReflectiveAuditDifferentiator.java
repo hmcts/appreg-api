@@ -3,9 +3,13 @@ package uk.gov.hmcts.appregister.audit.listener.diff;
 import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CRUDEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
@@ -14,144 +18,313 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * A generic reflective audit differentiator that can be used to compare two objects of any type for audit purposes
  *
  * If performance issues are a concern, consider implementing a specific differentiator for the object type.
  *
- * This class uses a cache to mitigate the use of reflective performance issues where possible
+ * This class does uses a cache to mitigate the use of reflective performance issues where possible
+ *
+ * The class has build is recursion protection to avoid circular references. Any errors are not fatal
+ * to the core operation of the business logic but will be logged.
+ *
+ * We can toggle recursion of nested objects and collection objects via the constructor parameters
  */
 @Slf4j
-@Component
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
 
+    /** Do we need to recurse nested objects */
+    private final boolean recurseNestedObjects;
+
+    /** Do we need to recurse collections*/
+    private final boolean recurseCollectionObjects;
+
+    /** Represents a null value. We default to a null string */
+    public final static String EMPTY_VALUE= "null";
+
     @Override
-    public List<Difference> diff(Keyable o, Keyable t1) {
-        List<Difference> diffs = new ArrayList<>();
-        difference(o, t1, diffs, new HashSet<>());
-        return diffs;
+    public boolean doesRecurseComplexObjects() {
+        return recurseNestedObjects;
     }
 
     @Override
-    public List<Difference> diff(Keyable t1) {
-        List<Difference> diffs = new ArrayList<>();
-        difference( t1, diffs, new HashSet<>());
-        return diffs;
+    public boolean doesRecurseCollectionObjects() {
+        return recurseCollectionObjects;
     }
 
-    public static List<Difference> difference(Keyable newVal, Keyable oldVal) {
+    @Override
+    public List<Difference> diff(CRUDEnum crudEnum, Keyable oldVal, Keyable newVal) {
+        return difference(crudEnum, oldVal, newVal, recurseNestedObjects, recurseCollectionObjects);
+    }
+
+    @Override
+    public List<Difference> diff(CRUDEnum crudEnum, Keyable newVal) {
+        return difference(crudEnum, null, newVal, recurseNestedObjects, recurseCollectionObjects);
+    }
+
+    /**
+     * process the differences for the new value
+     * @param oldVal The old value
+     * @param newVal The new value
+     * @param recurseNestedObjects Whether we recurse into nested objects
+     * @param recurseCollectionObjects Whether we recurse into collection objects
+    */
+    public static List<Difference> difference(CRUDEnum crudEnum, Keyable oldVal, Keyable newVal, boolean recurseNestedObjects, boolean recurseCollectionObjects) {
         List<Difference> diffs = new ArrayList<>();
-        if (!newVal.getId().equals(oldVal.getId())) {
+
+        if (oldVal == null && newVal == null) {
+            log.debug("Two null values have been detected. No differences to process");
+            return List.of();
+        }
+
+        // make sure if we are comparing old or new then the ids match
+        if (newVal != null && oldVal != null && (newVal.getId() == null || !newVal.getId().equals(oldVal.getId()))) {
             log.debug("Expected the same key {} {}", newVal.getId(), oldVal.getId());
             throw new AppRegistryException(CommonAppError.INTERNAL_SERVER_ERROR,
                     "Cannot compare objects with different keys");
         }
 
-        if (!newVal.getClass().getCanonicalName().equals(oldVal.getClass().getCanonicalName())) {
+        // make sure if we are comparing old or new then the types match
+        if ((newVal != null && oldVal != null && !newVal.getClass().getCanonicalName().equals(oldVal.getClass().getCanonicalName()))) {
             log.debug("Expected the same key {} {}", newVal.getId(), oldVal.getId());
             throw new AppRegistryException(CommonAppError.INTERNAL_SERVER_ERROR,
                     "Cannot compare objects that are not the same type");
         }
 
-        if (oldVal == null && newVal != null) {
-            // old value is null so use the new value as a basis of diff
-            difference(newVal, diffs, new HashSet<>());
-        } if (newVal == null && oldVal != null) {
-            // new value is null so use the old value as a basis of diff
-            difference(oldVal, diffs, new HashSet<>());
-        } else if (newVal != null && oldVal != null) {
-            difference(newVal, oldVal, diffs, new HashSet<>());
-        }
+        difference(crudEnum, oldVal, newVal, diffs, new HashSet<>(), recurseNestedObjects, recurseCollectionObjects, isAuditableAnnotated(newVal !=null ? newVal.getClass() : oldVal.getClass()));
 
         return diffs;
     }
 
-    private static void  difference(Object newVal, List<Difference> differenceList, Set<String> processed) {
-        try {
-            if (newVal != null) {
-                for (ReflectionCaches.MethodData method : ReflectionCaches.METHOD_CACHE.get(newVal.getClass()).methods()) {
-                    // record all new data as we dont have a an old to compare against
-                    Object newValRet = invokeMethod(method, newVal, processed);
-
-                    if (!isComplexWrapper(method.method().getReturnType())) {
-                        log.debug("Difference detected {} in field new : {}", method.method().getName(),
-                                newVal);
-                        differenceList.add(new Difference(method.tableName(), method.columnName(), "null", newValRet != null ? newValRet.toString() : "null"));
-                    } else {
-                        // recurse and get the differences in the complex object
-                        difference(newValRet, null, differenceList, processed);
-                    }
-                }
-            }
-        }
-        catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException | SecurityException e)
-        {
-            throw new AppRegistryException(CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Problem when establishing difference between objects", e);
-        }
+    /**
+     * process the differences for the new value against nothing i.e. all contents show up as a difference
+     * @param newVal The new value
+     * @param differenceList the captured differences
+     * @param processed The processed method call and the objects that were invoked
+     * @param recurseNestedObjects Whether we recurse into nested objects
+     * @param recurseCollectionObjects Whether we recurse into collection objects
+     */
+    private static void  difference(CRUDEnum crudEnum, Object newVal, List<Difference> differenceList, Set<String> processed,
+                                    boolean recurseNestedObjects, boolean recurseCollectionObjects) {
+        difference(crudEnum, null, newVal, differenceList, processed, recurseNestedObjects,
+                recurseCollectionObjects,  isAuditableAnnotated(newVal.getClass()));
     }
 
+    /**
+     * process the differences for the new value
+     * @param oldVal The old value
+     * @param newVal The new value
+     * @param differenceList the captured differences
+     * @param processed The processed method call and the objects that were invoked
+     * @param useAnnotations Whether we should use annotations to determine what diferences to capture
+     */
+    private static void difference(CRUDEnum crudEnum, Object oldVal, Object newVal, List<Difference> differenceList, Set<String> processed,
+                                   boolean recurseNestedObjects,
+                                   boolean recurseCollectionObjects,
+                                   boolean useAnnotations) {
+            if (newVal != null || oldVal != null) {
+                for (ReflectionCaches.MethodData method : ReflectionCaches.METHOD_CACHE.get(newVal != null
+                        ? newVal.getClass() : oldVal.getClass()).methods()) {
 
-        private static void difference(Object newVal, Object oldVal, List<Difference> differenceList, Set<String> processed) {
-        try {
-                if (newVal != null || oldVal != null) {
-                    for (ReflectionCaches.MethodData method : ReflectionCaches.METHOD_CACHE.get(newVal != null ? newVal.getClass() : oldVal.getClass()).methods()) {
+                    // if we are using annotations check if the method is annotated for this crud operation
+                    // else ignore the method
+                    if (useAnnotations && !isFieldAnnotatedForCrudAuditOperation(method.field(), crudEnum)) {
+                        log.debug("Skipping method {} as not annotated for {}", method.method().getName(), crudEnum);
+                        continue;
+                    }
 
+                    // check if they are logical equivalent
+                    if (!isComplexWrapper(method.method().getReturnType())) {
                         log.debug("Method {}", method.method().getName());
 
-                        Object newValRet = newVal != null ? invokeMethod(method, newVal, processed) : null;
+                        Object newValRet = newVal != null ? invokeMethodForNew(method, newVal, processed) : null;
 
                         log.debug("New Value Ret {}", newValRet);
 
-                        Object oldValRet = oldVal != null ? invokeMethod(method, oldVal, processed) : null;
+                        Object oldValRet = oldVal != null ? invokeMethodForOld(method, oldVal, processed) : null;
                         log.debug("Old Value Ret {}", oldValRet);
 
-                        // check if they are logical equivalent
-                        if (!isComplexWrapper(method.method().getReturnType())) {
+                        // detect diff
+                        if (newValRet != null && !newValRet.toString().equals(oldValRet!=null ? oldValRet.toString() : null)) {
                             log.debug("Difference detected {} in field new : {} and old{}", method.method().getName(),
                                     newVal, oldVal);
 
-                            // detect diff
-                            if (newValRet != null && !newValRet.equals(oldValRet)) {
-                                differenceList.add(new Difference(method.tableName(), method.columnName(), oldValRet != null ? oldValRet.toString() : "null",
-                                        newValRet.toString()));
-                            } else if (oldValRet != null && !oldValRet.equals(newValRet)) {
-                                differenceList.add(new Difference(method.tableName(), method.columnName(), oldValRet.toString(),
-                                        newValRet != null ? newValRet.toString() : "null"));
-                            }
-                        } else {
+                            differenceList.add(new Difference(method.tableName(), method.columnName(), oldValRet != null ? oldValRet.toString() : EMPTY_VALUE,
+                                    newValRet.toString()));
+                        } else if (oldValRet != null && !oldValRet.toString().equals(newValRet!=null ? newValRet.toString() : null)) {
+                            log.debug("Difference detected {} in field new : {} and old{}", method.method().getName(),
+                                    newVal, oldVal);
+
+                            differenceList.add(new Difference(method.tableName(), method.columnName(), oldValRet.toString(),
+                                    newValRet != null ? newValRet.toString() : EMPTY_VALUE));
+                        }
+                    } else {
+
+                        // if collection then iterate and compare contents
+                        if (isCollection(method.method().getReturnType()) && recurseCollectionObjects) {
+                            processListDiff(crudEnum, oldVal, newVal, differenceList, recurseNestedObjects,
+                                     useAnnotations, processed, method);
+                        }
+                        // if a complex object then recurse
+                        else if (recurseNestedObjects) {
+                            log.debug("Method {}", method.method().getName());
+
+                            Object newValRet = newVal != null ? invokeMethodForNew(method, newVal, processed) : null;
+
+                            log.debug("New Value Ret {}", newValRet);
+
+                            Object oldValRet = oldVal != null ? invokeMethodForOld(method, oldVal, processed) : null;
+                            log.debug("Old Value Ret {}", oldValRet);
+
                             // recurse and get the differences in the complex object
-                            difference(newValRet, oldValRet, differenceList, processed);
+                            difference(crudEnum, oldValRet, newValRet, differenceList, processed, recurseNestedObjects, recurseCollectionObjects, useAnnotations);
                         }
                     }
                 }
-        }
-        catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException | SecurityException e)
-        {
-            throw new AppRegistryException(CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Problem when establishing difference between objects", e);
+            }
+    }
+
+    /**
+     * processes the list difference between the old and new value objects
+     * @param crudEnum The CRUD operation
+     * @param oldVal The old value
+     * @param newVal The new value
+     * @param differenceList The list to build up
+     * @param recurseNestedObjects Whether we recurse into nested objects
+     * @param useAnnotations Whether we use annotations to determine what to audit
+     * @param processed The processed set to avoid infinite recursion
+     * @param method The method data to get the list
+     */
+    private static void processListDiff(CRUDEnum crudEnum, Object oldVal, Object newVal, List<Difference> differenceList,
+                                    boolean recurseNestedObjects,
+                                    boolean useAnnotations,
+                                    Set<String> processed,
+                                    ReflectionCaches.MethodData method) {
+        List<?> newValRetLst = newVal != null ? (List<?>)invokeMethodForNew(method, newVal, processed) : null;
+        List<?> oldValRetLst = oldVal != null ? (List<?>)invokeMethodForOld(method, oldVal, processed) : null;
+
+        if ((newValRetLst !=null && oldValRetLst != null && newValRetLst.size() >= oldValRetLst.size()) || (newValRetLst!=null
+                && oldValRetLst == null)) {
+            for (int i = 0; i < newValRetLst.size(); i++) {
+                boolean complex = isComplexWrapper(newValRetLst.get(i).getClass());
+                if (complex && recurseNestedObjects) {
+                    difference(crudEnum, getFromIndex(oldValRetLst, i), getFromIndex(newValRetLst, i), differenceList, processed, recurseNestedObjects, true, useAnnotations);
+                } else if (!complex){
+                    differenceList.add(new Difference(method.tableName(), method.columnName(), getFromIndex(oldValRetLst, i) != null ? getFromIndex(oldValRetLst, i).toString() : EMPTY_VALUE,
+                            getFromIndex(newValRetLst, i) != null ? getFromIndex(newValRetLst, i).toString() : EMPTY_VALUE));
+                }
+            }
+        } else if (oldValRetLst != null) {
+            for (int i = 0; i < oldValRetLst.size(); i++) {
+                boolean complex = isComplexWrapper(oldValRetLst.get(i).getClass());
+                if (complex && recurseNestedObjects) {
+                    difference(crudEnum, getFromIndex(oldValRetLst, i), getFromIndex(newValRetLst, i), differenceList, processed, recurseNestedObjects, true, useAnnotations);
+                } else if (!complex){
+                    differenceList.add(new Difference(method.tableName(), method.columnName(), getFromIndex(oldValRetLst, i).toString(),
+                            getFromIndex(newValRetLst, i) != null ? getFromIndex(newValRetLst, i).toString() : EMPTY_VALUE));
+                }
+            }
         }
     }
 
-    private static Object invokeMethod(ReflectionCaches.MethodData method, Object target, Set<String> processed) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    /**
+     * gets an object from a list at the specified index safely and consume the associated exception
+     * @param list The list to get the object from
+     * @param index The index to get
+     * @return The object value or null
+     */
+    private static Object getFromIndex(List<?> list, int index) {
+        if (list != null && list.size() > index) {
+            try {
+                return list.get(index);
+            } catch (IndexOutOfBoundsException e) {
+                log.debug("Index out of bounds {} for list size {}", index, list.size());
+            }
+        }
+        return null;
 
+    }
+
+    private static Object invokeMethodForNew(ReflectionCaches.MethodData method, Object target, Set<String> processed) {
+        return invokeMethod("NEW_", method, target,processed);
+    }
+
+    private static Object invokeMethodForOld(ReflectionCaches.MethodData method, Object target, Set<String> processed) {
+        return invokeMethod("OLD_", method, target,processed);
+    }
+
+    /**
+     * invokes a method and records its invocation against the target to avoid infinite recursion
+     * @param prefix The prefix to use for the processed set
+     * @param method The method to invoke
+     * @param target The target object
+     * @param processed The processed set to avoid infinite recursion
+     */
+    private static Object invokeMethod(String prefix, ReflectionCaches.MethodData method, Object target, Set<String> processed) {
         if (target!=null) {
-           if (!processed.contains(method.method() + Integer.valueOf(System.identityHashCode(target)).toString())) {
-                Object m = method.method().invoke(target);
-                processed.add(method.method() + target.toString());
+            int hash = System.identityHashCode(target);
 
-               log.debug("Processed {} on {}", method.method(), target);
-                return m;
+           if (!processed.contains(prefix + method.method() + hash)) {
+               try {
+                   Object m = method.method().invoke(target);
+                   processed.add(prefix + method.method() + hash);
+
+                   log.debug("Processed {} on {}", method.method(), target);
+                   return m;
+               }
+               catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException | SecurityException e)
+               {
+                   log.warn("Carrying on processing", e);
+               }
             } else {
-                log.debug("Already processed {} on {}", method.method(), target);
+                log.debug("Already processed {} using {}", method.method(), target);
            }
         }
         return null;
     }
 
+    /**
+     * Checks if this type is complex i.e. a collection or a keyable object
+     * @param type The type to check
+     * @return True or false
+     */
     public static boolean isComplexWrapper(Class<?> type) {
         log.debug("Is complex : {} {}",  type.toString(), Keyable.class.isAssignableFrom(type));
-        return Keyable.class.isAssignableFrom(type);
+        return isCollection(type) || Keyable.class.isAssignableFrom(type);
+    }
+
+    /**
+     * Checks if this type is a collection i.e. list
+     * @param type The type to check
+     * @return True or false
+     */
+    public static boolean isCollection(Class<?> type) {
+        log.debug("Is complex : {} {}",  type.toString(), Keyable.class.isAssignableFrom(type));
+        return List.class.isAssignableFrom(type);
+    }
+
+    /**
+     * Is this an auditable class
+     * @param cls The class to check
+     * @return true if auditable
+     */
+    public static boolean isAuditableAnnotated(Class<?> cls) {
+        return cls.getAnnotation(AuditEnabled.class) != null;
+    }
+
+    /**
+     * is the method annotated with the relevant crud audit operation
+     * @param method The method to check
+     * @param crudEnum The crud operation
+     * @return true if annotated for the crud operation
+     */
+    public static boolean isFieldAnnotatedForCrudAuditOperation(Field method, CRUDEnum crudEnum) {
+        Audit audit = method.getAnnotation(Audit.class);
+        return (audit != null && crudEnum == audit.action());
     }
 }

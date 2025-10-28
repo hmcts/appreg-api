@@ -58,7 +58,7 @@ public class DatabaseReset {
         applicationCodeRepository.deleteAll(
                 applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationListRepository.deleteAll(
-                applicationListRepository.findByPkGreaterThanEqual(SEQUENCE_START_VALUE));
+                applicationListRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         criminalJusticeAreaRepository.deleteAll(
                 criminalJusticeAreaRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         dataAuditRepository.deleteAll();
