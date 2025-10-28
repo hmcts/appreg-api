@@ -84,7 +84,6 @@ components:
     application-list-get-print-dto:     { $ref: './components/schemas/application-lists/application-list-get-print-dto.yaml' }
     # APPLICATION LIST ENTRIES
     entry-get-print-dto:                { $ref: './components/schemas/application-list-entries/entry-get-print-dto.yaml'}
-    # APPLICATION LIST ENTRIES
     entry-get-detail-dto:               { $ref: './components/schemas/application-list-entries/entry-get-detail-dto.yaml' }
     entry-create-dto:                   { $ref: './components/schemas/application-list-entries/entry-create-dto.yaml' }
     entry-get-filter-dto:               { $ref: './components/schemas/application-list-entries/entry-get-filter-dto.yaml' }
@@ -102,7 +101,7 @@ components:
     criminal-justice-area-get-dto:      { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-get-dto.yaml'}
     criminal-justice-area-page:         { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml' }
     # FEE STATUS
-    fee-status:                         { $ref: '/components/schemas/fee-status/fee-status.yaml'}
+    fee-status:                         { $ref: './components/schemas/fee-status/fee-status.yaml'}
     # PARTICIPANTS
     applicant:                          { $ref: './components/schemas/participants/applicant.yaml' }
     contact-details:                    { $ref: './components/schemas/participants/contact-details.yaml' }
