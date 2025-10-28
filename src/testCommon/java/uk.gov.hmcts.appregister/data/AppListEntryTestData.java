@@ -4,7 +4,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -12,6 +11,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 public class AppListEntryTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<
                 ApplicationListEntry, ApplicationListEntry.ApplicationListEntryBuilder> {
+
+    public static final String TRUE_VALUE = "1";
 
     @Override
     public ApplicationListEntry.ApplicationListEntryBuilder someMinimal() {
@@ -22,7 +23,7 @@ public class AppListEntryTestData
                 .applicationCode(code)
                 .applicationList(list)
                 .applicationListEntryWording("Wording " + uniqueId)
-                .entryRescheduled(ApplicationListEntryMapper.TRUE_VALUE)
+                .entryRescheduled(TRUE_VALUE)
                 .sequenceNumber(Short.MIN_VALUE)
                 .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")))
                 .entryFeeIds(List.of(new AppListEntryFeeIdTestData().someComplete()));

@@ -1,0 +1,13 @@
+type: object
+description: The person making, or responding to, the application.
+required:
+  - name
+  - contactDetails
+
+properties:
+
+  name:
+    $ref: './full-name.yaml'
+
+  contactDetails:
+    $ref: './contact-details.yaml'
