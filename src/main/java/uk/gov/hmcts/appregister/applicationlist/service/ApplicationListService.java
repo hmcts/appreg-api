@@ -74,16 +74,10 @@ public interface ApplicationListService {
      *
      * @param dto the filter parameters used to constrain the search results
      * @param pageable pagination and sorting configuration
-     * @param includeSummaries include entriesCount and entriesSummary for each Application List
-     * @param entriesPageable pagination and sorting configuration for entries
      * @return an {@link ApplicationListPage} containing a paginated set of application list
      *     summaries
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if invalid filter
      *     parameters are provided or underlying data retrieval fails
      */
-    ApplicationListPage getPage(
-            ApplicationListGetFilterDto dto,
-            Pageable pageable,
-            Boolean includeSummaries,
-            Pageable entriesPageable);
+    ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable);
 }

@@ -10,10 +10,10 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ApplicationListEntryMapStructMapper {
 
-    ApplicationListEntrySummary toSummaryModel(
+    ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
 
-    List<ApplicationListEntrySummary> toSummaryModelList(
+    List<ApplicationListEntrySummary> toSummaryDtoList(
             List<ApplicationListEntrySummaryProjection> summaryProjections);
 
     /**

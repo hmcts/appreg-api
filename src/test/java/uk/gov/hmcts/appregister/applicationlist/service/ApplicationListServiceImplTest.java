@@ -49,7 +49,6 @@ import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAre
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -290,7 +289,7 @@ public class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -338,7 +337,7 @@ public class ApplicationListServiceImplTest {
                         .time(DEFAULT_TIME);
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         // Then
         assertThat(result).isNotNull();
@@ -386,7 +385,7 @@ public class ApplicationListServiceImplTest {
                         .cjaCode("52")
                         .otherLocationDescription("town");
 
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -416,7 +415,7 @@ public class ApplicationListServiceImplTest {
 
         doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
 
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -457,7 +456,7 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("CJA Name"));
@@ -491,7 +490,7 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Some Court"));
@@ -523,82 +522,10 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
-        ApplicationListPage result = service.getPage(filter, pageable, false, pageable);
+        ApplicationListPage result = service.getPage(filter, pageable);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
-    }
-
-    @Test
-    void getPage_includeSummaries_success_returnsMappedPage() {
-
-        // Resolve CJA
-        CriminalJusticeArea cja = new CriminalJusticeArea();
-        String cjaDescription = "CJA Desc";
-        cja.setDescription(cjaDescription);
-        when(locationLookupService.getCjaOrThrow("52")).thenReturn(cja);
-
-        // DB results
-        ApplicationList row = new ApplicationList();
-        row.setUuid(UUID.randomUUID());
-        row.setCja(cja);
-        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
-
-        Pageable pageable = mock(Pageable.class);
-        when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
-                        isNull(),
-                        eq(cja),
-                        eq(DEFAULT_DATE),
-                        eq(DEFAULT_TIME),
-                        eq("morning"),
-                        eq("town hall"),
-                        eq(pageable)))
-                .thenReturn(dbPage);
-
-        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
-                .thenReturn(List.of());
-
-        // Page metadata mapping
-        doAnswer(
-                        inv -> {
-                            ApplicationListPage target = inv.getArgument(1);
-                            target.totalPages(1);
-                            target.elementsOnPage(1);
-                            return null;
-                        })
-                .when(pageMapper)
-                .toPage(eq(dbPage), any(ApplicationListPage.class));
-
-        // Given a filter with CJA + otherLocation (court is null)
-        ApplicationListGetFilterDto filter =
-                new ApplicationListGetFilterDto()
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(null)
-                        .cjaCode("52")
-                        .date(DEFAULT_DATE)
-                        .time(DEFAULT_TIME)
-                        .description("morning")
-                        .otherLocationDescription("town hall");
-
-        mockFindSummariesById(row.getUuid(), pageable);
-
-        ApplicationListGetSummaryDto applicationListGetSummaryDto =
-                new ApplicationListGetSummaryDto();
-        when(mapper.toGetSummaryDto(row, 0, cjaDescription))
-                .thenReturn(applicationListGetSummaryDto);
-
-        // When
-        ApplicationListPage result = service.getPage(filter, pageable, true, pageable);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getContent()).isNotNull();
-        assertThat(result.getContent().size()).isEqualTo(1);
-
-        verify(locationLookupService).getCjaOrThrow("52");
-        verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
-        verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
     }
 
     @Test
@@ -632,6 +559,7 @@ public class ApplicationListServiceImplTest {
     }
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
+        var uuid = UUID.randomUUID();
         var sequenceNumber = 1;
         var accountNumber = "1234567890";
         var applicant = "Mustafa's Org";
@@ -642,6 +570,7 @@ public class ApplicationListServiceImplTest {
         var result = "APPC";
         var projection =
                 applicationListEntrySummaryProjection()
+                        .uuid(uuid)
                         .sequenceNumber(sequenceNumber)
                         .accountNumber(accountNumber)
                         .applicant(applicant)

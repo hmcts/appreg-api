@@ -26,21 +26,4 @@ public class ProblemAssertUtil {
                 expectedErrorDetail.getHttpCode().value(), problemDetail.getStatus());
         Assertions.assertEquals(expectedErrorDetail.getMessage(), problemDetail.getDetail());
     }
-
-    /**
-     * Asserts an expected problem details response on an actual response but does not assert an app
-     * code as sometimes an AppRegistryException is thrown without an app code.
-     * actualResponseSpecification the actual response
-     *
-     * @param expectedErrorDetail The expected detail
-     * @param actualResponse The rest assured response
-     */
-    public static void assertEqualsWithoutAppCode(
-            ErrorDetail expectedErrorDetail, Response actualResponse) {
-        ProblemDetail problemDetail = actualResponse.as(ProblemDetail.class);
-        Assertions.assertEquals(expectedErrorDetail.getMessage(), problemDetail.getTitle());
-        Assertions.assertEquals(
-                expectedErrorDetail.getHttpCode().value(), problemDetail.getStatus());
-        Assertions.assertEquals(expectedErrorDetail.getMessage(), problemDetail.getDetail());
-    }
 }

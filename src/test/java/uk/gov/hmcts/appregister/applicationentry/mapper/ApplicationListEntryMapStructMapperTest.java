@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -12,6 +13,7 @@ class ApplicationListEntryMapStructMapperTest {
 
     @Test
     void testToSummaryModel_provideValidData_validModelGenerated() {
+        var uuid = UUID.randomUUID();
         var sequenceNumber = 1;
         var accountNumber = "1234567890";
         var applicant = "Mustafa's Org";
@@ -22,6 +24,7 @@ class ApplicationListEntryMapStructMapperTest {
         var result = "APPC";
         var projection =
                 applicationListEntrySummaryProjection()
+                        .uuid(uuid)
                         .sequenceNumber(sequenceNumber)
                         .accountNumber(accountNumber)
                         .applicant(applicant)
@@ -33,9 +36,10 @@ class ApplicationListEntryMapStructMapperTest {
                         .build();
 
         var mapper = new ApplicationListEntryMapStructMapperImpl();
-        var model = mapper.toSummaryModel(projection);
+        var model = mapper.toSummaryDto(projection);
 
         assertApplicationListEntrySummary(
+                uuid,
                 sequenceNumber,
                 model,
                 accountNumber,
@@ -49,6 +53,7 @@ class ApplicationListEntryMapStructMapperTest {
 
     @Test
     void testToSummaryModelList_provideValidData_validModelListGenerated() {
+        var uuid1 = UUID.randomUUID();
         var sequenceNumber1 = 1;
         var accountNumber1 = "1234567890";
         var applicant1 = "Mustafa's Org";
@@ -59,6 +64,7 @@ class ApplicationListEntryMapStructMapperTest {
         var result1 = "APPC";
         var projection1 =
                 applicationListEntrySummaryProjection()
+                        .uuid(uuid1)
                         .sequenceNumber(sequenceNumber1)
                         .accountNumber(accountNumber1)
                         .applicant(applicant1)
@@ -69,6 +75,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .result(result1)
                         .build();
 
+        var uuid2 = UUID.randomUUID();
         var sequenceNumber2 = 2;
         var accountNumber2 = "1234567891";
         var applicant2 = "AW62958 300919";
@@ -79,6 +86,7 @@ class ApplicationListEntryMapStructMapperTest {
         var result2 = "RESP";
         var projection2 =
                 applicationListEntrySummaryProjection()
+                        .uuid(uuid2)
                         .sequenceNumber(sequenceNumber2)
                         .accountNumber(accountNumber2)
                         .applicant(applicant2)
@@ -91,11 +99,12 @@ class ApplicationListEntryMapStructMapperTest {
 
         var mapper = new ApplicationListEntryMapStructMapperImpl();
         List<ApplicationListEntrySummary> list =
-                mapper.toSummaryModelList(List.of(projection1, projection2));
+                mapper.toSummaryDtoList(List.of(projection1, projection2));
 
         assertThat(list).hasSize(2);
 
         assertApplicationListEntrySummary(
+                uuid1,
                 sequenceNumber1,
                 list.getFirst(),
                 accountNumber1,
@@ -107,6 +116,7 @@ class ApplicationListEntryMapStructMapperTest {
                 result1);
 
         assertApplicationListEntrySummary(
+                uuid2,
                 sequenceNumber2,
                 list.getLast(),
                 accountNumber2,
@@ -119,8 +129,9 @@ class ApplicationListEntryMapStructMapperTest {
     }
 
     private static void assertApplicationListEntrySummary(
+            UUID uuid,
             int sequenceNumber,
-            ApplicationListEntrySummary model,
+            ApplicationListEntrySummary dto,
             String accountNumber,
             String applicant,
             String respondent,
@@ -128,13 +139,14 @@ class ApplicationListEntryMapStructMapperTest {
             String applicationTitle,
             boolean feeRequired,
             String result) {
-        Assertions.assertEquals(sequenceNumber, model.getSequenceNumber());
-        Assertions.assertEquals(accountNumber, model.getAccountNumber().orElse(null));
-        Assertions.assertEquals(applicant, model.getApplicant().orElse(null));
-        Assertions.assertEquals(respondent, model.getRespondent().orElse(null));
-        Assertions.assertEquals(postCode, model.getPostCode().orElse(null));
-        Assertions.assertEquals(applicationTitle, model.getApplicationTitle());
-        Assertions.assertEquals(feeRequired, model.getFeeRequired());
-        Assertions.assertEquals(result, model.getResult().orElse(null));
+        Assertions.assertEquals(uuid, dto.getUuid());
+        Assertions.assertEquals(sequenceNumber, dto.getSequenceNumber());
+        Assertions.assertEquals(accountNumber, dto.getAccountNumber().orElse(null));
+        Assertions.assertEquals(applicant, dto.getApplicant().orElse(null));
+        Assertions.assertEquals(respondent, dto.getRespondent().orElse(null));
+        Assertions.assertEquals(postCode, dto.getPostCode().orElse(null));
+        Assertions.assertEquals(applicationTitle, dto.getApplicationTitle());
+        Assertions.assertEquals(feeRequired, dto.getFeeRequired());
+        Assertions.assertEquals(result, dto.getResult().orElse(null));
     }
 }

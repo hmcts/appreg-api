@@ -20,10 +20,6 @@ public class DefaultErrorDetail implements ErrorDetail {
         return new DefaultErrorDetail(status, message, appCode);
     }
 
-    public static DefaultErrorDetail create(HttpStatus status, String message) {
-        return new DefaultErrorDetail(status, message, null);
-    }
-
     @Override
     public HttpStatus getHttpCode() {
         return httpCode;

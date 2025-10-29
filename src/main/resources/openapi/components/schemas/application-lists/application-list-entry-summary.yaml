@@ -1,6 +1,7 @@
 type: object
 description: Lightweight summary of an entry.
 required:
+  - uuid
   - sequenceNumber
   - accountNumber
   - applicant
@@ -11,6 +12,10 @@ required:
   - resulted
 
 properties:
+
+  uuid:
+    type: string
+    format: uuid
 
   sequenceNumber:
     type: integer

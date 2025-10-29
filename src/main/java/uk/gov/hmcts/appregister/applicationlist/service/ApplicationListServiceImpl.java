@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,7 +32,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
@@ -101,13 +99,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
         // Map each projection to a summary model
-        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryModel(projection)));
+        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
 
         // Fetch the number of entries linked to this list.
         // Avoids running a separate count query later when mapping to a DTO.
         Long entryCount = fetchEntryCounts(List.of(id)).getOrDefault(id, ZERO_ENTITIES);
 
-        return buildDto(list, entryCount, summaries);
+        return buildGetDetailDto(list, entryCount, summaries);
     }
 
     private static boolean hasCourt(ApplicationListCreateDto dto) {
@@ -173,7 +171,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return entity;
     }
 
-    private ApplicationListGetDetailDto buildDto(
+    private ApplicationListGetDetailDto buildGetDetailDto(
             ApplicationList list,
             Long entriesCount,
             List<ApplicationListEntrySummary> entriesSummary) {
@@ -193,17 +191,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      *
      * @param dto the filter criteria used to select application lists
      * @param pageable pagination and sorting information
-     * @param includeSummaries include entriesCount and entriesSummary for each Application List
-     * @param entriesPageable pagination and sorting information for entries
      * @return a populated {@link ApplicationListPage} with metadata and summary items
      */
     @Transactional(readOnly = true)
     @Override
-    public ApplicationListPage getPage(
-            ApplicationListGetFilterDto dto,
-            Pageable pageable,
-            Boolean includeSummaries,
-            Pageable entriesPageable) {
+    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
 
         CriminalJusticeArea cja = resolveCja(dto.getCjaCode()).orElse(null);
 
@@ -225,25 +217,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         ? Map.of()
                         : fetchEntryCounts(dbPage.map(ApplicationList::getUuid).toList());
 
-        Map<UUID, List<ApplicationListEntrySummary>> entrySummariesPerList = new HashMap<>();
-
-        if (includeSummaries) {
-            for (ApplicationList list : dbPage.getContent()) {
-                // Fetch results from the repository using pagination
-                Page<ApplicationListEntrySummaryProjection> entriesDbPage =
-                        aleRepository.findSummariesById(list.getUuid(), entriesPageable);
-
-                List<ApplicationListEntrySummary> summaries = new ArrayList<>();
-
-                // Map each projection to a summary model
-                entriesDbPage.forEach(
-                        projection -> summaries.add(entryMapper.toSummaryModel(projection)));
-
-                entrySummariesPerList.put(list.getUuid(), summaries);
-            }
-        }
-
-        return assembleResponsePage(dbPage, entriesPerListCounter, entrySummariesPerList);
+        return assembleResponsePage(dbPage, entriesPerListCounter);
     }
 
     private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {
@@ -261,9 +235,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     private ApplicationListPage assembleResponsePage(
-            Page<ApplicationList> appLists,
-            Map<UUID, Long> entriesPerListCounter,
-            Map<UUID, List<ApplicationListEntrySummary>> entrySummariesPerList) {
+            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter) {
         var responsePage = new ApplicationListPage();
         pageMapper.toPage(appLists, responsePage);
 
@@ -276,14 +248,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         for (ApplicationList al : appLists) {
             long entryCount = entriesPerListCounter.getOrDefault(al.getUuid(), ZERO_ENTITIES);
             String location = deriveLocation(al);
-
-            ApplicationListGetSummaryDto dto = mapper.toGetSummaryDto(al, entryCount, location);
-
-            if (dto != null) {
-                dto.setEntriesSummary(entrySummariesPerList.get(al.getUuid()));
-            }
-
-            responsePage.addContentItem(dto);
+            responsePage.addContentItem(mapper.toGetSummaryDto(al, entryCount, location));
         }
         return responsePage;
     }

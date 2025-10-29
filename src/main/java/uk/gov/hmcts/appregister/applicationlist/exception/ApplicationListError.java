@@ -12,14 +12,6 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
                             + " and 'otherLocationDescription' must be supplied.",
                     "AL-1")),
-
-    /**
-     * No Application List was found for the requested UUID.
-     *
-     * <p>HTTP 404 Not Found <br>
-     */
-    LIST_NOT_FOUND(DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found")),
-
     DELETION_ID_NOT_FOUND(
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND,
@@ -29,7 +21,9 @@ public enum ApplicationListError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "The application list is not in a deletable state",
-                    "AL-3"));
+                    "AL-3")),
+    LIST_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-4"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

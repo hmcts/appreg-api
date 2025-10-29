@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.util;
 
+import java.util.UUID;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public final class ApplicationListEntrySummaryProjectionUtil {
@@ -9,6 +10,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
     }
 
     public static final class Builder {
+        private UUID uuid;
         private short sequenceNumber;
         private String accountNumber;
         private String applicant;
@@ -17,6 +19,11 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         private String applicationTitle;
         private boolean feeRequired;
         private String result;
+
+        public Builder uuid(UUID uuid) {
+            this.uuid = uuid;
+            return this;
+        }
 
         public Builder sequenceNumber(int sequenceNumber) {
             this.sequenceNumber = (short) sequenceNumber;
@@ -60,6 +67,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
 
         public ApplicationListEntrySummaryProjection build() {
             return new Impl(
+                    uuid,
                     sequenceNumber,
                     accountNumber,
                     applicant,
@@ -72,6 +80,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
     }
 
     private static final class Impl implements ApplicationListEntrySummaryProjection {
+        private final UUID uuid;
         private final short sequenceNumber;
         private final String accountNumber;
         private final String applicant;
@@ -82,6 +91,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         private final String result;
 
         Impl(
+                UUID uuid,
                 short sequenceNumber,
                 String accountNumber,
                 String applicant,
@@ -90,6 +100,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
                 String applicationTitle,
                 boolean feeRequired,
                 String result) {
+            this.uuid = uuid;
             this.sequenceNumber = sequenceNumber;
             this.accountNumber = accountNumber;
             this.applicant = applicant;
@@ -103,6 +114,11 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         @Override
         public short getSequenceNumber() {
             return sequenceNumber;
+        }
+
+        @Override
+        public UUID getUuid() {
+            return uuid;
         }
 
         @Override

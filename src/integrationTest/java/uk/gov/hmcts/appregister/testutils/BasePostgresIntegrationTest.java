@@ -53,13 +53,6 @@ public abstract class BasePostgresIntegrationTest {
                 .toURL();
     }
 
-    /*protected URL getLocalUrlWithId(String context, UUID id)
-        throws MalformedURLException {
-        return URI.create(
-                "http://localhost:" + port + "/" + context + "?id=" + id)
-            .toURL();
-    }*/
-
     protected URL getLocalUrl(String context) throws MalformedURLException {
         return URI.create("http://localhost:" + port + "/" + context).toURL();
     }

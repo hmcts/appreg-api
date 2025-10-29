@@ -26,26 +26,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists?includeSummaries=true&entriesPage=0&entriesSize=10",
+							"raw": "{{APP_REG_HOST}}/application-lists",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists"
-							],
-							"query": [
-								{
-									"key": "includeSummaries",
-									"value": "true"
-								},
-								{
-									"key": "entriesPage",
-									"value": "0"
-								},
-								{
-									"key": "entriesSize",
-									"value": "10"
-								}
 							]
 						}
 					},
@@ -67,10 +53,9 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
 							"port": "4550",
 							"path": [

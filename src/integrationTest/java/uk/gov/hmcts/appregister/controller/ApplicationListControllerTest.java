@@ -719,41 +719,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    @DisplayName("GET: with includeSummaries flag set to true")
-    void givenincludeSummariesTrue_whenGet_then200() throws Exception {
-
-        String prefix = uniquePrefix("get-default-sort");
-
-        createWithCourt(prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
-
-        var userToken =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        Response resp =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.empty(),
-                        Optional.empty(),
-                        List.of(), // Rely on default sort
-                        getLocalUrl(WEB_CONTEXT),
-                        userToken,
-                        rs ->
-                                rs.header("Accept", VND_JSON_V1)
-                                        .queryParam("description", prefix)
-                                        .queryParam("includeSummaries", true),
-                        null);
-
-        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        ApplicationListPage page = resp.as(ApplicationListPage.class);
-
-        assertThat(page.getContent()).hasSize(1);
-        assertThat(page.getContent().getFirst().getEntriesCount()).isEqualTo(0);
-        assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
-    }
-
-    @Test
     @DisplayName("GET Application List")
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
         var token =
@@ -826,7 +791,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert success
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEqualsWithoutAppCode(
-                ApplicationListError.LIST_NOT_FOUND.getCode(), resp);
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 }

@@ -1,6 +1,10 @@
 package uk.gov.hmcts.appregister.common.projection;
 
+import java.util.UUID;
+
 public interface ApplicationListEntrySummaryProjection {
+
+    UUID getUuid();
 
     short getSequenceNumber();
 
