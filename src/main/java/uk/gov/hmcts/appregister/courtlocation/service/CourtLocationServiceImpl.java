@@ -64,6 +64,8 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
+                    log.debug(
+                            "Start: Find active Court Location for code: {} date: {}", code, date);
                     final List<NationalCourtHouse> rows =
                             repository.findActiveCourtsWithDate(code, date);
 
@@ -78,7 +80,8 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                                         .formatted(code, date));
                     }
 
-                    // Map the single matching entity to a detail DTO
+                    log.debug(
+                            "Finish: Find active Court Location for code: {} date: {}", code, date);
                     return Optional.of(mapper.toDetailDto(rows.getFirst()));
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;
@@ -101,28 +104,33 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
-                    // Fetch results from the repository using filters and pagination
-                    Page<NationalCourtHouse> dbPage =
+                    log.debug(
+                            "Start: Find Application List for: name: {} app code: {} with paging: {}",
+                            nameFilter,
+                            codeFilter,
+                            pageable);
+                    final Page<NationalCourtHouse> dbPage =
                             repository.findAllActiveCourts(codeFilter, nameFilter, pageable);
 
-                    // Populate the API page response with metadata
                     var responsePage = new CourtLocationPage();
 
-                    // Ensure content is never null: API spec requires an array, so return []
-                    // instead of null
                     if (responsePage.getContent() == null) {
                         responsePage.setContent(new ArrayList<>());
                     }
 
                     pageMapper.toPage(dbPage, responsePage);
 
-                    // Map each entity to a summary DTO and add to the page content
                     dbPage.forEach(
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
+                    log.debug(
+                            "Start: Find Application List for: name: {} app code: {} with paging: {}",
+                            nameFilter,
+                            codeFilter,
+                            pageable);
+
                     return Optional.of(responsePage);
                 },
-                // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }
