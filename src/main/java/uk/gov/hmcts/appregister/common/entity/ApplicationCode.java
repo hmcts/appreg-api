@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,6 +24,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
 /*
  * No XSD so we had to map the data using
@@ -66,12 +69,12 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     private String legislation;
 
     @Column(name = "fee_due", nullable = false)
-    @Size(max = 1)
-    private String feeDue;
+    @Convert(converter = YesNoConverter.class)
+    private YesOrNo feeDue;
 
     @Column(name = "application_code_respondent", nullable = false)
-    @Size(max = 1)
-    private String requiresRespondent;
+    @Convert(converter = YesNoConverter.class)
+    private YesOrNo requiresRespondent;
 
     @Column(name = "ac_destination_email_address_1")
     @Size(max = 553)
@@ -88,8 +91,8 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
     private LocalDate endDate;
 
     @Column(name = "bulk_respondent_allowed", nullable = false)
-    @Size(max = 1)
-    private String bulkRespondentAllowed;
+    @Convert(converter = YesNoConverter.class)
+    private YesOrNo bulkRespondentAllowed;
 
     @Column(name = "version", nullable = false)
     @Version

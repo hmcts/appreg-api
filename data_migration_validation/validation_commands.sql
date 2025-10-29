@@ -15,9 +15,9 @@ select data_validation.refresh_summary();
 -- comparison queries
 select * from data_validation.v_metadata;
 
-select * from data_validation.v_count_diff where count_diff > 0;
+select * from data_validation.v_count_diff where count_diff <> 0;
 
-select * from data_validation.v_bucket_diff where bucket_diff > 0;
+select * from data_validation.v_bucket_diff where bucket_diff <> 0;
 
 select * from data_validation.v_minmax_diff
 where (NULLIF(btrim(o_min),' ')

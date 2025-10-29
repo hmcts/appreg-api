@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.config;
 
 import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,11 @@ public class AppConfig implements WebMvcConfigurer {
     @Bean
     DateTimeProvider utcDateTimeProvider(Clock clock) {
         return () -> java.util.Optional.of(OffsetDateTime.now(clock));
+    }
+
+    @Bean
+    public ZoneId ukZone() {
+        return ZoneId.of("Europe/London");
     }
 
     /**

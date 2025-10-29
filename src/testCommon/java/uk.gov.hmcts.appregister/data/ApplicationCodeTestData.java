@@ -1,14 +1,15 @@
 package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
-import static uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper.TRUE_VALUE;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.util.StringUtil;
 
 public class ApplicationCodeTestData
@@ -21,19 +22,22 @@ public class ApplicationCodeTestData
         return data.code(StringUtil.stripToMax(uniqueId.toString(), 10))
                 .title("title" + uniqueId)
                 .wording("wording" + uniqueId)
-                .feeDue("1")
-                .requiresRespondent(TRUE_VALUE)
-                .startDate(LocalDate.now())
-                .bulkRespondentAllowed(TRUE_VALUE);
+                .feeDue(YesOrNo.YES)
+                .requiresRespondent(YesOrNo.YES)
+                .startDate(LocalDate.now(ZoneOffset.UTC))
+                .bulkRespondentAllowed(YesOrNo.YES);
     }
 
     @Override
     public ApplicationCode someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        LocalDate today = LocalDate.now();
         return Instancio.of(ApplicationCode.class)
                 .ignore(field(ApplicationCode::getId))
                 .ignore(field(ApplicationCode::getVersion))
                 .ignore(field(ApplicationCode::getApplicationListEntryList))
+                .set(field(ApplicationCode::getStartDate), today.minusDays(10))
+                .set(field(ApplicationCode::getEndDate), today.plusDays(10))
                 .withSettings(settings)
                 .create();
     }

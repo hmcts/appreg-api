@@ -51,7 +51,7 @@ public class ApplicationFeeServiceImplTest {
 
         // assert
         Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsetFee());
+        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
     }
 
     @Test
@@ -72,7 +72,7 @@ public class ApplicationFeeServiceImplTest {
 
         // assert
         Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertNull(feePair.offsetFee());
+        Assertions.assertNull(feePair.offsiteFee());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertEquals(feeOffsite, feePair.offsetFee());
+        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
         Assertions.assertNull(feePair.mainFee());
     }
 
@@ -108,7 +108,7 @@ public class ApplicationFeeServiceImplTest {
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
 
         // assert
-        Assertions.assertNull(feePair.offsetFee());
+        Assertions.assertNull(feePair.offsiteFee());
         Assertions.assertNull(feePair.mainFee());
     }
 
@@ -144,6 +144,6 @@ public class ApplicationFeeServiceImplTest {
 
         // assert
         Assertions.assertEquals(feeMain, feePair.mainFee());
-        Assertions.assertEquals(feeOffsite, feePair.offsetFee());
+        Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
     }
 }

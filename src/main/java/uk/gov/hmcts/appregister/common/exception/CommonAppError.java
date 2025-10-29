@@ -7,7 +7,10 @@ public enum CommonAppError implements ErrorCodeEnum {
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Sort key not suitable", "COMMON-1")),
     INTERNAL_SERVER_ERROR(
             DefaultErrorDetail.create(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "General unexpected failure", "COMMON-2"));
+                    HttpStatus.INTERNAL_SERVER_ERROR, "General unexpected failure", "COMMON-2")),
+    SORT_DIRECTION_NOT_SUITABLE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Sort direction not suitable", "COMMON-3"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

@@ -21,6 +21,10 @@ tags:
     description:
       An Application List records the date, time and location at which one or more Applications is to be considered by a
       magistrate or delegated authority.
+  - name: application-lists-entries
+    description:
+      An Application List Entry records all details of an individual Application. This will always belong to an
+      Application List.
   - name: court-locations
     description:
       Court Locations are reference data, not managed in App Reg. They are a consolidation of both crown and magistrates
@@ -46,8 +50,9 @@ paths:
   # APPLICATION LISTS
   /application-lists:             { $ref: './paths/application-lists/application-lists.yaml' }
   /application-lists/{id}:        { $ref: './paths/application-lists/application-lists-by-id.yaml' }
+  /application-lists/{id}/print:  { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
   # COURT LOCATIONS
-  /court-locations:              { $ref: './paths/court-locations/court-locations.yaml' }
+  /court-locations:               { $ref: './paths/court-locations/court-locations.yaml' }
   /court-locations/{code}:        { $ref: './paths/court-locations/court-locations-by-code.yaml' }
   # CRIMINAL JUSTICE AREAS
   /criminal-justice-areas:        { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
@@ -72,6 +77,9 @@ components:
     application-list-update-dto:        { $ref: './components/schemas/application-lists/application-list-update-dto.yaml' }
     application-list-page:              { $ref: './components/schemas/application-lists/application-list-page.yaml' }
     application-list-get-filter-dto:    { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
+    application-list-get-print-dto:     { $ref: './components/schemas/application-lists/application-list-get-print-dto.yaml' }
+    # APPLICATION LIST ENTRIES
+    entry-get-print-dto:                { $ref: './components/schemas/application-list-entries/entry-get-print-dto.yaml'}
     # COMMON
     problem:                            { $ref: './components/schemas/common/problem.yaml' }
     page:                               { $ref: './components/schemas/common/page.yaml' }
@@ -83,6 +91,13 @@ components:
     # CRIMINAL JUSTICE AREAS
     criminal-justice-area-get-dto:      { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-get-dto.yaml'}
     criminal-justice-area-page:         { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml' }
+    # PARTICIPANTS
+    applicant:                          { $ref: './components/schemas/participants/applicant.yaml' }
+    contact-details:                    { $ref: './components/schemas/participants/contact-details.yaml' }
+    full-name:                          { $ref: './components/schemas/participants/full-name.yaml' }
+    organisation:                       { $ref: './components/schemas/participants/organisation.yaml' }
+    person:                             { $ref: './components/schemas/participants/person.yaml' }
+    respondent:                         { $ref: './components/schemas/participants/respondent.yaml' }
     # RESULT CODES
     result-code-get-detail-dto:         { $ref: './components/schemas/result-codes/result-code-get-detail-dto.yaml' }
     result-code-get-summary-dto:        { $ref: './components/schemas/result-codes/result-code-get-summary-dto.yaml' }

@@ -35,7 +35,7 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     protected String issuer;
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.audiences}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.audiences[0]}")
     protected String audience;
 
     @Autowired protected WireMockServer wireMockServer;
