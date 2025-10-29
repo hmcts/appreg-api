@@ -14,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
@@ -28,6 +30,7 @@ import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
@@ -173,6 +176,21 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         : fetchEntryCounts(dbPage.map(ApplicationList::getUuid).toList());
 
         return assembleResponsePage(dbPage, entriesPerListCounter);
+    }
+
+    @Override
+    @Transactional
+    public ApplicationListGetPrintDto print(UUID id) {
+        ApplicationList list =
+            repository
+                .findByUuid(id)
+                .orElseThrow(
+                    () ->
+                        new AppRegistryException(
+                            ApplicationListError.LIST_NOT_FOUND,
+                            "No application list found for UUID '%s'"
+                                .formatted(id)));
+
     }
 
     private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {

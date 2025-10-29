@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 
 /**
@@ -60,4 +61,21 @@ public interface ApplicationListService {
      *     parameters are provided or underlying data retrieval fails
      */
     ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable);
+
+    /**
+     * Gets an Application List with all its Application List Entries.
+     *
+     * <p>This method encapsulates all business logic required to:
+     *
+     * <ul>
+     *   <li>Fetch the list metadata and its entries
+     *   <li>Query entries ordered by sequence number
+     * </ul>
+     *
+     * <p>The operation is read-only and does not modify any data.
+     *
+     * @param id the unique identifier of the application list to retrieve
+     * @return a detailed DTO representing the retrieved application list
+     */
+    ApplicationListGetPrintDto print(UUID id);
 }
