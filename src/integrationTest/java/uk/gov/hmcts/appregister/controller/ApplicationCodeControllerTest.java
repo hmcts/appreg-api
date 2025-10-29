@@ -1,12 +1,13 @@
 package uk.gov.hmcts.appregister.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -24,7 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
+import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -72,6 +73,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // a date that is without range for the main but out of range for the offsite fee
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
 
     @Test
@@ -92,7 +94,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        Assertions.assertEquals(defaultPageSize, page.getContent().size());
+        assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
@@ -102,7 +104,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG,
@@ -124,7 +126,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-        Assertions.assertEquals(defaultPageSize, page.getContent().size());
+        assertEquals(defaultPageSize, page.getContent().size());
 
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
@@ -134,58 +136,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG,
                                 GET_APPCODES_AUDIT_ACTION,
                                 OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
-    }
-
-    @Test
-    public void givenValidRequest_whenGetApplicationCodesWithoutOffsiteFee_thenReturn200()
-            throws Exception {
-        // a date that is within range for the main but out of range for the offsite fee
-        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-
-        // assert
-        ApplicationCodeGetSummaryDto applicationCodeDto =
-                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
-
-        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
-
-        // assert the audit log message
-        Assertions.assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        Assertions.assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
     }
 
     @Test
@@ -214,7 +171,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG,
@@ -222,7 +179,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                                 OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 COMPLETION_AUDIT_LOG,
@@ -258,13 +215,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(responseContent, applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 COMPLETION_AUDIT_LOG,
@@ -298,13 +255,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 COMPLETION_AUDIT_LOG,
@@ -342,13 +299,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 COMPLETION_AUDIT_LOG,
@@ -387,13 +344,13 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertApplicationCode(response, applicationCodeDto);
 
         // assert the audit log message
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 COMPLETION_AUDIT_LOG,
@@ -432,24 +389,22 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
 
-        Assertions.assertEquals("AD99003", firstEntry.getApplicationCode());
-        Assertions.assertEquals("Extract from the Court Register", firstEntry.getTitle());
-        Assertions.assertEquals(
-                "Certified extract from the court register", firstEntry.getWording());
-        Assertions.assertTrue(firstEntry.getIsFeeDue());
+        assertEquals("AD99003", firstEntry.getApplicationCode());
+        assertEquals("Extract from the Court Register", firstEntry.getTitle());
+        assertEquals("Certified extract from the court register", firstEntry.getWording());
+        assertTrue(firstEntry.getIsFeeDue());
         Assertions.assertFalse(firstEntry.getRequiresRespondent());
         Assertions.assertFalse(firstEntry.getBulkRespondentAllowed());
-        Assertions.assertEquals("CO1.1", firstEntry.getFeeReference().get());
-        Assertions.assertEquals(
-                "JP perform function away from court", firstEntry.getFeeDescription().get());
-        Assertions.assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        Assertions.assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals("CO1.1", firstEntry.getFeeReference().get());
+        assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
+        assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
+        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
-        Assertions.assertEquals("AD99004", secondEntry.getApplicationCode());
-        Assertions.assertEquals("Certificate of Satisfaction", secondEntry.getTitle());
-        Assertions.assertEquals(
+        assertEquals("AD99004", secondEntry.getApplicationCode());
+        assertEquals("Certificate of Satisfaction", secondEntry.getTitle());
+        assertEquals(
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
                 secondEntry.getWording());
@@ -493,8 +448,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
 
-        Assertions.assertEquals("AP99001", firstEntry.getApplicationCode());
-        Assertions.assertEquals("SW99009", secondEntry.getApplicationCode());
+        assertEquals("AP99001", firstEntry.getApplicationCode());
+        assertEquals("SW99009", secondEntry.getApplicationCode());
     }
 
     @Test
@@ -552,7 +507,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
-        Assertions.assertEquals("CT99002", firstEntry.getApplicationCode());
+        assertEquals("CT99002", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -582,7 +537,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
-        Assertions.assertEquals("AD99004", firstEntry.getApplicationCode());
+        assertEquals("AD99004", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -613,7 +568,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
-        Assertions.assertEquals("AP99004", firstEntry.getApplicationCode());
+        assertEquals("AP99004", firstEntry.getApplicationCode());
     }
 
     @Test
@@ -750,21 +705,21 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // assert the response
         responseSpec.then().statusCode(404);
         ProblemDetail codeDto = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getType().get(), codeDto.getType());
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getDetail());
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getTitle());
-        Assertions.assertEquals("/" + WEB_CONTEXT + "/" + id, codeDto.getInstance().toString());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getType().get(), codeDto.getType());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getDetail());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getTitle());
+        assertEquals("/" + WEB_CONTEXT + "/" + id, codeDto.getInstance().toString());
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 "Completion fail audit",
@@ -788,21 +743,21 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         responseSpec.then().statusCode(404);
         ProblemDetail codeDto = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getType().get(), codeDto.getType());
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getDetail());
-        Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getTitle());
-        Assertions.assertEquals("/" + WEB_CONTEXT + "/" + id, codeDto.getInstance().toString());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getType().get(), codeDto.getType());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getDetail());
+        assertEquals(
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getMessage(), codeDto.getTitle());
+        assertEquals("/" + WEB_CONTEXT + "/" + id, codeDto.getInstance().toString());
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
-        Assertions.assertTrue(
+        assertTrue(
                 Pattern.matches(
                         getExpectedLog(
                                 "Completion fail audit",
@@ -949,89 +904,85 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
     private void assertApplicationCode(
             ApplicationCodeGetSummaryDto actual, ApplicationCodeGetSummaryDto expected) {
-        Assertions.assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
-        Assertions.assertEquals(expected.getTitle(), actual.getTitle());
-        Assertions.assertEquals(expected.getWording(), actual.getWording());
-        Assertions.assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
-        Assertions.assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
-        Assertions.assertEquals(
-                expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
+        assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
+        assertEquals(expected.getTitle(), actual.getTitle());
+        assertEquals(expected.getWording(), actual.getWording());
+        assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
+        assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
+        assertEquals(expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
 
         if (expected.getFeeDescription().isPresent()) {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeAmount().get().getValue(),
                     actual.getFeeAmount().get().getValue());
         } else {
-            Assertions.assertEquals(
-                    expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
+            assertEquals(expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
         }
 
         if (expected.getOffsiteFeeAmount().isPresent()) {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getOffsiteFeeAmount().get().getValue(),
                     actual.getOffsiteFeeAmount().get().getValue());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getOffsiteFeeAmount().isPresent(),
                     actual.getOffsiteFeeAmount().isPresent());
         }
 
         if (expected.getFeeDescription().isPresent()) {
-            Assertions.assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
+            assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeDescription().isPresent(),
                     actual.getFeeDescription().isPresent());
         }
 
         if (expected.getFeeReference().isPresent()) {
-            Assertions.assertEquals(expected.getFeeReference(), actual.getFeeReference());
+            assertEquals(expected.getFeeReference(), actual.getFeeReference());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
         }
     }
 
     private void assertApplicationCode(
             ApplicationCodeGetDetailDto actual, ApplicationCodeGetDetailDto expected) {
-        Assertions.assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
-        Assertions.assertEquals(expected.getTitle(), actual.getTitle());
-        Assertions.assertEquals(expected.getWording(), actual.getWording());
-        Assertions.assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
-        Assertions.assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
-        Assertions.assertEquals(
-                expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
+        assertEquals(expected.getApplicationCode(), actual.getApplicationCode());
+        assertEquals(expected.getTitle(), actual.getTitle());
+        assertEquals(expected.getWording(), actual.getWording());
+        assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
+        assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
+        assertEquals(expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
         if (expected.getFeeDescription().isPresent()) {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeAmount().get().getValue(),
                     actual.getFeeAmount().get().getValue());
         } else {
-            Assertions.assertEquals(
-                    expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
+            assertEquals(expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
         }
 
         if (expected.getOffsiteFeeAmount().isPresent()) {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getOffsiteFeeAmount().get().getValue(),
                     actual.getOffsiteFeeAmount().get().getValue());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getOffsiteFeeAmount().isPresent(),
                     actual.getOffsiteFeeAmount().isPresent());
         }
 
         if (expected.getFeeDescription().isPresent()) {
-            Assertions.assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
+            assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeDescription().isPresent(),
                     actual.getFeeDescription().isPresent());
         }
 
         if (expected.getFeeReference().isPresent()) {
-            Assertions.assertEquals(expected.getFeeReference(), actual.getFeeReference());
+            assertEquals(expected.getFeeReference(), actual.getFeeReference());
         } else {
-            Assertions.assertEquals(
+            assertEquals(
                     expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
         }
     }

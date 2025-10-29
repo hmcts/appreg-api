@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
-import jakarta.transaction.Transactional;
+import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
+import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.audit.AuditEventEnum;
@@ -21,7 +22,6 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 
@@ -33,16 +33,24 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 @Slf4j
 public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
+    private static final int SINGLE_RECORD = 1;
+
     private final ApplicationCodeRepository repository;
     private final ApplicationCodeMapper applicationCodeMapper;
     private final ApplicationFeeService feeService;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final PageMapper pageMapper;
+    private final Clock clock;
+    private final ZoneId ukZone;
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationCodePage findAll(String appCode, String appTitle, Pageable pageable) {
+
+        // Use today's date to ensure we only return Result Codes that are currently active.
+        var todayUk = LocalDate.now(clock.withZone(ukZone));
+
         return auditService.processAudit(
                 AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
@@ -53,7 +61,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             pageable);
 
                     final Page<ApplicationCode> applicationCodeList =
-                            repository.search(appCode, appTitle, pageable);
+                            repository.search(appCode, appTitle, todayUk, pageable);
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
                     pageMapper.toPage(applicationCodeList, newPage);
@@ -67,7 +75,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
                                                 code,
                                                 feePair != null ? feePair.mainFee() : null,
-                                                feePair != null ? feePair.offsetFee() : null));
+                                                feePair != null ? feePair.offsiteFee() : null));
                             });
 
                     log.debug(
@@ -82,6 +90,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ApplicationCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
                 AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
@@ -89,25 +98,22 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     log.debug("Start: Find Application for app code: {} date: {}", code, date);
 
                     final List<ApplicationCode> applicationCodeResults =
-                            repository.findByCodeAndDate(
-                                code, date);
+                            repository.findByCodeAndDate(code, date);
 
                     ApplicationCode codeToConsider = null;
 
-                    // if empty throw an exception
                     if (applicationCodeResults.isEmpty()) {
                         throw new AppRegistryException(
-                                AppCodeError.CODE_NOT_FOUND,
+                                ApplicationCodeError.CODE_NOT_FOUND,
                                 " No code found for code %s and date %s".formatted(code, date));
                     } else {
-
                         if (applicationCodeResults.size() > 1) {
                             log.warn(
                                     "Too many records found for code %s and date %s. Defaulting to first one"
                                             .formatted(code, date));
                         }
 
-                        codeToConsider = applicationCodeResults.stream().findFirst().get();
+                        codeToConsider = applicationCodeResults.getFirst();
                     }
 
                     FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
@@ -116,7 +122,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                     applicationCodeMapper.toApplicationCodeGetDetailDto(
                                             codeToConsider,
                                             feePair != null ? feePair.mainFee() : null,
-                                            feePair != null ? feePair.offsetFee() : null));
+                                            feePair != null ? feePair.offsiteFee() : null));
 
                     log.debug("Finish: Find Application for app code: {} date: {}", code, date);
                     return result;

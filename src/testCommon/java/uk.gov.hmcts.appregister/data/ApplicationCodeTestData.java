@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.data;
 import static org.instancio.Select.field;
 
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -23,17 +24,20 @@ public class ApplicationCodeTestData
                 .wording("wording" + uniqueId)
                 .feeDue(YesOrNo.YES)
                 .requiresRespondent(YesOrNo.YES)
-                .startDate(OffsetDateTime.now(ZoneOffset.UTC))
+                .startDate(LocalDate.now(ZoneOffset.UTC))
                 .bulkRespondentAllowed(YesOrNo.YES);
     }
 
     @Override
     public ApplicationCode someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        LocalDate today = LocalDate.now();
         return Instancio.of(ApplicationCode.class)
                 .ignore(field(ApplicationCode::getId))
                 .ignore(field(ApplicationCode::getVersion))
                 .ignore(field(ApplicationCode::getApplicationListEntryList))
+                .set(field(ApplicationCode::getStartDate), today.minusDays(10))
+                .set(field(ApplicationCode::getEndDate), today.plusDays(10))
                 .withSettings(settings)
                 .create();
     }

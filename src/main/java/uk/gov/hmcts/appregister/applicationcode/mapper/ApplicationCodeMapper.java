@@ -1,7 +1,8 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -35,17 +36,22 @@ public abstract class ApplicationCodeMapper {
      * @return the fee amount dto
      */
     public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
-        if (fee != null) {
-            long mainPennies = Math.round(fee.getAmount() * 100);
-
-            ApplicationCodeGetSummaryDtoFeeAmount feeDto =
-                    new ApplicationCodeGetSummaryDtoFeeAmount();
-            feeDto.setValue(mainPennies);
-
-            return JsonNullable.of(feeDto);
-        } else {
+        if (fee == null || fee.getAmount() == null) {
             return JsonNullable.undefined();
         }
+
+        // Expecting NUMERIC(9,2) mapped to BigDecimal scale=2
+        BigDecimal pounds = fee.getAmount();
+
+        BigDecimal scaled = pounds.setScale(2, RoundingMode.UNNECESSARY);
+
+        long pence = scaled.movePointRight(2).longValueExact();
+
+        ApplicationCodeGetSummaryDtoFeeAmount dto = new ApplicationCodeGetSummaryDtoFeeAmount();
+        dto.setValue(pence);
+        dto.setCurrency(ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP);
+
+        return JsonNullable.of(dto);
     }
 
     /**
@@ -67,21 +73,12 @@ public abstract class ApplicationCodeMapper {
         return JsonNullable.of(feeReference);
     }
 
-    @Named("mapStartDate")
-    public LocalDate mapStartDate(OffsetDateTime offsetDateTime) {
-        return offsetDateTime.toLocalDate();
+    @Named("mapNullableLocalDate")
+    public JsonNullable<LocalDate> mapNullableLocalDate(LocalDate localDate) {
+        return (localDate == null) ? JsonNullable.undefined() : JsonNullable.of(localDate);
     }
 
-    @Named("mapOffsetDate")
-    public JsonNullable<LocalDate> mapOffset(OffsetDateTime offsetDateTime) {
-        if (offsetDateTime != null) {
-            return JsonNullable.of(offsetDateTime.toLocalDate());
-        }
-
-        return JsonNullable.undefined();
-    }
-
-    @Mapping(target = "offsiteFeeAmount", source = "offsetFee")
+    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee")
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
@@ -100,13 +97,21 @@ public abstract class ApplicationCodeMapper {
      *
      * @param entity the application code entity
      * @param fee the fee (main fee)*
-     * @param offsetFee the offset fee
+     * @param offsiteFee the offsite fee
      * @return The application code detail dto
      */
     public abstract ApplicationCodeGetSummaryDto toApplicationCodeGetSummaryDto(
-            ApplicationCode entity, Fee fee, Fee offsetFee);
+            ApplicationCode entity, Fee fee, Fee offsiteFee);
 
-    @Mapping(target = "offsiteFeeAmount", source = "offsetFee")
+    /**
+     * maps the application code entity to detail dto.
+     *
+     * @param entity the application code entity
+     * @param fee the fee (main fee)*
+     * @param offsiteFee the offsite fee
+     * @return The application code detail dto
+     */
+    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee")
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
@@ -117,19 +122,13 @@ public abstract class ApplicationCodeMapper {
             target = "feeReference",
             source = "entity.feeReference",
             qualifiedByName = "mapFeeReference")
-    @Mapping(target = "startDate", source = "entity.startDate", qualifiedByName = "mapStartDate")
-    @Mapping(target = "endDate", source = "entity.endDate", qualifiedByName = "mapOffsetDate")
+    @Mapping(target = "startDate", source = "entity.startDate")
+    @Mapping(
+            target = "endDate",
+            source = "entity.endDate",
+            qualifiedByName = "mapNullableLocalDate")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
-
-    /**
-     * maps the application code entity to detail dto.
-     *
-     * @param entity the application code entity
-     * @param fee the fee (main fee)*
-     * @param offsetFee the offset fee
-     * @return The application code detail dto
-     */
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
-            ApplicationCode entity, Fee fee, Fee offsetFee);
+            ApplicationCode entity, Fee fee, Fee offsiteFee);
 }

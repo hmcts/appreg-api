@@ -39,6 +39,7 @@ class AuditOperationServiceImplTest {
     @Test
     void testAuditOperationFlowWithResponsePayload() throws Exception {
         ApplicationCodeGetSummaryDto applicationCodeDto = new ApplicationCodeGetSummaryDto();
+
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
