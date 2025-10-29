@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import org.instancio.Instancio;
@@ -19,7 +20,7 @@ public class FeeTestData
         data.reference(StringUtil.stripToMax(uniqueId.toString(), 12))
                 .description("description" + uniqueId)
                 .startDate(LocalDate.now())
-                .amount(20D)
+                .amount(BigDecimal.valueOf(20))
                 .build();
 
         return data;
