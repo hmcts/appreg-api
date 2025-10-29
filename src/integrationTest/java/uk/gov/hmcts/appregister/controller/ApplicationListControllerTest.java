@@ -92,53 +92,72 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
 
+        String eventName = "Create Application List";
+        String operation = "CREATE";
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "application_list_status",
                         "null",
-                        req.getStatus().toString()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "application_description",
+                        "list_description",
                         "null",
-                        req.getDescription()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "courthouse_name", "null", "Cardiff Crown Court"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "courthouse_code", "null", VALID_COURT_CODE));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "courthouse_code", "null", VALID_COURT_CODE));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "other_courthouse", "null", "CJA_CD_DESCRIPTION"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "user_name", "null", "app.registry@hmcts.net"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        "Morning list \\(court\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "courthouse_name",
+                        "null",
+                        "Cardiff Crown Court",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "courthouse_code",
+                        "null",
+                        VALID_COURT_CODE,
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "user_name",
+                        "null",
+                        "app.registry@hmcts.net",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "duration_hour",
                         "null",
-                        req.getDurationHours().toString()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        req.getDurationHours().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "duration_minute",
                         "null",
-                        req.getDurationMinutes().toString()));
+                        req.getDurationMinutes().toString(),
+                        operation,
+                        eventName));
         differenceLogAsserter.assertFieldLogPresent("application_list_date");
         differenceLogAsserter.assertFieldLogPresent("application_list_time");
 
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "version", "null", "0"));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists", "version", "null", "0", operation, eventName));
         differenceLogAsserter.assertFieldLogPresent("al_id");
         differenceLogAsserter.assertFieldLogPresent("changed_date");
         differenceLogAsserter.assertFieldLogPresent("changed_by");
@@ -194,50 +213,64 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
 
+        String eventName = "Create Application List";
+        String operation = "CREATE";
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "application_list_status",
                         "null",
-                        req.getStatus().toString()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "application_description",
+                        "list_description",
                         "null",
-                        req.getDescription()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "courthouse_name", "null", "Cardiff Crown Court"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "courthouse_code", "null", VALID_COURT_CODE));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "other_courthouse", "null", "CJA_CD_DESCRIPTION"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "user_name", "null", "app.registry@hmcts.net"));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        "Morning list \\(cja\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "other_courthouse",
+                        "null",
+                        "CJA_CD_DESCRIPTION",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "user_name",
+                        "null",
+                        "app.registry@hmcts.net",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "duration_hour",
                         "null",
-                        req.getDurationHours().toString()));
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
+                        req.getDurationHours().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "duration_minute",
                         "null",
-                        req.getDurationMinutes().toString()));
+                        req.getDurationMinutes().toString(),
+                        operation,
+                        eventName));
         differenceLogAsserter.assertFieldLogPresent("application_list_date");
         differenceLogAsserter.assertFieldLogPresent("application_list_time");
 
-        differenceLogAsserter.assertDifference(
-                DifferenceLogAsserter.getAssertionString(
-                        "application_lists", "version", "null", "0"));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        "application_lists", "version", "null", "0", operation, eventName));
         differenceLogAsserter.assertFieldLogPresent("al_id");
         differenceLogAsserter.assertFieldLogPresent("changed_date");
         differenceLogAsserter.assertFieldLogPresent("changed_by");

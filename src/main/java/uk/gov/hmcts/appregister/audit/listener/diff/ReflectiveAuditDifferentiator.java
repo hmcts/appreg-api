@@ -18,8 +18,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
- * A generic reflective audit differentiator that can be used to compare two objects of any type for
- * audit purposes
+ * A generic reflective audit differentiator that can be used to compare two {@link
+ * uk.gov.hmcts.appregister.common.entity.base.Keyable} of any type for audit purposes
  *
  * <p>If performance issues are a concern, consider implementing a specific differentiator for the
  * object type.
@@ -32,6 +32,11 @@ import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
  *
  * <p>We can toggle recursion of nested objects and collection objects via the constructor
  * parameters.
+ *
+ * <p>The class supports use of the {@link uk.gov.hmcts.appregister.audit.listener.diff.Audit} and
+ * {@link uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled} annotations to tailor the way
+ * in which it detects differences between two {@link
+ * uk.gov.hmcts.appregister.common.entity.base.Keyable} objects.
  */
 @Slf4j
 @Getter
@@ -69,7 +74,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     /**
-     * process the differences for the new value.
+     * process the differences for the old and new value.
      *
      * @param oldVal The old value
      * @param newVal The new value
@@ -173,6 +178,8 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
             boolean recurseCollectionObjects,
             boolean useAnnotations) {
         if (newVal != null || oldVal != null) {
+
+            // loop through all methods of the objects being passed
             for (ReflectionCaches.MethodData method :
                     ReflectionCaches.METHOD_CACHE
                             .get(newVal != null ? newVal.getClass() : oldVal.getClass())
@@ -190,12 +197,14 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
                     continue;
                 }
 
-                // check if they are logical equivalent
+                // if the object is not complex wrap it
                 if (!isComplexWrapper(method.method().getReturnType())) {
                     storeDifference(oldVal, newVal, differenceList, method, processed);
                 } else {
 
-                    // if collection then iterate and compare contents
+                    // if collection then iterate and compare contents, if not a collection then
+                    // process the complex objects
+                    // if we have object reursion turned on
                     if (isCollection(method.method().getReturnType()) && recurseCollectionObjects) {
                         processListDiff(
                                 crudEnum,
@@ -222,7 +231,8 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
                                         : null;
                         log.debug("Old Value Ret {}", oldValRet);
 
-                        // recurse and get the differences in the complex object
+                        // recurse and get the differences in the complex object containing in the
+                        // list
                         difference(
                                 crudEnum,
                                 oldValRet,
@@ -267,7 +277,8 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     /**
-     * Stores the difference if detected between the old and new value.
+     * Stores the difference if detected between the old and new value. This method works out if the
+     * new or old value is null and compensates accordingly
      *
      * @param oldValRet The old value
      * @param newValRet The new value
@@ -284,6 +295,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
                 && !newValRet.toString().equals(oldValRet != null ? oldValRet.toString() : null)) {
             log.debug("Difference detected {} in field old: {} new: {}", newValRet, oldValRet);
 
+            // store the difference knowing that new value is not null
             differenceList.add(
                     new Difference(
                             method.tableName(),
@@ -294,6 +306,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
                 && !oldValRet.toString().equals(newValRet != null ? newValRet.toString() : null)) {
             log.debug("Difference detected {} in field old: {} new: {}", newValRet, oldValRet);
 
+            // store the difference knowing that old value is not null
             differenceList.add(
                     new Difference(
                             method.tableName(),
@@ -304,7 +317,9 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     /**
-     * processes the list difference between the old and new value objects.
+     * processes the list difference between the old and new value objects. This method selects
+     * which list is prioritised i.e. if the enew list is larger than the old list we iterate on the
+     * new list
      *
      * @param crudEnum The CRUD operation
      * @param oldVal The old value
@@ -313,7 +328,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
      * @param recurseNestedObjects Whether we recurse into nested objects
      * @param useAnnotations Whether we use annotations to determine what to audit
      * @param processed The processed set to avoid infinite recursion
-     * @param method The method data to get the list
+     * @param method The method data to get the list data
      */
     private static void processListDiff(
             CrudEnum crudEnum,
@@ -382,9 +397,15 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
             List<Difference> differenceList,
             boolean recurseNestedObjects,
             boolean useAnnotations) {
+
+        // loop through all values in the list, comparing each in turn
         for (int i = 0; i < lstToTraverse.size(); i++) {
-            log.debug("Looping through new list index {} {}", i, lstToTraverse.get(i));
+            log.debug("Looping through list index {} {}", i, lstToTraverse.get(i));
             boolean complex = isComplexWrapper(lstToTraverse.get(i).getClass());
+
+            // if the list contains a complex value then iterate and process the values, otherwise
+            // store the difference
+            // based on a difference
             if (complex && recurseNestedObjects) {
                 log.debug(
                         "Complex object detected and recursion enabled {} {}",
@@ -498,7 +519,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     /**
-     * Is this an auditable class.
+     * Is this an auditable class for the specific operation.
      *
      * @param crudEnum The audit operation taking place
      * @param cls The class to check

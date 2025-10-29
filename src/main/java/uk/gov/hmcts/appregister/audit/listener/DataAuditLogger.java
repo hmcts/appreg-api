@@ -57,7 +57,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
                 // save the audit record
                 dataAuditRepository.save(audit);
-                log.debug("Saved data audit record: {}", difference);
+                log.debug("Saving data audit difference: {}", difference);
+                log.debug("Saved data audit entity: {}", audit);
             }
         }
     }

@@ -24,7 +24,7 @@ public interface AuditDifferentiator {
     List<Difference> diff(CrudEnum crudEnum, Keyable oldObj, Keyable newObj);
 
     /**
-     * Gets a differences against nothing which effectively means get all field changes are
+     * Gets differences against nothing which effectively means get all field changes are
      * differences. Can be used when creating or deleting where we dont have two objects to diff.
      *
      * @param crudEnum The audit crud operation. This is used to determine how to treat the diff

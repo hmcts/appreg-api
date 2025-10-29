@@ -35,8 +35,4 @@ public class AuditEvent implements BaseAuditEvent {
         newValue = baseAuditEvent.getNewValue();
         oldValue = baseAuditEvent.getOldValue();
     }
-
-    public String getUpdateType() {
-        return "N/A";
-    }
 }
