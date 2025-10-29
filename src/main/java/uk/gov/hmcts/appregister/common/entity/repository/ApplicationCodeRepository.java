@@ -56,8 +56,8 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             """
         SELECT c
         FROM ApplicationCode c
-        WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER(:code), '%'))
-          AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER(:title), '%'))
+        WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%'))
+          AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%'))
           AND c.startDate < :date
           AND (c.endDate IS NULL OR c.endDate >= :date)
         """)

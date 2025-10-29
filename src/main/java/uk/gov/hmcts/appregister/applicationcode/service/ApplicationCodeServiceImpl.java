@@ -100,24 +100,27 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     final List<ApplicationCode> applicationCodeResults =
                             repository.findByCodeAndDate(code, date);
 
+                    ApplicationCode codeToConsider = null;
+
                     if (applicationCodeResults.isEmpty()) {
                         throw new AppRegistryException(
                                 ApplicationCodeError.CODE_NOT_FOUND,
                                 " No code found for code %s and date %s".formatted(code, date));
-                    } else if (applicationCodeResults.size() > SINGLE_RECORD) {
-                        throw new AppRegistryException(
-                                ApplicationCodeError.DUPLICATE_COURT_FOUND,
-                                "Multiple courts found for code '%s' on date %s"
-                                        .formatted(code, date));
+                    } else {
+                        if (applicationCodeResults.size() > 1) {
+                            log.warn(
+                                    "Too many records found for code %s and date %s. Defaulting to first one"
+                                            .formatted(code, date));
+                        }
+
+                        codeToConsider = applicationCodeResults.getFirst();
                     }
 
-                    ApplicationCode appCode = applicationCodeResults.getFirst();
-
-                    FeePair feePair = feeService.resolveFeePair(appCode.getFeeReference());
+                    FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
                     Optional<ApplicationCodeGetDetailDto> result =
                             Optional.of(
                                     applicationCodeMapper.toApplicationCodeGetDetailDto(
-                                            appCode,
+                                            codeToConsider,
                                             feePair != null ? feePair.mainFee() : null,
                                             feePair != null ? feePair.offsiteFee() : null));
 

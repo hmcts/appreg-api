@@ -16,6 +16,7 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -71,6 +73,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // a date that is without range for the main but out of range for the offsite fee
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
 
     @Test
@@ -140,51 +143,6 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                                 GET_APPCODES_AUDIT_ACTION,
                                 OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
-    }
-
-    @Test
-    public void givenValidRequest_whenGetApplicationCodesWithoutOffsiteFee_thenReturn200()
-            throws Exception {
-        // a date that is within range for the main but out of range for the offsite fee
-        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
-
-        // assert
-        ApplicationCodeGetSummaryDto applicationCodeDto =
-                generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
-
-        assertApplicationCode(page.getContent().get(1), applicationCodeDto);
-
-        // assert the audit log message
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
     }
 
     @Test
@@ -809,28 +767,58 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    void givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn409Problem()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
+                    throws Exception {
 
-        // Ensure the controller uses this point in time (you already have these two lines)
+        // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
-        TokenGenerator token =
+        TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-        Response response =
+        String id = APPCODE_CODE;
+        LogCaptor appCodeServiceLogCaptor = LogCaptor.forClass(ApplicationCodeServiceImpl.class);
+
+        Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + APPCODE_CODE,
+                                WEB_CONTEXT + "/" + id,
                                 OffsetDateTime.parse("2016-01-01T00:00:00Z")),
-                        token.fetchTokenForRole());
+                        tokenGenerator.fetchTokenForRole());
 
-        // New expected behaviour: 409 with ProblemDetail payload
-        response.then().statusCode(409).contentType("application/problem+json");
+        responseSpec.then().statusCode(200);
+        ApplicationCodeGetDetailDto codeDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
-        var problem = response.as(ProblemDetail.class);
-        assertEquals("APPCODE-2", problem.getType().toString()); // if you map 'type' like this
+        // assert
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
+                        Optional.empty(), Optional.empty(), Optional.of(70.0));
+
+        assertApplicationCode(codeDto, applicationCodeDto);
+
+        // assert that we see a warning in the logs
+        Assertions.assertTrue(
+                appCodeServiceLogCaptor
+                        .getWarnLogs()
+                        .get(0)
+                        .startsWith("Too many records found for code"));
+
+        // assert the audit log message
+        Assertions.assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
+                        logCaptor.getInfoLogs().get(0)));
+
+        Assertions.assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                COMPLETION_AUDIT_LOG,
+                                GET_APPCODE_AUDIT_ACTION,
+                                OperationStatus.COMPLETED),
+                        logCaptor.getInfoLogs().get(1)));
     }
 
     private ApplicationCodeGetSummaryDto
