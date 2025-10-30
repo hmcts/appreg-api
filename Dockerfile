@@ -11,12 +11,13 @@ WORKDIR /opt/app
 
 COPY --from=bb /bin/busybox /busybox
 
+
 USER root
 RUN ["/busybox","mkdir","-p","/usr/bin"]
 RUN ["/busybox","ln","-sf","/busybox","/usr/bin/ls"]
 RUN ["/busybox","ln","-sf","/busybox","/usr/bin/cat"]
 RUN ["/busybox","ln","-sf","/busybox","/usr/bin/sh"]
-USER nonroot
+USER hmcts
 
 ##### And here in final image
 

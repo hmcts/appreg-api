@@ -47,7 +47,7 @@ interface AuditOperationLifecycleListener {
 }
 
 note top of AuditOperationLifecycleListener
-The listener responds to callbacks
+The listener responds to audit lifecycle callbacks
 end note
 
 class AuditableResult {
@@ -123,6 +123,8 @@ end note
 class DataAuditRepository {
         save (DataAudit dataAudit) : DataAudit
 }
+
+Keyable <|-- DataAudit
 
 DataAuditLogger -> DataAudit : <<create>>
 DataAuditLogger -> AuditDifferentiator : diff
