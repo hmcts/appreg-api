@@ -1,11 +1,9 @@
 package uk.gov.hmcts.appregister.resultcode.mapper;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;

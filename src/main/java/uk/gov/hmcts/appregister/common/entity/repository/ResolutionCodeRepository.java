@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,29 +23,28 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
     /**
      * Find active Resolution Codes by code on a given date.
      *
-     * <p>Active if: {@code rc.startDate <= :date}
-     * and ({@code rc.endDate IS NULL} or {@code rc.endDate >= :date}).
-     * Code match is case-insensitive equality on {@code rc.resultCode}.
+     * <p>Active if: {@code rc.startDate <= :date} and ({@code rc.endDate IS NULL} or {@code
+     * rc.endDate >= :date}). Code match is case-insensitive equality on {@code rc.resultCode}.
      *
      * @param code case-insensitive business code (e.g. "ABC123")
      * @param date local date to check for active codes
      * @return zero, one, or many rows; service layer enforces uniqueness
      */
-    @Query("""
-      SELECT rc
-      FROM ResolutionCode rc
-      WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
-      AND rc.startDate <= :date
-      AND (rc.endDate IS NULL OR rc.endDate >= :date)
-      """)
+    @Query(
+            """
+        SELECT rc
+        FROM ResolutionCode rc
+        WHERE LOWER(rc.resultCode) = LOWER(CAST(:code AS string))
+        AND rc.startDate <= :date
+        AND (rc.endDate IS NULL OR rc.endDate >= :date)
+        """)
     List<ResolutionCode> findActiveResolutionCodesByCodeAndDate(
-        @Param("code") String code,
-        @Param("date") LocalDate date);
+            @Param("code") String code, @Param("date") LocalDate date);
 
     /**
      * Retrieve a page of active Resolution Codes filtered by code/title (case-insensitive).
      *
-     * Active if: rc.startDate < :asOfDate AND (rc.endDate IS NULL OR rc.endDate >= :asOfDate)
+     * <p>Active if: rc.startDate < :asOfDate AND (rc.endDate IS NULL OR rc.endDate >= :asOfDate)
      *
      * @param code optional partial code filter (case-insensitive)
      * @param title optional partial title filter (case-insensitive)
@@ -54,18 +52,18 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
      * @param pageable paging/sorting
      * @return page of matching entities
      */
-    @Query("""
-    SELECT rc
-    FROM ResolutionCode rc
-    WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER(:code), '%'))
-      AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER(:title), '%'))
-      AND rc.startDate < :date
-      AND (rc.endDate IS NULL OR rc.endDate >= :date)
-    """)
+    @Query(
+            """
+        SELECT rc
+        FROM ResolutionCode rc
+        WHERE (:code IS NULL OR LOWER(rc.resultCode) LIKE CONCAT('%', LOWER( CAST(:code as string)), '%'))
+        AND (:title IS NULL OR LOWER(rc.title) LIKE CONCAT('%', LOWER( CAST(:title as string)), '%'))
+        AND rc.startDate < :date
+        AND (rc.endDate IS NULL OR rc.endDate >= :date)
+        """)
     Page<ResolutionCode> findActiveOnDate(
-        @Param("code") String code,
-        @Param("title") String title,
-        @Param("date") LocalDate date,
-        Pageable pageable
-    );
+            @Param("code") String code,
+            @Param("title") String title,
+            @Param("date") LocalDate date,
+            Pageable pageable);
 }

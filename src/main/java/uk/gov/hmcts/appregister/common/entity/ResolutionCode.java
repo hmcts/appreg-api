@@ -26,10 +26,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * <p>This entity holds the full metadata for a Resolution (Result) Code, including its wording,
  * legislation references, destination email addresses, and validity dates. It is the
  * persistence-layer model that maps directly to the database schema and should not be exposed
- * directly in API responses. For API exposure, use {@link
- * uk.gov.hmcts.appregister.resultcode.dto.ResolutionCodeDto} or {@link
- * uk.gov.hmcts.appregister.resultcode.dto.ResolutionCodeListItemDto} created via a mapper
- * component.
+ * directly in API responses.
  *
  * <p><strong>Lombok annotations:</strong>
  *

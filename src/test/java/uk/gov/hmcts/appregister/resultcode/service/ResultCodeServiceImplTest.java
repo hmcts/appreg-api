@@ -8,12 +8,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,7 +43,6 @@ public class ResultCodeServiceImplTest {
     @Mock private ResolutionCodeRepository repository;
     @Mock private ResultCodeMapper mapper;
     @Mock private PageMapper pageMapper;
-    @Mock private DateBoundaryCalculator dateBoundaryCalculator;
 
     @Spy
     private List<AuditOperationLifecycleListener> auditListeners =
@@ -50,28 +52,40 @@ public class ResultCodeServiceImplTest {
     private AuditOperationService auditOperationService =
             new AuditOperationServiceImpl(new ObjectMapper());
 
-    @InjectMocks private ResultCodeServiceImpl service;
+    private ResultCodeServiceImpl service;
+
+    @BeforeEach
+    public void setup() {
+        ZoneId ukZone = ZoneId.of("Europe/London");
+        Clock fixedClock = Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC"));
+
+        service =
+                new ResultCodeServiceImpl(
+                        auditOperationService,
+                        auditListeners,
+                        repository,
+                        mapper,
+                        pageMapper,
+                        fixedClock,
+                        ukZone);
+    }
 
     /**
      * Given exactly one active result code row for (code,date), the service maps it to a detail DTO
      * and returns 200-style data.
      */
     @Test
-    void findByCodeAndDate_success_singleRow() {
+    void findByCode_success_singleRow() {
         final String code = "RC123";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
-        // We don't need specific LocalDateTime stubs; match with any()
-        when(dateBoundaryCalculator.startOfDay(date)).thenReturn(null);
-        when(dateBoundaryCalculator.startOfNextDay(date)).thenReturn(null);
-
         var entity = new ResolutionCode();
         var expectedDto = new ResultCodeGetDetailDto();
-        when(repository.findActiveResolutionCodesOnDateByCode(eq(code), any(), any()))
+        when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(entity));
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
 
-        ResultCodeGetDetailDto actual = service.findByCodeAndDate(code, date);
+        ResultCodeGetDetailDto actual = service.findByCode(code, date);
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
@@ -83,18 +97,15 @@ public class ResultCodeServiceImplTest {
      * with RESULT_CODE_NOT_FOUND.
      */
     @Test
-    void findByCodeAndDate_notFound_throws() {
+    void findByCode_notFound_throws() {
         final String code = "MISSING";
         final LocalDate date = LocalDate.parse("2025-01-01");
-
-        when(dateBoundaryCalculator.startOfDay(date)).thenReturn(null);
-        when(dateBoundaryCalculator.startOfNextDay(date)).thenReturn(null);
-        when(repository.findActiveResolutionCodesOnDateByCode(eq(code), any(), any()))
+        when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
-                        AppRegistryException.class, () -> service.findByCodeAndDate(code, date));
+                        AppRegistryException.class, () -> service.findByCode(code, date));
         Assertions.assertEquals(ResultCodeError.RESULT_CODE_NOT_FOUND, ex.getCode());
 
         verify(auditOperationService)
@@ -106,21 +117,18 @@ public class ResultCodeServiceImplTest {
      * DUPLICATE_RESULT_CODE_FOUND.
      */
     @Test
-    void findByCodeAndDate_duplicate_throws() {
+    void findByCode_duplicate_throws() {
         final String code = "DUP";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
-        when(dateBoundaryCalculator.startOfDay(date)).thenReturn(null);
-        when(dateBoundaryCalculator.startOfNextDay(date)).thenReturn(null);
-
         var r1 = new ResolutionCode();
         var r2 = new ResolutionCode();
-        when(repository.findActiveResolutionCodesOnDateByCode(eq(code), any(), any()))
+        when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(r1, r2));
 
         AppRegistryException ex =
                 Assertions.assertThrows(
-                        AppRegistryException.class, () -> service.findByCodeAndDate(code, date));
+                        AppRegistryException.class, () -> service.findByCode(code, date));
         Assertions.assertEquals(ResultCodeError.DUPLICATE_RESULT_CODE_FOUND, ex.getCode());
 
         verify(auditOperationService)
@@ -132,23 +140,17 @@ public class ResultCodeServiceImplTest {
      * each entity becomes a summary DTO (we assert size to avoid relying on field names).
      */
     @Test
-    void getPage_success_mapsContentAndMeta() {
+    void findAll_success_mapsContentAndMeta() {
         final String codeFilter = "R";
         final String titleFilter = "X";
         final var pageable = PageRequest.of(0, 2);
-
-        // Today boundaries used by the service before querying
-        var today = LocalDate.parse("2025-10-16");
-        when(dateBoundaryCalculator.getToday()).thenReturn(today);
-        when(dateBoundaryCalculator.startOfDay(today)).thenReturn(null);
-        when(dateBoundaryCalculator.startOfNextDay(today)).thenReturn(null);
+        ;
 
         var e1 = new ResolutionCode();
         var e2 = new ResolutionCode();
         Page<ResolutionCode> dbPage = new PageImpl<>(List.of(e1, e2), pageable, 5);
 
-        when(repository.findActiveOnDate(
-                        eq(codeFilter), eq(titleFilter), any(), any(), eq(pageable)))
+        when(repository.findActiveOnDate(eq(codeFilter), eq(titleFilter), any(), eq(pageable)))
                 .thenReturn(dbPage);
 
         // Simulate page meta copy so assertions have values
@@ -164,7 +166,7 @@ public class ResultCodeServiceImplTest {
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ResultCodePage.class));
 
-        ResultCodePage pageDto = service.getPage(codeFilter, titleFilter, pageable);
+        ResultCodePage pageDto = service.findAll(codeFilter, titleFilter, pageable);
 
         Assertions.assertEquals(5, pageDto.getTotalElements());
         Assertions.assertEquals(3, pageDto.getTotalPages());
@@ -182,16 +184,11 @@ public class ResultCodeServiceImplTest {
      * is an empty list (not null).
      */
     @Test
-    void getPage_empty_ok() {
+    void findAll_empty_ok() {
         final var pageable = PageRequest.of(1, 10);
 
-        var today = LocalDate.parse("2025-10-16");
-        when(dateBoundaryCalculator.getToday()).thenReturn(today);
-        when(dateBoundaryCalculator.startOfDay(today)).thenReturn(null);
-        when(dateBoundaryCalculator.startOfNextDay(today)).thenReturn(null);
-
         Page<ResolutionCode> emptyPage = new PageImpl<>(List.of(), pageable, 0);
-        when(repository.findActiveOnDate(eq(null), eq(null), any(), any(), eq(pageable)))
+        when(repository.findActiveOnDate(eq(null), eq(null), any(), eq(pageable)))
                 .thenReturn(emptyPage);
 
         doAnswer(
@@ -206,7 +203,7 @@ public class ResultCodeServiceImplTest {
                 .when(pageMapper)
                 .toPage(eq(emptyPage), any(ResultCodePage.class));
 
-        ResultCodePage pageDto = service.getPage(null, null, pageable);
+        ResultCodePage pageDto = service.findAll(null, null, pageable);
 
         Assertions.assertEquals(0, pageDto.getTotalElements());
         Assertions.assertEquals(0, pageDto.getTotalPages());

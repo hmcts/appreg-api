@@ -72,14 +72,13 @@ public class ResultCodeServiceImpl implements ResultCodeService {
      * @throws AppRegistryException if no match or multiple matches are found
      */
     @Override
-    public ResultCodeGetDetailDto findByCodeAndDate(String code, LocalDate date) {
+    public ResultCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
                 AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
-                    log.debug("Start: Find ResultCode using code: {} date: {}", code, date);
+                    log.debug("Start: Find active Result Code using code: {} date: {}", code, date);
                     final List<ResolutionCode> rows =
-                            repository.findActiveResolutionCodesByCodeAndDate(
-                                    code, date);
+                            repository.findActiveResolutionCodesByCodeAndDate(code, date);
 
                     if (rows.isEmpty()) {
                         throw new AppRegistryException(
@@ -93,10 +92,10 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                                         .formatted(code, date));
                     }
 
-                    // Map the single matching entity to a detail DTO
+                    log.debug(
+                            "Finish: Find active Result Code for code: {} on date: {}", code, date);
                     return Optional.of(mapper.toDetailDto(rows.getFirst()));
                 },
-                // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
@@ -112,7 +111,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
      * @return a page of Result Code summaries
      */
     @Override
-    public ResultCodePage getPage(String codeFilter, String titleFilter, Pageable pageable) {
+    public ResultCodePage findAll(String codeFilter, String titleFilter, Pageable pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
         var todayUk = LocalDate.now(clock.withZone(ukZone));
@@ -120,18 +119,16 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         return auditService.processAudit(
                 AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
                 unused -> {
-                    Page<ResolutionCode> dbPage =
-                            repository.findActiveOnDate(
-                                    codeFilter,
-                                    titleFilter,
-                                    todayUk,
-                                    pageable);
+                    log.debug(
+                            "Start: Find active Result Codes filtered by code: {} and title: {}",
+                            codeFilter,
+                            titleFilter);
 
-                    // Populate the API page response with metadata
+                    Page<ResolutionCode> dbPage =
+                            repository.findActiveOnDate(codeFilter, titleFilter, todayUk, pageable);
+
                     var responsePage = new ResultCodePage();
 
-                    // Ensure content is never null: API spec requires an array, so return []
-                    // instead of null
                     if (responsePage.getContent() == null) {
                         responsePage.setContent(new ArrayList<>());
                     }
@@ -139,7 +136,12 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                     pageMapper.toPage(dbPage, responsePage);
 
                     // Map each entity to a summary DTO and add to the page content
-                    dbPage.forEach(code -> responsePage.addContentItem(mapper.toSummaryDto(code)));
+                    dbPage.forEach(rc -> responsePage.addContentItem(mapper.toSummaryDto(rc)));
+
+                    log.debug(
+                            "Finish: Find active Result Codes filtered by code: {} and title: {}",
+                            codeFilter,
+                            titleFilter);
 
                     return Optional.of(responsePage);
                 },

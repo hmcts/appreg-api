@@ -33,8 +33,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 @Slf4j
 public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
-    private static final int SINGLE_RECORD = 1;
-
     private final ApplicationCodeRepository repository;
     private final ApplicationCodeMapper applicationCodeMapper;
     private final ApplicationFeeService feeService;
@@ -95,7 +93,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
-                    log.debug("Start: Find Application for app code: {} date: {}", code, date);
+                    log.debug(
+                            "Start: Find active Application Code using code: {} date: {}",
+                            code,
+                            date);
 
                     final List<ApplicationCode> applicationCodeResults =
                             repository.findByCodeAndDate(code, date);
@@ -105,12 +106,13 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     if (applicationCodeResults.isEmpty()) {
                         throw new AppRegistryException(
                                 ApplicationCodeError.CODE_NOT_FOUND,
-                                " No code found for code %s and date %s".formatted(code, date));
+                                "No code found for code %s and date %s".formatted(code, date));
                     } else {
                         if (applicationCodeResults.size() > 1) {
                             log.warn(
-                                    "Too many records found for code %s and date %s. Defaulting to first one"
-                                            .formatted(code, date));
+                                    "Too many records found for code: {} and date: {}. Defaulting to first one",
+                                    code,
+                                    date);
                         }
 
                         codeToConsider = applicationCodeResults.getFirst();
@@ -124,7 +126,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                             feePair != null ? feePair.mainFee() : null,
                                             feePair != null ? feePair.offsiteFee() : null));
 
-                    log.debug("Finish: Find Application for app code: {} date: {}", code, date);
+                    log.debug(
+                            "Finish: Find active Application Code using code: {} and date: {}",
+                            code,
+                            date);
                     return result;
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

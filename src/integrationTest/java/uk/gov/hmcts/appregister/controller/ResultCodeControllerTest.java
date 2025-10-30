@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -165,7 +166,6 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         // Don’t assert total count—just presence of known seeds
         assertThat(page.getContent())
                 .extracting("resultCode")
-                .asList()
                 .contains(APPC_CODE, AUTH_CODE, CASE_CODE);
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
@@ -193,7 +193,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
-        assertThat(page.getContent()).extracting("resultCode").asList().contains(APPC_CODE);
+        assertThat(page.getContent()).extracting("resultCode").contains(APPC_CODE);
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -220,7 +220,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
-        assertThat(page.getContent()).extracting("resultCode").asList().contains(AUTH_CODE);
+        assertThat(page.getContent()).extracting("resultCode").contains(AUTH_CODE);
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
@@ -247,7 +247,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
-        var codes = page.getContent().stream().map(i -> (String) i.getResultCode()).toList();
+        var codes = page.getContent().stream().map(ResultCodeGetSummaryDto::getResultCode).toList();
         assertThat(codes).contains(CASE_CODE);
         assertThat(codes.stream().filter(CASE_CODE::equals).count()).isEqualTo(1);
 
@@ -268,7 +268,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("title,asc", "resultCode,desc"),
+                        List.of("title,asc", "code,desc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         new ResultCodeFilter(Optional.empty(), Optional.empty()),

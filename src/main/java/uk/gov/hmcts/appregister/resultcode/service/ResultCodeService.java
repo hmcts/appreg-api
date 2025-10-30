@@ -24,7 +24,7 @@ public interface ResultCodeService {
      * @param date ISO date (yyyy-MM-dd) on which the Result Code must be valid
      * @return detailed Result Code DTO for the matching record
      */
-    ResultCodeGetDetailDto findByCodeAndDate(String code, LocalDate date);
+    ResultCodeGetDetailDto findByCode(String code, LocalDate date);
 
     /**
      * Retrieve a paginated list of active Result Codes.
@@ -44,5 +44,5 @@ public interface ResultCodeService {
      * @param pageable Spring Data paging and sorting configuration
      * @return a page of summarised Result Codes with metadata
      */
-    ResultCodePage getPage(String codeFilter, String titleFilter, Pageable pageable);
+    ResultCodePage findAll(String codeFilter, String titleFilter, Pageable pageable);
 }

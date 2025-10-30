@@ -4,13 +4,11 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
-
 import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
@@ -48,13 +46,14 @@ public class ResultCodeController implements ResultCodesApi {
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
 
+    // Maps and validates API sort parameters to entity field names.
     private final SortMapper sortMapper;
 
     /**
      * Retrieve a single Result Code by its code and a date where the Result Code is "Active".
      *
-     * <p>Delegates to {@link ResultCodeService#findByCodeAndDate(String, LocalDate)}. If no active
-     * court is found, the service layer throws a domain-specific exception.
+     * <p>Delegates to {@link ResultCodeService#findByCode(String, LocalDate)}. If no active court
+     * is found, the service layer throws a domain-specific exception.
      *
      * @param code identifier for the Result Code (case-insensitive)
      * @param date ISO date (yyyy-MM-dd) on which the Result Code must be "Active"
@@ -63,7 +62,8 @@ public class ResultCodeController implements ResultCodesApi {
     @Override
     public ResponseEntity<ResultCodeGetDetailDto> getResultCodeByCodeAndDate(
             String code, LocalDate date) {
-        var dto = resultCodeService.findByCodeAndDate(code, date);
+        var dto = resultCodeService.findByCode(code, date);
+        log.info("getResultCodes: code: {}, date: {}", code, date);
         return ResponseEntity.ok(dto);
     }
 
@@ -91,27 +91,29 @@ public class ResultCodeController implements ResultCodesApi {
     public ResponseEntity<ResultCodePage> getResultCodes(
             String code, String title, Integer page, Integer size, List<String> sort) {
 
-        sort = sort == null || sort.isEmpty() ? List.of() : sort;
+        final List<String> entitySortFields = toEntitySort(sort);
 
-        // map the sort parameters from OpenAPI to entity fields
-        sort =
-            sortMapper.map(
-                SortableField.of(sort.toArray(new String[0])),
-                ResultCodeSortFieldEnum::getEntityValue);
-
-        // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
         Pageable pageable =
                 pageableMapper.from(
-                        page, size, sort, ResolutionCode_.RESULT_CODE, Sort.Direction.ASC);
+                        page,
+                        size,
+                        entitySortFields,
+                        ResolutionCode_.RESULT_CODE,
+                        Sort.Direction.ASC);
+
+        var resultCodePage = resultCodeService.findAll(code, title, pageable);
 
         log.info(
-            "getResultCodes: code: {}, title {}, page: {}, size: {}",
-            code,
-            title,
-            page,
-            size);
-        var resultCodePage = resultCodeService.getPage(code, title, pageable);
+                "getResultCodes: code: {}, title: {}, page: {}, size: {}", code, title, page, size);
+        return ResponseEntity.ok().body(resultCodePage);
+    }
 
-        return ResponseEntity.ok(resultCodePage);
+    private List<String> toEntitySort(List<String> sort) {
+        if (sort == null || sort.isEmpty()) {
+            return List.of();
+        }
+        return sortMapper.map(
+                SortableField.of(sort.toArray(new String[0])),
+                ResultCodeSortFieldEnum::getEntityValue);
     }
 }
