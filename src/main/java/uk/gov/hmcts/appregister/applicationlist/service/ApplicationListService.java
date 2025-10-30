@@ -32,6 +32,26 @@ public interface ApplicationListService {
     ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
 
     /**
+     * Gets a new Application List.
+     *
+     * <p>This method encapsulates all business logic required to:
+     *
+     * <ul>
+     *   <li>Fetch the list metadata and total entry count
+     *   <li>Query a lightweight projection of entry summaries ordered by sequence number
+     * </ul>
+     *
+     * <p>The operation is read-only and does not modify any data. Pagination and sorting are
+     * handled via the supplied {@link Pageable}, which is typically created from OpenAPI paging
+     * parameters by a mapper.
+     *
+     * @param id the unique identifier of the application list to retrieve
+     * @param pageable Spring Data paging and sorting configuration for entry summaries
+     * @return a detailed DTO representing the retrieved application list
+     */
+    ApplicationListGetDetailDto get(UUID id, Pageable pageable);
+
+    /**
      * Deletes an Application List.
      *
      * @param idToDelete the id to delete

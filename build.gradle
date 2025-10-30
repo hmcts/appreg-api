@@ -558,7 +558,7 @@ openApiGenerate {
 // Add a new jar that will be published to maven with the classifier -openapi
 tasks.register('openapiJarArtefact', Jar) {
   archiveClassifier = 'openapi'
-  from layout.buildDirectory.dir("./resources/main/openapi").get().asFile
+  from new File("$rootDir/src/main/resources/openapi")
 }
 
 // Add a new jar that will be published to maven with the classifier -flyway

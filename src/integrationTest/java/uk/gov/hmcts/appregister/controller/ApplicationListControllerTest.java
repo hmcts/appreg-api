@@ -191,6 +191,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ProblemAssertUtil.assertEquals(CourtLocationError.COURT_NOT_FOUND.getCode(), resp);
     }
 
+    // --- Not found: CJA -----------------------------------------------------------------------
     @Test
     void givenUnknownCja_whenCreate_then404() throws Exception {
         var token =
@@ -715,5 +716,84 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         null);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @DisplayName("GET Application List")
+    void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        UUID id = dto.getId();
+
+        // fire test
+        resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+
+        dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
+        assertThat(dto.getEntriesCount()).isEqualTo(0);
+        assertThat(dto.getEntriesSummary()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("GET Application List: 403 when no role")
+    void givenNoRole_whenGetApplicationList_then403() throws Exception {
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
+
+        UUID id = UUID.randomUUID();
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    // --- Not found: Application List -------------------------------------------------
+    @Test
+    @DisplayName("GET Application List: 404 when list unknown")
+    void givenUnknownApplicationList_whenGetApplicationList_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        UUID id = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 }

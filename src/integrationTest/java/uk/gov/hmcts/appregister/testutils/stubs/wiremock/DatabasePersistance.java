@@ -11,6 +11,7 @@ import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
 /**
  * A persistence class that knows how to install the data into the database in the correct order.
@@ -43,6 +45,8 @@ public class DatabasePersistance {
     @Autowired private NameAddressRepository nameAddressRepository;
 
     @Autowired private ApplicationRegisterRepository applicationRegisterRepository;
+
+    @Autowired private StandardApplicantRepository standardApplicantRepository;
 
     public ApplicationCode save(ApplicationCode data) {
 
@@ -99,6 +103,14 @@ public class DatabasePersistance {
             save(entry.getApplicationList());
         }
 
+        if (entry.getStandardApplicant() != null) {
+            save(entry.getStandardApplicant());
+        }
+
+        if (entry.getRnameaddress() != null) {
+            save(entry.getRnameaddress());
+        }
+
         return applicationListEntryRepository.saveAndFlush(entry);
     }
 
@@ -108,5 +120,9 @@ public class DatabasePersistance {
         }
 
         return applicationListRepository.saveAndFlush(entry);
+    }
+
+    public StandardApplicant save(StandardApplicant data) {
+        return standardApplicantRepository.saveAndFlush(data);
     }
 }
