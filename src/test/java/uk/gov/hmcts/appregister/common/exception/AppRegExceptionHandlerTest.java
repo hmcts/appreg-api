@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import uk.gov.hmcts.appregister.applicationcode.exception.AppCodeError;
+import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 
 class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
@@ -24,7 +24,7 @@ class AppRegExceptionHandlerTest {
                     throws Exception {
         // setup
         AppRegistryException exception =
-                new AppRegistryException(AppCodeError.CODE_NOT_FOUND, "Test message", null);
+                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -34,13 +34,13 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(HttpStatusCode.valueOf(404), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getHttpCode().value(),
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getHttpCode().value(),
                 problemDetail.getBody().getStatus());
         Assertions.assertEquals(
-                AppCodeError.CODE_NOT_FOUND.getCode().getMessage(),
+                ApplicationCodeError.CODE_NOT_FOUND.getCode().getMessage(),
                 problemDetail.getBody().getDetail());
         Assertions.assertEquals(
-                new URI(AppCodeError.CODE_NOT_FOUND.getCode().getAppCode()),
+                new URI(ApplicationCodeError.CODE_NOT_FOUND.getCode().getAppCode()),
                 problemDetail.getBody().getType());
     }
 

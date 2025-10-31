@@ -13,6 +13,7 @@
 # Version	Date		Who		Purpose
 # 1.0		14/08/2025	Matthew Harman	Initial Version
 # 2.0		25/09/2025	Matthew Harman	Move to an incremental approach
+# 3.0		28/10/2025	Matthew Harman	Added Deletes with incremental
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -21,7 +22,7 @@
 #						FULL for big bang
 #				NOTE: CRIMINAL_JUSTICE_AREA will always be big 
 #				bang as this does not have a CHANGED_DATE field
-operation_mode='INCREMENTAL';
+operation_mode='FULL';
 
 # spool_location		Location to store extracted files
 spool_location='/opt/moj/rman/appreg';
@@ -39,6 +40,12 @@ postgres_schema_file="${spool_location}/create_import_schema.sql";
 # Blank the file
 >${postgres_schema_file}
 
+# postgres_delete_schema_file	Location of the file created to reload the
+#				postgres tables for staging the deleted data
+postgres_delete_schema_file="${spool_location}/create_delete_schema.sql";
+# Blank the file
+>${postgres_delete_schema_file}
+
 # postgres_environment		Postgres environment connection string
 #				NOTE: Don't put passwords here
 postgres_environment='postgresql://pgadmin:<pwd>@appreg-stg.postgres.database.azure.com:5432/appreg-db';
@@ -49,12 +56,46 @@ postgres_commands_file="${spool_location}/commands.sql";
 # Blank the file
 >${postgres_commands_file}
 
+# postgres_delete_commands_file	Location of the file created to have the 
+#				commands to load the .csv's into postgres
+#				for the deleted records
+postgres_delete_commands_file="${spool_location}/commands_delete.sql";
+# Blank the file
+>${postgres_delete_commands_file}
+
 # postgres_insert_file		Location of the file created to insert the 
 #				data into postgres
 postgres_insert_file="${spool_location}/insert_data.sql";
 # Blank the file
 >${postgres_insert_file}
 
+# postgres_delete_file		Location of the file created to delete the 
+#				data into postgres
+postgres_delete_file="${spool_location}/delete_data.sql";
+# Blank the file
+>${postgres_delete_file}
+
+# Clear the deletes file
+>deletes.sql
+
+FIRST_TIME="YES";
+
+export ORACLE_SID=LPRD1
+export ORACLE_HOME=/opt/moj/oracle/product/10.2.0/db
+export PATH=$ORACLE_HOME/bin:$PATH
+
+
+SCN=$(sqlplus -s "/ as sysdba" <<END
+col current_scn format 9999999999999
+set feedback off
+set head off
+set pagesize 0
+select ltrim(rtrim(current_scn)) from v\$database;
+exit;
+END
+)
+
+echo "scn is ${SCN}";
 
 # Define functions
 pop_postgres5() {
@@ -150,6 +191,8 @@ FIELD_SEPARATOR=$IFS
 IFS=','
 NEWLINE=$'\n'
 
+DATE_TIME=`date +%Y%m%d-%H%M`
+
 if [ $operation_mode == "INCREMENTAL" ]
 then
 	if [ ! -f $incremental_tracking_file ]
@@ -157,7 +200,8 @@ then
 		>$incremental_tracking_file
 	else
 		# backup the file
-		cp $incremental_tracking_file ${incremental_tracking_file}_`date +%Y%m%d-%H%M`	
+		mv $incremental_tracking_file ${incremental_tracking_file}_${DATE_TIME}	
+		FIRST_TIME="NO";
 	fi
 	now_date=`date +%Y-%m-%d`
 	now_time=`date +%H:%M:%S`
@@ -573,8 +617,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 
 echo "sql: $sql_script"
 		# scn parameter
-		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
-		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
+#		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
+#		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
 		
 		sql_script="${sql_script}spool ${spool_location}/${tables_to_extract}.csv;";
 		sql_script="${sql_script}${NEWLINE}SELECT${NEWLINE}";
@@ -838,21 +882,21 @@ echo "sqlaa: $sql_script";
 		echo ");${NEWLINE}">>${postgres_schema_file};
 
 echo "sql3: $sql_script"
-		sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN &SNAP_SCN${NEWLINE}";
+		sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
 		if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
 		then
 			sql_script="${sql_script}WHERE${NEWLINE}";
 			# Need to write the date filter
 			# Have we done this table before
-			record_count=`cat ${incremental_tracking_file}|grep ${tables_to_extract}|wc -l`;
+			record_count=`cat ${incremental_tracking_file}_${DATE_TIME}|grep ${tables_to_extract}|wc -l`;
 			if [ $record_count -eq 1 ]
 			then
 				# extract the lower water mark
 echo "before lwm"
 echo "tables to extract ${tables_to_extract}";
 echo "tracking file: ${incremental_tracking_file}";
-				lwm_date="$(grep "^${tables_to_extract}#" "$incremental_tracking_file" | awk -F'#' '{print $2}')"
-				lwm_time="$(grep "^${tables_to_extract}#" "$incremental_tracking_file" | awk -F'#' '{print $3}')"
+				lwm_date="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $2}')"
+				lwm_time="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $3}')"
 echo "lwm_date: ${lwm_date}"
 echo "lwm_time: ${lwm_time}"
 				sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' > TO_TIMESTAMP_TZ('${lwm_date} ${lwm_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
@@ -895,19 +939,7 @@ echo "ZZ: ${sql_script}";
 		if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
 		then
 			# record the hwm in the tracking file
-			if [ $record_count -eq 1 ]
-			then
-echo "Y1";
-				# record exists, modify it
-				sed -i "s|^${tables_to_extract}#.*|${tables_to_extract}#${now_date}#${now_time}|" "${incremental_tracking_file}";
-echo "Y1A";
-			else
-echo "Y2";
-echo "utc date: ${now_date}";
-echo "utc time: ${now_time}";
-				# Nothing there, write a new line
-				echo "${tables_to_extract}#${now_date}#${now_time}">>${incremental_tracking_file};
-			fi
+			echo "${tables_to_extract}#${now_date}#${now_time}#${SCN}">>${incremental_tracking_file};
 		fi
 		echo "${hash_index_drop}${NEWLINE}">>${postgres_insert_file};
 
@@ -947,8 +979,8 @@ echo "sql4: $sql_script"
 		sql_postgres5="";
 
 		# scn parameter
-		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
-		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
+#		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
+#		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
 
 		sql_script="${sql_script}spool ${spool_location}/${tables_to_extract}.csv;";
 
@@ -1232,7 +1264,7 @@ echo $field_name
 			sql_script="${sql_script}${sql1_script}";
 #			sql_script="${sql_script}${l_clob_field},${NEWLINE}";
 			sql_script="${sql_script}${sql3_script}${NEWLINE}";
-			sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN &SNAP_SCN${NEWLINE}";
+			sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
 
 			# Do the incremental parameters
 			if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
@@ -1240,15 +1272,15 @@ echo $field_name
 				sql_script="${sql_script}WHERE${NEWLINE}";
 				# Need to write the date filter
 				# Have we done this table before
-				record_count=`cat ${incremental_tracking_file}|grep ${tables_to_extract}|wc -l`;
+				record_count=`cat ${incremental_tracking_file}_${DATE_TIME}|grep ${tables_to_extract}|wc -l`;
 				if [ $record_count -eq 1 ]
 				then
 					# extract the lower water mark
 echo "before lwm"
 echo "tables to extract ${tables_to_extract}";
 echo "tracking file: ${incremental_tracking_file}";
-					lwm_date="$(grep "^${tables_to_extract}#" "$incremental_tracking_file" | awk -F'#' '{print $2}')"
-					lwm_time="$(grep "^${tables_to_extract}#" "$incremental_tracking_file" | awk -F'#' '{print $3}')"
+					lwm_date="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $2}')"
+					lwm_time="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $3}')"
 echo "lwm_date: ${lwm_date}"
 echo "lwm_time: ${lwm_time}"
 					sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' > TO_TIMESTAMP_TZ('${lwm_date} ${lwm_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
@@ -1302,19 +1334,7 @@ echo "s	ql_end: $sql_script";
 			if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
 			then
 				# record the hwm in the tracking file
-				if [ $record_count -eq 1 ]
-				then
-echo "Y1";
-					# record exists, modify it
-					sed -i "s|^${tables_to_extract}#.*|${tables_to_extract}#${now_date}#${now_time}|" "${incremental_tracking_file}";
-echo "Y1A";
-				else
-echo "Y2";
-echo "utc date: ${now_date}";
-echo "utc time: ${now_time}";
-					# Nothing there, write a new line
-					echo "${tables_to_extract}#${now_date}#${now_time}">>${incremental_tracking_file};
-				fi
+				echo "${tables_to_extract}#${now_date}#${now_time}#${SCN}">>${incremental_tracking_file};
 			fi
 			echo "sql4: $sql_script"
 
@@ -1337,3 +1357,297 @@ done
 
 # Write out the calling script
 echo "${calling_script}">extract_data.sql
+
+# Do the deletes
+echo "reverse"
+echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract; do
+	# Work out our variables
+	case $tables_to_extract in
+		APPREGISTER.APPLICATION_CODES)
+			echo "in APPLICATION_CODES"
+			primary_key="AC_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='application_codes';
+			lower_with_schema='appregister.application_codes';
+			;;
+		APPREGISTER.APPLICATION_LISTS)
+			echo "in APPLICATION_LISTS"
+			primary_key="AL_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='application_lists';
+			lower_with_schema='appregister.application_lists';
+			;;
+		APPREGISTER.APPLICATION_LIST_ENTRIES)
+			echo "in APPLICATION_LIST_ENTRIES"
+			primary_key="ALE_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='application_list_entries';
+			lower_with_schema='appregister.application_list_entries';
+			;;
+		APPREGISTER.APPLICATION_REGISTER)
+			echo "in APPLICATION_REGISTER"
+			primary_key="AR_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='application_register';
+			lower_with_schema='appregister.application_register';
+			;;
+		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
+			echo "in APP_LIST_ENTRY_FEE_ID"
+			primary_key="NVL(TO_CHAR(ALE_ALE_ID),'')||'|'||NVL(TO_CHAR(FEE_FEE_ID),'')||'|'||NVL(TO_CHAR(VERSION),'')||'|'||NVL(TO_CHAR(CHANGED_BY),'')||'|'||NVL(TO_CHAR(CHANGED_DATE,'YYYY-MM-DD HH24:MI:SS'),'')||'|'||REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(NVL(USER_NAME,''),'\','\\\\'),'|','\p'),CHR(13),'\r'),CHR(10),'\n'),CHR(9),'\t') AS row_text";
+			delete_allowed="YES";
+			concatenated_key="YES";
+			concatenated_string="row_text";
+			lower_table_name='app_list_entry_fee_id';
+			lower_with_schema='appregister.app_list_entry_fee_id';
+			delete_statement="WITH parsed AS (
+				SELECT 
+				(a[1])::text AS ale_ale_id_txt,
+				(a[2])::text AS fee_fee_id_txt,
+				(a[3])::text AS version_txt,
+				(a[4])::text AS changed_by_txt,
+				(a[5])::timestamp AS changed_date,
+				a[6] AS user_name_esc
+				FROM (SELECT string_to_array(row_text,'|') AS a
+					FROM ${postgres_schema}.${lower_table_name}_delete_temp) s
+				),
+				unescaped AS (
+					SELECT 
+					ale_ale_id_txt, fee_fee_id_txt, version_txt, changed_by_txt, changed_date,
+					REPLACE(REPLACE(REPLACE(REPLACE(user_name_esc, '\p','|'),
+						'\t', E'\t'),
+						'\r', E'\r'),
+						'\n', E'\n') AS user_name_mid
+					FROM parsed
+				),
+				final_rows AS (
+					SELECT 
+						ale_ale_id_txt, fee_fee_id_txt, version_txt, changed_by_txt, changed_date,
+					LEFT(REPLACE(user_name_mid, '\\','\'), 250)::varchar(250) as user_name
+					FROM unescaped
+				)
+				DELETE FROM ${postgres_schema}.${lower_table_name} t
+				USING final_rows d
+				WHERE t.ale_ale_id::text = d.ale_ale_id_txt
+				AND t.fee_fee_id::text = d.fee_fee_id_txt
+				AND t.version::text = d.version_txt
+				AND t.changed_by = d.changed_by_txt
+				AND t.changed_date = d.changed_date
+				AND t.user_name = d.user_name;";
+			;;
+		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
+			echo "in APP_LIST_ENTRY_FEE_STATUS"
+			primary_key="ALEFS_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='app_list_entry_fee_status';
+			lower_with_schema='appregister.app_list_entry_fee_status';
+			;;
+		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
+			echo "in APP_LIST_ENTRY_OFFICIAL"
+			primary_key="ALEO_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='app_list_entry_official';
+			lower_with_schema='appregister.app_list_entry_official';
+			;;
+		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
+			echo "in APP_LIST_ENTRY_RESOLUTIONS"
+			primary_key="ALER_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='app_list_entry_resolutions';
+			lower_with_schema='appregister.app_list_entry_resolutions';
+			;;
+		APPREGISTER.CRIMINAL_JUSTICE_AREA)
+			echo "in CRIMINAL_JUSTICE_AREA"
+			primary_key="CJA_ID";
+			delete_allowed="NO";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='criminal_justice_area';
+			lower_with_schema='appregister.criminal_justice_area';
+			;;
+		APPREGISTER.DATA_AUDIT)
+			echo "in DATA_AUDIT"
+			primary_key="DATA_ID";
+			delete_allowed="NO";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='data_audit';
+			lower_with_schema='appregister.data_audit';
+			;;
+		APPREGISTER.FEE)
+			echo "in FEE"
+			primary_key="FEE_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='fee';
+			lower_with_schema='appregister.fee';
+			;;
+		APPREGISTER.NAME_ADDRESS)
+			echo "in NAME_ADDRESS"
+			primary_key="NA_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='name_address';
+			lower_with_schema='appregister.name_address';
+			;;
+		APPREGISTER.RESOLUTION_CODES)
+			echo "in RESOLUTION_CODES"
+			primary_key="RC_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='resolution_codes';
+			lower_with_schema='appregister.resolution_codes';
+			;;
+		APPREGISTER.STANDARD_APPLICANTS)
+			echo "in STANDARD_APPLICANTS"
+			primary_key="SA_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='standard_applicants';
+			lower_with_schema='appregister.standard_applicants';
+			;;
+		LIBRA.NATIONAL_COURT_HOUSES)
+			echo "in NATIONAL_COURT_HOUSES"
+			primary_key="NCH_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='national_court_houses';
+			lower_with_schema='libra.national_court_houses';
+			;;
+		LIBRA.LINK_ADDRESSES)
+			echo "in LINK_ADDRESSES"
+			primary_key="LA_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='link_addresses';
+			lower_with_schema='libra.link_addresses';
+			;;
+		LIBRA.ADDRESSES)
+			echo "in ADDRESSES"
+			primary_key="ADR_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='addresses';
+			lower_with_schema='libra.addresses';
+			;;
+		LIBRA.LINK_COMMUNICATION_MEDIA)
+			echo "in LINK_COMMUNICATION_MEDIA"
+			primary_key="LCM_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='link_communication_media';
+			lower_with_schema='libra.link_communication_media';
+			;;
+		LIBRA.COMMUNICATION_MEDIA)
+			echo "in COMMUNICATION_MEDIA"
+			primary_key="COMM_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='communication_media';
+			lower_with_schema='libra.communication_media';
+			;;
+		LIBRA.PETTY_SESSIONAL_AREAS)
+			echo "in PETTY_SESSIONAL_AREAS"
+			primary_key="PSA_ID";
+			delete_allowed="YES";
+			concatenated_key="NO";
+			concatenated_string="";
+			lower_table_name='petty_sessional_areas';
+			lower_with_schema='libra.petty_sessional_areas';
+			;;
+	esac
+
+	if [[ "$delete_allowed" == "YES" ]]
+	then
+		if [[ "$FIRST_TIME" == "NO" ]]
+		then
+			# Find the old SCN number
+			last_scn="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $4}')"
+			echo "${tables_to_extract} ${last_scn}";
+	
+			# Start to generate the sql file
+			echo "DEFINE LAST_SCN = '${last_scn}'">>deletes.sql
+			echo "COLUMN THIS_SCN NEW_VALUE THIS_SCN">>deletes.sql
+			echo "SELECT TO_CHAR(current_scn,'FM9999999999999999999999999999990') AS THIS_SCN FROM v\$database;">>deletes.sql
+			echo "PROMPT Diffing deletes using (LAST_SCN=&LAST_SCN, THIS_SCN=&THIS_SCN)">>deletes.sql
+			echo "SET PAGESIZE 0 HEADING OFF FEEDBACK OFF VERIFY OFF">>deletes.sql
+			echo "SET LINESIZE 32767 WRAP OFF TRIMSPOOL OFF TAB OFF">>deletes.sql
+			echo "SPOOL ${spool_location}/${tables_to_extract}.deletes.csv">>deletes.sql
+			echo "WITH">>deletes.sql
+			echo "old_keys AS (">>deletes.sql
+			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &LAST_SCN">>deletes.sql 
+			echo "),">>deletes.sql
+			echo "new_keys AS (">>deletes.sql
+			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &THIS_SCN">>deletes.sql 
+			echo ")">>deletes.sql
+			if [[ "$concatenated_key" == "YES" ]]
+			then
+				echo "SELECT ${concatenated_string}">>deletes.sql
+				echo "FROM old_keys">>deletes.sql
+				echo "MINUS">>deletes.sql
+				echo "SELECT ${concatenated_string}">>deletes.sql
+				echo "FROM new_keys">>deletes.sql
+
+				# Create the schema for the deletes
+				echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_delete_temp;">>${postgres_delete_schema_file}
+				echo "">>${postgres_delete_schema_file}
+				echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (row_text TEXT);">>${postgres_delete_schema_file}
+				echo "">>${postgres_delete_schema_file}
+
+				# Write the commands to delete the data from 
+				# the main postgres schema
+				echo "${delete_statement}">>${postgres_delete_file};
+				echo "">>${postgres_delete_file}
+			else
+				echo "SELECT TO_CHAR(${primary_key})">>deletes.sql
+				echo "FROM old_keys">>deletes.sql
+				echo "MINUS">>deletes.sql
+				echo "SELECT TO_CHAR(${primary_key})">>deletes.sql
+				echo "FROM new_keys">>deletes.sql
+		
+				# Create the schema for the deletes
+				echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_delete_temp;">>${postgres_delete_schema_file}
+				echo "">>${postgres_delete_schema_file}
+				echo "CREATE UNLOGGED TABLE IF NOT EXISTS ${postgres_schema}.${lower_table_name}_delete_temp (${primary_key} NUMERIC);">>${postgres_delete_schema_file}
+				echo "">>${postgres_delete_schema_file}
+	
+				# Write the commands to delete the data from the main
+				# postgres schema
+				echo "delete from ${postgres_schema}.${lower_table_name} t">>${postgres_delete_file};
+				echo "USING ${postgres_schema}.${lower_table_name}_delete_temp d">>${postgres_delete_file};
+				echo "WHERE t.${primary_key} =  d.${primary_key};">>${postgres_delete_file};
+				echo "">>${postgres_delete_file}
+			fi
+			echo "ORDER BY 1;">>deletes.sql
+			echo "SPOOL OFF">>deletes.sql
+			echo "">>deletes.sql
+	
+			# Populate the postgres commands file
+			echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_delete_temp FROM '${lower_with_schema}.deletes.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_delete_commands_file;
+	
+		fi
+	fi
+done
+

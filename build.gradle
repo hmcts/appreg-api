@@ -2,10 +2,10 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.5.6'
-  id 'com.github.ben-manes.versions' version '0.52.0'
+  id 'org.springframework.boot' version '3.5.7'
+  id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
-  id "io.freefair.lombok" version "8.13.1"
+  id "io.freefair.lombok" version "8.14.2"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -14,7 +14,10 @@ plugins {
   id 'com.diffplug.spotless' version '7.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'org.openapi.generator' version '7.5.0'
+  id 'maven-publish'
 }
+
+
 
 tasks.withType(JavaCompile).configureEach {
   // Show deprecation warnings
@@ -25,8 +28,10 @@ ext {
   releaseTrainVersion = '2025.0.0' // Example: "2021.0.x" corresponds to Spring Boot 2.6.x or 2.7.x
 }
 
+def buildNumber = System.getenv("RELEASE_VERSION")?: "DEV-SNAPSHOT"
+
 checkstyle {
-  toolVersion = '11.0.1'                // or a version that matches your rules
+  toolVersion = '11.1.0'                // or a version that matches your rules
 }
 
 dependencyManagement {
@@ -38,7 +43,7 @@ dependencyManagement {
 application {
   mainClass = 'uk.gov.hmcts.appregister.Application'
   group = 'uk.gov.hmcts.appregister'
-  version = '0.0.1'
+  version buildNumber
 }
 
 java {
@@ -217,9 +222,6 @@ tasks.register('smoke', Test) {
 def commonJacocoExclusionsIntegration = [
         "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
-        "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
 
         // We need to reduce the code under mappers by using MapStruct
         "**/uk/gov/hmcts/appregister/**/mapper/*.class",
@@ -234,9 +236,6 @@ def commonJacocoExclusionsIntegration = [
 def commonJacocoExclusionsUnit = [
         "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationentry/**/*.class",
-        "**/uk/gov/hmcts/appregister/report/**/*.class",
-        "**/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*.class",
 
         // These are packages in which I do not envisage tests. These would be tested more appropriately in
         // integration tests or other types of tests
@@ -244,9 +243,6 @@ def commonJacocoExclusionsUnit = [
         "**/uk/gov/hmcts/appregister/**/dao/*.class",
         "**/uk/gov/hmcts/appregister/**/config/*.class",
         "**/uk/gov/hmcts/appregister/**/entity/*.class",
-
-        // If we use MapStruct, we don't need to test the generated mappers or we test them as part of integration tests
-        "**/uk/gov/hmcts/appregister/**/mapper/*.class"
 ]
 
 tasks.register('jacocoUnitReport', JacocoReport) {
@@ -424,7 +420,7 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
 
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
-  implementation 'org.openapitools:jackson-databind-nullable:0.2.7'
+  implementation 'org.openapitools:jackson-databind-nullable:0.2.8'
 
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
@@ -459,7 +455,7 @@ dependencies {
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
   testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
-  testImplementation("org.openapitools:jackson-databind-nullable:0.2.7")
+  testImplementation("org.openapitools:jackson-databind-nullable:0.2.8")
   testImplementation 'org.springframework.security:spring-security-test'
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
   testImplementation 'io.github.hakky54:logcaptor:2.12.1'
@@ -476,7 +472,7 @@ dependencies {
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
 
   // Updated Third-Party Dependencies
-  implementation 'org.apache.commons:commons-lang3:3.18.0'
+  implementation 'org.apache.commons:commons-lang3:3.19.0'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.48'
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
 
@@ -563,12 +559,38 @@ openApiGenerate {
     ]
 }
 
-openApiValidate {
-  inputSpec = file('src/main/resources/openapi/openapi.yaml').toURI().toString()
+// Add a new jar that will be published to maven with the classifier -openapi
+tasks.register('openapiJarArtefact', Jar) {
+  archiveClassifier = 'openapi'
+  from new File("$rootDir/src/main/resources/openapi")
 }
 
-processResources.dependsOn tasks.openApiGenerate
+// Add a new jar that will be published to maven with the classifier -flyway
+tasks.register('flywayArtefact', Jar) {
+  archiveClassifier = 'flyway'
+  from new File("./flyway/migrations"), new File("./flyway/data_population")
+}
+
+processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact
 compileJava.dependsOn tasks.openApiGenerate
 
-
+// publishing configuration
+publishing {
+  publications {
+    maven(MavenPublication) {
+      artifact openapiJarArtefact
+      artifact flywayArtefact
+    }
+  }
+  repositories {
+    maven {
+      name = "AzureArtifacts"
+      url = uri("https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1")
+      credentials {
+        username = System.getenv("AZURE_DEVOPS_ARTIFACT_USERNAME")
+        password = System.getenv("AZURE_DEVOPS_ARTIFACT_TOKEN")
+      }
+    }
+  }
+}
 
