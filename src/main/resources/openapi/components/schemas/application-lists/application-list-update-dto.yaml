@@ -59,11 +59,3 @@ properties:
     maximum: 59
     description: Duration minutes component.
     example: 30
-
-  version:
-    type: integer
-    format: int64
-    description: >
-      Resource version for optimistic concurrency. Must match the current version on the server,
-      otherwise the update will be rejected with 409 Conflict.
-    example: 3
