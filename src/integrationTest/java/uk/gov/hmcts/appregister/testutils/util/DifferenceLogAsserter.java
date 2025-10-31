@@ -42,6 +42,15 @@ public class DifferenceLogAsserter {
             String newValue,
             String updateType,
             String eventName) {
+
+        if (oldValue == null) {
+            oldValue = ".*";
+        }
+
+        if (newValue == null) {
+            newValue = ".*";
+        }
+
         return new DataAuditResult(
                 getAssertionString(tableName, columnName, oldValue, newValue),
                 String.format(

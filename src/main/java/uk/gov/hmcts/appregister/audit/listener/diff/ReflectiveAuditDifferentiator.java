@@ -545,6 +545,15 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
      */
     public static boolean isFieldAnnotatedForCrudAuditOperation(Field method, CrudEnum crudEnum) {
         Audit audit = method.getAnnotation(Audit.class);
-        return (audit != null && crudEnum == audit.action());
+
+        if (audit != null) {
+            for (CrudEnum action : audit.action()) {
+                if (crudEnum == action) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

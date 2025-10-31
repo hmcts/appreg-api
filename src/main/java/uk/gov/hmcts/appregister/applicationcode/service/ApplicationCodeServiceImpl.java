@@ -87,7 +87,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             pageable);
 
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, Optional.empty(), Optional.empty());
+                            new AuditableResult<>(newPage, Optional.empty());
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -129,7 +129,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                             codeToConsider,
                                             feePair != null ? feePair.mainFee() : null,
                                             feePair != null ? feePair.offsiteFee() : null),
-                                    Optional.empty(),
                                     Optional.empty());
                     return Optional.of(result);
                 },

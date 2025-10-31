@@ -82,9 +82,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
 
                     AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
                             new AuditableResult<>(
-                                    mapper.toDetailDto(rows.getFirst()),
-                                    Optional.empty(),
-                                    Optional.empty());
+                                    mapper.toDetailDto(rows.getFirst()), Optional.empty());
 
                     // Map the single matching entity to a detail DTO
                     return Optional.of(result);
@@ -130,7 +128,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
                     AuditableResult<CourtLocationPage, NationalCourtHouse> result =
-                            new AuditableResult<>(responsePage, Optional.empty(), Optional.empty());
+                            new AuditableResult<>(responsePage, Optional.empty());
                     return Optional.of(result);
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;

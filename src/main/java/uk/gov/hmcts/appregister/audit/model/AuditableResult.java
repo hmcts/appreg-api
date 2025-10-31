@@ -16,9 +16,6 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 public class AuditableResult<R, E extends Keyable> {
     private final R resultingValue;
 
-    /** The old entity contains the old data prior to a update or soft delete. */
-    private final Optional<E> oldEntity;
-
     /** The new entity contains the create, updates or soft delete. */
     private final Optional<E> newEntity;
 }

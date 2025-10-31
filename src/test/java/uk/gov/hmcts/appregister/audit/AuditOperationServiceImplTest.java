@@ -48,9 +48,7 @@ class AuditOperationServiceImplTest {
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
-                    return Optional.of(
-                            new AuditableResult<>(
-                                    applicationCodeDto, Optional.empty(), Optional.empty()));
+                    return Optional.of(new AuditableResult<>(applicationCodeDto, Optional.empty()));
                 },
                 listener);
 
@@ -171,7 +169,6 @@ class AuditOperationServiceImplTest {
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.of(new ApplicationList()),
                                                             Optional.empty()));
                                         },
                                         listener));
@@ -195,7 +192,6 @@ class AuditOperationServiceImplTest {
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.of(new ApplicationList()),
                                                             Optional.of(new ApplicationList())));
                                         },
                                         listener));
@@ -219,7 +215,6 @@ class AuditOperationServiceImplTest {
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.empty(),
                                                             Optional.empty()));
                                         },
                                         listener));
@@ -243,7 +238,6 @@ class AuditOperationServiceImplTest {
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.empty(),
                                                             Optional.empty()));
                                         },
                                         listener));
@@ -260,14 +254,13 @@ class AuditOperationServiceImplTest {
                         AppRegistryException.class,
                         () ->
                                 auditOperationServiceImpl.processAudit(
-                                        Optional.of(new ApplicationList()),
+                                        Optional.empty(),
                                         TestAuditOperation.UPDATE,
                                         (req) -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.empty(),
                                                             Optional.of(new ApplicationList())));
                                         },
                                         listener));
@@ -284,15 +277,14 @@ class AuditOperationServiceImplTest {
                         AppRegistryException.class,
                         () ->
                                 auditOperationServiceImpl.processAudit(
-                                        Optional.of(new ApplicationList()),
+                                        Optional.empty(),
                                         TestAuditOperation.UPDATE,
                                         (req) -> {
                                             // Simulate some processing and return a response
                                             return Optional.of(
                                                     new AuditableResult<>(
                                                             new ApplicationList(),
-                                                            Optional.of(new ApplicationList()),
-                                                            Optional.empty()));
+                                                            Optional.of(new ApplicationList())));
                                         },
                                         listener));
 

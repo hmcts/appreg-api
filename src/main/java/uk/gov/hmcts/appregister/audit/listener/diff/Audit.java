@@ -13,5 +13,5 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Target(ElementType.FIELD)
 public @interface Audit {
     /** The auditable action being performed. */
-    CrudEnum action();
+    CrudEnum[] action();
 }
