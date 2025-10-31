@@ -669,20 +669,20 @@ public class ReflectiveAuditDifferentiatorTest {
                 newAppLst.getDescription(),
                 findByField("list_description", differenceList).getNewValue());
 
-        Assertions.assertNotNull(
-                newAppLst.getDurationMinutes(),
+        Assertions.assertEquals(
+                Short.valueOf(newAppLst.getDurationMinutes()).toString(),
                 findByField("duration_minute", differenceList).getNewValue());
 
-        Assertions.assertNotNull(
-                newAppLst.getDurationHours(),
+        Assertions.assertEquals(
+                Short.valueOf(newAppLst.getDurationHours()).toString(),
                 findByField("duration_hour", differenceList).getNewValue());
 
-        Assertions.assertNotNull(
-                newAppLst.getTime(),
+        Assertions.assertEquals(
+                newAppLst.getTime().toString(),
                 findByField("application_list_time", differenceList).getNewValue());
 
-        Assertions.assertNotNull(
-                newAppLst.getDate(),
+        Assertions.assertEquals(
+                newAppLst.getDate().toString(),
                 findByField("application_list_date", differenceList).getNewValue());
     }
 
