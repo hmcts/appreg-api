@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,30 +42,28 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
     List<ApplicationCode> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Searches for application codes based on some filter criteria.
+     * Retrieve a page of active Application Codes filtered by code/title (case-insensitive).
      *
-     * @param code The code to find
-     * @param title The title
-     * @param applyLodgementDate The lodgement date will be a[[lied or not
-     * @param fromTs The from time
-     * @param toTs The to time
-     * @param pageable The pagaeable data to further the results
-     * @return The list of application codes in page format
+     * <p>Active if: c.startDate < :date AND (c.endDate IS NULL OR c.endDate >= :date)
+     *
+     * @param code optional partial code filter (case-insensitive)
+     * @param title optional partial title filter (case-insensitive)
+     * @param date date to evaluate "active" on
+     * @param pageable paging/sorting
+     * @return page of matching entities
      */
     @Query(
             """
         SELECT c
         FROM ApplicationCode c
-        WHERE (:code IS NULL OR c.code = :code)
-        AND (:title IS NULL OR c.title = :title)
-        AND ( :applyLodgementDate = false OR c.id IN (SELECT ale.applicationCode.id FROM ApplicationListEntry ale
-                where ale.lodgementDate >= :fromTs AND ale.lodgementDate < :toTs))
+        WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%'))
+          AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%'))
+          AND c.startDate < :date
+          AND (c.endDate IS NULL OR c.endDate >= :date)
         """)
     Page<ApplicationCode> search(
             @Param("code") String code,
             @Param("title") String title,
-            @Param("applyLodgementDate") Boolean applyLodgementDate,
-            @Param("fromTs") OffsetDateTime fromTs,
-            @Param("toTs") OffsetDateTime toTs,
+            @Param("date") LocalDate date,
             Pageable pageable);
 }

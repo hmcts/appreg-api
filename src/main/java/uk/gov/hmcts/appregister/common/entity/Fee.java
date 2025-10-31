@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -50,7 +51,7 @@ public class Fee implements Accountable, UnmanagedChangeable, Versionable {
     private String description;
 
     @Column(name = "fee_value", nullable = false)
-    private Double amount;
+    private BigDecimal amount;
 
     @Column(name = "fee_start_date", nullable = false)
     private LocalDate startDate;

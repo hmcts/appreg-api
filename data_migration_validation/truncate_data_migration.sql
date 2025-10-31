@@ -1,0 +1,4 @@
+truncate table data_validation.oracle_column_analysis cascade;
+truncate table data_validation.oracle_column_metadata cascade;
+truncate table data_validation.oracle_counts_by_date cascade;
+truncate table data_validation.oracle_rowcounts cascade;

@@ -17,6 +17,8 @@ plugins {
   id 'maven-publish'
 }
 
+
+
 tasks.withType(JavaCompile).configureEach {
   // Show deprecation warnings
   options.warnings = false
@@ -25,6 +27,8 @@ tasks.withType(JavaCompile).configureEach {
 ext {
   releaseTrainVersion = '2025.0.0' // Example: "2021.0.x" corresponds to Spring Boot 2.6.x or 2.7.x
 }
+
+def buildNumber = System.getenv("RELEASE_VERSION")?: "DEV-SNAPSHOT"
 
 checkstyle {
   toolVersion = '11.1.0'                // or a version that matches your rules
@@ -39,7 +43,7 @@ dependencyManagement {
 application {
   mainClass = 'uk.gov.hmcts.appregister.Application'
   group = 'uk.gov.hmcts.appregister'
-  version = '0.0.1'
+  version buildNumber
 }
 
 java {
@@ -560,7 +564,7 @@ openApiGenerate {
 // Add a new jar that will be published to maven with the classifier -openapi
 tasks.register('openapiJarArtefact', Jar) {
   archiveClassifier = 'openapi'
-  from layout.buildDirectory.dir("./resources/main/openapi").get().asFile
+  from new File("$rootDir/src/main/resources/openapi")
 }
 
 // Add a new jar that will be published to maven with the classifier -flyway
