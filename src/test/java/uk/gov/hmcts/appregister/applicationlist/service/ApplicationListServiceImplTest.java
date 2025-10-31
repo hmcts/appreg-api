@@ -38,6 +38,8 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocatio
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -60,6 +62,8 @@ public class ApplicationListServiceImplTest {
 
     @Mock private ApplicationListRepository repository;
     @Mock private ApplicationListEntryRepository aleRepository;
+    @Mock private AppListEntryResolutionRepository alerRepository;
+    @Mock private ApplicationListEntryOfficialRepository aleoRepository;
     @Mock private ApplicationListMapper mapper;
     @Mock private PageMapper pageMapper;
     @Mock private ApplicationListEntryMapStructMapper entryMapper;
@@ -76,6 +80,8 @@ public class ApplicationListServiceImplTest {
                 new ApplicationListServiceImpl(
                         repository,
                         aleRepository,
+                        alerRepository,
+                        aleoRepository,
                         mapper,
                         entryMapper,
                         validator,

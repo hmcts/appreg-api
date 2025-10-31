@@ -22,6 +22,8 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocatio
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -35,6 +37,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 
 /**
  * Service implementation for managing Application Lists.
@@ -58,6 +61,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     private final ApplicationListRepository repository;
     private final ApplicationListEntryRepository aleRepository;
+    private final AppListEntryResolutionRepository alerRepository;
+    private final ApplicationListEntryOfficialRepository aleoRepository;
     private final ApplicationListMapper mapper;
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final ApplicationListEntryMapStructMapper entryMapper;
@@ -238,6 +243,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         // Fetch results from the repository using pagination
         List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections =
                 aleRepository.findByIdForPrinting(id);
+
+        for (ApplicationListEntryPrintProjection entry : applicationListEntryPrintProjections) {
+            // Fetch result wordings from the repository
+            List<String> resultWordings = alerRepository.findByIdForPrinting(entry.getUuid());
+
+            // Fetch officials from the repository
+            List<String> officials = aleoRepository.findByIdForPrinting(entry.getUuid());
+        }
+
+        List<EntryGetPrintDto> dtos = new ArrayList<>();
+
+        // Map each projection to a DTO
+        applicationListEntryPrintProjections.forEach(projection -> dtos.add(
+            entryMapper.toPrintDto(projection)));
 
         return null;
     }

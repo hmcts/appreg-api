@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -27,4 +28,19 @@ public interface AppListEntryResolutionRepository
      *     value
      */
     List<AppListEntryResolution> findByIdGreaterThanEqual(Integer value);
+
+    /**
+     * Retrieves list of result wordings for a given application list entry.
+     *
+     * @param id the ID of the ApplicationListEntry
+     * @return result wordings
+     */
+    @Query(
+            """
+            SELECT
+                aler.resolutionWording
+            FROM AppListEntryResolution aler
+            WHERE aler.applicationList.uuid = :id
+            """)
+    List<String> findByIdForPrinting(UUID id);
 }
