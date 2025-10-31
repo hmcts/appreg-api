@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
@@ -106,4 +107,60 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         group by ale.applicationList.uuid
         """)
     List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
+
+    /**
+     * Retrieves list of entries for a given application list.
+     *
+     * @param id the ID of the ApplicationList
+     * @return application list entry projections
+     */
+    @Query(
+            """
+        SELECT
+            ale.uuid AS uuid,
+            ale.sequenceNumber AS sequenceNumber,
+            COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
+            COALESCE(ana.surname, sa.applicantSurname) AS applicantSurname,
+            COALESCE(ana.forename1, sa.applicantForename1) AS applicantFirstForename,
+            COALESCE(ana.forename2, sa.applicantForename2) AS applicantSecondForename,
+            COALESCE(ana.forename3, sa.applicantForename3) AS applicantThirdForename,
+            COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
+            COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
+            COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
+            COALESCE(ana.address4, sa.addressLine4) AS applicantAddressLine4,
+            COALESCE(ana.address5, sa.addressLine5) AS applicantAddressLine5,
+            COALESCE(ana.postcode, sa.postcode) AS applicantPostcode,
+            COALESCE(ana.telephoneNumber, sa.telephoneNumber) AS applicantPhone,
+            COALESCE(ana.mobileNumber, sa.mobileNumber) AS applicantMobile,
+            COALESCE(ana.emailAddress, sa.emailAddress) AS applicantEmail,
+            COALESCE(ana.name, sa.name) AS applicantName,
+            rna.title AS respondentTitle,
+            rna.surname AS respondentSurname,
+            rna.forename1 AS respondentFirstForename,
+            rna.forename2 AS respondentSecondForename,
+            rna.forename3 AS respondentThirdForename,
+            rna.address1 AS respondentAddressLine1,
+            rna.address2 AS respondentAddressLine2,
+            rna.address3 AS respondentAddressLine3,
+            rna.address4 AS respondentAddressLine4,
+            rna.address5 AS respondentAddressLine5,
+            rna.postcode AS respondentPostcode,
+            rna.telephoneNumber AS respondentPhone,
+            rna.mobileNumber AS respondentMobile,
+            rna.emailAddress AS respondentEmail,
+            rna.name AS respondentName,
+            ac.code AS applicationCode,
+            ac.title AS applicationTitle,
+            ale.applicationListEntryWording AS applicationWording,
+            ale.caseReference AS caseReference,
+            ale.accountNumber AS accountReference,
+            ale.notes AS notes
+        FROM ApplicationListEntry ale
+        LEFT JOIN ale.anamedaddress ana
+        LEFT JOIN ale.standardApplicant sa
+        LEFT JOIN ale.rnameaddress rna
+        LEFT JOIN ale.applicationCode ac
+        WHERE ale.applicationList.uuid = :id
+        """)
+    List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 }

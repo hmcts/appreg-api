@@ -201,8 +201,7 @@ public class ApplicationListController implements ApplicationListsApi {
      */
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<ApplicationListGetPrintDto> printApplicationList(
-        UUID id) {
+    public ResponseEntity<ApplicationListGetPrintDto> printApplicationList(UUID id) {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
 

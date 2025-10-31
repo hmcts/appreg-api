@@ -26,6 +26,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -225,15 +226,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public ApplicationListGetPrintDto print(UUID id) {
         ApplicationList list =
-            repository
-                .findByUuid(id)
-                .orElseThrow(
-                    () ->
-                        new AppRegistryException(
-                            ApplicationListError.LIST_NOT_FOUND,
-                            "No application list found for UUID '%s'"
-                                .formatted(id)));
+                repository
+                        .findByUuid(id)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListError.LIST_NOT_FOUND,
+                                                "No application list found for UUID '%s'"
+                                                        .formatted(id)));
 
+        // Fetch results from the repository using pagination
+        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections =
+                aleRepository.findByIdForPrinting(id);
+
+        return null;
     }
 
     private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {
