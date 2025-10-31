@@ -69,7 +69,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
      * @return The data id
      */
     private Long getDataId(CompleteEvent event) {
-        return event.getNewValue().isPresent() ? event.getNewValue().get().getId() : -1L;
+        Optional<Keyable> val = event.getNewValue();
+        return val.isPresent() ? val.get().getId() : -1L;
     }
 
     @Override
