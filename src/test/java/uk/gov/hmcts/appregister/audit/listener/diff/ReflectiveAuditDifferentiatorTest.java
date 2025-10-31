@@ -15,11 +15,13 @@ import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 
@@ -607,57 +609,50 @@ public class ReflectiveAuditDifferentiatorTest {
 
     @Test
     public void testOldAndNewAppListEntityWithSuperFields() {
-        ApplicationList oldAppLst = new AppListTestData().someComplete();
+        ApplicationListEntry oldAppLst = new AppListEntryTestData().someComplete();
         oldAppLst.setId(123L);
 
-        ApplicationList newAppLst = new AppListTestData().someComplete();
+        ApplicationListEntry newAppLst = new AppListEntryTestData().someComplete();
         newAppLst.setId(123L);
 
         ReflectiveAuditDifferentiator reflectiveAuditDifferentiator =
-                new ReflectiveAuditDifferentiator(false, true);
+                new ReflectiveAuditDifferentiator(true, true);
         List<Difference> differenceList =
                 reflectiveAuditDifferentiator.diff(CrudEnum.DELETE, oldAppLst, newAppLst);
         Assertions.assertNotNull(findByField("changed_date", differenceList));
         Assertions.assertNotNull(findByField("changed_by", differenceList));
         Assertions.assertNotNull(
-                oldAppLst.getDescription(),
-                findByField("list_description", differenceList).getOldValue());
+                oldAppLst.getSequenceNumber(),
+                findByField("sequence_number", differenceList).getOldValue());
         Assertions.assertNotNull(
-                newAppLst.getDescription(),
-                findByField("list_description", differenceList).getNewValue());
+                newAppLst.getSequenceNumber(),
+                findByField("sequence_number", differenceList).getNewValue());
 
         Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", differenceList).getNewValue());
+                newAppLst.getAccountNumber(),
+                findByField("account_number", differenceList).getNewValue());
         Assertions.assertEquals(
-                Short.valueOf(oldAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", differenceList).getOldValue());
+                oldAppLst.getAccountNumber(),
+                findByField("account_number", differenceList).getOldValue());
 
         Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", differenceList).getNewValue());
+                newAppLst.getApplicationList().getCourtName(),
+                findByField("courthouse_name", differenceList).getNewValue());
         Assertions.assertEquals(
-                Short.valueOf(oldAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", differenceList).getOldValue());
+                oldAppLst.getApplicationList().getCourtName(),
+                findByField("courthouse_name", differenceList).getOldValue());
 
         Assertions.assertNotNull(
-                newAppLst.getTime(),
-                findByField("application_list_time", differenceList).getNewValue());
+                newAppLst.getCaseReference(),
+                findByField("case_reference", differenceList).getNewValue());
         Assertions.assertNotNull(
-                oldAppLst.getTime(),
-                findByField("application_list_time", differenceList).getNewValue());
-
-        Assertions.assertNotNull(
-                newAppLst.getDate(),
-                findByField("application_list_date", differenceList).getNewValue());
-        Assertions.assertNotNull(
-                oldAppLst.getDate(),
-                findByField("application_list_date", differenceList).getNewValue());
+                oldAppLst.getCaseReference(),
+                findByField("case_reference", differenceList).getNewValue());
     }
 
     @Test
     public void testNewAppListEntityWithSuperFieldsAndRecursionOff() {
-        ApplicationList newAppLst = new AppListTestData().someComplete();
+        ApplicationListEntry newAppLst = new AppListEntryTestData().someComplete();
 
         ReflectiveAuditDifferentiator reflectiveAuditDifferentiator =
                 new ReflectiveAuditDifferentiator(false, false);
@@ -665,25 +660,7 @@ public class ReflectiveAuditDifferentiatorTest {
                 reflectiveAuditDifferentiator.diff(CrudEnum.DELETE, newAppLst);
         Assertions.assertNotNull(findByField("changed_date", differenceList));
         Assertions.assertNotNull(findByField("changed_by", differenceList));
-        Assertions.assertNotNull(
-                newAppLst.getDescription(),
-                findByField("list_description", differenceList).getNewValue());
-
-        Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", differenceList).getNewValue());
-
-        Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", differenceList).getNewValue());
-
-        Assertions.assertEquals(
-                newAppLst.getTime().toString(),
-                findByField("application_list_time", differenceList).getNewValue());
-
-        Assertions.assertEquals(
-                newAppLst.getDate().toString(),
-                findByField("application_list_date", differenceList).getNewValue());
+        Assertions.assertNotNull(findByField("version", differenceList));
     }
 
     private Difference findByField(String fieldName, List<Difference> differences) {

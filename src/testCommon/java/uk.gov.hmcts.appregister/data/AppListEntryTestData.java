@@ -1,9 +1,14 @@
 package uk.gov.hmcts.appregister.data;
 
+import static org.instancio.Select.field;
+
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -27,5 +32,14 @@ public class AppListEntryTestData
                 .sequenceNumber(Short.MIN_VALUE)
                 .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")))
                 .entryFeeIds(List.of(new AppListEntryFeeIdTestData().someComplete()));
+    }
+
+    @Override
+    public ApplicationListEntry someComplete() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        return Instancio.of(ApplicationListEntry.class)
+                .ignore(field(ApplicationList::getId))
+                .withSettings(settings)
+                .create();
     }
 }

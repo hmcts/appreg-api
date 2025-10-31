@@ -24,10 +24,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
@@ -42,6 +45,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
+@AuditEnabled(types = {CrudEnum.DELETE})
 public class ApplicationList extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -49,6 +53,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
     @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = CrudEnum.DELETE)
     private Long id;
 
     @Generated(event = EventType.INSERT)
@@ -97,5 +102,6 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Column(name = "version")
     @Version
+    @Audit(action = CrudEnum.DELETE)
     private Long version;
 }

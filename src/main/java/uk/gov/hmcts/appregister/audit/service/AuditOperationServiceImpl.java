@@ -54,7 +54,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             responsePayload = execution.apply(event);
 
             // check is the result fits the expectations according to the operation being performed
-            checkIfAuditOperationIsSuitableForResult(auditType, responsePayload);
+            checkIfAuditOperationIsSuitableForResult(auditType, oldValue, responsePayload);
 
             if (responsePayload.isPresent()) {
                 // fire after the completed operation
@@ -91,21 +91,20 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      * @param result The result containing old and new values on which to audit
      */
     private <T, E extends Keyable> void checkIfAuditOperationIsSuitableForResult(
-            AuditOperation eventEnum, Optional<AuditableResult<T, E>> result) {
+            AuditOperation eventEnum,
+            Optional<E> oldValue,
+            Optional<AuditableResult<T, E>> result) {
         if (eventEnum.getType().isCreate()
-                && ((result.isPresent() && result.get().getOldEntity().isPresent())
+                && ((result.isPresent() && oldValue.isPresent())
                         || (result.isPresent() && result.get().getNewEntity().isEmpty()))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
                 && result.isPresent()
-                && (result.get().getNewEntity().isEmpty()
-                        || result.get().getOldEntity().isEmpty())) {
+                && (result.get().getNewEntity().isEmpty() || oldValue.isEmpty())) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
-        } else if (eventEnum.getType().isDelete()
-                && result.isPresent()
-                && result.get().getOldEntity().isEmpty()) {
+        } else if (eventEnum.getType().isDelete() && !oldValue.isPresent()) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old and new");
         }

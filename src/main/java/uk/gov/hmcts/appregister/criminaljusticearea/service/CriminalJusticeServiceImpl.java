@@ -39,9 +39,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
 
                     AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
                             new AuditableResult<>(
-                                    criminalJusticeMapper.toDto(cja),
-                                    Optional.empty(),
-                                    Optional.empty());
+                                    criminalJusticeMapper.toDto(cja), Optional.empty());
 
                     return Optional.of(result);
                 },
@@ -66,8 +64,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                                     criminalJusticeMapper.toDto(entry)));
 
                     AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                            new AuditableResult<>(
-                                    criminalJusticeAreaPage, Optional.empty(), Optional.empty());
+                            new AuditableResult<>(criminalJusticeAreaPage, Optional.empty());
 
                     return Optional.of(result);
                 },

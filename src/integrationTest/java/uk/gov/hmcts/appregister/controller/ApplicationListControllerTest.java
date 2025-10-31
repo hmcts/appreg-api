@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -409,6 +410,26 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // fire tests
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
 
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(2);
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "al_id",
+                        null,
+                        null,
+                        "DELETE",
+                        "Delete Application List"));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "version",
+                        null,
+                        null,
+                        "DELETE",
+                        "Delete Application List"));
+
         // assert success
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
     }
@@ -432,6 +453,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.DELETION_ID_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0);
     }
 
     @Test
@@ -474,6 +499,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
                 problemDetail.getType().toString());
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0);
     }
 
     @Override
@@ -860,11 +889,5 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         null);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-    }
-
-    private String getExpectedDiffLog(
-            String tableName, String fieldName, String oldValue, String newValue) {
-        return "Saved data audit record: Difference(tableName=%s, fieldName=%s, oldValue=%s, newValue=%s)"
-                .formatted(tableName, fieldName, oldValue, newValue);
     }
 }

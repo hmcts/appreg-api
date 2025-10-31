@@ -53,7 +53,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                                 Optional.of(
                                         AuditableResult.builder()
                                                 .newEntity(Optional.of(test))
-                                                .oldEntity(Optional.empty())
                                                 .resultingValue("response")
                                                 .build()),
                         dataAuditLogger);

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -129,6 +130,9 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
         verify(mapper).toGetDetailDto(saved, null);
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -147,6 +151,9 @@ public class ApplicationListServiceImplTest {
 
         verify(validator).validate(dto);
         verify(repository, never()).save(any());
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -164,6 +171,9 @@ public class ApplicationListServiceImplTest {
 
         verify(validator).validate(dto);
         verify(repository, never()).save(any());
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     // -------- CREATE: CJA PATH ----------
@@ -197,6 +207,9 @@ public class ApplicationListServiceImplTest {
         assertThat(result).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -235,6 +248,9 @@ public class ApplicationListServiceImplTest {
 
         verify(validator).validate(dto);
         verify(repository, never()).save(any());
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -247,6 +263,9 @@ public class ApplicationListServiceImplTest {
         verify(deletionValidator).validate(id);
         verify(repository).findByUuid(id);
         verify(repository).save(any(ApplicationList.class));
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.DELETE_APP_LIST), notNull(), notNull());
     }
 
     @Test

@@ -105,9 +105,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(dto, court));
         var hydratedEntity = refreshEntity(savedEntity);
         return new AuditableResult<>(
-                mapper.toGetDetailDto(hydratedEntity, null),
-                Optional.empty(),
-                Optional.of(hydratedEntity));
+                mapper.toGetDetailDto(hydratedEntity, null), Optional.of(hydratedEntity));
     }
 
     /**
@@ -126,9 +124,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(dto, cja));
         var hydratedEntity = refreshEntity(savedEntity);
         return new AuditableResult<>(
-                mapper.toGetDetailDto(hydratedEntity, cja),
-                Optional.empty(),
-                Optional.of(hydratedEntity));
+                mapper.toGetDetailDto(hydratedEntity, cja), Optional.of(hydratedEntity));
     }
 
     @Override
@@ -138,11 +134,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         deletionValidator.validate(idToDelete);
         Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
 
-        if (applicationList.isPresent()) {
-            applicationList.get().setDeleted(true);
-            repository.save(applicationList.get());
-        }
-        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
+        auditService.processAudit(
+                applicationList,
+                AppListAuditOperation.DELETE_APP_LIST,
+                req -> {
+                    if (applicationList.isPresent()) {
+                        applicationList.get().setDeleted(true);
+                        repository.save(applicationList.get());
+                    }
+
+                    AuditableResult<String, ApplicationList> result =
+                            new AuditableResult<>(null, Optional.empty());
+                    return Optional.of(result);
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     /**
