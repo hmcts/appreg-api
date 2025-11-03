@@ -49,8 +49,8 @@ paths:
   /application-codes/{code}:                     { $ref: './paths/application-codes/application-codes-by-code.yaml' }
   # APPLICATION LISTS
   /application-lists:                            { $ref: './paths/application-lists/application-lists.yaml' }
-  /application-lists/{listId}:                       { $ref: './paths/application-lists/application-lists-by-id.yaml' }
-  /application-lists/{listId}/print:                 { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
+  /application-lists/{listId}:                   { $ref: './paths/application-lists/application-lists-by-id.yaml' }
+  /application-lists/{listId}/print:             { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
   # APPLICATION LIST ENTRIES
   /application-list-entries:                     { $ref: './paths/application-list-entries/entries.yaml' }
   /application-lists/{listId}/entries:           { $ref: './paths/application-list-entries/application-list-entries.yaml' }
