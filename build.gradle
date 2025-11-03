@@ -441,11 +441,11 @@ dependencies {
   implementation 'io.micrometer:micrometer-tracing'
 
   // get flyway core
-  implementation 'org.flywaydb:flyway-core:11.14.1'
-  implementation 'org.flywaydb:flyway-database-postgresql:11.14.1'
+  implementation 'org.flywaydb:flyway-core:11.15.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:11.15.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.5.2.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.34.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
@@ -479,9 +479,9 @@ dependencies {
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
 
   // Mapstruct dependency
-  implementation 'org.mapstruct:mapstruct:1.5.5.Final' // your version
-  annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-  testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+  implementation 'org.mapstruct:mapstruct:1.6.3' // your version
+  annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+  testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 }
 
 bootJar {
