@@ -1,0 +1,62 @@
+type: object
+description: Filter criteria for retrieving Application List Entries.
+
+properties:
+
+  date:
+    type: string
+    format: date
+    description: The date on which the application's hearing is scheduled.
+    example: "2025-10-07"
+
+  courtName:
+    type: string
+    description: Name of the court or session where the application is being heard.
+    example: "Royal Courts of Justice"
+
+  otherLocationDescription:
+    type: string
+    description: Description of an alternative location for the hearing.
+    example: "Bradford scout hut"
+
+  cjaCode:
+    type: string
+    description: The Criminal Justice Area (CJA) associated with the application.
+    example: "CJA-2025-001"
+
+  applicantOrganisation:
+    type: string
+    description: The name of the organisation submitting the application.
+    example: "Smith Legal Services Ltd"
+
+  applicantSurname:
+    type: string
+    description: The surname of the applicant if the applicant is an individual.
+    example: "Smith"
+
+  standardApplicantCode:
+    type: string
+    description: Unique code identifying the standard applicant.
+    example: "APP001"
+
+  status:
+    $ref: "../application-lists/application-list-status.yaml"
+
+  respondentOrganisation:
+    type: string
+    description: The name of the organisation responding to the application.
+    example: "Jones Consulting Group"
+
+  respondentSurname:
+    type: string
+    description: The surname of the respondent if the respondent is an individual.
+    example: "Jones"
+
+  respondentPostcode:
+    type: string
+    description: The postcode associated with the respondent’s address.
+    example: "SW1A 1AA"
+
+  accountReference:
+    type: string
+    description: Reference code identifying the applicant’s account.
