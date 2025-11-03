@@ -3,16 +3,19 @@ package uk.gov.hmcts.appregister.courtlocation.controller;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
+import uk.gov.hmcts.appregister.common.mapper.SortMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
 import uk.gov.hmcts.appregister.courtlocation.service.CourtLocationService;
-import uk.gov.hmcts.appregister.courtlocation.validator.CourtLocationsSortValidator;
 import uk.gov.hmcts.appregister.generated.api.CourtLocationsApi;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
@@ -31,18 +34,19 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
  * <p>All endpoints require the caller to have either user or admin role restrictions as enforced by
  * {@link RoleNames#USER_ROLE_OR_ADMIN_ROLE_RESTRICTION}.
  */
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class CourtLocationController implements CourtLocationsApi {
 
     // Service layer providing Court Location business logic.
-    private final CourtLocationService courtLocationService;
+    private final CourtLocationService service;
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
 
-    // Validator ensuring requested sort fields are valid for Court Locations.
-    private final CourtLocationsSortValidator sortValidator;
+    // Maps and validates API sort parameters to entity field names.
+    private final SortMapper sortMapper;
 
     /**
      * Retrieve a single Court Location by its business code and an effective date.
@@ -58,7 +62,8 @@ public class CourtLocationController implements CourtLocationsApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<CourtLocationGetDetailDto> getCourtLocationByCodeAndDate(
             String code, LocalDate date) {
-        var courtLocationGetDetailDto = courtLocationService.findByCodeAndDate(code, date);
+        var courtLocationGetDetailDto = service.findByCodeAndDate(code, date);
+        log.info("getCourtLocationByCodeAndDate: code: {}, date: {}", code, date);
         return ResponseEntity.ok().body(courtLocationGetDetailDto);
     }
 
@@ -73,7 +78,7 @@ public class CourtLocationController implements CourtLocationsApi {
      * </ul>
      *
      * <p>Pagination and sorting parameters follow the OpenAPI contract. Sorting is validated
-     * against allowed properties using {@link CourtLocationsSortValidator}.
+     * against allowed properties using {@link SortMapper}.
      *
      * @param name optional filter for court name (partial, case-insensitive)
      * @param code optional filter for court location code (partial, case-insensitive)
@@ -87,16 +92,27 @@ public class CourtLocationController implements CourtLocationsApi {
     public ResponseEntity<CourtLocationPage> getCourtLocations(
             String name, String code, Integer page, Integer size, List<String> sort) {
 
-        // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
+        final List<String> entitySortFields = toEntitySort(sort);
+
         Pageable pageable =
-                pageableMapper.from(page, size, sort, NationalCourtHouse_.NAME, Sort.Direction.ASC);
+                pageableMapper.from(
+                        page, size, entitySortFields, NationalCourtHouse_.NAME, Sort.Direction.ASC);
 
-        // Validate resolved sort properties to prevent invalid/unsafe sort fields
-        pageable.getSort().forEach(o -> sortValidator.validate(o.getProperty()));
+        log.info(
+                "getCourtLocations: code: {}, name: {}, page: {}, size: {}",
+                code,
+                name,
+                page,
+                size);
+        return ResponseEntity.ok().body(service.getPage(name, code, pageable));
+    }
 
-        // Fetch paginated results from service layer
-        var courtLocationPage = courtLocationService.getPage(name, code, pageable);
-
-        return ResponseEntity.ok(courtLocationPage);
+    private List<String> toEntitySort(List<String> sort) {
+        if (sort == null || sort.isEmpty()) {
+            return List.of();
+        }
+        return sortMapper.map(
+                SortableField.of(sort.toArray(new String[0])),
+                CourtLocationSortFieldMapper::getEntityValue);
     }
 }

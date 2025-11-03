@@ -158,7 +158,7 @@ public class RestAssuredClient {
     public Response executePostRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .post(url)
                 .andReturn();
     }
@@ -172,7 +172,7 @@ public class RestAssuredClient {
      */
     public Response executeDeleteRequest(URL url, TokenAndJwksKey token) {
         return given().header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .delete(url)
                 .andReturn();
     }
@@ -187,7 +187,7 @@ public class RestAssuredClient {
     public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .post(url)
                 .andReturn();
     }

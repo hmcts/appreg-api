@@ -1,0 +1,43 @@
+type: object
+description: Lightweight DTO for Application Lists Entries, not retrieved through a parent list. Used in list/search views.
+required:
+  - id
+  - applicantName
+  - applicationTitle
+  - isFeeRequired
+  - isResulted
+  - status
+
+properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier of the Application List Entry.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  applicantName:
+    type: string
+    description: Name of the person or organisation that made the application.
+    example: "John Smith"
+
+  respondentName:
+    type: string
+    description: Name of the person or organisation responding to the application.
+    example: "Jane Smith"
+
+  applicationTitle:
+    type: string
+    description: Descriptive title of the application.
+    example: "Application to Crown Court"
+
+  isFeeRequired:
+    type: boolean
+    description: True if submitting the application incurs a charge.
+
+  isResulted:
+    type: boolean
+    description: True if this application list entry has been resulted.
+
+  status:
+    $ref: '../application-lists/application-list-status.yaml'
