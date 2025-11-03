@@ -1,0 +1,82 @@
+type: object
+description: DTO representing a detailed Application List Entry.
+required:
+  - id
+  - listId
+  - applicationCode
+  - numberOfRespondents
+  - lodgementDate
+
+properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier of the Application List Entry.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  listId:
+    type: string
+    format: uuid
+    description: The Unique identifier of the Application List this Entry belongs to.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  standardApplicantCode:
+    type: string
+    description: Code that identifies the Standard Applicant.
+    example: "APP001"
+
+  applicationCode:
+    type: string
+    description: Code that identifies the Application Code.
+    example: "APP001"
+
+  applicant:
+    $ref: '../participants/applicant.yaml'
+
+  respondent:
+    $ref: '../participants/respondent.yaml'
+
+  numberOfRespondents:
+    type: integer
+    description: Number of respondents required by the Application.
+    example: 0
+
+  wordingFields:
+    type: array
+    items: {type: string}
+    description: An array of user-provided values used to populate placeholders in the entry wording template, applied in the order they are provided.
+    example: ["25 October 2025", "London"]
+
+  feeStatuses:
+    type: array
+    items: { $ref: '../fee-status/fee-status.yaml' }
+
+  hasOffsiteFee:
+    type: boolean
+    description: Indicates whether an off-site fee applies.
+    example: true
+
+  caseReference:
+    type: string
+    maxLength: 15
+    description: A reference code to identify a related case (maximum 15 characters).
+    example: "CASE-001"
+
+  accountNumber:
+    type: string
+    maxLength: 20
+    description: The Applicants account number (maximum 20 characters).
+    example: "ACC-001"
+
+  notes:
+    type: string
+    maxLength: 4000
+    description: Notes about the application or the hearing (maximum 4000 characters).
+    example: "Time is 10:31, we have convened to talk about Application..."
+
+  lodgementDate:
+    type: string
+    format: date
+    description: The date on which the application was submitted. Will be set to current date if omitted.
+    example: "2025-12-01"

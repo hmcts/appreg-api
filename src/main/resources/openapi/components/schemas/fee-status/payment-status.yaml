@@ -1,0 +1,8 @@
+type: string
+description: The Status of the Fee's Payment.
+enum:
+  - PAID
+  - UNDERTAKEN
+  - DUE
+  - REMITTED
+example: PAID

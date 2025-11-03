@@ -3,15 +3,15 @@ parameters:
     name: id
     required: true
     schema: { type: string, format: uuid }
-    description: Public identifier of the Application List.
+    description: Public identifier of the Application List Entry.
 
 get:
-  operationId: getApplicationList
-  tags: [ application-lists ]
-  summary: Get an Application List by id
+  operationId: getApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Get an Application List Entry by id
   responses:
     "200":
-      description: Application List detail
+      description: Returns a detailed Application List Entry
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -20,7 +20,7 @@ get:
             example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml" }
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
@@ -28,22 +28,19 @@ get:
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 put:
-  operationId: updateApplicationList
-  tags: [ application-lists ]
-  summary: Update an Application List
+  operationId: updateApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Update an Application List Entry
   description: >
-    Full replacement (PUT) of an existing Application List. The `id` is taken from
-    the path; the request body must satisfy the same constraints as create
-    (including the XOR location rule: either `courtLocation` or (`otherLocationDescription` + `criminalJusticeAreaCode`)).
-    The request must include the current `version` for optimistic concurrency; a mismatch results in 409 Conflict.
+    Full replacement (PUT) of an existing Application List Entry.
   requestBody:
     required: true
     content:
       application/vnd.hmcts.appreg.v1+json:
-        schema: { $ref: "../../components/schemas/application-lists/application-list-update-dto.yaml" }
+        schema: { $ref: "../../components/schemas/application-list-entries/entry-update-dto.yaml" }
   responses:
     "200":
-      description: Updated Application List
+      description: Returns the updated Application List Entry
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -52,7 +49,7 @@ put:
             example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml" }
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
@@ -61,13 +58,13 @@ put:
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 delete:
-  operationId: deleteApplicationList
-  tags: [ application-lists ]
-  summary: Delete an Application List
-  description: Permanently deletes the Application List identified by `id`.
+  operationId: deleteApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Delete an Application List Entry
+  description: Permanently deletes the Application List Entry identified by `id`.
   responses:
     "204":
-      description: Application List deleted (no content)
+      description: Application List Entry deleted (no content returned)
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.

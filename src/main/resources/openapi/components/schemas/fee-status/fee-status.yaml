@@ -1,0 +1,22 @@
+type: object
+description: The status of the fee linked to the application.
+required:
+  - paymentStatus
+  - statusDate
+
+properties:
+
+  paymentReference:
+    type: string
+    description: The reference code used to identify the payment.
+    example: "PAY-001"
+    maxLength: 12
+
+  paymentStatus:
+    $ref: './payment-status.yaml'
+
+  statusDate:
+    type: string
+    format: date
+    description: The date when the payment status was updated.
+    example: "2025-12-01"

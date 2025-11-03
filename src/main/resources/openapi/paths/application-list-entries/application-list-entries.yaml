@@ -1,17 +1,17 @@
 get:
-  operationId: getApplicationLists
-  tags: [ application-lists ]
-  summary: Get Application Lists (paginated, filterable)
-  description: Returns a paginated list of Application Lists.
+  operationId: getApplicationListEntries
+  tags: [ application-list-entries ]
+  summary: Get Application List Entries (paginated, filterable)
+  description: Returns a paginated list of Application List Entries linked to a specific Application List.
   parameters:
     - in: query
       name: filter
-      description: Filter criteria for Application Lists.
+      description: Filter criteria for Application List Entries.
       required: false
       style: form
       explode: true
       schema:
-        $ref: "../../components/schemas/application-lists/application-list-get-filter-dto.yaml"
+        $ref: "../../components/schemas/application-list-entries/entry-get-filter-dto.yaml"
     - in: query
       name: page
       schema: { type: integer, minimum: 0, default: 0 }
@@ -28,7 +28,7 @@ get:
         example: [ "date,desc", "status,asc" ]
   responses:
     "200":
-      description: Page of Application Lists
+      description: Page of Application List Entries
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -37,7 +37,7 @@ get:
             example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
-          schema: { $ref: "../../components/schemas/application-lists/application-list-page.yaml" }
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-page.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
@@ -45,21 +45,21 @@ get:
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }
 
 post:
-  operationId: createApplicationList
-  tags: [ application-lists ]
-  summary: Create an Application List
+  operationId: createApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Create an Application List Entry
   requestBody:
     required: true
     content:
       application/vnd.hmcts.appreg.v1+json:
         schema:
-          $ref: "../../components/schemas/application-lists/application-list-create-dto.yaml"
+          $ref: "../../components/schemas/application-list-entries/entry-create-dto.yaml"
   responses:
     "201":
-      description: Application List created
+      description: Returns the created Application List Entry
       headers:
         Location:
-          description: URL of the created Application List
+          description: URL of the created Application List Entry
           schema: { type: string }
         Vary:
           description: Response varies by Accept for media-type versioning.
@@ -69,7 +69,7 @@ post:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../components/schemas/application-lists/application-list-get-detail-dto.yaml"
+            $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml"
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
