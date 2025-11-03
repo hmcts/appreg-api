@@ -4,7 +4,7 @@
 -- V1.0  	Matthew Harman  31/07/2025	Initial Version
 -- V2.0  	Matthew Harman  16/09/2025	Added code for testing script applied
 -- V3.0	    Matthew Harman  17/10/2025  Removed Triggers
--- This results ina  failing merge
+--
 
 SET client_encoding TO 'UTF8';
 
