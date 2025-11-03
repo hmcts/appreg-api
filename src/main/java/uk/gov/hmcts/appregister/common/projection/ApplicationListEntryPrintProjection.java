@@ -1,8 +1,11 @@
 package uk.gov.hmcts.appregister.common.projection;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public interface ApplicationListEntryPrintProjection {
+
+    Long getId();
 
     UUID getUuid();
 
@@ -18,15 +21,15 @@ public interface ApplicationListEntryPrintProjection {
 
     String getApplicantForename3();
 
-    String getApplicantAddress1();
+    String getApplicantAddressLine1();
 
-    String getApplicantAddress2();
+    String getApplicantAddressLine2();
 
-    String getApplicantAddress3();
+    String getApplicantAddressLine3();
 
-    String getApplicantAddress4();
+    String getApplicantAddressLine4();
 
-    String getApplicantAddress5();
+    String getApplicantAddressLine5();
 
     String getApplicantPostcode();
 
@@ -48,15 +51,15 @@ public interface ApplicationListEntryPrintProjection {
 
     String getRespondentForename3();
 
-    String getRespondentAddress1();
+    String getRespondentAddressLine1();
 
-    String getRespondentAddress2();
+    String getRespondentAddressLine2();
 
-    String getRespondentAddress3();
+    String getRespondentAddressLine3();
 
-    String getRespondentAddress4();
+    String getRespondentAddressLine4();
 
-    String getRespondentAddress5();
+    String getRespondentAddressLine5();
 
     String getRespondentPostcode();
 
@@ -65,6 +68,8 @@ public interface ApplicationListEntryPrintProjection {
     String getRespondentMobile();
 
     String getRespondentEmail();
+
+    OffsetDateTime getRespondentDateOfBirth();
 
     String getRespondentName();
 

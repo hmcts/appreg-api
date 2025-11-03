@@ -117,13 +117,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     @Query(
             """
         SELECT
+            ale.id AS id,
             ale.uuid AS uuid,
             ale.sequenceNumber AS sequenceNumber,
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
             COALESCE(ana.surname, sa.applicantSurname) AS applicantSurname,
-            COALESCE(ana.forename1, sa.applicantForename1) AS applicantFirstForename,
-            COALESCE(ana.forename2, sa.applicantForename2) AS applicantSecondForename,
-            COALESCE(ana.forename3, sa.applicantForename3) AS applicantThirdForename,
+            COALESCE(ana.forename1, sa.applicantForename1) AS applicantForename1,
+            COALESCE(ana.forename2, sa.applicantForename2) AS applicantForename2,
+            COALESCE(ana.forename3, sa.applicantForename3) AS applicantForename3,
             COALESCE(ana.address1, sa.addressLine1) AS applicantAddressLine1,
             COALESCE(ana.address2, sa.addressLine2) AS applicantAddressLine2,
             COALESCE(ana.address3, sa.addressLine3) AS applicantAddressLine3,
@@ -136,9 +137,9 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             COALESCE(ana.name, sa.name) AS applicantName,
             rna.title AS respondentTitle,
             rna.surname AS respondentSurname,
-            rna.forename1 AS respondentFirstForename,
-            rna.forename2 AS respondentSecondForename,
-            rna.forename3 AS respondentThirdForename,
+            rna.forename1 AS respondentForename1,
+            rna.forename2 AS respondentForename2,
+            rna.forename3 AS respondentForename3,
             rna.address1 AS respondentAddressLine1,
             rna.address2 AS respondentAddressLine2,
             rna.address3 AS respondentAddressLine3,
@@ -148,6 +149,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             rna.telephoneNumber AS respondentPhone,
             rna.mobileNumber AS respondentMobile,
             rna.emailAddress AS respondentEmail,
+            rna.dateOfBirth AS respondentDateOfBirth,
             rna.name AS respondentName,
             ac.code AS applicationCode,
             ac.title AS applicationTitle,
@@ -161,6 +163,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         WHERE ale.applicationList.uuid = :id
+        ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 }

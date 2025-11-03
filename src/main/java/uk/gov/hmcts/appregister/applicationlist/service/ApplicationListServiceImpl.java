@@ -188,6 +188,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return dto;
     }
 
+    private ApplicationListGetPrintDto buildGetPrintDto(
+            ApplicationList list, List<EntryGetPrintDto> entries) {
+        ApplicationListGetPrintDto dto = mapper.toGetPrintDto(list);
+        dto.setEntries(entries);
+
+        return dto;
+    }
+
     /**
      * Retrieves a paginated list of application lists based on the given filter and paging
      * parameters.
@@ -244,21 +252,24 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections =
                 aleRepository.findByIdForPrinting(id);
 
+        List<EntryGetPrintDto> dtos = new ArrayList<>();
+
         for (ApplicationListEntryPrintProjection entry : applicationListEntryPrintProjections) {
             // Fetch result wordings from the repository
             List<String> resultWordings = alerRepository.findByIdForPrinting(entry.getUuid());
 
             // Fetch officials from the repository
             List<String> officials = aleoRepository.findByIdForPrinting(entry.getUuid());
+
+            // Map each projection to a DTO
+            EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
+
+            dto.setResultWordings(resultWordings);
+            dto.setOfficials(officials);
+            dtos.add(dto);
         }
 
-        List<EntryGetPrintDto> dtos = new ArrayList<>();
-
-        // Map each projection to a DTO
-        applicationListEntryPrintProjections.forEach(projection -> dtos.add(
-            entryMapper.toPrintDto(projection)));
-
-        return null;
+        return buildGetPrintDto(list, dtos);
     }
 
     private Optional<CriminalJusticeArea> resolveCja(String cjaCode) {

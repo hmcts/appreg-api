@@ -1,17 +1,24 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
+import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
-
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface ApplicationListEntryMapStructMapper {
@@ -33,9 +40,11 @@ public interface ApplicationListEntryMapStructMapper {
     @Mapping(target = "respondent.person.name.firstForename", source = "respondentForename1")
     @Mapping(target = "respondent.person.name.secondForename", source = "respondentForename2")
     @Mapping(target = "respondent.person.name.thirdForename", source = "respondentForename3")
+    @Mapping(target = "respondent.dateOfBirth", source = "respondentDateOfBirth")
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
-    EntryGetPrintDto toPrintDto(
-        ApplicationListEntryPrintProjection printProjection);
+    @Mapping(target = "resultWordings", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    EntryGetPrintDto toPrintDto(ApplicationListEntryPrintProjection printProjection);
 
     /**
      * Utility mapping method to wrap a {@link String} in a {@link JsonNullable}.
@@ -50,8 +59,39 @@ public interface ApplicationListEntryMapStructMapper {
         return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
     }
 
+    /**
+     * Utility mapping method to converts the given {@link OffsetDateTime} to a {@link LocalDate}.
+     *
+     * <p>If the input {@code offsetDateTime} is {@code null}, this method returns {@code null}.
+     * Otherwise, it extracts and returns the local date component of the given {@code
+     * OffsetDateTime}.
+     *
+     * @param offsetDateTime the OffsetDateTime to convert; may be null
+     * @return the corresponding LocalDate, or null if the input is null
+     */
+    default LocalDate map(OffsetDateTime offsetDateTime) {
+        return offsetDateTime == null ? null : offsetDateTime.toLocalDate();
+    }
+
+    /**
+     * Utility mapping method to maps contact details from the provided {@link
+     * ApplicationListEntryPrintProjection} object to a new {@link ContactDetails} instance based on
+     * the specified {@link PartyType}.
+     *
+     * <p>This method extracts address lines, postcode, phone, mobile, and email information for
+     * either the applicant or respondent, depending on the given {@code partyType}. All fields are
+     * initialized to empty strings before mapping to ensure null safety.
+     *
+     * @param applicationListEntryPrintProjection the projection object containing applicant and
+     *     respondent contact information
+     * @param partyType the type of party whose contact details should be mapped; expected values
+     *     are APPLICANT or RESPONDENT
+     * @return a ContactDetails object populated with the corresponding party’s contact details; if
+     *     partyType is not recognized, returns an empty ContactDetails instance
+     */
     default ContactDetails mapContactDetails(
-        ApplicationListEntryPrintProjection applicationListEntryPrintProjection, PartyType partyType) {
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
+            PartyType partyType) {
         ContactDetails details = new ContactDetails();
 
         String address1 = "";
@@ -65,21 +105,21 @@ public interface ApplicationListEntryMapStructMapper {
         String email = "";
 
         if (partyType == PartyType.APPLICANT) {
-            address1 = applicationListEntryPrintProjection.getApplicantAddress1();
-            address2 = applicationListEntryPrintProjection.getApplicantAddress2();
-            address3 = applicationListEntryPrintProjection.getApplicantAddress3();
-            address4 = applicationListEntryPrintProjection.getApplicantAddress4();
-            address5 = applicationListEntryPrintProjection.getApplicantAddress5();
+            address1 = applicationListEntryPrintProjection.getApplicantAddressLine1();
+            address2 = applicationListEntryPrintProjection.getApplicantAddressLine2();
+            address3 = applicationListEntryPrintProjection.getApplicantAddressLine3();
+            address4 = applicationListEntryPrintProjection.getApplicantAddressLine4();
+            address5 = applicationListEntryPrintProjection.getApplicantAddressLine5();
             postcode = applicationListEntryPrintProjection.getApplicantPostcode();
             phone = applicationListEntryPrintProjection.getApplicantPhone();
             mobile = applicationListEntryPrintProjection.getApplicantMobile();
             email = applicationListEntryPrintProjection.getApplicantEmail();
-        }  else if (partyType == PartyType.RESPONDENT) {
-            address1 = applicationListEntryPrintProjection.getRespondentAddress1();
-            address2 = applicationListEntryPrintProjection.getRespondentAddress2();
-            address3 = applicationListEntryPrintProjection.getRespondentAddress3();
-            address4 = applicationListEntryPrintProjection.getRespondentAddress4();
-            address5 = applicationListEntryPrintProjection.getRespondentAddress5();
+        } else if (partyType == PartyType.RESPONDENT) {
+            address1 = applicationListEntryPrintProjection.getRespondentAddressLine1();
+            address2 = applicationListEntryPrintProjection.getRespondentAddressLine2();
+            address3 = applicationListEntryPrintProjection.getRespondentAddressLine3();
+            address4 = applicationListEntryPrintProjection.getRespondentAddressLine4();
+            address5 = applicationListEntryPrintProjection.getRespondentAddressLine5();
             postcode = applicationListEntryPrintProjection.getRespondentPostcode();
             phone = applicationListEntryPrintProjection.getRespondentPhone();
             mobile = applicationListEntryPrintProjection.getRespondentMobile();
@@ -99,45 +139,87 @@ public interface ApplicationListEntryMapStructMapper {
         return details;
     }
 
-    default EntryGetPrintDto setApplicantContactDetailsByType(
-        ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
-        EntryGetPrintDto dto = new EntryGetPrintDto();
-
-        if (isPerson(applicationListEntryPrintProjection)) {
-            if (dto.getApplicant() != null && dto.getApplicant().getPerson() != null) {
-                dto.getApplicant().getPerson().setContactDetails(mapContactDetails(
-                    applicationListEntryPrintProjection, PartyType.APPLICANT));
-            }
-
-            if (dto.getRespondent() != null && dto.getRespondent().getPerson() != null) {
-                dto.getRespondent().getPerson().setContactDetails(mapContactDetails(
-                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
-            }
-        } else {
-            if (dto.getApplicant() != null && dto.getApplicant().getOrganisation() != null) {
-                dto.getApplicant().getOrganisation().setContactDetails(mapContactDetails(
-                    applicationListEntryPrintProjection,  PartyType.APPLICANT));
-            }
-
-            if (dto.getRespondent() != null && dto.getRespondent().getOrganisation() != null) {
-                dto.getRespondent().getOrganisation().setContactDetails(mapContactDetails(
-                    applicationListEntryPrintProjection,   PartyType.RESPONDENT));
-            }
+    /**
+     * Populates the {@link Applicant} and {@link Respondent} fields of the given {@link
+     * EntryGetPrintDto} after the initial mapping process, ensuring all required nested objects and
+     * contact details are initialized and populated.
+     *
+     * <p>This method is intended to be executed as an {@code @AfterMapping} hook in a MapStruct
+     * mapper. It verifies that both the applicant and respondent objects exist in the target DTO,
+     * and initializes any missing {@link Person} or {@link Organisation} sub-objects as required.
+     * It then maps and assigns the corresponding contact details for each party, depending on
+     * whether the entry represents a person or an organisation.
+     *
+     * @param applicationListEntryPrintProjection the source projection containing data for
+     *     applicant and respondent mapping
+     * @param dto the target EntryGetPrintDto object being populated after the main mapping process
+     */
+    @AfterMapping
+    default void setApplicantAndRespondent(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
+            @MappingTarget EntryGetPrintDto dto) {
+        if (dto.getApplicant() == null) {
+            dto.setApplicant(new Applicant());
         }
 
-        return dto;
+        if (dto.getRespondent() == null) {
+            dto.setRespondent(new Respondent());
+        }
+
+        if (isPerson(applicationListEntryPrintProjection)) {
+            if (dto.getApplicant().getPerson() == null) {
+                dto.getApplicant().setPerson(new Person());
+            }
+
+            dto.getApplicant()
+                    .getPerson()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+
+            if (dto.getRespondent().getPerson() == null) {
+                dto.getRespondent().setPerson(new Person());
+            }
+
+            dto.getRespondent()
+                    .getPerson()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
+        } else {
+            if (dto.getApplicant().getOrganisation() == null) {
+                dto.getApplicant().setOrganisation(new Organisation());
+            }
+
+            dto.getApplicant()
+                    .getOrganisation()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+
+            if (dto.getRespondent().getOrganisation() == null) {
+                dto.getRespondent().setOrganisation(new Organisation());
+            }
+
+            dto.getRespondent()
+                    .getOrganisation()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
+        }
     }
 
-    private boolean isPerson(ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
+    private boolean isPerson(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
         if (applicationListEntryPrintProjection == null) {
             return false;
         } else {
-            return applicationListEntryPrintProjection.getApplicantTitle() != null ||
-                applicationListEntryPrintProjection.getApplicantSurname() != null ||
-                applicationListEntryPrintProjection.getApplicantForename1() != null ||
-                applicationListEntryPrintProjection.getRespondentTitle() != null ||
-                applicationListEntryPrintProjection.getRespondentSurname() != null ||
-                applicationListEntryPrintProjection.getRespondentForename1() != null;
+            return applicationListEntryPrintProjection.getApplicantTitle() != null
+                    || applicationListEntryPrintProjection.getApplicantSurname() != null
+                    || applicationListEntryPrintProjection.getApplicantForename1() != null
+                    || applicationListEntryPrintProjection.getRespondentTitle() != null
+                    || applicationListEntryPrintProjection.getRespondentSurname() != null
+                    || applicationListEntryPrintProjection.getRespondentForename1() != null;
         }
     }
 }
