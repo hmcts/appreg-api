@@ -1,6 +1,11 @@
 parameters:
   - in: path
-    name: id
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+  - in: path
+    name: entryId
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List Entry.
@@ -61,7 +66,7 @@ delete:
   operationId: deleteApplicationListEntry
   tags: [ application-list-entries ]
   summary: Delete an Application List Entry
-  description: Permanently deletes the Application List Entry identified by `id`.
+  description: Permanently deletes the Application List Entry identified by `entryId.
   responses:
     "204":
       description: Application List Entry deleted (no content returned)

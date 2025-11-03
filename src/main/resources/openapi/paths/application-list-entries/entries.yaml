@@ -1,6 +1,6 @@
 get:
   operationId: getEntries
-  tags: [ application-lists-entries ]
+  tags: [ application-list-entries ]
   summary: Get all Entries (paginated, filterable)
   description: Returns a paginated list of Application Lists Entries that match the search filters, without using an Application List ID .
   parameters:
