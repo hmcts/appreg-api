@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
  * The ApplicationList entity represents a list of applications in the system.
  */
 @Entity
-@Table(name = TableNames.APPICATION_LIST)
+@Table(name = TableNames.APPLICATION_LISTS)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

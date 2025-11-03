@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import org.apache.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -188,7 +189,25 @@ public class RestAssuredClient {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/json")
-                .post(url)
+                .put(url)
+                .andReturn();
+    }
+
+    /**
+     * puts a request builder that can be used to make requests against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param etag The etag to use in the request
+     * @return The specification of the response
+     */
+    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object, String etag)
+            throws URISyntaxException {
+        return given().body(object)
+                .header("Authorization", "Bearer " + token.getToken())
+                .header("Content-Type", "application/json")
+                .header(HttpHeaders.IF_MATCH, etag)
+                .put(url)
                 .andReturn();
     }
 }

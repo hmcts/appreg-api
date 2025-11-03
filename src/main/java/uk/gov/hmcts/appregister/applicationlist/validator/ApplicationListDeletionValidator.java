@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.validator.Validator;
  */
 @RequiredArgsConstructor
 @Component
-public class ApplicationListDeletionValidator implements Validator<UUID> {
+public class ApplicationListDeletionValidator implements Validator<UUID, Void> {
     private final ApplicationListRepository applicationListRepository;
 
     @Override

@@ -51,6 +51,11 @@ public class DifferenceLogAsserter {
             newValue = ".*";
         }
 
+        oldValue = oldValue.replace(")", "\\)");
+        oldValue = oldValue.replace("(", "\\(");
+        newValue = newValue.replace(")", "\\)");
+        newValue = newValue.replace("(", "\\(");
+
         return new DataAuditResult(
                 getAssertionString(tableName, columnName, oldValue, newValue),
                 String.format(
@@ -181,7 +186,7 @@ public class DifferenceLogAsserter {
         int count = 0;
         for (String log : dataAuditLogger.getDebugLogs()) {
             if (Pattern.matches(DIFF_PREFIX + ".*", log)) {
-                return;
+                count = count + 1;
             }
         }
 

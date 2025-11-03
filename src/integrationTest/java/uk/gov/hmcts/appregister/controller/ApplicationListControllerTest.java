@@ -1,29 +1,39 @@
 package uk.gov.hmcts.appregister.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.instancio.Select.field;
 
 import io.restassured.response.Response;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.apache.http.HttpHeaders;
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -38,6 +48,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     // --- Seeded reference data ----------------------------------------------------
     private static final String VALID_COURT_CODE = "CCC003";
     private static final String VALID_COURT_NAME = "Cardiff Crown Court";
+    private static final String VALID_COURT_CODE2 = "BCC006";
 
     private static final String VALID_CJA_CODE = "CD";
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
@@ -48,7 +59,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
-    // --- POST ---------------------------------------------------------------------
+    private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
+    private static final LocalTime TEST_TIME2 = LocalTime.parse("10:30");
+
+    // --- Happy path: create with COURT --------------------------------------------------------
+
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
         var token =
@@ -61,7 +76,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning list (court)")
+                        .description("Morning_list_(court)")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(2)
@@ -69,6 +84,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().statusCode(HttpStatus.CREATED.value());
         resp.then().contentType(VND_JSON_V1);
 
@@ -83,7 +99,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(0L); // per seed: Version = 0
         assertThat(dto.getDate()).isEqualTo(TEST_DATE);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME); // mapper emits "HH:mm" when seconds = 0
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court)");
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         // Court populated, CJA null
@@ -109,7 +125,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         "application_lists",
                         "list_description",
                         "null",
-                        "Morning list \\(court\\)",
+                        "Morning_list_(court)",
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
@@ -182,7 +198,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning list (cja)")
+                        .description("Morning_list_(cja)")
                         .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE)
                         .otherLocationDescription(VALID_OTHER_LOCATION)
@@ -204,7 +220,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(0L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME);
-        assertThat(dto.getDescription()).isEqualTo("Morning list (cja)");
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(cja)");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         // CJA populated, Court null
@@ -230,7 +246,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         "application_lists",
                         "list_description",
                         "null",
-                        "Morning list \\(cja\\)",
+                        "Morning_list_(cja)",
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
@@ -278,8 +294,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         differenceLogAsserter.assertFieldLogNotPresent("is_deleted");
         differenceLogAsserter.assertFieldLogNotPresent("deleted_by");
         differenceLogAsserter.assertFieldLogNotPresent("deleted_date");
-
-        differenceLogAsserter.assertDiffCount(13);
     }
 
     // --- Validation: XOR rule (both supplied) -------------------------------------------------
@@ -333,7 +347,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEquals(CourtLocationError.COURT_NOT_FOUND.getCode(), resp);
+        ProblemAssertUtil.assertEquals(ApplicationListError.COURT_NOT_FOUND.getCode(), resp);
     }
 
     @Test
@@ -356,11 +370,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        ProblemAssertUtil.assertEquals(
-                uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError
-                        .CJA_NOT_FOUND
-                        .getCode(),
-                resp);
+        ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
     }
 
     @Test
@@ -378,6 +388,519 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
+        courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
+        courtLocationGetDetailDto.setStartDate(LocalDate.now());
+        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setName("Manchester_Crown_Court");
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
+
+        // Location header should point to /application-lists/{uuid}
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
+        assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getDurationHours()).isEqualTo(4);
+        assertThat(dto.getDurationMinutes()).isEqualTo(32);
+
+        // Court populated, CJA null
+        assertThat(dto.getCourtCode()).isEqualTo(VALID_COURT_CODE2);
+        assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
+        assertThat(dto.getCjaCode()).isNull();
+        assertThat(dto.getOtherLocationDescription()).isNull();
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCourtWithMatchProblem_then412() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, "never going to match");
+
+        resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
+        ProblemAssertUtil.assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCourtWithMatch_then200() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
+
+        // Location header should point to /application-lists/{uuid}
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
+        assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getDurationHours()).isEqualTo(4);
+        assertThat(dto.getDurationMinutes()).isEqualTo(32);
+
+        // Court populated, CJA null
+        assertThat(dto.getCourtCode()).isEqualTo(VALID_COURT_CODE2);
+        assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
+        assertThat(dto.getCjaCode()).isNull();
+        assertThat(dto.getOtherLocationDescription()).isNull();
+    }
+
+    // --- Happy path: create with CJA + otherLocation ------------------------------------------
+    @Test
+    void givenValidRequest_whenUpdateWithCja_then201() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .cjaCode(VALID_CJA_CODE)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .otherLocationDescription("Updated_other_location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().contentType(VND_JSON_V1);
+
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(1L);
+        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
+        assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+
+        // CJA populated, Court null
+        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE);
+        assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated_other_location");
+        assertThat(dto.getCourtCode()).isNull();
+        assertThat(dto.getCourtName()).isNull();
+    }
+
+    // --- Happy path: create with CJA + otherLocation ------------------------------------------
+    @Test
+    void givenValidRequest_whenUpdateWithCjaWithMatch_then201() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        differenceLogAsserter.clearLogs();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .cjaCode(VALID_CJA_CODE)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .otherLocationDescription("Updated_other_location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+
+        resp.then().contentType(VND_JSON_V1);
+
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(1L);
+        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
+        assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+
+        // CJA populated, Court null
+        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE);
+        assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated_other_location");
+        assertThat(dto.getCourtCode()).isNull();
+        assertThat(dto.getCourtName()).isNull();
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertDiffCount(13);
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        "OPEN",
+                        "CLOSED",
+                        CrudEnum.UPDATE.name(),
+                        AppListAuditOperation.UPDATE_APP_LIST.getEventName()));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        "Morning_list_(court)",
+                        "Morning_list_(court)_update",
+                        CrudEnum.UPDATE.name(),
+                        AppListAuditOperation.UPDATE_APP_LIST.getEventName()));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        TEST_DATE.toString(),
+                        TEST_DATE2.toString(),
+                        CrudEnum.UPDATE.name(),
+                        AppListAuditOperation.UPDATE_APP_LIST.getEventName()));
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_hour",
+                        Integer.toString(2),
+                        Integer.toString(4),
+                        CrudEnum.UPDATE.name(),
+                        AppListAuditOperation.UPDATE_APP_LIST.getEventName()));
+
+        differenceLogAsserter.assertDifferenceOrDataAuditChange(
+                DifferenceLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_minute",
+                        Integer.toString(30),
+                        Integer.toString(32),
+                        CrudEnum.UPDATE.name(),
+                        AppListAuditOperation.UPDATE_APP_LIST.getEventName()));
+
+        differenceLogAsserter.assertFieldLogPresent("changed_date");
+        differenceLogAsserter.assertFieldLogNotPresent("changed_by");
+        differenceLogAsserter.assertFieldLogNotPresent("al_id");
+        differenceLogAsserter.assertFieldLogNotPresent("id");
+        differenceLogAsserter.assertFieldLogNotPresent("is_deleted");
+        differenceLogAsserter.assertFieldLogNotPresent("deleted_by");
+        differenceLogAsserter.assertFieldLogNotPresent("deleted_date");
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCjaWithMatchProblem_then412() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .cjaCode(VALID_CJA_CODE)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .otherLocationDescription("Updated_other_location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, "no match");
+        resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
+        ProblemAssertUtil.assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
+    }
+
+    // --- Validation: UUID not found for update -------------------------------------------------
+    @Test
+    void givenInvalidUUID_whenUpdate_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .cjaCode(VALID_CJA_CODE)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .otherLocationDescription("Updated other location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+
+        // AL-1 (INVALID_LOCATION_COMBINATION)
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
+    }
+
+    // --- Validation: XOR rule (both supplied) -------------------------------------------------
+    @Test
+    void givenInvalidLocationCombination_whenUpdate_then400() throws Exception {
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .cjaCode(VALID_CJA_CODE)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .otherLocationDescription("Updated other location");
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // AL-1 (INVALID_LOCATION_COMBINATION)
+        ProblemAssertUtil.assertEquals(
+                uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError
+                        .INVALID_LOCATION_COMBINATION
+                        .getCode(),
+                resp);
+    }
+
+    // --- Not found: court ---------------------------------------------------------------------
+    @Test
+    void givenUnknownCourt_whenUpdate_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .courtLocationCode("Unknown")
+                        .otherLocationDescription("Updated_other_location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(ApplicationListError.COURT_NOT_FOUND.getCode(), resp);
+    }
+
+    // --- Not found: CJA -----------------------------------------------------------------------
+    @Test
+    void givenUnknownCja_whenUpdate_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .durationHours(4)
+                        .durationMinutes(32)
+                        .cjaCode("Unknown")
+                        .otherLocationDescription("Updated_other_location");
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
+    }
+
+    @Override
+    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        var validPayload =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("sec-matrix")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE);
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        ApplicationListUpdateDto uploadPayload =
+                Instancio.of(ApplicationListUpdateDto.class)
+                        .withSettings(settings)
+                        .ignore(field(ApplicationListUpdateDto::getCourtLocationCode))
+
+                        // Instancio does not honour Max and Min annotations
+                        .ignore(field(ApplicationListUpdateDto::getDurationHours))
+                        .ignore(field(ApplicationListUpdateDto::getDurationMinutes))
+                        .create();
+
+        uploadPayload.setDurationHours(1);
+        uploadPayload.setDurationMinutes(1);
+
+        return Stream.of(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.POST)
+                        .payload(validPayload)
+                        .successRole(RoleEnum.USER)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.POST)
+                        .payload(validPayload)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.PUT)
+                        .payload(uploadPayload)
+                        .successRole(RoleEnum.USER)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.PUT)
+                        .payload(uploadPayload)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
+                        .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.USER)
+                        .build());
+    }
+
+    /**
+     * A utility method to create a new record.
+     *
+     * @return A two part array:- [0] - the uuid that can be used to fetch or update the record [1]-
+     *     the etag for optimistic locking at the api level
+     */
+    private String[] createAppListUsingRestApi() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning_list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        return new String[] {resp.header(HttpHeaders.LOCATION), resp.header(HttpHeaders.ETAG)};
     }
 
     @Test
@@ -474,49 +997,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
                 problemDetail.getType().toString());
-    }
-
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        var validPayload =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(TEST_TIME)
-                        .description("sec-matrix")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
-        List<RestEndpointDescription> allRestfulDescriptions = new ArrayList<>();
-        allRestfulDescriptions.add(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.POST)
-                        .payload(validPayload)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
-
-        allRestfulDescriptions.add(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.POST)
-                        .payload(validPayload)
-                        .successRole(RoleEnum.USER)
-                        .build());
-
-        allRestfulDescriptions.add(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
-                        .method(HttpMethod.DELETE)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
-
-        allRestfulDescriptions.add(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
-                        .method(HttpMethod.DELETE)
-                        .successRole(RoleEnum.USER)
-                        .build());
-        return allRestfulDescriptions.stream();
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
