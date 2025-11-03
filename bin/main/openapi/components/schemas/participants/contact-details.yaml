@@ -1,0 +1,60 @@
+type: object
+description: A participant's contact details.
+required:
+  - addressLine1
+properties:
+
+  addressLine1:
+    type: string
+    description: Line one of the participant's address.
+    example: "10 Downing Street"
+    maxLength: 35
+
+  addressLine2:
+    type: string
+    description: Line two of the participant's address.
+    example: "Westminster"
+    maxLength: 35
+
+  addressLine3:
+    type: string
+    description: Line three of the participant's address.
+    example: "London"
+    maxLength: 35
+
+  addressLine4:
+    type: string
+    description: Line four of the participant's address.
+    example: "Greater London"
+    maxLength: 35
+
+  addressLine5:
+    type: string
+    description: Line five of the participant's address.
+    example: "United Kingdom"
+    maxLength: 35
+
+  postcode:
+    type: string
+    description: The participant's postcode.
+    example: "SW1A 2AA"
+    maxLength: 8
+
+  phone:
+    type: string
+    description: The participant's home-phone number.
+    example: "01225 123456"
+    maxLength: 20
+
+  mobile:
+    type: string
+    description: The participant's mobile number.
+    example: "07123456789"
+    maxLength: 20
+
+  email:
+    type: string
+    format: email
+    description: The participant's email address.
+    example: "john-doe@gmail.com"
+    maxLength: 253

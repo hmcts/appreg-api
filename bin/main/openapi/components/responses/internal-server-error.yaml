@@ -1,0 +1,16 @@
+description: Unexpected server error.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      generic:
+        value:
+          type: https://errors.hmcts.net/common/internal-error
+          title: Internal Server Error
+          status: 500
+          detail: An unexpected error occurred

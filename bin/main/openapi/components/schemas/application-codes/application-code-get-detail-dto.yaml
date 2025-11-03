@@ -1,0 +1,96 @@
+type: object
+description: Immutable DTO representing a detailed Application Code.
+required:
+  - applicationCode
+  - title
+  - wording
+  - isFeeDue
+  - requiresRespondent
+  - bulkRespondentAllowed
+  - startDate
+  - endDate
+
+properties:
+  applicationCode:
+    type: string
+    description: Code that identifies the application.
+  title:
+    type: string
+    description: Human-readable title.
+  wording:
+    type: string
+    description: Full descriptive wording, potentially with blank fields to be inputted by the user.
+  isFeeDue:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code require an
+      Application List Entry Fee Status to be created and linked.
+  requiresRespondent:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code require a
+      respondent to be created and linked.
+  bulkRespondentAllowed:
+    type: boolean
+    description: >
+      True if Application List Entries using this Application Code allow multiple
+      respondents to be created and linked.
+  feeReference:
+    type: string
+    nullable: true
+    description: A short reference code that identifies a Fee.
+  feeAmount:
+    type: object
+    description: >
+      Fee amount for this Application Code, expressed in pence (GBP minor units).
+      Always use integer values; 1 GBP = 100 pence.
+    nullable: true
+    required:
+      - value
+    properties:
+      value:
+        type: integer
+        format: int64
+        minimum: 0
+        description: Amount in pence.
+        example: 1299   # £12.99
+      currency:
+        type: string
+        description: ISO 4217 currency code (always "GBP" for now).
+        example: GBP
+        default: GBP
+        enum: [ GBP ]
+  feeDescription:
+    type: string
+    nullable: true
+    description: Descriptive text for the fee.
+  offsiteFeeAmount:
+    type: object
+    description: >
+      Fee amount for this Application Code, expressed in pence (GBP minor units).
+      Always use integer values; 1 GBP = 100 pence.
+    nullable: true
+    required:
+      - value
+    properties:
+      value:
+        type: integer
+        format: int64
+        minimum: 0
+        description: Amount in pence.
+        example: 1299   # £12.99
+      currency:
+        type: string
+        description: ISO 4217 currency code (always "GBP" for now).
+        example: GBP
+        default: GBP
+        enum: [ GBP ]
+  startDate:
+    type: string
+    format: date
+    description: Date the Application Code became active.
+  endDate:
+    type: string
+    format: date
+    description: Date the Application Code became inactive. `null` indicates that this row is still active.
+    nullable: true

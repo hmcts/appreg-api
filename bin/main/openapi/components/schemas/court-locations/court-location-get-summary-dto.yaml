@@ -1,0 +1,12 @@
+type: object
+description: Lightweight DTO for Court Locations, used in list/search views.
+required:
+  - name
+  - locationCode
+properties:
+  name:
+    type: string
+    description: Human-readable court name.
+  locationCode:
+    type: string
+    description: Code that identifies the Court Location.

@@ -1,0 +1,52 @@
+get:
+  operationId: getCourtLocations
+  tags: [ court-locations ]
+  summary: Get Court Locations (paginated, filterable)
+  description: |
+    Returns a paginated list of Court Locations.
+    - Filters:
+      - `name` – case-insensitive partial match
+      - `code` – case-insensitive partial match
+  parameters:
+    - in: query
+      name: name
+      schema: { type: string }
+      description: Filter by court name (contains, case-insensitive).
+    - in: query
+      name: code
+      schema: { type: string }
+      description: Filter by Court Location code (contains, case-insensitive).
+    - in: query
+      name: page
+      schema: { type: integer, format: int32, minimum: 0, default: 0 }
+      description: Zero-based page index.
+    - in: query
+      name: size
+      schema: { type: integer, format: int32, minimum: 1, default: 10, maximum: 100}
+      description: Page size.
+    - in: query
+      name: sort
+      description: >
+        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
+        Example: `?sort=name,asc&sort=code,desc`.
+      style: form
+      explode: true
+      schema:
+        type: array
+        items: { type: string }
+        example: [ "name,asc", "code,desc" ]
+  responses:
+    "200":
+      description: Page of summarised Court Locations
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string, example: Accept }
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/court-locations/court-location-page.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

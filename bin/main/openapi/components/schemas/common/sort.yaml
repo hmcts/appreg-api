@@ -1,0 +1,26 @@
+type: object
+description: Sorting state for the returned page.
+properties:
+  orders:
+    type: array
+    description: Active sort orders in priority order.
+    items:
+      type: object
+      required: [property, direction]
+      properties:
+        property:
+          type: string
+          description: Property name used for sorting.
+          example: "title"
+        direction:
+          type: string
+          description: Sort direction.
+          enum: [asc, desc]
+          example: "asc"
+required: []
+example:
+  orders:
+    - property: "title"
+      direction: "asc"
+    - property: "code"
+      direction: "desc"

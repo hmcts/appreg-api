@@ -1,0 +1,1521 @@
+components:
+  parameters:
+    AcceptVersion:
+      description: API versioning should be provided via Accept header
+      in: header
+      name: Accept
+      required: true
+      schema:
+        example: application/vnd.hmcts.applications+json; version=1.0
+        type: string
+  schemas:
+    ApplicationCodeCreateDto:
+      properties:
+        applicationCode:
+          type: string
+        bulkRespondentAllowed:
+          type: boolean
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        feeDue:
+          type: boolean
+        feeReference:
+          type: string
+        legislation:
+          type: string
+        requiresRespondent:
+          type: boolean
+        startDate:
+          type: string
+        title:
+          type: string
+        wording:
+          type: string
+      required:
+        - applicationCode
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
+      type: object
+    ApplicationCodeGetDto:
+      properties:
+        bulkRespondentAllowed:
+          type: boolean
+        code:
+          type: string
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        feeDue:
+          type: boolean
+        feeReference:
+          type: string
+        id:
+          type: integer
+        legislation:
+          type: string
+        mainFeeAmount:
+          type: string
+        mainFeeDescription:
+          type: string
+        offsetFeeAmount:
+          type: string
+        offsetFeeDescription:
+          type: string
+        requiresRespondent:
+          type: boolean
+        startDate:
+          type: string
+        title:
+          type: string
+        wording:
+          type: string
+      required:
+        - id
+        - code
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
+        - mainFeeDescription
+        - mainFeeAmount
+        - offsetFeeDescription
+        - offsetFeeAmount
+      type: object
+    ApplicationCodeUpdateDto:
+      properties:
+        bulkRespondentAllowed:
+          type: boolean
+        code:
+          type: string
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        feeDue:
+          type: boolean
+        feeReference:
+          type: string
+        id:
+          type: integer
+        legislation:
+          type: string
+        mainFeeAmount:
+          type: string
+        mainFeeDescription:
+          type: string
+        offsetFeeAmount:
+          type: string
+        offsetFeeDescription:
+          type: string
+        requiresRespondent:
+          type: boolean
+        startDate:
+          type: string
+        title:
+          type: string
+        version:
+          type: integer
+        wording:
+          type: string
+      required:
+        - id
+        - code
+        - title
+        - wording
+        - legislation
+        - feeDue
+        - requiresRespondent
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+        - bulkRespondentAllowed
+        - feeReference
+        - mainFeeDescription
+        - mainFeeAmount
+        - offsetFeeDescription
+        - offsetFeeAmount
+        - version
+      type: object
+    ApplicationEntryOfficialCreateDto:
+      properties:
+        applicationEntryId:
+          type: integer
+        forename:
+          type: string
+        officialType:
+          type: string
+        surname:
+          type: string
+        title:
+          type: string
+      required:
+        - applicationEntryId
+        - title
+        - forename
+        - surname
+        - officialType
+      type: object
+    ApplicationEntryOfficialGetDto:
+      properties:
+        applicationEntryId:
+          type: integer
+        forename:
+          type: string
+        id:
+          type: integer
+        officialType:
+          type: string
+        surname:
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - applicationEntryId
+        - title
+        - forename
+        - surname
+        - officialType
+      type: object
+    ApplicationEntryOfficialUpdateDto:
+      properties:
+        forename:
+          type: string
+        id:
+          type: integer
+        officialType:
+          type: string
+        surname:
+          type: string
+        title:
+          type: string
+        version:
+          type: integer
+      required:
+        - id
+        - title
+        - forename
+        - surname
+        - officialType
+        - version
+      type: object
+    ApplicationFeeCreateDto:
+      properties:
+        description:
+          type: string
+        reference:
+          type: string
+        startDate:
+          type: string
+        value:
+          type: string
+      required:
+        - reference
+        - description
+        - value
+        - startDate
+      type: object
+    ApplicationFeeGetDto:
+      properties:
+        description:
+          type: string
+        endDate:
+          type: string
+        id:
+          type: integer
+        reference:
+          type: string
+        startDate:
+          type: string
+        value:
+          type: string
+      required:
+        - id
+        - reference
+        - description
+        - value
+        - startDate
+        - endDate
+      type: object
+    ApplicationFeeStatusDto:
+      properties:
+        D:
+          type: string
+        feeStatus:
+          type: string
+        paymentReference:
+          type: string
+        statusCreationDate:
+          type: string
+      required:
+        - paymentReference
+        - feeStatus
+        - D
+        - statusCreationDate
+      type: object
+    ApplicationFeeUpdateDto:
+      properties:
+        description:
+          type: string
+        endDate:
+          type: string
+        id:
+          type: integer
+        reference:
+          type: string
+        startDate:
+          type: string
+        value:
+          type: string
+      required:
+        - id
+        - reference
+        - description
+        - value
+        - startDate
+        - endDate
+      type: object
+    ApplicationListCreateDto:
+      properties:
+        courthouseCode:
+          type: string
+        criminalJusticeAreaId:
+          type: integer
+        date:
+          type: string
+        description:
+          type: string
+        durationHour:
+          type: integer
+        durationMinute:
+          type: integer
+        otherCourthouse:
+          type: string
+        status:
+          type: string
+        time:
+          type: string
+      required:
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - otherCourthouse
+        - durationHour
+        - durationMinute
+        - criminalJusticeAreaId
+      type: object
+    ApplicationListEntryCreateDto:
+      properties:
+        accountNumber:
+          type: string
+        applicant:
+          type: string
+        applicationListId:
+          type: integer
+        bulkUpload:
+          type: boolean
+        caseReference:
+          type: string
+        entryWording:
+          type: string
+        feeStatuses:
+          type: string
+        lodgementDate:
+          type: string
+        messageUuid:
+          type: string
+        notes:
+          type: string
+        rescheduled:
+          type: boolean
+        retryCount:
+          type: string
+        sequenceNumber:
+          type: integer
+        standardApplicantId:
+          type: integer
+        userName:
+          type: string
+      required:
+        - applicationListId
+        - standardApplicantId
+        - applicant
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - sequenceNumber
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - feeStatuses
+      type: object
+    ApplicationListEntryGetDto:
+      properties:
+        accountNumber:
+          type: string
+        applicant:
+          type: string
+        applicationListId:
+          type: integer
+        bulkUpload:
+          type: boolean
+        caseReference:
+          type: string
+        entryId:
+          type: integer
+        entryWording:
+          type: string
+        feeStatuses:
+          type: string
+        lodgementDate:
+          type: string
+        messageUuid:
+          type: string
+        notes:
+          type: string
+        numberOfBulkRespondents:
+          type: integer
+        rescheduled:
+          type: boolean
+        retryCount:
+          type: string
+        sequenceNumber:
+          type: integer
+        standardApplicantId:
+          type: string
+        userName:
+          type: string
+      required:
+        - entryId
+        - applicationListId
+        - standardApplicantId
+        - applicant
+        - numberOfBulkRespondents
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - sequenceNumber
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - feeStatuses
+      type: object
+    ApplicationListEntryResultCreateDto:
+      properties:
+        resultCodeId:
+          type: integer
+        resultOfficer:
+          type: string
+        resultWording:
+          type: string
+      required:
+        - resultCodeId
+        - resultOfficer
+        - resultWording
+      type: object
+    ApplicationListEntryResultGetDto:
+      properties:
+        id:
+          type: integer
+        resultCode:
+          type: string
+        resultOfficer:
+          type: string
+        resultWording:
+          type: string
+      required:
+        - id
+        - resultCode
+        - resultWording
+        - resultOfficer
+      type: object
+    ApplicationListEntryResultUpdateDto:
+      properties:
+        id:
+          type: integer
+        resultCodeId:
+          type: integer
+        resultOfficer:
+          type: string
+        resultWording:
+          type: string
+        version:
+          type: integer
+      required:
+        - id
+        - version
+        - resultCodeId
+        - resultOfficer
+        - resultWording
+      type: object
+    ApplicationListEntryUpdateDto:
+      properties:
+        accountNumber:
+          type: string
+        applicant:
+          type: string
+        bulkUpload:
+          type: boolean
+        caseReference:
+          type: string
+        entryId:
+          type: integer
+        entryWording:
+          type: string
+        feeStatuses:
+          type: string
+        lodgementDate:
+          type: string
+        messageUuid:
+          type: string
+        notes:
+          type: string
+        rescheduled:
+          type: boolean
+        retryCount:
+          type: string
+        standardApplicantId:
+          type: integer
+        userName:
+          type: string
+        version:
+          type: integer
+      required:
+        - entryId
+        - standardApplicantId
+        - applicant
+        - entryWording
+        - caseReference
+        - accountNumber
+        - rescheduled
+        - notes
+        - bulkUpload
+        - userName
+        - messageUuid
+        - retryCount
+        - lodgementDate
+        - version
+        - feeStatuses
+      type: object
+    ApplicationListGetDto:
+      properties:
+        cjaCode:
+          type: string
+        cjaDescription:
+          type: string
+        courthouseCode:
+          type: string
+        courthouseName:
+          type: string
+        date:
+          type: string
+        description:
+          type: string
+        durationHour:
+          type: integer
+        durationMinute:
+          type: integer
+        id:
+          type: integer
+        otherCourthouse:
+          type: string
+        status:
+          type: string
+        time:
+          type: string
+      required:
+        - id
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - courthouseName
+        - otherCourthouse
+        - durationHour
+        - durationMinute
+        - cjaCode
+        - cjaDescription
+      type: object
+    ApplicationListStatus:
+      properties: { }
+      type: object
+    ApplicationListUpdateDto:
+      properties:
+        courthouseCode:
+          type: string
+        criminalJusticeAreaId:
+          type: integer
+        date:
+          type: string
+        description:
+          type: string
+        durationMinute:
+          type: integer
+        id:
+          type: integer
+        status:
+          type: string
+        time:
+          type: string
+        version:
+          type: integer
+      required:
+        - id
+        - version
+        - status
+        - date
+        - time
+        - description
+        - courthouseCode
+        - durationMinute
+        - criminalJusticeAreaId
+      type: object
+    CourtLocationGetDto:
+      properties: { }
+      type: object
+    CourtLocationUpdateDto:
+      properties:
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        courtLocationCode:
+          type: string
+        courtType:
+          type: string
+        endDate:
+          type: string
+        id:
+          type: integer
+        name:
+          type: string
+        postcode:
+          type: string
+        startDate:
+          type: string
+        telephoneNumber:
+          type: string
+        version:
+          type: integer
+        welshName:
+          type: string
+      required:
+        - id
+        - version
+        - name
+        - courtType
+        - courtLocationCode
+        - startDate
+        - endDate
+        - welshName
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - telephoneNumber
+      type: object
+    CourtLocationsCreateDto:
+      properties:
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        courtType:
+          type: string
+        name:
+          type: string
+        postcode:
+          type: string
+        telephoneNumber:
+          type: string
+      required:
+        - name
+        - courtType
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - telephoneNumber
+      type: object
+    CriminalJusticeAreGetDto:
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+        id:
+          type: integer
+      required:
+        - id
+        - code
+        - description
+      type: object
+    CriminalJusticeAreaCreateDto:
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+      required:
+        - code
+        - description
+      type: object
+    CriminalJusticeAreaUpdateDto:
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+        id:
+          type: integer
+        version:
+          type: integer
+      required:
+        - id
+        - code
+        - description
+        - version
+      type: object
+    NameAddressDto:
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        dateOfBirth:
+          type: string
+        dmsId:
+          type: string
+        emailAddress:
+          type: string
+        forename1:
+          type: string
+        forename2:
+          type: string
+        forename3:
+          type: string
+        mobileNumber:
+          type: string
+        name:
+          type: string
+        postcode:
+          type: string
+        surname:
+          type: string
+        telephoneNumber:
+          type: string
+        title:
+          type: string
+        userName:
+          type: string
+        version:
+          type: integer
+      required:
+        - title
+        - name
+        - forename1
+        - forename2
+        - forename3
+        - surname
+        - dateOfBirth
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - dmsId
+        - version
+        - userName
+      type: object
+    OfficialType:
+      properties: { }
+      type: object
+    ResultCodeCreateDto:
+      properties:
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        legislation:
+          type: string
+        resultCode:
+          type: string
+        startDate:
+          type: string
+        title:
+          type: string
+        wording:
+          type: string
+      required:
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+      type: object
+    ResultCodeGetDto:
+      properties:
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        id:
+          type: integer
+        legislation:
+          type: string
+        resultCode:
+          type: string
+        startDate:
+          type: string
+        title:
+          type: string
+        wording:
+          type: string
+      required:
+        - id
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+      type: object
+    ResultCodeUpdateDto:
+      properties:
+        destinationEmail1:
+          type: string
+        destinationEmail2:
+          type: string
+        endDate:
+          type: string
+        id:
+          type: integer
+        legislation:
+          type: string
+        resultCode:
+          type: string
+        startDate:
+          type: string
+        title:
+          type: string
+        version:
+          type: integer
+        wording:
+          type: string
+      required:
+        - id
+        - version
+        - resultCode
+        - title
+        - wording
+        - legislation
+        - destinationEmail1
+        - destinationEmail2
+        - startDate
+        - endDate
+      type: object
+    StandardApplicantCreateDto:
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        applicantCode:
+          type: string
+        applicantEndDate:
+          type: string
+        applicantForename1:
+          type: string
+        applicantForename2:
+          type: string
+        applicantForename3:
+          type: string
+        applicantName:
+          type: string
+        applicantStartDate:
+          type: string
+        applicantSurname:
+          type: string
+        applicantTitle:
+          type: string
+        emailAddress:
+          type: string
+        mobileNumber:
+          type: string
+        postcode:
+          type: string
+        telephoneNumber:
+          type: string
+      required:
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
+      type: object
+    StandardApplicantGetDto:
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        applicantCode:
+          type: string
+        applicantEndDate:
+          type: string
+        applicantForename1:
+          type: string
+        applicantForename2:
+          type: string
+        applicantForename3:
+          type: string
+        applicantName:
+          type: string
+        applicantStartDate:
+          type: string
+        applicantSurname:
+          type: string
+        applicantTitle:
+          type: string
+        emailAddress:
+          type: string
+        id:
+          type: integer
+        mobileNumber:
+          type: string
+        postcode:
+          type: string
+        telephoneNumber:
+          type: string
+      required:
+        - id
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
+      type: object
+    StandardApplicantUpdateDto:
+      properties:
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+        addressLine3:
+          type: string
+        addressLine4:
+          type: string
+        addressLine5:
+          type: string
+        applicantCode:
+          type: string
+        applicantEndDate:
+          type: string
+        applicantForename1:
+          type: string
+        applicantForename2:
+          type: string
+        applicantForename3:
+          type: string
+        applicantName:
+          type: string
+        applicantStartDate:
+          type: string
+        applicantSurname:
+          type: string
+        applicantTitle:
+          type: string
+        emailAddress:
+          type: string
+        id:
+          type: integer
+        mobileNumber:
+          type: string
+        postcode:
+          type: string
+        telephoneNumber:
+          type: string
+        version:
+          type: integer
+      required:
+        - id
+        - version
+        - applicantCode
+        - applicantTitle
+        - applicantName
+        - applicantForename1
+        - applicantForename2
+        - applicantForename3
+        - applicantSurname
+        - addressLine1
+        - addressLine2
+        - addressLine3
+        - addressLine4
+        - addressLine5
+        - postcode
+        - emailAddress
+        - telephoneNumber
+        - mobileNumber
+        - applicantStartDate
+        - applicantEndDate
+      type: object
+info:
+  description: RESTful API for managing the Applications Register business processes.
+  title: Applications Register API
+  version: 1.0.0
+openapi: 3.0.3
+paths:
+  /application-codes:
+    get:
+      responses:
+        '200':
+          description: List of application codes
+      summary: Get all application codes
+    post:
+      responses:
+        '201':
+          description: Application code created
+      summary: Create a new application code
+  /application-codes/{code-id}:
+    parameters:
+      - name: code-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Application code deleted
+      summary: Delete application code
+    get:
+      parameters:
+        - in: path
+          name: code-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application code detail
+      summary: Get application code by ID
+    put:
+      responses:
+        '200':
+          description: Application code updated
+      summary: Update application code
+  /application-entries/move:
+    post:
+      responses:
+        '200':
+          description: Entries moved
+      summary: Move one or more entries to another list
+  /application-fees:
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ApplicationFeeGetDto'
+                type: array
+          description: List of application fees
+      summary: Get all application fees
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationFeeCreateDto'
+        required: true
+      responses:
+        '201':
+          description: Application fee created
+      summary: Create a new application fee
+  /application-fees/{id}:
+    delete:
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Application fee deleted
+      summary: Delete an application fee by ID
+    get:
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationFeeGetDto'
+          description: Application fee details
+      summary: Get an application fee by ID
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    put:
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationFeeUpdateDto'
+        required: true
+      responses:
+        '200':
+          description: Application fee updated
+      summary: Update an application fee by ID
+  /application-lists:
+    get:
+      responses:
+        '200':
+          description: List of application lists
+      summary: List application lists
+    post:
+      responses:
+        '201':
+          description: Application list created
+      summary: Create a new application list
+  /application-lists/{list-id}:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Application list deleted
+      summary: Delete application list
+    get:
+      responses:
+        '200':
+          description: Application list detail
+      summary: Get application list by ID
+    put:
+      responses:
+        '200':
+          description: Application list updated
+      summary: Update application list
+  /application-lists/{list-id}/entries:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          description: List of application list entries
+      summary: Get all entries in a list
+    post:
+      responses:
+        '201':
+          description: Application list entry added
+      summary: Add entry to list
+  /application-lists/{list-id}/entries/bulk-upload:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  format: binary
+                  type: string
+              type: object
+      responses:
+        '200':
+          description: Upload processed successfully
+      summary: Bulk upload applications via CSV
+  /application-lists/{list-id}/entries/results:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      responses:
+        '200':
+          description: Results added successfully
+      summary: Bulk add results to entries
+  /application-lists/{list-id}/entries/{entry-id}:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entry-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Entry deleted
+      summary: Delete entry
+    get:
+      responses:
+        '200':
+          description: Entry details
+      summary: Get specific entry by ID
+    put:
+      responses:
+        '200':
+          description: Entry updated
+      summary: Update entry
+  /application-lists/{list-id}/entries/{entry-id}/results:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entry-id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          description: List of results
+      summary: Get results for a specific entry
+    post:
+      responses:
+        '201':
+          description: Result added
+      summary: Add result to entry
+  /application-lists/{list-id}/entries/{entry-id}/results/{result-id}:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: entry-id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: result-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Result deleted
+      summary: Delete result
+    put:
+      responses:
+        '200':
+          description: Result updated
+      summary: Update result
+  /application-lists/{list-id}/reschedule-entries:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      responses:
+        '200':
+          description: Entries rescheduled
+      summary: Reschedule one or more application list entries
+  /court-locations:
+    get:
+      responses:
+        '200':
+          description: List of court locations
+      summary: Get all court locations
+    post:
+      responses:
+        '201':
+          description: Court location created
+      summary: Create court location
+  /court-locations/{location-id}:
+    parameters:
+      - name: location-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Court location deleted
+      summary: Delete court location
+    get:
+      parameters:
+        - in: path
+          name: location-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Court location detail
+      summary: Get court location by ID
+    put:
+      responses:
+        '200':
+          description: Court location updated
+      summary: Update court location
+  /reports/activity-audit:
+    get:
+      responses:
+        '200':
+          description: Audit report generated
+      summary: Generate activity audit report
+  /reports/application-lists/{list-id}:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          description: Report generated
+      summary: Generate application list report
+  /reports/application-registers/{list-id}:
+    parameters:
+      - name: list-id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      responses:
+        '200':
+          description: Register report generated
+      summary: Generate application register report
+  /reports/fees:
+    get:
+      responses:
+        '200':
+          description: Fees report generated
+      summary: Generate fees report
+  /reports/list-maintenance:
+    get:
+      responses:
+        '200':
+          description: List maintenance report generated
+      summary: Generate list maintenance report
+  /reports/search-warrants:
+    get:
+      responses:
+        '200':
+          description: Search warrants report generated
+      summary: Generate search warrants report
+  /result-codes:
+    get:
+      responses:
+        '200':
+          description: List of result codes
+      summary: Get all result codes
+    post:
+      responses:
+        '201':
+          description: Result code created
+      summary: Create a new result code
+  /result-codes/{code-id}:
+    parameters:
+      - name: code-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Result code deleted
+      summary: Delete result code
+    get:
+      parameters:
+        - in: path
+          name: code-id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Result code detail
+      summary: Get result code by ID
+    put:
+      responses:
+        '200':
+          description: Result code updated
+      summary: Update result code
+  /standard-applicants:
+    get:
+      responses:
+        '200':
+          description: List of standard applicants
+      summary: List all standard applicants
+    post:
+      responses:
+        '201':
+          description: Standard applicant created
+      summary: Create a new standard applicant
+  /standard-applicants/{applicant-id}:
+    parameters:
+      - name: applicant-id
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      responses:
+        '204':
+          description: Standard applicant deleted
+      summary: Delete standard applicant
+    get:
+      responses:
+        '200':
+          description: Standard applicant details
+      summary: Get standard applicant by ID
+    put:
+      responses:
+        '200':
+          description: Standard applicant updated
+      summary: Update standard applicant
+servers:
+  - url: /

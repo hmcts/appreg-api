@@ -1,0 +1,29 @@
+type: object
+description: Immutable DTO representing a detailed Standard Applicant.
+required:
+  - code
+  - startDate
+  - endDate
+
+properties:
+
+  code:
+    type: string
+    description: Code that identifies the Standard Applicant.
+
+  fullName:
+    $ref: '../participants/full-name.yaml'
+
+  contactDetails:
+    $ref: '../participants/contact-details.yaml'
+
+  startDate:
+    type: string
+    format: date
+    description: Date the applicant record became active.
+
+  endDate:
+    type: string
+    format: date
+    description: Date the applicant became inactive. `null` indicates that this row is still active.
+    nullable: true

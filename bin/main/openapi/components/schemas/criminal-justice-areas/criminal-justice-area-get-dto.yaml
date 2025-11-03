@@ -1,0 +1,12 @@
+type: object
+description: Immutable DTO representing a Criminal Justice Area.
+required:
+  - code
+  - description
+properties:
+  code:
+    type: string
+    description: Code that identifies the Criminal Justice Area.
+  description:
+    type: string
+    description: Human-readable name of the Criminal Justice Area.

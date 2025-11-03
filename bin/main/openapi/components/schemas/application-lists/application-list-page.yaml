@@ -1,0 +1,8 @@
+allOf:
+  - $ref: '../common/page.yaml'
+  - type: object
+    properties:
+      content:
+        type: array
+        items:
+          $ref: './application-list-get-summary-dto.yaml'

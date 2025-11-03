@@ -1,0 +1,49 @@
+type: object
+description: Request payload to create an Application List.
+required:
+  - date
+  - time
+  - description
+  - status
+
+properties:
+
+  date:
+    type: string
+    format: date
+
+  time:
+    type: string
+    format: time
+
+  description:
+    type: string
+
+  status:
+    $ref: './application-list-status.yaml'
+
+  courtLocationCode:
+    type: string
+    description: Code that identifies the Court Location.
+    example: "LOC123"
+
+  otherLocationDescription:
+    type: string
+    description: Free-text location if not using a standard court.
+    example: "Temporary Courtroom at Town Hall"
+
+  cjaCode:
+    type: string
+    description: Criminal Justice Area code.
+    example: "CJA001"
+
+  durationHours:
+    type: integer
+    format: int32
+    minimum: 0
+
+  durationMinutes:
+    type: integer
+    format: int32
+    minimum: 0
+    maximum: 59

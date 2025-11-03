@@ -1,0 +1,30 @@
+type: object
+description: Generic Spring Data page.
+required: [content, pageNumber, pageSize, totalElements, elementsOnPage]
+properties:
+  pageNumber:
+    type: integer
+    format: int32
+    description: Zero-based page index.
+  pageSize:
+    type: integer
+    format: int32
+    description: Page size.
+  totalElements:
+    type: integer
+    format: int64
+    description: Total number of elements across all pages.
+  totalPages:
+    type: integer
+    format: int32
+    description: Total number of pages.
+  sort:
+    $ref: './sort.yaml'
+  first:
+    type: boolean
+  last:
+    type: boolean
+  elementsOnPage:
+    type: integer
+    format: int32
+    description: Total number of elements in the current page.
