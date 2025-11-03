@@ -477,9 +477,9 @@ dependencies {
   implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
 
   // Mapstruct dependency
-  implementation 'org.mapstruct:mapstruct:1.5.5.Final' // your version
-  annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
-  testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+  implementation 'org.mapstruct:mapstruct:1.6.3' // your version
+  annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+  testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
 }
 
 bootJar {
