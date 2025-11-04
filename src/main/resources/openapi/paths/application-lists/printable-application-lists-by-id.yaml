@@ -1,6 +1,6 @@
 parameters:
   - in: path
-    name: id
+    name: listId
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
