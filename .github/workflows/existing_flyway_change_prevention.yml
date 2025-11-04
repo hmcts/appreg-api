@@ -21,7 +21,7 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          # Check if any changed files are under config/
+          # Check if any changed files are under flyway/
           if echo "$CHANGED_FILES" | grep -q "^flyway/"; then
             echo "🚫 Changes detected in restricted directory: flyway/"
             exit 1
