@@ -16,15 +16,15 @@ jobs:
         run: |
           # Get a list of changed files compared to base
           git fetch origin ${{ github.event.pull_request.base.ref }}
-          CHANGED_FILES=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }} HEAD)
+          CHANGED_FILES=$(git diff  --name-status origin/${{ github.event.pull_request.base.ref }} HEAD)
 
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          # Check if any changed files are under flyway/
-          if echo "$CHANGED_FILES" | grep -q "^flyway/"; then
-            echo "🚫 Changes detected in restricted directory: flyway/"
+          # Block only if modified (M) files exist under flyway/
+          if echo "$CHANGED_FILES" | grep -E '^(M|D)\s+flyway/'; then
+            echo "🚫 Existing files under flyway/ were modified."
             exit 1
           else
-            echo "✅ No restricted files changed."
+            echo "✅ No existing restricted files modified (new files are allowed)."
           fi
