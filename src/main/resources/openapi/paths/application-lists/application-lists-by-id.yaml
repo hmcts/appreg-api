@@ -1,6 +1,6 @@
 parameters:
   - in: path
-    name: id
+    name: listId
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
@@ -84,7 +84,7 @@ delete:
   operationId: deleteApplicationList
   tags: [ application-lists ]
   summary: Delete an Application List
-  description: Permanently deletes the Application List identified by `id`.
+  description: Permanently deletes the Application List identified by `listId`.
   responses:
     "204":
       description: Application List deleted (no content)

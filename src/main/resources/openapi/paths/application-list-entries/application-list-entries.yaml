@@ -1,3 +1,9 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
 get:
   operationId: getApplicationListEntries
   tags: [ application-list-entries ]
