@@ -9,6 +9,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
+
+import uk.gov.hmcts.appregister.common.enumeration.EntityType;
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
@@ -166,37 +168,46 @@ public interface ApplicationListEntryMapStructMapper {
             dto.setRespondent(new Respondent());
         }
 
-        if (isPerson(applicationListEntryPrintProjection)) {
+        EntityType applicantEntityType = getApplicantEntityType(applicationListEntryPrintProjection);
+        EntityType respondentEntityType = getRespondentEntityType(applicationListEntryPrintProjection);
+
+        if (applicantEntityType == EntityType.PERSON) {
             if (dto.getApplicant().getPerson() == null) {
                 dto.getApplicant().setPerson(new Person());
             }
 
             dto.getApplicant()
-                    .getPerson()
-                    .setContactDetails(
-                            mapContactDetails(
-                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+                .getPerson()
+                .setContactDetails(
+                    mapContactDetails(
+                        applicationListEntryPrintProjection, PartyType.APPLICANT));
+        }
 
-            if (dto.getRespondent().getPerson() == null) {
-                dto.getRespondent().setPerson(new Person());
-            }
-
-            dto.getRespondent()
-                    .getPerson()
-                    .setContactDetails(
-                            mapContactDetails(
-                                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
-        } else {
+        if (applicantEntityType == EntityType.ORGANISATION) {
             if (dto.getApplicant().getOrganisation() == null) {
                 dto.getApplicant().setOrganisation(new Organisation());
             }
 
             dto.getApplicant()
-                    .getOrganisation()
-                    .setContactDetails(
-                            mapContactDetails(
-                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+                .getOrganisation()
+                .setContactDetails(
+                    mapContactDetails(
+                        applicationListEntryPrintProjection, PartyType.APPLICANT));
+        }
 
+        if (respondentEntityType == EntityType.PERSON) {
+            if (dto.getRespondent().getPerson() == null) {
+                dto.getRespondent().setPerson(new Person());
+            }
+
+            dto.getRespondent()
+                .getPerson()
+                .setContactDetails(
+                    mapContactDetails(
+                        applicationListEntryPrintProjection, PartyType.RESPONDENT));
+        }
+
+        if (respondentEntityType == EntityType.ORGANISATION) {
             if (dto.getRespondent().getOrganisation() == null) {
                 dto.getRespondent().setOrganisation(new Organisation());
             }
@@ -209,17 +220,27 @@ public interface ApplicationListEntryMapStructMapper {
         }
     }
 
-    private boolean isPerson(
+    private EntityType getApplicantEntityType(
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
-        if (applicationListEntryPrintProjection == null) {
-            return false;
+        if (applicationListEntryPrintProjection.getApplicantName() != null) {
+            return EntityType.ORGANISATION;
+        } else if (applicationListEntryPrintProjection.getApplicantForename1() != null &&
+            applicationListEntryPrintProjection.getApplicantSurname() != null) {
+            return EntityType.PERSON;
         } else {
-            return applicationListEntryPrintProjection.getApplicantTitle() != null
-                    || applicationListEntryPrintProjection.getApplicantSurname() != null
-                    || applicationListEntryPrintProjection.getApplicantForename1() != null
-                    || applicationListEntryPrintProjection.getRespondentTitle() != null
-                    || applicationListEntryPrintProjection.getRespondentSurname() != null
-                    || applicationListEntryPrintProjection.getRespondentForename1() != null;
+            return EntityType.PERSON;
+        }
+    }
+
+    private EntityType getRespondentEntityType(
+        ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
+        if (applicationListEntryPrintProjection.getRespondentName() != null) {
+            return EntityType.ORGANISATION;
+        } else if (applicationListEntryPrintProjection.getRespondentForename1() != null &&
+            applicationListEntryPrintProjection.getRespondentSurname() != null) {
+            return EntityType.PERSON;
+        } else {
+            return EntityType.PERSON;
         }
     }
 }
