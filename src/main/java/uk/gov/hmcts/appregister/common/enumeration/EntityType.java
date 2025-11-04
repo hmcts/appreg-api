@@ -8,7 +8,8 @@ import lombok.Getter;
 @Getter
 public enum EntityType {
     PERSON("Person"),
-    ORGANISATION("Organisation");
+    ORGANISATION("Organisation"),
+    UNKNOWN("Unknown");
 
     private final String value;
 

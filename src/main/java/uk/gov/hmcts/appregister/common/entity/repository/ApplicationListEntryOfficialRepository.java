@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,9 +40,9 @@ public interface ApplicationListEntryOfficialRepository
                 )
             )
             FROM AppListEntryOfficial aleo
-            WHERE aleo.appListEntry.uuid = :id
+            WHERE aleo.appListEntry.id = :id
             """)
-    List<String> findByIdForPrinting(UUID id);
+    List<String> findByIdForPrinting(Long id);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.

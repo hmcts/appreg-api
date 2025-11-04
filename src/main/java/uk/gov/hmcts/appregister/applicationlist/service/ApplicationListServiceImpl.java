@@ -255,11 +255,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         List<EntryGetPrintDto> dtos = new ArrayList<>();
 
         for (ApplicationListEntryPrintProjection entry : applicationListEntryPrintProjections) {
+            Long entryId = entry.getId();
+
             // Fetch result wordings from the repository
-            List<String> resultWordings = alerRepository.findByIdForPrinting(entry.getUuid());
+            List<String> resultWordings = alerRepository.findByIdForPrinting(entryId);
 
             // Fetch officials from the repository
-            List<String> officials = aleoRepository.findByIdForPrinting(entry.getUuid());
+            List<String> officials = aleoRepository.findByIdForPrinting(entryId);
 
             // Map each projection to a DTO
             EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
