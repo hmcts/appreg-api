@@ -1,4 +1,3 @@
----
 name: Check for duplicate Flyway scripts
 on:
   pull_request:
@@ -20,10 +19,10 @@ jobs:
           set -e
           
           flyway_script_count=$(find ./flyway -type f | wc -l | jq -r)
-        echo "Flyway migration script count: $flyway_script_count"
+          echo "Flyway migration script count: $flyway_script_count"
           
           readarray -t unique_numbers < <(find ./flyway -type f | awk -F '__' '{print $1}' | sort | uniq -c)
-        echo "Unique flyway migration script count: ${#unique_numbers[@]}"
+          echo "Unique flyway migration script count: ${#unique_numbers[@]}"
           
           if [ "$flyway_script_count" -ne "${#unique_numbers[@]}" ]; then
           echo "Duplicate flyway migration scripts found"
