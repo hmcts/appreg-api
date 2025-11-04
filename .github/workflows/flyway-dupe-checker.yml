@@ -1,0 +1,23 @@
+---
+name: Check for duplicate Flyway scripts
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+      - uses: actions/checkout@v4
+
+      - name: Make script executable
+        run: chmod +x ./bin/ci/flyway-dupe-checker.sh
+
+      - name: Check for duplicate Flyway scripts
+        run: ./bin/ci/flyway-dupe-checker.sh

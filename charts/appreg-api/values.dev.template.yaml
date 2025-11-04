@@ -2,6 +2,7 @@ java:
   # Don't modify below here
   image: ${IMAGE_NAME}
   ingressHost: ${SERVICE_FQDN}
+  devmemoryLimits: "3Gi"
   environment:
     env_name: 'DEV'
     POSTGRES_USER: "hmcts"
@@ -10,6 +11,7 @@ java:
     POSTGRES_DATABASE: postgres
     azure-tenant-id: "temp_tenant_id"
     azure-audience-id: "temp_aud"
+    JAVA_TOOL_OPTIONS: '-XX:InitialRAMPercentage=50 -XX:MaxRAMPercentage=75 -Xlog:gc* -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heap.hprof'
   secrets:
     POSTGRES_PASS:
       secretRef: "postgres"

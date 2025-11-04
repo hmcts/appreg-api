@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Set;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.TypeDescriptor;
@@ -17,6 +18,10 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 
 @Configuration
 public class AppConfig implements WebMvcConfigurer {
+
+    @Value("${app.timezone:Europe/London}")
+    private String timezone;
+
     /**
      * Allows the clock to be modified so that we can test time sensitive code.
      *
@@ -34,7 +39,7 @@ public class AppConfig implements WebMvcConfigurer {
 
     @Bean
     public ZoneId ukZone() {
-        return ZoneId.of("Europe/London");
+        return ZoneId.of(timezone);
     }
 
     /**

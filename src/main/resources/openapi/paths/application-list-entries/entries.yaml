@@ -1,0 +1,45 @@
+get:
+  operationId: getEntries
+  tags: [ application-list-entries ]
+  summary: Get all Entries (paginated, filterable)
+  description: Returns a paginated list of Application Lists Entries that match the search filters, without using an Application List ID .
+  parameters:
+    - in: query
+      name: filter
+      description: Filter criteria for Application Lists Entries.
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: "../../components/schemas/application-list-entries/entry-get-filter-dto.yaml"
+    - in: query
+      name: page
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+    - in: query
+      name: sort
+      style: form
+      explode: true
+      schema:
+        type: array
+        items: { type: string }
+        example: [ "date,desc", "status,asc" ]
+  responses:
+    "200":
+      description: Page of Application List Entries
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-page.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
