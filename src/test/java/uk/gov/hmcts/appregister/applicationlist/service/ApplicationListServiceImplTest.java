@@ -43,6 +43,7 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetVali
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
@@ -95,7 +96,16 @@ public class ApplicationListServiceImplTest {
 
     @Mock private EntityManager entityManager;
 
-    @Spy private MatchService matchService = new MatchServiceImpl(null);
+    // A null match provider that returns a null etag
+    private static MatchProvider NULL_MATCH_PROVIDER =
+            new MatchProvider() {
+                @Override
+                public String getEtag() {
+                    return null;
+                }
+            };
+
+    @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
 
     @Mock private ApplicationListDeletionValidator deletionValidator;
 
