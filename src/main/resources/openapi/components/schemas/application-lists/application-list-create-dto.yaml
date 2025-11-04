@@ -11,10 +11,14 @@ properties:
   date:
     type: string
     format: date
+    description: The calendar date on which the Application List is scheduled.
+    example: "2025-09-17"
 
   time:
     type: string
     format: time
+    description: The time of day at which the Application List is scheduled, seconds are optional.
+    example: "10:30:00, 10:30"
 
   description:
     type: string

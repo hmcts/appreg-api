@@ -141,7 +141,7 @@ public class ApplicationListMapperTest {
                             .build();
 
             // When
-            ApplicationListGetDetailDto dto = mapper.toGetDetailDto(appList, null);
+            ApplicationListGetDetailDto dto = mapper.toGetDetailDto(appList, null, 0L);
 
             assertNull(dto.getCjaCode());
             assertNull(dto.getOtherLocationDescription());
@@ -192,7 +192,7 @@ public class ApplicationListMapperTest {
             assertEquals(LocalTime.of(9, 0, 0), dto.getTime());
             assertEquals("Bath Magistrates Court", dto.getLocation());
             assertEquals("Morning session", dto.getDescription());
-            assertEquals(5, dto.getNumberOfEntries());
+            assertEquals(5, dto.getEntriesCount());
             assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
         }
     }
