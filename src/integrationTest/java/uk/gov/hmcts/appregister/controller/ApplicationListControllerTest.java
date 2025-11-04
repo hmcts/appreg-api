@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -94,24 +95,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         String eventName = "Create Application List";
         String operation = "CREATE";
+
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDifferenceOrDataAuditChange(
-                DifferenceLogAsserter.getDataAuditAssertion(
-                        "application_lists",
-                        "application_list_status",
-                        "null",
-                        req.getStatus().toString(),
-                        operation,
-                        eventName));
-        differenceLogAsserter.assertDifferenceOrDataAuditChange(
-                DifferenceLogAsserter.getDataAuditAssertion(
-                        "application_lists",
-                        "list_description",
-                        "null",
-                        "Morning list \\(court\\)",
-                        operation,
-                        eventName));
+        differenceLogAsserter.assertDiffCount(6);
+
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
@@ -131,42 +119,35 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "user_name",
+                        "application_list_status",
                         "null",
-                        "app.registry@hmcts.net",
+                        req.getStatus().toString(),
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "duration_hour",
+                        "list_description",
                         "null",
-                        req.getDurationHours().toString(),
+                        "Morning list \\(court\\)",
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "duration_minute",
+                        "application_list_time",
                         "null",
-                        req.getDurationMinutes().toString(),
+                        TEST_TIME.toString(),
                         operation,
                         eventName));
-        differenceLogAsserter.assertFieldLogPresent("application_list_date");
-        differenceLogAsserter.assertFieldLogPresent("application_list_time");
-
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
-                        "application_lists", "version", "null", "0", operation, eventName));
-        differenceLogAsserter.assertFieldLogPresent("al_id");
-        differenceLogAsserter.assertFieldLogPresent("changed_date");
-        differenceLogAsserter.assertFieldLogPresent("changed_by");
-        differenceLogAsserter.assertFieldLogPresent("id");
-        differenceLogAsserter.assertFieldLogNotPresent("is_deleted");
-        differenceLogAsserter.assertFieldLogNotPresent("deleted_by");
-        differenceLogAsserter.assertFieldLogNotPresent("deleted_date");
-
-        differenceLogAsserter.assertDiffCount(14);
+                        "application_lists",
+                        "application_list_date",
+                        "null",
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -215,8 +196,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         String eventName = "Create Application List";
         String operation = "CREATE";
+
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(6);
+
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
@@ -225,6 +209,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         req.getStatus().toString(),
                         operation,
                         eventName));
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_code");
+
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_name");
+
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
@@ -244,42 +234,27 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "user_name",
+                        "application_list_time",
                         "null",
-                        "app.registry@hmcts.net",
+                        TEST_TIME.toString(),
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
                         "application_lists",
-                        "duration_hour",
+                        "application_list_date",
                         "null",
-                        req.getDurationHours().toString(),
+                        TEST_DATE.toString(),
                         operation,
                         eventName));
         differenceLogAsserter.assertDifferenceOrDataAuditChange(
                 DifferenceLogAsserter.getDataAuditAssertion(
-                        "application_lists",
-                        "duration_minute",
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
                         "null",
-                        req.getDurationMinutes().toString(),
+                        null,
                         operation,
                         eventName));
-        differenceLogAsserter.assertFieldLogPresent("application_list_date");
-        differenceLogAsserter.assertFieldLogPresent("application_list_time");
-
-        differenceLogAsserter.assertDifferenceOrDataAuditChange(
-                DifferenceLogAsserter.getDataAuditAssertion(
-                        "application_lists", "version", "null", "0", operation, eventName));
-        differenceLogAsserter.assertFieldLogPresent("al_id");
-        differenceLogAsserter.assertFieldLogPresent("changed_date");
-        differenceLogAsserter.assertFieldLogPresent("changed_by");
-        differenceLogAsserter.assertFieldLogPresent("id");
-        differenceLogAsserter.assertFieldLogNotPresent("is_deleted");
-        differenceLogAsserter.assertFieldLogNotPresent("deleted_by");
-        differenceLogAsserter.assertFieldLogNotPresent("deleted_date");
-
-        differenceLogAsserter.assertDiffCount(13);
     }
 
     // --- Validation: XOR rule (both supplied) -------------------------------------------------

@@ -89,7 +89,7 @@ azure:
 appreg:
   audit:
     diff:
-      enable-complex-diff: false
+      enable-complex-diff: true
       enable-collection-diff: false
 
 
