@@ -277,7 +277,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("name,asc", "courtLocationCode,desc"),
+                        List.of("name,asc", "code,desc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         new CourtLocationFilter(Optional.empty(), Optional.empty()),

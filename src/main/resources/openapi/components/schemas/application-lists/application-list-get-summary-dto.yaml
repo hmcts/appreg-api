@@ -39,11 +39,16 @@ properties:
     description: Human-readable description of the Application List (e.g. session title or purpose).
     example: "Morning session for traffic-related applications"
 
-  numberOfEntries:
+  entriesCount:
     type: integer
     format: int32
     description: Total number of Application List Entries associated with this Application List.
     example: 12
+
+  entriesSummary:
+    type: array
+    items: { $ref: 'application-list-entry-summary.yaml' }
+    description: A list of lightweight summaries of entries.
 
   status: { $ref: './application-list-status.yaml' }
 

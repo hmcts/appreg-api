@@ -4,6 +4,7 @@ import lombok.Getter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea_;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 
 /**
@@ -30,7 +31,11 @@ public enum AuditEventEnum {
     ADD_APPLICATION_LIST_AUDIT_EVENT(TableNames.APPLICATION_LISTS, "N/A", "Add Application List"),
 
     UPDATE_APPLICATION_LIST_AUDIT_EVENT(
-            TableNames.APPLICATION_LISTS, "N/A", "Update Application List");
+            TableNames.APPLICATION_LISTS, "N/A", "Update Application List"),
+    GET_RESULT_CODE_AUDIT_EVENT(
+            TableNames.RESOLUTION_CODES, ResolutionCode_.TITLE, "Get Result Code"),
+
+    GET_RESULT_CODES_AUDIT_EVENT(TableNames.RESOLUTION_CODES, "N/A", "Get Result Codes");
 
     private final String tableName;
 

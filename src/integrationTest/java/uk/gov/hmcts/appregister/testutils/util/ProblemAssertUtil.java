@@ -14,7 +14,7 @@ public class ProblemAssertUtil {
      * Asserts an expected problem details response on an actual response.
      * actualResponseSpecification the actual response
      *
-     * @param expectedErrorDetail The expected de
+     * @param expectedErrorDetail The expected detail
      * @param actualResponse The rest assured response
      */
     public static void assertEquals(ErrorDetail expectedErrorDetail, Response actualResponse) {
