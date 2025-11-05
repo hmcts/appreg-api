@@ -37,6 +37,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficalMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
@@ -80,6 +81,7 @@ public class ApplicationListServiceImplTest {
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
+    @Mock private ApplicationListOfficalMapper officalMapper;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
@@ -128,6 +130,7 @@ public class ApplicationListServiceImplTest {
                         updateValidator,
                         getValidator,
                         entryMapper,
+                        officalMapper,
                         entityManager,
                         matchService,
                         pageMapper,

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -17,22 +16,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
-import uk.gov.hmcts.appregister.data.NameAddressTestData;
-import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
-import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
+import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Transactional
@@ -82,7 +74,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testFindSummariesById_returnsExpectedSummaryProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
-        ApplicationListEntry data = saveApplicationListEntry(list, (short) 1);
+        ApplicationListEntry data =
+                ApplicationListEntryUtil.saveApplicationListEntry(
+                        entityManager, persistance, list, (short) 1);
 
         // test get
         Pageable page = PageRequest.of(0, 10);
@@ -147,8 +141,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         ApplicationList list = new AppListTestData().someMinimal().build();
         Short sequenceNumber1 = (short) 1;
         Short sequenceNumber2 = (short) 2;
-        ApplicationListEntry data1 = saveApplicationListEntry(list, sequenceNumber1);
-        ApplicationListEntry data2 = saveApplicationListEntry(list, sequenceNumber2);
+        ApplicationListEntry data1 =
+                ApplicationListEntryUtil.saveApplicationListEntry(
+                        entityManager, persistance, list, sequenceNumber1);
+        ApplicationListEntry data2 =
+                ApplicationListEntryUtil.saveApplicationListEntry(
+                        entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 1);
@@ -175,7 +173,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testFindByIdForPrinting_returnsExpectedPrintProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
-        ApplicationListEntry data = saveApplicationListEntry(list, (short) 1);
+        ApplicationListEntry data =
+                ApplicationListEntryUtil.saveApplicationListEntry(
+                        entityManager, persistance, list, (short) 1);
 
         // test get
         List<ApplicationListEntryPrintProjection>
@@ -333,11 +333,11 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         .getFirst()
                         .getRespondentEmail());
         assertEquals(
-                data.getRnameaddress().getDateOfBirth().truncatedTo(ChronoUnit.MICROS),
+                data.getRnameaddress().getDateOfBirth().toLocalDate(),
                 applicationListEntryPrintProjectionsToAssertAgainst
                         .getFirst()
                         .getRespondentDateOfBirth()
-                        .truncatedTo(ChronoUnit.MICROS));
+                        .toLocalDate());
         assertEquals(
                 data.getRnameaddress().getName(),
                 applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getRespondentName());
@@ -370,7 +370,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(applicationListEntryPrintProjectionsToAssertAgainst.size()).isEqualTo(1);
     }
 
-    private ApplicationListEntry saveApplicationListEntry(
+    /*private ApplicationListEntry saveApplicationListEntry(
             ApplicationList list, Short sequenceNumber) {
         ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         entityManager.persist(resolutionCode);
@@ -401,5 +401,5 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         }
         entityManager.flush();
         return data;
-    }
+    }*/
 }

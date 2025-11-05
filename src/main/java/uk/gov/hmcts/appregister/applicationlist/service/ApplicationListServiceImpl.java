@@ -17,6 +17,7 @@ import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficalMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
@@ -36,6 +37,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -44,6 +46,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.Official;
 
 /**
  * Service implementation for managing Application Lists.
@@ -73,6 +76,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationListGetValidator applicationListGetValidator;
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final ApplicationListEntryMapStructMapper entryMapper;
+    private final ApplicationListOfficalMapper officalMapper;
     private final EntityManager entityManager;
     private final MatchService matchService;
 
@@ -370,16 +374,24 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         for (ApplicationListEntryPrintProjection entry : applicationListEntryPrintProjections) {
             Long entryId = entry.getId();
 
+            // Map each entry projection to a DTO
+            EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
+
             // Fetch result wordings from the repository
             List<String> resultWordings = alerRepository.findByIdForPrinting(entryId);
 
-            // Fetch officials from the repository
-            List<String> officials = aleoRepository.findByIdForPrinting(entryId);
-
-            // Map each projection to a DTO
-            EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
-
             dto.setResultWordings(resultWordings);
+
+            // Fetch officials from the repository
+            List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections =
+                    aleoRepository.findByIdForPrinting(entryId);
+
+            List<Official> officials = new ArrayList<>();
+
+            // Map each official projection to a DTO
+            applicationListOfficialPrintProjections.forEach(
+                    projection -> officials.add(officalMapper.toOfficialDto(projection)));
+
             dto.setOfficials(officials);
             dtos.add(dto);
         }
