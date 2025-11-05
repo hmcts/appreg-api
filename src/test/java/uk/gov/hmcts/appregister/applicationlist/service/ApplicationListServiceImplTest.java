@@ -3,17 +3,18 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
@@ -21,7 +22,9 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,10 +35,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
-import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListLocationValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
+import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
@@ -43,22 +52,28 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
+import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.concurrency.MatchService;
+import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.service.LocationLookupService;
-import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
-import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
+import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListServiceImplTest {
@@ -67,13 +82,42 @@ public class ApplicationListServiceImplTest {
     private static final LocalTime DEFAULT_TIME = LocalTime.of(10, 30);
 
     @Mock private ApplicationListRepository repository;
-    @Mock private ApplicationListEntryRepository aleRepository;
+    @Mock private NationalCourtHouseRepository courtHouseRepository;
+    @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
-    @Mock private ApplicationListLocationValidator validator;
-    @Mock private EntityManager entityManager;
-    @Mock private ApplicationListDeletionValidator deletionValidator;
+    @Mock private ApplicationListEntryRepository aleRepository;
+
+    @Spy
+    private DummyApplicationCreateListLocationValidator validator =
+            new DummyApplicationCreateListLocationValidator(
+                    repository, courtHouseRepository, cjaRepository);
+
+    @Spy
+    private DummyApplicationUpdateListLocationValidator updateValidator =
+            new DummyApplicationUpdateListLocationValidator(
+                    repository, courtHouseRepository, cjaRepository);
+
+    @Spy
+    private DummyApplicationListGetValidator getValidator =
+            new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
+
     @Mock private PageMapper pageMapper;
-    @Mock private LocationLookupService locationLookupService;
+    @Mock private ApplicationListEntryMapStructMapper entryMapper;
+
+    @Mock private EntityManager entityManager;
+
+    // A null match provider that returns a null etag
+    private static MatchProvider NULL_MATCH_PROVIDER =
+            new MatchProvider() {
+                @Override
+                public String getEtag() {
+                    return null;
+                }
+            };
+
+    @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
+
+    @Mock private ApplicationListDeletionValidator deletionValidator;
 
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
@@ -90,15 +134,16 @@ public class ApplicationListServiceImplTest {
                         aleRepository,
                         mapper,
                         validator,
+                        updateValidator,
+                        getValidator,
+                        entryMapper,
                         entityManager,
+                        matchService,
                         pageMapper,
-                        locationLookupService,
                         deletionValidator,
                         auditOperationService,
                         List.of(auditOperationLifecycleListener));
     }
-
-    // -------- CREATE: COURT PATH --------
 
     @Test
     void create_validCourt_savesAndReturnsDto() {
@@ -106,105 +151,110 @@ public class ApplicationListServiceImplTest {
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
-        ApplicationListCreateDto dto = new ApplicationListCreateDto().courtLocationCode("ABC123");
+        // given
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
 
         NationalCourtHouse court = new NationalCourtHouse();
-        when(locationLookupService.getActiveCourtOrThrow("ABC123")).thenReturn(court);
 
-        ApplicationList toSave = new ApplicationList();
-        when(mapper.toCreateEntityWithCourt(dto, court)).thenReturn(toSave);
+        ListLocationValidationSuccess success = new ListLocationValidationSuccess();
+        success.setNationalCourtHouse(court);
+
+        validator.setSuccess(success);
+
+        ApplicationList entityToSave = new ApplicationList();
+        when(mapper.toCreateEntityWithCourt(dto, court)).thenReturn(entityToSave);
 
         ApplicationList saved = new ApplicationList();
-        when(repository.save(toSave)).thenReturn(saved);
+        when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
 
-        ApplicationListGetDetailDto result = service.create(dto);
+        MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
+        Assertions.assertNotNull(result.getEtag());
+        Assertions.assertEquals(result.getPayload(), expected);
 
-        Assertions.assertEquals(expected, result);
-        verify(validator).validate(dto);
-        verify(locationLookupService).getActiveCourtOrThrow("ABC123");
-        verify(mapper).toCreateEntityWithCourt(dto, court);
-        verify(repository).save(toSave);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
-        verify(mapper).toGetDetailDto(saved, null);
+
         verify(auditOperationService)
                 .processAudit(
                         any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
+
+        verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     @Test
-    void create_noCourtFound_throwsAppRegistryException() {
-        ApplicationListCreateDto dto = new ApplicationListCreateDto().courtLocationCode("CODE1");
-
-        when(locationLookupService.getActiveCourtOrThrow("CODE1"))
-                .thenThrow(
-                        new AppRegistryException(
-                                CourtLocationError.COURT_NOT_FOUND, "No court found"));
-
-        // expect
-        assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("No court found");
-
-        verify(validator).validate(dto);
-        verify(repository, never()).save(any());
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
-    }
-
-    @Test
-    void create_multipleCourtsFound_throwsAppRegistryException() {
-        ApplicationListCreateDto dto = new ApplicationListCreateDto().courtLocationCode("DUPE");
-
-        when(locationLookupService.getActiveCourtOrThrow("DUPE"))
-                .thenThrow(
-                        new AppRegistryException(
-                                CourtLocationError.DUPLICATE_COURT_FOUND, "Multiple courts found"));
-
-        assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Multiple courts found");
-
-        verify(validator).validate(dto);
-        verify(repository, never()).save(any());
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
-    }
-
-    // -------- CREATE: CJA PATH ----------
-
-    @Test
-    void create_validCja_savesAndReturnsDto() {
+    void update_validCourt_savesAndReturnsDto() {
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
-        ApplicationListCreateDto dto =
-                new ApplicationListCreateDto().courtLocationCode("   ").cjaCode("CJA-42");
+        // given
+        NationalCourtHouse court = new NationalCourtHouse();
 
-        CriminalJusticeArea cja = new CriminalJusticeArea();
-        when(locationLookupService.getCjaOrThrow("CJA-42")).thenReturn(cja);
+        // the app list that is updated
+        ApplicationList applicationList = new ApplicationList();
 
-        ApplicationList toSave = new ApplicationList();
-        when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(toSave);
+        ListUpdateValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setNationalCourtHouse(court);
+        success.setApplicationList(applicationList);
+        updateValidator.setSuccess(success);
+
+        ApplicationList entityToSave = new ApplicationList();
 
         ApplicationList saved = new ApplicationList();
-        when(repository.save(toSave)).thenReturn(saved);
+        when(repository.save(entityToSave)).thenReturn(saved);
+
+        ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
+
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
+
+        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
+        PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
+
+        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
+                new PayloadForUpdate<>(dto, UUID.randomUUID());
+        MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
+        Assertions.assertNotNull(result.getEtag());
+        Assertions.assertEquals(result.getPayload(), expectedDto);
+
+        verify(entityManager).flush();
+        verify(entityManager).refresh(saved);
+    }
+
+    // -------- CJA PATH --------
+
+    @Test
+    void create_withValidCja_savesAndReturnsDto() {
+
+        doNothing().when(entityManager).flush();
+        doNothing().when(entityManager).refresh(any(ApplicationList.class));
+
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+
+        ListLocationValidationSuccess success = new ListLocationValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        validator.setSuccess(success);
+
+        ApplicationList entityToSave = new ApplicationList();
+        when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(entityToSave);
+
+        ApplicationList saved = new ApplicationList();
+        when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, cja)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
-        ApplicationListGetDetailDto result = service.create(dto);
+        MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
+        Assertions.assertNotNull(result.getEtag());
+        Assertions.assertEquals(expected, result.getPayload());
 
-        verify(validator).validate(dto);
-        verify(locationLookupService).getCjaOrThrow("CJA-42");
-        verify(repository).save(toSave);
-        verify(mapper).toGetDetailDto(saved, cja);
-        assertThat(result).isSameAs(expected);
+        verify(validator).validate(eq(dto), notNull());
+        verify(repository).save(entityToSave);
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
+
+        assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
         verify(auditOperationService)
@@ -213,44 +263,49 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
-    void create_noCjaFound_throwsAppRegistryException() {
-        ApplicationListCreateDto dto =
-                new ApplicationListCreateDto().courtLocationCode(null).cjaCode("X1");
+    void update_withValidCja_savesAndReturnsDto() {
 
-        when(locationLookupService.getCjaOrThrow("X1"))
-                .thenThrow(
-                        new AppRegistryException(
-                                CriminalJusticeAreaError.CJA_NOT_FOUND,
-                                "No Criminal Justice Areas found"));
+        doNothing().when(entityManager).flush();
+        doNothing().when(entityManager).refresh(any(ApplicationList.class));
+        CriminalJusticeArea cja = new CriminalJusticeArea();
 
-        assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("No Criminal Justice Areas found");
+        // the app list that is updated
+        ApplicationList applicationList = new ApplicationList();
 
-        verify(validator).validate(dto);
-        verify(repository, never()).save(any());
-    }
+        ListUpdateValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        success.setApplicationList(applicationList);
 
-    @Test
-    void create_multipleCjaFound_throwsAppRegistryException() {
-        ApplicationListCreateDto dto =
-                new ApplicationListCreateDto().courtLocationCode("").cjaCode("Y2");
+        updateValidator.setSuccess(success);
 
-        when(locationLookupService.getCjaOrThrow("Y2"))
-                .thenThrow(
-                        new AppRegistryException(
-                                CriminalJusticeAreaError.DUPLICATE_CJA_FOUND,
-                                "Multiple Criminal Justice Areas found"));
+        ApplicationList entityToSave = new ApplicationList();
 
-        assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Multiple Criminal Justice Areas found");
+        ApplicationList saved = new ApplicationList();
+        when(repository.save(entityToSave)).thenReturn(saved);
 
-        verify(validator).validate(dto);
-        verify(repository, never()).save(any());
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+
+        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
+
+        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
+        PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
+                new PayloadForUpdate<>(dto, UUID.randomUUID());
+
+        MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
+        Assertions.assertNotNull(result.getEtag());
+        Assertions.assertEquals(expected, result.getPayload());
+
+        verify(updateValidator).validate(eq(payloadForUpdate), notNull());
+        verify(repository).save(entityToSave);
+
+        verify(mapper).toGetDetailDto(saved, cja, 0L);
+        assertThat(result.getPayload()).isSameAs(expected);
+        verify(entityManager).flush();
+        verify(entityManager).refresh(saved);
+
         verify(auditOperationService)
                 .processAudit(
-                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
+                        any(), eq(AppListAuditOperation.UPDATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -274,7 +329,10 @@ public class ApplicationListServiceImplTest {
         // Resolve CJA
         CriminalJusticeArea cja = new CriminalJusticeArea();
         cja.setDescription("CJA Desc");
-        when(locationLookupService.getCjaOrThrow("52")).thenReturn(cja);
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        getValidator.setSuccess(success);
 
         // DB results
         ApplicationList row = new ApplicationList();
@@ -327,7 +385,6 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
-        verify(locationLookupService).getCjaOrThrow("52");
         verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
     }
@@ -335,13 +392,16 @@ public class ApplicationListServiceImplTest {
     @Test
     void getPage_courtFilled_success_returnsMappedPage() {
 
-        Pageable pageable = mock(Pageable.class);
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        getValidator.setSuccess(success);
 
         // DB results
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Central Court");
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
+
+        Pageable pageable = mock(Pageable.class);
 
         when(repository.findAllByFilter(
                         eq(ApplicationListStatus.CLOSED),
@@ -375,7 +435,6 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
-        verify(locationLookupService, never()).getCjaOrThrow(anyString());
         verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Central Court"));
     }
@@ -385,7 +444,10 @@ public class ApplicationListServiceImplTest {
 
         CriminalJusticeArea cja = new CriminalJusticeArea();
         cja.setDescription("CJA Desc");
-        when(locationLookupService.getCjaOrThrow("52")).thenReturn(cja);
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
@@ -427,10 +489,11 @@ public class ApplicationListServiceImplTest {
 
     @Test
     void getPage_emptyRepositoryPage_returnsEmptyContent() {
-        ApplicationListGetFilterDto filter =
-                new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
         Pageable pageable = mock(Pageable.class);
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        getValidator.setSuccess(success);
 
         Page<ApplicationList> dbPage = Page.empty();
         when(repository.findAllByFilter(
@@ -445,6 +508,9 @@ public class ApplicationListServiceImplTest {
                 .thenReturn(dbPage);
 
         doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+
+        ApplicationListGetFilterDto filter =
+                new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
         ApplicationListPage result = service.getPage(filter, pageable);
 
@@ -461,6 +527,9 @@ public class ApplicationListServiceImplTest {
 
         CriminalJusticeArea cja = new CriminalJusticeArea();
         cja.setDescription("CJA Name");
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
@@ -496,13 +565,15 @@ public class ApplicationListServiceImplTest {
     @Test
     void getPage_courtNamePresent_derivesLocation_usesCourtName() {
 
-        Pageable pageable = mock(Pageable.class);
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Some Court");
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
+        Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
                         eq(ApplicationListStatus.OPEN),
                         isNull(),
@@ -532,6 +603,9 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        getValidator.setSuccess(success);
+
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
 
@@ -559,6 +633,63 @@ public class ApplicationListServiceImplTest {
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
     }
 
+    @Test
+    void get_returnsDto() {
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        Pageable pageable = mock(Pageable.class);
+
+        mockFindSummariesById(id, pageable);
+
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+
+        ApplicationListGetDetailDto actual = service.get(id, pageable);
+
+        Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void get_returns404_whenApplicationListRepositoryEmpty() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.empty());
+
+        Pageable pageable = mock(Pageable.class);
+        assertThatThrownBy(() -> service.get(id, pageable))
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    private void mockFindSummariesById(UUID id, Pageable pageable) {
+        var uuid = UUID.randomUUID();
+        var sequenceNumber = 1;
+        var accountNumber = "1234567890";
+        var applicant = "Mustafa's Org";
+        var respondent = "Ahmed, Mustafa, His Majesty";
+        var postCode = "SW1A 1AA";
+        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
+        var feeRequired = true;
+        var result = "APPC";
+        var projection =
+                applicationListEntrySummaryProjection()
+                        .uuid(uuid)
+                        .sequenceNumber(sequenceNumber)
+                        .accountNumber(accountNumber)
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode(postCode)
+                        .applicationTitle(applicationTitle)
+                        .feeRequired(feeRequired)
+                        .result(result)
+                        .build();
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
+
+        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
+    }
+
     class DummyAuditOperationService implements AuditOperationService {
 
         @Override
@@ -577,6 +708,80 @@ public class ApplicationListServiceImplTest {
                                     "result",
                                     Optional.empty()));
             return optional.get().getResultingValue();
+        }
+    }
+
+    @Setter
+    class DummyApplicationCreateListLocationValidator
+            extends ApplicationCreateListLocationValidator {
+        private ListLocationValidationSuccess success;
+
+        public DummyApplicationCreateListLocationValidator(
+                ApplicationListRepository repository,
+                NationalCourtHouseRepository courtHouseRepository,
+                CriminalJusticeAreaRepository cjaRepository) {
+            super(repository, courtHouseRepository, cjaRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                ApplicationListCreateDto dto,
+                BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, R>
+                        createApplicationSupplier) {
+            return createApplicationSupplier.apply(dto, success);
+        }
+    }
+
+    @Setter
+    class DummyApplicationUpdateListLocationValidator
+            extends ApplicationUpdateListLocationValidator {
+        private ListUpdateValidationSuccess success;
+
+        public DummyApplicationUpdateListLocationValidator(
+                ApplicationListRepository repository,
+                NationalCourtHouseRepository courtHouseRepository,
+                CriminalJusticeAreaRepository cjaRepository) {
+            super(repository, courtHouseRepository, cjaRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForUpdate<ApplicationListUpdateDto> dto,
+                BiFunction<
+                                PayloadForUpdate<ApplicationListUpdateDto>,
+                                ListUpdateValidationSuccess,
+                                R>
+                        createApplicationSupplier) {
+            return createApplicationSupplier.apply(dto, success);
+        }
+    }
+
+    @Setter
+    class DummyApplicationListGetValidator extends ApplicationListGetValidator {
+        private ListLocationValidationSuccess success;
+
+        public DummyApplicationListGetValidator(
+                ApplicationListRepository repository,
+                NationalCourtHouseRepository courtHouseRepository,
+                CriminalJusticeAreaRepository cjaRepository) {
+            super(repository, courtHouseRepository, cjaRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                ApplicationListGetFilterDto dto,
+                BiFunction<ApplicationListGetFilterDto, ListLocationValidationSuccess, R>
+                        createApplicationSupplier) {
+            return createApplicationSupplier.apply(dto, success);
+        }
+
+        @Override
+        public <R> R validateCja(
+                ApplicationListGetFilterDto dto,
+                BiFunction<ApplicationListGetFilterDto, ListLocationValidationSuccess, R>
+                        createApplicationSupplier,
+                boolean doNotFailOnMissing) {
+            return createApplicationSupplier.apply(dto, success);
         }
     }
 }

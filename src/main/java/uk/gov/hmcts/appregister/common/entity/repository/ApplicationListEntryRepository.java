@@ -3,11 +3,14 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
     /**
@@ -59,6 +62,41 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *     value
      */
     List<ApplicationListEntry> findByIdGreaterThanEqual(Integer value);
+
+    /**
+     * Retrieves paginated list of entry summaries for a given application list.
+     *
+     * @param id the ID of the ApplicationList
+     * @param pageable Spring Data paging and sorting configuration
+     * @return a page of summary projections
+     */
+    @Query(
+            """
+            SELECT
+                ale.uuid AS uuid,
+                ale.sequenceNumber AS sequenceNumber,
+                ale.accountNumber AS accountNumber,
+                COALESCE(ana.name, sa.name) AS applicant,
+                rna.name AS respondent,
+                rna.postcode AS postCode,
+                ac.title AS applicationTitle,
+                CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
+                rc.resultCode AS result
+            FROM ApplicationListEntry ale
+            LEFT JOIN ale.anamedaddress ana
+            LEFT JOIN ale.standardApplicant sa
+            LEFT JOIN ale.rnameaddress rna
+            LEFT JOIN ale.applicationCode ac
+            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                AND aler.changedDate = (
+                    SELECT MAX(sub.changedDate)
+                    FROM AppListEntryResolution sub
+                    WHERE sub.applicationList = ale
+                )
+            LEFT JOIN aler.resolutionCode rc
+            WHERE ale.applicationList.uuid = :id
+            """)
+    Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 
     @Query(
             """

@@ -81,6 +81,9 @@ logging:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
     correlation: "[%X{traceId}/%X{spanId}]"
 
+app:
+  timezone: "Europe/London"
+
 azure:
   application-insights:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
@@ -89,7 +92,7 @@ azure:
 appreg:
   audit:
     diff:
-      enable-complex-diff: false
+      enable-complex-diff: true
       enable-collection-diff: false
 
 

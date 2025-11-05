@@ -42,4 +42,13 @@ public class AppListEntryTestData
                 .withSettings(settings)
                 .create();
     }
+
+    public ApplicationListEntry createApplicationListEntry(
+            ApplicationList list, Short sequenceNumber) {
+        ApplicationListEntry listEntryData = new AppListEntryTestData().someMinimal().build();
+
+        listEntryData.setApplicationList(list);
+        listEntryData.setSequenceNumber(sequenceNumber);
+        return listEntryData;
+    }
 }

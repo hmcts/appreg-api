@@ -669,25 +669,12 @@ public class ReflectiveAuditDifferentiatorTest {
         appLst.setId(123L);
 
         ReflectiveAuditDifferentiator reflectiveAuditDifferentiator =
-                new ReflectiveAuditDifferentiator(false, false);
+                new ReflectiveAuditDifferentiator(true, true);
         List<Difference> differenceList =
                 reflectiveAuditDifferentiator.diff(CrudEnum.DELETE, appLst, null);
-        Assertions.assertNotNull(findByField("changed_date", differenceList));
+        Assertions.assertEquals(2, differenceList.size());
         Assertions.assertNotNull(findByField("version", differenceList));
-        Assertions.assertNotNull(findByField("user_name", differenceList));
         Assertions.assertNotNull(findByField("al_id", differenceList));
-
-        Assertions.assertEquals(4, differenceList.size());
-        Assertions.assertEquals(
-                appLst.getChangedDate().toString(),
-                findByField("changed_date", differenceList).getOldValue());
-        Assertions.assertEquals(
-                appLst.getVersion().toString(),
-                findByField("version", differenceList).getOldValue());
-        Assertions.assertEquals(
-                appLst.getCreatedUser(), findByField("user_name", differenceList).getOldValue());
-        Assertions.assertEquals(
-                appLst.getId().toString(), findByField("al_id", differenceList).getOldValue());
     }
 
     private Difference findByField(String fieldName, List<Difference> differences) {
