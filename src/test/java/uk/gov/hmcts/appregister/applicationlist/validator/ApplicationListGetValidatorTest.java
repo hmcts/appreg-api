@@ -26,16 +26,16 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ApplicationListCreateValidatorTest {
+public class ApplicationListGetValidatorTest {
 
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
 
-    @InjectMocks private ApplicationCreateListLocationValidator validator;
+    @InjectMocks private ApplicationListGetValidator validator;
 
     private enum Field {
         COURT,
@@ -44,8 +44,8 @@ public class ApplicationListCreateValidatorTest {
     }
 
     // ---- HELPERS ----
-    private ApplicationListCreateDto buildDto(Field... fields) {
-        ApplicationListCreateDto dto = new ApplicationListCreateDto();
+    private ApplicationListGetFilterDto buildDto(Field... fields) {
+        ApplicationListGetFilterDto dto = new ApplicationListGetFilterDto();
 
         for (Field f : fields) {
             switch (f) {
@@ -60,7 +60,7 @@ public class ApplicationListCreateValidatorTest {
     @Test
     void create_noCourtReturnedFromRepository_throwsAppRegException() {
         // given
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn("CODE1");
 
         when(courtHouseRepository.findActiveCourts("CODE1")).thenReturn(List.of());
@@ -74,7 +74,7 @@ public class ApplicationListCreateValidatorTest {
     @Test
     void create_multipleCourtsReturnedFromRepository_throwsAppRegException() {
         // given
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn("DUPE");
 
         NationalCourtHouse c1 = new NationalCourtHouse();
@@ -89,7 +89,7 @@ public class ApplicationListCreateValidatorTest {
 
     @Test
     void create_noCjaReturnedFromRepository_throwsAppRegException() {
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn(null);
         when(dto.getCjaCode()).thenReturn("X1");
         when(dto.getOtherLocationDescription()).thenReturn("Y2");
@@ -104,7 +104,7 @@ public class ApplicationListCreateValidatorTest {
 
     @Test
     void create_multipleCjaReturnedFromRepository_throwsAppRegException() {
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn("");
         when(dto.getCjaCode()).thenReturn("Y2");
         when(dto.getOtherLocationDescription()).thenReturn("Y2");
@@ -122,7 +122,7 @@ public class ApplicationListCreateValidatorTest {
 
     @Test
     void create_noCjaReturnedFromRepositoryWhereDoNotFailOnMissingFalse_throwsAppRegException() {
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCjaCode()).thenReturn("X1");
         when(cjaRepository.findByCode("X1")).thenReturn(List.of());
 
@@ -136,7 +136,7 @@ public class ApplicationListCreateValidatorTest {
 
     @Test
     void create_noCjaPassedWhereDoNotFailOnMissingTrue_throwsAppRegException() {
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
 
         validator.validateCja(dto, (testDto, success) -> null, true);
     }
@@ -144,7 +144,7 @@ public class ApplicationListCreateValidatorTest {
     @Test
     void
             create_multipleCjaReturnedFromRepositoryWhereDoNotFailOnMissingFalse_throwsAppRegException() {
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCjaCode()).thenReturn("Y2");
         CriminalJusticeArea a = new CriminalJusticeArea();
         CriminalJusticeArea b = new CriminalJusticeArea();
@@ -177,7 +177,7 @@ public class ApplicationListCreateValidatorTest {
             when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
                     .thenReturn(List.of(new NationalCourtHouse()));
 
-            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback =
+            BiFunction<ApplicationListGetFilterDto, ListLocationValidationSuccess, ?> callback =
                     (dto, success) -> "result";
             Assertions.assertEquals("result", validator.validate(appList, callback));
         }
@@ -197,7 +197,7 @@ public class ApplicationListCreateValidatorTest {
             when(cjaRepository.findByCode(appList.getCjaCode()))
                     .thenReturn(List.of(new CriminalJusticeArea()));
 
-            BiFunction<ApplicationListCreateDto, ListLocationValidationSuccess, ?> callback =
+            BiFunction<ApplicationListGetFilterDto, ListLocationValidationSuccess, ?> callback =
                     (dto, success) -> "result";
             Assertions.assertEquals("result", validator.validate(appList, callback));
         }

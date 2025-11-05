@@ -28,6 +28,10 @@ public enum AuditEventEnum {
 
     GET_COURT_LOCATIONS_AUDIT_EVENT(TableNames.NATIONAL_COURT_HOUSES, "N/A", "Get Court Locations"),
 
+    ADD_APPLICATION_LIST_AUDIT_EVENT(TableNames.APPLICATION_LISTS, "N/A", "Add Application List"),
+
+    UPDATE_APPLICATION_LIST_AUDIT_EVENT(
+            TableNames.APPLICATION_LISTS, "N/A", "Update Application List"),
     GET_RESULT_CODE_AUDIT_EVENT(
             TableNames.RESOLUTION_CODES, ResolutionCode_.TITLE, "Get Result Code"),
 

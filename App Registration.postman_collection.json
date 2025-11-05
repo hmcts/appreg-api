@@ -479,6 +479,51 @@
 			"response": []
 		},
 		{
+			"name": "Update Application List",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"date\" : [ 2025, 10, 19 ],\r\n  \"time\" : [ 10, 30 ],\r\n  \"description\" : \"Morning list (court) update\",\r\n  \"status\" : \"CLOSED\",\r\n  \"otherLocationDescription\" : \"Updated other location\",\r\n  \"courtLocationCode\" : null,\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 4,\r\n  \"durationMinutes\" : 32,\r\n  \"version\" : 2\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4550/application-lists/{{created_id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4550",
+					"path": [
+						"application-lists",
+						"{{created_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Obtain Token",
 			"event": [
 				{
