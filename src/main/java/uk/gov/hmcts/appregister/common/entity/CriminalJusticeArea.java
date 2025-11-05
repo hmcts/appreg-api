@@ -14,8 +14,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.javers.core.metamodel.annotation.ValueObject;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
 import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Entity representing a Criminal Justice Area (CJA).
@@ -35,6 +37,7 @@ public class CriminalJusticeArea implements Identifiable, Keyable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")
     @SequenceGenerator(name = "cja_gen", sequenceName = "cja_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE})
     private Long id;
 
     @Column(name = "cja_code", nullable = false)

@@ -1,0 +1,30 @@
+name: Block merge if restricted directory changes
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-directory-change:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Check for changes under restricted directory
+        id: check_changes
+        run: |
+          # Get a list of changed files compared to base
+          git fetch origin ${{ github.event.pull_request.base.ref }}
+          CHANGED_FILES=$(git diff  --name-status origin/${{ github.event.pull_request.base.ref }} HEAD)
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Block only if modified (M) files exist under flyway/
+          if echo "$CHANGED_FILES" | grep -E '^(M|D)\s+flyway/'; then
+            echo "🚫 Existing files under flyway/ were modified."
+            exit 1
+          else
+            echo "✅ No existing restricted files modified (new files are allowed)."
+          fi

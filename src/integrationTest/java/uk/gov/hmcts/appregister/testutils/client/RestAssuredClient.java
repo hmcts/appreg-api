@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import org.apache.http.HttpHeaders;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -158,7 +159,7 @@ public class RestAssuredClient {
     public Response executePostRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .post(url)
                 .andReturn();
     }
@@ -172,8 +173,26 @@ public class RestAssuredClient {
      */
     public Response executeDeleteRequest(URL url, TokenAndJwksKey token) {
         return given().header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .delete(url)
+                .andReturn();
+    }
+
+    /**
+     * puts a request builder that can be used to make requests against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param etag The etag to use in the request
+     * @return The specification of the response
+     */
+    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object, String etag)
+            throws URISyntaxException {
+        return given().body(object)
+                .header("Authorization", "Bearer " + token.getToken())
+                .header(HttpHeaders.IF_MATCH, etag)
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .put(url)
                 .andReturn();
     }
 
@@ -187,8 +206,8 @@ public class RestAssuredClient {
     public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/json")
-                .post(url)
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .put(url)
                 .andReturn();
     }
 }

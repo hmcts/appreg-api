@@ -15,6 +15,7 @@ import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -129,4 +130,7 @@ public class ApplicationListEntry extends BaseChangeableEntity
 
     @OneToMany(mappedBy = "appListEntryId")
     private List<AppListEntryFeeId> entryFeeIds;
+
+    @Column(name = "id")
+    private UUID uuid;
 }

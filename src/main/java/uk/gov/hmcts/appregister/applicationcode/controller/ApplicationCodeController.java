@@ -51,7 +51,7 @@ public class ApplicationCodeController implements ApplicationCodesApi {
                 pageableMapper.from(page, size, sort, ApplicationCode_.CODE, Sort.Direction.ASC);
 
         log.info(
-                "getApplicationCodes: code: {}, title{}, page: {}, size: {}",
+                "getApplicationCodes: code: {}, title: {}, page: {}, size: {}",
                 code,
                 title,
                 page,
@@ -65,7 +65,7 @@ public class ApplicationCodeController implements ApplicationCodesApi {
             String code, LocalDate date) {
         ResponseEntity<ApplicationCodeGetDetailDto> response =
                 ResponseEntity.ok(service.findByCode(code, date));
-        log.info("getApplicationCodes: code: {}, date{}", code, date);
+        log.info("getApplicationCodes: code: {}, date: {}", code, date);
         return response;
     }
 }

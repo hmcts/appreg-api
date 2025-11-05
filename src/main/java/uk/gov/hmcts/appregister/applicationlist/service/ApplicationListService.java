@@ -2,10 +2,13 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 /**
  * Service interface for managing Application Lists.
@@ -24,11 +27,51 @@ public interface ApplicationListService {
      * either a {@code NationalCourtHouse} or a {@code CriminalJusticeArea}.
      *
      * @param dto the data transfer object containing details for the application list to create
-     * @return a detailed DTO representing the newly created application list
+     * @return a detailed DTO representing the newly created application list. Each DTO is wrapped
+     *     in a {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that can be used
+     *     in update or delete operations match response which contains the etag information that
+     *     can then be used for concurrency control in
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
      *     or the associated Court/CJA entity is not found or duplicated
      */
-    ApplicationListGetDetailDto create(ApplicationListCreateDto dto);
+    MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto);
+
+    /**
+     * Updates a new Application List.
+     *
+     * <p>The input DTO is validated and then persisted. Depending on the presence of a Court
+     * Location Code or a Criminal Justice Area (CJA) Code, the Application List is associated with
+     * either a {@code NationalCourtHouse} or a {@code CriminalJusticeArea}.
+     *
+     * @param dto the data transfer object containing details for the application list to update
+     * @return a detailed DTO representing the newly created application list. Each DTO is wrapped
+     *     in a {@link uk.gov.hmcts.appregister.common.concurrency.MatchResponse} that canontains an
+     *     etag that can be used in update or delete operations
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
+     *     or the associated Court/CJA entity is not found or duplicated
+     */
+    MatchResponse<ApplicationListGetDetailDto> update(
+            PayloadForUpdate<ApplicationListUpdateDto> dto);
+
+    /**
+     * Gets a new Application List.
+     *
+     * <p>This method encapsulates all business logic required to:
+     *
+     * <ul>
+     *   <li>Fetch the list metadata and total entry count
+     *   <li>Query a lightweight projection of entry summaries ordered by sequence number
+     * </ul>
+     *
+     * <p>The operation is read-only and does not modify any data. Pagination and sorting are
+     * handled via the supplied {@link Pageable}, which is typically created from OpenAPI paging
+     * parameters by a mapper.
+     *
+     * @param id the unique identifier of the application list to retrieve
+     * @param pageable Spring Data paging and sorting configuration for entry summaries
+     * @return a detailed DTO representing the retrieved application list
+     */
+    ApplicationListGetDetailDto get(UUID id, Pageable pageable);
 
     /**
      * Deletes an Application List.

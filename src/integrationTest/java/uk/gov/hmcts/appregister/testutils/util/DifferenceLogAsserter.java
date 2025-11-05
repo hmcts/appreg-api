@@ -108,10 +108,12 @@ public class DifferenceLogAsserter {
                 "Expected no differences, but found: " + dataAuditLogger.getErrorLogs());
     }
 
-    public void assertFieldLogPresent(String fieldName) {
+    public void assertFieldLogPresent(String tableName, String fieldName) {
         String pattern =
                 DIFF_PREFIX
-                        + " Difference\\(tableName=.*, fieldName="
+                        + " Difference\\(tableName="
+                        + tableName
+                        + ", fieldName="
                         + fieldName
                         + ", oldValue=.*, newValue=.*\\)";
         for (String log : dataAuditLogger.getDebugLogs()) {
@@ -132,9 +134,9 @@ public class DifferenceLogAsserter {
      *
      * @param fieldName The fieldname
      */
-    public void assertFieldLogNotPresent(String fieldName) {
+    public void assertFieldLogNotPresent(String tableName, String fieldName) {
         try {
-            assertFieldLogPresent(fieldName);
+            assertFieldLogPresent(tableName, fieldName);
             Assertions.fail();
         } catch (AssertionError assertionError) {
             log.debug("Caught expected exception: {}", assertionError.getMessage());
@@ -181,7 +183,7 @@ public class DifferenceLogAsserter {
         int count = 0;
         for (String log : dataAuditLogger.getDebugLogs()) {
             if (Pattern.matches(DIFF_PREFIX + ".*", log)) {
-                return;
+                count = count + 1;
             }
         }
 

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.controller;
 
 import static org.springframework.http.HttpStatus.CREATED;
+import static org.springframework.http.HttpStatus.OK;
 
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -19,14 +20,18 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
+import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 /**
  * REST controller for managing Application Lists.
@@ -81,13 +86,79 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListGetDetailDto> createApplicationList(
             @Valid @RequestBody ApplicationListCreateDto applicationListCreateDto) {
 
-        ApplicationListGetDetailDto created = service.create(applicationListCreateDto);
+        MatchResponse<ApplicationListGetDetailDto> created =
+                service.create(applicationListCreateDto);
 
-        return ResponseEntity.status(CREATED)
-                .varyBy("Accept")
-                .contentType(VND_JSON_V1)
-                .headers(h -> h.setLocation(locationOf(created.getId())))
-                .body(created);
+        ResponseEntity<ApplicationListGetDetailDto> response =
+                ResponseEntity.status(CREATED)
+                        .varyBy("Accept")
+                        .contentType(VND_JSON_V1)
+                        .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                        .eTag(created.getEtag())
+                        .body(created.getPayload());
+
+        log.info(
+                "Create successful for Application List with id: {}", created.getPayload().getId());
+        return response;
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> updateApplicationList(
+            UUID id, ApplicationListUpdateDto applicationListUpdateDto) {
+        MatchResponse<ApplicationListGetDetailDto> updated =
+                service.update(
+                        PayloadForUpdate.<ApplicationListUpdateDto>builder()
+                                .id(id)
+                                .data(applicationListUpdateDto)
+                                .build());
+
+        ResponseEntity<ApplicationListGetDetailDto> response =
+                ResponseEntity.status(OK)
+                        .varyBy("Accept")
+                        .contentType(VND_JSON_V1)
+                        .eTag(updated.getEtag())
+                        .body(updated.getPayload());
+
+        log.info(
+                "Update successful for Application List with id: {}", updated.getPayload().getId());
+        return response;
+    }
+
+    /**
+     * Gets an Application List by id.
+     *
+     * <p>This endpoint returns both the list metadata and a paginated summary of its entries.
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id the unique identifier of the application list
+     * @param page the page number to retrieve (zero-based)
+     * @param size the number of records per page
+     * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and
+     *     mapped by {@link ApplicationListSortMapper}
+     * @return {@link ResponseEntity} containing the application list details
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
+            UUID id, Integer page, Integer size, List<String> sort) {
+
+        // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number
+        // ascending
+        Pageable pageable =
+                pageableMapper.from(
+                        page,
+                        size,
+                        sort,
+                        ApplicationListEntry_.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC);
+
+        ApplicationListGetDetailDto retrieved = service.get(id, pageable);
+
+        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }
 
     /**

@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 /**
  * A common validator to validate sort criteria.
  */
-public abstract class AbstractSortValidator implements Validator<String> {
+public abstract class AbstractSortValidator implements Validator<String, Void> {
 
     /** Set of allowed property names for sorting. */
     /** Set of allowed property names for sorting. */
