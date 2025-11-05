@@ -21,6 +21,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
@@ -122,6 +123,42 @@ public class ApplicationListController implements ApplicationListsApi {
         log.info(
                 "Update successful for Application List with id: {}", updated.getPayload().getId());
         return response;
+    }
+
+    /**
+     * Gets an Application List by id.
+     *
+     * <p>This endpoint returns both the list metadata and a paginated summary of its entries.
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id the unique identifier of the application list
+     * @param page the page number to retrieve (zero-based)
+     * @param size the number of records per page
+     * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and
+     *     mapped by {@link ApplicationListSortMapper}
+     * @return {@link ResponseEntity} containing the application list details
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> getApplicationList(
+            UUID id, Integer page, Integer size, List<String> sort) {
+
+        // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number
+        // ascending
+        Pageable pageable =
+                pageableMapper.from(
+                        page,
+                        size,
+                        sort,
+                        ApplicationListEntry_.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC);
+
+        ApplicationListGetDetailDto retrieved = service.get(id, pageable);
+
+        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }
 
     /**

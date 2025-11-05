@@ -1,0 +1,83 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+  - in: path
+    name: entryId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List Entry.
+get:
+  operationId: getApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Get an Application List Entry by id
+  responses:
+    "200":
+      description: Returns a detailed Application List Entry
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
+put:
+  operationId: updateApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Update an Application List Entry
+  description: >
+    Full replacement (PUT) of an existing Application List Entry.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema: { $ref: "../../components/schemas/application-list-entries/entry-update-dto.yaml" }
+  responses:
+    "200":
+      description: Returns the updated Application List Entry
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-list-entries/entry-get-detail-dto.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
+delete:
+  operationId: deleteApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Delete an Application List Entry
+  description: Permanently deletes the Application List Entry identified by `entryId`.
+  responses:
+    "204":
+      description: Application List Entry deleted (no content returned)
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

@@ -1,0 +1,49 @@
+type: object
+description: Lightweight summary of an entry.
+required:
+  - uuid
+  - sequenceNumber
+  - accountNumber
+  - applicant
+  - respondent
+  - postCode
+  - applicationTitle
+  - feeRequired
+  - resulted
+
+properties:
+
+  uuid:
+    type: string
+    format: uuid
+
+  sequenceNumber:
+    type: integer
+    format: int32
+
+  accountNumber:
+    type: string
+    maxLength: 20
+    nullable: true
+
+  applicant:
+    type: string
+    nullable: true
+
+  respondent:
+    type: string
+    nullable: true
+
+  postCode:
+    type: string
+    nullable: true
+
+  applicationTitle:
+    type: string
+
+  feeRequired:
+    type: boolean
+
+  result:
+    type: string
+    nullable: true

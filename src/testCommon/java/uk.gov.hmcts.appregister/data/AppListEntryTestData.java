@@ -28,4 +28,13 @@ public class AppListEntryTestData
                 .lodgementDate(OffsetDateTime.now(ZoneId.of("UTC")))
                 .entryFeeIds(List.of(new AppListEntryFeeIdTestData().someComplete()));
     }
+
+    public ApplicationListEntry createApplicationListEntry(
+            ApplicationList list, Short sequenceNumber) {
+        ApplicationListEntry listEntryData = new AppListEntryTestData().someMinimal().build();
+
+        listEntryData.setApplicationList(list);
+        listEntryData.setSequenceNumber(sequenceNumber);
+        return listEntryData;
+    }
 }

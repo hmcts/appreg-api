@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "58511d89-8481-4a75-9d9f-063ba1f80c18",
+		"_postman_id": "7b041384-332c-410b-9bd1-2af8011b6b2f",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-58511d89-8481-4a75-9d9f-063ba1f80c18?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-7b041384-332c-410b-9bd1-2af8011b6b2f?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -38,22 +38,7 @@
 					"response": []
 				},
 				{
-					"name": "Create Application List",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(201);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"created_id\", response.id);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
+					"name": "Application Lists",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -66,16 +51,10 @@
 							]
 						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}",
+							"raw": "{\r\n  \"date\": \"2025-10-16\",\r\n  \"time\": \"10:30:00\",\r\n  \"description\": \"Wills test List.\",\r\n  \"status\": \"OPEN\",\r\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\r\n  \"courtLocationCode\": \"RCJ001\",\r\n  \"cjaCode\": \"02\",\r\n  \"durationHours\": 2,\r\n  \"durationMinutes\": 30\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -83,12 +62,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:4550/application-lists",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
 								"application-lists"
 							]
@@ -97,7 +74,7 @@
 					"response": []
 				},
 				{
-					"name": "Delete Application List",
+					"name": "Application Lists Sort",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -109,40 +86,40 @@
 								}
 							]
 						},
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
+						"method": "GET",
+						"header": [],
 						"url": {
-							"raw": "http://localhost:4550/application-lists/{{created_id}}",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists?sort=date,desc&sort=status,asc&&",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
-								"application-lists",
-								"{{created_id}}"
+								"application-lists"
+							],
+							"query": [
+								{
+									"key": "sort",
+									"value": "date,desc"
+								},
+								{
+									"key": "sort",
+									"value": "status,asc"
+								},
+								{
+									"key": "",
+									"value": null
+								},
+								{
+									"key": "",
+									"value": null
+								}
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Update Application List",
+					"name": "Application Lists Filter by Date",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -154,33 +131,60 @@
 								}
 							]
 						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n  \"date\" : [ 2025, 10, 19 ],\r\n  \"time\" : [ 10, 30 ],\r\n  \"description\" : \"Morning list (court) update\",\r\n  \"status\" : \"CLOSED\",\r\n  \"otherLocationDescription\" : \"Updated other location\",\r\n  \"courtLocationCode\" : null,\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 4,\r\n  \"durationMinutes\" : 32,\r\n  \"version\" : 2\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
+						"method": "GET",
+						"header": [],
 						"url": {
-							"raw": "http://localhost:4550/application-lists/{{created_id}}",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists?date=2025-10-25",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2025-10-25"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Application List",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
+							"host": [
+								"{{APP_REG_HOST}}"
 							],
 							"port": "4550",
 							"path": [
 								"application-lists",
-								"{{created_id}}"
+								"3f324c49-84ab-41df-9240-e64acbcf7f42"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "1"
+								}
 							]
 						}
 					},
@@ -189,7 +193,58 @@
 			]
 		},
 		{
-			"name": "application code",
+			"name": "result-codes",
+			"item": [
+				{
+					"name": "Result Codes",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"accept": true
+						}
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/vnd.hmcts.appreg.v1+json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/result-codes?page=0&size=21&sort=title,desc&code=nf",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"result-codes"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "21"
+								},
+								{
+									"key": "sort",
+									"value": "title,desc"
+								},
+								{
+									"key": "code",
+									"value": "nf"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "application-codes",
 			"item": [
 				{
 					"name": "Get Application Code",
@@ -310,6 +365,163 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "court-locations",
+			"item": []
+		},
+		{
+			"name": "criminal-justice-areas",
+			"item": []
+		},
+		{
+			"name": "Create Application List",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.expect(pm.response.code).to.equal(201);\r",
+							"const response = pm.response.json();\r",
+							"pm.environment.set(\"created_id\", response.id);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4550/application-lists",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4550",
+					"path": [
+						"application-lists"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Application List",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4550/application-lists/{{created_id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4550",
+					"path": [
+						"application-lists",
+						"{{created_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Application List",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"date\" : [ 2025, 10, 19 ],\r\n  \"time\" : [ 10, 30 ],\r\n  \"description\" : \"Morning list (court) update\",\r\n  \"status\" : \"CLOSED\",\r\n  \"otherLocationDescription\" : \"Updated other location\",\r\n  \"courtLocationCode\" : null,\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 4,\r\n  \"durationMinutes\" : 32,\r\n  \"version\" : 2\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:4550/application-lists/{{created_id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "4550",
+					"path": [
+						"application-lists",
+						"{{created_id}}"
+					]
+				}
+			},
+			"response": []
 		},
 		{
 			"name": "Obtain Token",

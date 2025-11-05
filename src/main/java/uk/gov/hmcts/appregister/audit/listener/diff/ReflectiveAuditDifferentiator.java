@@ -290,6 +290,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
             Object newValRet,
             List<Difference> differenceList,
             ReflectionCaches.MethodData method) {
+
         // detect diff
         if (newValRet != null
                 && !newValRet.toString().equals(oldValRet != null ? oldValRet.toString() : null)) {

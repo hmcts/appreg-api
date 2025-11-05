@@ -1,0 +1,24 @@
+type: object
+description: The Official hearing the application.
+properties:
+
+  title:
+    type: string
+    description: Prefix before a persons name.
+    example: "Mr, Mrs"
+    maxLength: 100
+
+  surname:
+    type: string
+    description: The persons family name.
+    example: "Smith"
+    maxLength: 100
+
+  forename:
+    type: string
+    description: The persons first name.
+    example: "John"
+    maxLength: 100
+
+  type:
+    $ref: './official-type.yaml'

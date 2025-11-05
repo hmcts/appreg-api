@@ -21,6 +21,10 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 @Configuration
 public class AppConfig implements WebMvcConfigurer {
+
+    @Value("${app.timezone:Europe/London}")
+    private String timezone;
+
     /**
      * Allows the clock to be modified so that we can test time sensitive code.
      *
@@ -38,7 +42,7 @@ public class AppConfig implements WebMvcConfigurer {
 
     @Bean
     public ZoneId ukZone() {
-        return ZoneId.of("Europe/London");
+        return ZoneId.of(timezone);
     }
 
     @Value("${appreg.audit.diff.enable-complex-diff}")

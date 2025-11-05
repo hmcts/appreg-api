@@ -10,7 +10,6 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 public enum AppListAuditOperation implements AuditOperation {
     CREATE_APP_LIST("Create Application List", CrudEnum.CREATE),
     UPDATE_APP_LIST("Update Application List", CrudEnum.UPDATE);
-
     private final String eventName;
 
     private final CrudEnum type;

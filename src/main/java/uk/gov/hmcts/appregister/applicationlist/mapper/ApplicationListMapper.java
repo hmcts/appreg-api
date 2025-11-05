@@ -52,24 +52,27 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationHours", source = "appList.durationHours")
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
-    ApplicationListGetDetailDto toGetDetailDto(ApplicationList appList, CriminalJusticeArea cja);
+    @Mapping(target = "entriesCount", source = "entryCount")
+    @Mapping(target = "entriesSummary", ignore = true)
+    ApplicationListGetDetailDto toGetDetailDto(
+            ApplicationList appList, CriminalJusticeArea cja, long entryCount);
 
     @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")
     @Mapping(target = "location", source = "location")
     @Mapping(target = "description", source = "appList.description")
-    @Mapping(target = "numberOfEntries", source = "entryCount")
+    @Mapping(target = "entriesCount", source = "entryCount")
     @Mapping(target = "status", source = "appList.status")
+    @Mapping(target = "entriesSummary", ignore = true)
     ApplicationListGetSummaryDto toGetSummaryDto(
             ApplicationList appList, long entryCount, String location);
 
-    // make sure we null out the existing court
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
-    @Mapping(target = "courtCode", source = "dto.courtLocationCode")
-    @Mapping(target = "courtName", source = "dto.courtLocationCode")
+    @Mapping(target = "courtCode", expression = "java(null)")
+    @Mapping(target = "courtName", expression = "java(null)")
     @Mapping(target = "changedBy", ignore = true)
     @Mapping(target = "changedDate", ignore = true)
     @Mapping(target = "otherLocation", source = "dto.otherLocationDescription")
@@ -100,6 +103,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", source = "dto.time")
+    @Mapping(target = "status", source = "dto.status.value")
     @Mapping(target = "cja", source = "cja")
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "deletedDate", ignore = true)

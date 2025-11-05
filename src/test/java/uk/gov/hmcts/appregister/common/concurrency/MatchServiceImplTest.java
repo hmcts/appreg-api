@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 @ExtendWith(MockitoExtension.class)
 public class MatchServiceImplTest {
 
-    @Mock private MatchProvider matchRequest;
+    @Mock private HttpMatchProviderImpl matchRequest;
 
     @InjectMocks public MatchServiceImpl matchService;
 

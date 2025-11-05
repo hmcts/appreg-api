@@ -1,20 +1,9 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
-
 /**
- * Represents a match provider that allows us to obtain the match infomration from the active
- * request.
+ * An interface that should understand how to return an etag for the current request.
  */
-@Component
-@RequiredArgsConstructor
-public class MatchProvider {
-    private final HttpServletRequest request;
-
-    public String getEtag() {
-        return request.getHeader(HttpHeaders.IF_MATCH);
-    }
+public interface MatchProvider {
+    /** Get the ETag value for concurrency control. */
+    String getEtag();
 }
