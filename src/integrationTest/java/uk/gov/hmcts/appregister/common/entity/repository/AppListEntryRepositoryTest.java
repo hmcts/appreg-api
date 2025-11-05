@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -180,216 +179,195 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // test get
         List<ApplicationListEntryPrintProjection>
-            applicationListEntryPrintProjectionsToAssertAgainst =
-            applicationListEntryRepository.findByIdForPrinting(
-                data.getApplicationList().getUuid());
+                applicationListEntryPrintProjectionsToAssertAgainst =
+                        applicationListEntryRepository.findByIdForPrinting(
+                                data.getApplicationList().getUuid());
 
         // assert that the data that has been retrieved aligns with the data that we
         // have stored
-        assertNotNull(
-            applicationListEntryPrintProjectionsToAssertAgainst.getFirst());
+        assertNotNull(applicationListEntryPrintProjectionsToAssertAgainst.getFirst());
         assertEquals(
-            data.getId(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getId());
+                data.getId(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getId());
         assertEquals(
-            data.getUuid(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getUuid());
+                data.getUuid(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getUuid());
         assertEquals(
-            data.getSequenceNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getSequenceNumber());
+                data.getSequenceNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getSequenceNumber());
         assertEquals(
-            data.getStandardApplicant().getApplicantTitle(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantTitle());
+                data.getStandardApplicant().getApplicantTitle(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getApplicantTitle());
         assertEquals(
-            data.getStandardApplicant().getApplicantSurname(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantSurname());
+                data.getStandardApplicant().getApplicantSurname(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantSurname());
         assertEquals(
-            data.getStandardApplicant().getApplicantForename1(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantForename1());
+                data.getStandardApplicant().getApplicantForename1(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantForename1());
         assertEquals(
-            data.getStandardApplicant().getApplicantForename2(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantForename2());
+                data.getStandardApplicant().getApplicantForename2(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantForename2());
         assertEquals(
-            data.getStandardApplicant().getApplicantForename3(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantForename3());
+                data.getStandardApplicant().getApplicantForename3(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantForename3());
         assertEquals(
-            data.getStandardApplicant().getAddressLine1(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantAddressLine1());
+                data.getStandardApplicant().getAddressLine1(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantAddressLine1());
         assertEquals(
-            data.getStandardApplicant().getAddressLine2(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantAddressLine2());
+                data.getStandardApplicant().getAddressLine2(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantAddressLine2());
         assertEquals(
-            data.getStandardApplicant().getAddressLine3(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantAddressLine3());
+                data.getStandardApplicant().getAddressLine3(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantAddressLine3());
         assertEquals(
-            data.getStandardApplicant().getAddressLine4(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantAddressLine4());
+                data.getStandardApplicant().getAddressLine4(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantAddressLine4());
         assertEquals(
-            data.getStandardApplicant().getAddressLine5(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantAddressLine5());
+                data.getStandardApplicant().getAddressLine5(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantAddressLine5());
         assertEquals(
-            data.getStandardApplicant().getPostcode(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantPostcode());
+                data.getStandardApplicant().getPostcode(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantPostcode());
         assertEquals(
-            data.getStandardApplicant().getTelephoneNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantPhone());
+                data.getStandardApplicant().getTelephoneNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getApplicantPhone());
         assertEquals(
-            data.getStandardApplicant().getMobileNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantMobile());
+                data.getStandardApplicant().getMobileNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicantMobile());
         assertEquals(
-            data.getStandardApplicant().getEmailAddress(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantEmail());
+                data.getStandardApplicant().getEmailAddress(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getApplicantEmail());
         assertEquals(
-            data.getStandardApplicant().getName(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicantName());
+                data.getStandardApplicant().getName(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getApplicantName());
         assertEquals(
-            data.getRnameaddress().getTitle(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentTitle());
+                data.getRnameaddress().getTitle(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentTitle());
         assertEquals(
-            data.getRnameaddress().getSurname(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentSurname());
+                data.getRnameaddress().getSurname(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentSurname());
         assertEquals(
-            data.getRnameaddress().getForename1(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentForename1());
+                data.getRnameaddress().getForename1(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentForename1());
         assertEquals(
-            data.getRnameaddress().getForename2(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentForename2());
+                data.getRnameaddress().getForename2(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentForename2());
         assertEquals(
-            data.getRnameaddress().getForename3(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentForename3());
+                data.getRnameaddress().getForename3(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentForename3());
         assertEquals(
-            data.getRnameaddress().getAddress1(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentAddressLine1());
+                data.getRnameaddress().getAddress1(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentAddressLine1());
         assertEquals(
-            data.getRnameaddress().getAddress2(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentAddressLine2());
+                data.getRnameaddress().getAddress2(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentAddressLine2());
         assertEquals(
-            data.getRnameaddress().getAddress3(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentAddressLine3());
+                data.getRnameaddress().getAddress3(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentAddressLine3());
         assertEquals(
-            data.getRnameaddress().getAddress4(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentAddressLine4());
+                data.getRnameaddress().getAddress4(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentAddressLine4());
         assertEquals(
-            data.getRnameaddress().getAddress5(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentAddressLine5());
+                data.getRnameaddress().getAddress5(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentAddressLine5());
         assertEquals(
-            data.getRnameaddress().getPostcode(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentPostcode());
+                data.getRnameaddress().getPostcode(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentPostcode());
         assertEquals(
-            data.getRnameaddress().getTelephoneNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentPhone());
+                data.getRnameaddress().getTelephoneNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentPhone());
         assertEquals(
-            data.getRnameaddress().getMobileNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentMobile());
+                data.getRnameaddress().getMobileNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentMobile());
         assertEquals(
-            data.getRnameaddress().getEmailAddress(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentEmail());
+                data.getRnameaddress().getEmailAddress(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentEmail());
         assertEquals(
-            data.getRnameaddress().getDateOfBirth().truncatedTo(ChronoUnit.MICROS),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentDateOfBirth().truncatedTo(ChronoUnit.MICROS));
+                data.getRnameaddress().getDateOfBirth().truncatedTo(ChronoUnit.MICROS),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getRespondentDateOfBirth()
+                        .truncatedTo(ChronoUnit.MICROS));
         assertEquals(
-            data.getRnameaddress().getName(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getRespondentName());
+                data.getRnameaddress().getName(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getRespondentName());
         assertEquals(
-            data.getApplicationCode().getCode(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicationCode());
+                data.getApplicationCode().getCode(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicationCode());
         assertEquals(
-            data.getApplicationCode().getTitle(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicationTitle());
+                data.getApplicationCode().getTitle(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicationTitle());
         assertEquals(
-            data.getApplicationListEntryWording(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getApplicationWording());
+                data.getApplicationListEntryWording(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getApplicationWording());
         assertEquals(
-            data.getCaseReference(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getCaseReference());
+                data.getCaseReference(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getCaseReference());
         assertEquals(
-            data.getAccountNumber(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getAccountReference());
+                data.getAccountNumber(),
+                applicationListEntryPrintProjectionsToAssertAgainst
+                        .getFirst()
+                        .getAccountReference());
         assertEquals(
-            data.getNotes(),
-            applicationListEntryPrintProjectionsToAssertAgainst
-                .getFirst()
-                .getNotes());
-        assertThat(applicationListEntryPrintProjectionsToAssertAgainst.size())
-            .isEqualTo(1);
+                data.getNotes(),
+                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getNotes());
+        assertThat(applicationListEntryPrintProjectionsToAssertAgainst.size()).isEqualTo(1);
     }
 
     private ApplicationListEntry saveApplicationListEntry(

@@ -20,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
+import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -30,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 /**
  * REST controller for managing Application Lists.
@@ -84,13 +87,43 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListGetDetailDto> createApplicationList(
             @Valid @RequestBody ApplicationListCreateDto applicationListCreateDto) {
 
-        ApplicationListGetDetailDto created = service.create(applicationListCreateDto);
+        MatchResponse<ApplicationListGetDetailDto> created =
+                service.create(applicationListCreateDto);
 
-        return ResponseEntity.status(CREATED)
-                .varyBy("Accept")
-                .contentType(VND_JSON_V1)
-                .headers(h -> h.setLocation(locationOf(created.getId())))
-                .body(created);
+        ResponseEntity<ApplicationListGetDetailDto> response =
+                ResponseEntity.status(CREATED)
+                        .varyBy("Accept")
+                        .contentType(VND_JSON_V1)
+                        .headers(h -> h.setLocation(locationOf(created.getPayload().getId())))
+                        .eTag(created.getEtag())
+                        .body(created.getPayload());
+
+        log.info(
+                "Create successful for Application List with id: {}", created.getPayload().getId());
+        return response;
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetDetailDto> updateApplicationList(
+            UUID id, ApplicationListUpdateDto applicationListUpdateDto) {
+        MatchResponse<ApplicationListGetDetailDto> updated =
+                service.update(
+                        PayloadForUpdate.<ApplicationListUpdateDto>builder()
+                                .id(id)
+                                .data(applicationListUpdateDto)
+                                .build());
+
+        ResponseEntity<ApplicationListGetDetailDto> response =
+                ResponseEntity.status(OK)
+                        .varyBy("Accept")
+                        .contentType(VND_JSON_V1)
+                        .eTag(updated.getEtag())
+                        .body(updated.getPayload());
+
+        log.info(
+                "Update successful for Application List with id: {}", updated.getPayload().getId());
+        return response;
     }
 
     /**

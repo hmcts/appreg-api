@@ -19,15 +19,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
  * Repository interface for managing ApplicationList entities.
  */
 public interface ApplicationListRepository extends JpaRepository<ApplicationList, Long> {
-
-    /**
-     * Find all ApplicationList entities associated with a specific user.
-     *
-     * @param userId the ID of the user
-     * @return a list of ApplicationList entities
-     */
-    List<ApplicationList> findAllByCreatedUser(String userId);
-
     /**
      * Find an ApplicationList entity by its ID and associated user.
      *
