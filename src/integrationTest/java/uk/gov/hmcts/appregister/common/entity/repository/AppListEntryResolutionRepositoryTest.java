@@ -11,8 +11,6 @@ import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -40,7 +38,6 @@ public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
                         entityManager, persistance, list, (short) 1);
 
         // test get
-        Pageable page = PageRequest.of(0, 10);
         List<String> resultWordings =
                 applicationListEntryResolutionRepository.findByIdForPrinting(data.getId());
 

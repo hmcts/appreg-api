@@ -1,17 +1,29 @@
 package uk.gov.hmcts.appregister.testutils.util;
 
+import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.CLERK_CODE;
+import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON2_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON3_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.MR;
+import static uk.gov.hmcts.appregister.util.TestConstants.MRS;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON2_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON3_SURNAME;
 
 import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
@@ -58,12 +70,51 @@ public final class ApplicationListEntryUtil {
         resolutions.add(appListEntryResolution2);
         listEntryData.setResolutions(resolutions);
 
+        List<AppListEntryOfficial> officials = new ArrayList<>();
+        AppListEntryOfficial appListEntryOfficial1 =
+                new AppListEntryOfficialTestData()
+                        .someMinimal()
+                        .appListEntry(listEntryData)
+                        .title(MR)
+                        .forename(PERSON1_FORENAME1)
+                        .surname(PERSON1_SURNAME)
+                        .officialType(MAGISTRATE_CODE)
+                        .build();
+        officials.add(appListEntryOfficial1);
+        AppListEntryOfficial appListEntryOfficial2 =
+                new AppListEntryOfficialTestData()
+                        .someMinimal()
+                        .appListEntry(listEntryData)
+                        .title(MRS)
+                        .forename(PERSON2_FORENAME1)
+                        .surname(PERSON2_SURNAME)
+                        .officialType(MAGISTRATE_CODE)
+                        .build();
+        officials.add(appListEntryOfficial2);
+        AppListEntryOfficial appListEntryOfficial3 =
+                new AppListEntryOfficialTestData()
+                        .someMinimal()
+                        .appListEntry(listEntryData)
+                        .title(MR)
+                        .forename(PERSON3_FORENAME1)
+                        .surname(PERSON3_SURNAME)
+                        .officialType(CLERK_CODE)
+                        .build();
+        officials.add(appListEntryOfficial3);
+        listEntryData.setOfficials(officials);
+
         ApplicationListEntry data = persistance.save(listEntryData);
 
         for (AppListEntryResolution resolution : resolutions) {
             entityManager.persist(resolution);
         }
+
+        for (AppListEntryOfficial official : officials) {
+            persistance.save(official);
+        }
+
         entityManager.flush();
+
         return data;
     }
 }

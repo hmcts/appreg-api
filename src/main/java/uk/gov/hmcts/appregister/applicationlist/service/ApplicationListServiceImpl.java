@@ -38,6 +38,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -384,7 +385,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
             // Fetch officials from the repository
             List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections =
-                    aleoRepository.findByIdForPrinting(entryId);
+                    aleoRepository.findByIdForPrinting(entryId, OfficialTypeUtil.PRINTABLE_CODES);
 
             List<Official> officials = new ArrayList<>();
 

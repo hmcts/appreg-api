@@ -14,11 +14,53 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
+import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
+import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
+import static uk.gov.hmcts.appregister.util.ApplicationListEntryPrintProjectionUtil.applicationListEntryPrintProjection;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
+import static uk.gov.hmcts.appregister.util.ApplicationListOfficialPrintProjectionUtil.applicationListOfficialPrintProjection;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONCODE1_CODE;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONCODE1_TITLE;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_ACCOUNTNUMBER;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_CASEREFERENCE;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_NOTES;
+import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_WORDING;
+import static uk.gov.hmcts.appregister.util.TestConstants.MRS;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE2;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE3;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE4;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE5;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_EMAIL;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.MR;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME2;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME3;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_MOBILE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_PHONE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_POSTCODE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_ADDRESSLINE1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_ADDRESSLINE2;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_ADDRESSLINE3;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_ADDRESSLINE4;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_ADDRESSLINE5;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_EMAIL;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_FORENAME1;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_FORENAME2;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_FORENAME3;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_MOBILE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_PHONE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_POSTCODE;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -60,13 +102,18 @@ import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepos
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListServiceImplTest {
@@ -713,6 +760,31 @@ public class ApplicationListServiceImplTest {
                 .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
+    @Test
+    void print_returnsDto() {
+        Long applicationListEntryId = 1L;
+
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        mockFindEntriesByIdForPrinting(id);
+
+        when(alerRepository.findByIdForPrinting(eq(applicationListEntryId))).thenReturn(List.of(WORDING_1, WORDING_2));
+
+        mockFindOfficialsByIdForPrinting(applicationListEntryId);
+
+        EntryGetPrintDto entryGetPrintDto = new EntryGetPrintDto();
+        when(entryMapper.toPrintDto(any(ApplicationListEntryPrintProjection.class))).thenReturn(entryGetPrintDto);
+
+        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
+        when(mapper.toGetPrintDto(saved)).thenReturn(expected);
+
+        ApplicationListGetPrintDto actual = service.print(id);
+
+        Assertions.assertEquals(expected, actual);
+    }
+
     private void mockFindSummariesById(UUID id, Pageable pageable) {
         var uuid = UUID.randomUUID();
         var sequenceNumber = 1;
@@ -738,5 +810,65 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
+    }
+
+    private void mockFindEntriesByIdForPrinting(UUID applicationListId) {
+        var projection =
+            applicationListEntryPrintProjection()
+                .id(1L)
+                .sequenceNumber(1)
+                .applicantTitle(MR)
+                .applicantSurname(PERSON4_SURNAME)
+                .applicantForename1(PERSON4_FORENAME1)
+                .applicantForename2(PERSON4_FORENAME2)
+                .applicantForename3(PERSON4_FORENAME3)
+                .applicantAddressLine1(PERSON4_ADDRESSLINE1)
+                .applicantAddressLine2(PERSON4_ADDRESSLINE2)
+                .applicantAddressLine3(PERSON4_ADDRESSLINE3)
+                .applicantAddressLine4(PERSON4_ADDRESSLINE4)
+                .applicantAddressLine5(PERSON4_ADDRESSLINE5)
+                .applicantPostcode(PERSON4_POSTCODE)
+                .applicantPhone(PERSON4_PHONE)
+                .applicantMobile(PERSON4_MOBILE)
+                .applicantEmail(PERSON4_EMAIL)
+                .respondentTitle(MRS)
+                .respondentSurname(PERSON5_SURNAME)
+                .respondentForename1(PERSON5_FORENAME1)
+                .respondentForename2(PERSON5_FORENAME2)
+                .respondentForename3(PERSON5_FORENAME3)
+                .respondentAddressLine1(PERSON5_ADDRESSLINE1)
+                .respondentAddressLine2(PERSON5_ADDRESSLINE2)
+                .respondentAddressLine3(PERSON5_ADDRESSLINE3)
+                .respondentAddressLine4(PERSON5_ADDRESSLINE4)
+                .respondentAddressLine5(PERSON5_ADDRESSLINE5)
+                .respondentPostcode(PERSON5_POSTCODE)
+                .respondentPhone(PERSON5_PHONE)
+                .respondentMobile(PERSON5_MOBILE)
+                .respondentEmail(PERSON5_EMAIL)
+                .respondentDateOfBirth(OffsetDateTime.now())
+                .applicationCode(APPLICATIONCODE1_CODE)
+                .applicationTitle(APPLICATIONCODE1_TITLE)
+                .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                .notes(APPLICATIONLISTENTRY1_NOTES)
+                .build();
+        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections = List.of(projection);
+
+        when(aleRepository.findByIdForPrinting(eq(applicationListId))).thenReturn(applicationListEntryPrintProjections);
+    }
+
+    private void mockFindOfficialsByIdForPrinting(Long applicationListEntryId) {
+        var projection =
+            applicationListOfficialPrintProjection()
+                .type(MAGISTRATE_CODE)
+                .title(MR)
+                .forename(PERSON1_FORENAME1)
+                .surname(PERSON1_SURNAME)
+                .build();
+        List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections = List.of(projection);
+
+        when(aleoRepository.findByIdForPrinting(eq(applicationListEntryId), eq(OfficialTypeUtil.PRINTABLE_CODES)))
+            .thenReturn(applicationListOfficialPrintProjections);
     }
 }

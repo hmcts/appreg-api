@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -13,6 +14,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepository;
@@ -47,6 +49,9 @@ public class DatabasePersistance {
     @Autowired private ApplicationRegisterRepository applicationRegisterRepository;
 
     @Autowired private StandardApplicantRepository standardApplicantRepository;
+
+    @Autowired
+    private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
 
     public ApplicationCode save(ApplicationCode data) {
 
@@ -124,5 +129,9 @@ public class DatabasePersistance {
 
     public StandardApplicant save(StandardApplicant data) {
         return standardApplicantRepository.saveAndFlush(data);
+    }
+
+    public AppListEntryOfficial save(AppListEntryOfficial data) {
+        return applicationListEntryOfficialRepository.saveAndFlush(data);
     }
 }

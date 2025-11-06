@@ -1,10 +1,11 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.util.Collection;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
 
 /**
@@ -12,7 +13,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintPr
  */
 @Repository
 public interface ApplicationListEntryOfficialRepository
-        extends JpaRepository<ApplicationCode, Long> {
+        extends JpaRepository<AppListEntryOfficial, Long> {
 
     /**
      * Retrieves list of officials for a given application list entry.
@@ -29,7 +30,8 @@ public interface ApplicationListEntryOfficialRepository
                 aleo.surname AS surname
             FROM AppListEntryOfficial aleo
             WHERE aleo.appListEntry.id = :id
-            AND aleo.officialType IN ('M', 'C')
+            AND aleo.officialType IN :codes
             """)
-    List<ApplicationListOfficialPrintProjection> findByIdForPrinting(Long id);
+    List<ApplicationListOfficialPrintProjection> findByIdForPrinting(
+            Long id, Collection<String> codes);
 }
