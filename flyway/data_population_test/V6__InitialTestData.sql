@@ -158,7 +158,10 @@ INSERT INTO standard_applicants (sa_id, standard_applicant_code, standard_applic
                                  address_l2, address_l3, address_l4, address_l5, postcode, email_address, telephone_number, mobile_number) VALUES
                                                                                                                                                (1, 'APP001', CURRENT_TIMESTAMP, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000001', 'John Smith', 'Mr', 'John', NULL, NULL, 'Smith','123 High Street', NULL, NULL, 'Townsville', NULL,'TS1 1AB', 'john.smith@example.com', '01234567890', '07123456789'),
                                                                                                                                                (2, 'APP002', CURRENT_TIMESTAMP, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000001',  'Jane Doe', 'Ms', 'Jane', NULL, NULL, 'Doe','456 Elm Road', 'Apt 5', NULL, 'Cityville', NULL,'CV2 2BC', 'jane.doe@example.com', '02345678901', NULL),
-                                                                                                                                               (3, 'APP003',  CURRENT_TIMESTAMP, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000001',  'Alex Dunn', 'Dr', 'Alex', 'Taylor', NULL, 'Dunn','789 Oak Avenue', NULL, NULL, 'Villageham', 'Countyshire','VH3 3CD', 'alex.johnson@example.com', NULL, '07987654321');
+                                                                                                                                               (3, 'APP003',  CURRENT_TIMESTAMP, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000001',  'Alex Dunn', 'Dr', 'Alex', 'Taylor', NULL, 'Dunn','789 Oak Avenue', NULL, NULL, 'Villageham', 'Countyshire','VH3 3CD', 'alex.johnson@example.com', NULL, '07987654321'),
+                                                                                                                                               (4, 'APP003',  CURRENT_TIMESTAMP, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000001',  'Alex Dunn', 'Dr', 'Alex', 'Taylor', NULL, 'Dunn','789 Oak Avenue', NULL, NULL, 'Villageham', 'Countyshire','VH3 3CD', 'alex.johnson@example.com', NULL, '07987654321');
+
+;
 --
 --
 --

@@ -6,6 +6,9 @@ import java.util.function.BiFunction;
  * A generic validation interface that is used across the app registration service.
  */
 public interface Validator<T, O> {
+    static final int SINGLE_RECORD = 1;
+
+
     /**
      * Validate the provided {@code validatable}.
      *

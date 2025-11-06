@@ -42,6 +42,18 @@ public class RestAssuredClient {
      *
      * @param url The url context
      * @param token The bearer token
+     * @param requestSpecificationConsumer The consumer to customise the request specification
+     * @return The specification of the response
+     */
+    public Response executeGetRequest(URL url, TokenAndJwksKey token, UnaryOperator<RequestSpecification> requestSpecificationConsumer) throws URISyntaxException {
+        return requestSpecificationConsumer.apply(given().header("Authorization", "Bearer " + token.getToken())).get(url).andReturn();
+    }
+
+    /**
+     * gets a request builder that can be used to make requests against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
      * @return The specification of the response
      */
     public Response executeGetRequestWithPaging(
