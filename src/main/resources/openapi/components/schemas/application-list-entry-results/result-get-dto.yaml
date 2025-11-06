@@ -1,0 +1,33 @@
+type: object
+description: Response payload to get an Application List Entry Result.
+required:
+  - id
+  - entryId
+  - resultCode
+
+properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier of the Application List Entry Result.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  entryId:
+    type: string
+    format: uuid
+    description: The Unique identifier of the parent Application List Entry belongs.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  resultCode:
+    type: string
+    description: Code that identifies the Result Code.
+    example: "RC-001"
+
+  wordingFields:
+    type: array
+    items: {type: string}
+    description: >
+      An array of user-provided values used to populate placeholders in the 'wording'. The wording is a field belonging
+      to the linked Result Code. Each string is applied to the wording in the order they are provided.
+    example: ["25 October 2025", "London"]
