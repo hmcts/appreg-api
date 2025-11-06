@@ -389,9 +389,7 @@ INSERT INTO standard_applicants (sa_id, standard_applicant_code, standard_applic
         (27, 'APP027', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000027', 'Chloe Lewis', 'Ms', 'Chloe', NULL, NULL, 'Lewis','951 Maple Avenue', NULL, NULL, 'Townfield', NULL,'TF27 7YZ', 'chloe.lewis@example.com', '08912345679', '07345678902'),
         (28, 'APP028', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000028', 'Jacob Martin', 'Mr', 'Jacob', NULL, NULL, 'Martin','357 Oak Street', NULL, NULL, 'Cityford', NULL,'CF28 8AB', 'jacob.martin@example.com', '09012345680', NULL),
         (29, 'APP029', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000029', 'Lily Nelson', 'Miss', 'Lily', NULL, NULL, 'Nelson','258 Elm Lane', NULL, NULL, 'Villageborough', NULL,'VB29 9CD', 'lily.nelson@example.com', '01234567893', '07456789013'),
-        (30, 'APP030', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000030', 'David Owen', 'Mr', 'David', NULL, NULL, 'Owen','654 Spruce Avenue', NULL, NULL, 'Hamletshire', NULL,'HS30 0EF', 'david.owen@example.com', '02345678914', NULL),
-        (31, 'APP030', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000030', 'David Owen', 'Mr', 'David', NULL, NULL, 'Owen','654 Spruce Avenue', NULL, NULL, 'Hamletshire', NULL,'HS30 0EF', 'david.owen@example.com', '02345678914', NULL),
-
+        (30, 'APP030', CURRENT_DATE, NULL, 1, 0, CURRENT_TIMESTAMP, '12345678-aaaa-bbbb-cccc-000000000030', 'David Owen', 'Mr', 'David', NULL, NULL, 'Owen','654 Spruce Avenue', NULL, NULL, 'Hamletshire', NULL,'HS30 0EF', 'david.owen@example.com', '02345678914', NULL);
 --
 --
 --
