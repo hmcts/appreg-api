@@ -45,8 +45,15 @@ public class RestAssuredClient {
      * @param requestSpecificationConsumer The consumer to customise the request specification
      * @return The specification of the response
      */
-    public Response executeGetRequest(URL url, TokenAndJwksKey token, UnaryOperator<RequestSpecification> requestSpecificationConsumer) throws URISyntaxException {
-        return requestSpecificationConsumer.apply(given().header("Authorization", "Bearer " + token.getToken())).get(url).andReturn();
+    public Response executeGetRequest(
+            URL url,
+            TokenAndJwksKey token,
+            UnaryOperator<RequestSpecification> requestSpecificationConsumer)
+            throws URISyntaxException {
+        return requestSpecificationConsumer
+                .apply(given().header("Authorization", "Bearer " + token.getToken()))
+                .get(url)
+                .andReturn();
     }
 
     /**

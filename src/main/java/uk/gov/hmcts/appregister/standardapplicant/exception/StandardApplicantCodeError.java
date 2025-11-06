@@ -8,8 +8,8 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 /**
  * Domain-specific error codes for Standard Applicant operations.
  *
- * <p>Each error maps to a standard {@link org.springframework.http.HttpStatus}, a human-readable message, and a stable
- * business error code (e.g. "SA-1").
+ * <p>Each error maps to a standard {@link org.springframework.http.HttpStatus}, a human-readable
+ * message, and a stable business error code (e.g. "SA-1").
  *
  * <p>Used in service and repository layers to signal known error conditions such as missing or
  * duplicate records.
@@ -22,7 +22,8 @@ public enum StandardApplicantCodeError implements ErrorCodeEnum {
      * Business code: RC-1
      */
     STANDARD_APPLICANT_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Standard Applicant not found", "SA-1")),
+            DefaultErrorDetail.create(
+                    HttpStatus.NOT_FOUND, "Standard Applicant not found", "SA-1")),
     /**
      * More than one Standard Applicant was found when only one was expected.
      *

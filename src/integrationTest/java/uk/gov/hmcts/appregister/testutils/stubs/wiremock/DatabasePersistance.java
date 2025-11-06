@@ -12,7 +12,16 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.entity.repository.*;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
 /**
  * A persistence class that knows how to install the data into the database in the correct order.

@@ -1,27 +1,22 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
-import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
-import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
-import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
+import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 
 public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
 
-    @Autowired
-    private StandardApplicantRepository repository;
+    @Autowired private StandardApplicantRepository repository;
 
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
@@ -112,8 +107,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             dataToPersist.getEmailAddress(),
                             standardApplicantToAssertAgainst.get().getEmailAddress());
                     assertEquals(
-                            dataToPersist.getId(),
-                            standardApplicantToAssertAgainst.get().getId());
+                            dataToPersist.getId(), standardApplicantToAssertAgainst.get().getId());
                 });
     }
 
@@ -141,4 +135,3 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                 });
     }
 }
-

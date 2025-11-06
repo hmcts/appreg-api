@@ -1,10 +1,9 @@
 package uk.gov.hmcts.appregister.testutils.client.request;
 
 import io.restassured.specification.RequestSpecification;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDate;
 import java.util.function.UnaryOperator;
+import lombok.RequiredArgsConstructor;
 
 /**
  * A request specification that applies a date get parameter to the request.

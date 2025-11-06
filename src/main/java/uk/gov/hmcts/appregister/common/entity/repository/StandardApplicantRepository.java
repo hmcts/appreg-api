@@ -2,12 +2,10 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 
 /**
@@ -24,7 +22,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      * @return an Optional containing the found StandardApplicant, or empty if not found
      */
     @Query(
-        """
+            """
         SELECT sa
         FROM StandardApplicant sa
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))

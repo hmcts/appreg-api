@@ -1,13 +1,17 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
-import org.mapstruct.*;
+import java.time.LocalDate;
+import org.mapstruct.InjectionStrategy;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
-
-import java.time.LocalDate;
 
 /**
  * Mapper for StandardApplicant entity to StandardApplicantDto.

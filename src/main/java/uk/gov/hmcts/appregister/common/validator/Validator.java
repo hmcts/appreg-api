@@ -8,7 +8,6 @@ import java.util.function.BiFunction;
 public interface Validator<T, O> {
     static final int SINGLE_RECORD = 1;
 
-
     /**
      * Validate the provided {@code validatable}.
      *

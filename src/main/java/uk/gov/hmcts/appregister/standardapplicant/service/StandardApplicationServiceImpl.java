@@ -3,9 +3,7 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
@@ -37,8 +35,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     @Override
     public StandardApplicantGetDetailDto findByCode(String code, LocalDate date) {
-        return validator.validate(PayloadForGet.builder().date(date).code(code).build(),
-                (id, standardApplicant)
-                -> mapper.toReadGetDto(standardApplicant));
+        return validator.validate(
+                PayloadForGet.builder().date(date).code(code).build(),
+                (id, standardApplicant) -> mapper.toReadGetDto(standardApplicant));
     }
 }
