@@ -768,52 +768,7 @@ public class ApplicationListServiceImplTest {
         UUID id = UUID.randomUUID();
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
-        mockFindEntriesByIdForPrinting(id);
-
-        when(alerRepository.findByIdForPrinting(eq(applicationListEntryId))).thenReturn(List.of(WORDING_1, WORDING_2));
-
-        mockFindOfficialsByIdForPrinting(applicationListEntryId);
-
-        EntryGetPrintDto entryGetPrintDto = new EntryGetPrintDto();
-        when(entryMapper.toPrintDto(any(ApplicationListEntryPrintProjection.class))).thenReturn(entryGetPrintDto);
-
-        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
-        when(mapper.toGetPrintDto(saved)).thenReturn(expected);
-
-        ApplicationListGetPrintDto actual = service.print(id);
-
-        Assertions.assertEquals(expected, actual);
-    }
-
-    private void mockFindSummariesById(UUID id, Pageable pageable) {
-        var uuid = UUID.randomUUID();
-        var sequenceNumber = 1;
-        var accountNumber = "1234567890";
-        var applicant = "Mustafa's Org";
-        var respondent = "Ahmed, Mustafa, His Majesty";
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-        var projection =
-                applicationListEntrySummaryProjection()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
-
-        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
-    }
-
-    private void mockFindEntriesByIdForPrinting(UUID applicationListId) {
-        var projection =
+        var applicationListEntryPrintProjection =
             applicationListEntryPrintProjection()
                 .id(1L)
                 .sequenceNumber(1)
@@ -853,22 +808,71 @@ public class ApplicationListServiceImplTest {
                 .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
                 .notes(APPLICATIONLISTENTRY1_NOTES)
                 .build();
-        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections = List.of(projection);
+        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections = List.of(applicationListEntryPrintProjection);
 
-        when(aleRepository.findByIdForPrinting(eq(applicationListId))).thenReturn(applicationListEntryPrintProjections);
-    }
+        when(aleRepository.findByIdForPrinting(eq(id))).thenReturn(applicationListEntryPrintProjections);
 
-    private void mockFindOfficialsByIdForPrinting(Long applicationListEntryId) {
-        var projection =
+        when(alerRepository.findByIdForPrinting(eq(applicationListEntryId))).thenReturn(List.of(WORDING_1, WORDING_2));
+
+        var applicationListOfficialPrintProjection =
             applicationListOfficialPrintProjection()
                 .type(MAGISTRATE_CODE)
                 .title(MR)
                 .forename(PERSON1_FORENAME1)
                 .surname(PERSON1_SURNAME)
                 .build();
-        List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections = List.of(projection);
+        List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections =
+            List.of(applicationListOfficialPrintProjection);
 
         when(aleoRepository.findByIdForPrinting(eq(applicationListEntryId), eq(OfficialTypeUtil.PRINTABLE_CODES)))
             .thenReturn(applicationListOfficialPrintProjections);
+
+        EntryGetPrintDto entryGetPrintDto = new EntryGetPrintDto();
+        when(entryMapper.toPrintDto(eq(applicationListEntryPrintProjection))).thenReturn(entryGetPrintDto);
+
+        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
+        when(mapper.toGetPrintDto(saved)).thenReturn(expected);
+
+        ApplicationListGetPrintDto actual = service.print(id);
+
+        Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void print_returns404_whenApplicationListRepositoryEmpty() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.print(id))
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    private void mockFindSummariesById(UUID id, Pageable pageable) {
+        var uuid = UUID.randomUUID();
+        var sequenceNumber = 1;
+        var accountNumber = "1234567890";
+        var applicant = "Mustafa's Org";
+        var respondent = "Ahmed, Mustafa, His Majesty";
+        var postCode = "SW1A 1AA";
+        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
+        var feeRequired = true;
+        var result = "APPC";
+        var projection =
+                applicationListEntrySummaryProjection()
+                        .uuid(uuid)
+                        .sequenceNumber(sequenceNumber)
+                        .accountNumber(accountNumber)
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode(postCode)
+                        .applicationTitle(applicationTitle)
+                        .feeRequired(feeRequired)
+                        .result(result)
+                        .build();
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
+
+        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 }

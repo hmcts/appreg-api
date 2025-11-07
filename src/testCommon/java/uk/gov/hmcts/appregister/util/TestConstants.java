@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.util;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
 public final class TestConstants {
 
     public static final String MR = "Mr";
@@ -41,6 +44,9 @@ public final class TestConstants {
     public static final String PERSON5_PHONE = "02079460958";
     public static final String PERSON5_MOBILE = "07700900000";
     public static final String PERSON5_EMAIL = "s.johnson@example.com";
+    public static final OffsetDateTime PERSON5_DATE_OF_BIRTH =
+        OffsetDateTime.of(2025, 11, 3, 0, 0, 0, 0,
+                          ZoneOffset.UTC);
 
     public static final String APPLICATIONCODE1_CODE = "AD99001";
     public static final String APPLICATIONCODE1_TITLE = "Copy documents";
