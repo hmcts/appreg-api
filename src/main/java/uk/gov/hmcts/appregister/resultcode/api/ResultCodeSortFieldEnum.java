@@ -18,9 +18,9 @@ public enum ResultCodeSortFieldEnum implements SortableOperationEnum {
     CODE("code", ResolutionCode_.RESULT_CODE);
 
     private final String apiValue;
-    private final String entityValue;
+    private final String[] entityValue;
 
-    ResultCodeSortFieldEnum(String apiValue, String entityValue) {
+    ResultCodeSortFieldEnum(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }

@@ -1,0 +1,1 @@
+UPDATE standard_applicants SET name = null;
