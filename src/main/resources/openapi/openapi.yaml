@@ -33,6 +33,8 @@ tags:
     description:
       Criminal Justice Areas are reference data, not managed in App Reg. They are officially recognized justice regions
       and used to classify records by jurisdiction.
+  - name: reports
+    description: Endpoints to generate and retrieve CSV reports asynchronously.
   - name: result-codes
     description:
       Result codes are reference data, not managed in App Reg. They are required to provide a set of ways an Application
@@ -61,6 +63,15 @@ paths:
   # CRIMINAL JUSTICE AREAS
   /criminal-justice-areas:                       { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
   /criminal-justice-areas/{code}:                { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
+  # REPORTS
+  /reports/fees/jobs:                            { $ref: './paths/reports/fees-report-jobs.yaml' }
+  /reports/search-warrants/jobs:                 { $ref: './paths/reports/search-warrants-report-jobs.yaml' }
+  /reports/list-maintenance/jobs:                { $ref: './paths/reports/list-maintenance-report-jobs.yaml' }
+  /reports/activity-audit/jobs:                  { $ref: './paths/reports/audit-report-jobs.yaml' }
+  /reports/application-lists/jobs:               { $ref: './paths/reports/application-lists-report-jobs.yaml' }
+  /reports/application-list-entries/jobs:        { $ref: './paths/reports/application-list-entries-report-jobs.yaml' }
+  /reports/jobs/{jobId}:                         { $ref: './paths/reports/report-jobs-by-id.yaml' }
+  /reports/jobs/{jobId}/download:                { $ref: './paths/reports/report-jobs-download-by-id.yaml' }
   # RESULT CODES
   /result-codes:                                 { $ref: './paths/result-codes/result-codes.yaml' }
   /result-codes/{code}:                          { $ref: './paths/result-codes/result-codes-by-code.yaml' }
