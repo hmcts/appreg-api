@@ -21,6 +21,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     private static final String WEB_CONTEXT = "standard-applicants";
 
     private static final String APPCODE_CODE = "APP001";
+    private static final String APPCODE_CODE_ORGANISATION = "APP005";
 
     private static final String DUPLICATE_APPCODE_CODE = "APP003";
 
@@ -39,13 +40,12 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         responseSpec.then().statusCode(200);
 
         StandardApplicantDto[] responseContent = responseSpec.as(StandardApplicantDto[].class);
-        Assertions.assertEquals(4, responseContent.length);
+        Assertions.assertEquals(5, responseContent.length);
 
         // assert
         StandardApplicantDto returnedSa = responseContent[2];
         Assertions.assertEquals("APP003", returnedSa.applicantCode());
         Assertions.assertEquals("Dr", returnedSa.applicantTitle());
-        Assertions.assertEquals("Alex Dunn", returnedSa.applicantName());
         Assertions.assertEquals("Alex", returnedSa.applicantForename1());
         Assertions.assertEquals("Taylor", returnedSa.applicantForename2());
         Assertions.assertNull(returnedSa.applicantForename3());
@@ -62,7 +62,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeAndDate_thenReturn200()
+    public void givenValidRequest_whenGetStandardApplicantByCodeAndDateForIndividual_thenReturn200()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -85,25 +85,91 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         Assertions.assertEquals("APP001", returnedSa.getCode());
         Assertions.assertEquals(LocalDate.now(), returnedSa.getStartDate());
         Assertions.assertFalse(returnedSa.getEndDate().isPresent());
-        Assertions.assertNotNull(returnedSa.getFullName());
-        Assertions.assertEquals("Mr", returnedSa.getFullName().getTitle());
-        Assertions.assertEquals("John", returnedSa.getFullName().getFirstForename());
-        Assertions.assertNull(returnedSa.getFullName().getSecondForename());
-        Assertions.assertNull(returnedSa.getFullName().getThirdForename());
-        Assertions.assertEquals("Smith", returnedSa.getFullName().getSurname());
-        Assertions.assertNull(returnedSa.getFullName().getThirdForename());
-        Assertions.assertNotNull(returnedSa.getContactDetails());
+        Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
+        Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
         Assertions.assertEquals(
-                "123 High Street", returnedSa.getContactDetails().getAddressLine1());
-        Assertions.assertNull(returnedSa.getContactDetails().getAddressLine2());
-        Assertions.assertNull(returnedSa.getContactDetails().getAddressLine3());
-        Assertions.assertEquals("Townsville", returnedSa.getContactDetails().getAddressLine4());
-        Assertions.assertNull(returnedSa.getContactDetails().getAddressLine5());
+                "John", returnedSa.getApplicant().getPerson().getName().getFirstForename());
+        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getSecondForename());
+        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
         Assertions.assertEquals(
-                "john.smith@example.com", returnedSa.getContactDetails().getEmail());
-        Assertions.assertEquals("07123456789", returnedSa.getContactDetails().getMobile());
-        Assertions.assertEquals("01234567890", returnedSa.getContactDetails().getPhone());
-        Assertions.assertEquals("TS1 1AB", returnedSa.getContactDetails().getPostcode());
+                "Smith", returnedSa.getApplicant().getPerson().getName().getSurname());
+        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
+        Assertions.assertEquals(
+                "123 High Street",
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3());
+        Assertions.assertEquals(
+                "Townsville",
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5());
+        Assertions.assertEquals(
+                "john.smith@example.com",
+                returnedSa.getApplicant().getPerson().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "07123456789",
+                returnedSa.getApplicant().getPerson().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "01234567890",
+                returnedSa.getApplicant().getPerson().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "TS1 1AB", returnedSa.getApplicant().getPerson().getContactDetails().getPostcode());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateForOrganisation_thenReturn200()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE_ORGANISATION),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now()));
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+
+        // assert the data
+        Assertions.assertEquals(APPCODE_CODE_ORGANISATION, returnedSa.getCode());
+        Assertions.assertEquals(LocalDate.now().minusDays(1), returnedSa.getStartDate());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertEquals(
+                "Organisation 1", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "123 High Street",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine2());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine3());
+        Assertions.assertEquals(
+                "Townsville",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine4());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine5());
+        Assertions.assertEquals(
+                "john.smith@example.com",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "07123456789",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "01234567890",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "TS1 1AB",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPostcode());
     }
 
     @Test

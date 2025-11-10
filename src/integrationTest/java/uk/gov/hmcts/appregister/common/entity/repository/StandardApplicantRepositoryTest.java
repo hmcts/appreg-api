@@ -21,7 +21,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     @Autowired private TransactionalUnitOfWork transactionalUnitOfWork;
 
     // Count for the baseline integration test data in the flyway script.
-    private static final int BASELINE_TEST_COUNT = 4;
+    private static final int BASELINE_TEST_COUNT = 5;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {

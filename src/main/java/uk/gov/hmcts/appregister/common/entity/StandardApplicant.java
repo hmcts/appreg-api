@@ -99,4 +99,14 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
 
     @Column(name = "mobile_number", length = 20)
     private String mobileNumber;
+
+    /**
+     * determine if an applicant is an organisation.
+     *
+     * @param applicant An applicant
+     * @return True or false
+     */
+    public static boolean isOrganisation(StandardApplicant applicant) {
+        return applicant.getName() != null && !applicant.getName().isBlank();
+    }
 }
