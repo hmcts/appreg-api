@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -14,10 +13,10 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.model.IndividualOrOrganisation;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
-import uk.gov.hmcts.appregister.common.model.IndividualOrOrganisationSearch;
 
 /**
  * Service implementation for managing standard applicants.
@@ -45,11 +44,12 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         // breaks name into individual and/or organisation parts
-        IndividualOrOrganisationSearch individualOrOrganisationSearch = IndividualOrOrganisationSearch.of(name);
+        IndividualOrOrganisation individualOrOrganisationSearch = IndividualOrOrganisation.of(name);
         String nm = individualOrOrganisationSearch.getName();
         String surname = individualOrOrganisationSearch.getSurname();
 
-        final Page<StandardApplicant> standardApplicantsList = repository.search(code, nm, surname, todayUk, pageable);
+        final Page<StandardApplicant> standardApplicantsList =
+                repository.search(code, nm, surname, todayUk, pageable);
 
         StandardApplicantPage newPage = new StandardApplicantPage();
         pageMapper.toPage(standardApplicantsList, newPage);
@@ -57,7 +57,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
         // Map each entity to a summary DTO and add to the page content
         standardApplicantsList.map(
                 sa -> {
-                     return newPage.addContentItem(mapper.toReadGetSummaryDto(sa));
+                    return newPage.addContentItem(mapper.toReadGetSummaryDto(sa));
                 });
 
         log.debug(
@@ -67,8 +67,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                 pageable);
         return newPage;
     }
-
-
 
     @Override
     @Deprecated

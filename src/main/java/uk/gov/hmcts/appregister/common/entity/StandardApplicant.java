@@ -101,7 +101,8 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String mobileNumber;
 
     /**
-     * determine if an applicant is an organisation
+     * determine if an applicant is an organisation.
+     *
      * @param applicant An applicant
      * @return True or false
      */

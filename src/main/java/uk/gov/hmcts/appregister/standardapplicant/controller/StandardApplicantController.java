@@ -11,12 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.common.api.SortableField;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.mapper.SortMapper;
@@ -44,7 +40,8 @@ public class StandardApplicantController implements StandardApplicantsApi {
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
-    public ResponseEntity<StandardApplicantPage> getStandardApplicants(String code, String title, Integer page, Integer size, List<String> sort) {
+    public ResponseEntity<StandardApplicantPage> getStandardApplicants(
+            String code, String title, Integer page, Integer size, List<String> sort) {
         sort = sort == null || sort.isEmpty() ? List.of() : sort;
 
         // map the sort parameters from OpenAPI to entity fields
@@ -55,7 +52,8 @@ public class StandardApplicantController implements StandardApplicantsApi {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
         Pageable pageable =
-                pageableMapper.from(page, size, sort, StandardApplicant_.APPLICANT_CODE, Sort.Direction.ASC);
+                pageableMapper.from(
+                        page, size, sort, StandardApplicant_.APPLICANT_CODE, Sort.Direction.ASC);
 
         log.info(
                 "getStandardApplicants: code: {}, title: {}, page: {}, size: {}",

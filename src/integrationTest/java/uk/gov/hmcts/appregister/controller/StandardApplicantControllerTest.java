@@ -1,18 +1,20 @@
 package uk.gov.hmcts.appregister.controller;
 
-import io.restassured.response.Response;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
 
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-
-import io.restassured.specification.RequestSpecification;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,23 +23,17 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.model.IndividualOrOrganisation;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
-import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.when;
 
 public class StandardApplicantControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "standard-applicants";
@@ -48,15 +44,14 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     @Value("${spring.data.web.pageable.max-page-size}")
     private Integer maxPageSize;
 
-    @MockitoBean
-    private Clock clock; // replaces Clock bean in Spring context
+    @MockitoBean private Clock clock; // replaces Clock bean in Spring context
 
     // The total standard applicant inserted by flyway scripts. See V6__InitialTestData.sql
     private static final int TOTAL_STANDARD_APPLICANT_COUNT = 7;
 
     @BeforeEach
     public void before() {
-        when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
@@ -122,8 +117,8 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
     @Test
     public void
-    givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithoutExplicitSort_thenReturn200()
-            throws Exception {
+            givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithoutExplicitSort_thenReturn200()
+                    throws Exception {
 
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -166,8 +161,8 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
     @Test
     public void
-    givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithExplicitSort_thenReturn200()
-            throws Exception {
+            givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithExplicitSort_thenReturn200()
+                    throws Exception {
 
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -236,8 +231,9 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
+                    throws Exception {
 
         Mockito.reset(clock);
 
@@ -269,8 +265,8 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
     @Test
     public void
-    givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
-            throws Exception {
+            givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
+                    throws Exception {
 
         // create a token
         TokenGenerator tokenGenerator =
@@ -292,12 +288,14 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         // assert the response
         Assertions.assertEquals(200, responseSpec.getStatusCode());
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
-        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 4, TOTAL_STANDARD_APPLICANT_COUNT);
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 4, TOTAL_STANDARD_APPLICANT_COUNT);
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForOrganisation_thenReturn200()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForOrganisation_thenReturn200()
+                    throws Exception {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -328,8 +326,9 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForNameOfIndividual_thenReturn200()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForNameOfIndividual_thenReturn200()
+                    throws Exception {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -359,8 +358,9 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForSurNameOfIndividual_thenReturn200()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForSurNameOfIndividual_thenReturn200()
+                    throws Exception {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -385,7 +385,9 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 1);
 
-        Assertions.assertEquals(StandardApplicantMapper.DEFAULT_NAME + " Evans", response.getContent().get(0).getName());
+        Assertions.assertEquals(
+                IndividualOrOrganisation.DEFAULT_NAME + " Evans",
+                response.getContent().get(0).getName());
     }
 
     @Test
@@ -406,9 +408,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeControllerTest.ApplicationCodeRequestFilter(
-                                Optional.of("APP001"),
-                                Optional.of(
-                                        "John, Smith")),
+                                Optional.of("APP001"), Optional.of("John, Smith")),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -422,8 +422,8 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
     @Test
     public void
-    givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
-            throws Exception {
+            givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -439,9 +439,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeControllerTest.ApplicationCodeRequestFilter(
-                                Optional.of("APP001"),
-                                Optional.of(
-                                        "John, Smith")),
+                                Optional.of("APP001"), Optional.of("John, Smith")),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -469,9 +467,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeControllerTest.ApplicationCodeRequestFilter(
-                                Optional.of("AP99004"),
-                                Optional.of(
-                                        "John, Smith")),
+                                Optional.of("AP99004"), Optional.of("John, Smith")),
                         new OpenApiPageMetaData());
         // assert the response
         responseSpec.then().statusCode(400);
@@ -481,8 +477,9 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn200()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn200()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -498,9 +495,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeControllerTest.ApplicationCodeRequestFilter(
-                                Optional.of("AP99004"),
-                                Optional.of(
-                                        "John, Smith")),
+                                Optional.of("AP99004"), Optional.of("John, Smith")),
                         new OpenApiPageMetaData());
         // assert the response
         responseSpec.then().statusCode(500);
@@ -511,8 +506,8 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     // accordingly
     @Test
     public void
-    givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
-            throws Exception {
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -528,9 +523,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeControllerTest.ApplicationCodeRequestFilter(
-                                Optional.of("AP99004"),
-                                Optional.of(
-                                        "John, Smith")),
+                                Optional.of("AP99004"), Optional.of("John, Smith")),
                         new OpenApiPageMetaData());
 
         // assert the response

@@ -8,8 +8,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
 @Getter
 @RequiredArgsConstructor
 enum TestSortableOperationEnum implements SortableOperationEnum {
-    TITLE("title", new String[]{ApplicationCode_.DESTINATION_EMAIL1}),
-    CODE("code", new String[]{ApplicationCode_.REQUIRES_RESPONDENT});
+    TITLE("title", new String[] {ApplicationCode_.DESTINATION_EMAIL1}),
+    CODE("code", new String[] {ApplicationCode_.REQUIRES_RESPONDENT});
 
     private final String apiValue;
     private final String[] entityValue;
