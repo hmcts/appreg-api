@@ -15,13 +15,4 @@ public enum PartyType {
     PartyType(String value) {
         this.value = value;
     }
-
-    public static PartyType fromValue(String value) {
-        for (PartyType party : values()) {
-            if (party.value.equalsIgnoreCase(value)) {
-                return party;
-            }
-        }
-        throw new IllegalArgumentException("Unknown party type: " + value);
-    }
 }

@@ -26,6 +26,7 @@ import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_CASEREFERENCE;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_NOTES;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_WORDING;
+import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.MRS;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
@@ -36,7 +37,6 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE4;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE5;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_EMAIL;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME1;
-import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME2;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME3;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_MOBILE;
@@ -769,66 +769,71 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         var applicationListEntryPrintProjection =
-            applicationListEntryPrintProjection()
-                .id(1L)
-                .sequenceNumber(1)
-                .applicantTitle(MR)
-                .applicantSurname(PERSON4_SURNAME)
-                .applicantForename1(PERSON4_FORENAME1)
-                .applicantForename2(PERSON4_FORENAME2)
-                .applicantForename3(PERSON4_FORENAME3)
-                .applicantAddressLine1(PERSON4_ADDRESSLINE1)
-                .applicantAddressLine2(PERSON4_ADDRESSLINE2)
-                .applicantAddressLine3(PERSON4_ADDRESSLINE3)
-                .applicantAddressLine4(PERSON4_ADDRESSLINE4)
-                .applicantAddressLine5(PERSON4_ADDRESSLINE5)
-                .applicantPostcode(PERSON4_POSTCODE)
-                .applicantPhone(PERSON4_PHONE)
-                .applicantMobile(PERSON4_MOBILE)
-                .applicantEmail(PERSON4_EMAIL)
-                .respondentTitle(MRS)
-                .respondentSurname(PERSON5_SURNAME)
-                .respondentForename1(PERSON5_FORENAME1)
-                .respondentForename2(PERSON5_FORENAME2)
-                .respondentForename3(PERSON5_FORENAME3)
-                .respondentAddressLine1(PERSON5_ADDRESSLINE1)
-                .respondentAddressLine2(PERSON5_ADDRESSLINE2)
-                .respondentAddressLine3(PERSON5_ADDRESSLINE3)
-                .respondentAddressLine4(PERSON5_ADDRESSLINE4)
-                .respondentAddressLine5(PERSON5_ADDRESSLINE5)
-                .respondentPostcode(PERSON5_POSTCODE)
-                .respondentPhone(PERSON5_PHONE)
-                .respondentMobile(PERSON5_MOBILE)
-                .respondentEmail(PERSON5_EMAIL)
-                .respondentDateOfBirth(OffsetDateTime.now())
-                .applicationCode(APPLICATIONCODE1_CODE)
-                .applicationTitle(APPLICATIONCODE1_TITLE)
-                .applicationWording(APPLICATIONLISTENTRY1_WORDING)
-                .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
-                .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
-                .notes(APPLICATIONLISTENTRY1_NOTES)
-                .build();
-        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections = List.of(applicationListEntryPrintProjection);
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantTitle(MR)
+                        .applicantSurname(PERSON4_SURNAME)
+                        .applicantForename1(PERSON4_FORENAME1)
+                        .applicantForename2(PERSON4_FORENAME2)
+                        .applicantForename3(PERSON4_FORENAME3)
+                        .applicantAddressLine1(PERSON4_ADDRESSLINE1)
+                        .applicantAddressLine2(PERSON4_ADDRESSLINE2)
+                        .applicantAddressLine3(PERSON4_ADDRESSLINE3)
+                        .applicantAddressLine4(PERSON4_ADDRESSLINE4)
+                        .applicantAddressLine5(PERSON4_ADDRESSLINE5)
+                        .applicantPostcode(PERSON4_POSTCODE)
+                        .applicantPhone(PERSON4_PHONE)
+                        .applicantMobile(PERSON4_MOBILE)
+                        .applicantEmail(PERSON4_EMAIL)
+                        .respondentTitle(MRS)
+                        .respondentSurname(PERSON5_SURNAME)
+                        .respondentForename1(PERSON5_FORENAME1)
+                        .respondentForename2(PERSON5_FORENAME2)
+                        .respondentForename3(PERSON5_FORENAME3)
+                        .respondentAddressLine1(PERSON5_ADDRESSLINE1)
+                        .respondentAddressLine2(PERSON5_ADDRESSLINE2)
+                        .respondentAddressLine3(PERSON5_ADDRESSLINE3)
+                        .respondentAddressLine4(PERSON5_ADDRESSLINE4)
+                        .respondentAddressLine5(PERSON5_ADDRESSLINE5)
+                        .respondentPostcode(PERSON5_POSTCODE)
+                        .respondentPhone(PERSON5_PHONE)
+                        .respondentMobile(PERSON5_MOBILE)
+                        .respondentEmail(PERSON5_EMAIL)
+                        .respondentDateOfBirth(OffsetDateTime.now())
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections =
+                List.of(applicationListEntryPrintProjection);
 
-        when(aleRepository.findByIdForPrinting(eq(id))).thenReturn(applicationListEntryPrintProjections);
+        when(aleRepository.findByIdForPrinting(eq(id)))
+                .thenReturn(applicationListEntryPrintProjections);
 
-        when(alerRepository.findByIdForPrinting(eq(applicationListEntryId))).thenReturn(List.of(WORDING_1, WORDING_2));
+        when(alerRepository.findByIdForPrinting(eq(applicationListEntryId)))
+                .thenReturn(List.of(WORDING_1, WORDING_2));
 
         var applicationListOfficialPrintProjection =
-            applicationListOfficialPrintProjection()
-                .type(MAGISTRATE_CODE)
-                .title(MR)
-                .forename(PERSON1_FORENAME1)
-                .surname(PERSON1_SURNAME)
-                .build();
+                applicationListOfficialPrintProjection()
+                        .type(MAGISTRATE_CODE)
+                        .title(MR)
+                        .forename(PERSON1_FORENAME1)
+                        .surname(PERSON1_SURNAME)
+                        .build();
         List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections =
-            List.of(applicationListOfficialPrintProjection);
+                List.of(applicationListOfficialPrintProjection);
 
-        when(aleoRepository.findByIdForPrinting(eq(applicationListEntryId), eq(OfficialTypeUtil.PRINTABLE_CODES)))
-            .thenReturn(applicationListOfficialPrintProjections);
+        when(aleoRepository.findByIdForPrinting(
+                        eq(applicationListEntryId), eq(OfficialTypeUtil.PRINTABLE_CODES)))
+                .thenReturn(applicationListOfficialPrintProjections);
 
         EntryGetPrintDto entryGetPrintDto = new EntryGetPrintDto();
-        when(entryMapper.toPrintDto(eq(applicationListEntryPrintProjection))).thenReturn(entryGetPrintDto);
+        when(entryMapper.toPrintDto(eq(applicationListEntryPrintProjection)))
+                .thenReturn(entryGetPrintDto);
 
         ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
         when(mapper.toGetPrintDto(saved)).thenReturn(expected);
@@ -844,9 +849,9 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.print(id))
-            .isInstanceOf(AppRegistryException.class)
-            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-            .isEqualTo(HttpStatus.NOT_FOUND);
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {

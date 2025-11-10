@@ -45,13 +45,36 @@ public final class TestConstants {
     public static final String PERSON5_MOBILE = "07700900000";
     public static final String PERSON5_EMAIL = "s.johnson@example.com";
     public static final OffsetDateTime PERSON5_DATE_OF_BIRTH =
-        OffsetDateTime.of(2025, 11, 3, 0, 0, 0, 0,
-                          ZoneOffset.UTC);
+            OffsetDateTime.of(2025, 11, 3, 0, 0, 0, 0, ZoneOffset.UTC);
+
+    public static final String ORGANISATION1_ADDRESSLINE1 = "100 Legal Street";
+    public static final String ORGANISATION1_ADDRESSLINE2 = "Corporate Offices, Level 3";
+    public static final String ORGANISATION1_ADDRESSLINE3 =
+            "Justice Tower, Central Business District";
+    public static final String ORGANISATION1_ADDRESSLINE4 = "Springfield";
+    public static final String ORGANISATION1_ADDRESSLINE5 = "United Kingdom";
+    public static final String ORGANISATION1_POSTCODE = "BA15 1LA";
+    public static final String ORGANISATION1_PHONE = "01614960823";
+    public static final String ORGANISATION1_MOBILE = "07700900123";
+    public static final String ORGANISATION1_EMAIL = "info@legalaid.example.com";
+    public static final String ORGANISATION1_NAME = "Legal Aid Board";
+
+    public static final String ORGANISATION2_ADDRESSLINE1 = "42 Innovation Avenue";
+    public static final String ORGANISATION2_ADDRESSLINE2 = "TechNova Business Park, Suite 5";
+    public static final String ORGANISATION2_ADDRESSLINE3 = "Innovation District";
+    public static final String ORGANISATION2_ADDRESSLINE4 = "Manchester";
+    public static final String ORGANISATION2_ADDRESSLINE5 = "United Kingdom";
+    public static final String ORGANISATION2_POSTCODE = "M15 6AB";
+    public static final String ORGANISATION2_PHONE = "01618345678";
+    public static final String ORGANISATION2_MOBILE = "07700900456";
+    public static final String ORGANISATION2_EMAIL = "contact@technova.example.com";
+    public static final String ORGANISATION2_NAME = "TechNova Solutions Ltd";
 
     public static final String APPLICATIONCODE1_CODE = "AD99001";
     public static final String APPLICATIONCODE1_TITLE = "Copy documents";
     public static final String APPLICATIONLISTENTRY1_WORDING = "Request to copy documents";
     public static final String APPLICATIONLISTENTRY1_CASEREFERENCE = "CASE001-001-001";
     public static final String APPLICATIONLISTENTRY1_ACCOUNTNUMBER = "1234567890";
-    public static final String APPLICATIONLISTENTRY1_NOTES = "Application for extension of time to file defence";
+    public static final String APPLICATIONLISTENTRY1_NOTES =
+            "Application for extension of time to file defence";
 }

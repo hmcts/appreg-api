@@ -1,8 +1,7 @@
 package uk.gov.hmcts.appregister.util;
 
-import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
-
 import java.time.OffsetDateTime;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 
 public final class ApplicationListEntryPrintProjectionUtil {
 

@@ -190,9 +190,6 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 data.getId(),
                 applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getId());
         assertEquals(
-                data.getUuid(),
-                applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getUuid());
-        assertEquals(
                 data.getSequenceNumber(),
                 applicationListEntryPrintProjectionsToAssertAgainst.getFirst().getSequenceNumber());
         assertEquals(

@@ -8,7 +8,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -51,19 +50,30 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
         // have stored
         assertNotNull(officials);
         assertTrue(
-            officials.stream().allMatch(o ->
-                                            OfficialTypeUtil.PRINTABLE_CODES.contains(o.getType())),
-            "Non-printable official type returned"
-        );
-        var expected = data.getOfficials().stream()
-            .map(o ->
-                     new OfficialKey(o.getTitle(), o.getForename(), o.getSurname(), o.getOfficialType()))
-            .collect(Collectors.toSet());
+                officials.stream()
+                        .allMatch(o -> OfficialTypeUtil.PRINTABLE_CODES.contains(o.getType())),
+                "Non-printable official type returned");
+        var expected =
+                data.getOfficials().stream()
+                        .map(
+                                o ->
+                                        new OfficialKey(
+                                                o.getTitle(),
+                                                o.getForename(),
+                                                o.getSurname(),
+                                                o.getOfficialType()))
+                        .collect(Collectors.toSet());
 
-        var actual = officials.stream()
-            .map(o ->
-                     new OfficialKey(o.getTitle(), o.getForename(), o.getSurname(), o.getType()))
-            .collect(Collectors.toSet());
+        var actual =
+                officials.stream()
+                        .map(
+                                o ->
+                                        new OfficialKey(
+                                                o.getTitle(),
+                                                o.getForename(),
+                                                o.getSurname(),
+                                                o.getType()))
+                        .collect(Collectors.toSet());
 
         assertEquals(expected, actual, "Officials from DB should match those persisted");
     }

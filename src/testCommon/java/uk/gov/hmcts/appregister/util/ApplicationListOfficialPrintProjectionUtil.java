@@ -35,11 +35,7 @@ public final class ApplicationListOfficialPrintProjectionUtil {
         }
 
         public ApplicationListOfficialPrintProjection build() {
-            return new Impl(
-                    type,
-                    title,
-                    forename,
-                    surname);
+            return new Impl(type, title, forename, surname);
         }
     }
 
@@ -49,11 +45,7 @@ public final class ApplicationListOfficialPrintProjectionUtil {
         private final String forename;
         private final String surname;
 
-        Impl(
-                String type,
-                String title,
-                String forename,
-                String surname) {
+        Impl(String type, String title, String forename, String surname) {
             this.type = type;
             this.title = title;
             this.forename = forename;
@@ -71,7 +63,9 @@ public final class ApplicationListOfficialPrintProjectionUtil {
         }
 
         @Override
-        public String getForename() { return forename; }
+        public String getForename() {
+            return forename;
+        }
 
         @Override
         public String getSurname() {

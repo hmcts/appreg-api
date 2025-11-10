@@ -2,13 +2,12 @@ package uk.gov.hmcts.appregister.applicationlist.mapper;
 
 import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
 import static uk.gov.hmcts.appregister.util.ApplicationListOfficialPrintProjectionUtil.applicationListOfficialPrintProjection;
-import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
 
 class ApplicationListOfficialMapperTest {

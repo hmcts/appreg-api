@@ -69,20 +69,19 @@ public interface ApplicationListMapper {
     ApplicationListGetSummaryDto toGetSummaryDto(
             ApplicationList appList, long entryCount, String location);
 
-    // @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")
-    // @Mapping(target = "description", source = "appList.description")
-    // @Mapping(target = "status", source = "appList.status")
-    // @Mapping(target = "cja", expression = "java(cja != null ? cja.getCode() : null)")
-    // @Mapping(target = "courtCode", source = "appList.courtCode")
     @Mapping(target = "courtName", source = "appList.courtName")
     @Mapping(target = "otherLocationDescription", source = "appList.otherLocation")
-    // @Mapping(target = "durationHours", source = "appList.durationHours")
-    // @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
-    // @Mapping(target = "version", source = "appList.version")
-    @Mapping(target = "cja", ignore = true)
-    @Mapping(target = "duration", ignore = true)
+    @Mapping(
+            target = "duration",
+            expression =
+                    "java(appList.getDurationHours() + \" Hours \" + appList.getDurationMinutes() + \" Minutes\")")
+    @Mapping(
+            target = "cja",
+            expression =
+                    "java(appList.getCja() != null ? appList.getCja().getCode() + \" - \" +"
+                            + "appList.getCja().getDescription() : null)")
     @Mapping(target = "entries", ignore = true)
     ApplicationListGetPrintDto toGetPrintDto(ApplicationList appList);
 

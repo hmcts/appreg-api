@@ -4,13 +4,13 @@ import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.CLERK_CODE;
 import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
-import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
-import static uk.gov.hmcts.appregister.util.TestConstants.PERSON2_FORENAME1;
-import static uk.gov.hmcts.appregister.util.TestConstants.PERSON3_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.MRS;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON2_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON2_SURNAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.PERSON3_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON3_SURNAME;
 
 import jakarta.persistence.EntityManager;
@@ -103,7 +103,7 @@ public final class ApplicationListEntryUtil {
         officials.add(appListEntryOfficial3);
         listEntryData.setOfficials(officials);
 
-        ApplicationListEntry data = persistance.save(listEntryData);
+        final ApplicationListEntry data = persistance.save(listEntryData);
 
         for (AppListEntryResolution resolution : resolutions) {
             entityManager.persist(resolution);

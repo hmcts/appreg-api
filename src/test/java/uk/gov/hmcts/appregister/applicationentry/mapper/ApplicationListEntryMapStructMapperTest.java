@@ -11,6 +11,26 @@ import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_WORDING;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.MRS;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_ADDRESSLINE1;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_ADDRESSLINE2;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_ADDRESSLINE3;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_ADDRESSLINE4;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_ADDRESSLINE5;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_EMAIL;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_MOBILE;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_NAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_PHONE;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION1_POSTCODE;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_ADDRESSLINE1;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_ADDRESSLINE2;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_ADDRESSLINE3;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_ADDRESSLINE4;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_ADDRESSLINE5;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_EMAIL;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_MOBILE;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_NAME;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_PHONE;
+import static uk.gov.hmcts.appregister.util.TestConstants.ORGANISATION2_POSTCODE;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE2;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_ADDRESSLINE3;
@@ -39,12 +59,15 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_PHONE;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_POSTCODE;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 
 class ApplicationListEntryMapStructMapperTest {
 
@@ -166,86 +189,148 @@ class ApplicationListEntryMapStructMapperTest {
     }
 
     @Test
-    void testToPrintDto_provideValidData_validDtoGenerated() {
+    void testToPrintDto_providePeople_validDtoGenerated() {
         var projection =
-            applicationListEntryPrintProjection()
-                .id(1L)
-                .sequenceNumber(1)
-                .applicantTitle(MR)
-                .applicantSurname(PERSON4_SURNAME)
-                .applicantForename1(PERSON4_FORENAME1)
-                .applicantForename2(PERSON4_FORENAME2)
-                .applicantForename3(PERSON4_FORENAME3)
-                .applicantAddressLine1(PERSON4_ADDRESSLINE1)
-                .applicantAddressLine2(PERSON4_ADDRESSLINE2)
-                .applicantAddressLine3(PERSON4_ADDRESSLINE3)
-                .applicantAddressLine4(PERSON4_ADDRESSLINE4)
-                .applicantAddressLine5(PERSON4_ADDRESSLINE5)
-                .applicantPostcode(PERSON4_POSTCODE)
-                .applicantPhone(PERSON4_PHONE)
-                .applicantMobile(PERSON4_MOBILE)
-                .applicantEmail(PERSON4_EMAIL)
-                .respondentTitle(MRS)
-                .respondentSurname(PERSON5_SURNAME)
-                .respondentForename1(PERSON5_FORENAME1)
-                .respondentForename2(PERSON5_FORENAME2)
-                .respondentForename3(PERSON5_FORENAME3)
-                .respondentAddressLine1(PERSON5_ADDRESSLINE1)
-                .respondentAddressLine2(PERSON5_ADDRESSLINE2)
-                .respondentAddressLine3(PERSON5_ADDRESSLINE3)
-                .respondentAddressLine4(PERSON5_ADDRESSLINE4)
-                .respondentAddressLine5(PERSON5_ADDRESSLINE5)
-                .respondentPostcode(PERSON5_POSTCODE)
-                .respondentPhone(PERSON5_PHONE)
-                .respondentMobile(PERSON5_MOBILE)
-                .respondentEmail(PERSON5_EMAIL)
-                .respondentDateOfBirth(PERSON5_DATE_OF_BIRTH)
-                .applicationCode(APPLICATIONCODE1_CODE)
-                .applicationTitle(APPLICATIONCODE1_TITLE)
-                .applicationWording(APPLICATIONLISTENTRY1_WORDING)
-                .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
-                .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
-                .notes(APPLICATIONLISTENTRY1_NOTES)
-                .build();
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantTitle(MR)
+                        .applicantSurname(PERSON4_SURNAME)
+                        .applicantForename1(PERSON4_FORENAME1)
+                        .applicantForename2(PERSON4_FORENAME2)
+                        .applicantForename3(PERSON4_FORENAME3)
+                        .applicantAddressLine1(PERSON4_ADDRESSLINE1)
+                        .applicantAddressLine2(PERSON4_ADDRESSLINE2)
+                        .applicantAddressLine3(PERSON4_ADDRESSLINE3)
+                        .applicantAddressLine4(PERSON4_ADDRESSLINE4)
+                        .applicantAddressLine5(PERSON4_ADDRESSLINE5)
+                        .applicantPostcode(PERSON4_POSTCODE)
+                        .applicantPhone(PERSON4_PHONE)
+                        .applicantMobile(PERSON4_MOBILE)
+                        .applicantEmail(PERSON4_EMAIL)
+                        .respondentTitle(MRS)
+                        .respondentSurname(PERSON5_SURNAME)
+                        .respondentForename1(PERSON5_FORENAME1)
+                        .respondentForename2(PERSON5_FORENAME2)
+                        .respondentForename3(PERSON5_FORENAME3)
+                        .respondentAddressLine1(PERSON5_ADDRESSLINE1)
+                        .respondentAddressLine2(PERSON5_ADDRESSLINE2)
+                        .respondentAddressLine3(PERSON5_ADDRESSLINE3)
+                        .respondentAddressLine4(PERSON5_ADDRESSLINE4)
+                        .respondentAddressLine5(PERSON5_ADDRESSLINE5)
+                        .respondentPostcode(PERSON5_POSTCODE)
+                        .respondentPhone(PERSON5_PHONE)
+                        .respondentMobile(PERSON5_MOBILE)
+                        .respondentEmail(PERSON5_EMAIL)
+                        .respondentDateOfBirth(PERSON5_DATE_OF_BIRTH)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
-        var dto = mapper.toPrintDto(projection);
+        var dto = new ApplicationListEntryMapStructMapperImpl().toPrintDto(projection);
 
-        Assertions.assertEquals(MR, dto.getApplicant().getPerson().getName().getTitle());
-        Assertions.assertEquals(PERSON4_SURNAME, dto.getApplicant().getPerson().getName().getSurname());
-        Assertions.assertEquals(PERSON4_FORENAME1, dto.getApplicant().getPerson().getName().getFirstForename());
-        Assertions.assertEquals(PERSON4_FORENAME2, dto.getApplicant().getPerson().getName().getSecondForename());
-        Assertions.assertEquals(PERSON4_FORENAME3, dto.getApplicant().getPerson().getName().getThirdForename());
-        Assertions.assertEquals(PERSON4_ADDRESSLINE1, dto.getApplicant().getPerson().getContactDetails().getAddressLine1());
-        Assertions.assertEquals(PERSON4_ADDRESSLINE2, dto.getApplicant().getPerson().getContactDetails().getAddressLine2());
-        Assertions.assertEquals(PERSON4_ADDRESSLINE3, dto.getApplicant().getPerson().getContactDetails().getAddressLine3());
-        Assertions.assertEquals(PERSON4_ADDRESSLINE4, dto.getApplicant().getPerson().getContactDetails().getAddressLine4());
-        Assertions.assertEquals(PERSON4_ADDRESSLINE5, dto.getApplicant().getPerson().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(PERSON4_POSTCODE, dto.getApplicant().getPerson().getContactDetails().getPostcode());
-        Assertions.assertEquals(PERSON4_PHONE, dto.getApplicant().getPerson().getContactDetails().getPhone());
-        Assertions.assertEquals(PERSON4_MOBILE, dto.getApplicant().getPerson().getContactDetails().getMobile());
-        Assertions.assertEquals(PERSON4_EMAIL, dto.getApplicant().getPerson().getContactDetails().getEmail());
-        Assertions.assertEquals(MRS, dto.getRespondent().getPerson().getName().getTitle());
-        Assertions.assertEquals(PERSON5_SURNAME, dto.getRespondent().getPerson().getName().getSurname());
-        Assertions.assertEquals(PERSON5_FORENAME1, dto.getRespondent().getPerson().getName().getFirstForename());
-        Assertions.assertEquals(PERSON5_FORENAME2, dto.getRespondent().getPerson().getName().getSecondForename());
-        Assertions.assertEquals(PERSON5_FORENAME3, dto.getRespondent().getPerson().getName().getThirdForename());
-        Assertions.assertEquals(PERSON5_ADDRESSLINE1, dto.getRespondent().getPerson().getContactDetails().getAddressLine1());
-        Assertions.assertEquals(PERSON5_ADDRESSLINE2, dto.getRespondent().getPerson().getContactDetails().getAddressLine2());
-        Assertions.assertEquals(PERSON5_ADDRESSLINE3, dto.getRespondent().getPerson().getContactDetails().getAddressLine3());
-        Assertions.assertEquals(PERSON5_ADDRESSLINE4, dto.getRespondent().getPerson().getContactDetails().getAddressLine4());
-        Assertions.assertEquals(PERSON5_ADDRESSLINE5, dto.getRespondent().getPerson().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(PERSON5_POSTCODE, dto.getRespondent().getPerson().getContactDetails().getPostcode());
-        Assertions.assertEquals(PERSON5_PHONE, dto.getRespondent().getPerson().getContactDetails().getPhone());
-        Assertions.assertEquals(PERSON5_MOBILE, dto.getRespondent().getPerson().getContactDetails().getMobile());
-        Assertions.assertEquals(PERSON5_EMAIL, dto.getRespondent().getPerson().getContactDetails().getEmail());
-        Assertions.assertEquals(PERSON5_DATE_OF_BIRTH.toLocalDate(), dto.getRespondent().getDateOfBirth());
-        Assertions.assertEquals(APPLICATIONCODE1_CODE, dto.getApplicationCode());
-        Assertions.assertEquals(APPLICATIONCODE1_TITLE, dto.getApplicationTitle());
-        Assertions.assertEquals(APPLICATIONLISTENTRY1_WORDING, dto.getApplicationWording());
-        Assertions.assertEquals(APPLICATIONLISTENTRY1_CASEREFERENCE, dto.getCaseReference());
-        Assertions.assertEquals(APPLICATIONLISTENTRY1_ACCOUNTNUMBER, dto.getAccountReference());
-        Assertions.assertEquals(APPLICATIONLISTENTRY1_NOTES, dto.getNotes());
+        var applicant = dto.getApplicant().getPerson();
+        var respondent = dto.getRespondent().getPerson();
+
+        assertContactDetailsEqual(
+                applicant.getContactDetails(),
+                PERSON4_ADDRESSLINE1,
+                PERSON4_ADDRESSLINE2,
+                PERSON4_ADDRESSLINE3,
+                PERSON4_ADDRESSLINE4,
+                PERSON4_ADDRESSLINE5,
+                PERSON4_POSTCODE,
+                PERSON4_PHONE,
+                PERSON4_MOBILE,
+                PERSON4_EMAIL);
+
+        assertContactDetailsEqual(
+                respondent.getContactDetails(),
+                PERSON5_ADDRESSLINE1,
+                PERSON5_ADDRESSLINE2,
+                PERSON5_ADDRESSLINE3,
+                PERSON5_ADDRESSLINE4,
+                PERSON5_ADDRESSLINE5,
+                PERSON5_POSTCODE,
+                PERSON5_PHONE,
+                PERSON5_MOBILE,
+                PERSON5_EMAIL);
+
+        Assertions.assertEquals(MR, applicant.getName().getTitle());
+        Assertions.assertEquals(PERSON4_SURNAME, applicant.getName().getSurname());
+        Assertions.assertEquals(MRS, respondent.getName().getTitle());
+        Assertions.assertEquals(PERSON5_SURNAME, respondent.getName().getSurname());
+        Assertions.assertEquals(
+                PERSON5_DATE_OF_BIRTH.toLocalDate(), dto.getRespondent().getDateOfBirth());
+
+        assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
+    void testToPrintDto_provideOrganisations_validDtoGenerated() {
+        var projection =
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantAddressLine1(ORGANISATION1_ADDRESSLINE1)
+                        .applicantAddressLine2(ORGANISATION1_ADDRESSLINE2)
+                        .applicantAddressLine3(ORGANISATION1_ADDRESSLINE3)
+                        .applicantAddressLine4(ORGANISATION1_ADDRESSLINE4)
+                        .applicantAddressLine5(ORGANISATION1_ADDRESSLINE5)
+                        .applicantPostcode(ORGANISATION1_POSTCODE)
+                        .applicantPhone(ORGANISATION1_PHONE)
+                        .applicantMobile(ORGANISATION1_MOBILE)
+                        .applicantEmail(ORGANISATION1_EMAIL)
+                        .applicantName(ORGANISATION1_NAME)
+                        .respondentAddressLine1(ORGANISATION2_ADDRESSLINE1)
+                        .respondentAddressLine2(ORGANISATION2_ADDRESSLINE2)
+                        .respondentAddressLine3(ORGANISATION2_ADDRESSLINE3)
+                        .respondentAddressLine4(ORGANISATION2_ADDRESSLINE4)
+                        .respondentAddressLine5(ORGANISATION2_ADDRESSLINE5)
+                        .respondentPostcode(ORGANISATION2_POSTCODE)
+                        .respondentPhone(ORGANISATION2_PHONE)
+                        .respondentMobile(ORGANISATION2_MOBILE)
+                        .respondentEmail(ORGANISATION2_EMAIL)
+                        .respondentName(ORGANISATION2_NAME)
+                        .applicationCode(APPLICATIONCODE1_CODE)
+                        .applicationTitle(APPLICATIONCODE1_TITLE)
+                        .applicationWording(APPLICATIONLISTENTRY1_WORDING)
+                        .caseReference(APPLICATIONLISTENTRY1_CASEREFERENCE)
+                        .accountReference(APPLICATIONLISTENTRY1_ACCOUNTNUMBER)
+                        .notes(APPLICATIONLISTENTRY1_NOTES)
+                        .build();
+
+        var dto = new ApplicationListEntryMapStructMapperImpl().toPrintDto(projection);
+
+        assertContactDetailsEqual(
+                dto.getApplicant().getOrganisation().getContactDetails(),
+                ORGANISATION1_ADDRESSLINE1,
+                ORGANISATION1_ADDRESSLINE2,
+                ORGANISATION1_ADDRESSLINE3,
+                ORGANISATION1_ADDRESSLINE4,
+                ORGANISATION1_ADDRESSLINE5,
+                ORGANISATION1_POSTCODE,
+                ORGANISATION1_PHONE,
+                ORGANISATION1_MOBILE,
+                ORGANISATION1_EMAIL);
+
+        assertContactDetailsEqual(
+                dto.getRespondent().getOrganisation().getContactDetails(),
+                ORGANISATION2_ADDRESSLINE1,
+                ORGANISATION2_ADDRESSLINE2,
+                ORGANISATION2_ADDRESSLINE3,
+                ORGANISATION2_ADDRESSLINE4,
+                ORGANISATION2_ADDRESSLINE5,
+                ORGANISATION2_POSTCODE,
+                ORGANISATION2_PHONE,
+                ORGANISATION2_MOBILE,
+                ORGANISATION2_EMAIL);
+
+        assertApplicationDetailsEqual(dto);
     }
 
     private static void assertApplicationListEntrySummary(
@@ -268,5 +353,36 @@ class ApplicationListEntryMapStructMapperTest {
         Assertions.assertEquals(applicationTitle, dto.getApplicationTitle());
         Assertions.assertEquals(feeRequired, dto.getFeeRequired());
         Assertions.assertEquals(result, dto.getResult().orElse(null));
+    }
+
+    private void assertContactDetailsEqual(
+            @NotNull @Valid ContactDetails actual,
+            String line1,
+            String line2,
+            String line3,
+            String line4,
+            String line5,
+            String postcode,
+            String phone,
+            String mobile,
+            String email) {
+        Assertions.assertEquals(line1, actual.getAddressLine1());
+        Assertions.assertEquals(line2, actual.getAddressLine2());
+        Assertions.assertEquals(line3, actual.getAddressLine3());
+        Assertions.assertEquals(line4, actual.getAddressLine4());
+        Assertions.assertEquals(line5, actual.getAddressLine5());
+        Assertions.assertEquals(postcode, actual.getPostcode());
+        Assertions.assertEquals(phone, actual.getPhone());
+        Assertions.assertEquals(mobile, actual.getMobile());
+        Assertions.assertEquals(email, actual.getEmail());
+    }
+
+    private void assertApplicationDetailsEqual(EntryGetPrintDto dto) {
+        Assertions.assertEquals(APPLICATIONCODE1_CODE, dto.getApplicationCode());
+        Assertions.assertEquals(APPLICATIONCODE1_TITLE, dto.getApplicationTitle());
+        Assertions.assertEquals(APPLICATIONLISTENTRY1_WORDING, dto.getApplicationWording());
+        Assertions.assertEquals(APPLICATIONLISTENTRY1_CASEREFERENCE, dto.getCaseReference());
+        Assertions.assertEquals(APPLICATIONLISTENTRY1_ACCOUNTNUMBER, dto.getAccountReference());
+        Assertions.assertEquals(APPLICATIONLISTENTRY1_NOTES, dto.getNotes());
     }
 }

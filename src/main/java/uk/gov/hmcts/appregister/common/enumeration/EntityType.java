@@ -16,13 +16,4 @@ public enum EntityType {
     EntityType(String value) {
         this.value = value;
     }
-
-    public static EntityType fromValue(String value) {
-        for (EntityType party : values()) {
-            if (party.value.equalsIgnoreCase(value)) {
-                return party;
-            }
-        }
-        throw new IllegalArgumentException("Unknown entity type: " + value);
-    }
 }
