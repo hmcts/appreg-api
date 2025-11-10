@@ -52,12 +52,12 @@ public class StandardApplicantExistsValidator
             throw new AppRegistryException(
                     StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND,
                     "No standard applicant found for code '%s' on date %s"
-                            .formatted(code, code.getDate().toString()));
+                            .formatted(code.getCode(), code.getDate()));
         } else if (results.size() > SINGLE_RECORD) {
             throw new AppRegistryException(
                     StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND,
                     "Multiple standard applicant found for code '%s' on date %s"
-                            .formatted(code, code.getDate().toString()));
+                            .formatted(code.getCode(), code.getDate()));
         }
 
         return results.getFirst();
