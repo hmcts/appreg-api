@@ -51,12 +51,12 @@ tags:
 
 paths:
   # APPLICATION CODES
-  /application-codes:                            { $ref: './paths/application-codes/application-codes.yaml' }
-  /application-codes/{code}:                     { $ref: './paths/application-codes/application-codes-by-code.yaml' }
+  /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }
+  /application-codes/{code}:                                        { $ref: './paths/application-codes/application-codes-by-code.yaml' }
   # APPLICATION LISTS
-  /application-lists:                            { $ref: './paths/application-lists/application-lists.yaml' }
-  /application-lists/{listId}:                   { $ref: './paths/application-lists/application-lists-by-id.yaml' }
-  /application-lists/{listId}/print:             { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
+  /application-lists:                                               { $ref: './paths/application-lists/application-lists.yaml' }
+  /application-lists/{listId}:                                      { $ref: './paths/application-lists/application-lists-by-id.yaml' }
+  /application-lists/{listId}/print:                                { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
@@ -65,84 +65,94 @@ paths:
   /application-lists/{listId}/entries/{entryId}/results:            { $ref: './paths/application-list-entry-results/application-list-entry-results.yaml' }
   /application-lists/{listId}/entries/{entryId}/results/{resultId}: { $ref: './paths/application-list-entry-results/application-list-entry-results-by-id.yaml' }
   # COURT LOCATIONS
-  /court-locations:                              { $ref: './paths/court-locations/court-locations.yaml' }
-  /court-locations/{code}:                       { $ref: './paths/court-locations/court-locations-by-code.yaml' }
+  /court-locations:                                                 { $ref: './paths/court-locations/court-locations.yaml' }
+  /court-locations/{code}:                                          { $ref: './paths/court-locations/court-locations-by-code.yaml' }
   # CRIMINAL JUSTICE AREAS
-  /criminal-justice-areas:                       { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
-  /criminal-justice-areas/{code}:                { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
+  /criminal-justice-areas:                                          { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
+  /criminal-justice-areas/{code}:                                   { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
   # REPORTS
-  /reports/fees/jobs:                            { $ref: './paths/reports/fees-report-jobs.yaml' }
-  /reports/search-warrants/jobs:                 { $ref: './paths/reports/search-warrants-report-jobs.yaml' }
-  /reports/list-maintenance/jobs:                { $ref: './paths/reports/list-maintenance-report-jobs.yaml' }
-  /reports/activity-audit/jobs:                  { $ref: './paths/reports/audit-report-jobs.yaml' }
-  /reports/application-lists/jobs:               { $ref: './paths/reports/application-lists-report-jobs.yaml' }
-  /reports/application-list-entries/jobs:        { $ref: './paths/reports/application-list-entries-report-jobs.yaml' }
-  /reports/jobs/{jobId}:                         { $ref: './paths/reports/report-jobs-by-id.yaml' }
-  /reports/jobs/{jobId}/download:                { $ref: './paths/reports/report-jobs-download-by-id.yaml' }
+  /reports/activity-audit/jobs:                                     { $ref: './paths/reports/activity-audit.yaml' }
+  /reports/fees/jobs:                                               { $ref: './paths/reports/fees.yaml' }
+  /reports/list-maintenance/jobs:                                   { $ref: './paths/reports/list-maintenance.yaml' }
+  /reports/search-warrants/jobs:                                    { $ref: './paths/reports/search-warrants.yaml' }
+  /reports/workload/jobs:                                           { $ref: './paths/reports/workload.yaml' }
+  /reports/duration/jobs:                                           { $ref: './paths/reports/duration.yaml' }
+  /reports/private-prosecutors-index/jobs:                          { $ref: './paths/reports/private-prosecutors-index.yaml' }
+  # REPORT JOB LIFECYCLE
+  /reports/jobs/{jobId}:                                            { $ref: './paths/reports/report-jobs-by-id.yaml' }
+  /reports/jobs/{jobId}/download:                                   { $ref: './paths/reports/report-jobs-download-by-id.yaml' }
   # RESULT CODES
-  /result-codes:                                 { $ref: './paths/result-codes/result-codes.yaml' }
-  /result-codes/{code}:                          { $ref: './paths/result-codes/result-codes-by-code.yaml' }
+  /result-codes:                                                    { $ref: './paths/result-codes/result-codes.yaml' }
+  /result-codes/{code}:                                             { $ref: './paths/result-codes/result-codes-by-code.yaml' }
   # STANDARD APPLICANTS
-  /standard-applicants:                          { $ref: './paths/standard-applicants/standard-applicants.yaml' }
-  /standard-applicants/{code}:                   { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
+  /standard-applicants:                                             { $ref: './paths/standard-applicants/standard-applicants.yaml' }
+  /standard-applicants/{code}:                                      { $ref: './paths/standard-applicants/standard-applicants-by-code.yaml' }
 
 components:
   schemas:
     # APPLICATION CODES
-    application-code-get-summary-dto:   { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }
-    application-code-get-detail-dto:    { $ref: './components/schemas/application-codes/application-code-get-detail-dto.yaml' }
-    application-code-page:              { $ref: './components/schemas/application-codes/application-code-page.yaml' }
+    application-code-get-summary-dto:     { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }
+    application-code-get-detail-dto:      { $ref: './components/schemas/application-codes/application-code-get-detail-dto.yaml' }
+    application-code-page:                { $ref: './components/schemas/application-codes/application-code-page.yaml' }
     # APPLICATION LISTS
-    application-list-get-detail-dto:    { $ref: './components/schemas/application-lists/application-list-get-detail-dto.yaml' }
-    application-list-get-summary-dto:   { $ref: './components/schemas/application-lists/application-list-get-summary-dto.yaml' }
-    application-list-create-dto:        { $ref: './components/schemas/application-lists/application-list-create-dto.yaml' }
-    application-list-update-dto:        { $ref: './components/schemas/application-lists/application-list-update-dto.yaml' }
-    application-list-page:              { $ref: './components/schemas/application-lists/application-list-page.yaml' }
-    application-list-get-filter-dto:    { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
-    application-list-get-print-dto:     { $ref: './components/schemas/application-lists/application-list-get-print-dto.yaml' }
+    application-list-get-detail-dto:      { $ref: './components/schemas/application-lists/application-list-get-detail-dto.yaml' }
+    application-list-get-summary-dto:     { $ref: './components/schemas/application-lists/application-list-get-summary-dto.yaml' }
+    application-list-create-dto:          { $ref: './components/schemas/application-lists/application-list-create-dto.yaml' }
+    application-list-update-dto:          { $ref: './components/schemas/application-lists/application-list-update-dto.yaml' }
+    application-list-page:                { $ref: './components/schemas/application-lists/application-list-page.yaml' }
+    application-list-get-filter-dto:      { $ref: './components/schemas/application-lists/application-list-get-filter-dto.yaml' }
+    application-list-get-print-dto:       { $ref: './components/schemas/application-lists/application-list-get-print-dto.yaml' }
     # APPLICATION LIST ENTRIES
-    entry-get-print-dto:                { $ref: './components/schemas/application-list-entries/entry-get-print-dto.yaml'}
-    entry-get-detail-dto:               { $ref: './components/schemas/application-list-entries/entry-get-detail-dto.yaml' }
-    entry-create-dto:                   { $ref: './components/schemas/application-list-entries/entry-create-dto.yaml' }
-    entry-get-filter-dto:               { $ref: './components/schemas/application-list-entries/entry-get-filter-dto.yaml' }
-    entry-update-dto:                   { $ref: './components/schemas/application-list-entries/entry-update-dto.yaml' }
-    entry-page:                         { $ref: './components/schemas/application-list-entries/entry-page.yaml' }
+    entry-get-print-dto:                  { $ref: './components/schemas/application-list-entries/entry-get-print-dto.yaml'}
+    entry-get-detail-dto:                 { $ref: './components/schemas/application-list-entries/entry-get-detail-dto.yaml' }
+    entry-create-dto:                     { $ref: './components/schemas/application-list-entries/entry-create-dto.yaml' }
+    entry-get-filter-dto:                 { $ref: './components/schemas/application-list-entries/entry-get-filter-dto.yaml' }
+    entry-update-dto:                     { $ref: './components/schemas/application-list-entries/entry-update-dto.yaml' }
+    entry-page:                           { $ref: './components/schemas/application-list-entries/entry-page.yaml' }
     # APPLICATION LIST ENTRY RESULT
-    result-get-dto:                     { $ref: './components/schemas/application-list-entry-results/result-get-dto.yaml' }
-    result-create-dto:                  { $ref: './components/schemas/application-list-entry-results/result-create-dto.yaml' }
-    result-update-dto:                  { $ref: './components/schemas/application-list-entry-results/result-update-dto.yaml' }
-    result-page:                        { $ref: './components/schemas/application-list-entry-results/result-page.yaml' }
-
+    result-get-dto:                       { $ref: './components/schemas/application-list-entry-results/result-get-dto.yaml' }
+    result-create-dto:                    { $ref: './components/schemas/application-list-entry-results/result-create-dto.yaml' }
+    result-update-dto:                    { $ref: './components/schemas/application-list-entry-results/result-update-dto.yaml' }
+    result-page:                          { $ref: './components/schemas/application-list-entry-results/result-page.yaml' }
     # COMMON
-    problem:                            { $ref: './components/schemas/common/problem.yaml' }
-    page:                               { $ref: './components/schemas/common/page.yaml' }
-    sort:                               { $ref: './components/schemas/common/sort.yaml' }
+    problem:                              { $ref: './components/schemas/common/problem.yaml' }
+    page:                                 { $ref: './components/schemas/common/page.yaml' }
+    sort:                                 { $ref: './components/schemas/common/sort.yaml' }
+    job-acknowledgement:                  { $ref: './components/schemas/common/job-acknowledgement.yaml' }
     # COURT LOCATIONS
-    court-location-get-summary-dto:     { $ref: './components/schemas/court-locations/court-location-get-summary-dto.yaml' }
-    court-location-get-detail-dto:      { $ref: './components/schemas/court-locations/court-location-get-detail-dto.yaml' }
-    court-location-page:                { $ref: './components/schemas/court-locations/court-location-page.yaml' }
+    court-location-get-summary-dto:       { $ref: './components/schemas/court-locations/court-location-get-summary-dto.yaml' }
+    court-location-get-detail-dto:        { $ref: './components/schemas/court-locations/court-location-get-detail-dto.yaml' }
+    court-location-page:                  { $ref: './components/schemas/court-locations/court-location-page.yaml' }
     # CRIMINAL JUSTICE AREAS
-    criminal-justice-area-get-dto:      { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-get-dto.yaml'}
-    criminal-justice-area-page:         { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml' }
+    criminal-justice-area-get-dto:        { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-get-dto.yaml'}
+    criminal-justice-area-page:           { $ref: './components/schemas/criminal-justice-areas/criminal-justice-area-page.yaml' }
     # FEE STATUS
-    fee-status:                         { $ref: './components/schemas/fee-status/fee-status.yaml'}
+    fee-status:                           { $ref: './components/schemas/fee-status/fee-status.yaml'}
     # PARTICIPANTS
-    applicant:                          { $ref: './components/schemas/participants/applicant.yaml' }
-    contact-details:                    { $ref: './components/schemas/participants/contact-details.yaml' }
-    full-name:                          { $ref: './components/schemas/participants/full-name.yaml' }
-    organisation:                       { $ref: './components/schemas/participants/organisation.yaml' }
-    person:                             { $ref: './components/schemas/participants/person.yaml' }
-    respondent:                         { $ref: './components/schemas/participants/respondent.yaml' }
-    official:                           { $ref: './components/schemas/participants/official.yaml'}
-    official-type:                      { $ref: './components/schemas/participants/official-type.yaml' }
+    applicant:                            { $ref: './components/schemas/participants/applicant.yaml' }
+    contact-details:                      { $ref: './components/schemas/participants/contact-details.yaml' }
+    full-name:                            { $ref: './components/schemas/participants/full-name.yaml' }
+    organisation:                         { $ref: './components/schemas/participants/organisation.yaml' }
+    person:                               { $ref: './components/schemas/participants/person.yaml' }
+    respondent:                           { $ref: './components/schemas/participants/respondent.yaml' }
+    official:                             { $ref: './components/schemas/participants/official.yaml'}
+    official-type:                        { $ref: './components/schemas/participants/official-type.yaml' }
+    # REPORTS
+    activity-audit-filter-dto:            { $ref: './components/schemas/reports/activity-audit-filter-dto.yaml' }
+    fees-report-filter-dto:               { $ref: './components/schemas/reports/fees-report-filter-dto.yaml' }
+    list-maintenance-filter-dto:          { $ref: './components/schemas/reports/list-maintenance-filter-dto.yaml' }
+    search-warrants-filter-dto:           { $ref: './components/schemas/reports/search-warrants-filter-dto.yaml' }
+    workload-filter-dto:                  { $ref: './components/schemas/reports/workload-filter-dto.yaml' }
+    duration-filter-dto:                  { $ref: './components/schemas/reports/duration-filter-dto.yaml' }
+    private-prosecutors-index-filter-dto: { $ref: './components/schemas/reports/private-prosecutors-index-filter-dto.yaml' }
     # RESULT CODES
-    result-code-get-detail-dto:         { $ref: './components/schemas/result-codes/result-code-get-detail-dto.yaml' }
-    result-code-get-summary-dto:        { $ref: './components/schemas/result-codes/result-code-get-summary-dto.yaml' }
-    result-code-page:                   { $ref: './components/schemas/result-codes/result-code-page.yaml' }
+    result-code-get-detail-dto:           { $ref: './components/schemas/result-codes/result-code-get-detail-dto.yaml' }
+    result-code-get-summary-dto:          { $ref: './components/schemas/result-codes/result-code-get-summary-dto.yaml' }
+    result-code-page:                     { $ref: './components/schemas/result-codes/result-code-page.yaml' }
     # STANDARD APPLICANTS
-    standard-applicant-get-detail-dto:  { $ref: './components/schemas/standard-applicants/standard-applicant-get-detail-dto.yaml' }
-    standard-applicant-get-summary-dto: { $ref: './components/schemas/standard-applicants/standard-applicant-get-summary-dto.yaml' }
-    standard-applicant-page:            { $ref: './components/schemas/standard-applicants/standard-applicant-page.yaml' }
+    standard-applicant-get-detail-dto:    { $ref: './components/schemas/standard-applicants/standard-applicant-get-detail-dto.yaml' }
+    standard-applicant-get-summary-dto:   { $ref: './components/schemas/standard-applicants/standard-applicant-get-summary-dto.yaml' }
+    standard-applicant-page:              { $ref: './components/schemas/standard-applicants/standard-applicant-page.yaml' }
 
   responses:
     # ERRORS
