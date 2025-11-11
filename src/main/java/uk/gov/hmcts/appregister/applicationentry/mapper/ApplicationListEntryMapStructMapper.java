@@ -166,10 +166,6 @@ public interface ApplicationListEntryMapStructMapper {
     default void setApplicantAndRespondent(
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
             @MappingTarget EntryGetPrintDto dto) {
-        if (dto.getApplicant() == null) {
-            dto.setApplicant(new Applicant());
-        }
-
         if (dto.getRespondent() == null) {
             dto.setRespondent(new Respondent());
         }
