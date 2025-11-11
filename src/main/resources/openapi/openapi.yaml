@@ -12,6 +12,10 @@ info:
   version: "@version@"
 
 tags:
+  - name: actions
+    description:
+      Task-based operations that perform domain-specific actions across one or more resources, such as rescheduling,
+      moving, bulk uploads, or bulk result submissions.
   - name: application-codes
     description:
       Application Codes are reference data, not managed in App Reg. They are required to provide a set repeatable data
@@ -50,6 +54,11 @@ tags:
       time they create applications.
 
 paths:
+  # ACTIONS
+  /application-lists/{listId}/reschedule-entries:                   { $ref: './paths/actions/reschedule-entries.yaml' }
+  /application-lists/{listId}/entries/results:                      { $ref: './paths/actions/entries-results.yaml' }
+  /application-lists/{listId}/entries/bulk-upload:                  { $ref: './paths/actions/entries-bulk-upload.yaml' }
+  /application-entries/move:                                        { $ref: './paths/actions/application-entries/move.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }
   /application-codes/{code}:                                        { $ref: './paths/application-codes/application-codes-by-code.yaml' }
@@ -90,6 +99,13 @@ paths:
 
 components:
   schemas:
+    # APPLICATION ACTIONS
+    reschedule-entries-dto:               { $ref: './components/schemas/actions/reschedule-entries-dto.yaml' }
+    move-entries-dto:                     { $ref: './components/schemas/actions/move-entries-dto.yaml' }
+    bulk-results-dto:                     { $ref: './components/schemas/actions/bulk-results-dto.yaml' }
+    bulk-upload-request-dto:              { $ref: './components/schemas/actions/bulk-upload-request-dto.yaml' }
+    bulk-upload-status-dto:               { $ref: './components/schemas/actions/bulk-upload-status-dto.yaml' }
+    bulk-upload-error-dto:                { $ref: './components/schemas/actions/bulk-upload-error-dto.yaml' }
     # APPLICATION CODES
     application-code-get-summary-dto:     { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }
     application-code-get-detail-dto:      { $ref: './components/schemas/application-codes/application-code-get-detail-dto.yaml' }
