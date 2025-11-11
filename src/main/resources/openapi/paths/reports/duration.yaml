@@ -1,0 +1,35 @@
+post:
+  operationId: createDurationReport
+  tags: [reports]
+  summary: Generate a Duration report of closed application lists.
+  description: >
+    Initiates an asynchronous job to create a CSV report of closed application lists within the specified duration.
+    Returns an acknowledgement containing the job ID for tracking progress.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/reports/duration-filter-dto.yaml"
+  responses:
+    "202":
+      description: Report job accepted for asynchronous processing.
+      headers:
+        Location:
+          description: URL to poll the report job status.
+          schema:
+            type: string
+            example: /reports/jobs/job_12345
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/common/job-acknowledgement.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

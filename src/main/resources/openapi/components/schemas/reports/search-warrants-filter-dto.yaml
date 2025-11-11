@@ -1,0 +1,36 @@
+type: object
+description: >
+  Filter criteria for POST /reports/search-warrants/jobs.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+additionalProperties: false
+required:
+  - dateFrom
+  - dateTo
+
+properties:
+  dateFrom:
+    type: string
+    format: date
+    description: Inclusive start date (YYYY-MM-DD).
+    example: "2025-10-01"
+
+  dateTo:
+    type: string
+    format: date
+    description: Inclusive end date (YYYY-MM-DD).
+    example: "2025-10-31"
+
+  courtLocationCode:
+    type: string
+    description: Court Location code (exact match).
+    example: "LOC123"
+
+  otherLocationDescription:
+    type: string
+    description: Other location description (case-insensitive contains match).
+    example: "town hall"
+
+  cjaCode:
+    type: string
+    description: Criminal Justice Area code (exact match).
+    example: "52"
