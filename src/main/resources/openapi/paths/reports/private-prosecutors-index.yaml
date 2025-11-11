@@ -22,7 +22,7 @@ post:
           description: URL to poll the report job status.
           schema:
             type: string
-            example: /reports/jobs/job_12345
+            example: "/reports/jobs/job_12345"
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema:
