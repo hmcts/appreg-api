@@ -23,8 +23,8 @@ import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
-import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
@@ -73,20 +73,18 @@ public class DataAuditLoggerTest {
         verify(dataAuditRepository, never()).save(any());
     }
 
-    /**
-     * This is a programmatic error as both new and old audit values should NEVER be null.
-     */
+    /** This is a programmatic error as both new and old audit values should NEVER be null. */
     @Test
     public void testFailOldAndNewEntityNull() {
-        ApplicationCodeTestData testData = new ApplicationCodeTestData();
-
-        StartEvent startEvent =
-                new StartEvent(
-                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
+        StartEvent startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, null);
 
-        AppRegistryException ex = Assertions.assertThrows(AppRegistryException.class,
-                () -> new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest));
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
+                                        .eventPerformed(auditRequest));
         Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
     }
 
@@ -98,15 +96,42 @@ public class DataAuditLoggerTest {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
 
         StartEvent startEvent =
-                new StartEvent(
-                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", new ApplicationList());
+                new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", new ApplicationList());
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
 
-        AppRegistryException ex = Assertions.assertThrows(AppRegistryException.class,
-                () -> new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest));
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
+                                        .eventPerformed(auditRequest));
         Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
     }
 
+    /**
+     * This is a programmatic error as both new and old audit values should NEVER have different
+     * ids.
+     */
+    @Test
+    public void testFailOldAndNewEntityWithDifferentIds() {
+        ApplicationList applicationList = new ApplicationList();
+        applicationList.setId(1L);
+
+        ApplicationList applicationList2 = new ApplicationList();
+        applicationList2.setId(2L);
+
+        StartEvent startEvent =
+                new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", applicationList);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, applicationList2);
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                new DataAuditLogger(auditDifferentiator, dataAuditRepository)
+                                        .eventPerformed(auditRequest));
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, ex.getCode());
+    }
 
     @Test
     public void testSuccessOperationForGetWithoutDataAuditSaveTest() {
@@ -144,7 +169,7 @@ public class DataAuditLoggerTest {
         when(auditDifferentiator.extractAuditData(CrudEnum.CREATE, newCode))
                 .thenReturn(
                         List.of(
-                                new AuditableData(tableName, field,  newValue),
+                                new AuditableData(tableName, field, newValue),
                                 new AuditableData(tableName, field1, newValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
@@ -196,13 +221,13 @@ public class DataAuditLoggerTest {
         String ofield1 = "field1";
         String oneValue2 = "value2";
 
-        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE,  newCode))
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, newCode))
                 .thenReturn(
                         List.of(
                                 new AuditableData(tableName, field, newValue),
                                 new AuditableData(tableName, field1, newValue2)));
 
-        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE,  oldCode))
+        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, oldCode))
                 .thenReturn(
                         List.of(
                                 new AuditableData(tableName, ofield, oneValue),
@@ -256,10 +281,7 @@ public class DataAuditLoggerTest {
                 .thenReturn(
                         List.of(
                                 new AuditableData(tableName, field, oldValue),
-                                new AuditableData(
-                                        tableName,
-                                        field1,
-                                        oldValue2)));
+                                new AuditableData(tableName, field1, oldValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
         // repo was not called as this is a get operation
@@ -294,13 +316,12 @@ public class DataAuditLoggerTest {
         String field1 = "field1";
 
         Keyable mockOld =
-                Mockito.mock(
-                        Keyable.class, withSettings().extraInterfaces(Auditable.class));
+                Mockito.mock(Keyable.class, withSettings().extraInterfaces(Auditable.class));
         Auditable differentiableOld = (Auditable) mockOld;
+        when(mockOld.getId()).thenReturn(id1);
 
         Keyable mockNew =
-                Mockito.mock(
-                        Keyable.class, withSettings().extraInterfaces(Auditable.class));
+                Mockito.mock(Keyable.class, withSettings().extraInterfaces(Auditable.class));
         Auditable differentiableNew = (Auditable) mockNew;
         when(mockNew.getId()).thenReturn(id1);
 
@@ -308,20 +329,10 @@ public class DataAuditLoggerTest {
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, differentiableNew);
 
         when(differentiableNew.extractAuditData(TestAuditOperation.DELETE.getType()))
-                .thenReturn(
-                        List.of(
-                                new AuditableData(
-                                        tableName,
-                                        field1,
-                                        newValue)));
+                .thenReturn(List.of(new AuditableData(tableName, field1, newValue)));
 
         when(differentiableOld.extractAuditData(TestAuditOperation.DELETE.getType()))
-                .thenReturn(
-                        List.of(
-                                new AuditableData(
-                                        tableName,
-                                        field1,
-                                        oldValue)));
+                .thenReturn(List.of(new AuditableData(tableName, field1, oldValue)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
         // repo was not called as this is a get operation

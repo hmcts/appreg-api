@@ -8,7 +8,6 @@ participant ApplicationListServiceImpl
 participant AuditOperationServiceImpl
 participant DataAuditLogger
 participant AuditOperationSlf4jLogger
-participant Reflect
 
 UI->ApplicationListController : Http Post Create App List
 activate  ApplicationListController
@@ -21,7 +20,6 @@ activate  AuditOperationServiceImpl
 AuditOperationServiceImpl -> AuditOperationSlf4jLogger : started(StartEvent event)
 activate  AuditOperationSlf4jLogger
 
-AuditOperationServiceImpl -> AuditOperationSlf4jLogger : finished(StartEvent event)
 
 AuditOperationServiceImpl -> DataAuditLogger : finished(CompleteEvent event)
 AuditOperationServiceImpl -> DataAuditLogger : started(StartEvent event)
@@ -29,12 +27,12 @@ AuditOperationServiceImpl -> DataAuditLogger : started(StartEvent event)
 AuditOperationServiceImpl -> DataAuditLogger : finished(CompleteEvent event)
 activate  DataAuditLogger
 
-group Manage Differences
-DataAuditLogger -> ReflectiveAuditDifferentiator : diff(auditCrudOp, oldValue, newValue)
+group Manage Audit Extraction
+DataAuditLogger -> ReflectiveAuditor : extractAuditData(auditCrudOp, oldValue, newValue)
     loop for all differences detected
 
 
-activate  ReflectiveAuditDifferentiator
+activate  ReflectiveAuditor
 
 database ApplicationListRepository
 

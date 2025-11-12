@@ -46,23 +46,16 @@ public class ReflectiveAuditorTest {
         test2.entry.add(listEntitya);
         test2.entry.add(listEntity2);
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(true);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.CREATE, test2);
 
         Assertions.assertEquals(6, differenceList.size());
         Assertions.assertEquals(
-                new AuditableData(
-                        "test_entity",
-                        "adr_id",
-                        test2.id.toString()),
-                        differenceList.get(0));
+                new AuditableData("test_entity", "adr_id", test2.id.toString()),
+                differenceList.get(0));
         Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_id",
-                        ""),
+                new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
                 differenceList.get(1));
         Assertions.assertEquals(
                 new AuditableData(
@@ -80,8 +73,7 @@ public class ReflectiveAuditorTest {
                 new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
                 differenceList.get(4));
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", ""),
-                differenceList.get(5));
+                new AuditableData("test_entity", "myname", ""), differenceList.get(5));
     }
 
     @Test
@@ -101,24 +93,20 @@ public class ReflectiveAuditorTest {
         test.entry.add(listEntity2);
         test.entryStrings.addAll(List.of("test string", "test string2"));
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(false);
-        List<AuditableData> differenceList = reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
+        List<AuditableData> differenceList =
+                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
 
         Assertions.assertEquals(3, differenceList.size());
 
         Assertions.assertEquals(
-                new AuditableData(
-                        "test_entity",
-                        "adr_id",
-                        test.id.toString()),
+                new AuditableData("test_entity", "adr_id", test.id.toString()),
                 differenceList.get(0));
         Assertions.assertEquals(
                 new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
                 differenceList.get(1));
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", ""),
-                differenceList.get(2));
+                new AuditableData("test_entity", "myname", ""), differenceList.get(2));
     }
 
     @Test
@@ -149,24 +137,17 @@ public class ReflectiveAuditorTest {
         test1.entry.add(listEntity1);
         test1.entryStrings.addAll(List.of("test string", "test string another 2"));
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(true);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
 
         Assertions.assertEquals(6, differenceList.size());
 
         Assertions.assertEquals(
-                new AuditableData(
-                        "test_entity",
-                        "adr_id",
-                        test.id.toString()),
+                new AuditableData("test_entity", "adr_id", test.id.toString()),
                 differenceList.get(0));
         Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_id",
-                        ""),
+                new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
                 differenceList.get(1));
         Assertions.assertEquals(
                 new AuditableData(
@@ -184,8 +165,7 @@ public class ReflectiveAuditorTest {
                 new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
                 differenceList.get(4));
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", ""),
-                differenceList.get(5));
+                new AuditableData("test_entity", "myname", ""), differenceList.get(5));
     }
 
     @Test
@@ -205,13 +185,12 @@ public class ReflectiveAuditorTest {
         test.entry.add(listEntity2);
         test.entryStrings.addAll(List.of("test string", "test string2"));
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(false);
-        List<AuditableData> differenceList = reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, test);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
+        List<AuditableData> differenceList =
+                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, test);
         Assertions.assertEquals(1, differenceList.size());
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname",  "random name"),
-                differenceList.get(0));
+                new AuditableData("test_entity", "myname", "random name"), differenceList.get(0));
     }
 
     @Test
@@ -222,8 +201,7 @@ public class ReflectiveAuditorTest {
         ApplicationList newAppLst = new AppListTestData().someComplete();
         newAppLst.setId(123L);
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(false);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, oldAppLst);
         List<AuditableData> newDifferenceList =
@@ -271,8 +249,7 @@ public class ReflectiveAuditorTest {
     public void testWithSuperFieldsAndRecursionOff() {
         ApplicationList newAppLst = new AppListTestData().someComplete();
 
-        ReflectiveAuditor reflectiveAuditDifferentiator =
-                new ReflectiveAuditor(false);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, newAppLst);
         Assertions.assertNotNull(findByField("changed_date", differenceList));
@@ -307,7 +284,7 @@ public class ReflectiveAuditorTest {
         return null;
     }
 
-    /** Setup some test data */
+    /** Setup some test data. */
     @Getter
     @AuditEnabled(types = {CrudEnum.DELETE})
     @Table(name = "test_entity")

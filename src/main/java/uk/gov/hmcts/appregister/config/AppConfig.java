@@ -71,8 +71,7 @@ public class AppConfig implements WebMvcConfigurer {
      */
     @Bean
     public DataAuditLogger auditDifferentiator(DataAuditRepository dataAuditRepository) {
-        return new DataAuditLogger(
-                new ReflectiveAuditor(complexDiffEnabled), dataAuditRepository);
+        return new DataAuditLogger(new ReflectiveAuditor(complexDiffEnabled), dataAuditRepository);
     }
 
     /**

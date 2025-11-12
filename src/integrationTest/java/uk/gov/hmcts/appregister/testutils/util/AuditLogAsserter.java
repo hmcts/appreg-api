@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
 
 /**
  * A class that allows us to assert against audit log data. This class reads the logs from {@link
- * uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}
+ * uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -30,10 +30,10 @@ public class AuditLogAsserter {
      *
      * @param tableName The table name
      * @param columnName The column name
-     * @param oldValue The old value. An empty string means we assert on an old audit value but not a specific value.
-     *                 A null means do not assert on old value at all
-     * @param newValue The new value. An empty string means we assert on an new audit value but not a specific value.
-     *                 A null means do not assert on new value at all
+     * @param oldValue The old value. An empty string means we assert on an old audit value but not
+     *     a specific value. A null means do not assert on old value at all
+     * @param newValue The new value. An empty string means we assert on an new audit value but not
+     *     a specific value. A null means do not assert on new value at all
      * @param updateType The audit type e.g. CREATE/UPDATE/DELETE
      * @param eventName The event name
      */
@@ -45,11 +45,11 @@ public class AuditLogAsserter {
             String updateType,
             String eventName) {
 
-        if (oldValue!=null && oldValue.isEmpty()) {
+        if (oldValue != null && oldValue.isEmpty()) {
             oldValue = ".*";
         }
 
-        if (newValue!=null && newValue.isEmpty()) {
+        if (newValue != null && newValue.isEmpty()) {
             newValue = ".*";
         }
 
@@ -111,7 +111,7 @@ public class AuditLogAsserter {
         }
 
         // check if old audit log exists
-        if (assertion.oldAuditRegex() != null){
+        if (assertion.oldAuditRegex() != null) {
             for (String log : dataAuditLogger.getDebugLogs()) {
                 if (!Pattern.matches(assertion.oldAuditRegex(), log)) {
                     oldLogFound = true;
@@ -127,19 +127,20 @@ public class AuditLogAsserter {
         }
 
         if (!oldLogFound || !newLogFound || !auditLogFound) {
-            throw new AssertionError(
-                    "We did not found expected logs");
+            throw new AssertionError("We did not found expected logs");
         }
     }
 
     public void assertFieldLogPresent(String tableName, String fieldName, boolean newAudit) {
         String pattern =
-                newAudit ? DIFF_NEW_PREFIX : DIFF_OLD_PREFIX
-                        + " AuditableDifferenceData\\(tableName="
-                        + tableName
-                        + ", fieldName="
-                        + fieldName
-                        + ", value=.*\\)";
+                newAudit
+                        ? DIFF_NEW_PREFIX
+                        : DIFF_OLD_PREFIX
+                                + " AuditableDifferenceData\\(tableName="
+                                + tableName
+                                + ", fieldName="
+                                + fieldName
+                                + ", value=.*\\)";
         for (String log : dataAuditLogger.getDebugLogs()) {
             if (Pattern.matches(pattern, log)) {
                 return;
@@ -155,6 +156,7 @@ public class AuditLogAsserter {
 
     /**
      * Assert that a log exists for the field name specified.
+     *
      * @param tableName The table name to find
      * @param fieldName The fieldname
      * @param newAudit Lookup for new audit records if true or false is old audit records
@@ -216,7 +218,8 @@ public class AuditLogAsserter {
     }
 
     /**
-     * assert a count for audit logs for either new or old audit logs
+     * assert a count for audit logs for either new or old audit logs.
+     *
      * @param assertCount The assert count
      * @param newAudit The new audit records being looked for
      */
@@ -224,7 +227,7 @@ public class AuditLogAsserter {
         int count = 0;
         for (String log : dataAuditLogger.getDebugLogs()) {
             if (newAudit) {
-                    if (Pattern.matches(getNewAssertionString(".*", ".*", ".*"), log)) {
+                if (Pattern.matches(getNewAssertionString(".*", ".*", ".*"), log)) {
                     count = count + 1;
                 }
             } else {

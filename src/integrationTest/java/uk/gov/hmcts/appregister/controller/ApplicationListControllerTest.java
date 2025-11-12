@@ -261,7 +261,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(TableNames.APPICATION_LIST,
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
                         "application_list_date",
                         null,
                         TEST_DATE.toString(),

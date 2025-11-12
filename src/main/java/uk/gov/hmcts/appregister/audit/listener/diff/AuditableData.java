@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * Contains the auditable data that has been established around a
- * {@link uk.gov.hmcts.appregister.common.entity.base.Keyable} entity
+ * Contains the auditable data that has been established around a {@link
+ * uk.gov.hmcts.appregister.common.entity.base.Keyable} entity.
  */
 @RequiredArgsConstructor
 @Getter

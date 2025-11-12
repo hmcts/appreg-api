@@ -68,12 +68,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         differenceLogAsserter.assertDiffCount(3, true);
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity",
-                        "adr_id",
-                        null,
-                        "123",
-                        "CREATE",
-                        "Create Application List"));
+                        "test_entity", "adr_id", null, "123", "CREATE", "Create Application List"));
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
                         "criminal_justice_area",
@@ -151,30 +146,15 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         differenceLogAsserter.assertDiffCount(6, true);
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity",
-                        "adr_id",
-                        "123",
-                        "123",
-                        "UPDATE",
-                        "Event Name"));
+                        "test_entity", "adr_id", "123", "123", "UPDATE", "Event Name"));
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        "criminal_justice_area",
-                        "cja_id",
-                        "999",
-                        "999",
-                        "UPDATE",
-                        "Event Name"));
+                        "criminal_justice_area", "cja_id", "999", "999", "UPDATE", "Event Name"));
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity",
-                        "myname",
-                        "old",
-                        "new",
-                        "UPDATE",
-                        "Event Name"));
+                        "test_entity", "myname", "old", "new", "UPDATE", "Event Name"));
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
                         "criminal_justice_area",
@@ -218,8 +198,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                             public CrudEnum getType() {
                                 return CrudEnum.DELETE;
                             }
-                        }
-                        ,
+                        },
                         (event) ->
                                 Optional.of(
                                         AuditableResult.builder()
@@ -234,11 +213,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         differenceLogAsserter.assertDiffCount(1, false);
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity",
-                        "myname",
-                        "My_Entity_Name",
-                        null,
-                        "DELETE",
-                        "Event Name"));
+                        "test_entity", "myname", "My_Entity_Name", null, "DELETE", "Event Name"));
     }
 }

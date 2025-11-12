@@ -5,13 +5,13 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
- * An interface that represents a way to get auditable data for an object. An
- * example usage is {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}
+ * An interface that represents a way to get auditable data for an object. An example usage is
+ * {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
  */
 public interface Auditor {
 
     /**
-     * Gets the auditable data for a given object
+     * Gets the auditable data for a given object.
      *
      * @param crudEnum The audit crud operation. This is used to determine how to treat the diff
      *     i.e. either by looking for the specific annotation {@link

@@ -16,19 +16,19 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
- * A generic reflective auditor that can be used get audit data from a
- * {@link uk.gov.hmcts.appregister.common.entity.base.Keyable} object
+ * A generic reflective auditor that can be used get audit data from a {@link
+ * uk.gov.hmcts.appregister.common.entity.base.Keyable} object
  *
- * <p>If performance issues are a concern, consider implementing a specific differentiator operation.
+ * <p>If performance issues are a concern, consider implementing a specific differentiator
+ * operation.
  *
  * <p>This class does uses a cache to mitigate the use of reflective performance issues where
  * possible
  *
- * <p>The class has build is recursion protection to avoid circular references. Any reflection errors are not
- * fatal to the core operation of the business logic but will be logged.
+ * <p>The class has build is recursion protection to avoid circular references. Any reflection
+ * errors are not fatal to the core operation of the business logic but will be logged.
  *
- * <p>We can toggle recursion of nested objects via the constructor
- * parameters.
+ * <p>We can toggle recursion of nested objects via the constructor parameters.
  *
  * <p>The class supports use of the {@link uk.gov.hmcts.appregister.audit.listener.diff.Audit} and
  * {@link uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled} annotations to tailor the way
@@ -54,7 +54,8 @@ public class ReflectiveAuditor implements Auditor {
     }
 
     /**
-     * process the audit data for the value
+     * process the audit data for the value.
+     *
      * @param crudEnum The audit operation
      * @param val The value to get auidit data from
      * @param recurseNestedObjects Whether we recurse into nested objects
@@ -69,8 +70,7 @@ public class ReflectiveAuditor implements Auditor {
                 diffs,
                 new HashSet<>(),
                 recurseNestedObjects,
-                isAuditableAnnotatedForOperation(
-                        crudEnum, val.getClass()));
+                isAuditableAnnotatedForOperation(crudEnum, val.getClass()));
 
         return diffs;
     }
@@ -78,7 +78,7 @@ public class ReflectiveAuditor implements Auditor {
     /**
      * process the auditable data for the value.
      *
-     * @param val The  value
+     * @param val The value
      * @param differenceList the captured differences
      * @param processed The processed method call and the objects that were invoked
      * @param useAnnotations Whether we should use annotations to determine what diferences to
@@ -95,9 +95,7 @@ public class ReflectiveAuditor implements Auditor {
 
             // loop through all methods of the objects being passed
             for (ReflectionCaches.MethodData method :
-                    ReflectionCaches.METHOD_CACHE
-                            .get(val.getClass())
-                            .methods()) {
+                    ReflectionCaches.METHOD_CACHE.get(val.getClass()).methods()) {
 
                 // if we are using annotations check if the method is annotated for this crud
                 // operation
@@ -164,20 +162,18 @@ public class ReflectiveAuditor implements Auditor {
         log.debug("Value Ret {}", val);
 
         // detect diff
-        log.debug("Difference detected in field: {} value: {}", method.field().getName(), valueString);
+        log.debug(
+                "Difference detected in field: {} value: {}",
+                method.field().getName(),
+                valueString);
 
         // store the difference knowing that new value is not null
-        differenceList.add(
-                new AuditableData(
-                        method.tableName(),
-                        method.columnName(),
-                        valueString));
-
+        differenceList.add(new AuditableData(method.tableName(), method.columnName(), valueString));
     }
 
     private static Object invokeMethodForNew(
             ReflectionCaches.MethodData method, Object target, Set<String> processed) {
-        return invokeMethod( method, target, processed);
+        return invokeMethod(method, target, processed);
     }
 
     /**
@@ -188,9 +184,7 @@ public class ReflectiveAuditor implements Auditor {
      * @param processed The processed set to avoid infinite recursion
      */
     private static Object invokeMethod(
-            ReflectionCaches.MethodData method,
-            Object target,
-            Set<String> processed) {
+            ReflectionCaches.MethodData method, Object target, Set<String> processed) {
         if (target != null) {
             int hash = System.identityHashCode(target);
 

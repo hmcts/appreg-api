@@ -11,16 +11,18 @@ import java.util.List;
 
 /**
  * A central place for cache to exist to avoid reflection based performance problems. This cache is
- * simple and lazy (if not called, then no memory usage). There is no associated eviction policy like
- * other, more sophisticated third party solutions. The cache is based on ClassValue.
+ * simple and lazy (if not called, then no memory usage). There is no associated eviction policy
+ * like other, more sophisticated third party solutions. The cache is based on ClassValue.
  */
 public class ReflectionCaches {
     public record MethodData(String tableName, String columnName, Method method, Field field) {}
 
     public record ReflectionMeta(List<MethodData> methods) {}
 
-    /** The method cache that is used for performance reasons. It parses a classes data and caches associated data
-     * for future use */
+    /**
+     * The method cache that is used for performance reasons. It parses a classes data and caches
+     * associated data for future use
+     */
     public static final ClassValue<ReflectionMeta> METHOD_CACHE =
             new ClassValue<>() {
                 @Override
@@ -31,7 +33,8 @@ public class ReflectionCaches {
                         Method get = getGetterForField(type, field.getName());
                         String col = getColumnOrJoinColumnName(field);
                         if (get != null && col != null) {
-                            // store the method data for a class with the table name, column name, method and field
+                            // store the method data for a class with the table name, column name,
+                            // method and field
                             returnMethods.add(new MethodData(table, col, get, field));
                         }
                     }
@@ -55,8 +58,9 @@ public class ReflectionCaches {
     /**
      * Returns the getter method corresponding to a field if it exists. Example: field 'status' →
      * method 'getStatus' or 'isStatus' (for booleans)
+     *
      * @param clazz The class to find the field within
-     * @param  fieldName The field name
+     * @param fieldName The field name
      * @return The associated method or null if not found
      */
     public static Method getGetterForField(Class<?> clazz, String fieldName) {
