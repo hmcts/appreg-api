@@ -12,4 +12,15 @@ public class CompleteEvent extends AuditEvent {
         this.messageStatus = OperationStatus.COMPLETED;
         this.newValue = newEntity;
     }
+
+    /**
+     * gets an indication of whether we are dealing with old, new or both values inside the event
+     * @return What values do we have in the event
+     */
+    public AuditOldNewEnum getNewOldAuditState() {
+        AuditOldNewEnum newOrOld = getOldValue() != null
+                ? AuditOldNewEnum.OLD : AuditOldNewEnum.NEW;
+        return getOldValue() != null && getNewValue() != null
+                ? AuditOldNewEnum.BOTH : newOrOld;
+    }
 }

@@ -40,7 +40,7 @@ public class TestEntityAuditable implements Keyable {
     private String resolutionWording;
 
     @Column(name = "myname", nullable = false)
-    @Audit(action = CrudEnum.DELETE)
+    @Audit(action = { CrudEnum.DELETE, CrudEnum.CREATE} )
     private String name;
 
     @Column(name = "entry", nullable = false)

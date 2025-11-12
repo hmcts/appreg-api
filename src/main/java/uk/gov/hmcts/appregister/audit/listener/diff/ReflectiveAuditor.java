@@ -13,42 +13,35 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
- * A generic reflective audit differentiator that can be used to compare two {@link
- * uk.gov.hmcts.appregister.common.entity.base.Keyable} of any type for audit purposes
+ * A generic reflective auditor that can be used get audit data from a
+ * {@link uk.gov.hmcts.appregister.common.entity.base.Keyable} object
  *
- * <p>If performance issues are a concern, consider implementing a specific differentiator for the
- * object type.
+ * <p>If performance issues are a concern, consider implementing a specific differentiator operation.
  *
  * <p>This class does uses a cache to mitigate the use of reflective performance issues where
  * possible
  *
- * <p>The class has build is recursion protection to avoid circular references. Any errors are not
+ * <p>The class has build is recursion protection to avoid circular references. Any reflection errors are not
  * fatal to the core operation of the business logic but will be logged.
  *
- * <p>We can toggle recursion of nested objects and collection objects via the constructor
+ * <p>We can toggle recursion of nested objects via the constructor
  * parameters.
  *
  * <p>The class supports use of the {@link uk.gov.hmcts.appregister.audit.listener.diff.Audit} and
  * {@link uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled} annotations to tailor the way
- * in which it detects differences between two {@link
- * uk.gov.hmcts.appregister.common.entity.base.Keyable} objects.
+ * in which it detects audit data.
  */
 @Slf4j
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
+public class ReflectiveAuditor implements Auditor {
 
     /** Do we need to recurse nested objects. */
     private final boolean recurseNestedObjects;
-
-    /** Represents a null value. We default to a null string. */
-    public static final String EMPTY_VALUE = "null";
 
     @Override
     public boolean doesRecurseComplexObjects() {
@@ -56,90 +49,54 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     @Override
-    public List<Difference> diff(CrudEnum crudEnum, Keyable oldVal, Keyable newVal) {
-        return difference(crudEnum, oldVal, newVal, recurseNestedObjects);
-    }
-
-    @Override
-    public List<Difference> diff(CrudEnum crudEnum, Keyable newVal) {
-        return difference(crudEnum, null, newVal, recurseNestedObjects);
+    public List<AuditableData> extractAuditData(CrudEnum crudEnum, Keyable keyable) {
+        return extractAuditData(crudEnum, keyable, recurseNestedObjects);
     }
 
     /**
-     * process the differences for the old and new value.
-     *
-     * @param oldVal The old value
-     * @param newVal The new value
+     * process the audit data for the value
+     * @param crudEnum The audit operation
+     * @param val The value to get auidit data from
      * @param recurseNestedObjects Whether we recurse into nested objects
      */
-    public static List<Difference> difference(
-            CrudEnum crudEnum, Keyable oldVal, Keyable newVal, boolean recurseNestedObjects) {
-        final List<Difference> diffs = new ArrayList<>();
+    public static List<AuditableData> extractAuditData(
+            CrudEnum crudEnum, Keyable val, boolean recurseNestedObjects) {
+        final List<AuditableData> diffs = new ArrayList<>();
 
-        if (oldVal == null && newVal == null) {
-            log.debug("Two null values have been detected. No differences to process");
-            return List.of();
-        }
-
-        // make sure if we are comparing old or new then the ids match
-        if (newVal != null
-                && oldVal != null
-                && (newVal.getId() == null || !newVal.getId().equals(oldVal.getId()))) {
-            log.debug("Expected the same key {} {}", newVal.getId(), oldVal.getId());
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Cannot compare objects with different keys");
-        }
-
-        // make sure if we are comparing old or new then the types match
-        if ((newVal != null
-                && oldVal != null
-                && !newVal.getClass()
-                        .getCanonicalName()
-                        .equals(oldVal.getClass().getCanonicalName()))) {
-            log.debug("Expected the same key {} {}", newVal.getId(), oldVal.getId());
-            throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR,
-                    "Cannot compare objects that are not the same type");
-        }
-
-        difference(
+        extractAuditData(
                 crudEnum,
-                oldVal,
-                newVal,
+                val,
                 diffs,
                 new HashSet<>(),
                 recurseNestedObjects,
                 isAuditableAnnotatedForOperation(
-                        crudEnum, newVal != null ? newVal.getClass() : oldVal.getClass()));
+                        crudEnum, val.getClass()));
 
         return diffs;
     }
 
     /**
-     * process the differences for the new value.
+     * process the auditable data for the value.
      *
-     * @param oldVal The old value
-     * @param newVal The new value
+     * @param val The  value
      * @param differenceList the captured differences
      * @param processed The processed method call and the objects that were invoked
      * @param useAnnotations Whether we should use annotations to determine what diferences to
      *     capture
      */
-    private static void difference(
+    private static void extractAuditData(
             CrudEnum crudEnum,
-            Object oldVal,
-            Object newVal,
-            List<Difference> differenceList,
+            Object val,
+            List<AuditableData> differenceList,
             Set<String> processed,
             boolean recurseNestedObjects,
             boolean useAnnotations) {
-        if (newVal != null || oldVal != null) {
+        if (val != null) {
 
             // loop through all methods of the objects being passed
             for (ReflectionCaches.MethodData method :
                     ReflectionCaches.METHOD_CACHE
-                            .get(newVal != null ? newVal.getClass() : oldVal.getClass())
+                            .get(val.getClass())
                             .methods()) {
 
                 // if we are using annotations check if the method is annotated for this crud
@@ -156,7 +113,7 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
 
                 // if the object is not complex wrap it
                 if (!isComplexWrapper(method.method().getReturnType())) {
-                    storeDifference(oldVal, newVal, differenceList, method, processed);
+                    storeAuditDiffData(val, differenceList, method, processed);
                 } else {
 
                     // if collection then iterate and compare contents, if not a collection then
@@ -165,24 +122,14 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
                     if (!isCollection(method.method().getReturnType()) && recurseNestedObjects) {
                         log.debug("Method {}", method.method().getName());
 
-                        Object newValRet =
-                                newVal != null
-                                        ? invokeMethodForNew(method, newVal, processed)
-                                        : null;
+                        Object newValRet = invokeMethodForNew(method, val, processed);
 
                         log.debug("New Value Ret {}", newValRet);
 
-                        Object oldValRet =
-                                oldVal != null
-                                        ? invokeMethodForOld(method, oldVal, processed)
-                                        : null;
-                        log.debug("Old Value Ret {}", oldValRet);
-
                         // recurse and get the differences in the complex object containing in the
                         // list
-                        difference(
+                        extractAuditData(
                                 crudEnum,
-                                oldValRet,
                                 newValRet,
                                 differenceList,
                                 processed,
@@ -195,104 +142,62 @@ public class ReflectiveAuditDifferentiator implements AuditDifferentiator {
     }
 
     /**
-     * Gets a value and stores the difference if detected between the old and new value.
+     * Gets a value and stores the audit difference.
      *
-     * @param oldVal The old value to call using the method
-     * @param newVal The new value to call using the method
-     * @param differenceList The list to build up
-     * @param method The method to get the new and old values
+     * @param val The value to call using the method
+     * @param differenceList The list to build up the audit data
+     * @param method The method to get the value
      * @param processed The processed set to avoid infinite recursion
      */
-    private static void storeDifference(
-            Object oldVal,
-            Object newVal,
-            List<Difference> differenceList,
+    private static void storeAuditDiffData(
+            Object val,
+            List<AuditableData> differenceList,
             ReflectionCaches.MethodData method,
             Set<String> processed) {
         log.debug("Method {}", method.method().getName());
 
-        Object newValRet = newVal != null ? invokeMethodForNew(method, newVal, processed) : null;
+        Object valRet = val != null ? invokeMethodForNew(method, val, processed) : "";
 
-        log.debug("New Value Ret {}", newValRet);
+        // if the value is null then set to empty string for comparison purposes
+        String valueString = valRet != null ? valRet.toString() : "";
 
-        Object oldValRet = oldVal != null ? invokeMethodForOld(method, oldVal, processed) : null;
-        log.debug("Old Value Ret {}", oldValRet);
-
-        // detect diff
-        storeDifference(oldValRet, newValRet, differenceList, method);
-    }
-
-    /**
-     * Stores the difference if detected between the old and new value. This method works out if the
-     * new or old value is null and compensates accordingly
-     *
-     * @param oldValRet The old value
-     * @param newValRet The new value
-     * @param differenceList The list to build up
-     * @param method The method that was used to get the values
-     */
-    private static void storeDifference(
-            Object oldValRet,
-            Object newValRet,
-            List<Difference> differenceList,
-            ReflectionCaches.MethodData method) {
+        log.debug("Value Ret {}", val);
 
         // detect diff
-        if (newValRet != null
-                && !newValRet.toString().equals(oldValRet != null ? oldValRet.toString() : null)) {
-            log.debug("Difference detected {} in field old: {} new: {}", newValRet, oldValRet);
+        log.debug("Difference detected in field: {} value: {}", method.field().getName(), valueString);
 
-            // store the difference knowing that new value is not null
-            differenceList.add(
-                    new Difference(
-                            method.tableName(),
-                            method.columnName(),
-                            oldValRet != null ? oldValRet.toString() : EMPTY_VALUE,
-                            newValRet.toString()));
-        } else if (oldValRet != null
-                && !oldValRet.toString().equals(newValRet != null ? newValRet.toString() : null)) {
-            log.debug("Difference detected {} in field old: {} new: {}", newValRet, oldValRet);
+        // store the difference knowing that new value is not null
+        differenceList.add(
+                new AuditableData(
+                        method.tableName(),
+                        method.columnName(),
+                        valueString));
 
-            // store the difference knowing that old value is not null
-            differenceList.add(
-                    new Difference(
-                            method.tableName(),
-                            method.columnName(),
-                            oldValRet.toString(),
-                            newValRet != null ? newValRet.toString() : EMPTY_VALUE));
-        }
     }
 
     private static Object invokeMethodForNew(
             ReflectionCaches.MethodData method, Object target, Set<String> processed) {
-        return invokeMethod("NEW_", method, target, processed);
-    }
-
-    private static Object invokeMethodForOld(
-            ReflectionCaches.MethodData method, Object target, Set<String> processed) {
-        return invokeMethod("OLD_", method, target, processed);
+        return invokeMethod( method, target, processed);
     }
 
     /**
      * invokes a method and records its invocation against the target to avoid infinite recursion.
      *
-     * @param prefix The prefix to use for the processed set
      * @param method The method to invoke
      * @param target The target object
      * @param processed The processed set to avoid infinite recursion
      */
     private static Object invokeMethod(
-            String prefix,
             ReflectionCaches.MethodData method,
             Object target,
             Set<String> processed) {
         if (target != null) {
             int hash = System.identityHashCode(target);
 
-            if (!processed.contains(prefix + method.method() + hash)) {
+            if (!processed.contains(method.method().toString() + hash)) {
                 try {
                     Object m = method.method().invoke(target);
-                    processed.add(prefix + method.method() + hash);
+                    processed.add(method.method().toString() + hash);
 
                     log.debug("Processed {} on {}", method.method(), target);
                     return m;
