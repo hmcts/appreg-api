@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -66,8 +65,7 @@ public class StandardApplicantServiceTest {
                         pageable,
                         2);
 
-        when(repository.search(eq(code), eq(name), isNull(), isNotNull(), eq(pageable)))
-                .thenReturn(pageImpl);
+        when(repository.search(eq(code), eq(name), isNotNull(), eq(pageable))).thenReturn(pageImpl);
 
         StandardApplicantPage standardApplicantPage =
                 standardApplicantService.findAll(code, name, pageable);
@@ -78,7 +76,12 @@ public class StandardApplicantServiceTest {
                 standardApplicantPage.getContent().get(0).getCode());
         Assertions.assertEquals(
                 pageImpl.getContent().get(0).getName(),
-                standardApplicantPage.getContent().get(0).getName());
+                standardApplicantPage
+                        .getContent()
+                        .get(0)
+                        .getApplicant()
+                        .getOrganisation()
+                        .getName());
         Assertions.assertEquals(
                 pageImpl.getContent().get(0).getApplicantStartDate(),
                 standardApplicantPage.getContent().get(0).getStartDate());
@@ -91,7 +94,12 @@ public class StandardApplicantServiceTest {
                 standardApplicantPage.getContent().get(1).getCode());
         Assertions.assertEquals(
                 pageImpl.getContent().get(1).getName(),
-                standardApplicantPage.getContent().get(1).getName());
+                standardApplicantPage
+                        .getContent()
+                        .get(1)
+                        .getApplicant()
+                        .getOrganisation()
+                        .getName());
         Assertions.assertEquals(
                 pageImpl.getContent().get(1).getApplicantStartDate(),
                 standardApplicantPage.getContent().get(1).getStartDate());

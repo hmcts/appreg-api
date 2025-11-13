@@ -10,7 +10,12 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.model.IndividualOrOrganisation;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
+import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.FullName;
+import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 
@@ -24,43 +29,92 @@ import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class StandardApplicantMapper {
-    @Mapping(target = "applicantName", source = "name")
-    public abstract StandardApplicantDto toReadDto(StandardApplicant entity);
 
     @Mapping(target = "code", source = "applicantCode")
-    @Mapping(target = "name", expression = "java(toNameBasedOnOrganisationVsIndividual(entity))")
-    @Mapping(target = "addressLine1", source = "addressLine1")
+    @Mapping(target = "applicant", expression = "java(toApplicant(entity))")
     @Mapping(target = "startDate", source = "applicantStartDate")
     @Mapping(target = "endDate", source = "applicantEndDate", qualifiedByName = "toEndDate")
     public abstract StandardApplicantGetSummaryDto toReadGetSummaryDto(StandardApplicant entity);
 
+    @Mapping(target = "code", source = "applicantCode")
+    @Mapping(target = "applicant", expression = "java(toApplicant(entity))")
+    @Mapping(target = "startDate", source = "applicantStartDate")
+    @Mapping(target = "endDate", source = "applicantEndDate", qualifiedByName = "toEndDate")
+    public abstract StandardApplicantGetDetailDto toReadGetDto(StandardApplicant entity);
+
+    @Deprecated
+    @Mapping(target = "applicantName", source = "name")
+    public abstract StandardApplicantDto toReadDto(StandardApplicant entity);
+
     /**
-     * A useful mapper to map the name depending on the name vs forename and surname data The reason
-     * that differentiation exists is to differentiate between organisations and individuals.
+     * A useful mapper to map the applicant details of the standard applicant.
      *
-     * @param applicant The applicant to map
-     * @return The name
+     * @param applicant The database applicant
+     * @return The applicant Dto
      */
-    public String toNameBasedOnOrganisationVsIndividual(StandardApplicant applicant) {
-        return StandardApplicant.isOrganisation(applicant)
-                ? applicant.getName()
-                : getIndividualName(applicant);
+    public Applicant toApplicant(StandardApplicant applicant) {
+        Applicant applicantDto = new Applicant();
+
+        ContactDetails contactDetails = toContactDetails(applicant);
+
+        // if the name is set then this is an organisation otherwise a person
+        if (StandardApplicant.isOrganisation(applicant)) {
+            Organisation organisation = new Organisation();
+            organisation.setName(applicant.getName());
+            organisation.setContactDetails(contactDetails);
+            applicantDto.setOrganisation(organisation);
+
+            applicantDto.setOrganisation(organisation);
+        } else {
+            FullName fullName = toFullName(applicant);
+            Person person = new Person();
+            person.setContactDetails(contactDetails);
+            person.setName(fullName);
+
+            applicantDto.setPerson(person);
+        }
+
+        return applicantDto;
     }
 
     /**
-     * gets the individual name from forename and surname.
+     * to full name.
      *
-     * @param applicant The applicant
-     * @return The individual name. At present if the forename and the surname as null then a
-     *     default string is used
+     * @param applicant The standard applicant
+     * @return The full name
      */
-    public String getIndividualName(StandardApplicant applicant) {
-        return IndividualOrOrganisation.getIndividualNameString(
-                applicant.getApplicantForename1(), applicant.getApplicantSurname());
+    FullName toFullName(StandardApplicant applicant) {
+        FullName fullName = new FullName();
+        fullName.setTitle(applicant.getApplicantTitle());
+        fullName.setFirstForename(applicant.getApplicantForename1());
+        fullName.setSecondForename(applicant.getApplicantForename2());
+        fullName.setThirdForename(applicant.getApplicantForename3());
+        fullName.setSurname(applicant.getApplicantSurname());
+        return fullName;
+    }
+
+    /**
+     * to contact details.
+     *
+     * @param applicant The standard applicant
+     * @return The contact details
+     */
+    ContactDetails toContactDetails(StandardApplicant applicant) {
+        ContactDetails contactDetails = new ContactDetails();
+        contactDetails.setAddressLine1(applicant.getAddressLine1());
+        contactDetails.setAddressLine2(applicant.getAddressLine2());
+        contactDetails.setAddressLine3(applicant.getAddressLine3());
+        contactDetails.setAddressLine4(applicant.getAddressLine4());
+        contactDetails.setAddressLine5(applicant.getAddressLine5());
+        contactDetails.setEmail(applicant.getEmailAddress());
+        contactDetails.setMobile(applicant.getMobileNumber());
+        contactDetails.setPhone(applicant.getTelephoneNumber());
+        contactDetails.setPostcode(applicant.getPostcode());
+        return contactDetails;
     }
 
     @Named("toEndDate")
-    public JsonNullable<LocalDate> toEndDate(LocalDate date) {
+    static JsonNullable<LocalDate> toEndDate(LocalDate date) {
         if (date != null) {
             return JsonNullable.of(date);
         } else {

@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,10 +19,20 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     /**
      * Finds a StandardApplicant by its applicant code.
      *
-     * @param applicantCode the applicant code to search for
+     * @param code the applicant code to search for
+     * @param date The date to check for active status
      * @return an Optional containing the found StandardApplicant, or empty if not found
      */
-    Optional<StandardApplicant> findByApplicantCode(String applicantCode);
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
+        AND sa.applicantStartDate <= :date
+        AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        """)
+    List<StandardApplicant> findStandardApplicantByCodeAndDate(
+            @Param("code") String code, @Param("date") LocalDate date);
 
     /**
      * Finds the ids that are greater than this value.
@@ -58,18 +67,16 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         WHERE (:code IS NULL OR c.applicantCode ILIKE CONCAT('%', CAST(:code AS string), '%'))
           AND (c.applicantStartDate < :active)
           AND (c.applicantEndDate IS NULL OR c.applicantEndDate > :active)
-          AND ((:name IS NULL AND :surname IS NULL) OR (((:name IS NULL OR c.name IS NOT NULL AND
-                  :name IS NOT NULL AND c.name
-                  ILIKE CONCAT('%', CAST(:name AS string), '%'))
-                  OR (:name IS NULL OR c.applicantForename1 IS NOT NULL AND :name IS NOT NULL AND c.applicantForename1
-                           ILIKE CONCAT('%', CAST(:name AS string), '%')))
-                  AND (:surname IS NULL OR c.applicantSurname IS NOT NULL AND :surname IS NOT NULL
-                          AND c.applicantSurname ILIKE CONCAT('%', CAST(:surname AS string), '%'))))
+          AND (:name IS NULL
+                  OR (((c.name IS NOT NULL AND c.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+                  OR (c.applicantForename1 IS NOT NULL AND c.applicantForename1
+                          ILIKE CONCAT('%', CAST(:name AS string), '%')))
+                  OR (c.applicantSurname IS NOT NULL
+                          AND c.applicantSurname ILIKE CONCAT('%', CAST(:name AS string), '%'))))
         """)
     Page<StandardApplicant> search(
             @Param("code") String code,
             @Param("name") String name,
-            @Param("surname") String surname,
             @Param("active") LocalDate active,
             Pageable pageable);
 }

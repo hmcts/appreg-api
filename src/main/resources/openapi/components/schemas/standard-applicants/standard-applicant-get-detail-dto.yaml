@@ -11,11 +11,8 @@ properties:
     type: string
     description: Code that identifies the Standard Applicant.
 
-  fullName:
-    $ref: '../participants/full-name.yaml'
-
-  contactDetails:
-    $ref: '../participants/contact-details.yaml'
+  applicant:
+    $ref: '../participants/applicant.yaml'
 
   startDate:
     type: string
