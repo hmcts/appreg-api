@@ -11,13 +11,11 @@ properties:
   id:
     type: string
     format: uuid
-    description: Unique identifier for the job.
+    description: Unique identifier for the job, in UUID v4 format.
     example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
 
   type:
-    type: string
-    description: Logical job type (e.g., "report:fees", "bulk:upload").
-    example: "report:fees"
+    $ref: './job-type.yaml'
 
   status:
     $ref: './job-status.yaml'

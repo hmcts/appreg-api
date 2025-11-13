@@ -1,0 +1,11 @@
+type: string
+description: The type of the job being polled by the user.
+enum:
+  - ACTIVITY_AUDIT_REPORT
+  - FEES_REPORT
+  - LIST_MAINTENANCE_REPORT
+  - SEARCH_WARRANTS_REPORT
+  - WORKLOAD_REPORT
+  - DURATION_REPORT
+  - PRIVATE_PROSECUTORS_INDEX_REPORT
+example: FEES_REPORT
