@@ -8,7 +8,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-public interface ApplicationListOfficalMapper {
+public interface ApplicationListOfficialMapper {
 
     Official toOfficialDto(ApplicationListOfficialPrintProjection printProjection);
 

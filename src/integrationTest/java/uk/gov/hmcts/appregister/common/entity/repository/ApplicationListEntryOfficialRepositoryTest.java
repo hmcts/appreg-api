@@ -7,7 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.Rollback;
@@ -35,46 +38,71 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
     record OfficialKey(String title, String forename, String surname, String type) {}
 
     @Test
-    public void testFindByIdForPrinting() {
+    public void testFindOfficialsForPrinting_bulk() {
+        // Arrange: one list with two entries
         ApplicationList list = new AppListTestData().someMinimal().build();
-        ApplicationListEntry data =
+
+        ApplicationListEntry entry1 =
                 ApplicationListEntryUtil.saveApplicationListEntry(
                         entityManager, persistance, list, (short) 1);
 
-        // test get
-        List<ApplicationListOfficialPrintProjection> officials =
-                applicationListEntryOfficialRepository.findByIdForPrinting(
-                        data.getId(), OfficialTypeUtil.PRINTABLE_CODES);
+        ApplicationListEntry entry2 =
+                ApplicationListEntryUtil.saveApplicationListEntry(
+                        entityManager, persistance, list, (short) 2);
 
-        // assert that the data that has been retrieved aligns with the data that we
-        // have stored
+        // Act: bulk fetch by list UUID
+        List<ApplicationListOfficialPrintProjection> officials =
+                applicationListEntryOfficialRepository.findOfficialsForPrinting(
+                        list.getUuid(), OfficialTypeUtil.PRINTABLE_CODES);
+
+        // Assert: non-null and only printable types returned
         assertNotNull(officials);
         assertTrue(
                 officials.stream()
-                        .allMatch(o -> OfficialTypeUtil.PRINTABLE_CODES.contains(o.getType())),
+                        .allMatch(
+                                official ->
+                                        OfficialTypeUtil.PRINTABLE_CODES.contains(
+                                                official.getType())),
                 "Non-printable official type returned");
-        var expected =
-                data.getOfficials().stream()
-                        .map(
-                                o ->
-                                        new OfficialKey(
-                                                o.getTitle(),
-                                                o.getForename(),
-                                                o.getSurname(),
-                                                o.getOfficialType()))
-                        .collect(Collectors.toSet());
 
-        var actual =
+        // Build expected map: entryId -> set of officials (title, forename, surname, type)
+        Map<Long, Set<OfficialKey>> expectedByEntry =
+                Stream.of(entry1, entry2)
+                        .collect(
+                                Collectors.toMap(
+                                        ApplicationListEntry::getId,
+                                        applicationListEntry ->
+                                                applicationListEntry.getOfficials().stream()
+                                                        .map(
+                                                                official ->
+                                                                        new OfficialKey(
+                                                                                official.getTitle(),
+                                                                                official
+                                                                                        .getForename(),
+                                                                                official
+                                                                                        .getSurname(),
+                                                                                official
+                                                                                        .getOfficialType()))
+                                                        .collect(Collectors.toSet())));
+
+        // Build actual map from projection
+        Map<Long, Set<OfficialKey>> actualByEntry =
                 officials.stream()
-                        .map(
-                                o ->
-                                        new OfficialKey(
-                                                o.getTitle(),
-                                                o.getForename(),
-                                                o.getSurname(),
-                                                o.getType()))
-                        .collect(Collectors.toSet());
+                        .collect(
+                                Collectors.groupingBy(
+                                        ApplicationListOfficialPrintProjection::getEntryId,
+                                        Collectors.mapping(
+                                                official ->
+                                                        new OfficialKey(
+                                                                official.getTitle(),
+                                                                official.getForename(),
+                                                                official.getSurname(),
+                                                                official.getType()),
+                                                Collectors.toSet())));
 
-        assertEquals(expected, actual, "Officials from DB should match those persisted");
+        assertEquals(
+                expectedByEntry,
+                actualByEntry,
+                "Officials from DB should match those persisted for each entry");
     }
 }

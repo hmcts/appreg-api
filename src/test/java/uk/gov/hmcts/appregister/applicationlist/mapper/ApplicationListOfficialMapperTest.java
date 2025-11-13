@@ -22,7 +22,7 @@ class ApplicationListOfficialMapperTest {
                         .surname(PERSON1_SURNAME)
                         .build();
 
-        var mapper = new ApplicationListOfficalMapperImpl();
+        var mapper = new ApplicationListOfficialMapperImpl();
         var dto = mapper.toOfficialDto(projection);
 
         Assertions.assertEquals(OfficialType.MAGISTRATE, dto.getType());

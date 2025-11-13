@@ -9,6 +9,7 @@ public final class ApplicationListOfficialPrintProjectionUtil {
     }
 
     public static final class Builder {
+        private Long entryId;
         private String type;
         private String title;
         private String forename;
@@ -35,21 +36,28 @@ public final class ApplicationListOfficialPrintProjectionUtil {
         }
 
         public ApplicationListOfficialPrintProjection build() {
-            return new Impl(type, title, forename, surname);
+            return new Impl(entryId, type, title, forename, surname);
         }
     }
 
     private static final class Impl implements ApplicationListOfficialPrintProjection {
+        private final Long entryId;
         private final String type;
         private final String title;
         private final String forename;
         private final String surname;
 
-        Impl(String type, String title, String forename, String surname) {
+        Impl(Long entryId, String type, String title, String forename, String surname) {
+            this.entryId = entryId;
             this.type = type;
             this.title = title;
             this.forename = forename;
             this.surname = surname;
+        }
+
+        @Override
+        public Long getEntryId() {
+            return entryId;
         }
 
         @Override

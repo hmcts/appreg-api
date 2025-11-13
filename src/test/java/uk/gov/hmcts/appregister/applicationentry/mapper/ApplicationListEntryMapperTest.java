@@ -69,7 +69,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 
-class ApplicationListEntryMapStructMapperTest {
+class ApplicationListEntryMapperTest {
 
     @Test
     void testToSummaryModel_provideValidData_validModelGenerated() {
@@ -95,7 +95,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .result(result)
                         .build();
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
+        var mapper = new ApplicationListEntryMapperImpl();
         var model = mapper.toSummaryDto(projection);
 
         assertApplicationListEntrySummary(
@@ -157,7 +157,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .result(result2)
                         .build();
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
+        var mapper = new ApplicationListEntryMapperImpl();
         List<ApplicationListEntrySummary> list =
                 mapper.toSummaryDtoList(List.of(projection1, projection2));
 
@@ -231,7 +231,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .notes(APPLICATIONLISTENTRY1_NOTES)
                         .build();
 
-        var dto = new ApplicationListEntryMapStructMapperImpl().toPrintDto(projection);
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
 
         var applicant = dto.getApplicant().getPerson();
         var respondent = dto.getRespondent().getPerson();
@@ -304,7 +304,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .notes(APPLICATIONLISTENTRY1_NOTES)
                         .build();
 
-        var dto = new ApplicationListEntryMapStructMapperImpl().toPrintDto(projection);
+        var dto = new ApplicationListEntryMapperImpl().toPrintDto(projection);
 
         assertContactDetailsEqual(
                 dto.getApplicant().getOrganisation().getContactDetails(),

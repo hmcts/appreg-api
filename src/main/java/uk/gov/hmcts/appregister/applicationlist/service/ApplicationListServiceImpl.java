@@ -14,10 +14,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
-import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficalMapper;
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
@@ -38,6 +38,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ResultWordingProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -67,22 +68,30 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
 
+    // Repositories
     private final ApplicationListRepository repository;
     private final ApplicationListEntryRepository aleRepository;
     private final AppListEntryResolutionRepository alerRepository;
     private final ApplicationListEntryOfficialRepository aleoRepository;
+
+    // Mappers
     private final ApplicationListMapper mapper;
+    // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
+    private final ApplicationListEntryMapper entryMapper;
+    private final ApplicationListOfficialMapper officalMapper; // (see rename suggestion below)
+    private final PageMapper pageMapper;
+
+    // Validators
     private final ApplicationCreateListLocationValidator applicationCreateListLocationValidator;
     private final ApplicationUpdateListLocationValidator applicationUpdateListLocationValidator;
     private final ApplicationListGetValidator applicationListGetValidator;
-    // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
-    private final ApplicationListEntryMapStructMapper entryMapper;
-    private final ApplicationListOfficalMapper officalMapper;
-    private final EntityManager entityManager;
+    private final ApplicationListDeletionValidator deletionValidator;
+
+    // Services
     private final MatchService matchService;
 
-    private final PageMapper pageMapper;
-    private final ApplicationListDeletionValidator deletionValidator;
+    // Infrastructure
+    private final EntityManager entityManager;
 
     /**
      * {@inheritDoc}
@@ -354,7 +363,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public ApplicationListGetPrintDto print(UUID id) {
         ApplicationList list =
                 repository
@@ -366,34 +375,48 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                 "No application list found for UUID '%s'"
                                                         .formatted(id)));
 
-        // Fetch results from the repository using pagination
-        List<ApplicationListEntryPrintProjection> applicationListEntryPrintProjections =
+        // 1) Fetch all entry projections for the list (single query)
+        List<ApplicationListEntryPrintProjection> entryProjections =
                 aleRepository.findByIdForPrinting(id);
 
-        List<EntryGetPrintDto> dtos = new ArrayList<>();
+        // Short-circuit if there are no entries
+        if (entryProjections.isEmpty()) {
+            return buildGetPrintDto(list, List.of());
+        }
 
-        for (ApplicationListEntryPrintProjection entry : applicationListEntryPrintProjections) {
+        // 2) Bulk fetch wordings for this list (single query)
+        List<ResultWordingProjection> wordingRows = alerRepository.findWordingsForPrinting(id);
+        Map<Long, List<String>> wordingsByEntryId =
+                wordingRows.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        ResultWordingProjection::getEntryId,
+                                        Collectors.mapping(
+                                                ResultWordingProjection::getWording,
+                                                Collectors.toList())));
+
+        // 3) Bulk fetch officials for this list (single query)
+        List<ApplicationListOfficialPrintProjection> officialRows =
+                aleoRepository.findOfficialsForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+
+        // map directly to DTOs while grouping
+        Map<Long, List<Official>> officialsByEntryId =
+                officialRows.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        ApplicationListOfficialPrintProjection::getEntryId,
+                                        Collectors.mapping(
+                                                officalMapper::toOfficialDto,
+                                                Collectors.toList())));
+
+        // Assemble DTOs locally (no further DB hits)
+        List<EntryGetPrintDto> dtos = new ArrayList<>(entryProjections.size());
+        for (ApplicationListEntryPrintProjection entry : entryProjections) {
             Long entryId = entry.getId();
-
-            // Map each entry projection to a DTO
             EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
 
-            // Fetch result wordings from the repository
-            List<String> resultWordings = alerRepository.findByIdForPrinting(entryId);
-
-            dto.setResultWordings(resultWordings);
-
-            // Fetch officials from the repository
-            List<ApplicationListOfficialPrintProjection> applicationListOfficialPrintProjections =
-                    aleoRepository.findByIdForPrinting(entryId, OfficialTypeUtil.PRINTABLE_CODES);
-
-            List<Official> officials = new ArrayList<>();
-
-            // Map each official projection to a DTO
-            applicationListOfficialPrintProjections.forEach(
-                    projection -> officials.add(officalMapper.toOfficialDto(projection)));
-
-            dto.setOfficials(officials);
+            dto.setResultWordings(wordingsByEntryId.getOrDefault(entryId, List.of()));
+            dto.setOfficials(officialsByEntryId.getOrDefault(entryId, List.of()));
             dtos.add(dto);
         }
 

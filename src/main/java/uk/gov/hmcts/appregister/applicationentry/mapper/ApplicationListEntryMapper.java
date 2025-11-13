@@ -24,12 +24,9 @@ import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-public interface ApplicationListEntryMapStructMapper {
+public interface ApplicationListEntryMapper {
 
-    Logger LOG = LoggerFactory.getLogger(ApplicationListEntryMapStructMapper.class);
-
-    static final String WARN_UNABLE_TO_DETERMINE_ENTITY_TYPE =
-            "Unable to determine entity type for application list entry ID {}: no name or forename/surname provided.";
+    Logger LOG = LoggerFactory.getLogger(ApplicationListEntryMapper.class);
 
     ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);

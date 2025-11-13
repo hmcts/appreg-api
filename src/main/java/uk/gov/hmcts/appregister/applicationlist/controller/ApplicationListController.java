@@ -238,6 +238,8 @@ public class ApplicationListController implements ApplicationListsApi {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
 
+        log.info("Successfully retrieved ApplicationList with id: {}", id);
+
         return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }
 
