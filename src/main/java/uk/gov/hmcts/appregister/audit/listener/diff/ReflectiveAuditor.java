@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
  * A generic reflective auditor that can be used get audit data from a {@link
- * uk.gov.hmcts.appregister.common.entity.base.Keyable} object
+ * uk.gov.hmcts.appregister.common.entity.base.Keyable} object.
  *
  * <p>If performance issues are a concern, consider implementing a specific differentiator
  * operation.
@@ -75,15 +75,6 @@ public class ReflectiveAuditor implements Auditor {
         return diffs;
     }
 
-    /**
-     * process the auditable data for the value.
-     *
-     * @param val The value
-     * @param differenceList the captured differences
-     * @param processed The processed method call and the objects that were invoked
-     * @param useAnnotations Whether we should use annotations to determine what diferences to
-     *     capture
-     */
     private static void extractAuditData(
             CrudEnum crudEnum,
             Object val,
@@ -113,29 +104,57 @@ public class ReflectiveAuditor implements Auditor {
                 if (!isComplexWrapper(method.method().getReturnType())) {
                     storeAuditDiffData(val, differenceList, method, processed);
                 } else {
-
-                    // if collection then iterate and compare contents, if not a collection then
-                    // process the complex objects
-                    // if we have object reursion turned on
-                    if (!isCollection(method.method().getReturnType()) && recurseNestedObjects) {
-                        log.debug("Method {}", method.method().getName());
-
-                        Object newValRet = invokeMethodForNew(method, val, processed);
-
-                        log.debug("New Value Ret {}", newValRet);
-
-                        // recurse and get the differences in the complex object containing in the
-                        // list
-                        extractAuditData(
-                                crudEnum,
-                                newValRet,
-                                differenceList,
-                                processed,
-                                recurseNestedObjects,
-                                useAnnotations);
-                    }
+                    extractAuditDataFromComplex(
+                            recurseNestedObjects,
+                            method,
+                            crudEnum,
+                            val,
+                            differenceList,
+                            processed,
+                            useAnnotations);
                 }
             }
+        }
+    }
+
+    /**
+     * process the audit data from a complex value.
+     *
+     * @param recurseNestedObjects Whether we recurse into nested objects
+     * @param method The method to get the complex value
+     * @param crudEnum The crud operation
+     * @param val The complex value to get audit data from
+     * @param differenceList The list to build up the audit data
+     * @param processed The processed list to avoid recursion
+     * @param useAnnotations Wether to use annotations or not when processing the operation
+     */
+    private static void extractAuditDataFromComplex(
+            boolean recurseNestedObjects,
+            ReflectionCaches.MethodData method,
+            CrudEnum crudEnum,
+            Object val,
+            List<AuditableData> differenceList,
+            Set<String> processed,
+            boolean useAnnotations) {
+        // if collection then iterate and compare contents, if not a collection then
+        // process the complex objects
+        // if we have object reursion turned on
+        if (!isCollection(method.method().getReturnType()) && recurseNestedObjects) {
+            log.debug("Method {}", method.method().getName());
+
+            Object newValRet = invokeMethodForNew(method, val, processed);
+
+            log.debug("New Value Ret {}", newValRet);
+
+            // recurse and get the differences in the complex object containing in the
+            // list
+            extractAuditData(
+                    crudEnum,
+                    newValRet,
+                    differenceList,
+                    processed,
+                    recurseNestedObjects,
+                    useAnnotations);
         }
     }
 

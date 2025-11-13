@@ -51,7 +51,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                                     .getClass()
                                     .getCanonicalName()
                                     .equals(event.getNewValue().getClass().getCanonicalName()))
-                            || event.getOldValue().getId().equals(event.getNewValue().getId()))) {
+                            || !event.getOldValue().getId().equals(event.getNewValue().getId()))) {
                 log.debug(
                         "ENew and old audit values are not the same type and or id{} {}",
                         event.getOldValue().getClass().getCanonicalName(),
@@ -65,59 +65,64 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                         "Cannot audit when both old and new values are null");
             }
 
-            AuditOldNewEnum oldNew = event.getNewOldAuditState();
+            auditDataBasedOnCompleteEventState(event);
+        }
+    }
 
-            if (oldNew == AuditOldNewEnum.OLD) {
-                List<AuditableData> oldDifferenceList;
-                if (event.getOldValue() instanceof Auditable auditDifferentiable) {
-                    oldDifferenceList =
-                            auditDifferentiable.extractAuditData(
-                                    event.getRequestAction().getType());
-                } else {
-                    oldDifferenceList =
-                            auditor.extractAuditData(
-                                    event.getRequestAction().getType(), event.getOldValue());
-                }
+    /**
+     * audits data based on the complete audit event state.
+     *
+     * @param event The event that signifies the auditable operation is complete
+     */
+    private void auditDataBasedOnCompleteEventState(CompleteEvent event) {
+        AuditOldNewEnum oldNew = event.getNewOldAuditState();
 
-                auditDiff(event, oldDifferenceList, null);
-            } else if (oldNew == AuditOldNewEnum.BOTH) {
-                List<AuditableData> oldDifferenceList;
-                List<AuditableData> newDifferenceList;
-                if (event.getOldValue() instanceof Auditable auditDifferentiable) {
-                    oldDifferenceList =
-                            auditDifferentiable.extractAuditData(
-                                    event.getRequestAction().getType());
-                } else {
-                    oldDifferenceList =
-                            auditor.extractAuditData(
-                                    event.getRequestAction().getType(), event.getOldValue());
-                }
-
-                if (event.getNewValue() instanceof Auditable newAuditDifferentiable) {
-                    newDifferenceList =
-                            newAuditDifferentiable.extractAuditData(
-                                    event.getRequestAction().getType());
-                } else {
-                    newDifferenceList =
-                            auditor.extractAuditData(
-                                    event.getRequestAction().getType(), event.getNewValue());
-                }
-
-                auditDiff(event, oldDifferenceList, newDifferenceList);
+        if (oldNew == AuditOldNewEnum.OLD) {
+            List<AuditableData> oldDifferenceList;
+            if (event.getOldValue() instanceof Auditable auditDifferentiable) {
+                oldDifferenceList =
+                        auditDifferentiable.extractAuditData(event.getRequestAction().getType());
             } else {
-                List<AuditableData> newDifferenceList;
-                if (event.getNewValue() instanceof Auditable auditDifferentiable) {
-                    newDifferenceList =
-                            auditDifferentiable.extractAuditData(
-                                    event.getRequestAction().getType());
-                } else {
-                    newDifferenceList =
-                            auditor.extractAuditData(
-                                    event.getRequestAction().getType(), event.getNewValue());
-                }
-
-                auditDiff(event, newDifferenceList, null);
+                oldDifferenceList =
+                        auditor.extractAuditData(
+                                event.getRequestAction().getType(), event.getOldValue());
             }
+
+            auditDiff(event, oldDifferenceList, null);
+        } else if (oldNew == AuditOldNewEnum.BOTH) {
+            List<AuditableData> oldDifferenceList;
+            List<AuditableData> newDifferenceList;
+            if (event.getOldValue() instanceof Auditable auditDifferentiable) {
+                oldDifferenceList =
+                        auditDifferentiable.extractAuditData(event.getRequestAction().getType());
+            } else {
+                oldDifferenceList =
+                        auditor.extractAuditData(
+                                event.getRequestAction().getType(), event.getOldValue());
+            }
+
+            if (event.getNewValue() instanceof Auditable newAuditDifferentiable) {
+                newDifferenceList =
+                        newAuditDifferentiable.extractAuditData(event.getRequestAction().getType());
+            } else {
+                newDifferenceList =
+                        auditor.extractAuditData(
+                                event.getRequestAction().getType(), event.getNewValue());
+            }
+
+            auditDiff(event, oldDifferenceList, newDifferenceList);
+        } else {
+            List<AuditableData> newDifferenceList;
+            if (event.getNewValue() instanceof Auditable auditDifferentiable) {
+                newDifferenceList =
+                        auditDifferentiable.extractAuditData(event.getRequestAction().getType());
+            } else {
+                newDifferenceList =
+                        auditor.extractAuditData(
+                                event.getRequestAction().getType(), event.getNewValue());
+            }
+
+            auditDiff(event, newDifferenceList, null);
         }
     }
 
