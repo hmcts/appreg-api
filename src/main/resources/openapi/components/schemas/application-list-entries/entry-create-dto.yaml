@@ -1,7 +1,6 @@
 type: object
 description: Request payload to create an Application List Entry.
 required:
-  - listId
   - applicationCode
 
 properties:
@@ -30,7 +29,9 @@ properties:
   wordingFields:
     type: array
     items: {type: string}
-    description: An array of user-provided values used to populate placeholders in the entry wording template, applied in the order they are provided.
+    description: >
+      An array of user-provided values used to populate placeholders in the 'wording'. The wording is a field belonging
+      to the linked Application Code. Each string is applied to the wording in the order they are provided.
     example: ["25 October 2025", "London"]
 
   feeStatuses:
@@ -65,3 +66,9 @@ properties:
     format: date
     description: The date on which the application was submitted. Will be set to current date if omitted.
     example: "2025-12-01"
+
+  officials:
+    type: array
+    items: { $ref: "../participants/official.yaml" }
+    description: An array of Officials who will decide the outcome of the Application.
+    maxItems: 4

@@ -1,0 +1,71 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+  - in: path
+    name: entryId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List Entry.
+get:
+  operationId: getApplicationListEntryResults
+  tags: [ application-list-entry-results ]
+  summary: Get Application List Entries Results (paginated)
+  description: Returns a paginated list of Application List Entry Results linked to a specific Entry.
+  parameters:
+    - in: query
+      name: page
+      schema: { type: integer, minimum: 0, default: 0 }
+    - in: query
+      name: size
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+  responses:
+    "200":
+      description: Page of Application List Entry Results
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-list-entry-results/result-page.yaml" }
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "406": { $ref: "../../components/responses/not-acceptable-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
+
+post:
+  operationId: createApplicationListEntryResult
+  tags: [ application-list-entry-results ]
+  summary: Create an Application List Entry Result
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/application-list-entry-results/result-create-dto.yaml"
+  responses:
+    "201":
+      description: Returns the created Application List Entry Result
+      headers:
+        Location:
+          description: URL of the created Application List Entry Result
+          schema: { type: string }
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/application-list-entry-results/result-get-dto.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
