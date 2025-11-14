@@ -41,6 +41,8 @@ tags:
     description:
       Criminal Justice Areas are reference data, not managed in App Reg. They are officially recognized justice regions
       and used to classify records by jurisdiction.
+  - name: jobs
+    description: Background job operations for asynchronous tasks (polling status across all job types).
   - name: reports
     description: Endpoints to generate and retrieve CSV reports asynchronously.
   - name: result-codes
@@ -78,6 +80,8 @@ paths:
   # CRIMINAL JUSTICE AREAS
   /criminal-justice-areas:                                          { $ref: './paths/criminal-justice-areas/criminal-justice-areas.yaml' }
   /criminal-justice-areas/{code}:                                   { $ref: './paths/criminal-justice-areas/criminal-justice-areas-by-code.yaml' }
+  # JOBS
+  /jobs/{jobId}:                                                    { $ref: './paths/jobs/jobs-by-id.yaml' }
   # REPORTS
   /reports/activity-audit/jobs:                                     { $ref: './paths/reports/activity-audit.yaml' }
   /reports/fees/jobs:                                               { $ref: './paths/reports/fees.yaml' }
@@ -86,8 +90,6 @@ paths:
   /reports/workload/jobs:                                           { $ref: './paths/reports/workload.yaml' }
   /reports/duration/jobs:                                           { $ref: './paths/reports/duration.yaml' }
   /reports/private-prosecutors-index/jobs:                          { $ref: './paths/reports/private-prosecutors-index.yaml' }
-  # REPORT JOB LIFECYCLE
-  /reports/jobs/{jobId}:                                            { $ref: './paths/reports/report-jobs-by-id.yaml' }
   /reports/jobs/{jobId}/download:                                   { $ref: './paths/reports/report-jobs-download-by-id.yaml' }
   # RESULT CODES
   /result-codes:                                                    { $ref: './paths/result-codes/result-codes.yaml' }
@@ -101,7 +103,6 @@ components:
     # APPLICATION ACTIONS
     move-entries-dto:                     { $ref: './components/schemas/actions/move-entries-dto.yaml' }
     bulk-result-dto:                      { $ref: './components/schemas/actions/bulk-result-dto.yaml' }
-    bulk-upload-dto:                      { $ref: './components/schemas/actions/bulk-upload-dto.yaml' }
     # APPLICATION CODES
     application-code-get-summary-dto:     { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }
     application-code-get-detail-dto:      { $ref: './components/schemas/application-codes/application-code-get-detail-dto.yaml' }

@@ -1,0 +1,54 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: ID of the Application List receiving the uploaded entries.
+
+post:
+  operationId: bulkUploadApplicationListEntries
+  tags: [ actions ]
+  summary: Start an asynchronous bulk upload of entries via CSV.
+  description: >
+    Enqueues a background job that validates the CSV and, if valid, atomically inserts
+    all rows in a single transaction. If any row fails during commit, the entire
+    transaction is rolled back and the job ends in `FAILED`.
+  requestBody:
+    required: true
+    content:
+      text/csv:
+        schema:
+          type: string
+          description: CSV payload containing entries to upload.
+      multipart/form-data:
+        schema:
+          type: object
+          required: [ file ]
+          properties:
+            file:
+              type: string
+              format: binary
+              description: CSV file containing entries to upload.
+  responses:
+    "202":
+      description: Job accepted. Poll the URL in the Location header for status.
+      headers:
+        Location:
+          description: Polling URL for the created job.
+          schema:
+            type: string
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/common/job-acknowledgement.yaml"
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
+    "415": { $ref: "../../components/responses/unsupported-media-type-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

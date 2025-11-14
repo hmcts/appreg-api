@@ -1,0 +1,16 @@
+description: Request entity is too large to be processed.
+headers:
+  x-correlation-id:
+    description: Correlation ID for request tracing.
+    schema: { type: string }
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      payload-too-large:
+        value:
+          type: https://errors.hmcts.net/common/payload-too-large
+          title: Payload Too Large
+          status: 413
+          detail: The uploaded file exceeds the maximum permitted size.
