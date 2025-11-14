@@ -17,7 +17,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
@@ -38,7 +38,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
     record OfficialKey(String title, String forename, String surname, String type) {}
 
     @Test
-    public void testFindOfficialsForPrinting_bulk() {
+    public void testFindByApplicationListUuidForPrinting() {
         // Arrange: one list with two entries
         ApplicationList list = new AppListTestData().someMinimal().build();
 
@@ -51,8 +51,8 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
                         entityManager, persistance, list, (short) 2);
 
         // Act: bulk fetch by list UUID
-        List<ApplicationListOfficialPrintProjection> officials =
-                applicationListEntryOfficialRepository.findOfficialsForPrinting(
+        List<ApplicationListEntryOfficialPrintProjection> officials =
+                applicationListEntryOfficialRepository.findByApplicationListUuidForPrinting(
                         list.getUuid(), OfficialTypeUtil.PRINTABLE_CODES);
 
         // Assert: non-null and only printable types returned
@@ -90,7 +90,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
                 officials.stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        ApplicationListOfficialPrintProjection::getEntryId,
+                                        ApplicationListEntryOfficialPrintProjection::getEntryId,
                                         Collectors.mapping(
                                                 official ->
                                                         new OfficialKey(

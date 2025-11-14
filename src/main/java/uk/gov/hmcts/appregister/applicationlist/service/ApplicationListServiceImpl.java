@@ -35,10 +35,10 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ResultWordingProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -375,7 +375,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                 "No application list found for UUID '%s'"
                                                         .formatted(id)));
 
-        // 1) Fetch all entry projections for the list (single query)
+        // 1) Fetch all entry projections for the list
         List<ApplicationListEntryPrintProjection> entryProjections =
                 aleRepository.findByIdForPrinting(id);
 
@@ -384,27 +384,32 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             return buildGetPrintDto(list, List.of());
         }
 
-        // 2) Bulk fetch wordings for this list (single query)
-        List<ResultWordingProjection> wordingRows = alerRepository.findWordingsForPrinting(id);
+        // 2) Bulk fetch wordings for this list
+        List<ApplicationListEntryResolutionPrintProjection>
+                applicationListEntryResolutionPrintProjections =
+                        alerRepository.findByApplicationListUuidForPrinting(id);
         Map<Long, List<String>> wordingsByEntryId =
-                wordingRows.stream()
+                applicationListEntryResolutionPrintProjections.stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        ResultWordingProjection::getEntryId,
+                                        ApplicationListEntryResolutionPrintProjection::getEntryId,
                                         Collectors.mapping(
-                                                ResultWordingProjection::getWording,
+                                                ApplicationListEntryResolutionPrintProjection
+                                                        ::getWording,
                                                 Collectors.toList())));
 
-        // 3) Bulk fetch officials for this list (single query)
-        List<ApplicationListOfficialPrintProjection> officialRows =
-                aleoRepository.findOfficialsForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+        // 3) Bulk fetch officials for this list
+        List<ApplicationListEntryOfficialPrintProjection>
+                applicationListEntryOfficialPrintProjection =
+                        aleoRepository.findByApplicationListUuidForPrinting(
+                                id, OfficialTypeUtil.PRINTABLE_CODES);
 
         // map directly to DTOs while grouping
         Map<Long, List<Official>> officialsByEntryId =
-                officialRows.stream()
+                applicationListEntryOfficialPrintProjection.stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        ApplicationListOfficialPrintProjection::getEntryId,
+                                        ApplicationListEntryOfficialPrintProjection::getEntryId,
                                         Collectors.mapping(
                                                 officalMapper::toOfficialDto,
                                                 Collectors.toList())));

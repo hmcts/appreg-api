@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 
 /**
  * Repository interface for managing AppListEntryOfficial entities.
@@ -17,11 +17,11 @@ public interface ApplicationListEntryOfficialRepository
         extends JpaRepository<AppListEntryOfficial, Long> {
 
     /**
-     * Retrieves officials for all entries in a given application list (bulk).
+     * Retrieves all officials for a given application list.
      *
-     * @param listUuid UUID of the ApplicationList (parent of the entries)
+     * @param listUuid the UUID of the ApplicationList
      * @param codes printable official types
-     * @return rows containing entryId and official fields, ordered for stable rendering
+     * @return a list of officials
      */
     @Query(
             """
@@ -32,11 +32,9 @@ public interface ApplicationListEntryOfficialRepository
                aleo.forename as forename,
                aleo.surname as surname
             FROM AppListEntryOfficial aleo
-            JOIN aleo.appListEntry ale
             WHERE aleo.appListEntry.applicationList.uuid = :listUuid
             AND aleo.officialType in :codes
-            ORDER BY ale.id, aleo.id
             """)
-    List<ApplicationListOfficialPrintProjection> findOfficialsForPrinting(
+    List<ApplicationListEntryOfficialPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid, Collection<String> codes);
 }

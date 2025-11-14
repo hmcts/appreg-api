@@ -13,7 +13,6 @@ public final class ApplicationListMappingHelper {
         if (app == null) {
             return null;
         }
-        ;
 
         short hours = app.getDurationHours();
         short minutes = app.getDurationMinutes();
@@ -26,18 +25,22 @@ public final class ApplicationListMappingHelper {
         if (cja == null) {
             return null;
         }
-        ;
+
         String code = cja.getCode();
-        String desc = cja.getDescription();
-        if (code == null && desc == null) {
+        String description = cja.getDescription();
+
+        if (code == null && description == null) {
             return null;
         }
+
         if (code == null) {
-            return desc;
+            return description;
         }
-        if (desc == null) {
+
+        if (description == null) {
             return code;
         }
-        return code + " - " + desc;
+
+        return code + " - " + description;
     }
 }

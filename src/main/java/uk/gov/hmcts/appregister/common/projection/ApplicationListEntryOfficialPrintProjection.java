@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.common.projection;
 
-public interface ApplicationListOfficialPrintProjection {
+public interface ApplicationListEntryOfficialPrintProjection {
 
     Long getEntryId();
 

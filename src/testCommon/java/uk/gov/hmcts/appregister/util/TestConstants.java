@@ -77,4 +77,7 @@ public final class TestConstants {
     public static final String APPLICATIONLISTENTRY1_ACCOUNTNUMBER = "1234567890";
     public static final String APPLICATIONLISTENTRY1_NOTES =
             "Application for extension of time to file defence";
+
+    public static final String CJA1_CODE = "01";
+    public static final String CJA1_DESCRIPTION = "CJA Number 1";
 }

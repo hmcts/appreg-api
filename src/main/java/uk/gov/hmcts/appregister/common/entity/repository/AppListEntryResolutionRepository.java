@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
-import uk.gov.hmcts.appregister.common.projection.ResultWordingProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 
 public interface AppListEntryResolutionRepository
         extends JpaRepository<AppListEntryResolution, Long> {
@@ -31,10 +31,10 @@ public interface AppListEntryResolutionRepository
     List<AppListEntryResolution> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Retrieves all result wordings for entries in a given application list.
+     * Retrieves all result wordings for a given application list.
      *
      * @param listUuid the UUID of the ApplicationList
-     * @return list of entry–wording pairs
+     * @return a list of result wordings
      */
     @Query(
             """
@@ -43,7 +43,7 @@ public interface AppListEntryResolutionRepository
                 aler.resolutionWording AS wording
             FROM AppListEntryResolution aler
             WHERE aler.applicationList.applicationList.uuid = :listUuid
-            ORDER BY aler.applicationList.id
             """)
-    List<ResultWordingProjection> findWordingsForPrinting(UUID listUuid);
+    List<ApplicationListEntryResolutionPrintProjection> findByApplicationListUuidForPrinting(
+            UUID listUuid);
 }

@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
 import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
-import static uk.gov.hmcts.appregister.util.ApplicationListOfficialPrintProjectionUtil.applicationListOfficialPrintProjection;
+import static uk.gov.hmcts.appregister.util.ApplicationListEntryOfficialPrintProjectionUtil.applicationListEntryOfficialPrintProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_SURNAME;
@@ -15,7 +15,7 @@ class ApplicationListOfficialMapperTest {
     @Test
     void testToOfficialDto_provideValidData_validDtoGenerated() {
         var projection =
-                applicationListOfficialPrintProjection()
+                applicationListEntryOfficialPrintProjection()
                         .type(MAGISTRATE_CODE)
                         .title(MR)
                         .forename(PERSON1_FORENAME1)

@@ -16,7 +16,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.projection.ResultWordingProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -33,7 +33,7 @@ public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
     @PersistenceContext private EntityManager entityManager;
 
     @Test
-    public void testFindWordingsForPrinting() {
+    public void testFindByApplicationListUuidForPrinting() {
         // Arrange
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry entry =
@@ -41,15 +41,18 @@ public class AppListEntryResolutionRepositoryTest extends BaseRepositoryTest {
                         entityManager, persistance, list, (short) 1);
 
         // Act
-        List<ResultWordingProjection> results =
-                applicationListEntryResolutionRepository.findWordingsForPrinting(list.getUuid());
+        List<ApplicationListEntryResolutionPrintProjection> results =
+                applicationListEntryResolutionRepository.findByApplicationListUuidForPrinting(
+                        list.getUuid());
 
         // Assert
         assertNotNull(results);
         Assertions.assertFalse(results.isEmpty());
 
         List<String> retrievedWordings =
-                results.stream().map(ResultWordingProjection::getWording).toList();
+                results.stream()
+                        .map(ApplicationListEntryResolutionPrintProjection::getWording)
+                        .toList();
 
         assertTrue(retrievedWordings.containsAll(List.of(WORDING_1, WORDING_2)));
         assertThat(retrievedWordings.size()).isEqualTo(2);

@@ -69,9 +69,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepos
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
-import uk.gov.hmcts.appregister.common.projection.ResultWordingProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -729,7 +729,7 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
-    void print_bulkFetchesAndGroups_returnsDto() {
+    void print_returnsDto() {
         // Given
         UUID id = UUID.randomUUID();
         ApplicationList list = new ApplicationList();
@@ -748,23 +748,26 @@ public class ApplicationListServiceImplTest {
         when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of(entryProjection));
 
         // 2) Wordings (bulk)
-        ResultWordingProjection wordingRow1 = mock(ResultWordingProjection.class);
+        ApplicationListEntryResolutionPrintProjection wordingRow1 =
+                mock(ApplicationListEntryResolutionPrintProjection.class);
         when(wordingRow1.getEntryId()).thenReturn(1L);
         when(wordingRow1.getWording()).thenReturn(WORDING_1);
 
-        ResultWordingProjection wordingRow2 = mock(ResultWordingProjection.class);
+        ApplicationListEntryResolutionPrintProjection wordingRow2 =
+                mock(ApplicationListEntryResolutionPrintProjection.class);
         when(wordingRow2.getEntryId()).thenReturn(1L);
         when(wordingRow2.getWording()).thenReturn(WORDING_2);
 
-        when(alerRepository.findWordingsForPrinting(id))
+        when(alerRepository.findByApplicationListUuidForPrinting(id))
                 .thenReturn(List.of(wordingRow1, wordingRow2));
 
         // 3) Officials (bulk)
-        ApplicationListOfficialPrintProjection officialProj =
-                mock(ApplicationListOfficialPrintProjection.class);
+        ApplicationListEntryOfficialPrintProjection officialProj =
+                mock(ApplicationListEntryOfficialPrintProjection.class);
         when(officialProj.getEntryId()).thenReturn(1L);
 
-        when(aleoRepository.findOfficialsForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES))
+        when(aleoRepository.findByApplicationListUuidForPrinting(
+                        id, OfficialTypeUtil.PRINTABLE_CODES))
                 .thenReturn(List.of(officialProj));
 
         // Mapper stubs
@@ -793,8 +796,9 @@ public class ApplicationListServiceImplTest {
         assertEquals(List.of(officialDto), dto.getOfficials());
 
         verify(aleRepository).findByIdForPrinting(id);
-        verify(alerRepository).findWordingsForPrinting(id);
-        verify(aleoRepository).findOfficialsForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+        verify(alerRepository).findByApplicationListUuidForPrinting(id);
+        verify(aleoRepository)
+                .findByApplicationListUuidForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);

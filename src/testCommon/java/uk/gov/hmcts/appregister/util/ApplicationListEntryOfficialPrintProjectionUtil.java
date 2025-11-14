@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.util;
 
-import uk.gov.hmcts.appregister.common.projection.ApplicationListOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 
-public final class ApplicationListOfficialPrintProjectionUtil {
+public final class ApplicationListEntryOfficialPrintProjectionUtil {
 
-    public static Builder applicationListOfficialPrintProjection() {
+    public static Builder applicationListEntryOfficialPrintProjection() {
         return new Builder();
     }
 
@@ -14,6 +14,11 @@ public final class ApplicationListOfficialPrintProjectionUtil {
         private String title;
         private String forename;
         private String surname;
+
+        public Builder entryId(Long entryId) {
+            this.entryId = entryId;
+            return this;
+        }
 
         public Builder type(String type) {
             this.type = type;
@@ -35,12 +40,12 @@ public final class ApplicationListOfficialPrintProjectionUtil {
             return this;
         }
 
-        public ApplicationListOfficialPrintProjection build() {
+        public ApplicationListEntryOfficialPrintProjection build() {
             return new Impl(entryId, type, title, forename, surname);
         }
     }
 
-    private static final class Impl implements ApplicationListOfficialPrintProjection {
+    private static final class Impl implements ApplicationListEntryOfficialPrintProjection {
         private final Long entryId;
         private final String type;
         private final String title;
