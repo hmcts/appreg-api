@@ -8,5 +8,15 @@
     <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
     <cve>CVE-2023-35116</cve>
   </suppress>
+
+  <!--Please add all the false positives under the below section-->
+  <suppress>
+    <notes>We do not expose a SMTP interface
+    </notes>
+    <packageUrl regex="true">^pkg:maven/org.eclipse.angus/angus-activation@2.0.3, cpe:2.3:a:eclipse:angus_mail:2.0.3:*:*:*:*:*:*:*$</packageUrl>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
+
+
   <!--End of false positives section -->
 </suppressions>
