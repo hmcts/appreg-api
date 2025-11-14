@@ -67,3 +67,9 @@ properties:
     format: date
     description: The date on which the application was submitted.
     example: "2025-12-01"
+
+  officials:
+    type: array
+    items: { $ref: "../participants/official.yaml" }
+    description: An array of Officials who will decide the outcome of the Application.
+    maxItems: 4

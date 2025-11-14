@@ -1,0 +1,61 @@
+
+type: object
+description: >
+  Filter criteria for POST /reports/private-prosecutors-index/jobs.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+additionalProperties: false
+required:
+  - dateFrom
+  - dateTo
+
+properties:
+
+  dateFrom:
+    type: string
+    format: date
+    description: Inclusive start date (YYYY-MM-DD).
+    example: "2025-10-01"
+
+  dateTo:
+    type: string
+    format: date
+    description: Inclusive end date (YYYY-MM-DD).
+    example: "2025-10-31"
+
+  location:
+    $ref: '../common/location.yaml'
+
+  applicantSurname:
+    type: string
+    description: Applicant surname (case-insensitive contains match).
+    example: "Smith"
+
+  applicantFirstName:
+    type: string
+    description: Applicant first name (case-insensitive contains match).
+    example: "John"
+
+  applicantOrganisationName:
+    type: string
+    description: Applicant organisation name (case-insensitive contains match).
+    example: "Acme Corp"
+
+  standardApplicantName:
+    type: string
+    description: Standard applicant name (case-insensitive contains match).
+    example: "Crown Prosecution Service"
+
+  respondentSurname:
+    type: string
+    description: Respondent surname (case-insensitive contains match).
+    example: "Doe"
+
+  respondentFirstName:
+    type: string
+    description: Respondent first name (case-insensitive contains match).
+    example: "Jane"
+
+  respondentOrganisationName:
+    type: string
+    description: Respondent organisation name (case-insensitive contains match).
+    example: "XYZ Ltd"

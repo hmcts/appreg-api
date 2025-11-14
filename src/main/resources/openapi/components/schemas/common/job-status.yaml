@@ -1,0 +1,7 @@
+type: string
+description: The status of the job being polled by the user.
+enum:
+  - RECEIVED
+  - PROCESSING
+  - FAILED
+  - COMPLETED
