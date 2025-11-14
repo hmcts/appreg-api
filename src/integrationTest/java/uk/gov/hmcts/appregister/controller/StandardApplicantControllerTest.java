@@ -26,7 +26,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -418,7 +417,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // assert the response is successful with no content
         responseSpec.then().statusCode(200);
-        ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
     }
 
@@ -675,7 +674,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // execute the functionality
-        int pageSize = 1;
+        int pageSize = 6;
         int pageNumber = 200;
         Response responseSpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -690,7 +689,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // assert the response
         responseSpec.then().statusCode(200);
-        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         Assertions.assertNull(page.getContent());
     }
