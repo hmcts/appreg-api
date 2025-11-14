@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
-import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -18,10 +17,13 @@ public class ListUpdateValidationSuccess extends ListLocationValidationSuccess {
     /** The application list being updated. */
     private ApplicationList applicationList;
 
-    public Optional<ApplicationList> getCopyOfApplicationList() {
-        ApplicationList before =
-                org.springframework.beans.BeanUtils.instantiateClass(ApplicationList.class);
-        BeanUtils.copyProperties(applicationList, before);
-        return Optional.of(before);
+    public ApplicationList getCopyOfApplicationList() {
+        ApplicationList before = null;
+        if (applicationList != null) {
+            before = org.springframework.beans.BeanUtils.instantiateClass(ApplicationList.class);
+            BeanUtils.copyProperties(applicationList, before);
+        }
+
+        return before;
     }
 }

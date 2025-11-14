@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.DifferenceLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 
 @AutoConfigureWebTestClient
 @AutoConfigureWireMock(port = 0)
@@ -44,7 +44,7 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
 
     protected LogCaptor logCaptor;
 
-    protected DifferenceLogAsserter differenceLogAsserter;
+    protected AuditLogAsserter differenceLogAsserter;
 
     @BeforeEach
     void setup() {
@@ -58,7 +58,7 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
         }
 
         logCaptor = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
-        differenceLogAsserter = new DifferenceLogAsserter();
+        differenceLogAsserter = new AuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();
     }

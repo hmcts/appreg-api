@@ -93,7 +93,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         log.debug("Start: Request to create application list : {}", dto);
 
         return auditService.processAudit(
-                Optional.empty(),
                 AppListAuditOperation.CREATE_APP_LIST,
                 req ->
                         applicationCreateListLocationValidator.validate(
@@ -193,7 +192,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         hydrated.getUuid(),
                         hydrated,
                         mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES)),
-                Optional.of(hydrated));
+                hydrated);
     }
 
     /**
@@ -219,7 +218,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         hydrated.getUuid(),
                         hydrated,
                         mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES)),
-                Optional.of(hydrated));
+                hydrated);
     }
 
     /**
@@ -250,7 +249,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     hydrated,
                                     mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES));
                         }),
-                Optional.of(success.getApplicationList()));
+                success.getApplicationList());
     }
 
     /**
@@ -284,7 +283,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     hydrated,
                                     mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES));
                         }),
-                Optional.of(applicationList));
+                applicationList);
     }
 
     @Override

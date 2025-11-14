@@ -7,21 +7,20 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 /**
- * Very similar to a @{link Comparable}, but for diffing purposes.
+ * Very similar to a @{link Comparable}, but for audit diffing purposes.
  */
-public interface AuditDifferentiable extends Keyable {
+public interface Auditable extends Keyable {
     /**
-     * establish the difference between this object and existing.
+     * establish the audit difference for this object.
      *
      * @param crudEnum The audit CRUD operation being performed
-     * @param existing The other object to diff against
      * @return The list of differences that exist at the field level
      */
-    default List<Difference> diff(CrudEnum crudEnum, Keyable existing) {
-        if (!(existing instanceof Difference)) {
+    default List<AuditableData> extractAuditData(CrudEnum crudEnum) {
+        if (!(this instanceof AuditableData)) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Usage error. Cant establish diff");
         }
-        return ReflectiveAuditDifferentiator.difference(crudEnum, existing, this, false, false);
+        return ReflectiveAuditor.extractAuditData(crudEnum, this, true);
     }
 }

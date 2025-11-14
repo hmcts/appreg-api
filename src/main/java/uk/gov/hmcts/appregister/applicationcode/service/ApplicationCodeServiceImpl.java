@@ -51,7 +51,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
-                Optional.empty(),
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
                     log.debug(
@@ -85,7 +84,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             pageable);
 
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, Optional.empty());
+                            new AuditableResult<>(newPage, null);
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -95,7 +94,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Transactional(readOnly = true)
     public ApplicationCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
-                Optional.empty(),
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     log.debug(
@@ -131,7 +129,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                             codeToConsider,
                                             feePair != null ? feePair.mainFee() : null,
                                             feePair != null ? feePair.offsiteFee() : null),
-                                    Optional.empty());
+                                    null);
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

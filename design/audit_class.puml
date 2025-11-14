@@ -13,21 +13,18 @@ enum OperationStatus {
     FAILED(-1);
 }
 
-interface AuditDifferentiator {
-   List<Difference> diff(CRUDEnum crudEnum, Keyable oldObj, Keyable newObj);
-   List<Difference> diff(CRUDEnum crudEnum, Keyable newObj);
+interface Auditor {
+   List<AuditableData> extractAuditData(CRUDEnum crudEnum, Keyable newObj);
 }
 
-interface AuditDifferentiable {
-    List<Difference> diff(CRUDEnum crudEnum, Keyable t)
+interface Auditable {
+    List<AuditableData> extractAuditData(CRUDEnum crudEnum)
 }
 
+Auditor <|-- ReflectiveAuditor
 
-
-AuditDifferentiator <|-- ReflectiveAuditDifferentiator
-
-note right of ReflectiveAuditDifferentiator
-The reflective based diffing class that works with
+note right of ReflectiveAuditor
+The reflective based audit extraction class that works with
 keyable entities. The audit annotations are honoured by
 this implementation
 end note
@@ -36,7 +33,7 @@ class ReflectionCaches {
 
 }
 
-ReflectiveAuditDifferentiator-> ReflectionCaches : lazily reads/caches method instances
+ReflectiveAuditor -> ReflectionCaches : lazily reads/caches method instances
 
 class StartEvent
 class CompleteEvent
@@ -102,6 +99,9 @@ optional lifecycle listeners to be called. It returns an AuditableResult
 with a new value if applicable
 end note
 
+AuditOperationServiceImpl -> AuditEvent : <<create>>
+
+
 class DataAuditLogger {
     void finished(CompleteEvent event)
 }
@@ -115,9 +115,8 @@ registered by Spring
 end note
 
 note top of DataAuditLogger
-The listener that handles entity changes, discovers the differences and
-saves them to the data_audit database table. The listener that simple logs to slf4j.
-This is registered by Spring
+The listener that handles entity changes, discovers the audit data and
+saves them to the data_audit database table.
 end note
 
 class DataAuditRepository {
@@ -127,9 +126,8 @@ class DataAuditRepository {
 Keyable <|-- DataAudit
 
 DataAuditLogger -> DataAudit : <<create>>
-DataAuditLogger -> AuditDifferentiator : diff
+DataAuditLogger -> ReflectiveAuditor : extractAuditData
 DataAuditLogger -> DataAuditRepository : save(DataAudit)
-DataAuditLogger -> AuditEvent : <<create>>
 
 AuditOperationService <.. AuditOperationServiceImpl
 AuditEvent o-- AuditOperation
@@ -152,9 +150,9 @@ end note
 
 note left of Audit
 Annotation to markup a field on a keyable class.
-This is used to establish a data diff for a particular audit
+This is used to establish a audit data for a particular audit
 operation. NOTE: The annotation is not needed, by default the
-whole keyable class data is diffed on all audit operations
+whole keyable class data is extracted
 end note
 
 @enduml

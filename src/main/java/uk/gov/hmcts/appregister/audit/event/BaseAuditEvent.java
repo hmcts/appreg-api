@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.event;
 
-import java.util.Optional;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
@@ -38,7 +37,7 @@ public interface BaseAuditEvent {
      */
     String getMessageContent();
 
-    Optional<Keyable> getNewValue();
+    Keyable getNewValue();
 
-    Optional<Keyable> getOldValue();
+    Keyable getOldValue();
 }

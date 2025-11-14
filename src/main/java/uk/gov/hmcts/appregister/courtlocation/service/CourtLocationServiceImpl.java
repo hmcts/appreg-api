@@ -65,7 +65,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     @Override
     public CourtLocationGetDetailDto findByCodeAndDate(String code, LocalDate date) {
         return auditService.processAudit(
-                Optional.empty(),
                 CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
                     log.debug(
@@ -85,8 +84,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     }
 
                     AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
-                            new AuditableResult<>(
-                                    mapper.toDetailDto(rows.getFirst()), Optional.empty());
+                            new AuditableResult<>(mapper.toDetailDto(rows.getFirst()), null);
 
                     // Map the single matching entity to a detail DTO
                     return Optional.of(result);
@@ -109,7 +107,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     @Override
     public CourtLocationPage getPage(String nameFilter, String codeFilter, Pageable pageable) {
         return auditService.processAudit(
-                Optional.empty(),
                 CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
                     log.debug(
@@ -132,7 +129,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
                     AuditableResult<CourtLocationPage, NationalCourtHouse> result =
-                            new AuditableResult<>(responsePage, Optional.empty());
+                            new AuditableResult<>(responsePage, null);
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

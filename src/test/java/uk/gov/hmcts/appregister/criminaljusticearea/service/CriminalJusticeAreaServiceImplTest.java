@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,7 +64,7 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(description, dto.getDescription());
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -87,7 +88,7 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(CriminalJusticeAreaError.DUPLICATE_CJA_FOUND, thrown.getCode());
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -111,7 +112,7 @@ class CriminalJusticeAreaServiceImplTest {
         Assertions.assertEquals(CriminalJusticeAreaError.CJA_NOT_FOUND, thrown.getCode());
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
                         notNull(),
                         notNull());

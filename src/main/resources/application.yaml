@@ -93,6 +93,5 @@ appreg:
   audit:
     diff:
       enable-complex-diff: true
-      enable-collection-diff: false
 
 

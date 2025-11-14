@@ -33,6 +33,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
@@ -48,7 +49,10 @@ public class ApplicationCodeServiceImplTest {
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
     @Mock private ApplicationFeeService feeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    @Spy private final AuditOperationService auditService = new DummyAuditOperationService();
+
+    @Spy
+    private final AuditOperationService auditService = new AuditOperationServiceImpl(objectMapper);
+
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();
     @Spy private final PageMapper pageMapper = new PageMapper();
 
@@ -261,7 +265,14 @@ public class ApplicationCodeServiceImplTest {
 
         @Override
         public <T, E extends Keyable> T processAudit(
-                Optional<E> oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            return processAudit(auditType, execution, listener);
+        }
+
+        public <T, E extends Keyable> T processAudit(
+                E oldValue,
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
@@ -271,9 +282,9 @@ public class ApplicationCodeServiceImplTest {
                                     new StartEvent(
                                             AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                                             UUID.randomUUID().toString(),
-                                            Optional.empty()),
+                                            null),
                                     "result",
-                                    Optional.empty()));
+                                    null));
             return optional.get().getResultingValue();
         }
     }

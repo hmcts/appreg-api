@@ -32,14 +32,12 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     public CriminalJusticeAreaGetDto findByCode(String code) {
         return auditService.processAudit(
-                Optional.empty(),
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
                 req -> {
                     var cja = locationLookupService.getCjaOrThrow(code);
 
                     AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
-                            new AuditableResult<>(
-                                    criminalJusticeMapper.toDto(cja), Optional.empty());
+                            new AuditableResult<>(criminalJusticeMapper.toDto(cja), null);
 
                     return Optional.of(result);
                 },
@@ -49,7 +47,6 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     public CriminalJusticeAreaPage findAll(String code, String description, Pageable pageable) {
         return auditService.processAudit(
-                Optional.empty(),
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
                 (req) -> {
                     org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
@@ -64,7 +61,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                                     criminalJusticeMapper.toDto(entry)));
 
                     AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                            new AuditableResult<>(criminalJusticeAreaPage, Optional.empty());
+                            new AuditableResult<>(criminalJusticeAreaPage, null);
 
                     return Optional.of(result);
                 },

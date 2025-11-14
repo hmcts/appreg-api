@@ -38,12 +38,19 @@ public class AuditOperationServiceImpl implements AuditOperationService {
 
     @Override
     public <T, E extends Keyable> T processAudit(
-            Optional<E> oldValue,
             AuditOperation auditType,
             Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
             AuditOperationLifecycleListener... listener) {
-        StartEvent event =
-                new StartEvent(auditType, getTraceId(), Optional.ofNullable(oldValue.orElse(null)));
+        return processAudit(null, auditType, execution, listener);
+    }
+
+    @Override
+    public <T, E extends Keyable> T processAudit(
+            E oldValue,
+            AuditOperation auditType,
+            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+            AuditOperationLifecycleListener... listener) {
+        StartEvent event = new StartEvent(auditType, getTraceId(), oldValue);
 
         // before execution hook
         fireAuditEvent(event, listener);
@@ -62,12 +69,11 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                         new CompleteEvent(
                                 event,
                                 getBodyAsString(responsePayload.get().getResultingValue()),
-                                Optional.ofNullable(
-                                        responsePayload.get().getNewEntity().orElse(null))),
+                                responsePayload.get().getNewEntity()),
                         listener);
             } else {
                 // fire after the completed operation
-                fireAuditEvent(new CompleteEvent(event, null, Optional.empty()), listener);
+                fireAuditEvent(new CompleteEvent(event, null, null), listener);
             }
 
             log.debug("Processed success auditable operation: {}", event);
@@ -91,20 +97,18 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      * @param result The result containing old and new values on which to audit
      */
     private <T, E extends Keyable> void checkIfAuditOperationIsSuitableForResult(
-            AuditOperation eventEnum,
-            Optional<E> oldValue,
-            Optional<AuditableResult<T, E>> result) {
+            AuditOperation eventEnum, E oldValue, Optional<AuditableResult<T, E>> result) {
         if (eventEnum.getType().isCreate()
-                && ((result.isPresent() && oldValue.isPresent())
-                        || (result.isPresent() && result.get().getNewEntity().isEmpty()))) {
+                && ((result.isPresent() && oldValue != null)
+                        || (result.isPresent() && result.get().getNewEntity() == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
                 && result.isPresent()
-                && (result.get().getNewEntity().isEmpty() || oldValue.isEmpty())) {
+                && (result.get().getNewEntity() == null || oldValue == null)) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
-        } else if (eventEnum.getType().isDelete() && !oldValue.isPresent()) {
+        } else if (eventEnum.getType().isDelete() && oldValue == null) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old and new");
         }

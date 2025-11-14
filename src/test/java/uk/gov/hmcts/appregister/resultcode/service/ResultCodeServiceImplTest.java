@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,10 +90,7 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(Optional.empty()),
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -115,10 +111,7 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(Optional.empty()),
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -142,10 +135,7 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(Optional.empty()),
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -189,10 +179,7 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(Optional.empty()),
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -229,9 +216,6 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(Optional.empty()),
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT),
-                        notNull(),
-                        notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
     }
 }

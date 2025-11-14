@@ -11,15 +11,18 @@ import java.util.List;
 
 /**
  * A central place for cache to exist to avoid reflection based performance problems. This cache is
- * simple and lazy (not called then no memory usage). There is no associated eviction policy like
- * other, more sophisticated third party solutions. The cache is based on ClassValue.
+ * simple and lazy (if not called, then no memory usage). There is no associated eviction policy
+ * like other, more sophisticated third party solutions. The cache is based on ClassValue.
  */
 public class ReflectionCaches {
     public record MethodData(String tableName, String columnName, Method method, Field field) {}
 
     public record ReflectionMeta(List<MethodData> methods) {}
 
-    /** The method cache that is used for performance. */
+    /**
+     * The method cache that is used for performance reasons. It parses a classes data and caches
+     * associated data for future use
+     */
     public static final ClassValue<ReflectionMeta> METHOD_CACHE =
             new ClassValue<>() {
                 @Override
@@ -30,6 +33,8 @@ public class ReflectionCaches {
                         Method get = getGetterForField(type, field.getName());
                         String col = getColumnOrJoinColumnName(field);
                         if (get != null && col != null) {
+                            // store the method data for a class with the table name, column name,
+                            // method and field
                             returnMethods.add(new MethodData(table, col, get, field));
                         }
                     }
@@ -39,7 +44,7 @@ public class ReflectionCaches {
             };
 
     /**
-     * Returns all methods declared in the given class and its superclasses. Includes
+     * Returns all fields declared in the given class and its superclasses. Includes
      * private/protected/package methods, and avoids duplicates.
      */
     public static List<Field> getAllFields(Class<?> type) {
@@ -53,6 +58,10 @@ public class ReflectionCaches {
     /**
      * Returns the getter method corresponding to a field if it exists. Example: field 'status' →
      * method 'getStatus' or 'isStatus' (for booleans)
+     *
+     * @param clazz The class to find the field within
+     * @param fieldName The field name
+     * @return The associated method or null if not found
      */
     public static Method getGetterForField(Class<?> clazz, String fieldName) {
         try {
@@ -80,10 +89,10 @@ public class ReflectionCaches {
     }
 
     /**
-     * Returns the table name defined on a class @Table.
+     * Returns the table name defined on a class via the @Table annotation.
      *
      * @param clazz the Java method to inspect (usually a getter)
-     * @return the column name if present, otherwise null
+     * @return the column name if present. Default message if not found
      */
     public static <T> String getTableName(Class<T> clazz) {
         // Try @JoinColumn next
@@ -122,7 +131,7 @@ public class ReflectionCaches {
      * Returns the column name defined on a getter method via @Column or @JoinColumn.
      *
      * @param field the Java method to inspect (usually a getter)
-     * @return the column name if present, otherwise null
+     * @return the column name if present. Default message if not found
      */
     public static String getColumnOrJoinColumnName(Field field) {
         if (field == null) {

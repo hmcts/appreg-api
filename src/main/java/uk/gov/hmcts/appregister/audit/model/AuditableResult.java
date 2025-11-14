@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.model;
 
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,5 +16,5 @@ public class AuditableResult<R, E extends Keyable> {
     private final R resultingValue;
 
     /** The new entity contains the create, updates or soft delete. */
-    private final Optional<E> newEntity;
+    private final E newEntity;
 }

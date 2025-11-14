@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
@@ -79,7 +80,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -103,7 +104,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -130,7 +131,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -186,7 +187,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
                         notNull(),
                         notNull());
@@ -225,7 +226,7 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        notNull(),
+                        isNull(),
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
                         notNull(),
                         notNull());

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.event;
 
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
@@ -23,9 +22,9 @@ public class AuditEvent implements BaseAuditEvent {
 
     protected String messageUuid;
 
-    protected Optional<Keyable> newValue;
+    protected Keyable newValue;
 
-    protected Optional<Keyable> oldValue;
+    protected Keyable oldValue;
 
     AuditEvent(BaseAuditEvent baseAuditEvent) {
         requestAction = baseAuditEvent.getRequestAction();

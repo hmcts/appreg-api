@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.audit.listener;
 
 import static org.mockito.Mockito.times;
 
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.Mockito;
@@ -19,10 +18,7 @@ class AuditOperationLifecycleListenerAdapterTest {
                 Mockito.mock(
                         AuditOperationLifecycleListenerAdapter.class, Answers.CALLS_REAL_METHODS);
         my.eventPerformed(
-                new StartEvent(
-                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                        "id",
-                        Optional.empty()));
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", null));
         Mockito.verify(my, times(1)).started(Mockito.notNull());
     }
 
@@ -34,11 +30,9 @@ class AuditOperationLifecycleListenerAdapterTest {
         my.eventPerformed(
                 new CompleteEvent(
                         new StartEvent(
-                                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                                "id",
-                                Optional.empty()),
+                                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT, "id", null),
                         null,
-                        Optional.empty()));
+                        null));
         Mockito.verify(my, times(1)).finished(Mockito.notNull());
     }
 
@@ -53,9 +47,9 @@ class AuditOperationLifecycleListenerAdapterTest {
                                 new StartEvent(
                                         AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                                         "id",
-                                        Optional.empty()),
+                                        null),
                                 null,
-                                Optional.empty())));
+                                null)));
         Mockito.verify(my, times(1)).finishFail(Mockito.notNull());
     }
 }
