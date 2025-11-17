@@ -14,6 +14,5 @@
     </notes>
     <cve>CVE-2025-7962</cve>
   </suppress>
-
   <!--End of false positives section -->
 </suppressions>

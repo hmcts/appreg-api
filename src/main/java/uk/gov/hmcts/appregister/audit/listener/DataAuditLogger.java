@@ -151,7 +151,6 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
             // store the new and old values based on the state
             setNewAndOldAuditValues(audit, diff, getNewDataForOld(diff, newDifferenceData), event);
-
             // save the audit record
             dataAuditRepository.save(audit);
 
@@ -160,7 +159,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     /**
-     * finds the new value update for the old auditable data.
+     * <<<<<<< HEAD finds the new value update for the old auditable data.
      *
      * @param oldData The old auditable data to find the new value for
      * @return the equivalent new auditable data to find for the value
@@ -180,7 +179,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     /**
-     * Sets the new and old audit values on the data audit record based on the event state.
+     * ======= >>>>>>> master Sets the new and old audit values on the data audit record based on
+     * the event state.
      *
      * @param audit The data audit record
      * @param primaryDiff The primary audit data
