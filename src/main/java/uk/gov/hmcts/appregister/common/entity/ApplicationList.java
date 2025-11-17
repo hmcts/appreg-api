@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,6 +28,9 @@ import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
+import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
@@ -55,8 +59,8 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
-    @Enumerated(EnumType.STRING)
-    private ApplicationListStatus status;
+    @Convert(converter = StatusConverter.class)
+    private Status status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)

@@ -6,37 +6,37 @@ properties:
   date:
     type: string
     format: date
-    description: The date on which the application's hearing is scheduled.
+    description: The date on which the application's hearing is scheduled. This has to be Exact.
     example: "2025-10-07"
 
-  courtName:
+  courtCode:
     type: string
-    description: Name of the court or session where the application is being heard.
+    description: Name of the court or session where the application is being heard. This has to be Exact.
     example: "Royal Courts of Justice"
 
   otherLocationDescription:
     type: string
-    description: Description of an alternative location for the hearing.
+    description: Description of an alternative location for the hearing. This can be Partial.
     example: "Bradford scout hut"
 
   cjaCode:
     type: string
-    description: The Criminal Justice Area (CJA) associated with the application.
+    description: The Criminal Justice Area (CJA) associated with the application. This has to be Exact.
     example: "CJA-2025-001"
 
   applicantOrganisation:
     type: string
-    description: The name of the organisation submitting the application.
+    description: The name of the organisation submitting the application. This can be Partial.
     example: "Smith Legal Services Ltd"
 
   applicantSurname:
     type: string
-    description: The surname of the applicant if the applicant is an individual.
+    description: The surname of the applicant if the applicant is an individual. This can be Partial.
     example: "Smith"
 
   standardApplicantCode:
     type: string
-    description: Unique code identifying the standard applicant.
+    description: Unique code identifying the standard applicant. This can be Partial.
     example: "APP001"
 
   status:
@@ -44,7 +44,7 @@ properties:
 
   respondentOrganisation:
     type: string
-    description: The name of the organisation responding to the application.
+    description: The name of the organisation responding to the application. This has to be Exact.
     example: "Jones Consulting Group"
 
   respondentSurname:
@@ -54,9 +54,9 @@ properties:
 
   respondentPostcode:
     type: string
-    description: The postcode associated with the respondent’s address.
+    description: The postcode associated with the respondent’s address. This has to be Exact.
     example: "SW1A 1AA"
 
   accountReference:
     type: string
-    description: Reference code identifying the applicant’s account.
+    description: Reference code identifying the applicant’s account. This can be Partial.

@@ -7,6 +7,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 public interface ApplicationEntryService {
     /**
      * Search the application entries based on the provided filter and pagination details.
+     *
      * @param filterDto The filter data
      * @param pageable The pagination information
      * @return The entry page containing the search results
