@@ -1,0 +1,37 @@
+type: object
+description: >
+  Filter criteria for POST /reports/activity-audit/jobs.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  The username must match exactly.
+additionalProperties: false
+required:
+  - dateFrom
+  - dateTo
+
+properties:
+
+  dateFrom:
+    type: string
+    format: date
+    description: Inclusive start date (YYYY-MM-DD).
+    example: "2025-10-01"
+
+  dateTo:
+    type: string
+    format: date
+    description: Inclusive end date (YYYY-MM-DD).
+    example: "2025-10-31"
+
+  username:
+    type: string
+    description: Exact username to audit.
+    example: "jsmith"
+
+  activityTypes:
+    type: array
+    description: >
+      One or more activity types to include in the audit report.
+      Must contain at least one value.
+    minItems: 1
+    items:
+      $ref: "./activity-type.yaml"

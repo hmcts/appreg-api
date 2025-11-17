@@ -1,0 +1,23 @@
+get:
+  operationId: getReportStatusById
+  tags: [reports]
+  summary: Get the status of a report generation job.
+  description: >
+    Returns the current status of a report job.
+  parameters:
+    - name: jobId
+      in: path
+      required: true
+      schema: { type: string }
+      description: The unique identifier of the report job.
+  responses:
+    "200":
+      description: Job status retrieved successfully.
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../components/schemas/common/job-acknowledgement.yaml"
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

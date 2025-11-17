@@ -1,0 +1,37 @@
+get:
+  operationId: downloadReport
+  tags: [reports]
+  summary: Download the generated CSV for a completed report job.
+  description: >
+    Streams the generated CSV from the database for the specified job.
+    The job must be in the `completed` state.
+  parameters:
+    - name: jobId
+      in: path
+      required: true
+      schema: { type: string }
+      description: The unique identifier of the report job.
+  responses:
+    "200":
+      description: The generated CSV report.
+      headers:
+        Content-Disposition:
+          description: Suggested filename for the downloaded CSV.
+          schema:
+            type: string
+            example: attachment; filename="report.csv"
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+      content:
+        text/csv:
+          schema:
+            type: string
+            format: binary
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml"}
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }
