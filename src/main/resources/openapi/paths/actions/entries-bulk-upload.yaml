@@ -21,9 +21,6 @@ post:
           type: string
           format: binary
           description: CSV file containing entries to upload.
-        encoding:
-          file:
-            contentType: text/csv
   responses:
     "202":
       description: Job accepted. Poll the URL in the Location header for status.
