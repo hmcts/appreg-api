@@ -189,7 +189,38 @@
 						}
 					},
 					"response": []
-				}
+				},
+        {
+          "name": "Print Application List",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42/print",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4550",
+              "path": [
+                "application-lists",
+                "3f324c49-84ab-41df-9240-e64acbcf7f42",
+                "print"
+              ]
+            }
+          },
+          "response": []
+        }
 			]
 		},
 		{

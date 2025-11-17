@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
@@ -42,6 +43,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
+    private static final String UNKNOWN_APPLICATION_LIST_ID =
+            "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
     // --- Seeded reference data ----------------------------------------------------
     private static final String VALID_COURT_CODE = "CCC003";
@@ -1357,11 +1360,93 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .build()
                         .fetchTokenForRole();
 
-        UUID id = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+        UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
 
         // fire test
         Response resp =
                 restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
+    @DisplayName("Print Application List")
+    void givenValidRequest_whenPrintApplicationList_then200AndBody() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        UUID id = dto.getId();
+
+        // fire test
+        Response printApplicationListResp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+
+        // assert success
+        printApplicationListResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+
+        ApplicationListGetPrintDto applicationListGetPrintDto =
+                printApplicationListResp.as(ApplicationListGetPrintDto.class);
+        assertThat(applicationListGetPrintDto.getEntries()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Print Application List: 403 when no role")
+    void givenNoRole_whenPrintApplicationList_then403() throws Exception {
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
+
+        UUID id = UUID.randomUUID();
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    // --- Not found: Application List -------------------------------------------------
+    @Test
+    @DisplayName("Print Application List: 404 when list unknown")
+    void givenUnknownApplicationList_whenPrintApplicationList_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
 
         // assert success
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
