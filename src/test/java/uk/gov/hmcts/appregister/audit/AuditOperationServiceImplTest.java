@@ -11,9 +11,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,10 +27,6 @@ class AuditOperationServiceImplTest {
     private AuditOperationServiceImpl auditOperationServiceImpl;
 
     @Captor ArgumentCaptor<AuditEvent> requestArgumentCaptor;
-
-    @Captor ArgumentCaptor<AuditEvent> successCapture;
-
-    @Captor ArgumentCaptor<AuditEvent> failCapture;
 
     private ObjectMapper objectMapper;
 
@@ -43,10 +44,10 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
-                    return Optional.of(applicationCodeDto);
+                    return Optional.of(new AuditableResult<>(applicationCodeDto, null));
                 },
                 listener);
 
@@ -76,7 +77,7 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
         auditOperationServiceImpl.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
                     return Optional.empty();
@@ -113,17 +114,16 @@ class AuditOperationServiceImplTest {
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
 
-        RuntimeException ex =
-                Assertions.assertThrows(
-                        IllegalArgumentException.class,
-                        () ->
-                                auditOperationServiceImpl.processAudit(
-                                        AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
-                                        (req) -> {
-                                            // Simulate some processing and return a response
-                                            throw new IllegalArgumentException("");
-                                        },
-                                        listener));
+        Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        auditOperationServiceImpl.processAudit(
+                                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
+                                (req) -> {
+                                    // Simulate some processing and return a response
+                                    throw new IllegalArgumentException("");
+                                },
+                                listener));
 
         Mockito.verify(listener, Mockito.times(2)).eventPerformed(requestArgumentCaptor.capture());
         Assertions.assertEquals(2, requestArgumentCaptor.getAllValues().size());
@@ -147,5 +147,136 @@ class AuditOperationServiceImplTest {
         Assertions.assertEquals("No Correlation Id Found", failOp.getMessageUuid());
         Assertions.assertEquals(-1, failOp.getMessageStatus().getStatus());
         Assertions.assertEquals("NULL", failOp.getMessageContent());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateOpNoNewValuebutOldValue()
+            throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.CREATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(), null));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateBothNewAndOldValue() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        new ApplicationList(),
+                                        TestAuditOperation.CREATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(),
+                                                            new ApplicationList()));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForCreateOldValueAndNoNewOrOld() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.CREATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(), null));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateNoNewOrOld() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.UPDATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(), null));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateNew() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.UPDATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(),
+                                                            new ApplicationList()));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+    }
+
+    @Test
+    void testAuditOperationFlowValidationFailureForUpdateOldNoNew() throws Exception {
+        AuditOperationLifecycleListener listener =
+                Mockito.mock(AuditOperationLifecycleListener.class);
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.UPDATE,
+                                        (req) -> {
+                                            // Simulate some processing and return a response
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            new ApplicationList(),
+                                                            new ApplicationList()));
+                                        },
+                                        listener));
+
+        Assertions.assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
     }
 }

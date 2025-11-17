@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
         uses = ApplicationListMappingHelper.class)
 public interface ApplicationListMapper {
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
@@ -32,7 +32,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "time", source = "dto.time")
     ApplicationList toCreateEntityWithCourt(ApplicationListCreateDto dto, NationalCourtHouse court);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
@@ -81,7 +81,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "entries", ignore = true)
     ApplicationListGetPrintDto toGetPrintDto(ApplicationList appList);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "courtCode", expression = "java(null)")
@@ -105,7 +105,7 @@ public interface ApplicationListMapper {
             CriminalJusticeArea cja,
             @MappingTarget ApplicationList entity);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "otherLocation", ignore = true)

@@ -12,15 +12,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
@@ -74,7 +76,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     @Override
     public ResultCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
-                AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT,
+                ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
                     log.debug("Start: Find active Result Code using code: {} date: {}", code, date);
                     final List<ResolutionCode> rows =
@@ -94,7 +96,9 @@ public class ResultCodeServiceImpl implements ResultCodeService {
 
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);
-                    return Optional.of(mapper.toDetailDto(rows.getFirst()));
+                    return Optional.of(
+                            new AuditableResult<ResultCodeGetDetailDto, Keyable>(
+                                    mapper.toDetailDto(rows.getFirst()), null));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
@@ -117,7 +121,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
-                AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT,
+                ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT,
                 unused -> {
                     log.debug(
                             "Start: Find active Result Codes filtered by code: {} and title: {}",
@@ -143,7 +147,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                             codeFilter,
                             titleFilter);
 
-                    return Optional.of(responsePage);
+                    return Optional.of(
+                            new AuditableResult<ResultCodePage, Keyable>(responsePage, null));
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
