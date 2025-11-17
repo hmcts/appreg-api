@@ -1,8 +1,4 @@
 description: The requested resource was not found.
-headers:
-  x-correlation-id:
-    description: Correlation ID for request tracing.
-    schema: { type: string }
 content:
   application/problem+json:
     schema:
