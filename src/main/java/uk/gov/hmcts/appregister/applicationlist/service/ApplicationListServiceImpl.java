@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
@@ -23,6 +24,9 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetVali
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -71,6 +75,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     private final PageMapper pageMapper;
     private final ApplicationListDeletionValidator deletionValidator;
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
      * {@inheritDoc}
@@ -86,15 +92,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto) {
         log.debug("Start: Request to create application list : {}", dto);
-        MatchResponse<ApplicationListGetDetailDto> response =
-                applicationCreateListLocationValidator.validate(
-                        dto,
-                        (listCreateDto, success) ->
-                                success.hasCourt()
-                                        ? createWithCourt(listCreateDto, success)
-                                        : createWithCja(listCreateDto, success));
-        log.debug("Finish: Request to create application list : {}", response.getPayload());
-        return response;
+
+        return auditService.processAudit(
+                AppListAuditOperation.CREATE_APP_LIST,
+                req ->
+                        applicationCreateListLocationValidator.validate(
+                                dto,
+                                (listCreateDto, success) ->
+                                        success.hasCourt()
+                                                ? Optional.of(
+                                                        createWithCourt(listCreateDto, success))
+                                                : Optional.of(
+                                                        createWithCja(listCreateDto, success))),
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     /**
@@ -166,13 +176,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCourt(
-            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            createWithCourt(
+                    ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var court = success.getNationalCourtHouse();
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
-        return MatchResponse.of(
-                hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES));
+
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                MatchResponse.of(
+                        hydrated.getUuid(),
+                        hydrated,
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES)),
+                hydrated);
     }
 
     /**
@@ -185,15 +201,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCja(
-            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            createWithCja(
+                    ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var cja = success.getCriminalJusticeArea();
 
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
         var hydrated = refreshEntity(savedEntity);
 
-        return MatchResponse.of(
-                hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES));
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                MatchResponse.of(
+                        hydrated.getUuid(),
+                        hydrated,
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES)),
+                hydrated);
     }
 
     /**

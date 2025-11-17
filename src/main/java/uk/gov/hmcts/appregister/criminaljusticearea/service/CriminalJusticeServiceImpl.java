@@ -6,13 +6,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
+import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
@@ -31,10 +32,14 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     public CriminalJusticeAreaGetDto findByCode(String code) {
         return auditService.processAudit(
-                AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
+                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
                 req -> {
                     var cja = locationLookupService.getCjaOrThrow(code);
-                    return Optional.of(criminalJusticeMapper.toDto(cja));
+
+                    AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
+                            new AuditableResult<>(criminalJusticeMapper.toDto(cja), null);
+
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
@@ -42,7 +47,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     public CriminalJusticeAreaPage findAll(String code, String description, Pageable pageable) {
         return auditService.processAudit(
-                AuditEventEnum.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
+                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
                 (req) -> {
                     org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
                             criminalJusticeAreaRepository.search(code, description, pageable);
@@ -55,7 +60,10 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             criminalJusticeAreaPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    return Optional.of(criminalJusticeAreaPage);
+                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
+                            new AuditableResult<>(criminalJusticeAreaPage, null);
+
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

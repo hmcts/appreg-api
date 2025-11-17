@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
@@ -43,6 +45,13 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetVali
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -50,6 +59,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
@@ -109,6 +119,11 @@ public class ApplicationListServiceImplTest {
 
     @Mock private ApplicationListDeletionValidator deletionValidator;
 
+    @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
+
+    @Spy
+    private final AuditOperationService auditOperationService = new DummyAuditOperationService();
+
     private ApplicationListServiceImpl service;
 
     @BeforeEach
@@ -125,7 +140,9 @@ public class ApplicationListServiceImplTest {
                         entityManager,
                         matchService,
                         pageMapper,
-                        deletionValidator);
+                        deletionValidator,
+                        auditOperationService,
+                        List.of(auditOperationLifecycleListener));
     }
 
     @Test
@@ -600,6 +617,92 @@ public class ApplicationListServiceImplTest {
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
     }
 
+    @Test
+    void get_returnsDto() {
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        Pageable pageable = mock(Pageable.class);
+
+        mockFindSummariesById(id, pageable);
+
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+
+        ApplicationListGetDetailDto actual = service.get(id, pageable);
+
+        Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void get_returns404_whenApplicationListRepositoryEmpty() {
+        UUID id = UUID.randomUUID();
+        when(repository.findByUuid(id)).thenReturn(Optional.empty());
+
+        Pageable pageable = mock(Pageable.class);
+        assertThatThrownBy(() -> service.get(id, pageable))
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    private void mockFindSummariesById(UUID id, Pageable pageable) {
+        var uuid = UUID.randomUUID();
+        var sequenceNumber = 1;
+        var accountNumber = "1234567890";
+        var applicant = "Mustafa's Org";
+        var respondent = "Ahmed, Mustafa, His Majesty";
+        var postCode = "SW1A 1AA";
+        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
+        var feeRequired = true;
+        var result = "APPC";
+        var projection =
+                applicationListEntrySummaryProjection()
+                        .uuid(uuid)
+                        .sequenceNumber(sequenceNumber)
+                        .accountNumber(accountNumber)
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode(postCode)
+                        .applicationTitle(applicationTitle)
+                        .feeRequired(feeRequired)
+                        .result(result)
+                        .build();
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
+
+        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
+    }
+
+    class DummyAuditOperationService implements AuditOperationService {
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            return processAudit(null, auditType, execution, listener);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            Optional<AuditableResult<T, E>> optional =
+                    execution.apply(
+                            new CompleteEvent(
+                                    new StartEvent(
+                                            AppListAuditOperation.CREATE_APP_LIST,
+                                            UUID.randomUUID().toString(),
+                                            null),
+                                    "result",
+                                    null));
+            return optional.get().getResultingValue();
+        }
+    }
+
     @Setter
     class DummyApplicationCreateListLocationValidator
             extends ApplicationCreateListLocationValidator {
@@ -672,62 +775,5 @@ public class ApplicationListServiceImplTest {
                 boolean doNotFailOnMissing) {
             return createApplicationSupplier.apply(dto, success);
         }
-    }
-
-    @Test
-    void get_returnsDto() {
-        ApplicationList saved = new ApplicationList();
-        UUID id = UUID.randomUUID();
-        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
-
-        Pageable pageable = mock(Pageable.class);
-
-        mockFindSummariesById(id, pageable);
-
-        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
-
-        ApplicationListGetDetailDto actual = service.get(id, pageable);
-
-        Assertions.assertEquals(expected, actual);
-    }
-
-    @Test
-    void get_returns404_whenApplicationListRepositoryEmpty() {
-        UUID id = UUID.randomUUID();
-        when(repository.findByUuid(id)).thenReturn(Optional.empty());
-
-        Pageable pageable = mock(Pageable.class);
-        assertThatThrownBy(() -> service.get(id, pageable))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    private void mockFindSummariesById(UUID id, Pageable pageable) {
-        var uuid = UUID.randomUUID();
-        var sequenceNumber = 1;
-        var accountNumber = "1234567890";
-        var applicant = "Mustafa's Org";
-        var respondent = "Ahmed, Mustafa, His Majesty";
-        var postCode = "SW1A 1AA";
-        var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired = true;
-        var result = "APPC";
-        var projection =
-                applicationListEntrySummaryProjection()
-                        .uuid(uuid)
-                        .sequenceNumber(sequenceNumber)
-                        .accountNumber(accountNumber)
-                        .applicant(applicant)
-                        .respondent(respondent)
-                        .postCode(postCode)
-                        .applicationTitle(applicationTitle)
-                        .feeRequired(feeRequired)
-                        .result(result)
-                        .build();
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
-
-        when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 }

@@ -47,8 +47,8 @@ public class ApplicationRegisterRepositoryTest extends BaseRepositoryTest {
                             appRegEntryData.getText(),
                             applicationRegToAssertAgainst.get().getText());
                     assertEquals(
-                            appRegEntryData.getApplicationList().getPk(),
-                            applicationRegToAssertAgainst.get().getApplicationList().getPk());
+                            appRegEntryData.getApplicationList().getId(),
+                            applicationRegToAssertAgainst.get().getApplicationList().getId());
                 });
     }
 }

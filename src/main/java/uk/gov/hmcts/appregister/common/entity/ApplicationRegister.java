@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 /**
  * Entity representing an application register entry.
@@ -30,7 +31,7 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-public class ApplicationRegister extends BaseChangeableEntity implements Accountable {
+public class ApplicationRegister extends BaseChangeableEntity implements Accountable, Keyable {
     @Id
     @Column(name = "ar_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ar_gen")

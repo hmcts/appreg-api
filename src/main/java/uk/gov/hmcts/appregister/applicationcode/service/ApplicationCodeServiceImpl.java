@@ -11,11 +11,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -50,7 +51,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT,
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
                     log.debug(
                             "Start: Find Application List for: app code: {} app title: {} with paging: {}",
@@ -82,7 +83,9 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             appTitle,
                             pageable);
 
-                    return Optional.of(newPage);
+                    AuditableResult<ApplicationCodePage, ApplicationCode> result =
+                            new AuditableResult<>(newPage, null);
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
@@ -91,7 +94,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Transactional(readOnly = true)
     public ApplicationCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
-                AuditEventEnum.GET_APPLICATION_CODE_AUDIT_EVENT,
+                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     log.debug(
                             "Start: Find active Application Code using code: {} date: {}",
@@ -119,18 +122,15 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     }
 
                     FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
-                    Optional<ApplicationCodeGetDetailDto> result =
-                            Optional.of(
+                    log.debug("Finish: Find Application for app code: {} date: {}", code, date);
+                    AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode> result =
+                            new AuditableResult<>(
                                     applicationCodeMapper.toApplicationCodeGetDetailDto(
                                             codeToConsider,
                                             feePair != null ? feePair.mainFee() : null,
-                                            feePair != null ? feePair.offsiteFee() : null));
-
-                    log.debug(
-                            "Finish: Find active Application Code using code: {} and date: {}",
-                            code,
-                            date);
-                    return result;
+                                            feePair != null ? feePair.offsiteFee() : null),
+                                    null);
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

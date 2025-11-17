@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 /**
  * Represents an official associated with an application list entry, mapped to the
@@ -32,7 +33,7 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-public class AppListEntryOfficial extends BaseChangeableEntity implements Accountable {
+public class AppListEntryOfficial extends BaseChangeableEntity implements Accountable, Keyable {
     @Id
     @Column(name = "aleo_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = " aleo_gen")

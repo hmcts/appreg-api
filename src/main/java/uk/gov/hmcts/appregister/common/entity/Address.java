@@ -17,6 +17,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -30,7 +31,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-public class Address extends BaseUnmanagedChangeableEntity implements Versionable {
+public class Address extends BaseUnmanagedChangeableEntity implements Versionable, Keyable {
     @Id
     @Column(name = "adr_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "adr_gen")

@@ -13,7 +13,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
 import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Entity representing a Criminal Justice Area (CJA).
@@ -26,12 +29,13 @@ import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class CriminalJusticeArea implements Identifiable {
+public class CriminalJusticeArea implements Identifiable, Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")
     @SequenceGenerator(name = "cja_gen", sequenceName = "cja_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE})
     private Long id;
 
     @Column(name = "cja_code", nullable = false)

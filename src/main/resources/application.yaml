@@ -89,5 +89,9 @@ azure:
     instrumentation-key: ${AppInsightsInstrumentationKey:00000000-0000-0000-0000-000000000000}
 
 
+appreg:
+  audit:
+    diff:
+      enable-complex-diff: true
 
 

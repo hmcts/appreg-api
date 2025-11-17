@@ -23,6 +23,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -34,6 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
@@ -103,6 +105,70 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
+
+        String eventName = "Create Application List";
+        String operation = "CREATE";
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(7, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_name",
+                        "",
+                        "Cardiff Crown Court",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_code",
+                        "",
+                        VALID_COURT_CODE,
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        "",
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        "",
+                        "Morning list \\(court\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        "",
+                        TEST_TIME.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        "",
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        "",
+                        "",
+                        operation,
+                        eventName));
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -148,6 +214,84 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+
+        String eventName = "Create Application List";
+        String operation = "CREATE";
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(8, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "application_list_status",
+                        null,
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_code", true);
+
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_name", true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        null,
+                        "Morning list \\(cja\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        null,
+                        "CJA_CD_DESCRIPTION",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        null,
+                        TEST_TIME.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        null,
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        null,
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        "",
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        "",
+                        "OPEN",
+                        operation,
+                        eventName));
     }
 
     // --- Validation: XOR rule (both supplied) -------------------------------------------------
@@ -1140,6 +1284,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         null);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    private String getExpectedDiffLog(
+            String tableName, String fieldName, String oldValue, String newValue) {
+        return "Saved data audit record: Difference(tableName=%s, fieldName=%s, oldValue=%s, newValue=%s)"
+                .formatted(tableName, fieldName, oldValue, newValue);
     }
 
     @Test

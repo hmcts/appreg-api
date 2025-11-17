@@ -8,13 +8,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 /**
  * Encapsulates a unit of work for the lifecycle of an auditable operation. Behaviour of each audit
@@ -33,26 +37,43 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     private final ObjectMapper mapper;
 
     @Override
-    public <T> T processAudit(
-            AuditEventEnum auditType,
-            Function<BaseAuditEvent, Optional<T>> execution,
+    public <T, E extends Keyable> T processAudit(
+            AuditOperation auditType,
+            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
             AuditOperationLifecycleListener... listener) {
-        StartEvent event = new StartEvent(auditType, getTraceId());
+        return processAudit(null, auditType, execution, listener);
+    }
+
+    @Override
+    public <T, E extends Keyable> T processAudit(
+            E oldValue,
+            AuditOperation auditType,
+            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+            AuditOperationLifecycleListener... listener) {
+        StartEvent event = new StartEvent(auditType, getTraceId(), oldValue);
 
         // before execution hook
         fireAuditEvent(event, listener);
 
         log.debug("Processed start of auditable operation: {}", event);
-        Optional<T> responsePayload;
+        Optional<AuditableResult<T, E>> responsePayload;
         try {
             responsePayload = execution.apply(event);
+
+            // check is the result fits the expectations according to the operation being performed
+            checkIfAuditOperationIsSuitableForResult(auditType, oldValue, responsePayload);
+
             if (responsePayload.isPresent()) {
                 // fire after the completed operation
                 fireAuditEvent(
-                        new CompleteEvent(event, getBodyAsString(responsePayload.get())), listener);
+                        new CompleteEvent(
+                                event,
+                                getBodyAsString(responsePayload.get().getResultingValue()),
+                                responsePayload.get().getNewEntity()),
+                        listener);
             } else {
                 // fire after the completed operation
-                fireAuditEvent(new CompleteEvent(event, null), listener);
+                fireAuditEvent(new CompleteEvent(event, null, null), listener);
             }
 
             log.debug("Processed success auditable operation: {}", event);
@@ -64,7 +85,33 @@ public class AuditOperationServiceImpl implements AuditOperationService {
             throw e;
         }
 
-        return responsePayload.orElse(null);
+        return responsePayload.map(AuditableResult::getResultingValue).orElse(null);
+    }
+
+    /**
+     * validates the audit operation is suitable for the old and new values being audited. Incorrect
+     * usage throws an exception back to the user, this error is simply a programmatic error of the
+     * audit api
+     *
+     * @param eventEnum The event type
+     * @param result The result containing old and new values on which to audit
+     */
+    private <T, E extends Keyable> void checkIfAuditOperationIsSuitableForResult(
+            AuditOperation eventEnum, E oldValue, Optional<AuditableResult<T, E>> result) {
+        if (eventEnum.getType().isCreate()
+                && ((result.isPresent() && oldValue != null)
+                        || (result.isPresent() && result.get().getNewEntity() == null))) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
+        } else if (eventEnum.getType().isUpdate()
+                && result.isPresent()
+                && (result.get().getNewEntity() == null || oldValue == null)) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
+        } else if (eventEnum.getType().isDelete() && oldValue == null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old and new");
+        }
     }
 
     /**

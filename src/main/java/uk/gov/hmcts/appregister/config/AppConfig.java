@@ -15,6 +15,9 @@ import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
+import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 @Configuration
 public class AppConfig implements WebMvcConfigurer {
@@ -42,6 +45,9 @@ public class AppConfig implements WebMvcConfigurer {
         return ZoneId.of(timezone);
     }
 
+    @Value("${appreg.audit.diff.enable-complex-diff}")
+    private boolean complexDiffEnabled;
+
     /**
      * Defines a audit lifecycle listener that can be called when working with the {@link
      * uk.gov.hmcts.appregister.audit.service.AuditOperationService}.
@@ -54,6 +60,18 @@ public class AppConfig implements WebMvcConfigurer {
     @Override
     public void addFormatters(FormatterRegistry registry) {
         registry.addConverter(new ListStringConverter());
+    }
+
+    /**
+     * load a preconfigured data audit logger that logs to the database based on a data
+     * differentiator. The default differentiator is a reflective one that checks all fields for
+     * differences. Reflective nesting of complex objects as well as collections are disabled by
+     * default. This can be overridden as appropriate NOTE: This can be overridden at the operation
+     * level. See {@link uk.gov.hmcts.appregister.audit.service.AuditOperationService}
+     */
+    @Bean
+    public DataAuditLogger auditDifferentiator(DataAuditRepository dataAuditRepository) {
+        return new DataAuditLogger(new ReflectiveAuditor(complexDiffEnabled), dataAuditRepository);
     }
 
     /**

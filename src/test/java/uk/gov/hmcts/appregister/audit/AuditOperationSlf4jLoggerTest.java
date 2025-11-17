@@ -4,6 +4,7 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.FailEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
@@ -22,7 +23,7 @@ class AuditOperationSlf4jLoggerTest {
     @Test
     void testFailOperationLog() {
         StartEvent startEvent =
-                new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
         FailEvent auditRequest = new FailEvent(startEvent);
 
         new AuditOperationSlf4jLogger().eventPerformed(auditRequest);
@@ -35,7 +36,7 @@ class AuditOperationSlf4jLoggerTest {
     @Test
     void testBeforeOperationLog() {
         StartEvent startEvent =
-                new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
 
         new AuditOperationSlf4jLogger().eventPerformed(startEvent);
 
@@ -47,8 +48,8 @@ class AuditOperationSlf4jLoggerTest {
     @Test
     void testCompletedOperationLog() {
         StartEvent startEvent =
-                new StartEvent(AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT, "ID");
-        CompleteEvent auditRequest = new CompleteEvent(startEvent, null);
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, null);
 
         new AuditOperationSlf4jLogger().eventPerformed(auditRequest);
 
