@@ -69,9 +69,9 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
@@ -150,23 +150,23 @@ public class ApplicationListServiceImplTest {
     @BeforeEach
     void setUp() {
         service =
-            new ApplicationListServiceImpl(
-                repository,
-                aleRepository,
-                alerRepository,
-                aleoRepository,
-                mapper,
-                entryMapper,
-                officalMapper,
-                pageMapper,
-                validator,
-                updateValidator,
-                getValidator,
-                deletionValidator,
-                matchService,
-                entityManager,
-                auditOperationService,
-                List.of(auditOperationLifecycleListener));
+                new ApplicationListServiceImpl(
+                        repository,
+                        aleRepository,
+                        alerRepository,
+                        aleoRepository,
+                        mapper,
+                        entryMapper,
+                        officalMapper,
+                        pageMapper,
+                        validator,
+                        updateValidator,
+                        getValidator,
+                        deletionValidator,
+                        matchService,
+                        entityManager,
+                        auditOperationService,
+                        List.of(auditOperationLifecycleListener));
     }
 
     @Test
@@ -666,9 +666,9 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
         assertThatThrownBy(() -> service.get(id, pageable))
-            .isInstanceOf(AppRegistryException.class)
-            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-            .isEqualTo(HttpStatus.NOT_FOUND);
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -681,37 +681,37 @@ public class ApplicationListServiceImplTest {
 
         // 1) Entry projections for the list (single query)
         var entryProjection =
-            applicationListEntryPrintProjection()
-                .id(1L)
-                .sequenceNumber(1)
-                .applicantTitle(MR)
-                .applicantSurname(PERSON4_SURNAME)
-                .applicantForename1(PERSON4_FORENAME1)
-                .build();
+                applicationListEntryPrintProjection()
+                        .id(1L)
+                        .sequenceNumber(1)
+                        .applicantTitle(MR)
+                        .applicantSurname(PERSON4_SURNAME)
+                        .applicantForename1(PERSON4_FORENAME1)
+                        .build();
         when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of(entryProjection));
 
         // 2) Wordings (bulk)
         ApplicationListEntryResolutionPrintProjection wordingRow1 =
-            mock(ApplicationListEntryResolutionPrintProjection.class);
+                mock(ApplicationListEntryResolutionPrintProjection.class);
         when(wordingRow1.getEntryId()).thenReturn(1L);
         when(wordingRow1.getWording()).thenReturn(WORDING_1);
 
         ApplicationListEntryResolutionPrintProjection wordingRow2 =
-            mock(ApplicationListEntryResolutionPrintProjection.class);
+                mock(ApplicationListEntryResolutionPrintProjection.class);
         when(wordingRow2.getEntryId()).thenReturn(1L);
         when(wordingRow2.getWording()).thenReturn(WORDING_2);
 
         when(alerRepository.findByApplicationListUuidForPrinting(id))
-            .thenReturn(List.of(wordingRow1, wordingRow2));
+                .thenReturn(List.of(wordingRow1, wordingRow2));
 
         // 3) Officials (bulk)
         ApplicationListEntryOfficialPrintProjection officialProj =
-            mock(ApplicationListEntryOfficialPrintProjection.class);
+                mock(ApplicationListEntryOfficialPrintProjection.class);
         when(officialProj.getEntryId()).thenReturn(1L);
 
         when(aleoRepository.findByApplicationListUuidForPrinting(
-            id, OfficialTypeUtil.PRINTABLE_CODES))
-            .thenReturn(List.of(officialProj));
+                        id, OfficialTypeUtil.PRINTABLE_CODES))
+                .thenReturn(List.of(officialProj));
 
         // Mapper stubs
         EntryGetPrintDto mappedEntryDto = new EntryGetPrintDto();
@@ -741,7 +741,7 @@ public class ApplicationListServiceImplTest {
         verify(aleRepository).findByIdForPrinting(id);
         verify(alerRepository).findByApplicationListUuidForPrinting(id);
         verify(aleoRepository)
-            .findByApplicationListUuidForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
+                .findByApplicationListUuidForPrinting(id, OfficialTypeUtil.PRINTABLE_CODES);
 
         // And the per-entry mapper was invoked
         verify(entryMapper).toPrintDto(entryProjection);
@@ -753,9 +753,9 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.print(id))
-            .isInstanceOf(AppRegistryException.class)
-            .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-            .isEqualTo(HttpStatus.NOT_FOUND);
+                .isInstanceOf(AppRegistryException.class)
+                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
@@ -769,17 +769,17 @@ public class ApplicationListServiceImplTest {
         var feeRequired = true;
         var result = "APPC";
         var projection =
-            applicationListEntrySummaryProjection()
-                .uuid(uuid)
-                .sequenceNumber(sequenceNumber)
-                .accountNumber(accountNumber)
-                .applicant(applicant)
-                .respondent(respondent)
-                .postCode(postCode)
-                .applicationTitle(applicationTitle)
-                .feeRequired(feeRequired)
-                .result(result)
-                .build();
+                applicationListEntrySummaryProjection()
+                        .uuid(uuid)
+                        .sequenceNumber(sequenceNumber)
+                        .accountNumber(accountNumber)
+                        .applicant(applicant)
+                        .respondent(respondent)
+                        .postCode(postCode)
+                        .applicationTitle(applicationTitle)
+                        .feeRequired(feeRequired)
+                        .result(result)
+                        .build();
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);

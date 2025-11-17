@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
@@ -89,14 +90,16 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final ApplicationUpdateListLocationValidator applicationUpdateListLocationValidator;
     private final ApplicationListGetValidator applicationListGetValidator;
     private final ApplicationListDeletionValidator deletionValidator;
-    private final AuditOperationService auditService;
-    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     // Services
     private final MatchService matchService;
 
     // Infrastructure
     private final EntityManager entityManager;
+
+    // Audit
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
      * {@inheritDoc}
