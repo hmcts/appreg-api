@@ -6,6 +6,8 @@ plugins {
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
   id "io.freefair.lombok" version "8.14.2"
+  id "org.openapi.generator" version "7.0.0"
+
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -13,11 +15,36 @@ plugins {
   id 'uk.gov.hmcts.java' version '0.12.67'
   id 'com.diffplug.spotless' version '7.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
-  id 'org.openapi.generator' version '7.3.0'
   id 'maven-publish'
 }
 
+/**
+ * a task that bundles the OpenAPI spec as json file
+ */
+tasks.register('bundleOpenApi', org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+  generatorName = "openapi"
+  inputSpec = layout.projectDirectory.file("src/main/resources/openapi/openapi.yaml")
+    .asFile
+    .path
+  outputDir = layout.buildDirectory.file("specmerge").get()
+    .asFile
+    .path
+}
 
+/**
+ * A task that copies the generated OpenAPI spec into the main resources static folder
+ */
+tasks.register('copySpecIntoMainResources', Copy) {
+  dependsOn bundleOpenApi
+  from layout.buildDirectory.file("specmerge/openapi.json")
+  into layout.buildDirectory.file("resources/main/static")
+}
+
+task copySpecIntoIntegration(type: Copy) {
+  dependsOn bundleOpenApi
+  from "$buildDir/specmerge/openapi.json"
+  into "$buildDir/resources/integrationTest/static"
+}
 
 tasks.withType(JavaCompile).configureEach {
   // Show deprecation warnings
@@ -217,6 +244,16 @@ tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
   classpath = files(sourceSets.smokeTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
+}
+
+task installSwaggerCLI(type: Exec) {
+  commandLine "npm", "install", "-g", "@apidevtools/swagger-cli"
+}
+
+task mergeOpenApi(type: Exec) {
+  dependsOn installSwaggerCLI
+  commandLine "swagger-cli", "bundle", "src/openapi/api.yaml",
+    "-o", "build/openapi/merged.yaml", "-t", "yaml"
 }
 
 def commonJacocoExclusionsIntegration = [
@@ -573,7 +610,8 @@ tasks.register('flywayArtefact', Jar) {
   from new File("./flyway/migrations"), new File("./flyway/data_population")
 }
 
-processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact
+processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact, tasks.bundleOpenApi,
+  tasks.copySpecIntoMainResources
 compileJava.dependsOn tasks.openApiGenerate
 
 
