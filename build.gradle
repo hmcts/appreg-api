@@ -6,7 +6,7 @@ plugins {
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
   id "io.freefair.lombok" version "8.14.2"
-  id "org.openapi.generator" version "7.0.0"
+  id 'org.openapi.generator' version '7.3.0'
 
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
@@ -38,12 +38,6 @@ tasks.register('copySpecIntoMainResources', Copy) {
   dependsOn bundleOpenApi
   from layout.buildDirectory.file("specmerge/openapi.json")
   into layout.buildDirectory.file("resources/main/static")
-}
-
-task copySpecIntoIntegration(type: Copy) {
-  dependsOn bundleOpenApi
-  from "$buildDir/specmerge/openapi.json"
-  into "$buildDir/resources/integrationTest/static"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -244,16 +238,6 @@ tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
   classpath = files(sourceSets.smokeTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
-}
-
-task installSwaggerCLI(type: Exec) {
-  commandLine "npm", "install", "-g", "@apidevtools/swagger-cli"
-}
-
-task mergeOpenApi(type: Exec) {
-  dependsOn installSwaggerCLI
-  commandLine "swagger-cli", "bundle", "src/openapi/api.yaml",
-    "-o", "build/openapi/merged.yaml", "-t", "yaml"
 }
 
 def commonJacocoExclusionsIntegration = [
