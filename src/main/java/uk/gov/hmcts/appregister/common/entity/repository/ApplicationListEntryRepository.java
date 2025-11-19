@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -165,4 +166,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
+
+    /**
+     * Fetches all ApplicationListEntry entities whose UUID matches any of the
+     * UUIDs in the provided collection.
+     *
+     * @param uuids collection of UUIDs identifying the ALEs to load
+     * @return list of matching ApplicationListEntry entities (possibly empty)
+     */
+    List<ApplicationListEntry> findAllByUuidIn(Collection<UUID> uuids);
 }
