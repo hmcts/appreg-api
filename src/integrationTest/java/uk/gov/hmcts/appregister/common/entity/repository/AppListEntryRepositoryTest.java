@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -215,26 +214,14 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
-            applicationListEntryRepository.searchForGetSummary(
-                false,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,page);
+                applicationListEntryRepository.searchForGetSummary(
+                        false, null, null, null, null, null, null, null, null, null, null, null,
+                        null, page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(10);
         assertThat(page0.getTotalPages()).isEqualTo(1);
-        ApplicationListEntryGetSummaryProjection projection0  = page0.getContent().get(0);
+        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(0);
         assertThat(projection0.getCjaCode()).isEqualTo("CJ");
         assertThat(projection0.getCourtCode()).isEqualTo("RCJ001");
         assertThat(projection0.getStatus()).isEqualTo(Status.OPEN);
@@ -245,11 +232,10 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertNotNull(projection0.getStandardApplicantCode(), "APP001");
         assertThat(projection0.getDateofal()).isEqualTo("2024-04-21");
 
-        ApplicationListEntryGetSummaryProjection projection4  = page0.getContent().get(4);
+        ApplicationListEntryGetSummaryProjection projection4 = page0.getContent().get(4);
 
         assertThat(projection4.getCjaCode()).isEqualTo("CJ");
         assertThat(projection4.getStatus()).isEqualTo(Status.OPEN);
-        assertThat(projection4.getAnameaddress().getName()).isEqualTo("Legal Aid Board");
         assertThat(projection4.getRnameaddress().getSurname()).isEqualTo("Johnson");
         assertThat(projection4.getRnameaddress().getName()).isEqualTo("Sarah Johnson");
         assertThat(projection4.getRnameaddress().getCode()).isEqualTo("RE");
@@ -267,32 +253,46 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
-            applicationListEntryRepository.searchForGetSummary(
-                true,
-                LocalDate.parse("2024-04-21"),
-                null,
-                "RCJ001",
-                "other",
-                "CJ",
-                "Legal Aid Board",
-                null,
-                "APP002",
-                Status.OPEN,
-                "Sarah Johnson",
-                "Johnson",
-                "XY9 8ZZ",
-                "232323232",page);
+                applicationListEntryRepository.searchForGetSummary(
+                        true,
+                        LocalDate.parse("2024-04-21"),
+                        "RCJ001",
+                        "other",
+                        "CJ",
+                        null,
+                        "Turner",
+                        "APP002",
+                        Status.OPEN,
+                        "Sarah Johnson",
+                        "Johnson",
+                        "XY9 8ZZ",
+                        "232323232",
+                        page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(1);
         assertThat(page0.getTotalPages()).isEqualTo(1);
         assertThat(page0.getContent().get(0).getCjaCode()).isEqualTo("CJ");
         assertThat(page0.getContent().get(0).getStatus()).isEqualTo(Status.OPEN);
-        assertThat(page0.getContent().get(0).getAnameaddress().getName()).isEqualTo("Legal Aid Board");
+        assertThat(page0.getContent().get(0).getAnameaddress().getSurname()).isEqualTo("Turner");
+        assertThat(page0.getContent().get(0).getAnameaddress().getAddress1())
+                .isEqualTo("1 Market Street");
+        assertThat(page0.getContent().get(0).getAnameaddress().getEmailAddress())
+                .isEqualTo("john.smith@example.com");
+        assertThat(page0.getContent().get(0).getAnameaddress().getPostcode()).isEqualTo("AB11 2CD");
+        assertThat(page0.getContent().get(0).getAnameaddress().getTelephoneNumber())
+                .isEqualTo("01234567890");
+
         assertThat(page0.getContent().get(0).getRnameaddress().getSurname()).isEqualTo("Johnson");
-        assertThat( page0.getContent().get(0).getRnameaddress().getName()).isEqualTo("Sarah Johnson");
+        assertThat(page0.getContent().get(0).getRnameaddress().getName())
+                .isEqualTo("Sarah Johnson");
         assertThat(page0.getContent().get(0).getRnameaddress().getCode()).isEqualTo("RE");
         assertThat(page0.getContent().get(0).getRnameaddress().getPostcode()).isEqualTo("XY9 8ZZ");
+        assertThat(page0.getContent().get(0).getRnameaddress().getAddress1())
+                .isEqualTo("12 The Avenue");
+        assertThat(page0.getContent().get(0).getRnameaddress().getEmailAddress())
+                .isEqualTo("s.johnson@example.com");
+
         assertThat(page0.getContent().get(0).getFeeRequired()).isEqualTo(YesOrNo.YES);
         assertThat(page0.getContent().get(0).getCourtCode()).isEqualTo("RCJ001");
         assertThat(page0.getContent().get(0).getOtherLocationDescription()).isEqualTo("other");
@@ -306,21 +306,21 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20);
         Page<ApplicationListEntryGetSummaryProjection> page0 =
-            applicationListEntryRepository.searchForGetSummary(
-                true,
-                LocalDate.parse("2025-04-21"),
-                LocalDate.parse("2024-04-21").plusDays(1),
-                "MCJC002",
-                null,
-                "CJ",
-                null,
-                null,
-                "PP001",
-                Status.OPEN,
-                "Jac",
-                "Turn",
-                "AB11 2CD",
-                "CASE",page);
+                applicationListEntryRepository.searchForGetSummary(
+                        true,
+                        LocalDate.parse("2025-04-21"),
+                        "MCJC002",
+                        null,
+                        "CJ",
+                        null,
+                        null,
+                        "PP001",
+                        Status.OPEN,
+                        "Jac",
+                        "Turn",
+                        "AB11 2CD",
+                        "CASE",
+                        page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(1);
@@ -329,7 +329,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getStatus()).isEqualTo(Status.OPEN);
         assertThat(page0.getContent().get(0).getFeeRequired()).isEqualTo(YesOrNo.NO);
 
-        assertThat(page0.getContent().get(0).getRnameaddress().getAddress1()).isEqualTo("1 Market Street");
+        assertThat(page0.getContent().get(0).getRnameaddress().getAddress1())
+                .isEqualTo("1 Market Street");
         assertThat(page0.getContent().get(0).getRnameaddress().getForename1()).isEqualTo("John");
         assertThat(page0.getContent().get(0).getRnameaddress().getSurname()).isEqualTo("Turner");
 
@@ -338,7 +339,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getRnameaddress().getPostcode()).isEqualTo("AB11 2CD");
 
         assertThat(page0.getContent().get(0).getTitle()).isEqualTo("Appeal by Case Stated (Crime)");
-        assertThat( page0.getContent().get(0).getLegislation()).isEqualTo("Section 111 Magistrates' Courts Act 1980");
-        assertThat( page0.getContent().get(0).getStandardApplicantCode()).isEqualTo("APP001");
+        assertThat(page0.getContent().get(0).getLegislation())
+                .isEqualTo("Section 111 Magistrates' Courts Act 1980");
+        assertThat(page0.getContent().get(0).getStandardApplicantCode()).isEqualTo("APP001");
     }
 }

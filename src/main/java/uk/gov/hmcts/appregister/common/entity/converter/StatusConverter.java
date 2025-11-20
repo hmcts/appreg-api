@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.entity.converter;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
 /**
  * Allows us to convert between the Status enum and the database representation and vice versa. The

@@ -1,13 +1,22 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 
 class ApplicationListEntryMapStructMapperTest {
 
@@ -126,6 +135,165 @@ class ApplicationListEntryMapStructMapperTest {
                 applicationTitle2,
                 feeRequired2,
                 result2);
+    }
+
+    @Test
+    public void toEntrySummary() {
+        // the applicant does have a name so is an organisation
+        NameAddress applicant = new NameAddress();
+        applicant.setName("name");
+        applicant.setCode("acode");
+        applicant.setAddress1("aaddress1");
+        applicant.setAddress2("aaddress2");
+        applicant.setAddress3("aaddress3");
+        applicant.setAddress4("aaddress4");
+        applicant.setAddress5("aaddress5");
+        applicant.setEmailAddress("aemail");
+        applicant.setTelephoneNumber("atel");
+        applicant.setMobileNumber("amobile");
+        applicant.setPostcode("apostcode");
+
+        // the respondent is a person
+        NameAddress respondent = new NameAddress();
+        respondent.setSurname("rsurname");
+        respondent.setCode("rcode");
+        respondent.setAddress1("raddress1");
+        respondent.setAddress2("raddress2");
+        respondent.setAddress3("raddress3");
+        respondent.setAddress4("raddress4");
+        respondent.setAddress5("raddress5");
+        respondent.setEmailAddress("remail");
+        respondent.setTelephoneNumber("rtel");
+        respondent.setMobileNumber("rmobile");
+        respondent.setPostcode("rpostcode");
+        respondent.setForename1("rforename1");
+        respondent.setForename2("rforename2");
+        respondent.setForename3("rforename3");
+
+        ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
+                .thenReturn("org1");
+        when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
+        when(applicationListEntryGetSummaryProjection.getAnameaddress()).thenReturn(applicant);
+        when(applicationListEntryGetSummaryProjection.getRnameaddress()).thenReturn(respondent);
+        when(applicationListEntryGetSummaryProjection.getDateofal()).thenReturn(LocalDate.now());
+
+        when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
+        when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
+        when(applicationListEntryGetSummaryProjection.getCourtCode()).thenReturn("courtcode");
+        when(applicationListEntryGetSummaryProjection.getLegislation()).thenReturn("leg");
+        when(applicationListEntryGetSummaryProjection.getTitle()).thenReturn("title");
+
+        when(applicationListEntryGetSummaryProjection.getRespondentSurname())
+                .thenReturn("ressurname");
+        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn("2");
+        when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
+        when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.CLOSED);
+
+        UUID uuidForProjection = UUID.randomUUID();
+        when(applicationListEntryGetSummaryProjection.getUuid())
+                .thenReturn(uuidForProjection.toString());
+
+        var mapper = new ApplicationListEntryMapStructMapperImpl();
+
+        // run test
+        EntryGetSummaryDto mappedResult =
+                mapper.toEntrySummary(applicationListEntryGetSummaryProjection);
+
+        // assert
+        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
+        Assertions.assertEquals("leg", mappedResult.getLegislation());
+        Assertions.assertEquals("title", mappedResult.getApplicationTitle());
+        Assertions.assertEquals("name", mappedResult.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "aaddress1",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine1());
+        Assertions.assertEquals(
+                "aaddress2",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2());
+        Assertions.assertEquals(
+                "aaddress3",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3());
+        Assertions.assertEquals(
+                "aaddress4",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4());
+        Assertions.assertEquals(
+                "aaddress5",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5());
+        Assertions.assertEquals(
+                "atel",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "apostcode",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getPostcode());
+        Assertions.assertEquals(
+                "aemail",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "amobile",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "raddress1",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine1());
+        Assertions.assertEquals(
+                "raddress2",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine2());
+        Assertions.assertEquals(
+                "raddress3",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine3());
+        Assertions.assertEquals(
+                "raddress4",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine4());
+        Assertions.assertEquals(
+                "raddress5",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine5());
+        Assertions.assertEquals(
+                "rtel", mappedResult.getRespondent().getPerson().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "rpostcode",
+                mappedResult.getRespondent().getPerson().getContactDetails().getPostcode());
+        Assertions.assertEquals(
+                "remail", mappedResult.getRespondent().getPerson().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "rmobile",
+                mappedResult.getRespondent().getPerson().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "rsurname", mappedResult.getRespondent().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "rforename3",
+                mappedResult.getRespondent().getPerson().getName().getThirdForename());
+        Assertions.assertEquals(
+                "rforename1",
+                mappedResult.getRespondent().getPerson().getName().getFirstForename());
+        Assertions.assertEquals(
+                "rforename2",
+                mappedResult.getRespondent().getPerson().getName().getSecondForename());
+        Assertions.assertTrue(mappedResult.getIsResulted());
+        Assertions.assertFalse(mappedResult.getIsFeeRequired());
+        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
+        Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
     }
 
     private static void assertApplicationListEntrySummary(

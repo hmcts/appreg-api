@@ -3,8 +3,6 @@ package uk.gov.hmcts.appregister.common.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -29,9 +27,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
-import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
  * The ApplicationList entity represents a list of applications in the system.

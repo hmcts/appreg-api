@@ -1,28 +1,20 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.stereotype.Controller;
-
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.api.SortableField;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.mapper.SortMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
@@ -38,8 +30,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     private final PageableMapper pageableMapper;
 
-    private static final MediaType VND_JSON_V1 =
-        MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    public static final MediaType VND_JSON_V1 =
+            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
 
     @Override
     public ResponseEntity<EntryPage> getEntries(
@@ -47,15 +39,18 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         final List<String> entitySortFields = toEntitySort(sort);
 
         Pageable pageInfo =
-            pageableMapper.from(
-                page, size, entitySortFields,
-                ApplicationEntrySortFieldEnum.CODE.getEntityValue(), Sort.Direction.ASC);
+                pageableMapper.from(
+                        page,
+                        size,
+                        entitySortFields,
+                        ApplicationEntrySortFieldEnum.CODE.getEntityValue(),
+                        Sort.Direction.ASC);
 
         log.info("Retrieved Application Lists");
         return ResponseEntity.ok()
-            .varyBy("Accept")
-            .contentType(VND_JSON_V1)
-            .body(applicationEntryService.search(filter, pageInfo));
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .body(applicationEntryService.search(filter, pageInfo));
     }
 
     private List<String> toEntitySort(List<String> sort) {
@@ -63,7 +58,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
             return List.of();
         }
         return sortMapper.map(
-            SortableField.of(sort.toArray(new String[0])),
-            ApplicationEntrySortFieldEnum::getEntityValue);
+                SortableField.of(sort.toArray(new String[0])),
+                ApplicationEntrySortFieldEnum::getEntityValue);
     }
 }
