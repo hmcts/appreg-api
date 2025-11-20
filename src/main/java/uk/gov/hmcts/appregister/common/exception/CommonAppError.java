@@ -12,7 +12,15 @@ public enum CommonAppError implements ErrorCodeEnum {
             DefaultErrorDetail.create(HttpStatus.PRECONDITION_FAILED, "Etag failure", "COMMON-3")),
     SORT_DIRECTION_NOT_SUITABLE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Sort direction not suitable", "COMMON-4"));
+                    HttpStatus.BAD_REQUEST, "Sort direction not suitable", "COMMON-4")),
+    CONSTRAINT_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Constraint Error", "COMMON-5")),
+    TYPE_MISMATCH_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Type Mismatch Error", "COMMON-6")),
+    METHOD_ARGUMENT_INVALID_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Error", "COMMON-7")),
+    METHOD_VALIDATION_INVALID_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-8"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
