@@ -9,13 +9,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
@@ -64,7 +65,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     @Override
     public CourtLocationGetDetailDto findByCodeAndDate(String code, LocalDate date) {
         return auditService.processAudit(
-                AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT,
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
                     log.debug(
                             "Start: Find active Court Location for code: {} date: {}", code, date);
@@ -82,9 +83,11 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                                         .formatted(code, date));
                     }
 
-                    log.debug(
-                            "Finish: Find active Court Location for code: {} date: {}", code, date);
-                    return Optional.of(mapper.toDetailDto(rows.getFirst()));
+                    AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
+                            new AuditableResult<>(mapper.toDetailDto(rows.getFirst()), null);
+
+                    // Map the single matching entity to a detail DTO
+                    return Optional.of(result);
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -104,7 +107,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
     @Override
     public CourtLocationPage getPage(String nameFilter, String codeFilter, Pageable pageable) {
         return auditService.processAudit(
-                AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT,
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
                     log.debug(
                             "Start: Find Application List for: name: {} app code: {} with paging: {}",
@@ -125,13 +128,9 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     dbPage.forEach(
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
-                    log.debug(
-                            "Start: Find Application List for: name: {} app code: {} with paging: {}",
-                            nameFilter,
-                            codeFilter,
-                            pageable);
-
-                    return Optional.of(responsePage);
+                    AuditableResult<CourtLocationPage, NationalCourtHouse> result =
+                            new AuditableResult<>(responsePage, null);
+                    return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

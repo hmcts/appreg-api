@@ -23,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -34,6 +33,7 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
@@ -89,7 +89,8 @@ public class ResultCodeServiceImplTest {
         Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
-                .processAudit(eq(AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -109,7 +110,8 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(ResultCodeError.RESULT_CODE_NOT_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(eq(AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -132,7 +134,8 @@ public class ResultCodeServiceImplTest {
         Assertions.assertEquals(ResultCodeError.DUPLICATE_RESULT_CODE_FOUND, ex.getCode());
 
         verify(auditOperationService)
-                .processAudit(eq(AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                .processAudit(
+                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -176,7 +179,7 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
     }
 
     /**
@@ -213,6 +216,6 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
     }
 }

@@ -12,9 +12,9 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
@@ -39,9 +39,9 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
     // Audit event names
     private static final String AUDIT_GET_ONE =
-            AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT.getEventName();
+            CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName();
     private static final String AUDIT_GET_PAGE =
-            AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName();
+            CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName();
 
     private static final int DEFAULT_PAGE_SIZE = 10;
 

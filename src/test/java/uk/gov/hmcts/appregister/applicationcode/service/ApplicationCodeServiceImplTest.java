@@ -22,16 +22,20 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
@@ -45,7 +49,10 @@ public class ApplicationCodeServiceImplTest {
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
     @Mock private ApplicationFeeService feeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    @Spy private final AuditOperationService auditService = new DummyAuditOperationService();
+
+    @Spy
+    private final AuditOperationService auditService = new AuditOperationServiceImpl(objectMapper);
+
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();
     @Spy private final PageMapper pageMapper = new PageMapper();
 
@@ -255,19 +262,30 @@ public class ApplicationCodeServiceImplTest {
     }
 
     class DummyAuditOperationService implements AuditOperationService {
+
         @Override
-        public <T> T processAudit(
-                AuditEventEnum auditType,
-                Function<BaseAuditEvent, Optional<T>> execution,
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
-            Optional<T> optional =
+            return processAudit(auditType, execution, listener);
+        }
+
+        public <T, E extends Keyable> T processAudit(
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            Optional<AuditableResult<T, E>> optional =
                     execution.apply(
                             new CompleteEvent(
                                     new StartEvent(
-                                            AuditEventEnum.GET_APPLICATION_CODES_AUDIT_EVENT,
-                                            UUID.randomUUID().toString()),
-                                    "result"));
-            return optional.orElse(null);
+                                            AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
+                                            UUID.randomUUID().toString(),
+                                            null),
+                                    "result",
+                                    null));
+            return optional.get().getResultingValue();
         }
     }
 }

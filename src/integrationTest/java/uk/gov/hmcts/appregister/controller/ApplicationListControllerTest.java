@@ -23,10 +23,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
@@ -34,12 +36,15 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
+    private static final String UNKNOWN_APPLICATION_LIST_ID =
+            "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
     // --- Seeded reference data ----------------------------------------------------
     private static final String VALID_COURT_CODE = "CCC003";
@@ -103,6 +108,70 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
+
+        String eventName = "Create Application List";
+        String operation = "CREATE";
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(7, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_name",
+                        "",
+                        "Cardiff Crown Court",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_code",
+                        "",
+                        VALID_COURT_CODE,
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        "",
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        "",
+                        "Morning list \\(court\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        "",
+                        TEST_TIME.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        "",
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        "",
+                        "",
+                        operation,
+                        eventName));
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -148,6 +217,84 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+
+        String eventName = "Create Application List";
+        String operation = "CREATE";
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(8, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        "application_lists",
+                        "application_list_status",
+                        null,
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_code", true);
+
+        differenceLogAsserter.assertFieldLogNotPresent(
+                TableNames.APPICATION_LIST, "courthouse_name", true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        null,
+                        "Morning list \\(cja\\)",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        null,
+                        "CJA_CD_DESCRIPTION",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        null,
+                        TEST_TIME.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        null,
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        null,
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "other_courthouse",
+                        "",
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        "",
+                        "OPEN",
+                        operation,
+                        eventName));
     }
 
     // --- Validation: XOR rule (both supplied) -------------------------------------------------
@@ -1142,6 +1289,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
 
+    private String getExpectedDiffLog(
+            String tableName, String fieldName, String oldValue, String newValue) {
+        return "Saved data audit record: Difference(tableName=%s, fieldName=%s, oldValue=%s, newValue=%s)"
+                .formatted(tableName, fieldName, oldValue, newValue);
+    }
+
     @Test
     @DisplayName("GET Application List")
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
@@ -1207,11 +1360,93 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .build()
                         .fetchTokenForRole();
 
-        UUID id = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+        UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
 
         // fire test
         Response resp =
                 restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
+    @DisplayName("Print Application List")
+    void givenValidRequest_whenPrintApplicationList_then200AndBody() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        UUID id = dto.getId();
+
+        // fire test
+        Response printApplicationListResp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+
+        // assert success
+        printApplicationListResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+
+        ApplicationListGetPrintDto applicationListGetPrintDto =
+                printApplicationListResp.as(ApplicationListGetPrintDto.class);
+        assertThat(applicationListGetPrintDto.getEntries()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Print Application List: 403 when no role")
+    void givenNoRole_whenPrintApplicationList_then403() throws Exception {
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
+
+        UUID id = UUID.randomUUID();
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    // --- Not found: Application List -------------------------------------------------
+    @Test
+    @DisplayName("Print Application List: 404 when list unknown")
+    void givenUnknownApplicationList_whenPrintApplicationList_then404() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id + "/print"), token);
 
         // assert success
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());

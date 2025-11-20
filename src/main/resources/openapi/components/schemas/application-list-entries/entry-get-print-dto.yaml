@@ -40,12 +40,8 @@ properties:
 
   officials:
     type: array
+    items: { $ref: '../participants/official.yaml' }
     description: A list of officials that ruled on the application.
-    items:
-      type: string
-    example:
-      - "Judge Alice Green."
-      - "Judge Emma Grey."
 
   caseReference:
     type: string

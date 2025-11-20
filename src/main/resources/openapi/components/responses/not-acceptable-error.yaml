@@ -1,8 +1,4 @@
 description: Requested media type/version not acceptable.
-headers:
-  x-correlation-id:
-    description: Correlation ID for request tracing.
-    schema: { type: string }
 content:
   application/problem+json:
     schema:
