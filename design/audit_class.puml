@@ -1,0 +1,158 @@
+@startuml
+class AuditEvent {
+     protected AuditOperation requestAction;
+     protected OperationStatus messageStatus;
+     protected Optional<Keyable> newValue;
+     protected Optional<Keyable> oldValue;
+}
+
+
+enum OperationStatus {
+    STARTED(1),
+    COMPLETED(10),
+    FAILED(-1);
+}
+
+interface Auditor {
+   List<AuditableData> extractAuditData(CRUDEnum crudEnum, Keyable newObj);
+}
+
+interface Auditable {
+    List<AuditableData> extractAuditData(CRUDEnum crudEnum)
+}
+
+Auditor <|-- ReflectiveAuditor
+
+note right of ReflectiveAuditor
+The reflective based audit extraction class that works with
+keyable entities. The audit annotations are honoured by
+this implementation
+end note
+
+class ReflectionCaches {
+
+}
+
+ReflectiveAuditor -> ReflectionCaches : lazily reads/caches method instances
+
+class StartEvent
+class CompleteEvent
+class FailEvent
+
+interface AuditOperationLifecycleListener {
+  +eventPerformed(AuditEvent)
+}
+
+note top of AuditOperationLifecycleListener
+The listener responds to audit lifecycle callbacks
+end note
+
+class AuditableResult {
+  Object getResultingValue()
+  Keyable getNewEntity()
+}
+
+note bottom of AuditEvent
+The audit event that represents the differing stages of an
+audit operation
+end note
+
+class AuditOperation {
+    String getEventName();
+    CRUDEnum getType();
+    Class<T> getEntityClass();
+}
+note bottom of AuditOperation
+    An operation specific audit operation
+end note
+
+class CRUDEnum {
+   CREATE('C'),
+   READ('R'),
+   UPDATE('S'),
+   DELETE('D');
+  +isCreate()
+  +isUpdate()
+  +isDelete()
+}
+
+interface AuditOperationService {
+    AuditableResult processAudit(Optional oldValue, AuditOperation auditType,
+    Function execution, AuditOperationLifecycleListener... listener);
+}
+
+
+class AuditOperationServiceImpl {
+    AuditableResult processAudit(Optional oldValue, AuditOperation auditType,
+    Function execution, AuditOperationLifecycleListener... listener);
+}
+
+AuditOperationServiceImpl -- AuditableResult
+AuditOperationServiceImpl -> AuditOperationLifecycleListener
+
+note top of AuditOperationServiceImpl
+The starting point of the API. This service is
+responsible for processing audit operations by taking an
+existing (old) )value, a specific audit operation type,
+a function representing the operation to be audited, and
+optional lifecycle listeners to be called. It returns an AuditableResult
+with a new value if applicable
+end note
+
+AuditOperationServiceImpl -> AuditEvent : <<create>>
+
+
+class DataAuditLogger {
+    void finished(CompleteEvent event)
+}
+
+AuditOperationLifecycleListener <|.. DataAuditLogger
+AuditOperationLifecycleListener <|.. AuditOperationSlf4jLogger
+
+note left of AuditOperationSlf4jLogger
+The listener that simple logs to slf4j. This is
+registered by Spring
+end note
+
+note top of DataAuditLogger
+The listener that handles entity changes, discovers the audit data and
+saves them to the data_audit database table.
+end note
+
+class DataAuditRepository {
+        save (DataAudit dataAudit) : DataAudit
+}
+
+Keyable <|-- DataAudit
+
+DataAuditLogger -> DataAudit : <<create>>
+DataAuditLogger -> ReflectiveAuditor : extractAuditData
+DataAuditLogger -> DataAuditRepository : save(DataAudit)
+
+AuditOperationService <.. AuditOperationServiceImpl
+AuditEvent o-- AuditOperation
+AuditEvent o-- OperationStatus
+AuditOperation o-- CRUDEnum
+
+AuditEvent <|-- StartEvent
+AuditEvent <|-- CompleteEvent
+AuditEvent <|-- FailEvent
+
+annotation AuditEnabled {}
+annotation Audit {
+    CRUDEnum type();
+}
+
+note left of AuditEnabled
+Annotation that allow us to mark a Keyable
+class as auditable
+end note
+
+note left of Audit
+Annotation to markup a field on a keyable class.
+This is used to establish a audit data for a particular audit
+operation. NOTE: The annotation is not needed, by default the
+whole keyable class data is extracted
+end note
+
+@enduml

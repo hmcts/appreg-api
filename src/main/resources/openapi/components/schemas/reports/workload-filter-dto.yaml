@@ -1,0 +1,25 @@
+type: object
+description: >
+  Filter criteria for POST /reports/workload/jobs.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+additionalProperties: false
+required:
+  - dateFrom
+  - dateTo
+
+properties:
+
+  dateFrom:
+    type: string
+    format: date
+    description: Inclusive start date (YYYY-MM-DD).
+    example: "2025-10-01"
+
+  dateTo:
+    type: string
+    format: date
+    description: Inclusive end date (YYYY-MM-DD).
+    example: "2025-10-31"
+
+  location:
+    $ref: '../common/location.yaml'

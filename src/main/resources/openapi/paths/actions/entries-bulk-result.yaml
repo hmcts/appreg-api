@@ -1,0 +1,36 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: ID of the Application List that owns the entries to be resulted.
+
+post:
+  operationId: bulkResultApplicationListEntries
+  tags: [ actions ]
+  summary: Create the same Result for multiple entries in an Application List.
+  description: >
+    Atomically creates a **separate Result** for each specified entry in the **source**
+    list (path `listId`), using the same Result payload for all entries. If any entry
+    cannot be resulted, **no Results are created**.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema:
+          $ref: "../../components/schemas/actions/bulk-result-dto.yaml"
+  responses:
+    "204":
+      description: Results created for all entries. No response body.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

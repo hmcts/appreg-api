@@ -1,8 +1,4 @@
 description: Authenticated but not permitted to perform this action.
-headers:
-  x-correlation-id:
-    description: Correlation ID for request tracing.
-    schema: { type: string }
 content:
   application/problem+json:
     schema:

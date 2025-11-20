@@ -8,5 +8,11 @@
     <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
     <cve>CVE-2023-35116</cve>
   </suppress>
+  
+  <suppress>
+    <notes>We do not expose a SMTP interface
+    </notes>
+    <cve>CVE-2025-7962</cve>
+  </suppress>
   <!--End of false positives section -->
 </suppressions>

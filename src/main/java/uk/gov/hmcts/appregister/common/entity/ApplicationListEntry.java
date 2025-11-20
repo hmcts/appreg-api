@@ -26,6 +26,7 @@ import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
@@ -41,7 +42,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-public class ApplicationListEntry extends BaseChangeableEntity implements Accountable, Versionable {
+public class ApplicationListEntry extends BaseChangeableEntity
+        implements Accountable, Versionable, Keyable {
 
     @Id
     @Column(name = "ale_id", nullable = false, updatable = false)

@@ -1,0 +1,257 @@
+package uk.gov.hmcts.appregister.applicationentry.mapper;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.List;
+import org.mapstruct.AfterMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
+import org.openapitools.jackson.nullable.JsonNullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.gov.hmcts.appregister.common.enumeration.EntityType;
+import uk.gov.hmcts.appregister.common.enumeration.PartyType;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
+
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface ApplicationListEntryMapper {
+
+    Logger LOG = LoggerFactory.getLogger(ApplicationListEntryMapper.class);
+
+    ApplicationListEntrySummary toSummaryDto(
+            ApplicationListEntrySummaryProjection summaryProjection);
+
+    List<ApplicationListEntrySummary> toSummaryDtoList(
+            List<ApplicationListEntrySummaryProjection> summaryProjections);
+
+    @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
+    @Mapping(target = "applicant.person.name.surname", source = "applicantSurname")
+    @Mapping(target = "applicant.person.name.firstForename", source = "applicantForename1")
+    @Mapping(target = "applicant.person.name.secondForename", source = "applicantForename2")
+    @Mapping(target = "applicant.person.name.thirdForename", source = "applicantForename3")
+    @Mapping(target = "applicant.organisation.name", source = "applicantName")
+    @Mapping(target = "respondent.person.name.title", source = "respondentTitle")
+    @Mapping(target = "respondent.person.name.surname", source = "respondentSurname")
+    @Mapping(target = "respondent.person.name.firstForename", source = "respondentForename1")
+    @Mapping(target = "respondent.person.name.secondForename", source = "respondentForename2")
+    @Mapping(target = "respondent.person.name.thirdForename", source = "respondentForename3")
+    @Mapping(target = "respondent.dateOfBirth", source = "respondentDateOfBirth")
+    @Mapping(target = "respondent.organisation.name", source = "respondentName")
+    @Mapping(target = "resultWordings", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    EntryGetPrintDto toPrintDto(ApplicationListEntryPrintProjection printProjection);
+
+    /**
+     * Utility mapping method to wrap a {@link String} in a {@link JsonNullable}.
+     *
+     * <p>This allows optional String fields (e.g. {@code accountNumber}) to be properly represented
+     * in generated OpenAPI models where {@code null} and "undefined" must be distinguished.
+     *
+     * @param string the String value
+     * @return a JsonNullable wrapper containing the value or null
+     */
+    default JsonNullable<String> map(String string) {
+        return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
+    }
+
+    /**
+     * Utility mapping method to converts the given {@link OffsetDateTime} to a {@link LocalDate}.
+     *
+     * <p>If the input {@code offsetDateTime} is {@code null}, this method returns {@code null}.
+     * Otherwise, it extracts and returns the local date component of the given {@code
+     * OffsetDateTime}.
+     *
+     * @param offsetDateTime the OffsetDateTime to convert; may be null
+     * @return the corresponding LocalDate, or null if the input is null
+     */
+    default LocalDate map(OffsetDateTime offsetDateTime) {
+        return offsetDateTime == null ? null : offsetDateTime.toLocalDate();
+    }
+
+    /**
+     * Utility mapping method to maps contact details from the provided {@link
+     * ApplicationListEntryPrintProjection} object to a new {@link ContactDetails} instance based on
+     * the specified {@link PartyType}.
+     *
+     * <p>This method extracts address lines, postcode, phone, mobile, and email information for
+     * either the applicant or respondent, depending on the given {@code partyType}. All fields are
+     * initialized to empty strings before mapping to ensure null safety.
+     *
+     * @param applicationListEntryPrintProjection the projection object containing applicant and
+     *     respondent contact information
+     * @param partyType the type of party whose contact details should be mapped; expected values
+     *     are APPLICANT or RESPONDENT
+     * @return a ContactDetails object populated with the corresponding party’s contact details; if
+     *     partyType is not recognized, returns an empty ContactDetails instance
+     */
+    default ContactDetails mapContactDetails(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
+            PartyType partyType) {
+        ContactDetails details = new ContactDetails();
+
+        String address1 = "";
+        String address2 = "";
+        String address3 = "";
+        String address4 = "";
+        String address5 = "";
+        String postcode = "";
+        String phone = "";
+        String mobile = "";
+        String email = "";
+
+        if (partyType == PartyType.APPLICANT) {
+            address1 = applicationListEntryPrintProjection.getApplicantAddressLine1();
+            address2 = applicationListEntryPrintProjection.getApplicantAddressLine2();
+            address3 = applicationListEntryPrintProjection.getApplicantAddressLine3();
+            address4 = applicationListEntryPrintProjection.getApplicantAddressLine4();
+            address5 = applicationListEntryPrintProjection.getApplicantAddressLine5();
+            postcode = applicationListEntryPrintProjection.getApplicantPostcode();
+            phone = applicationListEntryPrintProjection.getApplicantPhone();
+            mobile = applicationListEntryPrintProjection.getApplicantMobile();
+            email = applicationListEntryPrintProjection.getApplicantEmail();
+        } else if (partyType == PartyType.RESPONDENT) {
+            address1 = applicationListEntryPrintProjection.getRespondentAddressLine1();
+            address2 = applicationListEntryPrintProjection.getRespondentAddressLine2();
+            address3 = applicationListEntryPrintProjection.getRespondentAddressLine3();
+            address4 = applicationListEntryPrintProjection.getRespondentAddressLine4();
+            address5 = applicationListEntryPrintProjection.getRespondentAddressLine5();
+            postcode = applicationListEntryPrintProjection.getRespondentPostcode();
+            phone = applicationListEntryPrintProjection.getRespondentPhone();
+            mobile = applicationListEntryPrintProjection.getRespondentMobile();
+            email = applicationListEntryPrintProjection.getRespondentEmail();
+        }
+
+        details.setAddressLine1(address1);
+        details.setAddressLine2(address2);
+        details.setAddressLine3(address3);
+        details.setAddressLine4(address4);
+        details.setAddressLine5(address5);
+        details.setPostcode(postcode);
+        details.setPhone(phone);
+        details.setMobile(mobile);
+        details.setEmail(email);
+
+        return details;
+    }
+
+    /**
+     * Populates the {@link Applicant} and {@link Respondent} fields of the given {@link
+     * EntryGetPrintDto} after the initial mapping process, ensuring all required nested objects and
+     * contact details are initialized and populated.
+     *
+     * <p>This method is intended to be executed as an {@code @AfterMapping} hook in a MapStruct
+     * mapper. It verifies that both the applicant and respondent objects exist in the target DTO,
+     * and initializes any missing {@link Person} or {@link Organisation} sub-objects as required.
+     * It then maps and assigns the corresponding contact details for each party, depending on
+     * whether the entry represents a person or an organisation.
+     *
+     * @param applicationListEntryPrintProjection the source projection containing data for
+     *     applicant and respondent mapping
+     * @param dto the target EntryGetPrintDto object being populated after the main mapping process
+     */
+    @AfterMapping
+    default void setApplicantAndRespondent(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
+            @MappingTarget EntryGetPrintDto dto) {
+        if (dto.getRespondent() == null) {
+            dto.setRespondent(new Respondent());
+        }
+
+        EntityType applicantEntityType =
+                getApplicantEntityType(applicationListEntryPrintProjection);
+        EntityType respondentEntityType =
+                getRespondentEntityType(applicationListEntryPrintProjection);
+
+        if (applicantEntityType == EntityType.PERSON) {
+            if (dto.getApplicant().getPerson() == null) {
+                dto.getApplicant().setPerson(new Person());
+            }
+
+            dto.getApplicant()
+                    .getPerson()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+        }
+
+        if (applicantEntityType == EntityType.ORGANISATION) {
+            if (dto.getApplicant().getOrganisation() == null) {
+                dto.getApplicant().setOrganisation(new Organisation());
+            }
+
+            dto.getApplicant()
+                    .getOrganisation()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.APPLICANT));
+        }
+
+        if (respondentEntityType == EntityType.PERSON) {
+            if (dto.getRespondent().getPerson() == null) {
+                dto.getRespondent().setPerson(new Person());
+            }
+
+            dto.getRespondent()
+                    .getPerson()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
+        }
+
+        if (respondentEntityType == EntityType.ORGANISATION) {
+            if (dto.getRespondent().getOrganisation() == null) {
+                dto.getRespondent().setOrganisation(new Organisation());
+            }
+
+            dto.getRespondent()
+                    .getOrganisation()
+                    .setContactDetails(
+                            mapContactDetails(
+                                    applicationListEntryPrintProjection, PartyType.RESPONDENT));
+        }
+    }
+
+    private EntityType getApplicantEntityType(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
+        if (applicationListEntryPrintProjection.getApplicantName() != null) {
+            return EntityType.ORGANISATION;
+        } else if (applicationListEntryPrintProjection.getApplicantForename1() != null
+                && applicationListEntryPrintProjection.getApplicantSurname() != null) {
+            return EntityType.PERSON;
+        } else {
+            LOG.warn(
+                    "Unable to determine applicant entity type for application list entry ID {}: no name or"
+                            + "forename/surname provided.",
+                    applicationListEntryPrintProjection.getId());
+
+            return EntityType.UNKNOWN;
+        }
+    }
+
+    private EntityType getRespondentEntityType(
+            ApplicationListEntryPrintProjection applicationListEntryPrintProjection) {
+        if (applicationListEntryPrintProjection.getRespondentName() != null) {
+            return EntityType.ORGANISATION;
+        } else if (applicationListEntryPrintProjection.getRespondentForename1() != null
+                && applicationListEntryPrintProjection.getRespondentSurname() != null) {
+            return EntityType.PERSON;
+        } else {
+            LOG.warn(
+                    "Unable to determine respondent entity type for application list entry ID {}: no name or"
+                            + "forename/surname provided.",
+                    applicationListEntryPrintProjection.getId());
+
+            return EntityType.UNKNOWN;
+        }
+    }
+}

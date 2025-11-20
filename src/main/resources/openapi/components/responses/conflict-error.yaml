@@ -1,8 +1,4 @@
 description: Conflict with the current state of the resource.
-headers:
-  x-correlation-id:
-    description: Correlation ID for request tracing.
-    schema: { type: string }
 content:
   application/problem+json:
     schema:

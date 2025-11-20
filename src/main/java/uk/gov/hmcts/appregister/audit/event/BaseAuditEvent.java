@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.audit.event;
 
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
+import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 /**
  * The audit payload base interface.
@@ -13,7 +14,7 @@ public interface BaseAuditEvent {
      *
      * @return the request action
      */
-    AuditEventEnum getRequestAction();
+    AuditOperation getRequestAction();
 
     /**
      * gets the message uuid.
@@ -35,4 +36,8 @@ public interface BaseAuditEvent {
      * @return the message content
      */
     String getMessageContent();
+
+    Keyable getNewValue();
+
+    Keyable getOldValue();
 }

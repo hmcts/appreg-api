@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.courtlocation.service;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
@@ -20,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapperImpl;
@@ -79,7 +80,10 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                        isNull(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -100,7 +104,10 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                        isNull(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -124,7 +131,10 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATION_AUDIT_EVENT), notNull(), notNull());
+                        isNull(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -177,7 +187,10 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
+                        isNull(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -213,6 +226,9 @@ public class CourtLocationServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(AuditEventEnum.GET_COURT_LOCATIONS_AUDIT_EVENT), notNull(), notNull());
+                        isNull(),
+                        eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 }

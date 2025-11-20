@@ -42,8 +42,10 @@ public abstract class ApplicationListEntryMapStructMapper {
 
     /**
      * Convert the ApplicationListStatus enum from the generated model to the internal Status enum.
+     * This method checks for null values.
      *
-     * @return The status
+     * @param status The application list status to covert
+     * @return The converted status
      */
     public static Status toStatus(ApplicationListStatus status) {
         Status retStatus = null;
@@ -54,9 +56,11 @@ public abstract class ApplicationListEntryMapStructMapper {
     }
 
     /**
-     * Convert the ApplicationListStatus enum from the generated model to the internal Status enum.
+     * Convert the Status enum from the generated model to the external ApplicationListStatus enum.
+     * This method checks for null values.
      *
-     * @return The status
+     * @param status The status to covert
+     * @return The converted application list status
      */
     public static ApplicationListStatus toStatus(Status status) {
         ApplicationListStatus retStatus = null;

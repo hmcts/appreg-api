@@ -28,7 +28,7 @@ public class AppListTestData
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         ApplicationList list =
                 Instancio.of(ApplicationList.class)
-                        .ignore(field(ApplicationList::getPk))
+                        .ignore(field(ApplicationList::getId))
                         .ignore(field(ApplicationList::getCja))
                         .withSettings(settings)
                         .create();

@@ -14,8 +14,10 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -53,7 +55,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList entity = mapper.toCreateEntityWithCourt(dto, court);
 
-            assertNull(entity.getPk());
+            assertNull(entity.getId());
             assertNull(entity.getUuid());
             assertNull(entity.getVersion());
             assertNull(entity.getCreatedUser());
@@ -97,7 +99,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList entity = mapper.toCreateEntityWithCja(dto, cja);
 
-            assertNull(entity.getPk());
+            assertNull(entity.getId());
             assertNull(entity.getUuid());
             assertNull(entity.getVersion());
             assertNull(entity.getCreatedUser());
@@ -128,7 +130,7 @@ public class ApplicationListMapperTest {
 
             ApplicationList appList =
                     ApplicationList.builder()
-                            .pk(999L)
+                            .id(999L)
                             .uuid(id)
                             .description("Morning session for traffic-related applications")
                             .status(Status.fromValue(ApplicationListStatus.OPEN.getValue()))
@@ -195,6 +197,25 @@ public class ApplicationListMapperTest {
             assertEquals("Morning session", dto.getDescription());
             assertEquals(5, dto.getEntriesCount());
             assertEquals(ApplicationListStatus.OPEN, dto.getStatus());
+        }
+    }
+
+    // ---------- Mapping: toGetPrintDto ----------
+
+    @Nested
+    class ToGetPrintDtoTests {
+
+        @Test
+        void toGetPrintDto_passedValidEntity_returnsValidDto() {
+            ApplicationList appList = new AppListTestData().someMinimal().build();
+
+            // When
+            ApplicationListGetPrintDto dto = mapper.toGetPrintDto(appList);
+
+            assertEquals(appList.getDate(), dto.getDate());
+            assertEquals(appList.getTime(), dto.getTime());
+            assertEquals(appList.getCourtName(), dto.getCourtName());
+            assertEquals(appList.getOtherLocation(), dto.getOtherLocationDescription());
         }
     }
 }

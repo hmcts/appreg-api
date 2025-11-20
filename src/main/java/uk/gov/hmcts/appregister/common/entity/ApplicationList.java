@@ -23,10 +23,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Generated;
 import org.hibernate.generator.EventType;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 
 /**
@@ -41,47 +45,56 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
+@AuditEnabled(types = {CrudEnum.CREATE})
 public class ApplicationList extends BaseChangeableAndDeletableEntity
-        implements Accountable, Versionable {
+        implements Accountable, Versionable, Keyable {
     @Id
     @Column(name = "al_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
     @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    private Long pk;
+    private Long id;
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
+    @Audit(action = {CrudEnum.CREATE})
     @Convert(converter = StatusConverter.class)
     private Status status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)
+    @Audit(action = {CrudEnum.CREATE})
     private String description;
 
     @Column(name = "courthouse_name")
     @Size(max = 200)
+    @Audit(action = {CrudEnum.CREATE})
     private String courtName;
 
     @Column(name = "courthouse_code")
     @Size(max = 10)
+    @Audit(action = {CrudEnum.CREATE})
     private String courtCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cja_cja_id")
+    @Audit(action = {CrudEnum.CREATE})
     private CriminalJusticeArea cja;
 
     @Column(name = "other_courthouse")
     @Size(max = 200)
+    @Audit(action = {CrudEnum.CREATE})
     private String otherLocation;
 
     @Column(name = "application_list_date", nullable = false)
+    @Audit(action = {CrudEnum.CREATE})
     private LocalDate date;
 
     @Column(name = "application_list_time", nullable = false)
+    @Audit(action = {CrudEnum.CREATE})
     private LocalTime time;
 
     @Column(name = "duration_hour")

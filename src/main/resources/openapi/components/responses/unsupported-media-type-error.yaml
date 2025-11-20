@@ -1,0 +1,12 @@
+description: The server does not support the media type of the request.
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/common/problem.yaml'
+    examples:
+      unsupported-media-type:
+        value:
+          type: https://errors.hmcts.net/common/unsupported-media-type
+          title: Unsupported Media Type
+          status: 415
+          detail: The content type 'application/xml' is not supported. Expected 'text/csv' or 'multipart/form-data'.

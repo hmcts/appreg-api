@@ -1,0 +1,49 @@
+@startuml
+
+
+
+actor UI
+participant ApplicationListController
+participant ApplicationListServiceImpl
+participant AuditOperationServiceImpl
+participant DataAuditLogger
+participant AuditOperationSlf4jLogger
+
+UI->ApplicationListController : Http Post Create App List
+activate  ApplicationListController
+ApplicationListController -> ApplicationListServiceImpl : create(ApplicationListCreateDto dto)
+activate  ApplicationListServiceImpl
+
+ApplicationListServiceImpl -> AuditOperationServiceImpl : processAudit(oldValue, auditType, execution, listener)
+activate  AuditOperationServiceImpl
+
+AuditOperationServiceImpl -> AuditOperationSlf4jLogger : started(StartEvent event)
+activate  AuditOperationSlf4jLogger
+
+
+AuditOperationServiceImpl -> DataAuditLogger : finished(CompleteEvent event)
+AuditOperationServiceImpl -> DataAuditLogger : started(StartEvent event)
+
+AuditOperationServiceImpl -> DataAuditLogger : finished(CompleteEvent event)
+activate  DataAuditLogger
+
+group Manage Audit Extraction
+DataAuditLogger -> ReflectiveAuditor : extractAuditData(auditCrudOp, oldValue, newValue)
+    loop for all differences detected
+
+
+activate  ReflectiveAuditor
+
+database ApplicationListRepository
+
+
+database DataAuditRepository
+
+DataAuditLogger -> DataAuditRepository : Create Audit Record
+activate  DataAuditRepository
+    end
+end
+ApplicationListServiceImpl -> ApplicationListRepository : Create Record
+activate  ApplicationListRepository
+
+@enduml
