@@ -16,14 +16,17 @@ post:
         schema:
           $ref: "../../components/schemas/actions/move-entries-dto.yaml"
   responses:
-    "204":
-      description: All entries successfully moved. No response body.
+    "200":
+      description: All entries successfully moved.
       headers:
         Vary:
           description: Response varies by Accept for media-type versioning.
           schema:
             type: string
             example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema: { $ref: "../../components/schemas/application-lists/application-list-entries-moved-dto.yaml" }
     "400": { $ref: "../../components/responses/bad-request-error.yaml" }
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }

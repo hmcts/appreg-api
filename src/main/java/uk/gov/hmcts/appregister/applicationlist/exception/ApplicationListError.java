@@ -46,7 +46,17 @@ public enum ApplicationListError implements ErrorCodeEnum {
         DefaultErrorDetail.create(
             HttpStatus.BAD_REQUEST,
             "'entryIds' must be provided and non-empty",
-            "AL-5"));
+            "AL-5")),
+    INVALID_LIST_STATUS(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST,
+            "Cannot move the applications because either the source or target list have a CLOSED 'status'",
+            "AL-6")),
+    INVALID_ENTRY(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST,
+            "Validation failed for some entries (ALL_OR_NOTHING)",
+            "AL-7"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

@@ -1,0 +1,6 @@
+type: string
+description: Mode of the Application List Entries Move.
+enum:
+  - ALL_OR_NOTHING
+  - PARTIAL
+example: ALL_OR_NOTHING

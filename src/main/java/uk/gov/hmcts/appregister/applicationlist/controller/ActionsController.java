@@ -10,8 +10,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 import uk.gov.hmcts.appregister.applicationlist.service.ActionsService;
-import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.generated.api.ActionsApi;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMovedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 import java.util.UUID;
@@ -47,7 +47,8 @@ public class ActionsController implements ActionsApi {
     private final ActionsService service;
 
     @Override
-    public ResponseEntity<Void> moveApplicationListEntries(UUID listId, MoveEntriesDto moveEntriesDto) {
+    public ResponseEntity<ApplicationListEntriesMovedDto> moveApplicationListEntries(
+        UUID listId, MoveEntriesDto moveEntriesDto) {
         return ActionsApi.super.moveApplicationListEntries(listId, moveEntriesDto);
     }
 }

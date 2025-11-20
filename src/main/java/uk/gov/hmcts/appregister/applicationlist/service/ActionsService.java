@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import java.util.UUID;
 
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMovedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 /**
@@ -22,9 +23,10 @@ public interface ActionsService {
      *     the identifier of the source Application List that currently owns the entries.
      * @param moveEntriesDto
      *     details of the destination list and the entries to be moved.
+     * @return a DTO representing the outcome of the move operation.
      *
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
      *     or the associated target ApplicationList entity is not found
      */
-    void move(UUID listId, MoveEntriesDto moveEntriesDto);
+    ApplicationListEntriesMovedDto move(UUID listId, MoveEntriesDto moveEntriesDto);
 }
