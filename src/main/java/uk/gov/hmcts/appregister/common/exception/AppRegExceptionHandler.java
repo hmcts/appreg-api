@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -137,7 +138,30 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status,
             WebRequest request) {
         log.error("An exception occurred", ex);
-        ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
+
+        DateTimeParseException dataException = findCause(ex, DateTimeParseException.class);
+        ProblemDetail problemDetail =
+                getDetailFromEnum(
+                        CommonAppError.NOT_READABLE_ERROR,
+                        dataException == null ? ex : dataException);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * find the cause of a type.
+     *
+     * @param ex the exception
+     * @param type the type to find
+     * @return the identified exception
+     */
+    public static <T extends Throwable> T findCause(Throwable ex, Class<T> type) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current.getClass().equals(type)) {
+                return type.cast(current);
+            }
+            current = current.getCause();
+        }
+        return null;
     }
 }
