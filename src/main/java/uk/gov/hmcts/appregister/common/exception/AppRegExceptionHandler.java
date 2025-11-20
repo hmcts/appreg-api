@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import jakarta.validation.ConstraintViolationException;
+import java.net.URI;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -67,10 +69,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(e.getMessage());
         }
 
+        Optional<URI> uri = error.getCode().getType();
+
         // map the type and title if we have a code
-        if (error.getCode().getType().isPresent()) {
-            problemDetail.setType(error.getCode().getType().get());
-        }
+        uri.ifPresent(problemDetail::setType);
 
         if (error.getCode().getMessage() != null) {
             problemDetail.setTitle(error.getCode().getMessage());
