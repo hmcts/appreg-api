@@ -20,7 +20,10 @@ public enum CommonAppError implements ErrorCodeEnum {
     METHOD_ARGUMENT_INVALID_ERROR(
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Error", "COMMON-7")),
     METHOD_VALIDATION_INVALID_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-8"));
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-8")),
+    NOT_READABLE_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Not Readable Error", "COMMON-9")),
+    ;
 
     private final DefaultErrorDetail defaultErrorCode;
 

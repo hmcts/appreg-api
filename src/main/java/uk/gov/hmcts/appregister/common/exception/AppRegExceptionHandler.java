@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.FieldError;
@@ -80,12 +81,14 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     @SuppressWarnings({"java:S2259", "java:S1185"})
     protected ResponseEntity<Object> handleConstraintViolationException(
             ConstraintViolationException ex) {
+        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> mismatchType(MethodArgumentTypeMismatchException ex) {
+        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.TYPE_MISMATCH_ERROR, ex);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
@@ -96,6 +99,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
+        log.error("An exception occurred", ex);
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
@@ -120,8 +124,20 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
+        log.error("An exception occurred", ex);
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_VALIDATION_INVALID_ERROR, ex);
+        return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        log.error("An exception occurred", ex);
+        ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 }
