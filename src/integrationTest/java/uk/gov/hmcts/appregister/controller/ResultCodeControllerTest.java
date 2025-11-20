@@ -10,12 +10,12 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
-import uk.gov.hmcts.appregister.audit.AuditEventEnum;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
@@ -39,9 +39,9 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
 
     // Audit event names
     private static final String AUDIT_GET_ONE =
-            AuditEventEnum.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
+            ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
     private static final String AUDIT_GET_PAGE =
-            AuditEventEnum.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
+            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
 
     private static final int DEFAULT_PAGE_SIZE = 10;
 

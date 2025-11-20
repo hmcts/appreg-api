@@ -9,13 +9,17 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR,
+        uses = ApplicationListMappingHelper.class)
 public interface ApplicationListMapper {
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
@@ -28,7 +32,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "time", source = "dto.time")
     ApplicationList toCreateEntityWithCourt(ApplicationListCreateDto dto, NationalCourtHouse court);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
@@ -68,7 +72,16 @@ public interface ApplicationListMapper {
     ApplicationListGetSummaryDto toGetSummaryDto(
             ApplicationList appList, long entryCount, String location);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "date", source = "appList.date")
+    @Mapping(target = "time", source = "appList.time")
+    @Mapping(target = "courtName", source = "appList.courtName")
+    @Mapping(target = "otherLocationDescription", source = "appList.otherLocation")
+    @Mapping(target = "duration", source = "appList", qualifiedByName = "formatDuration")
+    @Mapping(target = "cja", source = "appList.cja", qualifiedByName = "formatCja")
+    @Mapping(target = "entries", ignore = true)
+    ApplicationListGetPrintDto toGetPrintDto(ApplicationList appList);
+
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "courtCode", expression = "java(null)")
@@ -92,7 +105,7 @@ public interface ApplicationListMapper {
             CriminalJusticeArea cja,
             @MappingTarget ApplicationList entity);
 
-    @Mapping(target = "pk", ignore = true)
+    @Mapping(target = "id", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "otherLocation", ignore = true)

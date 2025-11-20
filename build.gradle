@@ -576,6 +576,11 @@ tasks.register('flywayArtefact', Jar) {
 processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact
 compileJava.dependsOn tasks.openApiGenerate
 
+
+rootProject.tasks.named("processTestResources") {
+  duplicatesStrategy = 'include'
+}
+
 // publishing configuration
 publishing {
   publications {
@@ -595,4 +600,3 @@ publishing {
     }
   }
 }
-

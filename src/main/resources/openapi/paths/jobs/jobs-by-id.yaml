@@ -1,18 +1,22 @@
 get:
-  operationId: getReportStatusById
-  tags: [reports]
-  summary: Get the status of a report generation job.
-  description: >
-    Returns the current status of a report job.
+  operationId: getJobStatus
+  tags: [ jobs ]
+  summary: Get the status of a background job.
+  description: Returns the current status and details of a background job.
   parameters:
     - name: jobId
       in: path
       required: true
-      schema: { type: string }
-      description: The unique identifier of the report job.
+      schema: { type: string, format: uuid }
+      description: The unique identifier of the job.
   responses:
     "200":
       description: Job status retrieved successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string }
+          example: Accept
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:

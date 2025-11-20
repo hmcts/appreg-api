@@ -22,6 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -44,7 +45,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 @Getter
 @Setter
 public class ApplicationCode extends BaseUnmanagedChangeableEntity
-        implements Accountable, Versionable {
+        implements Accountable, Versionable, Keyable {
 
     @Id
     @Column(name = "ac_id", nullable = false, updatable = false)

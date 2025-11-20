@@ -1,0 +1,43 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam artifactBackgroundColor #F8F8F8
+skinparam nodeBackgroundColor #F1F5F9
+skinparam shadowing false
+
+actor Developer
+Developer -> github : Tag Release
+
+node "App Reg Client Repository" as clientDevice {
+component "npm" as npm
+component "Client Stubs\n(From OpenAPI)" as clientStubs
+}
+
+
+node "App Reg Repository" as appreg {
+component "Gradle" as gradle
+component "Open API Specifications" as openapireg
+component "Server Stubs\n(From OpenAPI)" as serverStubs
+}
+
+
+node "Azure Cloud" as artifacttore {
+node "Azure Artifact" as azurartifact {
+component "App Reg Open API" as openapiart
+}
+}
+
+node "Git Hub" as github {
+component "Publish to Azure Artifacts Workflow" as action
+}
+
+action -> action : 1. Generate release number
+action -> gradle : 2. Set release number and build
+action -> openapiart : 3. Publish Artifacts
+
+gradle->openapireg
+gradle->serverStubs
+
+npm-> clientStubs
+npm -> openapiart : Consume Open API Specs
+
+@enduml

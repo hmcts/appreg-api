@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
@@ -217,6 +218,29 @@ public class ApplicationListController implements ApplicationListsApi {
         var applicationListPage = service.getPage(filter, pageInfo);
         log.info("Retrieved Application Lists");
         return ResponseEntity.ok(applicationListPage);
+    }
+
+    /**
+     * Gets an Application List by id with all its Application List Entries.
+     *
+     * <p>This endpoint returns both the list metadata and its entries.
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param id the unique identifier of the application list
+     * @return {@link ResponseEntity} containing the application list details
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ApplicationListGetPrintDto> printApplicationList(UUID id) {
+
+        ApplicationListGetPrintDto retrieved = service.print(id);
+
+        log.info("Successfully retrieved ApplicationList with id: {}", id);
+
+        return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }
 
     /**

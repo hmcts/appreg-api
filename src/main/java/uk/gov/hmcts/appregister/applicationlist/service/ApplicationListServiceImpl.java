@@ -14,31 +14,45 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
+import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.Official;
 
 /**
  * Service implementation for managing Application Lists.
@@ -58,19 +72,34 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
 
+    // Repositories
     private final ApplicationListRepository repository;
     private final ApplicationListEntryRepository aleRepository;
+    private final AppListEntryResolutionRepository alerRepository;
+    private final ApplicationListEntryOfficialRepository aleoRepository;
+
+    // Mappers
     private final ApplicationListMapper mapper;
+    // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
+    private final ApplicationListEntryMapper entryMapper;
+    private final ApplicationListOfficialMapper officalMapper; // (see rename suggestion below)
+    private final PageMapper pageMapper;
+
+    // Validators
     private final ApplicationCreateListLocationValidator applicationCreateListLocationValidator;
     private final ApplicationUpdateListLocationValidator applicationUpdateListLocationValidator;
     private final ApplicationListGetValidator applicationListGetValidator;
-    // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
-    private final ApplicationListEntryMapStructMapper entryMapper;
-    private final EntityManager entityManager;
+    private final ApplicationListDeletionValidator deletionValidator;
+
+    // Services
     private final MatchService matchService;
 
-    private final PageMapper pageMapper;
-    private final ApplicationListDeletionValidator deletionValidator;
+    // Infrastructure
+    private final EntityManager entityManager;
+
+    // Audit
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
      * {@inheritDoc}
@@ -86,15 +115,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto) {
         log.debug("Start: Request to create application list : {}", dto);
-        MatchResponse<ApplicationListGetDetailDto> response =
-                applicationCreateListLocationValidator.validate(
-                        dto,
-                        (listCreateDto, success) ->
-                                success.hasCourt()
-                                        ? createWithCourt(listCreateDto, success)
-                                        : createWithCja(listCreateDto, success));
-        log.debug("Finish: Request to create application list : {}", response.getPayload());
-        return response;
+
+        return auditService.processAudit(
+                AppListAuditOperation.CREATE_APP_LIST,
+                req ->
+                        applicationCreateListLocationValidator.validate(
+                                dto,
+                                (listCreateDto, success) ->
+                                        success.hasCourt()
+                                                ? Optional.of(
+                                                        createWithCourt(listCreateDto, success))
+                                                : Optional.of(
+                                                        createWithCja(listCreateDto, success))),
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     /**
@@ -166,13 +199,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCourt(
-            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            createWithCourt(
+                    ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var court = success.getNationalCourtHouse();
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
-        return MatchResponse.of(
-                hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES));
+
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                MatchResponse.of(
+                        hydrated.getUuid(),
+                        hydrated,
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES)),
+                hydrated);
     }
 
     /**
@@ -185,15 +224,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> createWithCja(
-            ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            createWithCja(
+                    ApplicationListCreateDto createDto, ListLocationValidationSuccess success) {
         var cja = success.getCriminalJusticeArea();
 
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
         var hydrated = refreshEntity(savedEntity);
 
-        return MatchResponse.of(
-                hydrated.getUuid(), hydrated, mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES));
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                MatchResponse.of(
+                        hydrated.getUuid(),
+                        hydrated,
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES)),
+                hydrated);
     }
 
     /**
@@ -291,6 +335,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return dto;
     }
 
+    private ApplicationListGetPrintDto buildGetPrintDto(
+            ApplicationList list, List<EntryGetPrintDto> entries) {
+        ApplicationListGetPrintDto dto = mapper.toGetPrintDto(list);
+        dto.setEntries(entries);
+
+        return dto;
+    }
+
     /**
      * Retrieves a paginated list of application lists based on the given filter and paging
      * parameters.
@@ -331,6 +383,72 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     return assembleResponsePage(dbPage, entriesPerListCounter);
                 },
                 true);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ApplicationListGetPrintDto print(UUID id) {
+        ApplicationList list =
+                repository
+                        .findByUuid(id)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListError.LIST_NOT_FOUND,
+                                                "No application list found for UUID '%s'"
+                                                        .formatted(id)));
+
+        // 1) Fetch all entry projections for the list
+        List<ApplicationListEntryPrintProjection> entryProjections =
+                aleRepository.findByIdForPrinting(id);
+
+        // Short-circuit if there are no entries
+        if (entryProjections.isEmpty()) {
+            return buildGetPrintDto(list, List.of());
+        }
+
+        // 2) Bulk fetch wordings for this list
+        List<ApplicationListEntryResolutionPrintProjection>
+                applicationListEntryResolutionPrintProjections =
+                        alerRepository.findByApplicationListUuidForPrinting(id);
+        Map<Long, List<String>> wordingsByEntryId =
+                applicationListEntryResolutionPrintProjections.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        ApplicationListEntryResolutionPrintProjection::getEntryId,
+                                        Collectors.mapping(
+                                                ApplicationListEntryResolutionPrintProjection
+                                                        ::getWording,
+                                                Collectors.toList())));
+
+        // 3) Bulk fetch officials for this list
+        List<ApplicationListEntryOfficialPrintProjection>
+                applicationListEntryOfficialPrintProjection =
+                        aleoRepository.findByApplicationListUuidForPrinting(
+                                id, OfficialTypeUtil.PRINTABLE_CODES);
+
+        // map directly to DTOs while grouping
+        Map<Long, List<Official>> officialsByEntryId =
+                applicationListEntryOfficialPrintProjection.stream()
+                        .collect(
+                                Collectors.groupingBy(
+                                        ApplicationListEntryOfficialPrintProjection::getEntryId,
+                                        Collectors.mapping(
+                                                officalMapper::toOfficialDto,
+                                                Collectors.toList())));
+
+        // Assemble DTOs locally (no further DB hits)
+        List<EntryGetPrintDto> dtos = new ArrayList<>(entryProjections.size());
+        for (ApplicationListEntryPrintProjection entry : entryProjections) {
+            Long entryId = entry.getId();
+            EntryGetPrintDto dto = entryMapper.toPrintDto(entry);
+
+            dto.setResultWordings(wordingsByEntryId.getOrDefault(entryId, List.of()));
+            dto.setOfficials(officialsByEntryId.getOrDefault(entryId, List.of()));
+            dtos.add(dto);
+        }
+
+        return buildGetPrintDto(list, dtos);
     }
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {
