@@ -11,6 +11,7 @@ public class BeanUtil {
      * @param beanToCopy The bean to copy
      * @return The bean copy
      */
+    // CHECKSTYLE:OFF
     public static <T> T copyBean(T beanToCopy) {
         T before = null;
         if (beanToCopy != null) {
