@@ -1,14 +1,22 @@
 package uk.gov.hmcts.appregister.standardapplicant.controller;
 
+import static org.springframework.http.HttpStatus.OK;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.generated.api.StandardApplicantsApi;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantService;
 
@@ -16,25 +24,36 @@ import uk.gov.hmcts.appregister.standardapplicant.service.StandardApplicantServi
  * Controller for managing standard applicants.
  */
 @RestController
-@RequestMapping("/standard-applicants")
 @RequiredArgsConstructor
-public class StandardApplicantController {
+public class StandardApplicantController implements StandardApplicantsApi {
     private final StandardApplicantService service;
+
+    private static final MediaType VND_JSON_V1 =
+            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
 
     @Operation(
             summary = "Get all standard applicants for the authenticated user",
             operationId = "getAllStandardApplicants")
     @ApiResponse(responseCode = "200", description = "Standard applicants retrieved successfully")
     @GetMapping
+    @Deprecated
+    @RequestMapping(method = RequestMethod.GET, value = "/standard-applicants")
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<List<StandardApplicantDto>> getAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
-    @Operation(summary = "Get a standard applicant by ID", operationId = "getStandardApplicantById")
-    @ApiResponse(responseCode = "200", description = "Standard applicant found")
-    @ApiResponse(responseCode = "404", description = "Standard applicant not found")
-    @GetMapping("/{id}")
-    public ResponseEntity<StandardApplicantDto> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(service.findById(id));
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<StandardApplicantGetDetailDto> getStandardApplicantByCodeAndDate(
+            String code, LocalDate date) {
+
+        StandardApplicantGetDetailDto standardApplicantGetDetailDto =
+                service.findByCode(code, date);
+
+        return ResponseEntity.status(OK)
+                .varyBy("Accept")
+                .contentType(VND_JSON_V1)
+                .body(standardApplicantGetDetailDto);
     }
 }
