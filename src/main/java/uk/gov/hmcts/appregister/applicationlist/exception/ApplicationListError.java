@@ -42,7 +42,7 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     "AL-3")),
     LIST_NOT_FOUND(
             DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-4")),
-    NO_ENTRY_ID(
+    ENTRY_NOT_PROVIDED(
         DefaultErrorDetail.create(
             HttpStatus.BAD_REQUEST,
             "'entryIds' must be provided and non-empty",
@@ -52,11 +52,21 @@ public enum ApplicationListError implements ErrorCodeEnum {
             HttpStatus.BAD_REQUEST,
             "Cannot move the applications because either the source or target list have a CLOSED 'status'",
             "AL-6")),
-    INVALID_ENTRY(
+    ENTRY_NOT_FOUND(
+        DefaultErrorDetail.create(
+            HttpStatus.NOT_FOUND,
+            "Application list entry not found",
+            "AL-7")),
+    ENTRY_NOT_IN_SOURCE_LIST(
         DefaultErrorDetail.create(
             HttpStatus.BAD_REQUEST,
-            "Validation failed for some entries (ALL_OR_NOTHING)",
-            "AL-7"));
+            "Application list entry not in source list",
+            "AL-8")),
+    ENTRY_ALREADY_IN_TARGET_LIST(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST,
+            "Application list entry already in target list",
+            "AL-9"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

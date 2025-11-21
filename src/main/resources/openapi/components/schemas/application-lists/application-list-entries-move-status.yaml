@@ -1,6 +1,0 @@
-type: string
-description: Status of the Application List Entries Move.
-enum:
-  - SUCCEEDED
-  - COMPLETED_WITH_ERRORS
-example: SUCCEEDED

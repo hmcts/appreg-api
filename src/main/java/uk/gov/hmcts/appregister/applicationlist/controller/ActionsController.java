@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import uk.gov.hmcts.appregister.applicationlist.service.ActionsService;
 import uk.gov.hmcts.appregister.generated.api.ActionsApi;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMovedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 import java.util.UUID;
+
+import static org.springframework.http.HttpStatus.OK;
 
 /**
  * REST controller for managing Application List Entries.
@@ -47,8 +48,10 @@ public class ActionsController implements ActionsApi {
     private final ActionsService service;
 
     @Override
-    public ResponseEntity<ApplicationListEntriesMovedDto> moveApplicationListEntries(
+    public ResponseEntity<Void> moveApplicationListEntries(
         UUID listId, MoveEntriesDto moveEntriesDto) {
-        return ActionsApi.super.moveApplicationListEntries(listId, moveEntriesDto);
+        service.move(listId, moveEntriesDto);
+
+        return ResponseEntity.ok().build();
     }
 }

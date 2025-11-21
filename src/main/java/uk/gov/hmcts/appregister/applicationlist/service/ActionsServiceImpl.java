@@ -13,12 +13,9 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMoveStatus;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMovedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +23,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListEntriesMoveMode.PARTIAL;
 import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
 
 /**
@@ -46,7 +42,7 @@ public class ActionsServiceImpl implements ActionsService {
 
     @Override
     @Transactional
-    public ApplicationListEntriesMovedDto move(UUID listId, MoveEntriesDto moveEntriesDto) {
+    public void move(UUID listId, MoveEntriesDto moveEntriesDto) {
         ApplicationList sourceList =
             alRepository
                 .findByUuid(listId)
@@ -72,7 +68,7 @@ public class ActionsServiceImpl implements ActionsService {
         // Validate payload entry ids
         if (moveEntriesDto.getEntryIds() == null || moveEntriesDto.getEntryIds().isEmpty()) {
             throw new AppRegistryException(
-                ApplicationListError.NO_ENTRY_ID,
+                ApplicationListError.ENTRY_NOT_PROVIDED,
                 "No target application list found for UUID '%s'"
                     .formatted(listId));
         }
@@ -83,73 +79,41 @@ public class ActionsServiceImpl implements ActionsService {
         final Map<UUID, ApplicationListEntry> loadedByUuid = loadedEntries.stream()
             .collect(Collectors.toMap(ApplicationListEntry::getUuid, e -> e));
 
-        // keep per-entry validation results in a map for decision-making
-        final Map<UUID, String> invalidReasons = new HashMap<>(); // id -> reasonCode
-
-        final List<ApplicationListEntry> candidatesToMove = new ArrayList<>();
+        List<ApplicationListEntry> toSave = new ArrayList<>();
 
         // Validation loop
         for (UUID id : requestedIds) {
             ApplicationListEntry entry = loadedByUuid.get(id);
             if (entry == null) {
-                invalidReasons.put(id, "ALE_NOT_FOUND");
-                continue;
+                throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_FOUND,
+                    "No application list entry found for UUID '%s'"
+                        .formatted(id));
             }
 
-            // If expectedSourceListId provided, ensure entry belongs to it
-            if (listId != null &&
-                !listId.equals(entry.getApplicationList().getUuid())) {
-                invalidReasons.put(id, "INVALID_SOURCE_LIST");
-                continue;
+            // Ensure entry belongs to the source list
+            if (!listId.equals(entry.getApplicationList().getUuid())) {
+                throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                    "Application list entry '%s' does not belong to the source list"
+                        .formatted(id));
             }
 
             // Already in target
-            /*if (entry.getApplicationList().getUuid().equals(moveEntriesDto.getTargetListId())) {
-                invalidReasons.put(id, "ALREADY_IN_TARGET");
-                continue;
-            }*/
+            if (entry.getApplicationList().getUuid().equals(moveEntriesDto.getTargetListId())) {
+                throw new AppRegistryException(
+                    ApplicationListError.ENTRY_ALREADY_IN_TARGET_LIST,
+                    "Application list entry '%s' is already in the target list"
+                        .formatted(id));
+            }
 
             // Valid candidate
-            candidatesToMove.add(entry);
-        }
-
-        // Decide behavior based on mode
-        boolean partialMode = moveEntriesDto.getMode() == PARTIAL;
-        boolean anyInvalid = !invalidReasons.isEmpty();
-
-        if (!partialMode && anyInvalid) {
-            // ALL_OR_NOTHING and at least one invalid -> abort and return 400 with details
-            Map<UUID, String> details = new HashMap<>(invalidReasons);
-
-            throw new AppRegistryException(
-                ApplicationListError.INVALID_ENTRY,
-                "Validation failed for some entries (ALL_OR_NOTHING): " + details
-            );
+            entry.setApplicationList(targetList);
+            toSave.add(entry);
         }
 
         // Perform moves for candidates
-        int movedCount = 0;
-
-        for (ApplicationListEntry entry : candidatesToMove) {
-            // skip entries that were flagged invalid earlier (defensive)
-            if (invalidReasons.containsKey(entry.getUuid())) continue;
-
-            entry.setApplicationList(targetList);
-
-            aleRepository.save(entry);
-            movedCount++;
-        }
-
-        ApplicationListEntriesMoveStatus overallStatus;
-        if (movedCount == requestedIds.size()) {
-            overallStatus = ApplicationListEntriesMoveStatus.SUCCEEDED;
-        } else {
-            overallStatus = ApplicationListEntriesMoveStatus.COMPLETED_WITH_ERRORS;
-        }
-
-        return new ApplicationListEntriesMovedDto()
-            .overallStatus(overallStatus)
-            .movedCount(movedCount);
+        aleRepository.saveAll(toSave);
     }
 
     private void validateLists(ApplicationList sourceList, ApplicationList targetList) {
