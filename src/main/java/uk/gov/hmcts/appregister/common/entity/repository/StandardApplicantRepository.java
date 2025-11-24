@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 
@@ -15,10 +17,20 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     /**
      * Finds a StandardApplicant by its applicant code.
      *
-     * @param applicantCode the applicant code to search for
+     * @param code the applicant code to search for
+     * @param date The date to check for active status
      * @return an Optional containing the found StandardApplicant, or empty if not found
      */
-    Optional<StandardApplicant> findByApplicantCode(String applicantCode);
+    @Query(
+            """
+        SELECT sa
+        FROM StandardApplicant sa
+        WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
+        AND sa.applicantStartDate <= :date
+        AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        """)
+    List<StandardApplicant> findStandardApplicantByCodeAndDate(
+            @Param("code") String code, @Param("date") LocalDate date);
 
     /**
      * Finds the ids that are greater than this value.
