@@ -55,12 +55,7 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     HttpStatus.NOT_FOUND, "Application list entry not found", "AL-12")),
     ENTRY_NOT_IN_SOURCE_LIST(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-13")),
-    ENTRY_ALREADY_IN_TARGET_LIST(
-            DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
-                    "Application list entry already in target list",
-                    "AL-14"));
+                    HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-13"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.applicationlist.service;
+package uk.gov.hmcts.appregister.action.service;
 
 import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
 
@@ -30,7 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class ActionsServiceImpl implements ActionsService {
+public class ActionServiceImpl implements ActionService {
     // Repositories
     private final ApplicationListRepository alRepository;
     private final ApplicationListEntryRepository aleRepository;
@@ -92,13 +92,6 @@ public class ActionsServiceImpl implements ActionsService {
                         ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
                         "Application list entry '%s' does not belong to the source list"
                                 .formatted(id));
-            }
-
-            // Already in target
-            if (entry.getApplicationList().getUuid().equals(moveEntriesDto.getTargetListId())) {
-                throw new AppRegistryException(
-                        ApplicationListError.ENTRY_ALREADY_IN_TARGET_LIST,
-                        "Application list entry '%s' is already in the target list".formatted(id));
             }
 
             // Valid candidate

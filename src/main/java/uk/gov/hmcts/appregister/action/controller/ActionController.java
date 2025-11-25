@@ -1,13 +1,15 @@
-package uk.gov.hmcts.appregister.applicationlist.controller;
+package uk.gov.hmcts.appregister.action.controller;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.appregister.applicationlist.service.ActionsService;
+import uk.gov.hmcts.appregister.action.service.ActionService;
+import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ActionsApi;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
@@ -16,7 +18,7 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
  *
  * <p>This controller provides endpoints for task-based operations that perform domain-specific
  * actions across one or more resources, such as bulk-resulting entries, starting asynchronous bulk
- * uploads, and moving entries between lists. It leverages {@link ActionsService} for business logic
+ * uploads, and moving entries between lists. It leverages {@link ActionService} for business logic
  * and ensures request validation and authorization via Spring Security annotations.
  *
  * <p>Responses are served in versioned JSON media type: {@code
@@ -33,24 +35,21 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 @Validated
 @RequiredArgsConstructor
 @Slf4j
-public class ActionsController implements ActionsApi {
+public class ActionController implements ActionsApi {
 
-    private static final MediaType VND_JSON_V1 =
-            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
-
-    private final ActionsService service;
+    private final ActionService service;
 
     @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> moveApplicationListEntries(
             UUID listId, MoveEntriesDto moveEntriesDto) {
         service.move(listId, moveEntriesDto);
 
         log.info(
-            "Successfully moved ApplicationListEntries from source list={} to target list={} with entryIds={}",
-            listId,
-            moveEntriesDto.getTargetListId(),
-            moveEntriesDto.getEntryIds()
-        );
+                "Successfully moved ApplicationListEntries from source list={} to target list={} with entryIds={}",
+                listId,
+                moveEntriesDto.getTargetListId(),
+                moveEntriesDto.getEntryIds());
 
         return ResponseEntity.ok().build();
     }

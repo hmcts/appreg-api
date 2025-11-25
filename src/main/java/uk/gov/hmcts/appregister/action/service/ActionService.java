@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.applicationlist.service;
+package uk.gov.hmcts.appregister.action.service;
 
 import java.util.UUID;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
  * <p>This service defines the contract for executing domain-level "actions" across Application
  * Lists and their entries.
  */
-public interface ActionsService {
+public interface ActionService {
 
     /**
      * Moves the specified entries from a source Application List to a destination Application List.

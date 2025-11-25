@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.applicationlist.service;
+package uk.gov.hmcts.appregister.action.service;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -30,22 +30,22 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ActionsServiceImplTest {
+public class ActionServiceImplTest {
 
     @Mock private ApplicationListRepository alRepository;
     @Mock private ApplicationListEntryRepository aleRepository;
 
-    private ActionsServiceImpl service;
+    private ActionServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ActionsServiceImpl(alRepository, aleRepository);
+        service = new ActionServiceImpl(alRepository, aleRepository);
     }
 
     @Captor private ArgumentCaptor<List<ApplicationListEntry>> listCaptor;
 
     @Test
-    void move() {
+    void move_movesEntriesSuccessfully_whenValidRequest() {
         ApplicationList sourceList = new ApplicationList();
         UUID sourceListId = UUID.randomUUID();
         sourceList.setUuid(sourceListId);
@@ -277,43 +277,6 @@ public class ActionsServiceImplTest {
         ApplicationListEntry entry = new ApplicationListEntry();
         entry.setUuid(UUID.randomUUID());
         entry.setApplicationList(new ApplicationList());
-        requestedIds.add(entry.getUuid());
-
-        List<ApplicationListEntry> applicationListEntries = new ArrayList<>();
-        applicationListEntries.add(entry);
-
-        dto.setEntryIds(requestedIds);
-
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(applicationListEntries);
-
-        assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
-    }
-
-    @Test
-    void move_returns400_whenEntryAlreadyInTargetList() {
-        ApplicationList sourceList = new ApplicationList();
-        UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
-        MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
-
-        Set<UUID> requestedIds = new HashSet<>();
-
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setUuid(UUID.randomUUID());
-        entry.setApplicationList(targetList);
         requestedIds.add(entry.getUuid());
 
         List<ApplicationListEntry> applicationListEntries = new ArrayList<>();
