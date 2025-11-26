@@ -1,10 +1,18 @@
 {
 	"info": {
+<<<<<<< HEAD
 		"_postman_id": "e01fece6-de42-4b29-86d4-bfb0ab752787",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
 		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-e01fece6-de42-4b29-86d4-bfb0ab752787?action=share&source=collection_link&creator=15829068"
+=======
+		"_postman_id": "d7c5fbfb-7ebb-4457-8643-724023e938c6",
+		"name": "App Registration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15829068",
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-d7c5fbfb-7ebb-4457-8643-724023e938c6?action=share&source=collection_link&creator=15829068"
+>>>>>>> master
 	},
 	"item": [
 		{
@@ -448,6 +456,7 @@
 						}
 					},
 					"response": []
+<<<<<<< HEAD
 				},
 				{
 					"name": "Standard Applicant Get All",
@@ -465,6 +474,8 @@
 						}
 					},
 					"response": []
+=======
+>>>>>>> master
 				}
 			]
 		},
