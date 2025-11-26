@@ -1,9 +1,8 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -30,8 +29,9 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 
 /**
  * The ApplicationList entity represents a list of applications in the system.
@@ -57,12 +57,13 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
+    @Audit(action = {CrudEnum.CREATE})
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
-    @Enumerated(EnumType.STRING)
     @Audit(action = {CrudEnum.CREATE})
-    private ApplicationListStatus status;
+    @Convert(converter = StatusConverter.class)
+    private Status status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)

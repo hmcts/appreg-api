@@ -26,4 +26,14 @@ public enum FeeStatusType {
         }
         throw new IllegalArgumentException("Unknown fee status: " + displayName);
     }
+
+    public static FeeStatusType fromValue(String value) {
+        for (FeeStatusType status : FeeStatusType.values()) {
+            if (status.getDisplayName().equalsIgnoreCase(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown value: " + value);
+    }
+
 }

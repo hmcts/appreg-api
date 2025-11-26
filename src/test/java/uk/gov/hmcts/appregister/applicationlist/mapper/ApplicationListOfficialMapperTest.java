@@ -16,7 +16,7 @@ class ApplicationListOfficialMapperTest {
     void testToOfficialDto_provideValidData_validDtoGenerated() {
         var projection =
                 applicationListEntryOfficialPrintProjection()
-                        .type(MAGISTRATE_CODE)
+                        .type(uk.gov.hmcts.appregister.common.enumeration.OfficialType.MAGISTRATE)
                         .title(MR)
                         .forename(PERSON1_FORENAME1)
                         .surname(PERSON1_SURNAME)

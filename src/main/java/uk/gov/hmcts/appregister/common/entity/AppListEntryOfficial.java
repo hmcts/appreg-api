@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -20,6 +21,9 @@ import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.converter.OfficialConverter;
+import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 
 /**
  * Represents an official associated with an application list entry, mapped to the
@@ -58,7 +62,8 @@ public class AppListEntryOfficial extends BaseChangeableEntity implements Accoun
     private String surname;
 
     @Column(name = "official_type", nullable = false)
-    private String officialType;
+    @Convert(converter = OfficialConverter.class)
+    private OfficialType officialType;
 
     @Column(name = "user_name", nullable = false)
     private String createdUser;

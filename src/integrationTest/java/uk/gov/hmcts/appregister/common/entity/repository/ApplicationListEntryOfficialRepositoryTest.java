@@ -17,6 +17,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.data.AppListTestData;
@@ -35,7 +36,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
 
     @PersistenceContext private EntityManager entityManager;
 
-    record OfficialKey(String title, String forename, String surname, String type) {}
+    record OfficialKey(String title, String forename, String surname, OfficialType type) {}
 
     @Test
     public void testFindByApplicationListUuidForPrinting() {
@@ -82,7 +83,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
                                                                                 official
                                                                                         .getSurname(),
                                                                                 official
-                                                                                        .getOfficialType()))
+                                                                                    .getOfficialType()))
                                                         .collect(Collectors.toSet())));
 
         // Build actual map from projection

@@ -76,6 +76,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
@@ -350,7 +351,7 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         eq(cja),
                         eq(DEFAULT_DATE),
@@ -412,7 +413,7 @@ public class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
 
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.CLOSED),
+                        eq(Status.CLOSED),
                         eq("LOC123"),
                         isNull(),
                         eq(DEFAULT_DATE),
@@ -465,7 +466,7 @@ public class ApplicationListServiceImplTest {
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         eq(cja),
                         isNull(),
@@ -505,7 +506,7 @@ public class ApplicationListServiceImplTest {
 
         Page<ApplicationList> dbPage = Page.empty();
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
@@ -547,7 +548,7 @@ public class ApplicationListServiceImplTest {
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
@@ -583,7 +584,7 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
@@ -619,7 +620,7 @@ public class ApplicationListServiceImplTest {
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),

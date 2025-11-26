@@ -13,7 +13,8 @@ properties:
   applicationCode:
     type: string
     description: Code that identifies the Application Code.
-    example: "APP001"
+    example: "APP001",
+    required: true
 
   applicant:
     $ref: '../participants/applicant.yaml'
@@ -24,6 +25,7 @@ properties:
   numberOfRespondents:
     type: integer
     description: Number of respondents required by the Application.
+    format: int16
     example: 0
 
   wordingFields:

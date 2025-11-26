@@ -27,7 +27,7 @@ public class AppListEntryFeeStatusTestData
 
         ApplicationListEntry applicationListEntry =
                 new AppListEntryTestData().someMinimal().build();
-        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.DUE.getDisplayName());
+        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.DUE);
         appListEntryFeeStatus.setAppListEntry(applicationListEntry);
 
         return appListEntryFeeStatus;

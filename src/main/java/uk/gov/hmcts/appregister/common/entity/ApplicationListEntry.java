@@ -13,6 +13,8 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
+
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -22,17 +24,23 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents an entry in the application list, mapped to the "application_list_entries" table in
  * the database.
  */
 @Entity
-@Table(name = "application_list_entries")
+@Table(name = TableNames.APPLICATION_LISTS_ENTRY)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -40,6 +48,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
+@AuditEnabled(types = {CrudEnum.CREATE})
 public class ApplicationListEntry extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -48,10 +57,12 @@ public class ApplicationListEntry extends BaseChangeableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
     @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
+    @Audit(action = {CrudEnum.CREATE})
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -115,7 +126,7 @@ public class ApplicationListEntry extends BaseChangeableEntity
     private String retryCount;
 
     @Column(name = "lodgement_date", nullable = false)
-    private OffsetDateTime lodgementDate;
+    private LocalDate lodgementDate;
 
     @OneToMany(mappedBy = "applicationList")
     private List<AppListEntryResolution> resolutions;
@@ -130,5 +141,6 @@ public class ApplicationListEntry extends BaseChangeableEntity
     private List<AppListEntryFeeId> entryFeeIds;
 
     @Column(name = "id")
+    @Generated(event = EventType.INSERT)
     private UUID uuid;
 }

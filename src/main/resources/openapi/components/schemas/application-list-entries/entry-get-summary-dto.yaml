@@ -16,19 +16,24 @@ properties:
     description: Unique identifier of the Application List Entry.
     example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
-  applicantName:
-    type: string
+  applicant:
     description: Name of the person or organisation that made the application.
     example: "John Smith"
+    $ref: '../participants/applicant.yaml'
 
-  respondentName:
-    type: string
+  respondent:
     description: Name of the person or organisation responding to the application.
     example: "Jane Smith"
+    $ref: '../participants/applicant.yaml'
 
   applicationTitle:
     type: string
     description: Descriptive title of the application.
+    example: "Application to Crown Court"
+
+  legislation:
+    type: string
+    description: Legislation under which the application is made.
     example: "Application to Crown Court"
 
   isFeeRequired:

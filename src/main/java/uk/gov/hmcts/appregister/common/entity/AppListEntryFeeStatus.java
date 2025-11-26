@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Converter;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
@@ -12,6 +14,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,6 +28,9 @@ import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.converter.FeeStatusTypeConverter;
+import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
 /**
  * The AppListEntryFeeStatus entity represents the fee status of an application list entry.
@@ -53,10 +60,11 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     private String alefsPaymentReference;
 
     @Column(name = "alefs_fee_status")
-    private String alefsFeeStatus;
+    @Convert(converter = FeeStatusTypeConverter.class)
+    private FeeStatusType alefsFeeStatus;
 
     @Column(name = "alefs_fee_status_date", nullable = false)
-    private OffsetDateTime alefsFeeStatusDate;
+    private LocalDate alefsFeeStatusDate;
 
     @Column(name = "alefs_version", nullable = false)
     @Version

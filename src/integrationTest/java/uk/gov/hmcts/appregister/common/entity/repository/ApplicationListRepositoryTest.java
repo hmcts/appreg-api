@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -37,7 +38,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         ApplicationList al =
                 ApplicationList.builder()
-                        .status(ApplicationListStatus.fromValue(status))
+                        .status(Status.valueOf(ApplicationListStatus.fromValue(status).getValue()))
                         .description(description)
                         .otherLocation(otherLocation)
                         .courtName(courtCode != null ? "Court " + courtCode : null)
@@ -61,7 +62,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     private ApplicationList buildEntity() {
         return ApplicationList.builder()
-                .status(ApplicationListStatus.OPEN)
+                .status(Status.valueOf(ApplicationListStatus.OPEN.getValue()))
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")
@@ -87,7 +88,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-        assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(reloaded.getStatus()).isEqualTo(Status.OPEN);
         assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
         assertThat(reloaded.getChangedBy())
                 .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
@@ -124,7 +125,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                     assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
                     assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
                     assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-                    assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+                    assertThat(reloaded.getStatus()).isEqualTo(Status.OPEN);
                     assertThat(reloaded.getCreatedUser())
                             .isEqualTo(TokenGenerator.DEFAULT_USERNAME);
                     assertThat(reloaded.getChangedBy())
@@ -187,13 +188,19 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN, "CCC003", null, null, null, null, null, page);
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
+                        "CCC003",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().getFirst().getCourtCode()).isEqualTo("CCC003");
-        assertThat(result.getContent().getFirst().getStatus())
-                .isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(result.getContent().getFirst().getStatus()).isEqualTo(Status.OPEN);
     }
 
     @Test
@@ -209,14 +216,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
-                        null,
-                        cja52,
-                        null,
-                        null,
-                        null,
-                        null,
-                        PageRequest.of(0, 10));
+                        Status.OPEN, null, cja52, null, null, null, null, PageRequest.of(0, 10));
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -236,7 +236,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         null,
                         null,
                         null,
@@ -282,7 +282,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Page<ApplicationList> page0 =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",
                         null,
                         null,
@@ -295,7 +295,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // And: page 1 size 1
         Page<ApplicationList> page1 =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",
                         null,
                         null,

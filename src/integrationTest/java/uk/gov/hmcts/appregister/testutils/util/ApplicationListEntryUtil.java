@@ -23,6 +23,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
@@ -78,7 +79,7 @@ public final class ApplicationListEntryUtil {
                         .title(MR)
                         .forename(PERSON1_FORENAME1)
                         .surname(PERSON1_SURNAME)
-                        .officialType(MAGISTRATE_CODE)
+                        .officialType(OfficialType.MAGISTRATE)
                         .build();
         officials.add(appListEntryOfficial1);
         AppListEntryOfficial appListEntryOfficial2 =
@@ -88,7 +89,7 @@ public final class ApplicationListEntryUtil {
                         .title(MRS)
                         .forename(PERSON2_FORENAME1)
                         .surname(PERSON2_SURNAME)
-                        .officialType(MAGISTRATE_CODE)
+                        .officialType(OfficialType.MAGISTRATE)
                         .build();
         officials.add(appListEntryOfficial2);
         AppListEntryOfficial appListEntryOfficial3 =
@@ -98,7 +99,7 @@ public final class ApplicationListEntryUtil {
                         .title(MR)
                         .forename(PERSON3_FORENAME1)
                         .surname(PERSON3_SURNAME)
-                        .officialType(CLERK_CODE)
+                        .officialType(OfficialType.CLERK)
                         .build();
         officials.add(appListEntryOfficial3);
         listEntryData.setOfficials(officials);

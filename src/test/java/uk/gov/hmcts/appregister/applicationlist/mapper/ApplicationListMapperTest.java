@@ -13,6 +13,7 @@ import org.mapstruct.factory.Mappers;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -64,7 +65,7 @@ public class ApplicationListMapperTest {
             assertNull(entity.getCja());
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
-            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
+            assertEquals(Status.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
             assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
@@ -110,7 +111,7 @@ public class ApplicationListMapperTest {
             assertEquals("CJA001", entity.getCja().getCode());
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
-            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
+            assertEquals(Status.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
             assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
@@ -132,7 +133,7 @@ public class ApplicationListMapperTest {
                             .id(999L)
                             .uuid(id)
                             .description("Morning session for traffic-related applications")
-                            .status(ApplicationListStatus.OPEN)
+                            .status(Status.fromValue(ApplicationListStatus.OPEN.getValue()))
                             .courtCode("LOC123")
                             .courtName("Bath Magistrates Court")
                             .date(LocalDate.of(2025, 9, 17))
@@ -175,7 +176,7 @@ public class ApplicationListMapperTest {
                     ApplicationList.builder()
                             .uuid(id)
                             .description("Morning session")
-                            .status(ApplicationListStatus.OPEN)
+                            .status(Status.valueOf(ApplicationListStatus.OPEN.getValue()))
                             .date(LocalDate.of(2025, 9, 19))
                             .time(LocalTime.of(9, 0, 0))
                             .build();

@@ -24,7 +24,7 @@ class AppRegExceptionHandlerTest {
                     throws Exception {
         // setup
         AppRegistryException exception =
-                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", null);
+                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -58,7 +58,7 @@ class AppRegExceptionHandlerTest {
                                 new DefaultErrorDetail(
                                         HttpStatus.BAD_REQUEST, customMessage, customType),
                         "Test message",
-                        null);
+                        (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
