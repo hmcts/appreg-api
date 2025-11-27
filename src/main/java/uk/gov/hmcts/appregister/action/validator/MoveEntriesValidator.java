@@ -5,6 +5,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -18,6 +20,7 @@ import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPE
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class MoveEntriesValidator implements Validator<MoveEntriesDto, MoveEntriesValidationSuccess> {
 
     private final ApplicationListRepository applicationListRepository;
@@ -66,6 +69,12 @@ public class MoveEntriesValidator implements Validator<MoveEntriesDto, MoveEntri
             );
 
         validateLists(sourceList, targetList);
+
+        log.debug(
+            "List validation successful. Source list (uuid={}), target list (uuid={}) are both OPEN.",
+            sourceList.getUuid(),
+            targetList.getUuid()
+        );
 
         // Validate entry IDs exist
         if (dto.getEntryIds() == null || dto.getEntryIds().isEmpty()) {
@@ -128,6 +137,8 @@ public class MoveEntriesValidator implements Validator<MoveEntriesDto, MoveEntri
             if (targetNotOpen) {
                 msg.append(String.format("target list (uuid=%s) ", targetList.getUuid()));
             }
+
+            log.warn("List validation failed. {}", msg.toString().trim());
 
             throw new AppRegistryException(
                 ApplicationListError.INVALID_LIST_STATUS, msg.toString().trim());
