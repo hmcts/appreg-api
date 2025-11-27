@@ -95,7 +95,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
 
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                ApplicationListError.SOURCE_LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 
@@ -120,7 +120,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
 
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                ApplicationListError.TARGET_LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 

@@ -1,18 +1,15 @@
 package uk.gov.hmcts.appregister.action.service;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED;
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,13 +17,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+
+import uk.gov.hmcts.appregister.action.validator.MoveEntriesValidationSuccess;
+import uk.gov.hmcts.appregister.action.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,58 +37,55 @@ public class ActionServiceImplTest {
     @Mock private ApplicationListRepository alRepository;
     @Mock private ApplicationListEntryRepository aleRepository;
 
+    @Spy
+    private DummyMoveEntriesValidator moveEntriesValidator =
+        new DummyMoveEntriesValidator(alRepository, aleRepository);
+
     private ActionServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ActionServiceImpl(alRepository, aleRepository);
+        service = new ActionServiceImpl(aleRepository, moveEntriesValidator);
     }
 
     @Captor private ArgumentCaptor<List<ApplicationListEntry>> listCaptor;
 
     @Test
     void move_movesEntriesSuccessfully_whenValidRequest() {
-        ApplicationList sourceList = new ApplicationList();
+        // Arrange: build DTO and entries
         UUID sourceListId = UUID.randomUUID();
+
+        ApplicationList sourceList = new ApplicationList();
         sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
 
         ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
-        MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
-
-        Set<UUID> requestedIds = new HashSet<>();
+        targetList.setUuid(UUID.randomUUID());
 
         ApplicationListEntry entry1 = new ApplicationListEntry();
         entry1.setUuid(UUID.randomUUID());
-        entry1.setApplicationList(sourceList);
-        requestedIds.add(entry1.getUuid());
+        entry1.setApplicationList(targetList); // what will be persisted
 
         ApplicationListEntry entry2 = new ApplicationListEntry();
         entry2.setUuid(UUID.randomUUID());
-        entry2.setApplicationList(sourceList);
-        requestedIds.add(entry2.getUuid());
+        entry2.setApplicationList(targetList); // what will be persisted
 
-        List<ApplicationListEntry> applicationListEntries = new ArrayList<>();
-        applicationListEntries.add(entry1);
-        applicationListEntries.add(entry2);
+        // DTO
+        MoveEntriesDto dto = new MoveEntriesDto();
+        dto.setTargetListId(targetList.getUuid());
+        dto.setEntryIds(Set.of(entry1.getUuid(), entry2.getUuid()));
 
-        dto.setEntryIds(requestedIds);
+        // Short-circuit the validator with a pre-built success
+        MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
+        success.setSourceList(sourceList);
+        success.setTargetList(targetList);
+        success.setEntriesToSave(List.of(entry1, entry2));
 
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(applicationListEntries);
+        moveEntriesValidator.setSuccess(success);
 
+        // Act
         service.move(sourceListId, dto);
 
-        verify(alRepository).findByUuid(sourceListId);
-        verify(alRepository).findByUuid(targetListId);
-        verify(aleRepository).findAllByUuidIn(dto.getEntryIds());
-
+        // Assert: repository saveAll called with the expected entries
         verify(aleRepository).saveAll(listCaptor.capture());
         List<ApplicationListEntry> capturedList = listCaptor.getValue();
 
@@ -97,198 +96,175 @@ public class ActionServiceImplTest {
 
     @Test
     void move_returns404_whenSourceListDoesNotExist() {
-        UUID sourceListId = UUID.randomUUID();
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.empty());
+        // Validator will throw the expected AppRegistryException
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.SOURCE_LIST_NOT_FOUND,
+                "No source application list found for UUID"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
 
+        UUID sourceListId = UUID.randomUUID();
         MoveEntriesDto dto = new MoveEntriesDto();
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void move_returns404_whenTargetListDoesNotExist() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.TARGET_LIST_NOT_FOUND,
+                "No target application list found for UUID"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        UUID targetListId = UUID.randomUUID();
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.empty());
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
+        dto.setTargetListId(UUID.randomUUID());
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void move_returns400_whenSourceListNotOpen() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.INVALID_LIST_STATUS,
+                "Source list not open"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(CLOSED);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void move_returns400_whenTargetListNotOpen() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.INVALID_LIST_STATUS,
+                "Target list not open"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(CLOSED);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
+        dto.setTargetListId(UUID.randomUUID());
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void move_returns400_whenEntryIdsNull() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.ENTRY_NOT_PROVIDED,
+                "No entry IDs provided"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void move_returns400_whenEntryIdsEmpty() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.ENTRY_NOT_PROVIDED,
+                "No entry IDs provided"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
-        dto.setEntryIds(new HashSet<>());
+        dto.setEntryIds(Set.of());
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test
     void move_returns404_whenEntryDoesNotExist() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.ENTRY_NOT_FOUND,
+                "No application list entry found"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
-
-        Set<UUID> requestedIds = new HashSet<>();
-
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setUuid(UUID.randomUUID());
-        entry.setApplicationList(sourceList);
-        requestedIds.add(entry.getUuid());
-
-        dto.setEntryIds(requestedIds);
-
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(emptyList());
+        dto.setEntryIds(Set.of(UUID.randomUUID()));
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
     void move_returns400_whenEntryNotInSourceList() {
-        ApplicationList sourceList = new ApplicationList();
+        doThrow(
+            new AppRegistryException(
+                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                "Application list entry does not belong to source list"))
+            .when(moveEntriesValidator)
+            .validate(any(MoveEntriesDto.class), any());
+
         UUID sourceListId = UUID.randomUUID();
-        sourceList.setUuid(sourceListId);
-        sourceList.setStatus(OPEN);
-        when(alRepository.findByUuid(sourceListId)).thenReturn(Optional.of(sourceList));
-
-        ApplicationList targetList = new ApplicationList();
-        UUID targetListId = UUID.randomUUID();
-        targetList.setUuid(targetListId);
-        targetList.setStatus(OPEN);
-        when(alRepository.findByUuid(targetListId)).thenReturn(Optional.of(targetList));
-
         MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetListId);
-
-        Set<UUID> requestedIds = new HashSet<>();
-
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setUuid(UUID.randomUUID());
-        entry.setApplicationList(new ApplicationList());
-        requestedIds.add(entry.getUuid());
-
-        List<ApplicationListEntry> applicationListEntries = new ArrayList<>();
-        applicationListEntries.add(entry);
-
-        dto.setEntryIds(requestedIds);
-
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(applicationListEntries);
+        dto.setEntryIds(Set.of(UUID.randomUUID()));
 
         assertThatThrownBy(() -> service.move(sourceListId, dto))
-                .isInstanceOf(AppRegistryException.class)
-                .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+            .isInstanceOf(AppRegistryException.class)
+            .extracting(e -> ((AppRegistryException)e).getCode().getCode().getHttpCode())
+            .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Setter
+    static class DummyMoveEntriesValidator extends MoveEntriesValidator {
+
+        private MoveEntriesValidationSuccess success;
+
+        public DummyMoveEntriesValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListRepository, applicationListEntryRepository);
+        }
+
+        @Override
+        public <R> R validate(
+            MoveEntriesDto dto,
+            java.util.function.BiFunction<MoveEntriesDto, MoveEntriesValidationSuccess, R> createSupplier) {
+
+            return createSupplier.apply(dto, success);
+        }
+
+        public DummyMoveEntriesValidator withSourceList(UUID id) {
+            return this;
+        }
     }
 }
