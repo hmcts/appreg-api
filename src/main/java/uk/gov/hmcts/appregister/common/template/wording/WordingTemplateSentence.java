@@ -1,5 +1,11 @@
 package uk.gov.hmcts.appregister.common.template.wording;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -9,27 +15,19 @@ import uk.gov.hmcts.appregister.common.template.TemplateableSentence;
 import uk.gov.hmcts.appregister.common.template.type.DataType;
 import uk.gov.hmcts.appregister.common.util.ReadOnlyList;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 /**
- * A class that allows us to parse a Wording Templates sentence containing multiple work templates of the form {TYPE|REFERENCE|LENGTH}
- * and substitute values into it.
+ * A class that allows us to parse a Wording Templates sentence containing multiple work templates
+ * of the form {TYPE|REFERENCE|LENGTH} and substitute values into it.
  *
- * Each template needs to have the following string format:=
+ * <p>Each template needs to have the following string format:=
  *
- * TYPE - The data type (e.g. TEXT)
- * REFERENCE - The reference name for the data
- * LENGTH - The length of the data
- * E.g. {TEXT|Applicant Name|50}
+ * <p>TYPE - The data type (e.g. TEXT) REFERENCE - The reference name for the data LENGTH - The
+ * length of the data E.g. {TEXT|Applicant Name|50}
  */
 @Slf4j
 @ToString
-public class WordingTemplateSentence extends ReadOnlyList<Templateable> implements TemplateableSentence {
+public class WordingTemplateSentence extends ReadOnlyList<Templateable>
+        implements TemplateableSentence {
     /** The starting character */
     private static final String START_CHARACTER = "{";
 
@@ -45,8 +43,10 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
     /** The template string with placeholders */
     private String templateWithPositionalPlaceholders = "";
 
-    /** The placeholder UUID that is used as a unique placeholder with the template. Without this
-     * we can not guarantee a unique substitution key */
+    /**
+     * The placeholder UUID that is used as a unique placeholder with the template. Without this we
+     * can not guarantee a unique substitution key
+     */
     private UUID positionalPlaceholderPrefix = UUID.randomUUID();
 
     /** The regular expression to identify the template regex */
@@ -72,12 +72,10 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
                 backing.add(wordingTemplate);
 
                 // replace the pattern with a placeholder
-                templateWithPositionalPlaceholders = templateWithPositionalPlaceholders
-                    .replaceFirst("\\"
-                                      + START_CHARACTER
-                                      + Pattern.quote(grp) + "\\"
-                                      + END_CHARACTER,
-                                  getPlaceholderForPosition(positionIndex));
+                templateWithPositionalPlaceholders =
+                        templateWithPositionalPlaceholders.replaceFirst(
+                                "\\" + START_CHARACTER + Pattern.quote(grp) + "\\" + END_CHARACTER,
+                                getPlaceholderForPosition(positionIndex));
                 positionIndex = positionIndex + 1;
             } catch (AppRegistryException ex) {
                 log.warn("Failing to parse template %s".formatted(grp), ex);
@@ -87,17 +85,20 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
             }
         }
 
-        log.debug("Created template with positional placeholders: {}", templateWithPositionalPlaceholders);
+        log.debug(
+                "Created template with positional placeholders: {}",
+                templateWithPositionalPlaceholders);
     }
 
     /**
      * A constructor that copies an existing template collection but uses a different positional
      * template string
+     *
      * @param templateToCopy The template to copy
      * @param templateWithPlaceholders The processed placeholder string to work with
      */
-    public WordingTemplateSentence(WordingTemplateSentence templateToCopy,
-                                   String templateWithPlaceholders) {
+    public WordingTemplateSentence(
+            WordingTemplateSentence templateToCopy, String templateWithPlaceholders) {
         super(templateToCopy.backing);
         this.templateWithPositionalPlaceholders = templateWithPlaceholders;
         this.erroneous = templateToCopy.erroneous;
@@ -107,6 +108,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
     /**
      * gets the unique placeholder string in for a positional
+     *
      * @param position The position in the template
      * @return The unique placeholder for the id position
      */
@@ -117,7 +119,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
     @Override
     public List<String> getReferences() {
         List<String> references = new ArrayList<>();
-        for (int i=0;i < size(); i++) {
+        for (int i = 0; i < size(); i++) {
             references.add(get(i).getReference());
         }
         return references;
@@ -132,14 +134,21 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
     public String substitute(List<String> values) {
         String returnedString = templateWithPositionalPlaceholders;
 
-        if (values.size() > size()) {
-            throw new AppRegistryException(CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
-                                           "Number of options exceeds number of templates",
-                                           Map.of("templateSize", Integer.toString(size()),
-                                                  "valueSize", Integer.toString(values.size())));
+        if (values == null || values.isEmpty()) {
+            log.debug("No substitution values provided, returning original template");
+            return returnedString;
         }
 
-        for (int i=0;i < values.size(); i++) {
+        if (values.size() > size()) {
+            throw new AppRegistryException(
+                    CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                    "Number of values exceeds number of templates",
+                    Map.of(
+                            "templateSize", Integer.toString(size()),
+                            "valueSize", Integer.toString(values.size())));
+        }
+
+        for (int i = 0; i < values.size(); i++) {
             // if we have a value to substitute then substitute it into one of the valid templates
             log.debug("Substituting options into template: {}", get(i).toString());
 
@@ -151,10 +160,11 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
         log.debug("Substituted value: {}", returnedString);
         return returnedString;
-}
+    }
 
     /**
      * Creates a working template from a string.
+     *
      * @param template The template string
      * @return wording template instance
      */
@@ -171,9 +181,8 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
     public TemplateableSentence substituteForTemplate(Templateable values, String value) {
         String returnedString = templateWithPositionalPlaceholders;
 
-
         // find the template to substitute
-        for (int i=0;i < size(); i++) {
+        for (int i = 0; i < size(); i++) {
 
             // find the matching template reference
             if (get(i).equals(values)) {
@@ -188,12 +197,15 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
                 log.debug("Substituted value into the sentence: {}", get(i).toString());
 
                 // now copy the exists sentence but remove the substituted template
-                WordingTemplateSentence newCollection =  new WordingTemplateSentence(this, returnedString);
+                WordingTemplateSentence newCollection =
+                        new WordingTemplateSentence(this, returnedString);
 
                 // remove the already substituted template from the collection
                 newCollection.backing.remove(newCollection.get(i));
 
-                log.debug("Returning a new sentence with the template replaced : {}", newCollection.toString());
+                log.debug(
+                        "Returning a new sentence with the template replaced : {}",
+                        newCollection.toString());
 
                 return newCollection;
             }
@@ -210,7 +222,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
     @Override
     public Templateable getTemplateForReference(String referenceValue) {
-        for (int i=0;i < size(); i++) {
+        for (int i = 0; i < size(); i++) {
             if (get(i).getReference().equals(referenceValue)) {
                 return get(i);
             }
@@ -219,18 +231,16 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
         return null;
     }
 
-    /**
-     * A wording template that supports substitution.
-     */
+    /** A wording template that supports substitution. */
     @ToString
-    public static class WordingTemplate implements Templateable
-    {
+    public static class WordingTemplate implements Templateable {
         /** Then delimiter */
         private static String DELIMITER = "\\|";
 
         /** The regex pattern to split the template */
-        private static final Pattern PATTERN = Pattern.compile("[^|]+\\" + DELIMITER + "[^|]+\\"
-                                                                   + DELIMITER + "[^}]+", Pattern.DOTALL);
+        private static final Pattern PATTERN =
+                Pattern.compile(
+                        "[^|]+\\" + DELIMITER + "[^|]+\\" + DELIMITER + "[^}]+", Pattern.DOTALL);
 
         /** The reference that the substitute would happen */
         private String reference;
@@ -241,7 +251,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
         /** The length of the value */
         private int length;
 
-        /**The template string */
+        /** The template string */
         private String template;
 
         @Override
@@ -262,7 +272,8 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
         public WordingTemplate(String templateString) {
             // check the template string is valid
             if (!PATTERN.matcher(templateString).find()) {
-                throw new AppRegistryException(CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, "Invalid template string");
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, "Invalid template string");
             }
 
             this.template = templateString;
@@ -271,7 +282,8 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
             // if the parts in the template do not equate to 3 then throw an exception
             if (parts.length != 3) {
-                throw new AppRegistryException(CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, "Invalid template string");
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, "Invalid template string");
             }
 
             // split the template stringand store the meta data parts
@@ -282,12 +294,14 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
             type = validateDataType(parts[0]);
 
             if (type == null) {
-                throw new AppRegistryException(CommonAppError.WORDING_DATA_TYPE_FAILURE, "Invalid data type in template");
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_DATA_TYPE_FAILURE, "Invalid data type in template");
             }
         }
 
         /**
          * Creates a working template from a string.
+         *
          * @param template The template string
          * @return wording template instance
          */
@@ -300,9 +314,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
             boolean found = m.find();
             if (!found) {
                 throw new AppRegistryException(
-                    CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE,
-                    "Invalid template string"
-                );
+                        CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, "Invalid template string");
             }
 
             String grp = m.group(1);
@@ -325,6 +337,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
         /**
          * splits the pattern into parts.
+         *
          * @return The pattern parts
          */
         private String[] getPartsOfTemplate(String template) {
@@ -336,22 +349,27 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable> implemen
 
             log.debug("Validating value '{}' for template: {}", value, this);
             if (!type.validateForType(value)) {
-                throw new AppRegistryException(CommonAppError.WORDING_DATA_TYPE_FAILURE, "Invalid data type value in template",
-                                               Map.of(getReference(), value));
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_DATA_TYPE_FAILURE,
+                        "Invalid data type value in template",
+                        Map.of(getReference(), value));
             }
 
-            log.debug("Validating value length'{}' for template: {}", value.length(), this);
+            log.debug("Validating value length '{}' for template: {}", value.length(), this);
             if (value.length() > length) {
-                throw new AppRegistryException(CommonAppError.WORDING_LENGTH_FAILURE, "Invalid data type in template",
-                                               Map.of(getReference(), value));
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_LENGTH_FAILURE,
+                        "Invalid length type in template",
+                        Map.of(getReference(), value));
             }
         }
 
         /**
          * substitute the text into the template
+         *
          * @param values The list of options to substitute
-         * @return The substituted string or not present if validation failed. NOTE: This method simply returns the
-         * original string if substitution can be performed
+         * @return The substituted string or not present if validation failed. NOTE: This method
+         *     simply returns the original string if substitution can be performed
          */
         public String substitute(String values) {
             canValueBeSubstituted(values);

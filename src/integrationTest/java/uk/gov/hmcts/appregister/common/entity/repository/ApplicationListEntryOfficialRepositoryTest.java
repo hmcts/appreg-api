@@ -83,7 +83,7 @@ public class ApplicationListEntryOfficialRepositoryTest extends BaseRepositoryTe
                                                                                 official
                                                                                         .getSurname(),
                                                                                 official
-                                                                                    .getOfficialType()))
+                                                                                        .getOfficialType()))
                                                         .collect(Collectors.toSet())));
 
         // Build actual map from projection

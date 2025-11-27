@@ -7,10 +7,10 @@ import lombok.Getter;
  */
 @Getter
 public enum FeeStatusType {
-    DUE("Due"),
-    PAID("Paid"),
-    REMITTED("Remitted"),
-    UNDERTAKING("Undertaking");
+    DUE("D"),
+    PAID("P"),
+    REMITTED("R"),
+    UNDERTAKING("U");
 
     private final String displayName;
 
@@ -35,5 +35,4 @@ public enum FeeStatusType {
         }
         throw new IllegalArgumentException("Unknown value: " + value);
     }
-
 }

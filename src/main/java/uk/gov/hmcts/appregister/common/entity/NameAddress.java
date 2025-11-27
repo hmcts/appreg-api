@@ -32,6 +32,9 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
+    public static String RESPONDENT_CODE = "RE";
+    public static String APPLICANT_CODE = "AP";
+
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
@@ -122,5 +125,13 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @Override
     public void setCreatedUser(String user) {
         this.userName = user;
+    }
+
+    public boolean isApplicant() {
+        return code != null && code.startsWith(APPLICANT_CODE);
+    }
+
+    public boolean isRespondent() {
+        return code != null && code.startsWith(RESPONDENT_CODE);
     }
 }

@@ -24,7 +24,8 @@ class AppRegExceptionHandlerTest {
                     throws Exception {
         // setup
         AppRegistryException exception =
-                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", (Throwable) null);
+                new AppRegistryException(
+                        ApplicationCodeError.CODE_NOT_FOUND, "Test message", (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =

@@ -22,7 +22,6 @@ import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.converter.OfficialConverter;
-import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 
 /**

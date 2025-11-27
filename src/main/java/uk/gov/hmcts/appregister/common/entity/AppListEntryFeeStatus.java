@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
-import jakarta.persistence.Converter;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
@@ -14,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -29,7 +27,6 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.FeeStatusTypeConverter;
-import uk.gov.hmcts.appregister.common.entity.converter.StatusConverter;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
 /**
@@ -73,7 +70,7 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     @Column(name = "alefs_changed_by", nullable = false)
     private String changedBy;
 
-    @Column(name = "fee_changed_date", nullable = false)
+    @Column(name = "alefs_changed_date", nullable = false)
     private OffsetDateTime changedDate;
 
     @Column(name = "alefs_user_name", nullable = false)

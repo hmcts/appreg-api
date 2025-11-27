@@ -54,8 +54,4 @@ public class AppListEntryFeeId extends BaseChangeableEntity implements Accountab
     @Column(name = "user_name", nullable = false)
     @Size(max = 250)
     private String createdUser;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "appListEntryId", nullable = false)
-    private ApplicationListEntry le;
 }

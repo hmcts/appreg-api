@@ -11,7 +11,8 @@ import uk.gov.hmcts.appregister.common.template.type.TextDataType;
 @Getter
 public enum WordingDataTypes {
     TEXT("TEXT", new TextDataType()),
-    DATE("DATE", new DateType()),;
+    DATE("DATE", new DateType()),
+    ;
 
     private final String value;
     private final DataType type;

@@ -13,8 +13,7 @@ properties:
   applicationCode:
     type: string
     description: Code that identifies the Application Code.
-    example: "APP001",
-    required: true
+    example: "APP001"
 
   applicant:
     $ref: '../participants/applicant.yaml'

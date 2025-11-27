@@ -14,18 +14,19 @@ public enum CommonAppError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Sort direction not suitable", "COMMON-4")),
     WORDING_DATA_TYPE_FAILURE(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST, "Wording data type failure", "COMMON-5")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Wording data type failure", "COMMON-5")),
     WORDING_LENGTH_FAILURE(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST, "Wording length exceeded failure", "COMMON-6")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Wording length exceeded failure", "COMMON-6")),
     WORDING_TEMPLATE_FORMAT_FAILURE(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST, "Template format failure", "COMMON-7")),
-    WORDING_SUBSTITUTE_SIZE_MISMATCH (DefaultErrorDetail.create(
-        HttpStatus.BAD_REQUEST, "Values to be substituted does not match substituting values",
-        "COMMON-8"));
-
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Template format failure", "COMMON-7")),
+    WORDING_SUBSTITUTE_SIZE_MISMATCH(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Values to be substituted does not match substituting values",
+                    "COMMON-8"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

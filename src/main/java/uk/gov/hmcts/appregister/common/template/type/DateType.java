@@ -6,11 +6,10 @@ import java.time.format.DateTimeParseException;
 public class DateType implements DataType {
     @Override
     public boolean validateForType(String value) {
-       try {
+        try {
             LocalDate.parse(value).toString();
             return true;
-        }
-        catch (DateTimeParseException dateTimeParseException) {
+        } catch (DateTimeParseException dateTimeParseException) {
             return false;
         }
     }

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
-import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntryOfficialPrintProjectionUtil.applicationListEntryOfficialPrintProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON1_FORENAME1;

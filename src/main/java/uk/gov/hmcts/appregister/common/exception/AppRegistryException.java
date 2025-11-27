@@ -1,9 +1,8 @@
 package uk.gov.hmcts.appregister.common.exception;
 
-import lombok.Getter;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * The exception that is thrown when an error occurs in the App Registry service.

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -13,6 +14,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
+import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -27,6 +29,9 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public abstract class ApplicationListEntryEntityMapper {
+
+    @Autowired
+    OfficialMapper officialMapper;
 
     @Mapping(target = "title", source = "person.name.title")
     @Mapping(target = "surname", source = "person.name.surname")
@@ -67,11 +72,11 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "userName", ignore = true)
     @Mapping(target = "code", ignore = true)
     @Mapping(target = "version", ignore = true)
-    @Mapping(target = "title",  ignore = true)
-    @Mapping(target = "surname",  ignore = true)
-    @Mapping(target = "forename1",  ignore = true)
-    @Mapping(target = "forename2",  ignore = true)
-    @Mapping(target = "forename3",  ignore = true)
+    @Mapping(target = "title", ignore = true)
+    @Mapping(target = "surname", ignore = true)
+    @Mapping(target = "forename1", ignore = true)
+    @Mapping(target = "forename2", ignore = true)
+    @Mapping(target = "forename3", ignore = true)
     abstract NameAddress toOrganisation(Organisation organisation);
 
     @Mapping(target = "applicationListEntryWording", source = "substituteWording")
@@ -88,9 +93,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "version", ignore = true)
-    @Mapping(target = "entryRescheduled", ignore = true)
     @Mapping(target = "bulkUpload", ignore = true)
-    @Mapping(target = "sequenceNumber", ignore = true)
     @Mapping(target = "tcepStatus", ignore = true)
     @Mapping(target = "messageUuid", ignore = true)
     @Mapping(target = "retryCount", ignore = true)
@@ -98,14 +101,16 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "entryFeeIds", ignore = true)
     @Mapping(target = "entryFeeStatuses", ignore = true)
     @Mapping(target = "officials", ignore = true)
-    public abstract ApplicationListEntry toApplicationListEntry(EntryCreateDto entryCreateDto,
-                                                                String substituteWording,
-                                                                StandardApplicant standardApplicant,
-                                                                NameAddress applicant,
-                                                                NameAddress respondent,
-                                                                ApplicationCode code,
-                                                                ApplicationList applicationList);
-
+    @Mapping(target = "entryRescheduled", constant = "N")
+    @Mapping(target = "sequenceNumber", constant = "1")
+    public abstract ApplicationListEntry toApplicationListEntry(
+            EntryCreateDto entryCreateDto,
+            String substituteWording,
+            StandardApplicant standardApplicant,
+            NameAddress applicant,
+            NameAddress respondent,
+            ApplicationCode code,
+            ApplicationList applicationList);
 
     public NameAddress toApplicantNameAddress(Applicant applicant) {
         if (applicant.getPerson() != null) {
@@ -129,32 +134,40 @@ public abstract class ApplicationListEntryEntityMapper {
 
     /**
      * Maps the applicant to a name address
+     *
      * @param applicant The applicant details
      * @return The mapped entity
      */
-    @Mapping(target = "code", defaultValue = "AP")
-    public NameAddress mapApplicant(Applicant applicant) {
-        return toApplicantNameAddress(applicant);
+    public NameAddress toApplicant(Applicant applicant) {
+        NameAddress nameAddress = toApplicantNameAddress(applicant);
+        nameAddress.setCode(NameAddress.APPLICANT_CODE);
+        return nameAddress;
     }
 
     /**
      * Maps the respondent to a name address
+     *
      * @param respondent The respondent details
      * @return The mapped entity
      */
-    @Mapping(target = "code", defaultValue = "RE")
-    public NameAddress mapRespondent(Respondent respondent) {
-        return toRespondentNameAddress(respondent);
+    public NameAddress toRespondent(Respondent respondent) {
+        NameAddress nameAddress = toRespondentNameAddress(respondent);
+        nameAddress.setCode(NameAddress.RESPONDENT_CODE);
+        return nameAddress;
     }
 
-    @Mapping(target = "alefsFeeStatus", expression = "java(getStatus(feeStatus.getPaymentStatus()))")
+    @Mapping(
+            target = "alefsFeeStatus",
+            expression = "java(toStatus(feeStatus.getPaymentStatus()))")
     @Mapping(target = "appListEntry", source = "applicationListEntry")
     @Mapping(target = "alefsFeeStatusDate", source = "feeStatus.statusDate")
     @Mapping(target = "alefsPaymentReference", source = "feeStatus.paymentReference")
-    @Mapping(target = "alefsStatusCreationDate",  ignore = true)
-    public abstract AppListEntryFeeStatus toFeeStatus(FeeStatus feeStatus, ApplicationListEntry applicationListEntry);
+    @Mapping(target = "alefsStatusCreationDate", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    public abstract AppListEntryFeeStatus toFeeStatus(
+            FeeStatus feeStatus, ApplicationListEntry applicationListEntry);
 
-    public FeeStatusType getStatus(PaymentStatus paymentStatus) {
+    public FeeStatusType toStatus(PaymentStatus paymentStatus) {
         if (paymentStatus == PaymentStatus.DUE) {
             return FeeStatusType.DUE;
         } else if (paymentStatus == PaymentStatus.PAID) {
@@ -168,15 +181,13 @@ public abstract class ApplicationListEntryEntityMapper {
         return null;
     }
 
-
     @Mapping(target = "appListEntry", source = "listEntryEntity")
     @Mapping(target = "forename", source = "official.forename")
     @Mapping(target = "surname", source = "official.surname")
-    @Mapping(target = "officialType",  expression = "java(getOfficial(official.getType()))")
-    @Mapping(target = "createdUser",  ignore = true)
-    public abstract AppListEntryOfficial toOfficial(Official official, ApplicationListEntry listEntryEntity);
+    @Mapping(target = "officialType", expression = "java(officialMapper.toOfficial(official.getType()))")
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    public abstract AppListEntryOfficial toOfficial(
+            Official official, ApplicationListEntry listEntryEntity);
 
-    public OfficialType getOfficial(uk.gov.hmcts.appregister.generated.model.OfficialType officialType) {
-        return OfficialType.fromValue(officialType.getValue());
-    }
 }

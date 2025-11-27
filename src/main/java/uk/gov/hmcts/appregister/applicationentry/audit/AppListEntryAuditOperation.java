@@ -8,7 +8,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @RequiredArgsConstructor
 @Getter
 public enum AppListEntryAuditOperation implements AuditOperation {
-    CREATE_APP_ENTRY_LIST("Create Entry Application List",CrudEnum.CREATE);
+    CREATE_APP_ENTRY_LIST("Create Entry Application List", CrudEnum.CREATE);
     private final String eventName;
 
     private final CrudEnum type;

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -42,5 +43,17 @@ public class FeeRepositoryTest extends BaseRepositoryTest {
         assertTrue(
                 DateUtil.equalsIgnoreMillis(
                         fee.getStartDate(), feeToAssertAgainst.get().getStartDate()));
+    }
+
+    @Test
+    public void testSearchForFeeWithoutOffsite() {
+        Assertions.assertNotNull(
+            applicationFeeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), false));
+    }
+
+    @Test
+    public void testSearchForFeeWithOffsite() {
+        Assertions.assertNotNull(
+            applicationFeeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), true));
     }
 }

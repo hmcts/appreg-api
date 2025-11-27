@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum OfficialType {
-    MAGISTRATE("MAGISTRATE"),
+    MAGISTRATE("M"),
 
-    CLERK("CLERK");
+    CLERK("C");
 
     private final String value;
 

@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.testutils.util;
 
-import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.CLERK_CODE;
-import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_CODE;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;

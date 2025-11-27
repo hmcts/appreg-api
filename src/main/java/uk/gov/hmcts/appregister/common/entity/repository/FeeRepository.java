@@ -42,14 +42,15 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
      * @return fee entities matching the reference and offset status
      */
     @Query(
-        """
+            """
     SELECT f
     FROM Fee f
     WHERE (f.reference = :reference) AND
       ((f.endDate IS NULL OR  f.endDate >= :dateTime)
               AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
     """)
-    List<Fee> findByReferenceBetweenDateWithOffsite(String reference, LocalDate dateTime, boolean offsiteStatus);
+    List<Fee> findByReferenceBetweenDateWithOffsite(
+            String reference, LocalDate dateTime, boolean offsiteStatus);
 
     /**
      * Finds ApplicationCode entities with IDs greater than or equal to the specified value.

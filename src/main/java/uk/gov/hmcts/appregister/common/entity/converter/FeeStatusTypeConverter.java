@@ -17,4 +17,3 @@ public class FeeStatusTypeConverter implements AttributeConverter<FeeStatusType,
         return dbData == null ? null : FeeStatusType.fromValue(dbData);
     }
 }
-

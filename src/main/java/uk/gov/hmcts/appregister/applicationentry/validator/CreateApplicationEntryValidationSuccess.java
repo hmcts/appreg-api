@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -22,5 +21,4 @@ public class CreateApplicationEntryValidationSuccess {
     private Fee fee;
     private StandardApplicant sa;
     private ApplicationList applicationList;
-
 }

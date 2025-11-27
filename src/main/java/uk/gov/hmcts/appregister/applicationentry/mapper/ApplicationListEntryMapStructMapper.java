@@ -2,23 +2,29 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+import lombok.Setter;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
-
 import org.springframework.beans.factory.annotation.Autowired;
-
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
+import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -35,12 +41,23 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR, uses= {ApplicantMapper.class})
+@Mapper(
+        componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.ERROR,
+        uses = {ApplicantMapper.class})
+@Setter
 public abstract class ApplicationListEntryMapStructMapper {
 
     @Autowired
     ApplicantMapper aMapper;
+
+    @Autowired
+    OfficialMapper officialMapper;
+
+    @Autowired
+    StandardApplicantMapper standardApplicantMapper;
 
     public abstract ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
@@ -93,8 +110,12 @@ public abstract class ApplicationListEntryMapStructMapper {
     }
 
     @Mapping(target = "id", source = "projection.uuid")
-    @Mapping(target = "applicant", expression = "java(aMapper.toApplicant(projection.getAnameaddress()))")
-    @Mapping(target = "respondent", expression = "java(aMapper.toApplicant(projection.getRnameaddress()))")
+    @Mapping(
+            target = "applicant",
+            expression = "java(toApplicant(projection))")
+    @Mapping(
+            target = "respondent",
+            expression = "java(aMapper.toApplicant(projection.getRnameaddress()))")
     @Mapping(target = "applicationTitle", source = "projection.title")
     @Mapping(target = "isFeeRequired", expression = "java(projection.getFeeRequired().isYes())")
     @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
@@ -103,59 +124,103 @@ public abstract class ApplicationListEntryMapStructMapper {
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
+    /**
+     * gets a standard applicant or a named applicant depending on which one exists
+     * @param projection The projection
+     * @return The applicant mapper
+     */
+    public Applicant toApplicant(ApplicationListEntryGetSummaryProjection projection) {
+        if (projection.getAnameaddress() != null) {
+            return aMapper.toApplicant(projection.getAnameaddress());
+        }
+        else if (projection.getStandardApplicant() != null) {
+            return standardApplicantMapper.toApplicant(projection.getStandardApplicant());
+        }
+
+        return null;
+    }
+
+    /**
+     * gets a standard applicant or a named applicant depending on which one exists
+     * @param applicationListEntry The app list entry
+     * @param standardApplicant The standard applicant to use can be null
+     * @return The applicant mapper
+     */
+    public Applicant toApplicant(ApplicationListEntry applicationListEntry, StandardApplicant standardApplicant) {
+
+        if (standardApplicant != null) {
+            return standardApplicantMapper.toApplicant(standardApplicant);
+        }
+
+        return aMapper.toApplicant(applicationListEntry.getAnamedaddress());
+    }
 
     /**
      * gets the entry detail dto from application list entry.
+     *
      * @param applicationListEntry The application list entry
      * @return The entry get detail dto
      */
-    @Mapping(target = "id", expression = "java(applicationListEntry.getApplicationList().getUuid())")
+    @Mapping(
+            target = "id",
+            expression = "java(applicationListEntry.getApplicationList().getUuid())")
     @Mapping(target = "listId", expression = "java(applicationListEntry.getUuid())")
-    @Mapping(target = "standardApplicantCode", source = "applicationListEntry.standardApplicant.applicantCode")
+    @Mapping(
+            target = "standardApplicantCode",
+            source = "applicationListEntry.standardApplicant.applicantCode")
     @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
-    @Mapping(target = "applicant", expression = "java(aMapper.toApplicant(applicationListEntry.getAnamedaddress()))")
-    @Mapping(target = "respondent", expression = "java(toRespondent(applicationListEntry.getRnameaddress()))")
-    @Mapping(target = "numberOfRespondents", source="applicationListEntry.numberOfBulkRespondents")
-    @Mapping(target = "wordingFields", expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+    @Mapping(
+            target = "applicant",
+            expression = "java(toApplicant(applicationListEntry, applicant))")
+    @Mapping(
+            target = "respondent",
+            expression = "java(toRespondent(applicationListEntry.getRnameaddress()))")
+    @Mapping(
+            target = "numberOfRespondents",
+            source = "applicationListEntry.numberOfBulkRespondents")
+    @Mapping(
+            target = "wordingFields",
+            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
     @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.isOffsite())")
     @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
     @Mapping(target = "accountNumber", source = "applicationListEntry.accountNumber")
     @Mapping(target = "notes", source = "applicationListEntry.notes")
     @Mapping(target = "officials", expression = "java(toOfficial(officials))")
-    public abstract EntryGetDetailDto toEntryGetDetailDto(ApplicationListEntry applicationListEntry,
-                                                          List<AppListEntryFeeStatus> statusList, Fee fee,
-                                                          List<AppListEntryOfficial> officials);
+    public abstract EntryGetDetailDto toEntryGetDetailDto(
+            ApplicationListEntry applicationListEntry,
+            List<AppListEntryFeeStatus> statusList,
+            Fee fee,
+            List<AppListEntryOfficial> officials, StandardApplicant applicant);
 
     public List<Official> toOfficial(List<AppListEntryOfficial> officials) {
         List<Official> retOfficials = new ArrayList<>();
-        for(AppListEntryOfficial official : officials) {
+        for (AppListEntryOfficial official : officials) {
             Official off = new Official();
             off.setSurname(official.getSurname());
             off.setTitle(official.getTitle());
             off.setForename(official.getForename());
-            off.setType(getOfficial(official.getOfficialType()));
+            off.setType(officialMapper.toOfficial(official.getOfficialType()));
             retOfficials.add(off);
         }
         return retOfficials;
     }
 
-    /**
-     * gets the working refreence strings to return
-     */
+    /** gets the working refreence strings to return */
     public List<String> getTemplateKeys(ApplicationCode code) {
         return WordingTemplateSentence.with(code.getWording()).getReferences();
     }
 
     public List<FeeStatus> getFeeStatusList(List<AppListEntryFeeStatus> feeStatusList) {
         return feeStatusList.stream()
-                .map(feeStatus -> {
-                    FeeStatus status = new FeeStatus();
-                    status.setPaymentStatus(getStatus(feeStatus.getAlefsFeeStatus()));
-                    status.setPaymentReference(feeStatus.getAlefsPaymentReference());
-                    status.setStatusDate(feeStatus.getAlefsFeeStatusDate());
-                    return status;
-                })
+                .map(
+                        feeStatus -> {
+                            FeeStatus status = new FeeStatus();
+                            status.setPaymentStatus(getStatus(feeStatus.getAlefsFeeStatus()));
+                            status.setPaymentReference(feeStatus.getAlefsPaymentReference());
+                            status.setStatusDate(feeStatus.getAlefsFeeStatusDate());
+                            return status;
+                        })
                 .toList();
     }
 
@@ -208,9 +273,5 @@ public abstract class ApplicationListEntryMapStructMapper {
         }
 
         return respondentDto;
-    }
-
-    public uk.gov.hmcts.appregister.generated.model.OfficialType getOfficial(OfficialType officialType) {
-        return uk.gov.hmcts.appregister.generated.model.OfficialType.valueOf(officialType.getValue());
     }
 }
