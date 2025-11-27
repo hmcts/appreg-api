@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.applicationlist.controller;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -27,13 +27,11 @@ import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
  *   <li>{@code @RestController} - Marks this as a REST controller.
  *   <li>{@code @Validated} - Enables validation on method parameters.
  *   <li>{@code @RequiredArgsConstructor} - Generates a constructor for final fields.
- *   <li>{@code @Slf4j} - Provides logging support.
  * </ul>
  */
 @RestController
 @Validated
 @RequiredArgsConstructor
-@Slf4j
 public class ActionController implements ActionsApi {
 
     private final ActionService service;
@@ -43,12 +41,6 @@ public class ActionController implements ActionsApi {
     public ResponseEntity<Void> moveApplicationListEntries(
             UUID listId, MoveEntriesDto moveEntriesDto) {
         service.move(listId, moveEntriesDto);
-
-        log.info(
-                "Successfully moved ApplicationListEntries from source list={} to target list={} with entryIds={}",
-                listId,
-                moveEntriesDto.getTargetListId(),
-                moveEntriesDto.getEntryIds());
 
         return ResponseEntity.ok().build();
     }
