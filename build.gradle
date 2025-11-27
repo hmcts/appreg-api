@@ -445,7 +445,7 @@ dependencies {
   implementation 'org.flywaydb:flyway-database-postgresql:11.15.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.34.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.37.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
