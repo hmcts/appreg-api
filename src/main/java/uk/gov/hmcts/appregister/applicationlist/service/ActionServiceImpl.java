@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.action.service;
+package uk.gov.hmcts.appregister.applicationlist.service;
 
 import java.util.UUID;
 
@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import uk.gov.hmcts.appregister.action.validator.MoveEntriesValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 

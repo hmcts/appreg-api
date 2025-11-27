@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.action.controller;
+package uk.gov.hmcts.appregister.applicationlist.controller;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.appregister.action.service.ActionService;
+import uk.gov.hmcts.appregister.applicationlist.service.ActionService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ActionsApi;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;

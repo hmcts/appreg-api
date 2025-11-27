@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.action.service;
+package uk.gov.hmcts.appregister.applicationlist.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,8 +21,8 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
-import uk.gov.hmcts.appregister.action.validator.MoveEntriesValidationSuccess;
-import uk.gov.hmcts.appregister.action.validator.MoveEntriesValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;

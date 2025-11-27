@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.action.validator;
+package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import java.util.List;
 import lombok.Data;

@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.action.service;
+package uk.gov.hmcts.appregister.applicationlist.service;
 
 import java.util.UUID;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
