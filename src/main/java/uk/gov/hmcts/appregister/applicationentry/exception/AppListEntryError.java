@@ -55,7 +55,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
     APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "The application list is not correct to have an entry added for it",
+                    "The application list state is not suitable to have an entry added for it",
                     "AL-11")),
     RESPONDENT_REQUIRED(
             DefaultErrorDetail.create(
