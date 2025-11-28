@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -143,8 +141,8 @@ public class MoveEntriesValidator
     }
 
     private void validateLists(ApplicationList sourceList, ApplicationList targetList) {
-        boolean sourceNotOpen = sourceList.getStatus() != OPEN;
-        boolean targetNotOpen = targetList.getStatus() != OPEN;
+        boolean sourceNotOpen = !sourceList.isOpen();
+        boolean targetNotOpen = !targetList.isOpen();
 
         if (sourceNotOpen || targetNotOpen) {
             StringBuilder msg =

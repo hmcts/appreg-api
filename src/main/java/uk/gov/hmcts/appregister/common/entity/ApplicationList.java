@@ -110,4 +110,8 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @Column(name = "version")
     @Version
     private Long version;
+
+    public boolean isOpen() {
+        return this.status == ApplicationListStatus.OPEN;
+    }
 }
