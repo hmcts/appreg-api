@@ -90,7 +90,26 @@ public class MoveEntriesValidator
 
         Set<UUID> requestedIds = new HashSet<>(dto.getEntryIds());
         List<ApplicationListEntry> loadedEntries =
-                applicationListEntryRepository.findAllByUuidIn(requestedIds);
+                applicationListEntryRepository.findAllByUuidInAndApplicationListUuid(
+                        requestedIds, sourceListId);
+
+        if (loadedEntries.size() != requestedIds.size()) {
+            // Compute which are missing / excluded
+            Set<UUID> foundIds =
+                    loadedEntries.stream()
+                            .map(ApplicationListEntry::getUuid)
+                            .collect(Collectors.toSet());
+
+            Set<UUID> missing =
+                    requestedIds.stream()
+                            .filter(id -> !foundIds.contains(id))
+                            .collect(Collectors.toSet());
+
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                    "The following entries were not found in the source list: %s"
+                            .formatted(missing));
+        }
 
         Map<UUID, ApplicationListEntry> loadedByUuid =
                 loadedEntries.stream()
@@ -100,12 +119,6 @@ public class MoveEntriesValidator
 
         for (UUID id : requestedIds) {
             ApplicationListEntry entry = loadedByUuid.get(id);
-            if (entry == null) {
-                throw new AppRegistryException(
-                        ApplicationListError.ENTRY_NOT_FOUND,
-                        "No application list entry found for UUID '%s'".formatted(id));
-            }
-
             if (!sourceListId.equals(entry.getApplicationList().getUuid())) {
                 throw new AppRegistryException(
                         ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,

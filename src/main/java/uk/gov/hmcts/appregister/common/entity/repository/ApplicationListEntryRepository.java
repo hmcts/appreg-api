@@ -168,11 +168,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 
     /**
-     * Fetches all ApplicationListEntry entities whose UUID matches any of the UUIDs in the provided
-     * collection.
+     * Retrieves all ApplicationListEntry entities whose UUID is contained in the provided
+     * collection *and* whose parent ApplicationList matches the given source list UUID.
      *
-     * @param uuids collection of UUIDs identifying the ALEs to load
-     * @return list of matching ApplicationListEntry entities (possibly empty)
+     * @param uuids the collection of entry UUIDs to retrieve
+     * @param sourceListUuid the UUID of the application list the entries must belong to
+     * @return a list of matching entries; never {@code null}, but may be empty if no entries match
      */
-    List<ApplicationListEntry> findAllByUuidIn(Collection<UUID> uuids);
+    List<ApplicationListEntry> findAllByUuidInAndApplicationListUuid(
+            Collection<UUID> uuids, UUID sourceListUuid);
 }

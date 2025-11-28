@@ -242,10 +242,10 @@ public class ActionServiceImplTest {
     }
 
     @Test
-    void move_returns404_whenEntryDoesNotExist() {
+    void move_returns400_whenEntryDoesNotExist() {
         doThrow(
                         new AppRegistryException(
-                                ApplicationListError.ENTRY_NOT_FOUND,
+                                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
                                 "No application list entry found"))
                 .when(moveEntriesValidator)
                 .validate(any(MoveEntriesDto.class), any());
@@ -256,7 +256,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+                .isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
     @Test

@@ -66,7 +66,8 @@ public class MoveEntriesValidatorTest {
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(e1.getUuid(), e2.getUuid()));
 
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(List.of(e1, e2));
+        when(aleRepository.findAllByUuidInAndApplicationListUuid(dto.getEntryIds(), sourceListId))
+                .thenReturn(List.of(e1, e2));
 
         MoveEntriesValidationSuccess success =
                 validator.withSourceList(sourceListId).validate(dto, (d, s) -> s);
@@ -245,7 +246,7 @@ public class MoveEntriesValidatorTest {
     }
 
     @Test
-    void validate_throws_entryNotFound_whenEntryMissing() {
+    void validate_throws_entryNotInSourceList_whenEntryMissing() {
         ApplicationList source = new ApplicationList();
         source.setUuid(sourceListId);
         source.setStatus(OPEN);
@@ -262,13 +263,15 @@ public class MoveEntriesValidatorTest {
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(missingId));
 
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(List.of());
+        // single filtered call returns empty -> fast-fail as "not in source list"
+        when(aleRepository.findAllByUuidInAndApplicationListUuid(dto.getEntryIds(), sourceListId))
+                .thenReturn(List.of());
 
         assertThatThrownBy(() -> validator.withSourceList(sourceListId).validate(dto, (d, s) -> s))
                 .satisfies(
                         ex ->
                                 Assertions.assertEquals(
-                                        ApplicationListError.ENTRY_NOT_FOUND,
+                                        ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
                                         ((AppRegistryException) ex).getCode()));
     }
 
@@ -293,7 +296,9 @@ public class MoveEntriesValidatorTest {
         dto.setTargetListId(targetListId);
         dto.setEntryIds(Set.of(wrongEntry.getUuid()));
 
-        when(aleRepository.findAllByUuidIn(dto.getEntryIds())).thenReturn(List.of(wrongEntry));
+        // Because the repo call filters to sourceListId, wrongEntry will NOT be returned
+        when(aleRepository.findAllByUuidInAndApplicationListUuid(dto.getEntryIds(), sourceListId))
+                .thenReturn(List.of());
 
         assertThatThrownBy(() -> validator.withSourceList(sourceListId).validate(dto, (d, s) -> s))
                 .satisfies(

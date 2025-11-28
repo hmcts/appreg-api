@@ -190,7 +190,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
-    @DisplayName("Move Application List Entries: 404 when entry unknown")
+    @DisplayName("Move Application List Entries: 400 when entry unknown")
     void givenUnknownEntry_whenMove_then400() throws Exception {
         var token = getToken();
 
@@ -208,11 +208,11 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                         token);
 
         // assert success
-        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
 
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.ENTRY_NOT_FOUND.getCode().getAppCode(),
+                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 
