@@ -15,6 +15,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -84,6 +86,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -189,19 +192,27 @@ public class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCourt(dto, court)).thenReturn(entityToSave);
 
         ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(new ApplicationList()));
+
+        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(result.getPayload(), expected);
-
+        Assertions.assertEquals(1, summaryCaptor.getValue().size());
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper).toGetDetailDto(saved, null, 0L);
+        verify(mapper, times(2)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     @Test
@@ -224,10 +235,18 @@ public class ApplicationListServiceImplTest {
         ApplicationList entityToSave = new ApplicationList();
 
         ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
+
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expectedDto);
+
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(new ApplicationList()));
+        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -240,6 +259,8 @@ public class ApplicationListServiceImplTest {
 
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+
+        verify(mapper, times(2)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     // -------- CJA PATH --------
@@ -261,22 +282,36 @@ public class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(entityToSave);
 
         ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+
+        // setup return summaries
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(new ApplicationList()));
+        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(expected, result.getPayload());
+        Assertions.assertEquals(1, summaryCaptor.getValue().size());
 
         verify(validator).validate(eq(dto), notNull());
         verify(repository).save(entityToSave);
-        verify(mapper).toGetDetailDto(saved, cja, 0L);
-
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), isNull(), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test
@@ -298,14 +333,23 @@ public class ApplicationListServiceImplTest {
         ApplicationList entityToSave = new ApplicationList();
 
         ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
+
+        ArgumentCaptor<List> summaryCaptor = ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
                 new PayloadForUpdate<>(dto, UUID.randomUUID());
+
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(new ApplicationList()));
+        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -313,10 +357,14 @@ public class ApplicationListServiceImplTest {
 
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
-        verify(mapper).toGetDetailDto(saved, cja, 0L);
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), isNull(), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test
@@ -652,7 +700,7 @@ public class ApplicationListServiceImplTest {
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
 
         ApplicationListGetDetailDto actual = service.get(id, pageable);
 

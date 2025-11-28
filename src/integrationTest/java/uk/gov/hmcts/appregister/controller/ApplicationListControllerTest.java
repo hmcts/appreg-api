@@ -19,11 +19,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -33,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -62,6 +66,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
     private static final LocalTime TEST_TIME2 = LocalTime.parse("10:30");
+
+    @Autowired private ApplicationListRepository applicationListRepository;
+
+    @Autowired private TransactionalUnitOfWork unitOfWork;
 
     // --- Happy path: create with COURT --------------------------------------------------------
 
@@ -108,6 +116,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
+        assertThat(dto.getEntriesSummary()).isNotNull();
 
         String eventName = "Create Application List";
         String operation = "CREATE";
@@ -217,6 +226,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+        assertThat(dto.getEntriesSummary()).isNotNull();
 
         String eventName = "Create Application List";
         String operation = "CREATE";
@@ -400,8 +410,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .build()
                         .fetchTokenForRole();
 
-        String[] createdLocation = createAppListUsingRestApi();
-
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
         courtLocationGetDetailDto.setStartDate(LocalDate.now());
@@ -419,7 +427,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp =
                 restAssuredClient.executePutRequest(
-                        URI.create(createdLocation[0]).toURL(), token, req);
+                        URI.create(
+                                        getLocalUrl(WEB_CONTEXT)
+                                                + "/"
+                                                + getFirstOpenListToUpdate().toString())
+                                .toURL(),
+                        token,
+                        req);
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -429,9 +443,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
-        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
-        assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getVersion()).isEqualTo(2L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(LocalDate.parse("2025-10-19"));
+        assertThat(dto.getTime()).isEqualTo("10:30"); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(dto.getDurationHours()).isEqualTo(4);
@@ -442,6 +456,19 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
+        assertThat(dto.getEntriesSummary()).hasSize(5);
+        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("APPC");
+        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(1).getResult().get()).isEqualTo("AUTH");
+        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
+                .isEqualTo("Copy documents (electronic)");
+        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
+                .isEqualTo("Extract from the Court Register");
+        assertThat(dto.getEntriesSummary().get(4).getApplicationTitle())
+                .isEqualTo("Certificate of Satisfaction");
     }
 
     @Test
@@ -1454,5 +1481,19 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+    }
+
+    /**
+     * gets the first open list.
+     *
+     * @return The uuid of the first open list
+     */
+    private UUID getFirstOpenListToUpdate() {
+        ApplicationList applicationList =
+                unitOfWork.inTransaction(
+                        () -> {
+                            return applicationListRepository.findAll().getFirst();
+                        });
+        return applicationList.getUuid();
     }
 }
