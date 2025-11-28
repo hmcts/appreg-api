@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.projection;
 
 import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
@@ -43,4 +44,6 @@ public interface ApplicationListEntryGetSummaryProjection {
     String getRespondentPostcode();
 
     String getAccountReference();
+
+    StandardApplicant getStandardApplicant();
 }

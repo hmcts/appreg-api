@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -44,7 +45,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .result(result)
                         .build();
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
+        var mapper = new ApplicationListEntryMapperImpl();
         var model = mapper.toSummaryDto(projection);
 
         assertApplicationListEntrySummary(
@@ -106,7 +107,7 @@ class ApplicationListEntryMapStructMapperTest {
                         .result(result2)
                         .build();
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
+        var mapper = new ApplicationListEntryMapperImpl();
         List<ApplicationListEntrySummary> list =
                 mapper.toSummaryDtoList(List.of(projection1, projection2));
 
@@ -196,7 +197,8 @@ class ApplicationListEntryMapStructMapperTest {
         when(applicationListEntryGetSummaryProjection.getUuid())
                 .thenReturn(uuidForProjection.toString());
 
-        var mapper = new ApplicationListEntryMapStructMapperImpl();
+        var mapper = new ApplicationListEntryMapperImpl();
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
 
         // run test
         EntryGetSummaryDto mappedResult =

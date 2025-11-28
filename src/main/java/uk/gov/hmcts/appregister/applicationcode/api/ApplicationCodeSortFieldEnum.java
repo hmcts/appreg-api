@@ -18,9 +18,9 @@ public enum ApplicationCodeSortFieldEnum implements SortableOperationEnum {
     CODE("code", ApplicationCode_.CODE);
 
     private final String apiValue;
-    private final String entityValue;
+    private final String[] entityValue;
 
-    ApplicationCodeSortFieldEnum(String apiValue, String entityValue) {
+    ApplicationCodeSortFieldEnum(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }

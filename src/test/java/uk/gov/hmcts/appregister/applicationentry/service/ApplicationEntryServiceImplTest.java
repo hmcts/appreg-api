@@ -10,6 +10,7 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,12 +22,13 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapperImpl;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -38,13 +40,16 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 public class ApplicationEntryServiceImplTest {
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
-    @Spy
-    private final ApplicationListEntryMapStructMapper mapper =
-            new ApplicationListEntryMapStructMapperImpl();
+    @Spy private final ApplicationListEntryMapper mapper = new ApplicationListEntryMapperImpl();
 
     @Spy private final PageMapper pageMapper = new PageMapper();
 
     @InjectMocks private ApplicationEntryServiceImpl applicationEntryService;
+
+    @BeforeEach
+    public void setUp() {
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+    }
 
     @Test
     public void testSearchForGetSummary() {

@@ -107,6 +107,8 @@ public class ApplicationListServiceImplTest {
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
+    @Mock private ApplicationListEntryMapper entryListMapper;
+
     @Mock private ApplicationListOfficialMapper officalMapper;
 
     @Spy
@@ -124,6 +126,7 @@ public class ApplicationListServiceImplTest {
             new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
 
     @Mock private PageMapper pageMapper;
+
     @Mock private ApplicationListEntryMapper entryMapper;
 
     @Mock private EntityManager entityManager;
@@ -349,6 +352,8 @@ public class ApplicationListServiceImplTest {
         row.setCja(cja);
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
@@ -436,6 +441,8 @@ public class ApplicationListServiceImplTest {
                         .date(DEFAULT_DATE)
                         .time(DEFAULT_TIME);
 
+        when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
+
         // When
         ApplicationListPage result = service.getPage(filter, pageable);
 
@@ -463,6 +470,8 @@ public class ApplicationListServiceImplTest {
         row.setCja(cja);
 
         Pageable pageable = mock(Pageable.class);
+
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
@@ -503,6 +512,8 @@ public class ApplicationListServiceImplTest {
 
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
+
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Page<ApplicationList> dbPage = Page.empty();
         when(repository.findAllByFilter(
@@ -546,6 +557,8 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
@@ -581,6 +594,8 @@ public class ApplicationListServiceImplTest {
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Some Court");
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
@@ -610,13 +625,15 @@ public class ApplicationListServiceImplTest {
     @Test
     void getPage_noCourtOrCja_derivesLocation_usesFallback() {
 
-        Pageable pageable = mock(Pageable.class);
-
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
+
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
+        Pageable pageable = mock(Pageable.class);
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(

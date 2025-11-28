@@ -3,35 +3,46 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.enumeration.EntityType;
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
-public interface ApplicationListEntryMapper {
+@Slf4j
+@Setter
+public abstract class ApplicationListEntryMapper {
 
-    Logger LOG = LoggerFactory.getLogger(ApplicationListEntryMapper.class);
+    @Autowired ApplicantMapper applicantMapper;
 
-    ApplicationListEntrySummary toSummaryDto(
+    @Autowired StandardApplicantMapper standardApplicantMapper;
+
+    public abstract ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
 
-    List<ApplicationListEntrySummary> toSummaryDtoList(
+    public abstract List<ApplicationListEntrySummary> toSummaryDtoList(
             List<ApplicationListEntrySummaryProjection> summaryProjections);
 
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
@@ -49,7 +60,8 @@ public interface ApplicationListEntryMapper {
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
     @Mapping(target = "officials", ignore = true)
-    EntryGetPrintDto toPrintDto(ApplicationListEntryPrintProjection printProjection);
+    public abstract EntryGetPrintDto toPrintDto(
+            ApplicationListEntryPrintProjection printProjection);
 
     /**
      * Utility mapping method to wrap a {@link String} in a {@link JsonNullable}.
@@ -60,7 +72,7 @@ public interface ApplicationListEntryMapper {
      * @param string the String value
      * @return a JsonNullable wrapper containing the value or null
      */
-    default JsonNullable<String> map(String string) {
+    public JsonNullable<String> map(String string) {
         return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
     }
 
@@ -74,7 +86,7 @@ public interface ApplicationListEntryMapper {
      * @param offsetDateTime the OffsetDateTime to convert; may be null
      * @return the corresponding LocalDate, or null if the input is null
      */
-    default LocalDate map(OffsetDateTime offsetDateTime) {
+    public LocalDate map(OffsetDateTime offsetDateTime) {
         return offsetDateTime == null ? null : offsetDateTime.toLocalDate();
     }
 
@@ -94,7 +106,7 @@ public interface ApplicationListEntryMapper {
      * @return a ContactDetails object populated with the corresponding party’s contact details; if
      *     partyType is not recognized, returns an empty ContactDetails instance
      */
-    default ContactDetails mapContactDetails(
+    public ContactDetails mapContactDetails(
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
             PartyType partyType) {
         ContactDetails details = new ContactDetails();
@@ -160,7 +172,7 @@ public interface ApplicationListEntryMapper {
      * @param dto the target EntryGetPrintDto object being populated after the main mapping process
      */
     @AfterMapping
-    default void setApplicantAndRespondent(
+    public void setApplicantAndRespondent(
             ApplicationListEntryPrintProjection applicationListEntryPrintProjection,
             @MappingTarget EntryGetPrintDto dto) {
         if (dto.getRespondent() == null) {
@@ -229,7 +241,7 @@ public interface ApplicationListEntryMapper {
                 && applicationListEntryPrintProjection.getApplicantSurname() != null) {
             return EntityType.PERSON;
         } else {
-            LOG.warn(
+            log.warn(
                     "Unable to determine applicant entity type for application list entry ID {}: no name or"
                             + "forename/surname provided.",
                     applicationListEntryPrintProjection.getId());
@@ -246,12 +258,72 @@ public interface ApplicationListEntryMapper {
                 && applicationListEntryPrintProjection.getRespondentSurname() != null) {
             return EntityType.PERSON;
         } else {
-            LOG.warn(
+            log.warn(
                     "Unable to determine respondent entity type for application list entry ID {}: no name or"
                             + "forename/surname provided.",
                     applicationListEntryPrintProjection.getId());
 
             return EntityType.UNKNOWN;
         }
+    }
+
+    /**
+     * Convert the ApplicationListStatus enum from the generated model to the internal Status enum.
+     * This method checks for null values.
+     *
+     * @param status The application list status to covert
+     * @return The converted status
+     */
+    public Status toStatus(ApplicationListStatus status) {
+        Status retStatus = null;
+        if (status != null) {
+            retStatus = Status.valueOf(status.getValue());
+        }
+        return retStatus;
+    }
+
+    /**
+     * Convert the Status enum from the generated model to the external ApplicationListStatus enum.
+     * This method checks for null values.
+     *
+     * @param status The status to covert
+     * @return The converted application list status
+     */
+    public ApplicationListStatus toStatus(Status status) {
+        ApplicationListStatus retStatus = null;
+        if (status != null) {
+            retStatus = ApplicationListStatus.valueOf(status.getValue());
+        }
+
+        return retStatus;
+    }
+
+    @Mapping(target = "id", source = "projection.uuid")
+    @Mapping(target = "applicant", expression = "java(toApplicant(projection))")
+    @Mapping(
+            target = "respondent",
+            expression = "java(applicantMapper.toApplicant(projection.getRnameaddress()))")
+    @Mapping(target = "applicationTitle", source = "projection.title")
+    @Mapping(target = "isFeeRequired", expression = "java(projection.getFeeRequired().isYes())")
+    @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
+    @Mapping(target = "legislation", source = "projection.legislation")
+    @Mapping(target = "isResulted", expression = "java(projection.getResult() != null)")
+    public abstract EntryGetSummaryDto toEntrySummary(
+            ApplicationListEntryGetSummaryProjection projection);
+
+    /**
+     * gets a standard applicant or a named applicant depending on which one exists.
+     *
+     * @param projection The projection
+     * @return The applicant mapper
+     */
+    public Applicant toApplicant(ApplicationListEntryGetSummaryProjection projection) {
+        if (projection.getAnameaddress() != null) {
+            return applicantMapper.toApplicant(projection.getAnameaddress());
+        } else if (projection.getStandardApplicant() != null) {
+            return standardApplicantMapper.toApplicant(projection.getStandardApplicant());
+        }
+
+        return null;
     }
 }

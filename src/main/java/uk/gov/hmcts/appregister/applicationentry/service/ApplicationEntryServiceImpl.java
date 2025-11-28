@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
-    private final ApplicationListEntryMapStructMapper mapper;
+    private final ApplicationListEntryMapper mapper;
 
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -26,7 +26,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, Pageable pageable) {
-        Status status = ApplicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
+        Status status = mapper.toStatus(filterDto.getStatus());
 
         log.debug(
                 "Started: Find Application Entry for criteria: {} with paging: {}",

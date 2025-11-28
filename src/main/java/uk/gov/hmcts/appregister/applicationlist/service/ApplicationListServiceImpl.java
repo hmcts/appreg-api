@@ -14,7 +14,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapStructMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -364,7 +363,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 (getDto, success) -> {
                     final Page<ApplicationList> dbPage =
                             repository.findAllByFilter(
-                                    ApplicationListEntryMapStructMapper.toStatus(dto.getStatus()),
+                                    entryMapper.toStatus(dto.getStatus()),
                                     dto.getCourtLocationCode(),
                                     success.getCriminalJusticeArea(),
                                     dto.getDate(),

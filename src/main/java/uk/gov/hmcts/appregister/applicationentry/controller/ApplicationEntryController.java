@@ -43,7 +43,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         page,
                         size,
                         entitySortFields,
-                        ApplicationEntrySortFieldEnum.CODE.getEntityValue(),
+                        ApplicationEntrySortFieldEnum.CODE.getEntityValue()[0],
                         Sort.Direction.ASC);
 
         log.info("Retrieved Application Lists");

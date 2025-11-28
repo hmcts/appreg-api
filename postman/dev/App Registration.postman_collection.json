@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "c0e1f740-289c-42c0-a123-15c7656475f3",
+		"_postman_id": "7b041384-332c-410b-9bd1-2af8011b6b2f",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-c0e1f740-289c-42c0-a123-15c7656475f3?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-7b041384-332c-410b-9bd1-2af8011b6b2f?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -167,7 +167,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
+							"raw": "{{APP_REG_HOST}}/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
@@ -190,37 +190,37 @@
 					},
 					"response": []
 				},
-				{
-					"name": "Print Application List",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42/print",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "4550",
-							"path": [
-								"application-lists",
-								"3f324c49-84ab-41df-9240-e64acbcf7f42",
-								"print"
-							]
-						}
-					},
-					"response": []
-				}
+        {
+          "name": "Print Application List",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42/print",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "4550",
+              "path": [
+                "application-lists",
+                "3f324c49-84ab-41df-9240-e64acbcf7f42",
+                "print"
+              ]
+            }
+          },
+          "response": []
+        }
 			]
 		},
 		{
@@ -405,59 +405,122 @@
 			"name": "criminal-justice-areas",
 			"item": []
 		},
+    {
+      "name": "application_list_entries",
+      "item": [
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-list-entries"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2024-04-21"
+                },
+                {
+                  "key": "cjaCode",
+                  "value": "CJ"
+                },
+                {
+                  "key": "courtCode",
+                  "value": "RCJ001"
+                },
+                {
+                  "key": "applicantSurname",
+                  "value": "rn"
+                },
+                {
+                  "key": "status",
+                  "value": "OPEN"
+                },
+                {
+                  "key": "respondentOrganisation",
+                  "value": "ah%20Johnson"
+                },
+                {
+                  "key": "respondentPostcode",
+                  "value": "XY9%208ZZ"
+                },
+                {
+                  "key": "accountReference",
+                  "value": "323232"
+                },
+                {
+                  "key": "standardApplicantCode",
+                  "value": "APP0"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
 		{
-			"name": "application_list_entries",
+			"name": "Standard Applicants",
 			"item": [
 				{
-					"name": "Get Summary",
+					"name": "Get Standard Applicant By Code And Date",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"let now = new Date();\r",
+									"let isoString = now.toISOString();   // e.g. 2025-11-06T15:24:17.843Z\r",
+									"let dateOnly = isoString.split('T')[0];\r",
+									"\r",
+									"pm.environment.set(\"now\", dateOnly);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseURL}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
+							"raw": "{{APP_REG_HOST}}/standard-applicants/APP001?date={{now}}",
 							"host": [
-								"{{baseURL}}"
+								"{{APP_REG_HOST}}"
 							],
 							"path": [
-								"application-list-entries"
+								"standard-applicants",
+								"APP001"
 							],
 							"query": [
 								{
 									"key": "date",
-									"value": "2024-04-21"
-								},
-								{
-									"key": "cjaCode",
-									"value": "CJ"
-								},
-								{
-									"key": "courtCode",
-									"value": "RCJ001"
-								},
-								{
-									"key": "applicantSurname",
-									"value": "rn"
-								},
-								{
-									"key": "status",
-									"value": "OPEN"
-								},
-								{
-									"key": "respondentOrganisation",
-									"value": "ah%20Johnson"
-								},
-								{
-									"key": "respondentPostcode",
-									"value": "XY9%208ZZ"
-								},
-								{
-									"key": "accountReference",
-									"value": "323232"
-								},
-								{
-									"key": "standardApplicantCode",
-									"value": "APP0"
+									"value": "{{now}}"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Standard Applicant Get All",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/standard-applicants",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"standard-applicants"
 							]
 						}
 					},

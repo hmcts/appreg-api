@@ -15,9 +15,9 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     STATUS("status", "status"),
     DATE("hearingDate", "date");
     private final String apiValue;
-    private final String entityValue;
+    private final String[] entityValue;
 
-    ApplicationEntrySortFieldEnum(String apiValue, String entityValue) {
+    ApplicationEntrySortFieldEnum(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }

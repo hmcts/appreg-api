@@ -14,9 +14,9 @@ public enum CourtLocationSortFieldMapper implements SortableOperationEnum {
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();
 
     private final String apiValue;
-    private final String entityValue;
+    private final String[] entityValue;
 
-    CourtLocationSortFieldMapper(String apiValue, String entityValue) {
+    CourtLocationSortFieldMapper(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }
