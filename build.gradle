@@ -425,7 +425,7 @@ dependencies {
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
 
-  implementation "io.swagger.parser.v3:swagger-parser-v3:2.1.35"
+  implementation "io.swagger.parser.v3:swagger-parser-v3:2.1.36"
 
     // SpringDoc OpenAPI
   implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.14'
@@ -445,7 +445,7 @@ dependencies {
   implementation 'org.flywaydb:flyway-database-postgresql:11.15.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.34.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.37.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
@@ -475,8 +475,8 @@ dependencies {
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.19.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.48'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.49'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.49'
 
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3' // your version

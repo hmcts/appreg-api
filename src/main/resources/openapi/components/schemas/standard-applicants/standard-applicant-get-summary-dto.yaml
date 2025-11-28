@@ -10,12 +10,8 @@ properties:
   code:
     type: string
     description: Code that identifies the Standard Applicant.
-  name:
-    type: string
-    description: Name of the Standard Applicant.
-  addressLine1:
-    type: string
-    description: First line of the applicant's address.
+  applicant:
+    $ref: '../participants/applicant.yaml'
   startDate:
     type: string
     format: date

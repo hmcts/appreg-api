@@ -13,9 +13,9 @@ get:
       schema: { type: string }
       description: Filter by code (contains, case-insensitive).
     - in: query
-      name: title
+      name: name
       schema: { type: string }
-      description: Filter by title (contains, case-insensitive).
+      description: Filter by name (contains, case-insensitive).
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
