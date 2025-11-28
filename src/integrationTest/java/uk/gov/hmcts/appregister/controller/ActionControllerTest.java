@@ -85,8 +85,8 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
 
         Response resp =
                 getMoveApplicationListEntriesResponse(
-                        page.getContent().getFirst().getId(),
                         UUID.fromString(UNKNOWN_APPLICATION_LIST_ID),
+                        page.getContent().getFirst().getId(),
                         entryIds,
                         token);
 
@@ -105,7 +105,9 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
             throws Exception {
         var token = getToken();
 
-        UUID sourceListId = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
+        ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
+
+        UUID sourceListId = page.getContent().getFirst().getId();
 
         Set<UUID> entryIds = new HashSet<>();
         entryIds.add(UUID.randomUUID());

@@ -1,16 +1,13 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
@@ -38,44 +35,47 @@ public class ActionServiceImpl implements ActionService {
     @Override
     @Transactional
     public void move(UUID listId, MoveEntriesDto moveEntriesDto) {
-        Set<UUID> entryIdsSet = moveEntriesDto.getEntryIds();
-        List<UUID> allEntryIds = new ArrayList<>(entryIdsSet);
+        MoveEntriesValidationSuccess validationSuccess =
+                moveEntriesValidator
+                        .withSourceList(listId)
+                        .validate(moveEntriesDto, (request, success) -> success);
+
+        // If validator returned null (defensive) treat as no-op
+        List<uk.gov.hmcts.appregister.common.entity.ApplicationListEntry> entriesToSave =
+                validationSuccess == null || validationSuccess.getEntriesToSave() == null
+                        ? List.of()
+                        : validationSuccess.getEntriesToSave();
 
         // determine chunk size from pageable mapper (prefer the configured maxPageSize)
         Integer maxPageSize = pageableMapper.getMaxPageSize();
         Integer defaultPageSize = pageableMapper.getDefaultPageSize();
-        int chunkSize = (maxPageSize != null && maxPageSize > 0) ? maxPageSize
-            : (defaultPageSize != null && defaultPageSize > 0) ? defaultPageSize : 1000;
+        int chunkSize =
+                (maxPageSize != null && maxPageSize > 0)
+                        ? maxPageSize
+                        : (defaultPageSize != null && defaultPageSize > 0) ? defaultPageSize : 1000;
 
-        int total = allEntryIds.size();
-        log.info("Starting move of {} entries from list {} to target list {} using chunk size {}",
-                 total, listId, moveEntriesDto.getTargetListId(), chunkSize);
+        int total = entriesToSave.size();
+        log.info(
+                "Starting move of {} entries from list {} to target list {} using chunk size {}",
+                total,
+                listId,
+                moveEntriesDto.getTargetListId(),
+                chunkSize);
 
         int processed = 0;
         for (int start = 0; start < total; start += chunkSize) {
             int end = Math.min(start + chunkSize, total);
 
             // make a copy of the sublist to avoid holding references to the full list
-            List<UUID> chunkIds = new ArrayList<UUID>(allEntryIds.subList(start, end));
+            List<uk.gov.hmcts.appregister.common.entity.ApplicationListEntry> chunk =
+                    new ArrayList<>(entriesToSave.subList(start, end));
 
-            MoveEntriesDto chunkDto = new MoveEntriesDto();
-            chunkDto.setTargetListId(moveEntriesDto.getTargetListId());
-            chunkDto.setEntryIds(new HashSet<>(chunkIds));
+            log.debug("Persisting chunk: start={}, end={}, size={}", start, end, chunk.size());
 
-            log.debug("Processing chunk: start={}, end={}, size={}", start, end, chunkIds.size());
+            // persist this chunk
+            aleRepository.saveAll(chunk);
 
-            moveEntriesValidator
-                .withSourceList(listId)
-                .validate(
-                    chunkDto,
-                    (request, success) -> {
-                        // saveAll for this chunk
-                        aleRepository.saveAll(success.getEntriesToSave());
-                        return null;
-                    }
-                );
-
-            processed += chunkIds.size();
+            processed += chunk.size();
             log.info("Processed {}/{} entries", processed, total);
         }
 
