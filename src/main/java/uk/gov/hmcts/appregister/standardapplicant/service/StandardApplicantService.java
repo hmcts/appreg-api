@@ -1,15 +1,23 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import java.time.LocalDate;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
-import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 
 /**
  * Service interface for managing Standard Applicants.
  */
 public interface StandardApplicantService {
-    List<StandardApplicantDto> findAll();
+    /**
+     * Page data according to search criteria.
+     *
+     * @param code The code
+     * @param name The name
+     * @param pageable The pageable
+     * @return The standard applicant page
+     */
+    StandardApplicantPage findAll(String code, String name, Pageable pageable);
 
     /**
      * finds a standard applicant by code and date.

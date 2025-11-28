@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -39,4 +41,42 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      * @return a list of ApplicationCode entities with IDs >= value
      */
     List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
+
+    /**
+     * Retrieve a page of active Standrd Applicant Codes filtered by code/name (case-insensitive).
+     *
+     * <p>Active if: c.startDate < :date AND (c.endDate IS NULL OR c.endDate >= :date)
+     *
+     * <p>Name can represent the name title or the forename_1 or the surname. If name is not null we
+     * use name as this is an organisation. The expectations is that the forename and surname will
+     * be null in this case.
+     *
+     * <p>If the name is not null then we search matching results on the name, forename_1 and
+     * surname fields.
+     *
+     * @param code optional partial code filter (case-insensitive)
+     * @param name optional partial title filter (case-insensitive)
+     * @param active date to evaluate "active" on
+     * @param pageable paging/sorting
+     * @return page of matching entities
+     */
+    @Query(
+            """
+        SELECT c
+        FROM StandardApplicant c
+        WHERE (:code IS NULL OR c.applicantCode ILIKE CONCAT('%', CAST(:code AS string), '%'))
+          AND (c.applicantStartDate < :active)
+          AND (c.applicantEndDate IS NULL OR c.applicantEndDate > :active)
+          AND (:name IS NULL
+                  OR (((c.name IS NOT NULL AND c.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
+                  OR (c.applicantForename1 IS NOT NULL AND c.applicantForename1
+                          ILIKE CONCAT('%', CAST(:name AS string), '%')))
+                  OR (c.applicantSurname IS NOT NULL
+                          AND c.applicantSurname ILIKE CONCAT('%', CAST(:name AS string), '%'))))
+        """)
+    Page<StandardApplicant> search(
+            @Param("code") String code,
+            @Param("name") String name,
+            @Param("active") LocalDate active,
+            Pageable pageable);
 }

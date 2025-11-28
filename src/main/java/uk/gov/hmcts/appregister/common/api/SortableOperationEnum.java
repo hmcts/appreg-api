@@ -12,5 +12,5 @@ public interface SortableOperationEnum {
     String getApiValue();
 
     /** The backend entity value. */
-    String getEntityValue();
+    String[] getEntityValue();
 }
