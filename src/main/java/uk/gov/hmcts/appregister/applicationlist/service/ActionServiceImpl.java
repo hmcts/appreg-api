@@ -1,14 +1,21 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
+
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -34,51 +41,55 @@ public class ActionServiceImpl implements ActionService {
 
     @Override
     @Transactional
-    public void move(UUID listId, MoveEntriesDto moveEntriesDto) {
-        MoveEntriesValidationSuccess validationSuccess =
-                moveEntriesValidator
-                        .withSourceList(listId)
-                        .validate(moveEntriesDto, (request, success) -> success);
+    public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
+        ApplicationList targetList =
+            moveEntriesValidator
+                .withSourceList(sourceListId)
+                .validate(moveEntriesDto, (req, success) ->
+                    success.getTargetList());
 
-        // If validator returned null (defensive) treat as no-op
-        List<uk.gov.hmcts.appregister.common.entity.ApplicationListEntry> entriesToSave =
-                validationSuccess == null || validationSuccess.getEntriesToSave() == null
-                        ? List.of()
-                        : validationSuccess.getEntriesToSave();
+        // IDs to process
+        Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
 
-        // determine chunk size from pageable mapper (prefer the configured maxPageSize)
-        Integer maxPageSize = pageableMapper.getMaxPageSize();
-        Integer defaultPageSize = pageableMapper.getDefaultPageSize();
-        int chunkSize =
-                (maxPageSize != null && maxPageSize > 0)
-                        ? maxPageSize
-                        : (defaultPageSize != null && defaultPageSize > 0) ? defaultPageSize : 1000;
+        // Resolve paging size
+        int pageSize = resolvePageSize();
 
-        int total = entriesToSave.size();
-        log.info(
-                "Starting move of {} entries from list {} to target list {} using chunk size {}",
-                total,
-                listId,
-                moveEntriesDto.getTargetListId(),
-                chunkSize);
+        int pageIndex = 0;
+        Page<ApplicationListEntry> page;
 
-        int processed = 0;
-        for (int start = 0; start < total; start += chunkSize) {
-            int end = Math.min(start + chunkSize, total);
+        do {
+            Pageable pageable = PageRequest.of(pageIndex, pageSize);
 
-            // make a copy of the sublist to avoid holding references to the full list
-            List<uk.gov.hmcts.appregister.common.entity.ApplicationListEntry> chunk =
-                    new ArrayList<>(entriesToSave.subList(start, end));
+            // ----- CHUNKED READ -----
+            page = aleRepository
+                .findAllByUuidInAndApplicationListUuid(requestedIds, sourceListId, pageable);
 
-            log.debug("Persisting chunk: start={}, end={}, size={}", start, end, chunk.size());
+            if (page.hasContent()) {
+                List<ApplicationListEntry> entries = page.getContent();
 
-            // persist this chunk
-            aleRepository.saveAll(chunk);
+                // update entries
+                for (ApplicationListEntry entry : entries) {
+                    entry.setApplicationList(targetList);
+                }
 
-            processed += chunk.size();
-            log.info("Processed {}/{} entries", processed, total);
-        }
+                // ----- CHUNKED SAVE -----
+                aleRepository.saveAll(entries);
+            }
 
-        log.info("Completed move of {} entries from list {}", total, listId);
+            pageIndex++;
+
+        } while (!page.isLast());
+
+        log.info("Completed paged move for {} entries from list {}", requestedIds.size(), sourceListId);
+    }
+
+    private int resolvePageSize() {
+        Integer max = pageableMapper.getMaxPageSize();
+        Integer def = pageableMapper.getDefaultPageSize();
+        return (max != null && max > 0)
+            ? max
+            : (def != null && def > 0)
+            ? def
+            : 1000;
     }
 }

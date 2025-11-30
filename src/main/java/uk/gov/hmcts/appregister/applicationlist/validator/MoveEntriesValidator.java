@@ -1,20 +1,17 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -40,104 +37,43 @@ public class MoveEntriesValidator
 
     @Override
     public void validate(MoveEntriesDto dto) {
-        validate(dto, null);
+        validate(dto, (req, success) -> null);
     }
 
     @Override
     public <R> R validate(
-            MoveEntriesDto dto,
-            BiFunction<MoveEntriesDto, MoveEntriesValidationSuccess, R> createSupplier) {
+        MoveEntriesDto dto,
+        BiFunction<MoveEntriesDto, MoveEntriesValidationSuccess, R> createSupplier) {
+        ApplicationList sourceList = applicationListRepository.findByUuid(sourceListId)
+            .orElseThrow(() -> new AppRegistryException(
+                ApplicationListError.SOURCE_LIST_NOT_FOUND,
+                "No source application list found for UUID '%s'".formatted(sourceListId)));
 
-        if (sourceListId == null) {
-            throw new IllegalStateException("sourceListId must be provided before validation");
-        }
-
-        // Load source list
-        ApplicationList sourceList =
-                applicationListRepository
-                        .findByUuid(sourceListId)
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                ApplicationListError.SOURCE_LIST_NOT_FOUND,
-                                                "No source application list found for UUID '%s'"
-                                                        .formatted(sourceListId)));
-
-        // Load target list
-        ApplicationList targetList =
-                applicationListRepository
-                        .findByUuid(dto.getTargetListId())
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                ApplicationListError.TARGET_LIST_NOT_FOUND,
-                                                "No target application list found for UUID '%s'"
-                                                        .formatted(dto.getTargetListId())));
+        ApplicationList targetList = applicationListRepository.findByUuid(dto.getTargetListId())
+            .orElseThrow(() -> new AppRegistryException(
+                ApplicationListError.TARGET_LIST_NOT_FOUND,
+                "No target application list found for UUID '%s'".formatted(dto.getTargetListId())));
 
         validateLists(sourceList, targetList);
 
-        log.debug(
-                "List validation successful. Source list (uuid={}), target list (uuid={}) are both OPEN.",
-                sourceList.getUuid(),
-                targetList.getUuid());
-
         if (dto.getEntryIds() == null || dto.getEntryIds().isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
+            throw new AppRegistryException(ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
         Set<UUID> requestedIds = new HashSet<>(dto.getEntryIds());
-        List<ApplicationListEntry> loadedEntries =
-                applicationListEntryRepository.findAllByUuidInAndApplicationListUuid(
-                        requestedIds, sourceListId);
+        long foundCount = applicationListEntryRepository
+            .countByUuidInAndApplicationListUuid(requestedIds, sourceListId);
 
-        if (loadedEntries.size() != requestedIds.size()) {
-            // Compute which are missing / excluded
-            Set<UUID> foundIds =
-                    loadedEntries.stream()
-                            .map(ApplicationListEntry::getUuid)
-                            .collect(Collectors.toSet());
-
-            Set<UUID> missing =
-                    requestedIds.stream()
-                            .filter(id -> !foundIds.contains(id))
-                            .collect(Collectors.toSet());
-
+        if (foundCount != requestedIds.size()) {
             throw new AppRegistryException(
-                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
-                    "The following entries were not found in the source list: %s"
-                            .formatted(missing));
-        }
-
-        Map<UUID, ApplicationListEntry> loadedByUuid =
-                loadedEntries.stream()
-                        .collect(Collectors.toMap(ApplicationListEntry::getUuid, e -> e));
-
-        List<ApplicationListEntry> toSave = new ArrayList<>();
-
-        for (UUID id : requestedIds) {
-            ApplicationListEntry entry = loadedByUuid.get(id);
-            if (!sourceListId.equals(entry.getApplicationList().getUuid())) {
-                throw new AppRegistryException(
-                        ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
-                        "Application list entry '%s' does not belong to the source list"
-                                .formatted(id));
-            }
-
-            entry.setApplicationList(targetList);
-            toSave.add(entry);
+                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                "One or more entries were not found in the source list");
         }
 
         MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
-        success.setSourceList(sourceList);
         success.setTargetList(targetList);
-        success.setEntriesToSave(toSave);
 
-        if (createSupplier != null) {
-            return createSupplier.apply(dto, success);
-        }
-
-        return null;
+        return createSupplier.apply(dto, success);
     }
 
     private void validateLists(ApplicationList sourceList, ApplicationList targetList) {

@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -173,8 +174,23 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      *
      * @param uuids the collection of entry UUIDs to retrieve
      * @param sourceListUuid the UUID of the application list the entries must belong to
+     * @param pageable the pagination information (page number, page size, and sorting)
      * @return a list of matching entries; never {@code null}, but may be empty if no entries match
      */
-    List<ApplicationListEntry> findAllByUuidInAndApplicationListUuid(
-            Collection<UUID> uuids, UUID sourceListUuid);
+    Page<ApplicationListEntry> findAllByUuidInAndApplicationListUuid(
+            Collection<UUID> uuids, UUID sourceListUuid, Pageable pageable);
+
+    /**
+     * Counts the number of ApplicationListEntry records whose UUID is contained in the
+     * supplied set and that belong to the specified application list.
+     *
+     * @param uuids
+     *     the set of entry UUIDs to match against; must not be {@code null}.
+     * @param applicationListUuid
+     *     the UUID of the application list that the entries must belong to; must not be {@code null}.
+     *
+     * @return the number of ApplicationListEntry instances that match both the UUID inclusion
+     *         filter and the given application list.
+     */
+    long countByUuidInAndApplicationListUuid(Set<UUID> uuids, UUID applicationListUuid);
 }
