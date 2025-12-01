@@ -2,37 +2,30 @@ package uk.gov.hmcts.appregister.applicationlist.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,104 +33,77 @@ public class ActionServiceImplTest {
 
     @Mock private ApplicationListRepository alRepository;
     @Mock private ApplicationListEntryRepository aleRepository;
-    @Mock private PageableMapper pageableMapper;
 
     @Spy
     private DummyMoveEntriesValidator moveEntriesValidator =
-            new DummyMoveEntriesValidator(alRepository, aleRepository);
+            new DummyMoveEntriesValidator(alRepository);
 
     private ActionServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ActionServiceImpl(aleRepository, moveEntriesValidator, pageableMapper);
-    }
-
-    @Captor private ArgumentCaptor<List<ApplicationListEntry>> listCaptor;
-
-    @Test
-    void move_movesEntriesSuccessfully_whenValidRequest() {
-        UUID sourceListId = UUID.randomUUID();
-
-        ApplicationList sourceList = new ApplicationList();
-        sourceList.setUuid(sourceListId);
-
-        ApplicationList targetList = new ApplicationList();
-        targetList.setUuid(UUID.randomUUID());
-
-        ApplicationListEntry entry1 = new ApplicationListEntry();
-        entry1.setUuid(UUID.randomUUID());
-        entry1.setApplicationList(sourceList);
-
-        ApplicationListEntry entry2 = new ApplicationListEntry();
-        entry2.setUuid(UUID.randomUUID());
-        entry2.setApplicationList(sourceList);
-
-        MoveEntriesDto dto = new MoveEntriesDto();
-        dto.setTargetListId(targetList.getUuid());
-        dto.setEntryIds(Set.of(entry1.getUuid(), entry2.getUuid()));
-
-        MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
-        success.setSourceList(sourceList);
-        success.setTargetList(targetList);
-        success.setEntriesToSave(List.of(entry1, entry2));
-
-        moveEntriesValidator.setSuccess(success);
-
-        service.move(sourceListId, dto);
-
-        verify(aleRepository).saveAll(listCaptor.capture());
-        List<ApplicationListEntry> capturedList = listCaptor.getValue();
-
-        Assertions.assertEquals(2, capturedList.size());
-        Assertions.assertTrue(capturedList.contains(entry1));
-        Assertions.assertTrue(capturedList.contains(entry2));
+        service = new ActionServiceImpl(aleRepository, moveEntriesValidator);
     }
 
     @Test
-    void move_chunksEntries_whenMaxPageSizeSmall() {
-        // Force small chunk size
-        when(pageableMapper.getMaxPageSize()).thenReturn(2);
-
+    void move_performsBulkUpdate_whenValidRequest() {
         ApplicationList targetList = new ApplicationList();
         targetList.setUuid(UUID.randomUUID());
 
-        // 5 entries -> should produce 3 chunks (2,2,1)
-        List<UUID> entryUuids = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            entryUuids.add(UUID.randomUUID());
-        }
+        // Two entry UUIDs requested
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
 
-        // Build DTO containing the 5 UUIDs
         MoveEntriesDto dto = new MoveEntriesDto();
         dto.setTargetListId(targetList.getUuid());
-        dto.setEntryIds(new HashSet<>(entryUuids));
-
-        List<ApplicationListEntry> allEntries =
-                entryUuids.stream()
-                        .map(
-                                id -> {
-                                    ApplicationListEntry e = new ApplicationListEntry();
-                                    e.setUuid(id);
-                                    return e;
-                                })
-                        .collect(Collectors.toList());
+        dto.setEntryIds(Set.of(id1, id2));
 
         MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
-        success.setSourceList(null);
         success.setTargetList(targetList);
-        success.setEntriesToSave(allEntries);
-
         moveEntriesValidator.setSuccess(success);
 
-        // Act
+        // Mock repository to return rowsUpdated == requested size (2)
         UUID sourceListId = UUID.randomUUID();
+        when(aleRepository.bulkMoveByUuidAndSourceList(anySet(), eq(targetList), eq(sourceListId)))
+                .thenReturn(2);
+
+        // Act - should not throw
         service.move(sourceListId, dto);
 
-        // Assert: even though we supplied the full list as the "entriesToSave",
-        // the service's loop should still have iterated once per chunk. For 5 items
-        // with chunk size 2, that is 3 iterations -> 3 saveAll invocations.
-        verify(aleRepository, times(3)).saveAll(listCaptor.capture());
+        // Verify the bulk update call was invoked once with the same source and target that the
+        // service was called with
+        verify(aleRepository, times(1))
+                .bulkMoveByUuidAndSourceList(anySet(), eq(targetList), eq(sourceListId));
+    }
+
+    @Test
+    void move_throws_whenBulkUpdateAffectsFewerRowsThanRequested() {
+        ApplicationList targetList = new ApplicationList();
+        targetList.setUuid(UUID.randomUUID());
+
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+
+        MoveEntriesDto dto = new MoveEntriesDto();
+        dto.setTargetListId(targetList.getUuid());
+        dto.setEntryIds(Set.of(id1, id2));
+
+        MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
+        success.setTargetList(targetList);
+        moveEntriesValidator.setSuccess(success);
+
+        // Simulate DB updated only 1 row even though 2 were requested
+        UUID sourceListId = UUID.randomUUID();
+        when(aleRepository.bulkMoveByUuidAndSourceList(anySet(), eq(targetList), eq(sourceListId)))
+                .thenReturn(1);
+
+        assertThatThrownBy(() -> service.move(sourceListId, dto))
+                .isInstanceOf(AppRegistryException.class)
+                .satisfies(
+                        ex ->
+                                Assertions.assertEquals(
+                                        ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                                        ((AppRegistryException) ex).getCode()));
     }
 
     @Test
@@ -154,7 +120,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -172,7 +138,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.NOT_FOUND);
+                .isEqualTo(org.springframework.http.HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -188,7 +154,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -205,7 +171,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -221,7 +187,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -238,7 +204,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -256,7 +222,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Test
@@ -274,7 +240,7 @@ public class ActionServiceImplTest {
         assertThatThrownBy(() -> service.move(UUID.randomUUID(), dto))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
-                .isEqualTo(HttpStatus.BAD_REQUEST);
+                .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
     @Setter
@@ -282,10 +248,8 @@ public class ActionServiceImplTest {
 
         private MoveEntriesValidationSuccess success;
 
-        public DummyMoveEntriesValidator(
-                ApplicationListRepository applicationListRepository,
-                ApplicationListEntryRepository applicationListEntryRepository) {
-            super(applicationListRepository, applicationListEntryRepository);
+        public DummyMoveEntriesValidator(ApplicationListRepository applicationListRepository) {
+            super(applicationListRepository);
         }
 
         @Override
@@ -297,6 +261,7 @@ public class ActionServiceImplTest {
             return createSupplier.apply(dto, success);
         }
 
+        @Override
         public DummyMoveEntriesValidator withSourceList(UUID id) {
             return this;
         }

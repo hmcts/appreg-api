@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -8,8 +7,10 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
@@ -169,28 +170,27 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 
     /**
-     * Retrieves all ApplicationListEntry entities whose UUID is contained in the provided
-     * collection *and* whose parent ApplicationList matches the given source list UUID.
+     * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
+     * rows updated.
      *
-     * @param uuids the collection of entry UUIDs to retrieve
-     * @param sourceListUuid the UUID of the application list the entries must belong to
-     * @param pageable the pagination information (page number, page size, and sorting)
-     * @return a list of matching entries; never {@code null}, but may be empty if no entries match
+     * @param entryUuids the set of entry UUIDs to move; only entries matching these UUIDs and
+     *     belonging to the sourceListUuid will be updated
+     * @param targetList the ApplicationList entity representing the new target list to which the
+     *     entries will be reassigned; this value is written to the applicationList field of all
+     *     matching entries
+     * @param sourceListUuid the UUID of the source ApplicationList; only entries currently
+     *     associated with this list will be updated
+     * @return the number of rows updated; may be less than the number of provided UUIDs if some
+     *     entries are not found in the source list
      */
-    Page<ApplicationListEntry> findAllByUuidInAndApplicationListUuid(
-            Collection<UUID> uuids, UUID sourceListUuid, Pageable pageable);
-
-    /**
-     * Counts the number of ApplicationListEntry records whose UUID is contained in the
-     * supplied set and that belong to the specified application list.
-     *
-     * @param uuids
-     *     the set of entry UUIDs to match against; must not be {@code null}.
-     * @param applicationListUuid
-     *     the UUID of the application list that the entries must belong to; must not be {@code null}.
-     *
-     * @return the number of ApplicationListEntry instances that match both the UUID inclusion
-     *         filter and the given application list.
-     */
-    long countByUuidInAndApplicationListUuid(Set<UUID> uuids, UUID applicationListUuid);
+    @Modifying(clearAutomatically = true)
+    @Query(
+            """
+        UPDATE ApplicationListEntry ale
+        SET ale.applicationList = :targetList
+        WHERE ale.uuid IN :entryUuids
+        AND ale.applicationList.uuid = :sourceListUuid
+        """)
+    int bulkMoveByUuidAndSourceList(
+            Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
 }

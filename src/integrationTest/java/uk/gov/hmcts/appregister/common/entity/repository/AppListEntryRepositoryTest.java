@@ -9,6 +9,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -367,36 +369,58 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(applicationListEntryPrintProjectionsToAssertAgainst.size()).isEqualTo(1);
     }
 
-    /*private ApplicationListEntry saveApplicationListEntry(
-            ApplicationList list, Short sequenceNumber) {
-        ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
-        entityManager.persist(resolutionCode);
+    @Test
+    public void testBulkMoveByUuidAndSourceList_movesOnlyMatchingEntriesAndReturnsCount() {
+        // Given: source, target and other lists
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        persistance.save(sourceList);
+
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        persistance.save(targetList);
+
+        ApplicationList otherList = new AppListTestData().someMinimal().build();
+        persistance.save(otherList);
+
+        // Create entries:
+        // - two entries in the source list that we expect to be moved
+        // - one entry in the source list that is NOT in the uuid set (should not move)
+        // - one entry in a different list that is included in the uuid set but must NOT move
+        UUID moveUuid1 = UUID.randomUUID();
+        saveEntryInSourceList(sourceList, moveUuid1);
+
+        UUID moveUuid2 = UUID.randomUUID();
+        saveEntryInSourceList(sourceList, moveUuid2);
+
+        UUID keepUuid = UUID.randomUUID();
+        saveEntryInSourceList(sourceList, keepUuid);
+
+        UUID wrongListUuid = UUID.randomUUID();
+        saveEntryInSourceList(otherList, wrongListUuid);
+
         entityManager.flush();
 
-        ApplicationListEntry listEntryData =
-                new AppListEntryTestData().createApplicationListEntry(list, sequenceNumber);
+        // When: call the repository bulk-move with a set that includes moveUuid1, moveUuid2 and
+        // wrongListUuid
+        Set<UUID> uuidsToMove = Set.of(moveUuid1, moveUuid2, wrongListUuid);
 
-        listEntryData.setAccountNumber("1234567890");
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
-        listEntryData.setStandardApplicant(standardApplicant);
-        NameAddress nameAddress = new NameAddressTestData().someComplete();
-        listEntryData.setRnameaddress(nameAddress);
+        int updatedCount =
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        uuidsToMove, targetList, sourceList.getUuid());
 
-        AppListEntryResolution appListEntryResolution =
-                new AppListEntryResolutionTestData()
-                        .someMinimal()
-                        .applicationList(listEntryData)
-                        .resolutionCode(resolutionCode)
-                        .build();
-        List<AppListEntryResolution> resolutions = List.of(appListEntryResolution);
-        listEntryData.setResolutions(resolutions);
-
-        ApplicationListEntry data = persistance.save(listEntryData);
-
-        for (AppListEntryResolution resolution : resolutions) {
-            entityManager.persist(resolution);
-        }
         entityManager.flush();
-        return data;
-    }*/
+        entityManager.clear();
+
+        // Then: only the two entries in the source list are moved, and the method returns 2
+        assertEquals(
+                2,
+                updatedCount,
+                "Should report two rows updated (only entries in source list moved)");
+    }
+
+    private void saveEntryInSourceList(ApplicationList sourceList, UUID moveUuid1) {
+        ApplicationListEntry moveEntry1 = new AppListEntryTestData().someMinimal().build();
+        moveEntry1.setApplicationList(sourceList);
+        moveEntry1.setUuid(moveUuid1);
+        persistance.save(moveEntry1);
+    }
 }
