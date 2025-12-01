@@ -655,7 +655,7 @@ public class ApplicationListServiceImplTest {
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, saved.getCja(), 0L)).thenReturn(expected);
 
         ApplicationListGetDetailDto actual = service.get(id, pageable);
 
