@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
 
 /**
@@ -28,6 +29,13 @@ import uk.gov.hmcts.appregister.standardapplicant.dto.StandardApplicantDto;
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
 public abstract class StandardApplicantMapper {
+
+    @Mapping(target = "code", source = "applicantCode")
+    @Mapping(target = "applicant", expression = "java(toApplicant(entity))")
+    @Mapping(target = "startDate", source = "applicantStartDate")
+    @Mapping(target = "endDate", source = "applicantEndDate", qualifiedByName = "toEndDate")
+    public abstract StandardApplicantGetSummaryDto toReadGetSummaryDto(StandardApplicant entity);
+
     @Mapping(target = "code", source = "applicantCode")
     @Mapping(target = "applicant", expression = "java(toApplicant(entity))")
     @Mapping(target = "startDate", source = "applicantStartDate")
