@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
+
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +102,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     // Audit
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+
+    public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
     /**
      * {@inheritDoc}
@@ -368,6 +372,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional(readOnly = true)
     @Override
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+        TimeWindow timeWindow = computeTimeWindow(dto);
+
         return applicationListGetValidator.validateCja(
                 dto,
                 (getDto, success) -> {
@@ -377,7 +383,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     dto.getCourtLocationCode(),
                                     success.getCriminalJusticeArea(),
                                     dto.getDate(),
-                                    dto.getTime(),
+                                    timeWindow.start,
+                                    timeWindow.end,
+                                    timeWindow.wrapsMidnight,
                                     dto.getDescription(),
                                     dto.getOtherLocationDescription(),
                                     pageable);
@@ -496,5 +504,21 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             return al.getCja().getDescription();
         }
         return "Location not set";
+    }
+
+    /* Convert a user-supplied "HH:mm" time into a minute-range.
+    The repository uses [start, end] to match all seconds within that minute.
+    When the computed end value wraps to midnight (e.g., 23:59 -> 00:00),
+    we record this so the repository can handle the boundary correctly. */
+    private TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
+        if (dto.getTime() != null) {
+            LocalTime start = dto.getTime().withSecond(0).withNano(0);
+            LocalTime end = start.plusMinutes(1);
+            Boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
+
+            return new TimeWindow(start, end, wrapsMidnight);
+        }
+
+        return new TimeWindow(null, null, null);
     }
 }
