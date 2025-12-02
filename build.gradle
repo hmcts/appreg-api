@@ -2,10 +2,10 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.5.7'
+  id 'org.springframework.boot' version '3.5.8'
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
-  id "io.freefair.lombok" version "8.14.2"
+  id "io.freefair.lombok" version "8.14.3"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -220,22 +220,19 @@ tasks.register('smoke', Test) {
 }
 
 def commonJacocoExclusionsIntegration = [
-        "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
 
         // We need to reduce the code under mappers by using MapStruct
         "**/uk/gov/hmcts/appregister/**/mapper/*.class",
 
         // Do not include entity tests
-        "**/uk/gov/hmcts/appregister/**/entity/*.class",
-
-        // undo this when we have reimplemented it to reflect the open api
-        "**/uk/gov/hmcts/appregister/resolutioncode/**/*.class"
+        "**/uk/gov/hmcts/appregister/**/entity/*.class"
 ]
 
 def commonJacocoExclusionsUnit = [
         "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
         "**/uk/gov/hmcts/appregister/generated/**/*.class",
+        "**/uk/gov/hmcts/appregister/**/api/*.class",
 
         // These are packages in which I do not envisage tests. These would be tested more appropriately in
         // integration tests or other types of tests
@@ -344,12 +341,7 @@ sonarqube {
     property "sonar.projectName", "AppReg :: appreg-api"
     property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
     property "sonar.coverage.exclusions", [
-            "src/main/java/uk/gov/hmcts/appregister/**/dto/**/*",
             "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
-            "src/main/java/uk/gov/hmcts/appregister/applicationentry/**/*",
-            "src/main/java/uk/gov/hmcts/appregister/report/**/*",
-            "src/main/java/uk/gov/hmcts/appregister/applicationlistentryresolutions/**/*",
-            "src/main/java/uk/gov/hmcts/appregister/**/mapper/*"
     ]
     if (gradle.startParameter.taskNames.contains("localSonarqube")) {
       property 'sonar.host.url', 'http://localhost:9000'
@@ -445,7 +437,7 @@ dependencies {
   implementation 'org.flywaydb:flyway-database-postgresql:11.15.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.37.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.38.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'

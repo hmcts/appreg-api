@@ -38,7 +38,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         ApplicationList al =
                 ApplicationList.builder()
-                        .status(Status.valueOf(ApplicationListStatus.fromValue(status).getValue()))
+                        .status(Status.fromValue(status))
                         .description(description)
                         .otherLocation(otherLocation)
                         .courtName(courtCode != null ? "Court " + courtCode : null)
@@ -62,7 +62,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     private ApplicationList buildEntity() {
         return ApplicationList.builder()
-                .status(Status.valueOf(ApplicationListStatus.OPEN.getValue()))
+                .status(Status.OPEN)
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")

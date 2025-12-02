@@ -198,6 +198,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                         cast(:respondentPostcode AS string) AND ale.rnameaddress.code='RE')
                 AND (:accountReference IS NULL OR  ale.caseReference
                         LIKE CONCAT('%', cast(:accountReference AS string), '%'))
+                AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
         """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             boolean hasHearingDate,

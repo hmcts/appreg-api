@@ -202,14 +202,11 @@ public class RestAssuredClient {
      *
      * @param url The url context
      * @param token The bearer token
-     * @param etag The etag to use in the request
      * @return The specification of the response
      */
-    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object, String etag)
-            throws URISyntaxException {
+    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
-                .header(HttpHeaders.IF_MATCH, etag)
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .put(url)
                 .andReturn();
@@ -220,12 +217,14 @@ public class RestAssuredClient {
      *
      * @param url The url context
      * @param token The bearer token
+     * @param etag The etag to use in the request
      * @return The specification of the response
      */
-    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
+    public Response executePutRequest(URL url, TokenAndJwksKey token, Object object, String etag) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .header(HttpHeaders.IF_MATCH, etag)
                 .put(url)
                 .andReturn();
     }

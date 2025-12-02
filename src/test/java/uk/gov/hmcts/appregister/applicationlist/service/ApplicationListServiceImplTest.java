@@ -231,6 +231,7 @@ public class ApplicationListServiceImplTest {
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
+
         when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
@@ -305,6 +306,7 @@ public class ApplicationListServiceImplTest {
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+
         when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
@@ -317,6 +319,7 @@ public class ApplicationListServiceImplTest {
 
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
+
         verify(mapper).toGetDetailDto(saved, cja, 0L);
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
@@ -673,7 +676,7 @@ public class ApplicationListServiceImplTest {
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+        when(mapper.toGetDetailDto(saved, saved.getCja(), 0L)).thenReturn(expected);
 
         ApplicationListGetDetailDto actual = service.get(id, pageable);
 
