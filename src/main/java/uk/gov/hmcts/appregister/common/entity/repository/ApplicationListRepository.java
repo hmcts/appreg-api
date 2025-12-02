@@ -110,7 +110,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             @Param("onDate") LocalDate onDate,
             @Param("start") LocalTime start,
             @Param("end") LocalTime end,
-            @Param("wrapsMidnight") Boolean wrapsMidnight,
+            @Param("wrapsMidnight") boolean wrapsMidnight,
             @Param("description") String description,
             @Param("otherDesc") String otherDesc,
             Pageable pageable);

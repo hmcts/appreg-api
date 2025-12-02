@@ -263,7 +263,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         null,
                         null,
                         page);
@@ -294,7 +294,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         null,
                         null,
                         PageRequest.of(0, 10));
@@ -323,7 +323,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         "SESSION",
                         null,
                         PageRequest.of(0, 10));
@@ -350,7 +350,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         null,
                         "hall",
                         PageRequest.of(0, 10));
@@ -380,7 +380,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         null,
                         null,
                         PageRequest.of(
@@ -395,7 +395,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
-                        null,
+                        false,
                         null,
                         null,
                         PageRequest.of(

@@ -481,7 +481,7 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
-                        isNull(),
+                        eq(false),
                         isNull(),
                         eq("town"),
                         eq(pageable)))
@@ -523,7 +523,7 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
-                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -567,7 +567,7 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
-                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -605,7 +605,7 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
-                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -643,7 +643,7 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
-                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))

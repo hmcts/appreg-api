@@ -513,11 +513,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         if (dto.getTime() != null) {
             LocalTime start = dto.getTime().withSecond(0).withNano(0);
             LocalTime end = start.plusMinutes(1);
-            Boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
+            boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
 
             return new TimeWindow(start, end, wrapsMidnight);
         }
 
-        return new TimeWindow(null, null, null);
+        return new TimeWindow(null, null, false);
     }
 }
