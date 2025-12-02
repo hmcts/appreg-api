@@ -180,9 +180,11 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     /**
-     * <<<<<<< HEAD Sets the new and old audit values on the data audit record based on the event
-     * state. ======= ======= >>>>>>> master Sets the new and old audit values on the data audit
-     * record based on the event state. >>>>>>> ARCPOC-409
+     * <<<<<<< HEAD <<<<<<< HEAD Sets the new and old audit values on the data audit record based on
+     * the event state. ======= ======= >>>>>>> master Sets the new and old audit values on the data
+     * audit record based on the event state. >>>>>>> ARCPOC-409 ======= ======= >>>>>>> master Sets
+     * the new and old audit values on the data audit record based on the event state. >>>>>>>
+     * master
      *
      * @param audit The data audit record
      * @param primaryDiff The primary audit data

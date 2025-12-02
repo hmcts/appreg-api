@@ -348,7 +348,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             ApplicationList list,
             Long entriesCount,
             List<ApplicationListEntrySummary> entriesSummary) {
-        ApplicationListGetDetailDto dto = mapper.toGetDetailDto(list, null, entriesCount);
+        ApplicationListGetDetailDto dto = mapper.toGetDetailDto(list, list.getCja(), entriesCount);
         dto.setEntriesSummary(entriesSummary);
 
         return dto;

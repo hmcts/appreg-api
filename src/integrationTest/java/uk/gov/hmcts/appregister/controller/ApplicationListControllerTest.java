@@ -1552,6 +1552,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
+        assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
         assertThat(dto.getEntriesSummary()).isNotNull();
     }
