@@ -155,6 +155,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         Pageable page = PageRequest.of(0, 10);
 
+        LocalTime nineOneAm = LocalTime.of(9, 1);
+
         // When: filter ONLY by date and time; leave other filters null
         Page<ApplicationList> result =
                 repository.findAllByFilter(
@@ -163,6 +165,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null, // cja
                         targetDay, // date
                         nineAm, // time
+                        nineOneAm, // end time
+                        false, // wraps midnight
                         null, // description
                         null, // other location
                         page);
@@ -172,6 +176,72 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         ApplicationList only = result.getContent().getFirst();
         assertThat(only.getDate()).isEqualTo(targetDay);
         assertThat(only.getTime()).isEqualTo(nineAm);
+    }
+
+    @Test
+    @DisplayName("findAllByFilter: matches by time with seconds")
+    void findAllByFilter_timeWithSeconds_match() {
+        // Given
+        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalTime nineAm = LocalTime.of(9, 0, 1);
+        LocalTime nineOneAm = LocalTime.of(9, 1);
+
+        // Matching row: 09:00
+        save("OPEN", "CCC003", null, targetDay, nineAm, "keep", "west");
+
+        Pageable page = PageRequest.of(0, 10);
+
+        // When: filter ONLY by time; leave other filters null
+        Page<ApplicationList> result =
+                repository.findAllByFilter(
+                        null, // status
+                        null, // courtCode
+                        null, // cja
+                        null, // date
+                        nineAm, // time
+                        nineOneAm, // end time
+                        false, // wraps midnight
+                        null, // description
+                        null, // other location
+                        page);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        ApplicationList only = result.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(nineAm);
+    }
+
+    @Test
+    @DisplayName("findAllByFilter: matches by 23:59")
+    void findAllByFilter_minuteToMidnight_match() {
+        // Given
+        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalTime startTime = LocalTime.of(23, 59, 1);
+        LocalTime endTime = LocalTime.of(0, 0);
+
+        // Matching row: 09:00
+        save("OPEN", "CCC003", null, targetDay, startTime, "keep", "west");
+
+        Pageable page = PageRequest.of(0, 10);
+
+        // When: filter ONLY by time; leave other filters null
+        Page<ApplicationList> result =
+                repository.findAllByFilter(
+                        null, // status
+                        null, // courtCode
+                        null, // cja
+                        null, // date
+                        startTime, // time
+                        endTime, // end time
+                        true, // wraps midnight
+                        null, // description
+                        null, // other location
+                        page);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        ApplicationList only = result.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(startTime);
     }
 
     @Test
@@ -188,14 +258,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
-                        "CCC003",
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        page);
+                        Status.OPEN, "CCC003", null, null, null, null, false, null, null, page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -216,7 +279,16 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        Status.OPEN, null, cja52, null, null, null, null, PageRequest.of(0, 10));
+                        Status.OPEN,
+                        null,
+                        cja52,
+                        null,
+                        null,
+                        null,
+                        false,
+                        null,
+                        null,
+                        PageRequest.of(0, 10));
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -241,6 +313,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
+                        false,
                         "SESSION",
                         null,
                         PageRequest.of(0, 10));
@@ -261,7 +335,16 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        null, null, null, null, null, null, "hall", PageRequest.of(0, 10));
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        false,
+                        null,
+                        "hall",
+                        PageRequest.of(0, 10));
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -288,6 +371,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
+                        false,
+                        null,
                         null,
                         PageRequest.of(
                                 0, 1, org.springframework.data.domain.Sort.by("date").ascending()));
@@ -300,6 +385,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
+                        false,
                         null,
                         null,
                         PageRequest.of(
