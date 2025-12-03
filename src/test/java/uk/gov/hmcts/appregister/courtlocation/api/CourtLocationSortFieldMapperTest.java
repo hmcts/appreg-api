@@ -30,11 +30,12 @@ public class CourtLocationSortFieldMapperTest {
     @Test
     void fieldsMatchExpectedContract() {
         assertEquals("name", CourtLocationSortFieldMapper.TITLE.getApiValue());
-        assertEquals(NationalCourtHouse_.NAME, CourtLocationSortFieldMapper.TITLE.getEntityValue());
+        assertEquals(
+                NationalCourtHouse_.NAME, CourtLocationSortFieldMapper.TITLE.getEntityValue()[0]);
 
         assertEquals("code", CourtLocationSortFieldMapper.CODE.getApiValue());
         assertEquals(
                 NationalCourtHouse_.COURT_LOCATION_CODE,
-                CourtLocationSortFieldMapper.CODE.getEntityValue());
+                CourtLocationSortFieldMapper.CODE.getEntityValue()[0]);
     }
 }

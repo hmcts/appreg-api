@@ -66,7 +66,7 @@ public class SortableField {
      * @param lookup function to map API field names to SortableFieldsEnum
      * @return The string mapping the sortable field in the format "entityField,direction"
      */
-    public String toSortStringUsingSortableOperation(
+    public List<String> toSortStringUsingSortableOperation(
             Function<String, SortableOperationEnum> lookup) {
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField == null) {
@@ -75,11 +75,19 @@ public class SortableField {
                     "Sort property '%s' is not allowed.".formatted(this.field));
         }
 
-        if (direction != null) {
-            return lookup.apply(field).getEntityValue() + SORT_DELIMITER + direction;
-        } else {
-            return lookup.apply(field).getEntityValue();
+        return getSortParts(lookup);
+    }
+
+    private List<String> getSortParts(Function<String, SortableOperationEnum> lookup) {
+        List<String> sortPartsLst = new ArrayList<>();
+        for (String sort : lookup.apply(field).getEntityValue()) {
+            if (direction != null) {
+                sortPartsLst.add(sort + SORT_DELIMITER + direction);
+            } else {
+                sortPartsLst.add(sort);
+            }
         }
+        return sortPartsLst;
     }
 
     private static String checkDirection(String[] sortParts, String apiField) {
