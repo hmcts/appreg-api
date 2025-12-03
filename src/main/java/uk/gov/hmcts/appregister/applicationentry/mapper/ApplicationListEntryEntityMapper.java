@@ -5,7 +5,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
-import org.mapstruct.TargetType;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -93,12 +92,12 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "changedBy", ignore = true)
     @Mapping(target = "changedDate", ignore = true)
     public abstract void toApplicationListEntry(
-        EntryUpdateDto entryUpdateDto,
-        String substituteWording,
-        StandardApplicant standardApplicant,
-        ApplicationCode code,
-        ApplicationList applicationList, @MappingTarget ApplicationListEntry entry);
-
+            EntryUpdateDto entryUpdateDto,
+            String substituteWording,
+            StandardApplicant standardApplicant,
+            ApplicationCode code,
+            ApplicationList applicationList,
+            @MappingTarget ApplicationListEntry entry);
 
     @Mapping(target = "alefsFeeStatus", expression = "java(toStatus(feeStatus.getPaymentStatus()))")
     @Mapping(target = "appListEntry", source = "applicationListEntry")

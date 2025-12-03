@@ -78,8 +78,10 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
-    public ResponseEntity<EntryGetDetailDto> updateApplicationListEntry(UUID listId, UUID entryId, EntryUpdateDto entryUpdateDto) {
-        return ApplicationListEntriesApi.super.updateApplicationListEntry(listId, entryId, entryUpdateDto);
+    public ResponseEntity<EntryGetDetailDto> updateApplicationListEntry(
+            UUID listId, UUID entryId, EntryUpdateDto entryUpdateDto) {
+        return ApplicationListEntriesApi.super.updateApplicationListEntry(
+                listId, entryId, entryUpdateDto);
     }
 
     private List<String> toEntitySort(List<String> sort) {
@@ -90,5 +92,4 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 SortableField.of(sort.toArray(new String[0])),
                 ApplicationEntrySortFieldEnum::getEntityValue);
     }
-
 }

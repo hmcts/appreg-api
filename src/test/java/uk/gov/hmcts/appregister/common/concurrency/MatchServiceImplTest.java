@@ -1,17 +1,14 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -39,8 +36,7 @@ public class MatchServiceImplTest {
                 () -> {
                     return matchResponse;
                 },
-                List.of(versionable)
-        );
+                List.of(versionable));
     }
 
     @Test
@@ -64,7 +60,8 @@ public class MatchServiceImplTest {
                                 matchService.matchOnRequest(
                                         () -> {
                                             return MatchResponse.of("test", List.of(versionable));
-                                        }, List.of(versionable1)));
+                                        },
+                                        List.of(versionable1)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 

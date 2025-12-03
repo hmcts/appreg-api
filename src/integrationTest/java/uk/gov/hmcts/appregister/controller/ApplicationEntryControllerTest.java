@@ -887,7 +887,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
+        responseSpecCreate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
@@ -972,7 +972,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                         + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
+        responseSpecCreate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.APPLICANT_CODE_DOES_NOT_EXIST.getCode().getType().get(),

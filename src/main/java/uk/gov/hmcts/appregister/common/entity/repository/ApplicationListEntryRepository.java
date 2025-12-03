@@ -9,8 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
@@ -276,31 +274,32 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 
-
     /**
      * Finds an entry for Uuid.
+     *
      * @param entryId The entry id
      * @return A single matching application entry
      */
     @Query(
-        """
-    SELECT ale
-    FROM ApplicationListEntry ale
-    WHERE ale.uuid = :entryId
-    """)
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
 
     /**
      * Finds all entities with the given IDs, within the associated list.
+     *
      * @param entryId The entry id
      * @param listId The list that the entry resides in
      * @return A single matching application entry
      */
     @Query(
-        """
-    SELECT ale
-    FROM ApplicationListEntry ale
-    WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
-    """)
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
+        """)
     Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
 }

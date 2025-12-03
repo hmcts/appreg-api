@@ -1,7 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import lombok.RequiredArgsConstructor;
+import java.time.Clock;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -14,26 +19,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
-import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
-import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
-import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
-
-import java.time.Clock;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.BiFunction;
-
-import org.springframework.stereotype.Component;
-
-import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
@@ -43,57 +31,76 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Component
 @Slf4j
 public class UpdateApplicationEntryValidator
-    extends AbstractApplicatonEntryValidator<PayloadForUpdateEntry,
-    UpdateApplicationEntryValidationSuccess> {
+        extends AbstractApplicatonEntryValidator<
+                PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess> {
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
-    public UpdateApplicationEntryValidator(ApplicationListRepository applicationListRepository,
-                                           ApplicationCodeRepository applicationCodeRepository,
-                                           FeeRepository feeRepository, Clock clock,
-                                           StandardApplicantRepository standardApplicantRepository,
-                                           ApplicationListEntryRepository applicationListEntryRepository) {
-        super(applicationListRepository, applicationCodeRepository, feeRepository, clock, standardApplicantRepository);
+    public UpdateApplicationEntryValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationCodeRepository applicationCodeRepository,
+            FeeRepository feeRepository,
+            Clock clock,
+            StandardApplicantRepository standardApplicantRepository,
+            ApplicationListEntryRepository applicationListEntryRepository) {
+        super(
+                applicationListRepository,
+                applicationCodeRepository,
+                feeRepository,
+                clock,
+                standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
     }
 
     @Override
-    public <R> R validate(PayloadForUpdateEntry validatable, BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R> validateSuccess) {
-        Optional<ApplicationListEntry> entry = applicationListEntryRepository
-            .findByUuid(validatable.getEntryId());
+    public <R> R validate(
+            PayloadForUpdateEntry validatable,
+            BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>
+                    validateSuccess) {
+        Optional<ApplicationListEntry> entry =
+                applicationListEntryRepository.findByUuid(validatable.getEntryId());
         if (entry.isEmpty()) {
             throw new AppRegistryException(
-                AppListEntryError.ENTRY_DOES_NOT_EXIST,
-                "The application entry %s does not exist in application list %s"
-                    .formatted(validatable.getEntryId(),
-                               getApplicationListUuid(validatable)));
+                    AppListEntryError.ENTRY_DOES_NOT_EXIST,
+                    "The application entry %s does not exist in application list %s"
+                            .formatted(
+                                    validatable.getEntryId(), getApplicationListUuid(validatable)));
         }
 
         log.debug(" application list entry is found {}", validatable.getEntryId());
 
-        entry = applicationListEntryRepository.findByEntryUuidWithinListUuid(validatable.getId(), validatable.getEntryId());
+        entry =
+                applicationListEntryRepository.findByEntryUuidWithinListUuid(
+                        validatable.getId(), validatable.getEntryId());
         if (entry.isEmpty()) {
             throw new AppRegistryException(
-                AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST,
-                "The application list does not exist %s".formatted(getApplicationListUuid(validatable)));
+                    AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST,
+                    "The application list does not exist %s"
+                            .formatted(getApplicationListUuid(validatable)));
         }
 
-        log.debug(" application list entry {} is found and is within list {}", validatable.getEntryId(),
-                  validatable.getId());
+        log.debug(
+                " application list entry {} is found and is within list {}",
+                validatable.getEntryId(),
+                validatable.getId());
 
         return super.validate(validatable, validateSuccess);
     }
 
     @Override
-    protected UpdateApplicationEntryValidationSuccess getResult(ApplicationCode code,
-                                                                WordingTemplateSentence wordingTemplateCollection,
-                                                                Fee fee, StandardApplicant saCode,
-                                                                ApplicationList applicationList,
-                                                                PayloadForUpdateEntry payload) {
-        return new UpdateApplicationEntryValidationSuccess(wordingTemplateCollection,
-                                                          code, fee, saCode,
-                                                          applicationList,
-                                                          applicationListEntryRepository
-                                                               .findByUuid(payload.getEntryId()).get());
+    protected UpdateApplicationEntryValidationSuccess getResult(
+            ApplicationCode code,
+            WordingTemplateSentence wordingTemplateCollection,
+            Fee fee,
+            StandardApplicant saCode,
+            ApplicationList applicationList,
+            PayloadForUpdateEntry payload) {
+        return new UpdateApplicationEntryValidationSuccess(
+                wordingTemplateCollection,
+                code,
+                fee,
+                saCode,
+                applicationList,
+                applicationListEntryRepository.findByUuid(payload.getEntryId()).get());
     }
 
     @Override

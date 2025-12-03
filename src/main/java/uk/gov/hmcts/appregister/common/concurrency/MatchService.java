@@ -1,11 +1,8 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
-
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 public interface MatchService {
     /**
@@ -14,6 +11,6 @@ public interface MatchService {
      * @param supplier The supplier to return the updated etag
      * @param entities The versionable entity to match against
      */
-    <T>  MatchResponse<T> matchOnRequest(
-         Supplier<MatchResponse<T>> supplier, List<Keyable> entities);
+    <T> MatchResponse<T> matchOnRequest(
+            Supplier<MatchResponse<T>> supplier, List<Keyable> entities);
 }

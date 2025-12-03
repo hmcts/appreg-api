@@ -1,10 +1,8 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
 import java.util.List;
-import java.util.UUID;
 import lombok.Getter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 
 /**

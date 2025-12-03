@@ -1,14 +1,11 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
@@ -30,7 +27,7 @@ public class MatchServiceImpl implements MatchService {
      * @return The match response with the updated etag
      */
     public <T> MatchResponse<T> matchOnRequest(
-        Supplier<MatchResponse<T>> supplier, List<Keyable> entities) {
+            Supplier<MatchResponse<T>> supplier, List<Keyable> entities) {
         // Apply the match etag from the request to the entity
         if (request.getEtag() != null) {
             // Assuming the entity has a setEtag method

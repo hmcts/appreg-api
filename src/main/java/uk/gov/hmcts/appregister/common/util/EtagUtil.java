@@ -4,9 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.UUID;
-
-import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
@@ -14,6 +11,7 @@ public class EtagUtil {
 
     /**
      * generates an ETag for a given entity based on its ID, version, and class name.
+     *
      * @param id The list of Keyable entities to generate the ETag for.
      * @return The generated ETag string.
      */
@@ -29,16 +27,22 @@ public class EtagUtil {
     }
 
     /**
-     * gets a unique string representation of a list of Keyable entities
+     * gets a unique string representation of a list of Keyable entities.
+     *
      * @param ids The list of Keyable entities
      * @return The string that is unique to the configuration
      */
     private static String getStringRepresentation(List<Keyable> ids) {
         StringBuilder stringBuilder = new StringBuilder();
         for (Keyable keyable : ids) {
-            stringBuilder.append( keyable.getId().toString()).append(":").append((keyable instanceof Versionable)
-                                     ? ((Versionable) keyable).getVersion().toString() : "")
-                .append(keyable.getClass().getCanonicalName());
+            stringBuilder
+                    .append(keyable.getId().toString())
+                    .append(":")
+                    .append(
+                            (keyable instanceof Versionable)
+                                    ? ((Versionable) keyable).getVersion().toString()
+                                    : "")
+                    .append(keyable.getClass().getCanonicalName());
         }
 
         return stringBuilder.toString();

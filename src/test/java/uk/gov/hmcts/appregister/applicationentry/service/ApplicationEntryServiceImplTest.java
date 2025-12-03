@@ -165,23 +165,22 @@ public class ApplicationEntryServiceImplTest {
 
     @Spy
     private DummyCreateApplicationEntryValidator createApplicationEntryValidator =
-        new DummyCreateApplicationEntryValidator(
-            applicationListRepository,
-            applicationCodeRepository,
-            feeRepository,
-            clock,
-            standardApplicantRepository);
+            new DummyCreateApplicationEntryValidator(
+                    applicationListRepository,
+                    applicationCodeRepository,
+                    feeRepository,
+                    clock,
+                    standardApplicantRepository);
 
     @Spy
     private DummyUpdateApplicationEntryValidator updateApplicationEntryValidator =
-        new DummyUpdateApplicationEntryValidator(
-            applicationListRepository,
-            applicationCodeRepository,
-            feeRepository,
-            clock,
-            standardApplicantRepository,
-            applicationListEntryRepository);
-
+            new DummyUpdateApplicationEntryValidator(
+                    applicationListRepository,
+                    applicationCodeRepository,
+                    feeRepository,
+                    clock,
+                    standardApplicantRepository,
+                    applicationListEntryRepository);
 
     @BeforeEach
     void setUp() {
@@ -534,29 +533,27 @@ public class ApplicationEntryServiceImplTest {
     }
 
     class DummyUpdateApplicationEntryValidator extends UpdateApplicationEntryValidator {
-        public DummyUpdateApplicationEntryValidator(ApplicationListRepository applicationListRepository,
-                                                    ApplicationCodeRepository applicationCodeRepository,
-                                                    FeeRepository feeRepository, Clock clock,
-                                                    StandardApplicantRepository standardApplicantRepository,
-                                                    ApplicationListEntryRepository applicationListEntryRepository) {
+        public DummyUpdateApplicationEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationCodeRepository applicationCodeRepository,
+                FeeRepository feeRepository,
+                Clock clock,
+                StandardApplicantRepository standardApplicantRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
             super(
-                applicationListRepository,
-                applicationCodeRepository,
-                feeRepository,
-                clock,
-                standardApplicantRepository,
-                applicationListEntryRepository
-            );
+                    applicationListRepository,
+                    applicationCodeRepository,
+                    feeRepository,
+                    clock,
+                    standardApplicantRepository,
+                    applicationListEntryRepository);
         }
 
         @Override
         public <R> R validate(
-            PayloadForUpdateEntry validatable,
-            BiFunction<
-                PayloadForUpdateEntry,
-                UpdateApplicationEntryValidationSuccess,
-                R>
-                validateSuccess) {
+                PayloadForUpdateEntry validatable,
+                BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>
+                        validateSuccess) {
             return validateSuccess.apply(validatable, updateSuccess);
         }
     }

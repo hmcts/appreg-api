@@ -1,15 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.Fee;
@@ -18,12 +13,8 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
-import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -35,22 +26,31 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Component
 @Slf4j
 public class CreateApplicationEntryValidator
-        extends AbstractApplicatonEntryValidator<PayloadForCreate<EntryCreateDto>,
-    CreateApplicationEntryValidationSuccess> {
+        extends AbstractApplicatonEntryValidator<
+                PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess> {
 
-    public CreateApplicationEntryValidator(ApplicationListRepository applicationListRepository,
-                                           ApplicationCodeRepository applicationCodeRepository,
-                                           FeeRepository feeRepository, Clock clock,
-                                           StandardApplicantRepository standardApplicantRepository) {
-        super(applicationListRepository, applicationCodeRepository, feeRepository, clock, standardApplicantRepository);
+    public CreateApplicationEntryValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationCodeRepository applicationCodeRepository,
+            FeeRepository feeRepository,
+            Clock clock,
+            StandardApplicantRepository standardApplicantRepository) {
+        super(
+                applicationListRepository,
+                applicationCodeRepository,
+                feeRepository,
+                clock,
+                standardApplicantRepository);
     }
 
     @Override
-    protected CreateApplicationEntryValidationSuccess getResult(ApplicationCode code,
-                                                                WordingTemplateSentence wordingTemplateCollection,
-                                                                Fee fee, StandardApplicant saCode,
-                                                                ApplicationList applicationList,
-                                                                PayloadForCreate<EntryCreateDto> dto) {
+    protected CreateApplicationEntryValidationSuccess getResult(
+            ApplicationCode code,
+            WordingTemplateSentence wordingTemplateCollection,
+            Fee fee,
+            StandardApplicant saCode,
+            ApplicationList applicationList,
+            PayloadForCreate<EntryCreateDto> dto) {
         return CreateApplicationEntryValidationSuccess.builder()
                 .applicationCode(code)
                 .wordingSentence(wordingTemplateCollection)

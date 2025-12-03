@@ -263,8 +263,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
                             return MatchResponse.of(
-                                    mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES), List.of(hydrated));
-                        }, List.of(success.getApplicationList())),
+                                    mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
                 success.getApplicationList());
     }
 
@@ -293,8 +295,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var hydrated = refreshEntity(savedEntity);
 
                             return MatchResponse.of(
-                                    mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES), List.of(hydrated));
-                        }, List.of(success.getApplicationList())), success.getApplicationList());
+                                    mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
+                success.getApplicationList());
     }
 
     @Override
