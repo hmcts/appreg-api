@@ -30,9 +30,9 @@ public class ResultCodeSortFieldEnumTest {
     @Test
     void fieldsMatchExpectedContract() {
         assertEquals("title", ResultCodeSortFieldEnum.TITLE.getApiValue());
-        assertEquals(ResolutionCode_.TITLE, ResultCodeSortFieldEnum.TITLE.getEntityValue());
+        assertEquals(ResolutionCode_.TITLE, ResultCodeSortFieldEnum.TITLE.getEntityValue()[0]);
 
         assertEquals("code", ResultCodeSortFieldEnum.CODE.getApiValue());
-        assertEquals(ResolutionCode_.RESULT_CODE, ResultCodeSortFieldEnum.CODE.getEntityValue());
+        assertEquals(ResolutionCode_.RESULT_CODE, ResultCodeSortFieldEnum.CODE.getEntityValue()[0]);
     }
 }

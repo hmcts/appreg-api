@@ -30,7 +30,7 @@ public class SortMapper {
             List<SortableField> sorts, Function<String, SortableOperationEnum> findSortFieldEnum) {
         List<String> mappedSorts = new ArrayList<>();
         for (SortableField sortableField : sorts) {
-            mappedSorts.add(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+            mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
         }
         return mappedSorts;
     }

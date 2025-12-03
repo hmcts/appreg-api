@@ -2,12 +2,11 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '3.5.7'
+  id 'org.springframework.boot' version '3.5.8'
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
-  id "io.freefair.lombok" version "8.14.2"
   id 'org.openapi.generator' version '7.3.0'
-
+  id "io.freefair.lombok" version "8.14.3"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -446,7 +445,7 @@ dependencies {
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
 
-  implementation "io.swagger.parser.v3:swagger-parser-v3:2.1.35"
+  implementation "io.swagger.parser.v3:swagger-parser-v3:2.1.36"
 
     // SpringDoc OpenAPI
   implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.8.14'
@@ -466,7 +465,7 @@ dependencies {
   implementation 'org.flywaydb:flyway-database-postgresql:11.15.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.34.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.38.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
@@ -496,8 +495,8 @@ dependencies {
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.19.0'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.48'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.48'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.49'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.49'
 
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3' // your version
