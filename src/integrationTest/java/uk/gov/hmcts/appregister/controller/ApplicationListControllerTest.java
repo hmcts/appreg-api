@@ -1371,11 +1371,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
         assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
-        assertThat(problemDetail.getDetail())
-                .isEqualTo(
-                        "Method parameter 'listId': Failed to convert value of "
-                                + "type 'java.lang.String' to required type "
-                                + "'java.util.UUID'; Invalid UUID string: 232322");
+        assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
     }
 

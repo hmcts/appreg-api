@@ -12,8 +12,6 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -82,7 +80,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler
     @SuppressWarnings({"java:S2259", "java:S1185"})
-    protected ResponseEntity<Object> handleConstraintViolationException(
+    protected ResponseEntity<ProblemDetail> handleConstraintViolationException(
             ConstraintViolationException ex) {
         log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
@@ -115,7 +113,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                     .getProperties()
                     .put(fieldError.getField(), fieldError.getDefaultMessage());
         }
-        MultiValueMap<String, String> errors = new LinkedMultiValueMap<>();
 
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
@@ -141,11 +138,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             WebRequest request) {
         log.error("An exception occurred", ex);
 
-        DateTimeParseException dataException = findCause(ex, DateTimeParseException.class);
+        DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         ProblemDetail problemDetail =
                 getDetailFromEnum(
                         CommonAppError.NOT_READABLE_ERROR,
-                        dataException == null ? ex : dataException);
+                        dateException == null ? ex : dateException);
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
@@ -159,7 +156,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     public static <T extends Throwable> T findCause(Throwable ex, Class<T> type) {
         Throwable current = ex;
         while (current != null) {
-            if (current.getClass().equals(type)) {
+            if (type.isInstance(current)) {
                 return type.cast(current);
             }
             current = current.getCause();
