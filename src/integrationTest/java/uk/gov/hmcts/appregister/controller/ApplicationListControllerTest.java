@@ -1360,6 +1360,74 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @DisplayName("GET: filter by time without seconds matches time with seconds")
+    void givenTimeFilterWithoutSeconds_thenSlotWithSeconds() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t093101 = LocalTime.of(9, 31, 1);
+
+        createWithCourt(prefix + " - keep", day, t093101);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "09:31"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(t093101);
+    }
+
+    @Test
+    @DisplayName("GET: filter by 23:59")
+    void givenTimeFilter_thenSlot() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t235901 = LocalTime.of(23, 59, 1);
+
+        createWithCourt(prefix + " - keep", day, t235901);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "23:59"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(t235901);
+    }
+
+    @Test
     @DisplayName("GET: filter by courtLocationCode")
     void givenCourtFilter_thenOnlyCourtRows() throws Exception {
 
