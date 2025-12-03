@@ -352,12 +352,15 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
+        LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
         when(repository.findAllByFilter(
                         eq(ApplicationListStatus.OPEN),
                         isNull(),
                         eq(cja),
                         eq(DEFAULT_DATE),
                         eq(DEFAULT_TIME),
+                        eq(expectedEndTime),
+                        eq(false),
                         eq("morning"),
                         eq("town hall"),
                         eq(pageable)))
@@ -414,12 +417,16 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
+
         when(repository.findAllByFilter(
                         eq(ApplicationListStatus.CLOSED),
                         eq("LOC123"),
                         isNull(),
                         eq(DEFAULT_DATE),
                         eq(DEFAULT_TIME),
+                        eq(expectedEndTime),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -474,6 +481,8 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
+                        eq(false),
+                        isNull(),
                         eq("town"),
                         eq(pageable)))
                 .thenReturn(dbPage);
@@ -513,6 +522,8 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -556,6 +567,8 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
+                        eq(false),
+                        isNull(),
                         isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
@@ -591,6 +604,8 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -628,6 +643,8 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         isNull(),
                         isNull(),
+                        eq(false),
+                        isNull(),
                         isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
@@ -642,6 +659,82 @@ public class ApplicationListServiceImplTest {
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
+    }
+
+    @Test
+    void getPage_minuteToMidnightTime_callsFindAllByFilterWithWrapsMidnightTrue() {
+
+        // Resolve CJA
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+        cja.setDescription("CJA Desc");
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        getValidator.setSuccess(success);
+
+        // DB results
+        ApplicationList row = new ApplicationList();
+        row.setUuid(UUID.randomUUID());
+        row.setCja(cja);
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
+
+        Pageable pageable = mock(Pageable.class);
+        LocalTime time = LocalTime.of(23, 59);
+        LocalTime expectedEndTime = LocalTime.of(0, 0);
+        when(repository.findAllByFilter(
+                        eq(ApplicationListStatus.OPEN),
+                        isNull(),
+                        eq(cja),
+                        eq(DEFAULT_DATE),
+                        eq(time),
+                        eq(expectedEndTime),
+                        eq(true),
+                        eq("morning"),
+                        eq("town hall"),
+                        eq(pageable)))
+                .thenReturn(dbPage);
+
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
+
+        // Page metadata mapping
+        doAnswer(
+                        inv -> {
+                            ApplicationListPage target = inv.getArgument(1);
+                            target.totalPages(1);
+                            target.elementsOnPage(1);
+                            return null;
+                        })
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class));
+
+        // Given a filter with CJA + otherLocation (court is null)
+        ApplicationListGetFilterDto filter =
+                new ApplicationListGetFilterDto()
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(null)
+                        .cjaCode("52")
+                        .date(DEFAULT_DATE)
+                        .time(time)
+                        .description("morning")
+                        .otherLocationDescription("town hall");
+
+        // When
+        ApplicationListPage result = service.getPage(filter, pageable);
+
+        // Then
+        verify(repository)
+                .findAllByFilter(
+                        eq(ApplicationListStatus.OPEN),
+                        isNull(),
+                        eq(cja),
+                        eq(DEFAULT_DATE),
+                        eq(time),
+                        eq(expectedEndTime),
+                        eq(true),
+                        eq("morning"),
+                        eq("town hall"),
+                        eq(pageable));
     }
 
     @Test
