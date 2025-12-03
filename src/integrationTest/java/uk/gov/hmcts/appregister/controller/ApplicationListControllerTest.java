@@ -1600,6 +1600,45 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @DisplayName("GET Application List")
+    void givenValidRequest_whenGetApplicationList_then400IdFormatting() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
+        // fire test
+        resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/232322"), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
+        assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
+        assertThat(problemDetail.getStatus()).isEqualTo(400);
+    }
+
+    @Test
     @DisplayName("GET Application List: 403 when no role")
     void givenNoRole_whenGetApplicationList_then403() throws Exception {
         var token = getATokenWithValidCredentials().build().fetchTokenForRole();
