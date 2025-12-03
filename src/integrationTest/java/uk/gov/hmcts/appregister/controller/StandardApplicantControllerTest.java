@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
@@ -743,7 +744,10 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                                 Optional.of("AP99004"), Optional.of("John")),
                         new OpenApiPageMetaData());
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
     }
 
     // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
@@ -771,8 +775,12 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                                 Optional.of("AP99004"), Optional.of("John")),
                         new OpenApiPageMetaData());
 
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
     }
 
     @RequiredArgsConstructor
