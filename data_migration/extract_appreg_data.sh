@@ -14,6 +14,7 @@
 # 1.0		14/08/2025	Matthew Harman	Initial Version
 # 2.0		25/09/2025	Matthew Harman	Move to an incremental approach
 # 3.0		28/10/2025	Matthew Harman	Added Deletes with incremental
+# 4.0 		20/11/2025	Matthew Harman	Added in Parallelisation
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -23,6 +24,10 @@
 #				NOTE: CRIMINAL_JUSTICE_AREA will always be big 
 #				bang as this does not have a CHANGED_DATE field
 operation_mode='FULL';
+
+# thread_count			Thread Count, how many streams do we run in
+#				parallel, set to 1 to turn off parallelisation.
+thread_count=2;
 
 # spool_location		Location to store extracted files
 spool_location='/opt/moj/rman/appreg';
@@ -52,14 +57,12 @@ postgres_environment='postgresql://pgadmin:<pwd>@appreg-stg.postgres.database.az
 
 # postgres_commands_file	Location of the file created to have the 
 #				commands to load the .csv's into postgres
-postgres_commands_file="${spool_location}/commands.sql";
-# Blank the file
->${postgres_commands_file}
+postgres_commands_file="${spool_location}/commands";
 
 # postgres_delete_commands_file	Location of the file created to have the 
 #				commands to load the .csv's into postgres
 #				for the deleted records
-postgres_delete_commands_file="${spool_location}/commands_delete.sql";
+postgres_delete_commands_file="${spool_location}/commands_delete.bat";
 # Blank the file
 >${postgres_delete_commands_file}
 
@@ -80,6 +83,20 @@ postgres_delete_file="${spool_location}/delete_data.sql";
 
 FIRST_TIME="YES";
 
+BASE=1000;		# Base value used for lists in files, allows
+			# max of 1000 tables.  Increment this is this 
+			# becomes too small
+
+for ((threads=0; threads<thread_count; threads++)); do
+	>${postgres_commands_file}_part_${threads}.bat
+done
+
+# Set Arrays for tracking each paralel run
+script_per_parallel=()
+counts=()
+max_idx=()
+runs_list=""
+
 export ORACLE_SID=LPRD1
 export ORACLE_HOME=/opt/moj/oracle/product/10.2.0/db
 export PATH=$ORACLE_HOME/bin:$PATH
@@ -98,6 +115,21 @@ END
 echo "scn is ${SCN}";
 
 # Define functions
+add_script_parallel() {
+	local run="$1"
+	local file="$2"
+
+	# increment count for this run
+	counts[$run]=$(( ${counts[$run]:-0} + 1 ))
+	local idx="${counts[$run]}"
+	local flat=$(( run * BASE + idx ))
+echo "FLAT: ${flat}";
+echo "file: ${file}";
+	script_per_parallel[$flat]="${file}"
+#	script_per_parallel[$flat]="hello world"
+echo "script_per_parallel $flat = ${script_per_parallel[$flat]}";
+}
+
 pop_postgres5() {
 	# Function to populate the sql_postgres5 variable
 	# send debug to stderr so it doesn't contaminate the return
@@ -210,6 +242,9 @@ fi
 # Loop through the TABLES
 for tables_to_extract in $TABLES_TO_EXTRACT
 do
+	sql_head="";
+	sql_spool="";
+	sql_script="";
 	echo "starting extracting $tables_to_extract at `date`"
 	calling_script="${calling_script}@${tables_to_extract}.sql${NEWLINE}";
 echo "running case: $tables_to_extract $lower_table_name";
@@ -231,6 +266,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="AC_ID";
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -249,6 +285,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="AL_ID";
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -267,6 +304,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="ALE_ID";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -285,6 +323,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="AR_ID";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -303,6 +342,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index="CREATE UNIQUE INDEX IF NOT EXISTS ux_app_list_entry_fee_id_row_idx ON ${postgres_schema}.app_list_entry_fee_id(ale_ale_id,fee_fee_id,version,changed_by,changed_date,user_name);";
 			hash_index_constraint="ALTER TABLE ${postgres_schema}.app_list_entry_fee_id ADD CONSTRAINT ux_app_list_entry_fee_id_row UNIQUE USING INDEX ux_app_list_entry_fee_id_row_idx;";
 			hash_index_drop="alter table ${postgres_schema}.app_list_entry_fee_id drop constraint ux_app_list_entry_fee_id_row;";
+			shard_field="ALE_ALE_ID";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -321,6 +361,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="ALEFS_ID";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -339,6 +380,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="ALEO_ID";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -357,6 +399,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="ALER_ID";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -376,6 +419,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_drop='';
 			drop_constraint="alter table ${postgres_schema}.application_lists drop constraint al_cja_fk;";
 			create_constraint="alter table ${postgres_schema}.application_lists add constraint al_cja_fk foreign key (cja_cja_id) references ${postgres_schema}.criminal_justice_area(cja_id) on delete no action not deferrable initially immediate;";
+			shard_field="CJA_ID";
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
@@ -394,6 +438,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="DATA_ID";
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -412,6 +457,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="FEE_ID";
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -430,6 +476,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="NA_ID";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -448,6 +495,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="RC_ID";
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -466,6 +514,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="SA_ID";
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -484,6 +533,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="NCH_ID";
 			;;
 		LIBRA.LINK_ADDRESSES)
 			echo "in LINK_ADDRESSES"
@@ -502,6 +552,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="LA_ID";
 			;;
 		LIBRA.ADDRESSES)
 			echo "in ADDRESSES"
@@ -520,6 +571,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="ADR_ID";
 			;;
 		LIBRA.LINK_COMMUNICATION_MEDIA)
 			echo "in LINK_COMMUNICATION_MEDIA"
@@ -538,6 +590,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="LCM_ID";
 			;;
 		LIBRA.COMMUNICATION_MEDIA)
 			echo "in COMMUNICATION_MEDIA"
@@ -556,6 +609,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="COMM_ID";
 			;;
 		LIBRA.PETTY_SESSIONAL_AREAS)
 			echo "in PETTY_SESSIONAL_AREAS"
@@ -574,6 +628,7 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index='';
 			hash_index_constraint='';
 			hash_index_drop='';
+			shard_field="PSA_ID";
 			;;
 	esac
 
@@ -582,10 +637,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 	then
 		# not multi chunk 
 		echo "table is not a multi chunk one";
+		l_have_where="NO";
 		
-		# Populate the postgres commands file
-		echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_commands_file;
-
 		# Populate the drop statement into the postgres_schema_file
 		echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_temp;${NEWLINE}">>${postgres_schema_file};
 		echo "${NEWLINE}">>${postgres_schema_file};
@@ -603,8 +656,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 		fi
 
 		# Generate the sql script
-		sql_script="${sql_header1}${NEWLINE}${sql_header2}";
-		sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+		sql_head="${sql_header1}${NEWLINE}${sql_header2}";
+		sql_head="${sql_head}${NEWLINE}${sql_header3}${NEWLINE}";
 
 		# And the postgres script
 		sql_postgres="WITH cleaned AS (${NEWLINE}";
@@ -616,12 +669,9 @@ echo "running case: $tables_to_extract $lower_table_name";
 		sql_postgres5="";
 
 echo "sql: $sql_script"
-		# scn parameter
-#		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
-#		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
 		
-		sql_script="${sql_script}spool ${spool_location}/${tables_to_extract}.csv;";
-		sql_script="${sql_script}${NEWLINE}SELECT${NEWLINE}";
+echo "LLLLL: ${sql_head}"
+		sql_script="${NEWLINE}SELECT${NEWLINE}";
 echo "sql2: $sql_script"
 
 		# How many fields are in this table
@@ -883,9 +933,17 @@ echo "sqlaa: $sql_script";
 
 echo "sql3: $sql_script"
 		sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
+echo "AA: ${l_have_where}";
 		if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
 		then
-			sql_script="${sql_script}WHERE${NEWLINE}";
+			if [[ ${l_have_where} == "NO" ]] 
+			then
+				sql_script="${sql_script}WHERE${NEWLINE}";
+			else
+				sql_script="${sql_script}WHERE${NEWLINE}";
+			fi
+			l_have_where="YES";
+echo "AB: ${l_have_where}";
 			# Need to write the date filter
 			# Have we done this table before
 			record_count=`cat ${incremental_tracking_file}_${DATE_TIME}|grep ${tables_to_extract}|wc -l`;
@@ -907,16 +965,47 @@ echo "${sql_script}";
 echo "ZZ: ${sql_script}";
 		fi
 
-		if [[ ${order_by_field} -ne "" ]]
-		then
-			sql_script="${sql_script}ORDER BY ${order_by_field};";
-		else
-			sql_script="${sql_script};";
-		fi
-		sql_script="${sql_script}${NEWLINE}spool off;${NEWLINE}";
+		# Shard the data
+		sql_script_base="${sql_script}";
+		adjusted_thread_count=$((thread_count -1));
+echo "AAAAA ${thread_count}";
+		for ((threads=0; threads<thread_count; threads++)); do
+echo "BBBBB";
+echo "${threads}";
+			# Populate the postgres commands file
+			echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
 
-		# Write the script to a file
-		echo "${sql_script}">${tables_to_extract}.sql;
+			sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
+			sql_script=$sql_script_base;
+echo "AC: ${l_have_where}";
+			if [[ ${l_have_where} == "NO" ]] || [[ $incremental_allowed == "NO" ]] || [[ ${operation_mode} == "FULL" ]]
+			then
+echo "AD: ${l_have_where}";
+				sql_script="${sql_script}WHERE (ORA_HASH(TO_CHAR(${shard_field}), ${adjusted_thread_count-1}) = ${threads})${NEWLINE}";
+			else
+echo "AE: ${l_have_where}";
+				sql_script="${sql_script}AND (ORA_HASH(TO_CHAR(${shard_field}), ${adjusted_thread_count-1}) = ${threads})${NEWLINE}";
+			fi
+			l_have_where="YES";
+
+			if [[ ${order_by_field} -ne "" ]]
+			then
+				sql_script="${sql_script}ORDER BY ${order_by_field};";
+			else
+				sql_script="${sql_script};";
+			fi
+			sql_script="${sql_script}${NEWLINE}spool off;${NEWLINE}";
+
+			# Write the script to a file
+			echo "${sql_head}">${tables_to_extract}_part_${threads}.sql;
+			echo "${sql_spool}">>${tables_to_extract}_part_${threads}.sql;
+			echo "${sql_script}">>${tables_to_extract}_part_${threads}.sql;
+echo 'ADDING $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE"';
+			add_script_parallel $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE}";
+echo "ADDING COMPLETE";
+echo "CCCCC";
+		done
+echo "DDDDD";
 	
 		# Write the postgres to a file
 		echo "${sql_postgres}">>$postgres_insert_file;
@@ -953,10 +1042,14 @@ echo "ZZ: ${sql_script}";
 echo "sql4: $sql_script"
 	else
 		# multi chunk 
+		l_have_where="NO";
 		echo "table is a multi chunk one";
+echo "MULTI:"
+echo "head: ${sql_head}";
+echo "spool: ${sql_spool}";
+echo "script: ${sql_script}";
+echo "ITLUM"
 
-		# Populate the postgres commands file
-		echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>$postgres_commands_file;
 
 		# Populate the drop statement into the postgres_schema_file
 		echo "DROP TABLE IF EXISTS ${postgres_schema}.${lower_table_name}_temp;${NEWLINE}">>${postgres_schema_file};
@@ -965,9 +1058,11 @@ echo "sql4: $sql_script"
 		echo "${hash_index_constraint}${NEWLINE}">>${postgres_schema_file};
 
 		# Generate the sql script
-		sql_script="${sql_header1}${NEWLINE}${sql_header2}";
-		sql_script="${sql_script}${NEWLINE}${sql_header3}${NEWLINE}";
+		sql_head="${sql_header1}${NEWLINE}${sql_header2}";
+		sql_head="${sql_head}${NEWLINE}${sql_header3}${NEWLINE}";
 
+echo "FINISHED HEAD: ${sql_head}";
+echo "HEAD"
 		# And the postgres script
 		sql_postgres="WITH unescaped AS (${NEWLINE}";
 		sql_postgres="${sql_postgres}SELECT${NEWLINE}";
@@ -978,13 +1073,6 @@ echo "sql4: $sql_script"
 		sql_postgres4="SELECT${NEWLINE}";
 		sql_postgres5="";
 
-		# scn parameter
-#		sql_script="${sql_script}COLUMN SNAP_SCN NEW_VALUE SNAP_SCN${NEWLINE}";
-#		sql_script="${sql_script}SELECT TO_CHAR(current_scn, 'FM99999999999999999999999999990') AS SNAP_SCN FROM v\$database;${NEWLINE}";
-
-		sql_script="${sql_script}spool ${spool_location}/${tables_to_extract}.csv;";
-
-echo "sql: $sql_script";
 		sql_script="${sql_script}${NEWLINE}WITH base AS (${NEWLINE}";
 		sql_script="${sql_script}SELECT${NEWLINE}";
 echo "sql2: $sql_script"
@@ -1266,49 +1354,95 @@ echo $field_name
 			sql_script="${sql_script}${sql3_script}${NEWLINE}";
 			sql_script="${sql_script}FROM ${tables_to_extract} AS OF SCN ${SCN}${NEWLINE}";
 
-			# Do the incremental parameters
-			if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
-			then
-				sql_script="${sql_script}WHERE${NEWLINE}";
-				# Need to write the date filter
-				# Have we done this table before
-				record_count=`cat ${incremental_tracking_file}_${DATE_TIME}|grep ${tables_to_extract}|wc -l`;
-				if [ $record_count -eq 1 ]
+			# Shard the data
+			sql_script_base="${sql_script}";
+			adjusted_thread_count=$((thread_count -1));
+echo "AAAAA ${thread_count}";
+			for ((threads=0; threads<thread_count; threads++)); do
+				l_have_where="NO";
+echo "BBBBB";
+echo "${threads}";
+				# Populate the postgres commands file
+				echo "\"c:\Program Files\PostgreSQL\16\bin\psql.exe\" --set=ON_ERROR_STOP=1 -c \"\copy ${postgres_schema}.${lower_table_name}_temp FROM '${lower_with_schema}_part_${threads}.csv' WITH (FORMAT text, DELIMITER '|', NULL '')\" \"${postgres_environment}\"">>${postgres_commands_file}_part_${threads}.bat;
+
+				sql_spool="spool ${spool_location}/${tables_to_extract}_part_${threads}.csv;";
+				sql_script=$sql_script_base;
+echo "B1: ${l_have_where}"
+				if [[ ${l_have_where} == "NO" ]]
 				then
-					# extract the lower water mark
+echo "B2: ${l_have_where}"
+					sql_script="${sql_script}WHERE (ORA_HASH(TO_CHAR(${shard_field}), ${adjusted_thread_count-1}) = ${threads})${NEWLINE}";
+				else
+					sql_script="${sql_script}AND (ORA_HASH(TO_CHAR(${shard_field}), ${adjusted_thread_count-1}) = ${threads})${NEWLINE}";
+echo "B3: ${l_have_where}"
+				fi
+				l_have_where="YES";
+echo "B4: ${l_have_where}"
+
+				echo 'ADDING $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE"';
+				add_script_parallel $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE}";
+echo "ADDING COMPLETE";
+echo "CCCCC";
+	
+				# Do the incremental parameters
+				if [ $operation_mode == "INCREMENTAL" ] && [ $incremental_allowed == "YES" ]
+				then
+echo "B5: ${l_have_where}"
+					if [[ "${l_have_where}" == "NO" ]]
+					then
+echo "B6: ${l_have_where}"
+						sql_script="${sql_script}WHERE${NEWLINE}";
+					else
+						sql_script="${sql_script}AND${NEWLINE}";
+echo "B7: ${l_have_where}"
+					fi
+					l_have_where="YES";
+echo "B8: ${l_have_where}"
+					# Need to write the date filter
+					# Have we done this table before
+					record_count=`cat ${incremental_tracking_file}_${DATE_TIME}|grep ${tables_to_extract}|wc -l`;
+					if [ $record_count -eq 1 ]
+					then
+						# extract the lower water mark
 echo "before lwm"
 echo "tables to extract ${tables_to_extract}";
 echo "tracking file: ${incremental_tracking_file}";
-					lwm_date="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $2}')"
-					lwm_time="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $3}')"
+						lwm_date="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $2}')"
+						lwm_time="$(grep "^${tables_to_extract}#" "${incremental_tracking_file}_${DATE_TIME}" | awk -F'#' '{print $3}')"
 echo "lwm_date: ${lwm_date}"
 echo "lwm_time: ${lwm_time}"
-					sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' > TO_TIMESTAMP_TZ('${lwm_date} ${lwm_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
-					sql_script="${sql_script}AND${NEWLINE}";
+						sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' > TO_TIMESTAMP_TZ('${lwm_date} ${lwm_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
+						sql_script="${sql_script}AND${NEWLINE}";
 echo "${sql_script}";
-				fi
-				sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' <= TO_TIMESTAMP_TZ('${now_date} ${now_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
+					fi
+					sql_script="${sql_script}FROM_TZ(CAST(${changed_date} AS TIMESTAMP), DBTIMEZONE) AT TIME ZONE 'UTC' <= TO_TIMESTAMP_TZ('${now_date} ${now_time} UTC', 'YYYY-MM-DD HH24:MI:SS TZR')${NEWLINE}";
 echo "ZZ: ${sql_script}";
-			fi
-	
-			sql_script="${sql_script}),${NEWLINE}";
-			sql_script="${sql_script}maxn AS (SELECT MAX(n_pieces) AS max_pieces FROM base),${NEWLINE}";
-			sql_script="${sql_script}seq AS (${NEWLINE}";
-			sql_script="${sql_script}SELECT LEVEL AS piece_no FROM dual${NEWLINE}";
-			sql_script="${sql_script}CONNECT BY LEVEL <= (SELECT NVL(max_pieces,1) FROM maxn)${NEWLINE}";
-			sql_script="${sql_script})${NEWLINE}";
-			sql_script="${sql_script}SELECT${NEWLINE}";
-			sql_script="${sql_script}${sql2_script}||'|'||${NEWLINE}";
-			sql_script="${sql_script}TO_CLOB(TO_CHAR(s.piece_no))${NEWLINE}";
-#			sql_script="${sql_script}${l_clob_string}${NEWLINE}";
-			sql_script="${sql_script}FROM base b${NEWLINE}";
-			sql_script="${sql_script}JOIN seq s${NEWLINE}";
-			sql_script="${sql_script}ON s.piece_no <= b.n_pieces${NEWLINE}";
-			sql_script="${sql_script}ORDER BY b.${order_by_field}, s.piece_no;${NEWLINE}";
-			sql_script="${sql_script}spool off;${NEWLINE}";
-echo "s	ql_end: $sql_script";
-			echo "${sql_script}">${tables_to_extract}.sql;
+				fi
 		
+				sql_script="${sql_script}),${NEWLINE}";
+				sql_script="${sql_script}maxn AS (SELECT MAX(n_pieces) AS max_pieces FROM base),${NEWLINE}";
+				sql_script="${sql_script}seq AS (${NEWLINE}";
+				sql_script="${sql_script}SELECT LEVEL AS piece_no FROM dual${NEWLINE}";
+				sql_script="${sql_script}CONNECT BY LEVEL <= (SELECT NVL(max_pieces,1) FROM maxn)${NEWLINE}";
+				sql_script="${sql_script})${NEWLINE}";
+				sql_script="${sql_script}SELECT${NEWLINE}";
+				sql_script="${sql_script}${sql2_script}||'|'||${NEWLINE}";
+				sql_script="${sql_script}TO_CLOB(TO_CHAR(s.piece_no))${NEWLINE}";
+#				sql_script="${sql_script}${l_clob_string}${NEWLINE}";
+				sql_script="${sql_script}FROM base b${NEWLINE}";
+				sql_script="${sql_script}JOIN seq s${NEWLINE}";
+				sql_script="${sql_script}ON s.piece_no <= b.n_pieces${NEWLINE}";
+				sql_script="${sql_script}ORDER BY b.${order_by_field}, s.piece_no;${NEWLINE}";
+				sql_script="${sql_script}spool off;${NEWLINE}";
+echo "sql_end: $sql_script";
+echo "ABCD: ${sql_head}"
+echo "DEFG"
+				echo "${sql_head}">${tables_to_extract}_part_${threads}.sql;
+				echo "${sql_spool}">>${tables_to_extract}_part_${threads}.sql;
+				echo "${sql_script}">>${tables_to_extract}_part_${threads}.sql;
+		
+			done
+echo "DDDDD";
 			# Write the postgres to a file
 			echo "${sql_postgres}">>$postgres_insert_file;
 			echo "FROM ${postgres_schema}.${lower_table_name}_temp">>$postgres_insert_file;
@@ -1356,8 +1490,85 @@ do
 done
 
 # Write out the calling script
-echo "${calling_script}">extract_data.sql
+#echo "${calling_script}">extract_data.sql
 
+# Extract the data to files
+echo "EXTRACT"
+max=${counts[$run]:-0};
+idx=1
+echo "max: ${max}";
+echo "idx: ${idx}";
+echo "script per parallel: ${script_per_parallel}";
+
+for ((threads=0; threads<thread_count; threads++)); do
+	while [ "$idx" -le "$max" ]; do
+		flat=$(( run * BASE + threads ))
+echo "flat: ${flat}";
+		printf "	[%d] => %s\n" "$idx" "${script_per_parallel[$flat]}"
+		idx=$((idx+1))
+	done
+done
+
+echo "SSS";
+
+# scan keys and populate max_idx + runs_array
+for flat in ${!script_per_parallel[@]}; do
+	# skip non numeric keys (defensive)
+	if ! expr "$flat" + 0 >/dev/null 2>&1; then
+		continue
+	fi
+
+	run=$(( flat / BASE ))
+	idx=$(( flat % BASE ))
+	
+	# update max_idx for this run
+	if [ -z "${max_idx[$run]:-}" ] || [ "${max_idx[$run]}" -lt "$idx" ]; then
+		max_idx[$run]=$idx
+	fi
+
+	# add run to runs_array only if not present
+	found=0
+	for existing in "${runs_array[@]}"; do
+		if [ "$existing" = "$run" ]; then
+			found=1
+			break
+		fi
+	done
+	if [ $found -eq 0 ]; then
+		runs_array=( "${runs_array[@]}" "$run" )
+	fi
+done
+
+# if nothing found, exit gracefully
+if [ "${#runs_array[@]}" -eq 0 ]; then
+	echo "No entries in script_per_parallel - nothing to write"
+	exit 0
+fi
+
+# Iterate runs safely and write files
+for run in "${runs_array[@]}"; do
+	# Debugging aid (uncomment if necessary}
+	# echo "DEBUG: processing run='$run' max_idx='${max_idx[$run]}'"
+
+	outfile="extract_data_${run}.sql"
+	: > "$outfile" 		# truncate/create
+
+	max=${max_idx[$run]:-0}
+	# iterate from 1..max and write lines onlt from present entries
+	i=1
+	while [ "$i" -le "$max" ]; do
+		flat=$(( run * BASE + i ))
+		val="${script_per_parallel[$flat]:-}"
+		if [ -n "$val" ]; then
+			printf "%s\n" "$val" >> "$outfile"
+		fi
+		i=$(( i + 1 ))
+	done
+
+	echo "Wrote run $run -> $outfile (entries: $(wc -l < "$outfile"))"
+done
+
+		
 # Do the deletes
 echo "reverse"
 echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract; do

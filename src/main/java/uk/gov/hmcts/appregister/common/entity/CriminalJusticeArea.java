@@ -35,7 +35,7 @@ public class CriminalJusticeArea implements Identifiable, Keyable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")
     @SequenceGenerator(name = "cja_gen", sequenceName = "cja_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private Long id;
 
     @Column(name = "cja_code", nullable = false)
