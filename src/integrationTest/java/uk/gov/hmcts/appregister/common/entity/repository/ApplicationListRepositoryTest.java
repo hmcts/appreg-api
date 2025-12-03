@@ -6,6 +6,7 @@ import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -444,5 +445,40 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // Confirm ordering by date asc
         assertThat(page0.getContent().getFirst().getDate()).isEqualTo(d1);
         assertThat(page1.getContent().getFirst().getDate()).isEqualTo(d2);
+    }
+
+    @Test
+    @DisplayName("findByUuid: returns entity when not soft-deleted")
+    void findByUuid_returnsEntityWhenNotSoftDeleted() {
+        // Given
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getUuid()).isEqualTo(uuid);
+        assertThat(found.get().isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("findByUuid: excludes soft-deleted entity")
+    @Transactional
+    void findByUuid_excludesSoftDeletedEntity() {
+        // Given - create and soft-delete an entity
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // mark as deleted and persist
+        saved.setDeleted(YES);
+        repository.saveAndFlush(saved);
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then - should be excluded by the query
+        assertThat(found).isEmpty();
     }
 }

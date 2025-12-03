@@ -956,6 +956,42 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
     }
 
+    @Test
+    @DisplayName("UPDATE: 404 when updating a soft-deleted list")
+    void givenSoftDeleted_whenUpdate_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-update", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Attempt update on soft-deleted")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(2)
+                        .durationMinutes(15);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
+    }
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         var validPayload =
@@ -1099,7 +1135,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithConflict_then204() throws Exception {
+    void givenValidRequest_whenDeleteTwice_thenSecondDeleteReturns404() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1124,20 +1160,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         UUID id = dto.getId();
 
-        // fire tests
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-
-        // assert success
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
-        // prove the delete has been made
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
-
-        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
-                problemDetail.getType().toString());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
