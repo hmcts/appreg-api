@@ -1351,6 +1351,74 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @DisplayName("GET: filter by time without seconds matches time with seconds")
+    void givenTimeFilterWithoutSeconds_thenSlotWithSeconds() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t093101 = LocalTime.of(9, 31, 1);
+
+        createWithCourt(prefix + " - keep", day, t093101);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "09:31"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(t093101);
+    }
+
+    @Test
+    @DisplayName("GET: filter by 23:59")
+    void givenTimeFilter_thenSlot() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t235901 = LocalTime.of(23, 59, 1);
+
+        createWithCourt(prefix + " - keep", day, t235901);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "23:59"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(t235901);
+    }
+
+    @Test
     @DisplayName("GET: filter by courtLocationCode")
     void givenCourtFilter_thenOnlyCourtRows() throws Exception {
 
@@ -1529,6 +1597,45 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
         assertThat(dto.getEntriesSummary()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("GET Application List")
+    void givenValidRequest_whenGetApplicationList_then400IdFormatting() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
+        // fire test
+        resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/232322"), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
+        assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
+        assertThat(problemDetail.getStatus()).isEqualTo(400);
     }
 
     @Test
