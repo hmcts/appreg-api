@@ -1742,6 +1742,35 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @DisplayName("GET Application List: 404 when list soft deleted")
+    void givenSoftDeletedApplicationList_whenGetApplicationList_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-get", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
     @DisplayName("Print Application List")
     void givenValidRequest_whenPrintApplicationList_then200AndBody() throws Exception {
         var token =
