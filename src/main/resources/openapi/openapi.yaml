@@ -1,5 +1,4 @@
 openapi: 3.0.4
-
 info:
   title: Applications Register API
   description:
@@ -10,7 +9,6 @@ info:
   # DO NOT change this to $version — Groovy template expansion conflicts with $ref
   # entries elsewhere in the file and will break the build.
   version: "@version@"
-
 tags:
   - name: actions
     description:
