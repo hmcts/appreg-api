@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +28,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, 1, 2);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(9, 0);
 
-    private void save(
+    private ApplicationList save(
             String status,
             String courtCode,
             CriminalJusticeArea cja,
@@ -49,6 +51,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         .durationMinutes((short) 0)
                         .build();
         repository.saveAndFlush(al);
+        return al;
     }
 
     private CriminalJusticeArea saveCja(String code, String desc) {
@@ -361,6 +364,39 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    @DisplayName("findAllByFilter: does not match soft deleted list")
+    void findAllByFilter_softDeletedList_noMatch() {
+        // Given
+        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalTime nineAm = LocalTime.of(9, 0);
+
+        // Soft deleted row -> should NOT match
+        ApplicationList applicationList =
+                save("OPEN", "CCC003", null, targetDay, nineAm, "soft deleted", "west");
+        applicationList.setDeleted(YES);
+        repository.saveAndFlush(applicationList);
+
+        Pageable page = PageRequest.of(0, 10);
+
+        // When: filter ONLY by date and time; leave other filters null
+        Page<ApplicationList> result =
+                repository.findAllByFilter(
+                        null, // status
+                        null, // courtCode
+                        null, // cja
+                        targetDay, // date
+                        null, // time
+                        null, // end time
+                        false, // wraps midnight
+                        "soft deleted", // description
+                        null, // other location
+                        page);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(0);
+    }
+
+    @Test
     @DisplayName("findAllByFilter: paging works (page size 1, sorted by date asc)")
     void findAllByFilter_paging_andSorting() {
         // Given
@@ -409,5 +445,40 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // Confirm ordering by date asc
         assertThat(page0.getContent().getFirst().getDate()).isEqualTo(d1);
         assertThat(page1.getContent().getFirst().getDate()).isEqualTo(d2);
+    }
+
+    @Test
+    @DisplayName("findByUuid: returns entity when not soft-deleted")
+    void findByUuid_returnsEntityWhenNotSoftDeleted() {
+        // Given
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getUuid()).isEqualTo(uuid);
+        assertThat(found.get().isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("findByUuid: excludes soft-deleted entity")
+    @Transactional
+    void findByUuid_excludesSoftDeletedEntity() {
+        // Given - create and soft-delete an entity
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // mark as deleted and persist
+        saved.setDeleted(YES);
+        repository.saveAndFlush(saved);
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then - should be excluded by the query
+        assertThat(found).isEmpty();
     }
 }

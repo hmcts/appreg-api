@@ -47,12 +47,19 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
     List<ApplicationList> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Finds all entities with the given IDs.
+     * Finds a non-soft deleted application list by its UUID.
      *
-     * @param ids An id to look up
+     * @param id An id to look up
      * @return A single matching application entry
      */
-    Optional<ApplicationList> findByUuid(UUID ids);
+    @Query(
+            """
+        SELECT al
+        FROM ApplicationList al
+        WHERE al.uuid = :id
+          AND (al.deleted IS NULL OR al.deleted <> '1')
+        """)
+    Optional<ApplicationList> findByUuid(UUID id);
 
     /**
      * Retrieves a paginated list of {@link ApplicationList} entities filtered by the specified
@@ -102,6 +109,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
                )
           AND (:description IS NULL OR lower(al.description) LIKE concat('%', lower(cast(:description AS string)), '%'))
           AND (:otherDesc IS NULL OR lower(al.otherLocation) LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
+          AND (al.deleted IS NULL OR al.deleted <> '1')
         """)
     Page<ApplicationList> findAllByFilter(
             @Param("status") ApplicationListStatus status,
