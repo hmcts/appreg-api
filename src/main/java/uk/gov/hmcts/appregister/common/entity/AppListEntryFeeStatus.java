@@ -21,19 +21,22 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.FeeStatusTypeConverter;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
 /**
  * The AppListEntryFeeStatus entity represents the fee status of an application list entry.
  */
 @Entity
-@Table(name = "app_list_entry_fee_status")
+@Table(name = TableNames.APPLICATION_LISTS_FEE_STATUS)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -41,12 +44,14 @@ import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class AppListEntryFeeStatus implements Changeable, Accountable, Versionable, Keyable {
     @Id
     @Column(name = "alefs_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "alefs_gen")
     @SequenceGenerator(name = "alefs_gen", sequenceName = "alefs_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -187,6 +187,7 @@ public class ApplicationEntryServiceImplTest {
         service =
                 new ApplicationEntryServiceImpl(
                         applicationListEntryRepository,
+                        feeRepository,
                         pageMapper,
                         createApplicationEntryValidator,
                         updateApplicationEntryValidator,
@@ -196,6 +197,7 @@ public class ApplicationEntryServiceImplTest {
                         nameAddressRepository,
                         appListEntryOfficialRepository,
                         appListEntryFeeRepository,
+                        standardApplicantRepository,
                         applicationListEntryMapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -212,6 +214,7 @@ public class ApplicationEntryServiceImplTest {
         service =
                 new ApplicationEntryServiceImpl(
                         applicationListEntryRepository,
+                        feeRepository,
                         pageMapper,
                         createApplicationEntryValidator,
                         updateApplicationEntryValidator,
@@ -221,6 +224,7 @@ public class ApplicationEntryServiceImplTest {
                         nameAddressRepository,
                         appListEntryOfficialRepository,
                         appListEntryFeeRepository,
+                        standardApplicantRepository,
                         mapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
@@ -316,7 +320,7 @@ public class ApplicationEntryServiceImplTest {
 
         FeeTestData feeTestData = new FeeTestData();
         Fee fee = feeTestData.someComplete();
-        fee.setId(-1L);
+        fee.setId(-2L);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -411,8 +415,8 @@ public class ApplicationEntryServiceImplTest {
                         .build();
 
         AppListEntryFeeId appListFee = new AppListEntryFeeId();
-        appListFee.setAppListEntryId(applicationListEntry);
-        appListFee.setFeeId(fee);
+        appListFee.setAppListEntryId(applicationListEntry.getId());
+        appListFee.setFeeId(fee.getId());
 
         ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
         when(appListEntryFeeRepository.save(captor.capture())).thenReturn(appListFee);
@@ -456,8 +460,8 @@ public class ApplicationEntryServiceImplTest {
         verify(appListEntryOfficialRepository, times(entryCreateDto.getOfficials().size()))
                 .save(appListOfficialCaptor.capture());
 
-        Assertions.assertEquals(applicationListEntry, captor.getValue().getAppListEntryId());
-        Assertions.assertEquals(fee, captor.getValue().getFeeId());
+        Assertions.assertEquals(-1, captor.getValue().getAppListEntryId());
+        Assertions.assertEquals(-2, captor.getValue().getFeeId());
 
         Assertions.assertEquals(applicant, appCaptorName.getAllValues().get(0));
         Assertions.assertEquals(respondent, appCaptorName.getAllValues().get(1));
@@ -510,7 +514,7 @@ public class ApplicationEntryServiceImplTest {
 
         @Override
         public <T, E extends Keyable> T processAudit(AuditOperation auditType, Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
-            return processAudit(auditType, execution, null);
+            return processAudit(null, auditType, execution, null);
         }
 
         @Override
@@ -518,7 +522,7 @@ public class ApplicationEntryServiceImplTest {
             AuditOperation auditType,
             Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
             AuditOperationLifecycleListener... listener) {
-            return processAudit(auditType, execution, listener);
+            return processAudit(null, auditType, execution, listener);
         }
 
         @Override

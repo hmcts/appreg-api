@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.audit;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -89,12 +91,10 @@ public class DataAuditLoggerTest {
     }
 
     /**
-     * This is a programmatic error as both new and old audit values should NEVER be diffent types.
+     * This is a programmatic error as both new and old audit values should NEVER be different types.
      */
     @Test
     public void testFailOldAndNewEntityDifferentTypes() {
-        ApplicationCodeTestData testData = new ApplicationCodeTestData();
-
         StartEvent startEvent =
                 new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", new ApplicationList());
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, new ApplicationCode());
@@ -194,7 +194,7 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForUpdateTest() {
+    public void testSuccessOperationForUpdateWhereNewLargerThanOldTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
         ApplicationCode newCode = testData.someComplete();
         ApplicationCode oldCode = testData.someComplete();
@@ -213,30 +213,32 @@ public class DataAuditLoggerTest {
         String newValue = "value";
 
         String field1 = "field1";
+        String newValue1 = "value2";
+
+        String field2 = "field2";
         String newValue2 = "value2";
 
-        String ofield = "field";
-        String oneValue = "value";
+        String oneValue = "ovalue";
 
-        String ofield1 = "field1";
-        String oneValue2 = "value2";
+        String oneValue1 = "ovalue2";
 
-        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, newCode))
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(newCode)))
                 .thenReturn(
                         List.of(
                                 new AuditableData(tableName, field, newValue),
-                                new AuditableData(tableName, field1, newValue2)));
+                                new AuditableData(tableName, field1, newValue1),
+                                new AuditableData(tableName, field2, newValue2)));
 
-        when(auditDifferentiator.extractAuditData(CrudEnum.UPDATE, oldCode))
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(oldCode)))
                 .thenReturn(
                         List.of(
-                                new AuditableData(tableName, ofield, oneValue),
-                                new AuditableData(tableName, ofield1, oneValue2)));
+                                new AuditableData(tableName, field, oneValue),
+                                new AuditableData(tableName, field1, oneValue1)));
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
         // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(2)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(3)).save(auditCaptor.capture());
 
         DataAudit dataAudit = auditCaptor.getAllValues().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
@@ -249,10 +251,90 @@ public class DataAuditLoggerTest {
         DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field1, dataAudit1.getColumnName());
-        Assertions.assertEquals(newValue2, dataAudit1.getNewValue());
-        Assertions.assertEquals(oneValue2, dataAudit1.getOldValue());
+        Assertions.assertEquals(newValue1, dataAudit1.getNewValue());
+        Assertions.assertEquals(oneValue1, dataAudit1.getOldValue());
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit1.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit1.getUpdateType());
+
+        DataAudit dataAudit3 = auditCaptor.getAllValues().get(2);
+        Assertions.assertEquals(id, dataAudit3.getRelatedKey());
+        Assertions.assertEquals(field2, dataAudit3.getColumnName());
+        Assertions.assertEquals(newValue2, dataAudit3.getNewValue());
+        Assertions.assertEquals("", dataAudit3.getOldValue());
+        Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit3.getTableName());
+        Assertions.assertEquals(CrudEnum.UPDATE, dataAudit3.getUpdateType());
+    }
+
+    @Test
+    public void testSuccessOperationForUpdateWhereOldLargerThanNewDiffTest() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        ApplicationCode oldCode = testData.someComplete();
+
+        Long id = 123L;
+        newCode.setId(id);
+
+        Long id1 = 123L;
+        oldCode.setId(id1);
+
+        StartEvent startEvent = new StartEvent(TestAuditOperation.UPDATE, "ID", oldCode);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        String tableName = TableNames.APPLICATION_CODES;
+        String field = "field";
+        String newValue = "value";
+
+        String field1 = "field1";
+        String newValue1 = "value2";
+
+        String field2 = "field2";
+        String newValue2 = "value2";
+
+        String oneValue = "ovalue";
+
+        String oneValue1 = "ovalue2";
+
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(oldCode)))
+            .thenReturn(
+                List.of(
+                    new AuditableData(tableName, field, newValue),
+                    new AuditableData(tableName, field1, newValue1),
+                    new AuditableData(tableName, field2, newValue2)));
+
+        when(auditDifferentiator.extractAuditData(eq(CrudEnum.UPDATE), refEq(newCode)))
+            .thenReturn(
+                List.of(
+                    new AuditableData(tableName, field, oneValue),
+                    new AuditableData(tableName, field1, oneValue1)));
+
+        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+
+        // repo was not called as this is a get operation
+        verify(dataAuditRepository, times(3)).save(auditCaptor.capture());
+
+        DataAudit dataAudit = auditCaptor.getAllValues().get(0);
+        Assertions.assertEquals(id, dataAudit.getRelatedKey());
+        Assertions.assertEquals(field, dataAudit.getColumnName());
+        Assertions.assertEquals(newValue, dataAudit.getOldValue());
+        Assertions.assertEquals(oneValue, dataAudit.getNewValue());
+        Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit.getTableName());
+        Assertions.assertEquals(CrudEnum.UPDATE, dataAudit.getUpdateType());
+
+        DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
+        Assertions.assertEquals(id, dataAudit1.getRelatedKey());
+        Assertions.assertEquals(field1, dataAudit1.getColumnName());
+        Assertions.assertEquals(newValue1, dataAudit1.getOldValue());
+        Assertions.assertEquals(oneValue1, dataAudit1.getNewValue());
+        Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit1.getTableName());
+        Assertions.assertEquals(CrudEnum.UPDATE, dataAudit1.getUpdateType());
+
+        DataAudit dataAudit3 = auditCaptor.getAllValues().get(2);
+        Assertions.assertEquals(id, dataAudit3.getRelatedKey());
+        Assertions.assertEquals(field2, dataAudit3.getColumnName());
+        Assertions.assertEquals(newValue2, dataAudit3.getOldValue());
+        Assertions.assertEquals("", dataAudit3.getNewValue());
+        Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit3.getTableName());
+        Assertions.assertEquals(CrudEnum.UPDATE, dataAudit3.getUpdateType());
     }
 
     @Test

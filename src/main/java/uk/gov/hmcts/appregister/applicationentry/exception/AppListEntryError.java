@@ -21,7 +21,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     "The applicant type can only be an organsisation, person, or standard applicant",
                     "ALE-2")),
 
-    APPLICANT_CODE_DOES_NOT_EXIST(
+    APPLICATION_CODE_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND, "The supplied application code does not exist", "ALE-3")),
 

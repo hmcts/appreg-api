@@ -7,6 +7,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.type.DateType;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
+import java.util.List;
+
 public class WordingTemplateTest {
     private static final String DATE_TEMPLATE =
             "This is a test {DATE|Applicant officer|10} with a date";
@@ -57,6 +59,17 @@ public class WordingTemplateTest {
 
         Assertions.assertTrue(wordingTemplate.doesSubstitute("2024-12-31"));
         Assertions.assertEquals("2024-12-31", wordingTemplate.substitute("2024-12-31"));
+    }
+
+    @Test
+    public void testParameterSizeMismatch() {
+        WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
+        AppRegistryException appRegistryException =
+            Assertions.assertThrows(
+                AppRegistryException.class,
+                () -> collection.substitute(List.of()));
+        Assertions.assertEquals(
+            CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test

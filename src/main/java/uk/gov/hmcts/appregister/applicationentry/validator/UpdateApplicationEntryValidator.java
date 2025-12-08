@@ -52,6 +52,11 @@ public class UpdateApplicationEntryValidator
     }
 
     @Override
+    public void validate(PayloadForUpdateEntry validatable) {
+        validate(validatable, null);
+    }
+
+    @Override
     public <R> R validate(
             PayloadForUpdateEntry validatable,
             BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>

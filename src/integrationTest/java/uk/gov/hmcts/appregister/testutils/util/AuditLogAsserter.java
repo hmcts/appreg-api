@@ -60,13 +60,13 @@ public class AuditLogAsserter {
                         DATA_RECORD
                                 + " DataAudit\\(id=.*,"
                                 + " schemaName=appreg,"
-                                + " tableName=%s,"
-                                + " columnName=%s,"
-                                + " oldValue=%s,"
+                                + " tableName=%s,.*"
+                                + " columnName=%s,.*"
+                                + " oldValue=%s,.*"
                                 + " newValue=%s,.*"
-                                + " changedDate=.*,"
-                                + " relatedKey=.*,"
-                                + " updateType=%s.*"
+                                + " changedDate=.*,.*"
+                                + " relatedKey=.*,.*"
+                                + " updateType=%s,.*"
                                 + " eventName=%s,.*"
                                 + " changedBy=.*\\)",
                         tableName,
@@ -93,8 +93,9 @@ public class AuditLogAsserter {
      * The string assertion. Failure on absence of the string.
      *
      * @param assertion The assertion to find
+     * @return The data audit count
      */
-    public void assertDataAuditChange(DataAuditResult assertion) {
+    public int assertDataAuditChange(DataAuditResult assertion) {
 
         // if we are not looking for old or new audi logs
         boolean oldLogFound = assertion.oldAuditRegex() == null;
@@ -119,16 +120,21 @@ public class AuditLogAsserter {
             }
         }
 
+        int matchCount = 0;
+
         // check the data audit record log exists
         for (String log : dataAuditLogger.getDebugLogs()) {
             if (Pattern.matches(assertion.dataAuditRegex(), log)) {
                 auditLogFound = true;
+                matchCount = matchCount + 1;
             }
         }
 
         if (!oldLogFound || !newLogFound || !auditLogFound) {
             throw new AssertionError("We did not found expected logs");
         }
+
+        return matchCount;
     }
 
     public void assertFieldLogPresent(String tableName, String fieldName, boolean newAudit) {

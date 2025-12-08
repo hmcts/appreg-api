@@ -139,7 +139,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
             return returnedString;
         }
 
-        if (values.size() > size()) {
+        if (values.size() != size()) {
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
                     "Number of values exceeds number of templates",

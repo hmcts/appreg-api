@@ -46,6 +46,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -224,7 +225,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             return matchService.matchOnRequest(
                                     () -> {
                                         return auditService.processAudit(
-                                                BeanUtil.copyBean(success.getApplicationEntryId()),
+                                                BeanUtil.copyBean(getEntry(success)),
                                                 AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST,
                                                 req -> {
 
@@ -297,7 +298,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                             entryGetDetailDto,
                                                                             getKeyablesForCreateUpdateEtag(
                                                                                     listEntryEntity)),
-                                                                    listEntryEntity));
+                                                                    getEntry(success)));
                                                 });
                                     },
 
@@ -513,13 +514,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         // capture the respondent before the change
         NameAddress existingRespondent = null;
         if (success.getApplicationEntryId().getRnameaddress() != null) {
-            existingRespondent = BeanUtil.copyBean(success.getApplicationEntryId().getRnameaddress());
+            existingRespondent = BeanUtil.copyBean(getEntry(success).getRnameaddress());
         }
 
         // if we are not expecting a respondent set to null
         if (updateEntry.getData().getRespondent() != null) {
-            NameAddress nameAddress = nameAddressRepository.save(
-                applicantMapper.toRespondent(updateEntry.getData().getRespondent()));
+            NameAddress nameAddress = auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_RESPONDENT,
+                req -> {
+                    NameAddress na = nameAddressRepository.save(
+                        applicantMapper.toRespondent(updateEntry.getData().getRespondent()));
+                    return Optional.of(new AuditableResult<>(na, na));
+                });
             success.getApplicationEntryId().setRnameaddress(nameAddress);
         } else {
             success.getApplicationEntryId().setRnameaddress(null);
@@ -600,7 +606,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         // capture the applicant before the change
         NameAddress existingApplicant = null;
         if (success.getApplicationEntryId().getAnamedaddress() != null) {
-            existingApplicant = BeanUtil.copyBean(success.getApplicationEntryId().getAnamedaddress());
+            existingApplicant = BeanUtil.copyBean(getEntry(success).getAnamedaddress());
         }
 
         if (updateEntry.getData().getApplicant() != null
@@ -610,11 +616,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             // set the standard applicant
             success.getApplicationEntryId().setStandardApplicant(null);
 
-            // now add the new applicant
-            applicantToSave = applicantMapper.toApplicant(updateEntry.getData().getApplicant());
-            NameAddress nameAddress = nameAddressRepository.save(applicantToSave);
+            NameAddress nameAddress = auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_APPLICANT,
+                req -> {
+                    // now add the new applicant
+                    NameAddress applicant = applicantMapper.toApplicant(updateEntry.getData().getApplicant());
+                    NameAddress na = nameAddressRepository.save(applicant);
+                    return Optional.of(new AuditableResult<>(na, na));
+                });
 
-            log.debug("Update applicant with id: {}", applicantToSave.getId());
+            log.debug("Update applicant with id: {}", nameAddress.getId());
             success.getApplicationEntryId().setAnamedaddress(nameAddress);
         } else if (success.getSa() != null) {
             success.getApplicationEntryId().setStandardApplicant(success.getSa());

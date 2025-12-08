@@ -75,10 +75,15 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
      * @param event The event that signifies the auditable operation is complete
      */
     private void auditDataBasedOnCompleteEventState(CompleteEvent event) {
+
+        // determines whether we are auditing old, new or both
         AuditOldNewEnum oldNew = event.getNewOldAuditState();
 
+        // if we just have old gather the old data difference
         if (oldNew == AuditOldNewEnum.OLD) {
             List<AuditableData> oldDifferenceList;
+
+            // prioritise the extract audit data from Auditable if implemented
             if (event.getOldValue() instanceof Auditable auditDifferentiable) {
                 oldDifferenceList =
                         auditDifferentiable.extractAuditData(event.getRequestAction().getType());
@@ -89,6 +94,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             }
 
             auditDiff(event, oldDifferenceList, null, true);
+        // if both new and old values are present
         } else if (oldNew == AuditOldNewEnum.BOTH) {
             List<AuditableData> oldDifferenceList;
             List<AuditableData> newDifferenceList;
@@ -110,6 +116,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                                 event.getRequestAction().getType(), event.getNewValue());
             }
 
+            // based on the largest size we define the primary and secondary lists to compare
             List<AuditableData> primaryList =
                     oldDifferenceList.size() >= newDifferenceList.size()
                             ? oldDifferenceList
@@ -119,7 +126,9 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                     : oldDifferenceList;
 
             auditDiff(event, primaryList, secondaryList, oldDifferenceList.size() >= newDifferenceList.size());
-        } else {
+        }
+        // process just new values
+        else {
             List<AuditableData> newDifferenceList;
             if (event.getNewValue() instanceof Auditable auditDifferentiable) {
                 newDifferenceList =
@@ -169,15 +178,16 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     /**
      * finds the new value update for the old auditable data.
      *
-     * @param oldData The old auditable data to find the new value for
+     * @param dataToFind The auditable data to find the new value for
+     * @param listToFindData The list to find the data in
      * @return the equivalent new auditable data to find for the value
      */
     private AuditableData getCorrespondingData(
-            AuditableData oldData, List<AuditableData> newDifferenceData) {
-        if (newDifferenceData != null) {
-            for (AuditableData diff : newDifferenceData) {
-                if (diff.getTableName().equals(oldData.getTableName())
-                        && diff.getFieldName().equals(oldData.getFieldName())) {
+            AuditableData dataToFind, List<AuditableData> listToFindData) {
+        if (listToFindData != null) {
+            for (AuditableData diff : listToFindData) {
+                if (diff.getTableName().equals(dataToFind.getTableName())
+                        && diff.getFieldName().equals(dataToFind.getFieldName())) {
                     return diff;
                 }
             }

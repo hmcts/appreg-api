@@ -16,9 +16,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents a Name and Address entity mapped to the "name_address" table in the database.
@@ -31,6 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
     public static String RESPONDENT_CODE = "RE";
     public static String APPLICANT_CODE = "AP";
@@ -40,6 +44,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
     @SequenceGenerator(name = "na_gen", sequenceName = "na_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long id;
 
     @Column(name = "code")

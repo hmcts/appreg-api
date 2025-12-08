@@ -313,7 +313,7 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
                         getApplicationCode(validatable), LocalDate.now(clock));
         if (code.size() == 0) {
             throw new AppRegistryException(
-                    AppListEntryError.APPLICANT_CODE_DOES_NOT_EXIST,
+                    AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,
                     "No valid code can be found %s".formatted(getApplicationCode(validatable)));
         }
 
