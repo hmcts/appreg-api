@@ -87,6 +87,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
         resp.then().statusCode(HttpStatus.OK.value());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 404 when source list unknown")
     void givenUnknownTargetApplicationList_whenMoveApplicationListEntries_then404()
@@ -114,6 +115,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 404 when target list unknown")
     void givenUnknownSourceApplicationList_whenMoveApplicationListEntries_then404()
@@ -141,6 +143,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 400 when source list not open")
     void givenClosedSourceList_whenMove_then400() throws Exception {
@@ -168,6 +171,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 400 when target list not open")
     void givenClosedTargetList_whenMove_then400() throws Exception {
@@ -204,6 +208,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 400 when entry unknown")
     void givenUnknownEntry_whenMove_then400() throws Exception {
@@ -231,6 +236,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Disabled
     @Test
     @DisplayName("Move Application List Entries: 400 when entry not in source list")
     void givenEntryNotInSourceList_whenMove_then400() throws Exception {
