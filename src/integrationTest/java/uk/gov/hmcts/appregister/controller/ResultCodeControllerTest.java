@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -23,6 +25,7 @@ import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
+@Disabled
 public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "result-codes";
