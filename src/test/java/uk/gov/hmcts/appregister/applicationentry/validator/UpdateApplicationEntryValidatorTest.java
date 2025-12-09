@@ -372,4 +372,73 @@ public class UpdateApplicationEntryValidatorTest {
                 AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
     }
+
+    @Test
+    void testStandardApplicantMultiple() {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.getApplicant().setPerson(null);
+
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
+                        entryUpdateDto.getStandardApplicantCode(), LocalDate.now(clock)))
+                .thenReturn(List.of(new StandardApplicant(), new StandardApplicant()));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.MULTIPLE_STANDARD_APPLICANT_EXIST.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantCodeNotExist() {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.getApplicant().setPerson(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of());
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testApplicantCodeMultiple() {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.getApplicant().setPerson(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(new ApplicationCode(), new ApplicationCode()));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
 }

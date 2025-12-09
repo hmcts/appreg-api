@@ -160,6 +160,13 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
                     standardApplicantRepository.findStandardApplicantByCodeAndDate(
                             standardApplicantCode, LocalDate.now(clock));
 
+            if (saCode.size() > 1) {
+                throw new AppRegistryException(
+                        AppListEntryError.MULTIPLE_STANDARD_APPLICANT_EXIST,
+                        "Multiple standard applicant codes exist for %s"
+                                .formatted(standardApplicantCode));
+            }
+
             if (saCode.isEmpty()) {
                 // throw exception we expect a valid standard applicant code
                 throw new AppRegistryException(
@@ -311,6 +318,14 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
         List<ApplicationCode> code =
                 applicationCodeRepository.findByCodeAndDate(
                         getApplicationCode(validatable), LocalDate.now(clock));
+
+        if (code.size() > 1) {
+            throw new AppRegistryException(
+                    AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST,
+                    "Multiple application codes exist for %s"
+                            .formatted(getApplicationCode(validatable)));
+        }
+
         if (code.size() == 0) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST,

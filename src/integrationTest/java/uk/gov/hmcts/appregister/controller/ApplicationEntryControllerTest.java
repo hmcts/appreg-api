@@ -915,7 +915,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                         + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
+        responseSpecCreate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
@@ -944,7 +944,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                         + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
+        responseSpecCreate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE

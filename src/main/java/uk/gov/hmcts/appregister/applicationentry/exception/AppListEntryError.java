@@ -25,6 +25,10 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND, "The supplied application code does not exist", "ALE-3")),
 
+    MULTIPLE_APPLICATION_CODE_EXIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT, "Multiple application codes exist", "ALE-4")),
+
     FEE_REQUIRED(
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "The code requires a fee", "ALE-5")),
 
@@ -46,35 +50,39 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.NOT_FOUND, "Standard applicant does not exist for code", "ALE-9")),
 
+    MULTIPLE_STANDARD_APPLICANT_EXIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT, "Multiple Standard applicant exists for code", "ALE-10")),
+
     APPLICATION_LIST_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALE-10")),
+                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALE-11")),
 
     APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "The application list state is not suitable to have an entry added for it",
-                    "ALE-11")),
+                    "ALE-12")),
     RESPONDENT_REQUIRED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Respondent is expected for the provided application code",
-                    "ALE-12")),
+                    "ALE-13")),
     NOT_RESPONDENT_REQUIRED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Respondent not expected for the provided application code",
-                    "ALE-13")),
+                    "ALE-14")),
 
     ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "Application entry does not exist", "ALE-14")),
+                    HttpStatus.NOT_FOUND, "Application entry does not exist", "ALE-15")),
 
     ENTRY_IS_NOT_WITHIN_LIST(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Application entry is not within application list",
-                    "ALE-15"));
+                    "ALE-16"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
