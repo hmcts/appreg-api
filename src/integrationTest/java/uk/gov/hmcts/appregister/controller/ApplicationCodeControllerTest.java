@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +39,6 @@ import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
-@Disabled
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-codes";
 

@@ -13,7 +13,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openapitools.jackson.nullable.JsonNullableModule;
@@ -25,7 +24,6 @@ import uk.gov.hmcts.appregister.testutils.BaseIntegration;
  * with a 401 when we find an incorrect issuer, find an incorrect audience, find an incorrect
  * signature - Authorisation fails with a 403 when the wrong role is presented.
  */
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     /** The stream of negative security contexts to be tested. */
