@@ -391,21 +391,21 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(projection0.getCjaCode()).isEqualTo("CJ");
         assertThat(projection0.getCourtCode()).isEqualTo("RCJ001");
         assertThat(projection0.getStatus()).isEqualTo(Status.OPEN);
-        assertNotNull(projection0.getRnameaddress());
+        assertNotNull(projection0.getRnameAddress());
         assertThat(projection0.getTitle()).isEqualTo("Certificate of Satisfaction");
-        assertNull(projection0.getAnameaddress());
+        assertNull(projection0.getAnameAddress());
         assertNotNull(projection0.getLegislation(), "");
         assertNotNull(projection0.getStandardApplicantCode(), "APP001");
-        assertThat(projection0.getDateofal()).isEqualTo("2024-04-21");
+        assertThat(projection0.getDateOfAl()).isEqualTo("2024-04-21");
 
         ApplicationListEntryGetSummaryProjection projection4 = page0.getContent().get(4);
 
         assertThat(projection4.getCjaCode()).isEqualTo("CJ");
         assertThat(projection4.getStatus()).isEqualTo(Status.OPEN);
-        assertThat(projection4.getRnameaddress().getSurname()).isEqualTo("Johnson");
-        assertThat(projection4.getRnameaddress().getName()).isEqualTo("Sarah Johnson");
-        assertThat(projection4.getRnameaddress().getCode()).isEqualTo("RE");
-        assertThat(projection4.getRnameaddress().getPostcode()).isEqualTo("XY9 8ZZ");
+        assertThat(projection4.getRnameAddress().getSurname()).isEqualTo("Johnson");
+        assertThat(projection4.getRnameAddress().getName()).isEqualTo("Sarah Johnson");
+        assertThat(projection4.getRnameAddress().getCode()).isEqualTo("RE");
+        assertThat(projection4.getRnameAddress().getPostcode()).isEqualTo("XY9 8ZZ");
         assertThat(projection4.getFeeRequired()).isEqualTo(YesOrNo.YES);
         assertThat(projection4.getCourtCode()).isEqualTo("RCJ001");
         assertThat(projection4.getOtherLocationDescription()).isEqualTo("other");
@@ -440,23 +440,23 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getTotalPages()).isEqualTo(1);
         assertThat(page0.getContent().get(0).getCjaCode()).isEqualTo("CJ");
         assertThat(page0.getContent().get(0).getStatus()).isEqualTo(Status.OPEN);
-        assertThat(page0.getContent().get(0).getAnameaddress().getSurname()).isEqualTo("Turner");
-        assertThat(page0.getContent().get(0).getAnameaddress().getAddress1())
+        assertThat(page0.getContent().get(0).getAnameAddress().getSurname()).isEqualTo("Turner");
+        assertThat(page0.getContent().get(0).getAnameAddress().getAddress1())
                 .isEqualTo("1 Market Street");
-        assertThat(page0.getContent().get(0).getAnameaddress().getEmailAddress())
+        assertThat(page0.getContent().get(0).getAnameAddress().getEmailAddress())
                 .isEqualTo("john.smith@example.com");
-        assertThat(page0.getContent().get(0).getAnameaddress().getPostcode()).isEqualTo("AB11 2CD");
-        assertThat(page0.getContent().get(0).getAnameaddress().getTelephoneNumber())
+        assertThat(page0.getContent().get(0).getAnameAddress().getPostcode()).isEqualTo("AB11 2CD");
+        assertThat(page0.getContent().get(0).getAnameAddress().getTelephoneNumber())
                 .isEqualTo("01234567890");
 
-        assertThat(page0.getContent().get(0).getRnameaddress().getSurname()).isEqualTo("Johnson");
-        assertThat(page0.getContent().get(0).getRnameaddress().getName())
+        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Johnson");
+        assertThat(page0.getContent().get(0).getRnameAddress().getName())
                 .isEqualTo("Sarah Johnson");
-        assertThat(page0.getContent().get(0).getRnameaddress().getCode()).isEqualTo("RE");
-        assertThat(page0.getContent().get(0).getRnameaddress().getPostcode()).isEqualTo("XY9 8ZZ");
-        assertThat(page0.getContent().get(0).getRnameaddress().getAddress1())
+        assertThat(page0.getContent().get(0).getRnameAddress().getCode()).isEqualTo("RE");
+        assertThat(page0.getContent().get(0).getRnameAddress().getPostcode()).isEqualTo("XY9 8ZZ");
+        assertThat(page0.getContent().get(0).getRnameAddress().getAddress1())
                 .isEqualTo("12 The Avenue");
-        assertThat(page0.getContent().get(0).getRnameaddress().getEmailAddress())
+        assertThat(page0.getContent().get(0).getRnameAddress().getEmailAddress())
                 .isEqualTo("s.johnson@example.com");
 
         assertThat(page0.getContent().get(0).getFeeRequired()).isEqualTo(YesOrNo.YES);
@@ -495,14 +495,14 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getStatus()).isEqualTo(Status.OPEN);
         assertThat(page0.getContent().get(0).getFeeRequired()).isEqualTo(YesOrNo.NO);
 
-        assertThat(page0.getContent().get(0).getRnameaddress().getAddress1())
+        assertThat(page0.getContent().get(0).getRnameAddress().getAddress1())
                 .isEqualTo("1 Market Street");
-        assertThat(page0.getContent().get(0).getRnameaddress().getForename1()).isEqualTo("John");
-        assertThat(page0.getContent().get(0).getRnameaddress().getSurname()).isEqualTo("Turner");
+        assertThat(page0.getContent().get(0).getRnameAddress().getForename1()).isEqualTo("John");
+        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Turner");
 
-        assertThat(page0.getContent().get(0).getRnameaddress().getName()).isEqualTo("Jack Turner");
-        assertThat(page0.getContent().get(0).getRnameaddress().getCode()).isEqualTo("RE");
-        assertThat(page0.getContent().get(0).getRnameaddress().getPostcode()).isEqualTo("AB11 2CD");
+        assertThat(page0.getContent().get(0).getRnameAddress().getName()).isEqualTo("Jack Turner");
+        assertThat(page0.getContent().get(0).getRnameAddress().getCode()).isEqualTo("RE");
+        assertThat(page0.getContent().get(0).getRnameAddress().getPostcode()).isEqualTo("AB11 2CD");
 
         assertThat(page0.getContent().get(0).getTitle()).isEqualTo("Appeal by Case Stated (Crime)");
         assertThat(page0.getContent().get(0).getLegislation())

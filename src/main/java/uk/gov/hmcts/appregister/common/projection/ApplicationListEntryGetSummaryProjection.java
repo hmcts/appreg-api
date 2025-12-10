@@ -21,17 +21,17 @@ public interface ApplicationListEntryGetSummaryProjection {
 
     String getOtherLocationDescription();
 
-    NameAddress getAnameaddress();
+    NameAddress getAnameAddress();
 
     String getStandardApplicantCode();
 
-    NameAddress getRnameaddress();
+    NameAddress getRnameAddress();
 
     Status getStatus();
 
     String getTitle();
 
-    LocalDate getDateofal();
+    LocalDate getDateOfAl();
 
     String getApplicationOrganisation();
 

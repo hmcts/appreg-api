@@ -55,9 +55,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         pageMapper.toPage(resultPage, newPage);
 
         // Map each entity to a summary DTO and add to the page content
-        resultPage.map(
+        resultPage.forEach(
                 entry -> {
-                    return newPage.addContentItem(mapper.toEntrySummary(entry));
+                    newPage.addContentItem(mapper.toEntrySummary(entry));
                 });
 
         log.debug(

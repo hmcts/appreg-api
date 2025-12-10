@@ -52,7 +52,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         ApplicationEntrySortFieldEnum.CODE.getEntityValue()[0],
                         Sort.Direction.ASC);
 
-        log.info("Retrieved Application Lists");
+        log.info("Retrieved Application Entry Lists");
         return ResponseEntity.ok()
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)
