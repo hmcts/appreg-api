@@ -16,11 +16,13 @@ post:
   requestBody:
     required: true
     content:
-      multipart/form-data:
-        schema:
-          type: string
-          format: binary
-          description: CSV file containing entries to upload.
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              file:
+                type: string
+                format: binary
   responses:
     "202":
       description: Job accepted. Poll the URL in the Location header for status.

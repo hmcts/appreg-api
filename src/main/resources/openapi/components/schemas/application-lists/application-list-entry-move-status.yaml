@@ -1,0 +1,6 @@
+type: string
+description: Status of the Application List Entry Move.
+enum:
+  - SUCCEEDED
+  - FAILED
+example: SUCCEEDED
