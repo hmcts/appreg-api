@@ -141,6 +141,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
          SELECT
                 ale.applicationList.date  AS date,
                 ale.uuid AS uuid,
+                ale.id AS id,
                 ale.applicationList.courtCode  AS courtCode,
                 ac.legislation as legislation,
                 ac.feeDue feeRequired,
