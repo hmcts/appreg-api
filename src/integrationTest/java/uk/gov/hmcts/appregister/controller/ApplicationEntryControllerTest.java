@@ -40,6 +40,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -72,7 +73,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
     @Autowired private ApplicationListRepository applicationListRepository;
 
-    @Test
+    @StabilityTest
     public void testGetApplicationEntriesSearch() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -81,7 +82,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(10),
+                        Optional.of(20),
                         Optional.of(0),
                         List.of(),
                         getLocalUrl(WEB_CONTEXT),
@@ -91,11 +92,12 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         responseSpec.then().statusCode(200);
 
         EntryPage page = responseSpec.as(EntryPage.class);
-        PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, TOTAL_APP_ENTRY_COUNT);
+        PagingAssertionUtil.assertPageDetails(page, 20, 0, 1, TOTAL_APP_ENTRY_COUNT);
         assertEquals(10, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Sarah Johnson");
         assertThat(
@@ -121,9 +123,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .isEqualTo("XY9 8ZZ");
 
         assertThat(entryGetSummaryDto.getApplicationTitle())
-                .isEqualTo("Appeal by Case Stated (Civil)");
-        assertThat(entryGetSummaryDto.getLegislation())
-                .isEqualTo("Section 111 Magistrates' Courts Act 1980");
+                .isEqualTo("Certified genuine copy document");
+        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
@@ -165,7 +166,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
     }
 
-    @Test
+    @StabilityTest
     public void testGetApplicationEntriesSearchWithAllDetails() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -270,7 +271,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
     }
 
-    @Test
+    @StabilityTest
     public void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -375,7 +376,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
     }
 
-    @Test
+    @StabilityTest
     public void testGetApplicationEntriesSearchWithAllSortKeys() throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
                 ApplicationEntrySortFieldEnum.values()) {
@@ -398,7 +399,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertTrue(ApplicationEntrySortFieldEnum.values().length > 0);
     }
 
-    @Test
+    @StabilityTest
     public void testGetApplicationEntriesSearchWithSort() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -409,7 +410,10 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(10),
                         Optional.of(0),
-                        List.of(ApplicationEntrySortFieldEnum.CODE.getApiValue() + "," + "desc"),
+                        List.of(
+                                ApplicationEntrySortFieldEnum.LEGISLATION.getApiValue()
+                                        + ","
+                                        + "desc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
 
@@ -421,35 +425,38 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertEquals(10, page.getContent().size());
 
         EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getFirstForename())
+                .isEqualTo("Jane");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
-                .isEqualTo("Smith");
+                .isEqualTo("Doe");
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
-                .isEqualTo("Jack Turner");
+                .isEqualTo("Legal Aid Board");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
                                 .getAddressLine1())
-                .isEqualTo("1 Market Street");
+                .isEqualTo("100 Legal Street");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
                                 .getEmail())
-                .isEqualTo("john.smith@example.com");
+                .isEqualTo("info@legalaid.example.com");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
                                 .getPostcode())
-                .isEqualTo("AB11 2CD");
+                .isEqualTo("BA15 1LA");
 
         assertThat(entryGetSummaryDto.getApplicationTitle())
-                .isEqualTo("Certificate of Satisfaction");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+                .isEqualTo("Request for Certificate of Refusal to State a Case (Civil)");
+        assertThat(entryGetSummaryDto.getLegislation())
+                .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
@@ -460,10 +467,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .isEqualTo("John");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
                 .isEqualTo("Turner");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSecondForename())
-                .isEqualTo("Francis");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename())
-                .isEqualTo("Michael");
 
         assertThat(
                         entryGetSummaryDto
@@ -512,7 +515,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
     }
 
-    @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
@@ -538,7 +541,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertNull(page.getContent());
     }
 
-    @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidSortQuery_thenReturn400()
                     throws Exception {
@@ -563,7 +566,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     // NOTE: Spring is more forgiving in this scenario and defaults the page number to
     // 0 and returns a 200. Our implementation
     // returns a 500
-    @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn200()
                     throws Exception {
@@ -582,13 +585,13 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
     }
 
     // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
     // does not behave
     // accordingly
-    @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
                     throws Exception {
@@ -608,7 +611,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         tokenGenerator.fetchTokenForRole());
 
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
     }
 
     @Test

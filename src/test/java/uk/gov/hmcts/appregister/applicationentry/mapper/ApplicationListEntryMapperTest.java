@@ -409,9 +409,9 @@ class ApplicationListEntryMapperTest {
         when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
                 .thenReturn("org1");
         when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
-        when(applicationListEntryGetSummaryProjection.getAnameaddress()).thenReturn(applicant);
-        when(applicationListEntryGetSummaryProjection.getRnameaddress()).thenReturn(respondent);
-        when(applicationListEntryGetSummaryProjection.getDateofal()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getAnameAddress()).thenReturn(applicant);
+        when(applicationListEntryGetSummaryProjection.getRnameAddress()).thenReturn(respondent);
+        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");

@@ -320,7 +320,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "applicant", expression = "java(toApplicant(projection))")
     @Mapping(
             target = "respondent",
-            expression = "java(applicantMapper.toApplicant(projection.getRnameaddress()))")
+            expression = "java(applicantMapper.toApplicant(projection.getRnameAddress()))")
     @Mapping(target = "applicationTitle", source = "projection.title")
     @Mapping(target = "isFeeRequired", expression = "java(projection.getFeeRequired().isYes())")
     @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
@@ -336,8 +336,8 @@ public abstract class ApplicationListEntryMapper {
      * @return The applicant mapper
      */
     public Applicant toApplicant(ApplicationListEntryGetSummaryProjection projection) {
-        if (projection.getAnameaddress() != null) {
-            return applicantMapper.toApplicant(projection.getAnameaddress());
+        if (projection.getAnameAddress() != null) {
+            return applicantMapper.toApplicant(projection.getAnameAddress());
         } else if (projection.getStandardApplicant() != null) {
             return standardApplicantMapper.toApplicant(projection.getStandardApplicant());
         }

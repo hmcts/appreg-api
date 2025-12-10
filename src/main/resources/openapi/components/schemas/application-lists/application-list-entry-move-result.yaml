@@ -1,0 +1,14 @@
+type: object
+description: Result of an entry move.
+required:
+  - uuid
+  - status
+
+properties:
+
+  uuid:
+    type: string
+    format: uuid
+
+  status:
+    $ref: './application-list-entry-move-status.yaml'

@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
@@ -654,7 +655,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                                         "Request for Certificate of Refusal to State a Case (Civil)")),
                         new OpenApiPageMetaData());
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertTrue(
+                problemDetail.getDetail().endsWith("must be greater than or equal to 1"));
+        Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
@@ -685,7 +694,15 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         new OpenApiPageMetaData());
 
         // assert the response
-        responseSpec.then().statusCode(500);
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertTrue(
+                problemDetail.getDetail().endsWith("must be less than or equal to 100"));
+        Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     @Test

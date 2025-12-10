@@ -44,7 +44,7 @@ properties:
 
   respondentOrganisation:
     type: string
-    description: The name of the organisation responding to the application. This has to be Exact.
+    description: The name of the organisation responding to the application.
     example: "Jones Consulting Group"
 
   respondentSurname:

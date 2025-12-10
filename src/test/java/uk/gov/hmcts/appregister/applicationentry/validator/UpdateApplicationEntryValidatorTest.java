@@ -102,7 +102,7 @@ public class UpdateApplicationEntryValidatorTest {
         appListUuid = UUID.randomUUID();
         appListEntryUuid = UUID.randomUUID();
 
-        when(applicationListRepository.findByUuid(appListUuid))
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
                 .thenReturn(Optional.of(applicationList));
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
@@ -283,7 +283,8 @@ public class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.getApplicant().setOrganisation(null);
 
-        when(applicationListRepository.findByUuid(appListUuid)).thenReturn(Optional.empty());
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
+                .thenReturn(Optional.empty());
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);

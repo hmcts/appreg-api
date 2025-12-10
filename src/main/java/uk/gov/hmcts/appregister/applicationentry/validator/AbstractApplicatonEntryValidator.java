@@ -121,7 +121,8 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
      */
     private ApplicationList validateParentApplicationList(T validatable) {
         Optional<ApplicationList> applicationList =
-                applicationListRepository.findByUuid(getApplicationListUuid(validatable));
+                applicationListRepository.findByUuidIncludingDelete(
+                        getApplicationListUuid(validatable));
         if (applicationList.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
