@@ -46,4 +46,7 @@ public interface AppListEntryResolutionRepository
             """)
     List<ApplicationListEntryResolutionPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid);
+
+    Optional<AppListEntryResolution> findByUuidAndApplicationList_Uuid(
+            UUID resolutionUuid, UUID entryUuid);
 }

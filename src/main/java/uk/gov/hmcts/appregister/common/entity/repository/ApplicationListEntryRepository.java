@@ -193,4 +193,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         """)
     int bulkMoveByUuidAndSourceList(
             Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
+
+    Optional<ApplicationListEntry> findByUuidAndApplicationListUuid(UUID entryUuid, UUID listUuid);
 }

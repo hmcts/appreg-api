@@ -19,6 +19,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
@@ -68,4 +70,8 @@ public class AppListEntryResolution extends BaseChangeableEntity
     @Column(name = "user_name")
     @Size(max = 250)
     private String createdUser;
+
+    @Generated(event = EventType.INSERT)
+    @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
+    private java.util.UUID uuid;
 }
