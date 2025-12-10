@@ -9,7 +9,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED;
+import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
@@ -157,6 +160,62 @@ public class ApplicationListCreateValidatorTest {
         Assertions.assertEquals(ApplicationListError.DUPLICATE_CJA_FOUND, exception.getCode());
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void valid_whenOpenStatus() {
+        // given
+        var appList = buildDto(Field.COURT);
+        when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        appList.setStatus(OPEN);
+
+        // expect
+        assertDoesNotThrow(() -> validator.validate(appList));
+    }
+
+    @Test
+    void create_closedStatus_throwsAppRegException() {
+        // given
+        var appList = buildDto(Field.COURT);
+        when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        appList.setStatus(CLOSED);
+
+        // expect
+        AppRegistryException ex =
+                assertThrows(AppRegistryException.class, () -> validator.validate(appList));
+        assertEquals(ApplicationListError.INVALID_NEW_LIST_STATUS, ex.getCode());
+    }
+
+    @Test
+    void valid_whenValidTime() {
+        // given
+        var appList = buildDto(Field.COURT);
+        when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        appList.setTime(LocalTime.of(12, 30));
+
+        // expect
+        assertDoesNotThrow(() -> validator.validate(appList));
+    }
+
+    @Test
+    void create_invalidTime_throwsAppRegException() {
+        // given
+        var appList = buildDto(Field.COURT);
+        when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        appList.setTime(LocalTime.now());
+
+        // expect
+        AppRegistryException ex =
+                assertThrows(AppRegistryException.class, () -> validator.validate(appList));
+        assertEquals(ApplicationListError.INVALID_TIME, ex.getCode());
     }
 
     // ---- TESTS ----

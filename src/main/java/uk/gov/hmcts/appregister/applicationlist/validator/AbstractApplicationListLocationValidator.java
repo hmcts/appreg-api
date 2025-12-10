@@ -1,5 +1,8 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED;
+
+import java.time.LocalTime;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -13,6 +16,8 @@ import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepo
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
  * Validator component for location fields.
@@ -48,6 +53,20 @@ public abstract class AbstractApplicationListLocationValidator<
      * @return The location description
      */
     abstract Function<T, String> getLocationDescription();
+
+    /**
+     * gets the status from the underlying dto.
+     *
+     * @return The status
+     */
+    abstract Function<T, ApplicationListStatus> getStatus();
+
+    /**
+     * gets the time from the underlying dto.
+     *
+     * @return The time
+     */
+    abstract Function<T, LocalTime> getTime();
 
     /**
      * creates the result the validator success that. Always a sub class of {@link
@@ -111,6 +130,25 @@ public abstract class AbstractApplicationListLocationValidator<
             validateCourt(dto, createApplication);
         } else {
             validateCja(dto, createApplication);
+        }
+
+        if (dto instanceof ApplicationListCreateDto) {
+            ApplicationListStatus applicationListStatus = getStatus().apply(dto);
+
+            if (applicationListStatus == CLOSED) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_NEW_LIST_STATUS,
+                        "A closed application list is not allowed to be created");
+            }
+        }
+
+        LocalTime time = getTime().apply(dto);
+
+        if (time != null && time.getSecond() != 0) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_TIME,
+                    "An application list is not allowed to be created with a time in the format HH:MM:SS, only the"
+                            + "HH:MM format is supported");
         }
 
         if (createApplicationSupplier != null) {
