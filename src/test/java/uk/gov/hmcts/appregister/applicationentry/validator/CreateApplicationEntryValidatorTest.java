@@ -96,7 +96,7 @@ public class CreateApplicationEntryValidatorTest {
 
         appListUuid = UUID.randomUUID();
 
-        when(applicationListRepository.findByUuid(appListUuid))
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
                 .thenReturn(Optional.of(applicationList));
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -233,7 +233,8 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
 
-        when(applicationListRepository.findByUuid(appListUuid)).thenReturn(Optional.empty());
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
+                .thenReturn(Optional.empty());
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -258,7 +259,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
 
         applicationList.setStatus(Status.CLOSED);
-        when(applicationListRepository.findByUuid(appListUuid))
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
                 .thenReturn(Optional.of(applicationList));
 
         PayloadForCreate<EntryCreateDto> payload =

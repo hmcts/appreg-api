@@ -7,13 +7,14 @@ import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 
 @Getter
 public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
-    CODE("courtCode", "courtCode"),
-    LOCATION("otherLocationDescription", "otherLocationDescription"),
-    LEGISLATION("legislation", "legislation"),
-    CJA_CODE("cjaCode", "cjaCode"),
-    ACCOUNT_REFERENCE("accountReference", "accountReference"),
-    STATUS("status", "status"),
-    DATE("hearingDate", "date");
+    // ensure we always add id to guarantee a consistent sort order in searches
+    CODE("courtCode", "courtCode", "id"),
+    LOCATION("otherLocationDescription", "otherLocationDescription", "id"),
+    LEGISLATION("legislation", "legislation", "id"),
+    CJA_CODE("cjaCode", "cjaCode", "id"),
+    ACCOUNT_REFERENCE("accountReference", "accountReference", "id"),
+    STATUS("status", "status", "id"),
+    DATE("hearingDate", "date", "id");
     private final String apiValue;
     private final String[] entityValue;
 

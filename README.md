@@ -2,7 +2,7 @@
 
 This file contains basic repository information and a setup guide for development.
 
-Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/display/ARM/Backend+development+for+new+users). 
+Setup guide is copied from [Confluence](https://tools.hmcts.net/confluence/display/ARM/Backend+development+for+new+users).
 
 ## Prerequisites
 
@@ -87,7 +87,7 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 
 ## Running Sonarqube locally
 
-1. Ensure you have Docker installed and running 
+1. Ensure you have Docker installed and running
 
 `docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community`
 
@@ -101,7 +101,25 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
 
 `gradlew localSonarqube`
 
-Once successful you can view the Jacoco coverage results in Sonarqube at http://localhost:9000
+## Jacoco Coverage
+
+Run the following gradle command to determine coverage for unit tests:-
+
+`gradlew localSonarqube`
+
+Run the following gradle command to determine coverage for integration tests:-
+
+`gradlew jacocoUnitCoverageVerification`
+
+The html reports reside under build/reports/jacoco/
+
+**80% coverage is required for each unit and integration test run**
+
+## Import the openapi specification into Swagger
+
+1. The specification is published by the application registration under $LOCALHOST/specs/openapi.json
+
+2. If you navigate to https://editor.swagger.io/. You can import the specification by selecting File -> Import URL and entering the URL to the openapi.json file
 
 ## Plugins
 
@@ -128,7 +146,7 @@ Once successful you can view the Jacoco coverage results in Sonarqube at http://
 ## Database setup
 
 ### Local Execution
-Run the local docker compose file [`docker-compose.yml`](docker-compose.yml) to start a PostgreSQL instance with the default schemas. One of two profiles 
+Run the local docker compose file [`docker-compose.yml`](docker-compose.yml) to start a PostgreSQL instance with the default schemas. One of two profiles
 needs to be used in order to populate the baseline data:-
 
 `functionaltesting` - for applying ([test data](./flyway/data_population)

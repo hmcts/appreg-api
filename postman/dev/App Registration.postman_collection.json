@@ -677,6 +677,50 @@
 				}
 			]
 		},
+    {
+      "name": "actions",
+      "item": [
+        {
+          "name": "Move Application List Entries",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"targetListId\": \"47a8edf1-6167-4fbf-806d-68cd88e6382e\",\r\n  \"entryIds\": [\r\n    \"7913172a-28a4-4fb6-ac3b-16e269856960\",\r\n    \"6490e071-12f6-4356-a1cb-14b7326573b5\"\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/4e87812d-d307-40a1-a127-6d038a7462e4/entries/move",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "4e87812d-d307-40a1-a127-6d038a7462e4",
+                "entries",
+                "move"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
 		{
 			"name": "application_list_entries",
 			"item": [

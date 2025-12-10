@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,12 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     @Override
     public ResponseEntity<EntryPage> getEntries(
             EntryGetFilterDto filter, Integer page, Integer size, List<String> sort) {
-        final List<String> entitySortFields = toEntitySort(sort);
+        List<String> entitySortFields = toEntitySort(sort);
+
+        // if we do not have a sort then default to multiple code sort entity fields
+        if (entitySortFields.isEmpty()) {
+            entitySortFields = Arrays.asList(ApplicationEntrySortFieldEnum.CODE.getEntityValue());
+        }
 
         Pageable pageInfo =
                 pageableMapper.from(
@@ -51,7 +57,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         ApplicationEntrySortFieldEnum.CODE.getEntityValue()[0],
                         Sort.Direction.ASC);
 
-        log.info("Retrieved Application Lists");
+        log.info("Retrieved Application Entry Lists");
         return ResponseEntity.ok()
                 .varyBy("Accept")
                 .contentType(VND_JSON_V1)

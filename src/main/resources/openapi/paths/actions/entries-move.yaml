@@ -16,7 +16,7 @@ post:
         schema:
           $ref: "../../components/schemas/actions/move-entries-dto.yaml"
   responses:
-    "204":
+    "200":
       description: All entries successfully moved. No response body.
       headers:
         Vary:

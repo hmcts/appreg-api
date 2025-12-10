@@ -26,7 +26,17 @@ public enum CommonAppError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Values to be substituted does not match substituting values",
-                    "COMMON-8"));
+                    "COMMON-8")),
+    CONSTRAINT_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Constraint Error", "COMMON-9")),
+    TYPE_MISMATCH_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Type Mismatch Error", "COMMON-10")),
+    METHOD_ARGUMENT_INVALID_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Error", "COMMON-11")),
+    METHOD_VALIDATION_INVALID_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-12")),
+    NOT_READABLE_ERROR(
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Not Readable Error", "COMMON-13"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

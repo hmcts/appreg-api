@@ -115,4 +115,8 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @Version
     @Audit(action = {CrudEnum.UPDATE})
     private Long version;
+
+    public boolean isOpen() {
+        return this.status == Status.OPEN;
+    }
 }

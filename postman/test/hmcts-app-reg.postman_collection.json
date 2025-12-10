@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "7a4749f7-399f-4974-ac5c-ed0f51b311d8",
+		"_postman_id": "450db1bb-d2e9-4754-a31c-045c64a2b97a",
 		"name": "hmcts-app-reg",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "39744829",
-		"_collection_link": "https://hmcts-appreg.postman.co/workspace/My-Workspace~0b18cc1b-2097-4800-884f-64db4f578cad/collection/39744829-7a4749f7-399f-4974-ac5c-ed0f51b311d8?action=share&source=collection_link&creator=39744829"
+		"_exporter_id": "15829068",
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-450db1bb-d2e9-4754-a31c-045c64a2b97a?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -862,6 +862,24 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Get the Open API Specification",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/specs/openapi.json",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"specs",
+						"openapi.json"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [

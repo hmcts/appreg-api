@@ -25,6 +25,6 @@ class OpenApiPublisherTest extends BasePostgresIntegrationTest {
     @Test
     @SuppressWarnings("PMD.JUnitTestsShouldIncludeAssert")
     void generateDocs() throws Exception {
-        mvc.perform(get("/specs/openapi.yaml")).andExpect(status().isOk());
+        mvc.perform(get("/specs/openapi.json")).andExpect(status().isOk());
     }
 }

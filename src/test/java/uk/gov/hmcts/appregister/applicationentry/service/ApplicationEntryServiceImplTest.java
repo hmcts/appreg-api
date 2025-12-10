@@ -218,11 +218,11 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
                 .thenReturn("org1");
         when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
-        when(applicationListEntryGetSummaryProjection.getAnameaddress())
+        when(applicationListEntryGetSummaryProjection.getAnameAddress())
                 .thenReturn(new NameAddress());
-        when(applicationListEntryGetSummaryProjection.getRnameaddress())
+        when(applicationListEntryGetSummaryProjection.getRnameAddress())
                 .thenReturn(new NameAddress());
-        when(applicationListEntryGetSummaryProjection.getDateofal()).thenReturn(LocalDate.now());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
 
         when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
         when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");

@@ -113,7 +113,7 @@ public class CreateApplicationEntryValidator
     private ApplicationList validateParentApplicationList(
             PayloadForCreate<EntryCreateDto> validatable) {
         Optional<ApplicationList> applicationList =
-                applicationListRepository.findByUuid(validatable.getId());
+                applicationListRepository.findByUuidIncludingDelete(validatable.getId());
         if (applicationList.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST,
