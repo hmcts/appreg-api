@@ -132,24 +132,9 @@ public abstract class AbstractApplicationListLocationValidator<
             validateCja(dto, createApplication);
         }
 
-        if (dto instanceof ApplicationListCreateDto) {
-            ApplicationListStatus applicationListStatus = getStatus().apply(dto);
+        validateStatus(dto);
 
-            if (applicationListStatus == CLOSED) {
-                throw new AppRegistryException(
-                        ApplicationListError.INVALID_NEW_LIST_STATUS,
-                        "A closed application list is not allowed to be created");
-            }
-        }
-
-        LocalTime time = getTime().apply(dto);
-
-        if (time != null && time.getSecond() != 0) {
-            throw new AppRegistryException(
-                    ApplicationListError.INVALID_TIME,
-                    "An application list is not allowed to be created with a time in the format HH:MM:SS, only the"
-                            + "HH:MM format is supported");
-        }
+        validateTime(dto);
 
         if (createApplicationSupplier != null) {
             return createApplicationSupplier.apply(dto, createApplication);
@@ -228,5 +213,28 @@ public abstract class AbstractApplicationListLocationValidator<
         }
 
         createApplication.setNationalCourtHouse(courts.getFirst());
+    }
+
+    private void validateStatus(T dto) {
+        if (dto instanceof ApplicationListCreateDto) {
+            ApplicationListStatus applicationListStatus = getStatus().apply(dto);
+
+            if (applicationListStatus == CLOSED) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_NEW_LIST_STATUS,
+                        "A closed application list is not allowed to be created");
+            }
+        }
+    }
+
+    private void validateTime(T dto) {
+        LocalTime time = getTime().apply(dto);
+
+        if (time != null && time.getSecond() != 0) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_TIME,
+                    "An application list is not allowed to be created with a time in the format HH:MM:SS, only the"
+                            + "HH:MM format is supported");
+        }
     }
 }
