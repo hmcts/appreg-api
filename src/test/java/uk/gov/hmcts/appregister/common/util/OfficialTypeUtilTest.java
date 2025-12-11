@@ -5,7 +5,7 @@ import static uk.gov.hmcts.appregister.common.util.OfficialTypeUtil.MAGISTRATE_C
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 
 public class OfficialTypeUtilTest {
 

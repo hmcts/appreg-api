@@ -6,7 +6,7 @@ FROM busybox:1.37.0-musl AS bb
 FROM hmctspublic.azurecr.io/base/java:21-distroless
 
 
-#DEBUG - Remove everything between here 
+#DEBUG - Remove everything between here
 WORKDIR /opt/app
 
 COPY --from=bb /bin/busybox /busybox

@@ -34,7 +34,7 @@ class AuditOperationServiceImplTest {
     void setup() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper);
+        auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper, null);
     }
 
     @Test

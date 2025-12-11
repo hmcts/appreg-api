@@ -49,29 +49,28 @@ public abstract class StandardApplicantMapper {
     /**
      * A useful mapper to map the applicant details of the standard applicant.
      *
-     * @param applicant The database applicant
+     * @param applicant The database applicant name and address
      * @return The applicant Dto
      */
     public Applicant toApplicant(StandardApplicant applicant) {
-        Applicant applicantDto = new Applicant();
-
         ContactDetails contactDetails = toContactDetails(applicant);
+        Applicant applicantDto = null;
+        if (applicant != null) {
+            applicantDto = new Applicant();
 
-        // if the name is set then this is an organisation otherwise a person
-        if (StandardApplicant.isOrganisation(applicant)) {
-            Organisation organisation = new Organisation();
-            organisation.setName(applicant.getName());
-            organisation.setContactDetails(contactDetails);
-            applicantDto.setOrganisation(organisation);
-
-            applicantDto.setOrganisation(organisation);
-        } else {
-            FullName fullName = toFullName(applicant);
-            Person person = new Person();
-            person.setContactDetails(contactDetails);
-            person.setName(fullName);
-
-            applicantDto.setPerson(person);
+            if (applicant.getName() != null) {
+                // if the name is set then this is an organisation otherwise a person
+                Organisation organisation = new Organisation();
+                organisation.setName(applicant.getName());
+                organisation.setContactDetails(contactDetails);
+                applicantDto.setOrganisation(organisation);
+            } else {
+                Person person = new Person();
+                FullName fullName = toFullName(applicant);
+                person.setContactDetails(contactDetails);
+                person.setName(fullName);
+                applicantDto.setPerson(person);
+            }
         }
 
         return applicantDto;
@@ -80,10 +79,10 @@ public abstract class StandardApplicantMapper {
     /**
      * to full name.
      *
-     * @param applicant The standard applicant
+     * @param applicant The standard applicant name and address
      * @return The full name
      */
-    FullName toFullName(StandardApplicant applicant) {
+    public FullName toFullName(StandardApplicant applicant) {
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getApplicantTitle());
         fullName.setFirstForename(applicant.getApplicantForename1());
@@ -96,20 +95,22 @@ public abstract class StandardApplicantMapper {
     /**
      * to contact details.
      *
-     * @param applicant The standard applicant
+     * @param applicant The standard applicant name address
      * @return The contact details
      */
-    ContactDetails toContactDetails(StandardApplicant applicant) {
+    public ContactDetails toContactDetails(StandardApplicant applicant) {
         ContactDetails contactDetails = new ContactDetails();
-        contactDetails.setAddressLine1(applicant.getAddressLine1());
-        contactDetails.setAddressLine2(applicant.getAddressLine2());
-        contactDetails.setAddressLine3(applicant.getAddressLine3());
-        contactDetails.setAddressLine4(applicant.getAddressLine4());
-        contactDetails.setAddressLine5(applicant.getAddressLine5());
-        contactDetails.setEmail(applicant.getEmailAddress());
-        contactDetails.setMobile(applicant.getMobileNumber());
-        contactDetails.setPhone(applicant.getTelephoneNumber());
-        contactDetails.setPostcode(applicant.getPostcode());
+        if (applicant != null) {
+            contactDetails.setAddressLine1(applicant.getAddressLine1());
+            contactDetails.setAddressLine2(applicant.getAddressLine2());
+            contactDetails.setAddressLine3(applicant.getAddressLine3());
+            contactDetails.setAddressLine4(applicant.getAddressLine4());
+            contactDetails.setAddressLine5(applicant.getAddressLine5());
+            contactDetails.setEmail(applicant.getEmailAddress());
+            contactDetails.setMobile(applicant.getMobileNumber());
+            contactDetails.setPhone(applicant.getTelephoneNumber());
+            contactDetails.setPostcode(applicant.getPostcode());
+        }
         return contactDetails;
     }
 

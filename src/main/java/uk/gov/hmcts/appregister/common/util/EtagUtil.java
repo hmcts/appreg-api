@@ -36,13 +36,13 @@ public class EtagUtil {
         StringBuilder stringBuilder = new StringBuilder();
         for (Keyable keyable : ids) {
             stringBuilder
-                .append(keyable.getId().toString())
-                .append(":")
-                .append(
-                    (keyable instanceof Versionable)
-                        ? ((Versionable) keyable).getVersion().toString()
-                        : "")
-                .append(keyable.getClass().getCanonicalName());
+                    .append(keyable.getId().toString())
+                    .append(":")
+                    .append(
+                            (keyable instanceof Versionable)
+                                    ? ((Versionable) keyable).getVersion().toString()
+                                    : "")
+                    .append(keyable.getClass().getCanonicalName());
         }
 
         return stringBuilder.toString();

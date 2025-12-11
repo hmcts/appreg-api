@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.audit.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,31 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     private static final String TRACE_ID = "traceId";
 
     private final ObjectMapper mapper;
+
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+
+    @Override
+    public <T, E extends Keyable> T processAudit(
+            AuditOperation auditType,
+            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+        return processAudit(
+                null,
+                auditType,
+                execution,
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
+
+    @Override
+    public <T, E extends Keyable> T processAudit(
+            E oldValue,
+            AuditOperation auditType,
+            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+        return processAudit(
+                oldValue,
+                auditType,
+                execution,
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+    }
 
     @Override
     public <T, E extends Keyable> T processAudit(
@@ -110,7 +136,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
         } else if (eventEnum.getType().isDelete() && oldValue == null) {
             throw new AppRegistryException(
-                    CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old and new");
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old");
         }
     }
 

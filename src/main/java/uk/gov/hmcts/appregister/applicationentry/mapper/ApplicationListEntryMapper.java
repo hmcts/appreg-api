@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,18 +13,23 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.EntityType;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
+import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -31,7 +37,11 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.FullName;
+import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
@@ -42,6 +52,8 @@ import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper
 public abstract class ApplicationListEntryMapper {
 
     @Autowired ApplicantMapper applicantMapper;
+
+    @Autowired OfficialMapper officialMapper;
 
     @Autowired StandardApplicantMapper standardApplicantMapper;
 
@@ -318,44 +330,6 @@ public abstract class ApplicationListEntryMapper {
             ApplicationListEntryGetSummaryProjection projection);
 
     /**
-     * Convert ApplicationList and ApplicationListEntry to EntryGetSummaryDto.
-     * @param applicationListEntry The application list entry
-     * @return The entry summary DTO
-     */
-
-    @Mapping(target = "id", source = "applicationListEntry.uuid")
-    @Mapping(target = "listId", source = "applicationListEntry.applicationList.uuid")
-    @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
-
-
-    @Mapping(target = "applicant", expression = "java(toApplicant(applicationListEntry.getAnameAddress))")
-    @Mapping(
-        target = "respondent",
-        expression = "java(applicantMapper.toApplicant(applicationListEntry.getRnameAddress()))")
-
-    @Mapping(target = "numberOfRespondents", source = "applicationListEntry.numberOfBulkRespondents")
-
-    @Mapping(target = "applicationTitle", source = "applicationListEntry.getApplicationCode().getTitle()")
-    @Mapping(target = "isFeeRequired", expression = "java(applicationListEntry.getApplicationCode().isFeeDue().isYes())")
-    @Mapping(target = "status", expression = "java(toStatus(applicationListEntry.getApplicationList().getStatus()))")
-    @Mapping(target = "legislation", expression = "java(applicationListEntry.getApplicationCode().getLegislation())")
-    @Mapping(target = "isResulted", expression = "java(applicationListEntry.getResolutions().size() > 0)")
-    @Mapping(target = "standardApplicantCode", expression = "java(applicationListEntry.getStandardApplicant().getCode())")
-
-
-    public abstract EntryGetDetailDto toEntryGetDetailDto(ApplicationListEntry applicationListEntry);
-    
-    /**
-     * gets the working refreence strings from template code.
-     *
-     * @param code The application code
-     * @return The list of template keys (references)
-     */
-    public List<String> getTemplateKeys(ApplicationCode code) {
-        return WordingTemplateSentence.with(code.getWording()).getReferences();
-    }
-
-    /**
      * gets a standard applicant or a named applicant depending on which one exists.
      *
      * @param projection The projection
@@ -369,5 +343,192 @@ public abstract class ApplicationListEntryMapper {
         }
 
         return null;
+    }
+
+    /**
+     * derives an applicant from the standard applicant or a named applicant depending on which one
+     * exists.
+     *
+     * @param applicationListEntry The app list entry
+     * @param standardApplicant The standard applicant to use, can be null
+     * @return The applicant mapper
+     */
+    public Applicant toApplicant(
+            ApplicationListEntry applicationListEntry, StandardApplicant standardApplicant) {
+        if (standardApplicant != null) {
+            return standardApplicantMapper.toApplicant(standardApplicant);
+        }
+
+        return applicantMapper.toApplicant(applicationListEntry.getAnamedaddress());
+    }
+
+    /**
+     * gets the entry detail dto from application list entry.
+     *
+     * @param applicationListEntry The application list entry
+     * @return The entry get detail dto
+     */
+    @Mapping(target = "id", expression = "java(applicationListEntry.getUuid())")
+    @Mapping(
+            target = "listId",
+            expression = "java(applicationListEntry.getApplicationList().getUuid())")
+    @Mapping(
+            target = "standardApplicantCode",
+            source = "applicationListEntry.standardApplicant.applicantCode")
+    @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
+    @Mapping(
+            target = "applicant",
+            expression = "java(toApplicant(applicationListEntry, applicant))")
+    @Mapping(
+            target = "respondent",
+            expression = "java(toRespondent(applicationListEntry.getRnameaddress()))")
+    @Mapping(
+            target = "numberOfRespondents",
+            source = "applicationListEntry.numberOfBulkRespondents")
+    @Mapping(
+            target = "wordingFields",
+            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+    @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
+    @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.isOffsite())")
+    @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
+    @Mapping(target = "accountNumber", source = "applicationListEntry.accountNumber")
+    @Mapping(target = "notes", source = "applicationListEntry.notes")
+    @Mapping(target = "officials", expression = "java(toOfficial(officials))")
+    @Mapping(target = "lodgementDate", source = "applicationListEntry.lodgementDate")
+    public abstract EntryGetDetailDto toEntryGetDetailDto(
+            ApplicationListEntry applicationListEntry,
+            List<AppListEntryFeeStatus> statusList,
+            Fee fee,
+            List<AppListEntryOfficial> officials,
+            StandardApplicant applicant);
+
+    public List<Official> toOfficial(List<AppListEntryOfficial> officials) {
+        List<Official> retOfficials = new ArrayList<>();
+        for (AppListEntryOfficial official : officials) {
+            Official off = new Official();
+            off.setSurname(official.getSurname());
+            off.setTitle(official.getTitle());
+            off.setForename(official.getForename());
+            off.setType(officialMapper.toOfficial(official.getOfficialType()));
+            retOfficials.add(off);
+        }
+        return retOfficials;
+    }
+
+    /**
+     * Convert ApplicationList and ApplicationListEntry to EntryGetSummaryDto.
+     *
+     * @param applicationListEntry The application list entry
+     * @return The entry summary DTO
+     */
+    @Mapping(target = "id", source = "applicationListEntry.uuid")
+    @Mapping(target = "listId", source = "applicationListEntry.applicationList.uuid")
+    @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
+    @Mapping(
+            target = "applicant",
+            expression = "java(toApplicant(applicationListEntry.getAnameAddress))")
+    @Mapping(
+            target = "respondent",
+            expression =
+                    "java(applicantMapper.toApplicant(applicationListEntry.getRnameAddress()))")
+    @Mapping(
+            target = "numberOfRespondents",
+            source = "applicationListEntry.numberOfBulkRespondents")
+    @Mapping(
+            target = "applicationTitle",
+            source = "applicationListEntry.getApplicationCode().getTitle()")
+    @Mapping(
+            target = "isFeeRequired",
+            expression = "java(applicationListEntry.getApplicationCode().isFeeDue().isYes())")
+    @Mapping(
+            target = "status",
+            expression = "java(toStatus(applicationListEntry.getApplicationList().getStatus()))")
+    @Mapping(
+            target = "legislation",
+            expression = "java(applicationListEntry.getApplicationCode().getLegislation())")
+    @Mapping(
+            target = "isResulted",
+            expression = "java(applicationListEntry.getResolutions().size() > 0)")
+    @Mapping(
+            target = "standardApplicantCode",
+            expression = "java(applicationListEntry.getStandardApplicant().getCode())")
+    public abstract EntryGetDetailDto toEntryGetDetailDto(
+            ApplicationListEntry applicationListEntry);
+
+    /**
+     * gets the working refreence strings from template code.
+     *
+     * @param code The application code
+     * @return The list of template keys (references)
+     */
+    public List<String> getTemplateKeys(ApplicationCode code) {
+        return WordingTemplateSentence.with(code.getWording()).getReferences();
+    }
+
+    public List<FeeStatus> getFeeStatusList(List<AppListEntryFeeStatus> feeStatusList) {
+        return feeStatusList.stream()
+                .map(
+                        feeStatus -> {
+                            FeeStatus status = new FeeStatus();
+                            status.setPaymentStatus(getStatus(feeStatus.getAlefsFeeStatus()));
+                            status.setPaymentReference(feeStatus.getAlefsPaymentReference());
+                            status.setStatusDate(feeStatus.getAlefsFeeStatusDate());
+                            return status;
+                        })
+                .toList();
+    }
+
+    public PaymentStatus getStatus(FeeStatusType feeStatus) {
+        if (feeStatus == FeeStatusType.DUE) {
+            return PaymentStatus.DUE;
+        } else if (feeStatus == FeeStatusType.PAID) {
+            return PaymentStatus.PAID;
+        } else if (feeStatus == FeeStatusType.REMITTED) {
+            return PaymentStatus.REMITTED;
+        } else if (feeStatus == FeeStatusType.UNDERTAKING) {
+            return PaymentStatus.UNDERTAKEN;
+        }
+
+        return null;
+    }
+
+    /**
+     * A useful mapper to map the applicant details of the standard applicant.
+     *
+     * @param nameAddress The database name and address
+     * @return The applicant Dto
+     */
+    /**
+     * A useful mapper to map the applicant details of the standard applicant.
+     *
+     * @param applicant The database applicant
+     * @return The applicant Dto
+     */
+    public Respondent toRespondent(NameAddress applicant) {
+
+        ContactDetails contactDetails = applicantMapper.toContactDetails(applicant);
+        Respondent respondentDto = null;
+        if (applicant != null) {
+            respondentDto = new Respondent();
+
+            if (applicant.getName() != null) {
+                // if the name is set then this is an organisation otherwise a person
+                Organisation organisation = new Organisation();
+                organisation.setName(applicant.getName());
+                organisation.setContactDetails(contactDetails);
+                respondentDto.setOrganisation(organisation);
+
+            } else {
+                Person person = new Person();
+                FullName fullName = applicantMapper.toFullName(applicant);
+                person.setContactDetails(contactDetails);
+                person.setName(fullName);
+                respondentDto.setPerson(person);
+            }
+
+            respondentDto.setDateOfBirth(applicant.getDateOfBirth());
+        }
+
+        return respondentDto;
     }
 }

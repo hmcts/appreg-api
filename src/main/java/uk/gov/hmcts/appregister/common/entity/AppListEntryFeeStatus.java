@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.FetchType;
@@ -12,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,17 +21,22 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.converter.FeeStatusTypeConverter;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 
 /**
  * The AppListEntryFeeStatus entity represents the fee status of an application list entry.
  */
 @Entity
-@Table(name = "app_list_entry_fee_status")
+@Table(name = TableNames.APPLICATION_LISTS_FEE_STATUS)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -37,12 +44,14 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class AppListEntryFeeStatus implements Changeable, Accountable, Versionable, Keyable {
     @Id
     @Column(name = "alefs_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "alefs_gen")
     @SequenceGenerator(name = "alefs_gen", sequenceName = "alefs_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -53,10 +62,11 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     private String alefsPaymentReference;
 
     @Column(name = "alefs_fee_status")
-    private String alefsFeeStatus;
+    @Convert(converter = FeeStatusTypeConverter.class)
+    private FeeStatusType alefsFeeStatus;
 
     @Column(name = "alefs_fee_status_date", nullable = false)
-    private OffsetDateTime alefsFeeStatusDate;
+    private LocalDate alefsFeeStatusDate;
 
     @Column(name = "alefs_version", nullable = false)
     @Version
@@ -65,7 +75,7 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     @Column(name = "alefs_changed_by", nullable = false)
     private String changedBy;
 
-    @Column(name = "fee_changed_date", nullable = false)
+    @Column(name = "alefs_changed_date", nullable = false)
     private OffsetDateTime changedDate;
 
     @Column(name = "alefs_user_name", nullable = false)

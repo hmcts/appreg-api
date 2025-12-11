@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -34,7 +35,8 @@ class AppRegExceptionHandlerTest {
                     throws Exception {
         // setup
         AppRegistryException exception =
-                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", null);
+                new AppRegistryException(
+                        ApplicationCodeError.CODE_NOT_FOUND, "Test message", (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -68,7 +70,7 @@ class AppRegExceptionHandlerTest {
                                 new DefaultErrorDetail(
                                         HttpStatus.BAD_REQUEST, customMessage, customType),
                         "Test message",
-                        null);
+                        (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -148,7 +150,8 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
         Assertions.assertEquals(
-                customMessage, ((ProblemDetail) problemDetail.getBody()).getDetail());
+                "Custom message. field=defaultMessage\n",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
@@ -187,7 +190,8 @@ class AppRegExceptionHandlerTest {
         String content = "test";
 
         // setup
-        HttpMessageNotReadableException exception = new HttpMessageNotReadableException(content);
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, (HttpInputMessage) null);
 
         // execute
         ResponseEntity<Object> problemDetail =
@@ -199,8 +203,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
 
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
-        Assertions.assertEquals(
-                content, ((ProblemDetail) (ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(content, ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
@@ -219,7 +222,7 @@ class AppRegExceptionHandlerTest {
 
         // setup
         HttpMessageNotReadableException exception =
-                new HttpMessageNotReadableException(content, dateTimeParseException);
+                new HttpMessageNotReadableException(content, dateTimeParseException, null);
 
         // execute
         ResponseEntity<Object> problemDetail =

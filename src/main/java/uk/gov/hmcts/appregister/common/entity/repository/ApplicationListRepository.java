@@ -62,13 +62,13 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
     Optional<ApplicationList> findByUuid(UUID id);
 
     /**
-     * Finds an application list by its UUID. Does not exclude deleted entries.
+     * Finds a non-soft deleted application list by its UUID. Does not exclude deleted entries.
      *
      * @param id An id to look up
      * @return A single matching application entry
      */
     @Query(
-        """
+            """
         SELECT al
         FROM ApplicationList al
         WHERE al.uuid = :id

@@ -13,6 +13,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
@@ -84,9 +85,8 @@ public class ReflectiveAuditor implements Auditor {
             boolean useAnnotations) {
         if (val != null) {
 
-            // loop through all methods of the objects being passed
             for (ReflectionCaches.MethodData method :
-                    ReflectionCaches.METHOD_CACHE.get(val.getClass()).methods()) {
+                    ReflectionCaches.METHOD_CACHE.get(BeanUtil.getProxyClass(val)).methods()) {
 
                 // if we are using annotations check if the method is annotated for this crud
                 // operation

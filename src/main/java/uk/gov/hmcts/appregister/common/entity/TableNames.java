@@ -18,4 +18,8 @@ public class TableNames {
     public static final String LINK_COMMUNICATION_MEDIA = "link_communication_media";
     public static final String LINK_ADDRESSES = "link_addresses";
     public static final String APPICATION_LIST = "application_lists";
+    public static final String NAME_ADDRESS = "name_address";
+    public static final String APPLICATION_LISTS_FEE_STATUS = "app_list_entry_fee_status";
+    public static final String APPLCATION_LISTS_ENTRY_OFFICIAL = "app_list_entry_official";
+    public static final String APPLCATION_LISTS_ENTRY_FEE_ID = "app_list_entry_fee_id";
 }

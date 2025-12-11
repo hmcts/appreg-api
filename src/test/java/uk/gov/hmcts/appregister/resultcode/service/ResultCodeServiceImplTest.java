@@ -50,7 +50,7 @@ public class ResultCodeServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper());
+            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
 
     private ResultCodeServiceImpl service;
 

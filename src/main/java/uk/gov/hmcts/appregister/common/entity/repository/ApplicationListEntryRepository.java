@@ -42,6 +42,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             Long id, Long listId, String userId);
 
     /**
+     * Finds a single application list entries by list ID, ensuring it belongs to the specified
+     * application list and that the list is owned by the given user.
+     *
+     * @param listId The ID of the application list the application is expected to belong to
+     * @return The application, if found and accessible
+     */
+    List<ApplicationListEntry> findByApplicationListId(Long listId);
+
+    /**
      * Finds all applications with the given IDs that are accessible to a specific user. Only
      * applications belonging to lists owned by that user will be returned.
      *
@@ -270,6 +279,35 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 
     /**
+     * Finds an entry for Uuid.
+     *
+     * @param entryId The entry id
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuid(UUID entryId);
+
+    /**
+     * Finds all entities with the given IDs, within the associated list.
+     *
+     * @param entryId The entry id
+     * @param listId The list that the entry resides in
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
+
+    /**
      * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
      * rows updated.
      *
@@ -301,7 +339,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return A single matching application entry
      */
     @Query(
-        """
+            """
         SELECT ale
         FROM ApplicationListEntry ale
         WHERE ale.uuid = :entryId
@@ -316,7 +354,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return A single matching application entry
      */
     @Query(
-        """
+            """
         SELECT ale
         FROM ApplicationListEntry ale
         WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId

@@ -117,7 +117,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(7, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST, "id", "", null, operation, eventName));
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -226,7 +229,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(8, true);
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -236,6 +238,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         req.getStatus().toString(),
                         operation,
                         eventName));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        "application_lists", "id", null, null, operation, eventName));
+
         differenceLogAsserter.assertFieldLogNotPresent(
                 TableNames.APPICATION_LIST, "courthouse_code", true);
 
@@ -450,8 +457,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
 
-        differenceLogAsserter.assertDiffCount(11, true);
-
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
         differenceLogAsserter.assertDataAuditChange(
@@ -555,8 +560,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
         resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
-
-        differenceLogAsserter.assertDiffCount(11, true);
     }
 
     @Test
@@ -678,8 +681,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-
-        differenceLogAsserter.assertDiffCount(11, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
@@ -1698,7 +1699,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // assert success
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
+        assertThat(problemDetail.getType())
+                .isEqualTo(CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get());
         assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
     }

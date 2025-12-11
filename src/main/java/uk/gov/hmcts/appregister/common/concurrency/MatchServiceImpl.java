@@ -27,7 +27,7 @@ public class MatchServiceImpl implements MatchService {
      * @return The match response with the updated etag
      */
     public <T> MatchResponse<T> matchOnRequest(
-        Supplier<MatchResponse<T>> supplier, List<Keyable> entities) {
+            Supplier<MatchResponse<T>> supplier, List<Keyable> entities) {
         // Apply the match etag from the request to the entity
         if (request != null && request.getEtag() != null) {
             // Assuming the entity has a setEtag method
@@ -37,9 +37,9 @@ public class MatchServiceImpl implements MatchService {
             // exception
             if (!generateEtag.equals(request.getEtag())) {
                 throw new AppRegistryException(
-                    CommonAppError.MATCH_ETAG_FAILURE,
-                    "ETag specified %s does not match identified record"
-                        .formatted(request.getEtag()));
+                        CommonAppError.MATCH_ETAG_FAILURE,
+                        "ETag specified %s does not match identified record"
+                                .formatted(request.getEtag()));
             }
         }
 
