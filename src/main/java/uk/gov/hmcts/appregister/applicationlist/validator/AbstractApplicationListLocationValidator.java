@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -30,7 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
  * validated. In this way it can be shared
  */
 @RequiredArgsConstructor
-@Slf4j
 public abstract class AbstractApplicationListLocationValidator<
                 T, O extends ListLocationValidationSuccess>
         implements Validator<T, O> {
@@ -230,9 +228,7 @@ public abstract class AbstractApplicationListLocationValidator<
     }
 
     private void validateTime(T dto) {
-        log.info("Validating time for application list entry");
         LocalTime time = getTime().apply(dto);
-        log.info("Time is {}", time);
 
         if (time != null && time.getSecond() != 0) {
             throw new AppRegistryException(
