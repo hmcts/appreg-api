@@ -12,6 +12,11 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.EntityType;
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
@@ -23,6 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
@@ -310,6 +316,44 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "isResulted", expression = "java(projection.getResult() != null)")
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
+
+    /**
+     * Convert ApplicationList and ApplicationListEntry to EntryGetSummaryDto.
+     * @param applicationListEntry The application list entry
+     * @return The entry summary DTO
+     */
+
+    @Mapping(target = "id", source = "applicationListEntry.uuid")
+    @Mapping(target = "listId", source = "applicationListEntry.applicationList.uuid")
+    @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
+
+
+    @Mapping(target = "applicant", expression = "java(toApplicant(applicationListEntry.getAnameAddress))")
+    @Mapping(
+        target = "respondent",
+        expression = "java(applicantMapper.toApplicant(applicationListEntry.getRnameAddress()))")
+
+    @Mapping(target = "numberOfRespondents", source = "applicationListEntry.numberOfBulkRespondents")
+
+    @Mapping(target = "applicationTitle", source = "applicationListEntry.getApplicationCode().getTitle()")
+    @Mapping(target = "isFeeRequired", expression = "java(applicationListEntry.getApplicationCode().isFeeDue().isYes())")
+    @Mapping(target = "status", expression = "java(toStatus(applicationListEntry.getApplicationList().getStatus()))")
+    @Mapping(target = "legislation", expression = "java(applicationListEntry.getApplicationCode().getLegislation())")
+    @Mapping(target = "isResulted", expression = "java(applicationListEntry.getResolutions().size() > 0)")
+    @Mapping(target = "standardApplicantCode", expression = "java(applicationListEntry.getStandardApplicant().getCode())")
+
+
+    public abstract EntryGetDetailDto toEntryGetDetailDto(ApplicationListEntry applicationListEntry);
+    
+    /**
+     * gets the working refreence strings from template code.
+     *
+     * @param code The application code
+     * @return The list of template keys (references)
+     */
+    public List<String> getTemplateKeys(ApplicationCode code) {
+        return WordingTemplateSentence.with(code.getWording()).getReferences();
+    }
 
     /**
      * gets a standard applicant or a named applicant depending on which one exists.
