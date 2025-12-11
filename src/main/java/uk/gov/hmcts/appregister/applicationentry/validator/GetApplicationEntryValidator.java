@@ -16,12 +16,14 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 /**
- * gets the entry detail validator
+ * Gets the application entry validator which checks that the application entry exists within the
+ * specified application list and that the application list is in the correct state (open and not
+ * deleted).
  */
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class GetEntryValidator
+public class GetApplicationEntryValidator
         implements Validator<PayloadGetEntryInList, GetEntryValidationSuccess> {
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
@@ -36,6 +38,8 @@ public class GetEntryValidator
     public <R> R validate(
             PayloadGetEntryInList validatable,
             BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
+
+        // check that the application list exists
         Optional<ApplicationList> applicationList =
                 applicationListRepository.findByUuidIncludingDelete(validatable.getListId());
         if (applicationList.isEmpty()) {
@@ -44,14 +48,15 @@ public class GetEntryValidator
                     "The application list does not exist %s".formatted(validatable.getListId()));
         }
 
-        // if the state of the application is not open then we cant add an entry
+        // if the state of the application is  open and not soft deleted
         if (applicationList.get().getStatus() != Status.OPEN || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE,
-                    "The application list id %s is not in the correct state or the application list is deleted %s"
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    "The application list id %s is not in the correct state or the application list is deleted"
                             .formatted(validatable.getListId()));
         }
 
+        // check that the entry exists
         Optional<ApplicationListEntry> entry =
                 applicationListEntryRepository.findByUuid(validatable.getEntryId());
         if (entry.isEmpty()) {
@@ -63,9 +68,10 @@ public class GetEntryValidator
 
         log.debug(" application list entry is found {}", validatable.getEntryId());
 
+        // check that the entry is within the list
         entry =
                 applicationListEntryRepository.findByEntryUuidWithinListUuid(
-                        validatable.getEntryId(), validatable.getEntryId());
+                        validatable.getListId(), validatable.getEntryId());
         if (entry.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST,

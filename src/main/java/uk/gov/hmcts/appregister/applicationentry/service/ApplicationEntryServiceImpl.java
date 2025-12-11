@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
-import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -86,7 +86,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     // Infrastructure
     private final EntityManager entityManager;
 
-    private final GetEntryValidator getEntryValidator;
+    private final GetApplicationEntryValidator getEntryValidator;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, Pageable pageable) {
@@ -778,18 +778,45 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
-    public MatchResponse<EntryGetDetailDto> getApplicationListEntrySummary(
+    public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
+        log.debug(
+                "Started: Getting application list entry detail: {} for list: {}",
+                entry.getEntryId(),
+                entry.getListId());
+
         return getEntryValidator.validate(
                 entry,
                 (req, success) -> {
                     getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
                     EntryGetDetailDto dto =
                             applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                                    success.getApplicationListEntry());
+                                    success.getApplicationListEntry(),
+                                    hasOffsite(success.getApplicationListEntry()));
+                    log.debug(
+                            "Finished: Getting application list entry detail: {} for list: {}",
+                            entry.getEntryId(),
+                            entry.getListId());
+
                     return MatchResponse.of(
                             dto, getKeyablesForCreateUpdateEtag(success.getApplicationListEntry()));
                 });
+    }
+
+    /**
+     * has an offsite fee.
+     *
+     * @param entry The entry
+     * @return Whether we have an offsite fee
+     */
+    private boolean hasOffsite(ApplicationListEntry entry) {
+        for (AppListEntryFeeId feeEntryId : entry.getEntryFeeIds()) {
+            if (feeRepository.findById(feeEntryId.getId()).get().isOffsite()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

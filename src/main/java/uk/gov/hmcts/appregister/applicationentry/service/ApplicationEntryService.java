@@ -50,10 +50,11 @@ public interface ApplicationEntryService {
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
 
     /**
-     * Retrieves an entry representation based on the entry details provided
+     * Retrieves an entry representation based on the entry details provided which contains the list
+     * id and entry id.
      *
      * @param entry The payment get detail
-     * @return A MatchResponse containing the summary of application list entries
+     * @return A MatchResponse containing the entry details
      */
-    MatchResponse<EntryGetDetailDto> getApplicationListEntrySummary(PayloadGetEntryInList entry);
+    MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(PayloadGetEntryInList entry);
 }

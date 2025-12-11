@@ -136,7 +136,7 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
         // if the state of the application is not open then we cant add an entry
         if (applicationList.get().getStatus() != Status.OPEN || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE,
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
                     "The application list id %s is not in the correct state or the application list is deleted %s"
                             .formatted(
                                     getApplicationListUuid(validatable),

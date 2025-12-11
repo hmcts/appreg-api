@@ -108,16 +108,17 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     @Override
     public ResponseEntity<EntryGetDetailDto> getApplicationListEntry(UUID listId, UUID entryId) {
-        PayloadGetEntryInList payloadForGet = PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
+        PayloadGetEntryInList payloadForGet =
+                PayloadGetEntryInList.builder().listId(listId).entryId(entryId).build();
 
-        MatchResponse<EntryGetDetailDto> matchResponse
-            = applicationEntryService.getApplicationListEntrySummary(payloadForGet);
-
-        return ResponseEntity.created(locationOf(payloadForGet.getEntryId()))
-            .varyBy(HttpHeaders.ACCEPT)
-            .contentType(VND_JSON_V1)
-            .eTag(matchResponse.getEtag())
-            .body(matchResponse.getPayload());
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                applicationEntryService.getApplicationListEntryDetail(payloadForGet);
+        log.info("Get Application List Entry");
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .eTag(matchResponse.getEtag())
+                .body(matchResponse.getPayload());
     }
 
     private List<String> toEntitySort(List<String> sort) {

@@ -316,9 +316,12 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     auditService.processAudit(
                             BeanUtil.copyBean(success.getApplicationList()),
                             AppListAuditOperation.DELETE_APP_LIST,
-                            (ev) -> Optional.of(performDelete(success.getApplicationList())),
-                            auditLifecycleListeners.toArray(
-                                    new AuditOperationLifecycleListener[0]));
+                            req -> {
+                                performDelete(success.getApplicationList());
+                                Optional<AuditableResult<Void, ApplicationList>> ret =
+                                        Optional.empty();
+                                return ret;
+                            });
                     return null;
                 });
 
@@ -533,14 +536,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 matchService.matchOnRequest(
-                        applicationList.getUuid(),
-                        applicationList,
                         () -> {
                             var savedEntity = repository.save(applicationList);
-                            var hydrated = refreshEntity(savedEntity);
-
-                            return MatchResponse.of(hydrated.getUuid(), hydrated, null);
-                        }),
+                            return MatchResponse.of(null, List.of());
+                        },
+                        List.of(applicationList)),
                 applicationList);
     }
 }
