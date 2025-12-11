@@ -426,26 +426,25 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     @Test
     void givenInvalidTime_whenCreate_then400() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
+        var token = getATokenWithValidCredentials()
+            .roles(List.of(RoleEnum.USER))
+            .build()
+            .fetchTokenForRole();
 
-        var req =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(LocalTime.now())
-                        .description("list_(court)")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(2)
-                        .durationMinutes(30);
+        var invalidTime = LocalTime.of(0, 0, 1);
+
+        var req = new ApplicationListCreateDto()
+            .date(TEST_DATE)
+            .time(invalidTime)
+            .description("list_(court)")
+            .status(ApplicationListStatus.OPEN)
+            .courtLocationCode(VALID_COURT_CODE)
+            .durationHours(2)
+            .durationMinutes(30);
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-
         ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
     }
 
