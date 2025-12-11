@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.controller;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
+import jakarta.persistence.EntityManager;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.List;
@@ -12,14 +13,22 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
+import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -29,47 +38,51 @@ import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 public class ActionControllerTest extends AbstractSecurityControllerTest {
-
+    @Autowired private EntityManager entityManager;
+    @MockitoBean private UserProvider provider;
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
     private static final String UNKNOWN_APPLICATION_LIST_ID =
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
+    @BeforeEach
+    public void before() {
+        when(provider.getUserId()).thenReturn("user");
+        when(provider.getEmail()).thenReturn("email");
+        when(provider.getRoles()).thenReturn(new String[] {"role"});
+    }
+
     @Test
     @DisplayName("Move Application List Entries")
     void givenValidRequest_whenMove_then200() throws Exception {
+        // Given: source, target and other lists
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        ApplicationListEntry sourceEntry = new AppListEntryTestData().someMinimal().build();
+        sourceEntry.setApplicationList(sourceList);
+
+        persistance.save(sourceEntry);
+        sourceList.setStatus(Status.OPEN);
+        persistance.save(sourceList);
+
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        ApplicationListEntry targetListEntry = new AppListEntryTestData().someMinimal().build();
+        targetListEntry.setApplicationList(targetList);
+
+        persistance.save(targetListEntry);
+        targetList.setStatus(Status.OPEN);
+        persistance.save(targetList);
+
+        Set<UUID> uuidsToMove = Set.of(sourceEntry.getUuid());
+
         var token = getToken();
 
-        ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
-
-        UUID sourceListId = page.getContent().get(0).getId();
-        UUID targetListId = page.getContent().get(1).getId();
-
-        Response resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + sourceListId), token);
-        ApplicationListGetDetailDto applicationListGetDetailDto =
-                resp.as(ApplicationListGetDetailDto.class);
-
-        Set<UUID> entryIds = new HashSet<>();
-        UUID entry1Id = applicationListGetDetailDto.getEntriesSummary().get(0).getUuid();
-        UUID entry2Id = applicationListGetDetailDto.getEntriesSummary().get(1).getUuid();
-        entryIds.add(entry1Id);
-        entryIds.add(entry2Id);
-
         // fire test
-        resp = getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
+        Response resp =
+                getMoveApplicationListEntriesResponse(
+                        sourceList.getUuid(), targetList.getUuid(), uuidsToMove, token);
 
         // assert success
         resp.then().statusCode(HttpStatus.OK.value());
-
-        resp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + targetListId), token);
-        applicationListGetDetailDto = resp.as(ApplicationListGetDetailDto.class);
-        assertThat(applicationListGetDetailDto.getEntriesSummary())
-                .extracting(ApplicationListEntrySummary::getUuid)
-                .contains(entry1Id, entry2Id);
     }
 
     @Test

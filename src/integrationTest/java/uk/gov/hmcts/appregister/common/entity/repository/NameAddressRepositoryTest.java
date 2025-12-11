@@ -20,7 +20,7 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
 
     @Autowired private UserProvider loggedInUser;
 
-    private static final int BASELINE_TEST_COUNT = 4;
+    private static final int BASELINE_TEST_COUNT = 5;
 
     @Test
     public void testBasicInsertionUpdate() throws Exception {

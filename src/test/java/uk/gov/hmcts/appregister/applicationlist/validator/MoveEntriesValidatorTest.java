@@ -2,8 +2,8 @@ package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED;
-import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.OPEN;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import java.util.Optional;
 import java.util.Set;

@@ -31,7 +31,7 @@ import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEnt
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 
 /**
  * The ApplicationList entity represents a list of applications in the system.
@@ -63,7 +63,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @Column(name = "application_list_status")
     @Enumerated(EnumType.STRING)
     @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
-    private ApplicationListStatus status;
+    private Status status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)
@@ -116,6 +116,6 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     private Long version;
 
     public boolean isOpen() {
-        return this.status == ApplicationListStatus.OPEN;
+        return this.status == Status.OPEN;
     }
 }

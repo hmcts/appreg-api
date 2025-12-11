@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 
 /**
  * Repository interface for managing ApplicationList entities.
@@ -112,7 +112,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
           AND (al.deleted IS NULL OR al.deleted <> '1')
         """)
     Page<ApplicationList> findAllByFilter(
-            @Param("status") ApplicationListStatus status,
+            @Param("status") Status status,
             @Param("courtCode") String courtCode,
             @Param("cja") CriminalJusticeArea cja,
             @Param("onDate") LocalDate onDate,
