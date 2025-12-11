@@ -396,6 +396,60 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    void givenClosedStatus_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning_list_(court)")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(
+                uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError
+                        .INVALID_NEW_LIST_STATUS
+                        .getCode(),
+                resp);
+    }
+
+    @Test
+    void givenInvalidTime_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.now())
+                        .description("list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
+    }
+
+    @Test
     void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
@@ -816,7 +870,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning list (court) update")
-                        .status(ApplicationListStatus.CLOSED)
+                        .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE)
                         .durationHours(4)
                         .durationMinutes(32)
@@ -954,6 +1008,42 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("UPDATE: 404 when updating a soft-deleted list")
+    void givenSoftDeleted_whenUpdate_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-update", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Attempt update on soft-deleted")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(2)
+                        .durationMinutes(15);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
     }
 
     @Override
@@ -1099,7 +1189,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithConflict_then204() throws Exception {
+    void givenValidRequest_whenDeleteTwice_thenSecondDeleteReturns404() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1124,20 +1214,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         UUID id = dto.getId();
 
-        // fire tests
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-
-        // assert success
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
-        // prove the delete has been made
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
-
-        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
-                problemDetail.getType().toString());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
@@ -1351,48 +1432,14 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    @DisplayName("GET: filter by time without seconds matches time with seconds")
-    void givenTimeFilterWithoutSeconds_thenSlotWithSeconds() throws Exception {
-
-        String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
-        LocalTime t093101 = LocalTime.of(9, 31, 1);
-
-        createWithCourt(prefix + " - keep", day, t093101);
-
-        var userToken =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        Response resp =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.empty(),
-                        Optional.empty(),
-                        List.of(),
-                        getLocalUrl(WEB_CONTEXT),
-                        userToken,
-                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "09:31"),
-                        null);
-
-        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        ApplicationListPage page = resp.as(ApplicationListPage.class);
-
-        assertThat(page.getContent()).hasSize(1);
-        var only = page.getContent().getFirst();
-        assertThat(only.getTime()).isEqualTo(t093101);
-    }
-
-    @Test
     @DisplayName("GET: filter by 23:59")
     void givenTimeFilter_thenSlot() throws Exception {
 
         String prefix = uniquePrefix("get-date-time");
         LocalDate day = LocalDate.of(2025, 10, 15);
-        LocalTime t235901 = LocalTime.of(23, 59, 1);
+        LocalTime t2359 = LocalTime.of(23, 59);
 
-        createWithCourt(prefix + " - keep", day, t235901);
+        createWithCourt(prefix + " - keep", day, t2359);
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -1415,7 +1462,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
-        assertThat(only.getTime()).isEqualTo(t235901);
+        assertThat(only.getTime()).isEqualTo(t2359);
     }
 
     @Test
@@ -1487,6 +1534,44 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
+    }
+
+    @Test
+    @DisplayName("GET: does not return soft deleted list")
+    void givenDefaults_whenGet_then200AndNoSoftDeletedSlot() throws Exception {
+
+        // setup a record for deletion
+        String prefix = uniquePrefix("soft-deleted");
+        ApplicationListGetDetailDto dto =
+                createWithCourt(
+                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        UUID id = dto.getId();
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), userToken);
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(), // Rely on default sort
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(0);
     }
 
     @Test
@@ -1663,6 +1748,35 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .fetchTokenForRole();
 
         UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
+    @DisplayName("GET Application List: 404 when list soft deleted")
+    void givenSoftDeletedApplicationList_whenGetApplicationList_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-get", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
         // fire test
         Response resp =

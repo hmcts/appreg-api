@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
 import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -26,7 +29,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     private static final LocalDate DEFAULT_DATE = LocalDate.of(2025, 1, 2);
     private static final LocalTime DEFAULT_TIME = LocalTime.of(9, 0);
 
-    private void save(
+    private ApplicationList save(
             String status,
             String courtCode,
             CriminalJusticeArea cja,
@@ -37,7 +40,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         ApplicationList al =
                 ApplicationList.builder()
-                        .status(ApplicationListStatus.fromValue(status))
+                        .status(Status.fromValue(status))
                         .description(description)
                         .otherLocation(otherLocation)
                         .courtName(courtCode != null ? "Court " + courtCode : null)
@@ -49,6 +52,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                         .durationMinutes((short) 0)
                         .build();
         repository.saveAndFlush(al);
+        return al;
     }
 
     private CriminalJusticeArea saveCja(String code, String desc) {
@@ -61,7 +65,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
     private ApplicationList buildEntity() {
         return ApplicationList.builder()
-                .status(ApplicationListStatus.OPEN)
+                .status(Status.OPEN)
                 .description("Smoke test list")
                 .courtName("Cardiff Crown Court")
                 .courtCode("CCC003")
@@ -87,7 +91,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
         assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
         assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-        assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(reloaded.getStatus()).isEqualTo(Status.OPEN);
         assertThat(reloaded.getCreatedUser()).isEqualTo(TokenGenerator.DEFAULT_USERNAME);
         assertThat(reloaded.getChangedBy())
                 .isEqualTo(TokenGenerator.DEFAULT_TID + ":" + TokenGenerator.DEFAULT_OID);
@@ -124,7 +128,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                     assertThat(reloaded.getDescription()).isEqualTo("Smoke test list");
                     assertThat(reloaded.getCourtName()).isEqualTo("Cardiff Crown Court");
                     assertThat(reloaded.getCourtCode()).isEqualTo("CCC003");
-                    assertThat(reloaded.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+                    assertThat(reloaded.getStatus()).isEqualTo(Status.OPEN);
                     assertThat(reloaded.getCreatedUser())
                             .isEqualTo(TokenGenerator.DEFAULT_USERNAME);
                     assertThat(reloaded.getChangedBy())
@@ -257,22 +261,12 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
-                        "CCC003",
-                        null,
-                        null,
-                        null,
-                        null,
-                        false,
-                        null,
-                        null,
-                        page);
+                        Status.OPEN, "CCC003", null, null, null, null, false, null, null, page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().getFirst().getCourtCode()).isEqualTo("CCC003");
-        assertThat(result.getContent().getFirst().getStatus())
-                .isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(result.getContent().getFirst().getStatus()).isEqualTo(Status.OPEN);
     }
 
     @Test
@@ -288,7 +282,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.OPEN,
                         null,
                         cja52,
                         null,
@@ -317,7 +311,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When
         Page<ApplicationList> result =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         null,
                         null,
                         null,
@@ -361,6 +355,39 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    @DisplayName("findAllByFilter: does not match soft deleted list")
+    void findAllByFilter_softDeletedList_noMatch() {
+        // Given
+        LocalDate targetDay = LocalDate.of(2025, 1, 2);
+        LocalTime nineAm = LocalTime.of(9, 0);
+
+        // Soft deleted row -> should NOT match
+        ApplicationList applicationList =
+                save("OPEN", "CCC003", null, targetDay, nineAm, "soft deleted", "west");
+        applicationList.setDeleted(YES);
+        repository.saveAndFlush(applicationList);
+
+        Pageable page = PageRequest.of(0, 10);
+
+        // When: filter ONLY by date and time; leave other filters null
+        Page<ApplicationList> result =
+                repository.findAllByFilter(
+                        null, // status
+                        null, // courtCode
+                        null, // cja
+                        targetDay, // date
+                        null, // time
+                        null, // end time
+                        false, // wraps midnight
+                        "soft deleted", // description
+                        null, // other location
+                        page);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(0);
+    }
+
+    @Test
     @DisplayName("findAllByFilter: paging works (page size 1, sorted by date asc)")
     void findAllByFilter_paging_andSorting() {
         // Given
@@ -374,7 +401,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // When: page 0 size 1
         Page<ApplicationList> page0 =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",
                         null,
                         null,
@@ -389,7 +416,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // And: page 1 size 1
         Page<ApplicationList> page1 =
                 repository.findAllByFilter(
-                        ApplicationListStatus.OPEN,
+                        Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",
                         null,
                         null,
@@ -409,5 +436,40 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // Confirm ordering by date asc
         assertThat(page0.getContent().getFirst().getDate()).isEqualTo(d1);
         assertThat(page1.getContent().getFirst().getDate()).isEqualTo(d2);
+    }
+
+    @Test
+    @DisplayName("findByUuid: returns entity when not soft-deleted")
+    void findByUuid_returnsEntityWhenNotSoftDeleted() {
+        // Given
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then
+        assertThat(found).isPresent();
+        assertThat(found.get().getUuid()).isEqualTo(uuid);
+        assertThat(found.get().isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("findByUuid: excludes soft-deleted entity")
+    @Transactional
+    void findByUuid_excludesSoftDeletedEntity() {
+        // Given - create and soft-delete an entity
+        ApplicationList saved = repository.saveAndFlush(buildEntity());
+        UUID uuid = saved.getUuid();
+
+        // mark as deleted and persist
+        saved.setDeleted(YES);
+        repository.saveAndFlush(saved);
+
+        // When
+        var found = repository.findByUuid(uuid);
+
+        // Then - should be excluded by the query
+        assertThat(found).isEmpty();
     }
 }

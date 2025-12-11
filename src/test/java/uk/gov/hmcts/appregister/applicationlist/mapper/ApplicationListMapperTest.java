@@ -7,12 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
+import org.instancio.Instancio;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -29,6 +32,43 @@ public class ApplicationListMapperTest {
     private final ApplicationListMapper mapper = Mappers.getMapper(ApplicationListMapper.class);
 
     // ---------- Mapping: toCreateEntityWithCourt ----------
+
+    @Test
+    void testToCreateEntityWithCja() {
+        // Given
+        var dto = Instancio.of(ApplicationListCreateDto.class).create();
+        var criminalJusticeArea = Instancio.of(CriminalJusticeArea.class).create();
+
+        // When
+        ApplicationList entity = mapper.toCreateEntityWithCja(dto, criminalJusticeArea);
+
+        // Then
+        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
+        Assertions.assertEquals(dto.getOtherLocationDescription(), entity.getOtherLocation());
+        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
+        Assertions.assertEquals(criminalJusticeArea, entity.getCja());
+        Assertions.assertEquals(dto.getTime(), entity.getTime());
+        Assertions.assertEquals(dto.getDate(), entity.getDate());
+    }
+
+    @Test
+    void testToCreateEntityWithCourt() {
+        // Given
+        var dto = Instancio.of(ApplicationListCreateDto.class).create();
+        var nationalCourtHouse = Instancio.of(NationalCourtHouse.class).create();
+
+        // When
+        ApplicationList entity = mapper.toCreateEntityWithCourt(dto, nationalCourtHouse);
+
+        // Then
+        Assertions.assertEquals(nationalCourtHouse.getCourtLocationCode(), entity.getCourtCode());
+        Assertions.assertEquals(nationalCourtHouse.getName(), entity.getCourtName());
+        Assertions.assertEquals(dto.getDescription(), entity.getDescription());
+        Assertions.assertEquals(dto.getTime(), entity.getTime());
+        Assertions.assertEquals(dto.getDate(), entity.getDate());
+        Assertions.assertEquals(dto.getDurationHours(), entity.getDurationHours());
+        Assertions.assertEquals(dto.getDurationMinutes(), entity.getDurationMinutes());
+    }
 
     @Nested
     class ToCreateEntityWithCourtTests {
@@ -64,7 +104,7 @@ public class ApplicationListMapperTest {
             assertNull(entity.getCja());
             assertNull(entity.getOtherLocation());
             assertEquals("Morning session", entity.getDescription());
-            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
+            assertEquals(Status.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 17), entity.getDate());
             assertEquals(LocalTime.of(10, 30, 0), entity.getTime());
             assertEquals(2, entity.getDurationHours());
@@ -110,7 +150,7 @@ public class ApplicationListMapperTest {
             assertEquals("CJA001", entity.getCja().getCode());
             assertEquals("Temporary Courtroom at Town Hall", entity.getOtherLocation());
             assertEquals("Afternoon session", entity.getDescription());
-            assertEquals(ApplicationListStatus.OPEN, entity.getStatus());
+            assertEquals(Status.OPEN, entity.getStatus());
             assertEquals(LocalDate.of(2025, 9, 18), entity.getDate());
             assertEquals(LocalTime.of(14, 5, 7), entity.getTime());
             assertEquals(1, entity.getDurationHours());
@@ -132,7 +172,7 @@ public class ApplicationListMapperTest {
                             .id(999L)
                             .uuid(id)
                             .description("Morning session for traffic-related applications")
-                            .status(ApplicationListStatus.OPEN)
+                            .status(Status.OPEN)
                             .courtCode("LOC123")
                             .courtName("Bath Magistrates Court")
                             .date(LocalDate.of(2025, 9, 17))
@@ -175,7 +215,7 @@ public class ApplicationListMapperTest {
                     ApplicationList.builder()
                             .uuid(id)
                             .description("Morning session")
-                            .status(ApplicationListStatus.OPEN)
+                            .status(Status.OPEN)
                             .date(LocalDate.of(2025, 9, 19))
                             .time(LocalTime.of(9, 0, 0))
                             .build();
