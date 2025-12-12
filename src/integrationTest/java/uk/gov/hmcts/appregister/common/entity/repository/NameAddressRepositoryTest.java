@@ -12,7 +12,6 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
-import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Slf4j
 public class NameAddressRepositoryTest extends BaseRepositoryTest {
@@ -47,9 +46,10 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
         assertEquals(nameAddress.getDmsId(), nameAddressToAssertAgainst.get().getDmsId());
         assertEquals(nameAddress.getDmsId(), nameAddressToAssertAgainst.get().getDmsId());
         assertTrue(
-                DateUtil.equalsIgnoreMillis(
-                        nameAddress.getDateOfBirth(),
-                        nameAddressToAssertAgainst.get().getDateOfBirth()));
+                nameAddress
+                        .getDateOfBirth()
+                        .toLocalDate()
+                        .isEqual(nameAddressToAssertAgainst.get().getDateOfBirth().toLocalDate()));
         assertEquals(
                 nameAddress.getEmailAddress(), nameAddressToAssertAgainst.get().getEmailAddress());
         assertEquals(nameAddress.getForename1(), nameAddressToAssertAgainst.get().getForename1());

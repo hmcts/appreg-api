@@ -180,8 +180,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     }
 
     /**
-     * Sets the new and old audit values on the data audit
-     * record based on the event state.
+     * Sets the new and old audit values on the data audit record based on the event state.
      *
      * @param audit The data audit record
      * @param primaryDiff The primary audit data
