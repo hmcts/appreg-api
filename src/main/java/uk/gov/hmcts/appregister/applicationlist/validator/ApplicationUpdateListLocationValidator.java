@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import java.time.LocalTime;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -11,6 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepo
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 /**
@@ -85,5 +87,15 @@ public class ApplicationUpdateListLocationValidator
     @Override
     Function<PayloadForUpdate<ApplicationListUpdateDto>, String> getLocationDescription() {
         return (dto) -> dto.getData().getOtherLocationDescription();
+    }
+
+    @Override
+    Function<PayloadForUpdate<ApplicationListUpdateDto>, ApplicationListStatus> getStatus() {
+        return (dto) -> dto.getData().getStatus();
+    }
+
+    @Override
+    Function<PayloadForUpdate<ApplicationListUpdateDto>, LocalTime> getTime() {
+        return (dto) -> dto.getData().getTime();
     }
 }

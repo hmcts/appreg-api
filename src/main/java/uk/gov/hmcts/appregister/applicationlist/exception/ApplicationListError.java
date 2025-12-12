@@ -62,8 +62,18 @@ public enum ApplicationListError implements ErrorCodeEnum {
     INVALID_ENTRY_RESULT_LIST_STATUS(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "Cannot delete the entry result because the list has a CLOSED 'status'",
-                    "AL-16"));
+                    "Cannot delete the entry result because the list has a CLOSED 'status'", "AL-16")),
+    INVALID_NEW_LIST_STATUS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot create the application because the " + "list has a CLOSED 'status'",
+                    "AL-17")),
+    INVALID_TIME(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Times in the format HH:MM:SS are not allowed in the application list; only the HH:MM format is"
+                            + " supported.",
+                    "AL-18"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {
