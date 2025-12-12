@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +89,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final EntityManager entityManager;
 
     private final GetApplicationEntryValidator getEntryValidator;
+
+    private final Clock clock;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, Pageable pageable) {
@@ -804,18 +808,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * has an offsite fee.
+     * has an offsite fee for the entry.
      *
      * @param entry The entry
      * @return Whether we have an offsite fee
      */
     private boolean hasOffsite(ApplicationListEntry entry) {
-        for (AppListEntryFeeId feeEntryId : entry.getEntryFeeIds()) {
-            if (feeRepository.findById(feeEntryId.getId()).get().isOffsite()) {
-                return true;
+        if (!entry.getEntryFeeIds().isEmpty()) {
+            List<Long> feeIds =
+                    entry.getEntryFeeIds().stream().map(AppListEntryFeeId::getFeeId).toList();
+
+            if (!feeIds.isEmpty()) {
+                List<Fee> fees = feeRepository.findByIdsBetweenDate(feeIds, LocalDate.now(clock));
+
+                // take the first fee offsite if it exists
+                return !fees.isEmpty() && fees.getFirst().isOffsite();
             }
         }
-
         return false;
     }
 

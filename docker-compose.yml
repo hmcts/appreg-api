@@ -20,6 +20,7 @@ services:
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}
       - AZURE_ISSUER=${AZURE_ISSUER}
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
     ports:
       - "4550:4550"
       - "5005:5005"
@@ -46,6 +47,7 @@ services:
       - AZURE_TENANT_ID=${AZURE_TENANT_ID}
       - AZURE_AUDIENCE_ID=${AZURE_AUDIENCE_ID}
       - AZURE_ISSUER=${AZURE_ISSUER}
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,address=*:5005,server=y,suspend=n
     ports:
       - "4550:4550"
       - "5005:5005"

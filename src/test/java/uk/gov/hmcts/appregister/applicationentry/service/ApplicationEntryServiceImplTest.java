@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -192,6 +193,9 @@ public class ApplicationEntryServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
+
         service =
                 new ApplicationEntryServiceImpl(
                         applicationListEntryRepository,
@@ -210,7 +214,8 @@ public class ApplicationEntryServiceImplTest {
                         applicantMapper,
                         applicationListEntryEntityMapper,
                         entityManager,
-                        getEntryValidator);
+                        getEntryValidator,
+                        clock);
     }
 
     @Test
@@ -238,7 +243,8 @@ public class ApplicationEntryServiceImplTest {
                         applicantMapper,
                         applicationListEntryEntityMapper,
                         entityManager,
-                        getEntryValidator);
+                        getEntryValidator,
+                        clock);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -507,13 +513,11 @@ public class ApplicationEntryServiceImplTest {
 
         Fee fee = new FeeTestData().someComplete();
         fee.setOffsite(true);
-        when(feeRepository.findById(notNull())).thenReturn(Optional.of(fee));
+        when(feeRepository.findByIdsBetweenDate(notNull(), notNull())).thenReturn(List.of(fee));
 
         EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, true))
                 .thenReturn(entryGetDetailDto);
-
-        applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, true);
 
         PayloadGetEntryInList payload =
                 PayloadGetEntryInList.builder()
@@ -528,6 +532,41 @@ public class ApplicationEntryServiceImplTest {
         // assert
         Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
         Assertions.assertNotNull(matchResponse.getEtag());
+    }
+
+    @Test
+    void testToEntryGetDetailDtoNoFees() {
+        ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        getEntryValidationSuccess =
+                GetEntryValidationSuccess.builder()
+                        .applicationListEntry(applicationListEntry)
+                        .applicationList(applicationList)
+                        .build();
+
+        applicationListEntry.getEntryFeeIds().clear();
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, false))
+                .thenReturn(entryGetDetailDto);
+
+        PayloadGetEntryInList payload =
+                PayloadGetEntryInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        // test
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                service.getApplicationListEntryDetail(payload);
+
+        // assert
+        Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
+        Assertions.assertNotNull(matchResponse.getEtag());
+
+        // no fees were found or called for
+        verify(feeRepository, times(0)).findByIdsBetweenDate(notNull(), notNull());
     }
 
     @Setter
