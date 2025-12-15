@@ -7,7 +7,7 @@ public class DateType implements DataType {
     @Override
     public boolean validateForType(String value) {
         try {
-            LocalDate.parse(value).toString();
+            LocalDate.parse(value);
             return true;
         } catch (DateTimeParseException dateTimeParseException) {
             return false;
