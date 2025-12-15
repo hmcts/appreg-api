@@ -15,10 +15,10 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
 
 /**
  * A useful assertion class for the create/update application entry functionality. This class aims
@@ -226,8 +226,11 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getStandardApplicantCode() != null) {
             // determine how the applicant should be represented
             Applicant applicant =
-                    new StandardApplicantMapperImpl()
-                            .toApplicant(applicationListEntry.getStandardApplicant());
+                    new ApplicantMapperImpl()
+                            .toApplicant(
+                                    new ApplicantMapperImpl()
+                                            .toApplicantEntity(
+                                                    applicationListEntry.getStandardApplicant()));
 
             // validate the SA person or organisation
             if (applicant.getPerson() != null) {

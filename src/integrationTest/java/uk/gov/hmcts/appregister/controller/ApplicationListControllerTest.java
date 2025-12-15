@@ -403,6 +403,60 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    void givenClosedStatus_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning_list_(court)")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(
+                uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError
+                        .INVALID_NEW_LIST_STATUS
+                        .getCode(),
+                resp);
+    }
+
+    @Test
+    void givenInvalidTime_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.now())
+                        .description("list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
+    }
+
+    @Test
     void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
@@ -817,7 +871,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning list (court) update")
-                        .status(ApplicationListStatus.CLOSED)
+                        .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE)
                         .durationHours(4)
                         .durationMinutes(32)
@@ -1379,48 +1433,14 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    @DisplayName("GET: filter by time without seconds matches time with seconds")
-    void givenTimeFilterWithoutSeconds_thenSlotWithSeconds() throws Exception {
-
-        String prefix = uniquePrefix("get-date-time");
-        LocalDate day = LocalDate.of(2025, 10, 15);
-        LocalTime t093101 = LocalTime.of(9, 31, 1);
-
-        createWithCourt(prefix + " - keep", day, t093101);
-
-        var userToken =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        Response resp =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.empty(),
-                        Optional.empty(),
-                        List.of(),
-                        getLocalUrl(WEB_CONTEXT),
-                        userToken,
-                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "09:31"),
-                        null);
-
-        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-        ApplicationListPage page = resp.as(ApplicationListPage.class);
-
-        assertThat(page.getContent()).hasSize(1);
-        var only = page.getContent().getFirst();
-        assertThat(only.getTime()).isEqualTo(t093101);
-    }
-
-    @Test
     @DisplayName("GET: filter by 23:59")
     void givenTimeFilter_thenSlot() throws Exception {
 
         String prefix = uniquePrefix("get-date-time");
         LocalDate day = LocalDate.of(2025, 10, 15);
-        LocalTime t235901 = LocalTime.of(23, 59, 1);
+        LocalTime t2359 = LocalTime.of(23, 59);
 
-        createWithCourt(prefix + " - keep", day, t235901);
+        createWithCourt(prefix + " - keep", day, t2359);
 
         var userToken =
                 getATokenWithValidCredentials()
@@ -1443,7 +1463,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
-        assertThat(only.getTime()).isEqualTo(t235901);
+        assertThat(only.getTime()).isEqualTo(t2359);
     }
 
     @Test
@@ -1699,8 +1719,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // assert success
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        assertThat(problemDetail.getType())
-                .isEqualTo(CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get());
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode());
         assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
     }

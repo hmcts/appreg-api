@@ -309,13 +309,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public void delete(UUID idToDelete) {
         log.debug("Start: Deleting Application List with id: {}", idToDelete);
-        deletionValidator.validate(idToDelete);
-        Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
 
-        if (applicationList.isPresent()) {
-            applicationList.get().setDeleted(true);
-            repository.save(applicationList.get());
-        }
+        deletionValidator.validate(
+                idToDelete,
+                (id, success) -> {
+                    auditService.processAudit(
+                            BeanUtil.copyBean(success.getApplicationList()),
+                            AppListAuditOperation.DELETE_APP_LIST,
+                            (ev) -> Optional.of(performDelete(success.getApplicationList())),
+                            auditLifecycleListeners.toArray(
+                                    new AuditOperationLifecycleListener[0]));
+                    return null;
+                });
+
         log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
@@ -511,5 +517,27 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         }
 
         return new TimeWindow(null, null, false);
+    }
+
+    /**
+     * Delete an Application List.
+     *
+     * @param applicationList the application list entity to delete
+     * @return an AuditableResult containing a MatchResponse with the soft-deleted ApplicationList
+     */
+    private AuditableResult<MatchResponse<Void>, ApplicationList> performDelete(
+            ApplicationList applicationList) {
+
+        // mark entity as soft-deleted
+        applicationList.setDeleted(true);
+
+        return new AuditableResult<>(
+                matchService.matchOnRequest(
+                        () -> {
+                            repository.save(applicationList);
+                            return MatchResponse.of(null, List.of());
+                        },
+                        List.of(applicationList)),
+                applicationList);
     }
 }

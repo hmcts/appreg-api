@@ -79,7 +79,11 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                 .id(listId)
                                 .data(entryCreateDto)
                                 .build());
-        log.info("Create Application List Entry");
+
+        log.info(
+                "Successfully created Application List Entry with id:{}",
+                entryGetDetailDto.getPayload().getId());
+
         return ResponseEntity.created(locationOf(entryGetDetailDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)

@@ -34,9 +34,9 @@ public interface AppListEntryFeeStatusRepository
      */
     @Query(
             """
-            SELECT appStatus
-            FROM AppListEntryFeeStatus appStatus
-            WHERE appStatus.appListEntry.uuid = :entryId
+        SELECT appStatus
+        FROM AppListEntryFeeStatus appStatus
+        WHERE appStatus.appListEntry.uuid = :entryId
         """)
     List<AppListEntryFeeStatus> getFeeStatusByEntryUuid(UUID entryId);
 }

@@ -56,7 +56,18 @@ public enum ApplicationListError implements ErrorCodeEnum {
     SOURCE_LIST_NOT_FOUND(
             DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-13")),
     TARGET_LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-14"));
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-14")),
+    INVALID_NEW_LIST_STATUS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot create the application because the " + "list has a CLOSED 'status'",
+                    "AL-15")),
+    INVALID_TIME(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Times in the format HH:MM:SS are not allowed in the application list; only the HH:MM format is"
+                            + " supported.",
+                    "AL-16"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

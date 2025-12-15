@@ -95,7 +95,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
 
 class ApplicationListEntryMapperTest {
 
@@ -106,7 +105,6 @@ class ApplicationListEntryMapperTest {
         mapper = new ApplicationListEntryMapperImpl();
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         mapper.setOfficialMapper(new OfficialMapper());
-        mapper.setStandardApplicantMapper(new StandardApplicantMapperImpl());
     }
 
     @Test

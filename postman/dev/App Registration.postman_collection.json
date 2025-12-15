@@ -167,7 +167,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
+							"raw": "{{APP_REG_HOST}}/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],

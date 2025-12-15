@@ -36,8 +36,8 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
-    public static String RESPONDENT_CODE = "RE";
-    public static String APPLICANT_CODE = "AP";
+    public static final String RESPONDENT_CODE = "RE";
+    public static final String APPLICANT_CODE = "AP";
 
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)

@@ -10,7 +10,6 @@ import uk.gov.hmcts.appregister.common.entity.compositeid.AppListEntryFeeComposi
 
 public interface AppListEntryFeeRepository
         extends JpaRepository<AppListEntryFeeId, AppListEntryFeeCompositeId> {
-
     /**
      * gets all fees for an entry id.
      *

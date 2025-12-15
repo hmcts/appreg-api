@@ -259,7 +259,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
 
         applicationList.setStatus(Status.CLOSED);
-        when(applicationListRepository.findByUuid(appListUuid))
+        when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
                 .thenReturn(Optional.of(applicationList));
 
         PayloadForCreate<EntryCreateDto> payload =

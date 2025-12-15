@@ -233,7 +233,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
 
-        Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
         Assertions.assertEquals(
                 dateExContent,
                 ((ProblemDetail) (ProblemDetail) problemDetail.getBody()).getDetail());

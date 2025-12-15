@@ -22,7 +22,11 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 
 /**
- * Maps ApplicationListEntry related entities to associated entities.
+ * This mapper works for the application list featured endpoints.
+ *
+ * <p>Maps application list entry related Dtos to the associated database entities {@link
+ * ApplicationListEntry}, {@link AppListEntryFeeStatus}, {@link AppListEntryOfficial}, {@link
+ * AppListEntryOfficial}.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Setter
