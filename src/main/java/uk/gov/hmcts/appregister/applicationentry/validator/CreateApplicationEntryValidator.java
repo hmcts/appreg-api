@@ -39,6 +39,8 @@ public class CreateApplicationEntryValidator
     private final FeeRepository feeRepository;
     private final Clock clock;
     private final StandardApplicantRepository standardApplicantRepository;
+    private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
+            "Bulk respondent not required for code %s";
 
     @Override
     public void validate(PayloadForCreate<EntryCreateDto> validatable) {
@@ -323,8 +325,8 @@ public class CreateApplicationEntryValidator
                 && validatable.getData().getNumberOfRespondents() != 0) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
-                    "Bulk respondent not required for code %s"
-                            .formatted(validatable.getData().getApplicationCode()));
+                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
+                            validatable.getData().getApplicationCode()));
         }
 
         // if we do not require a respondent, check that none exists in the payload
@@ -343,8 +345,8 @@ public class CreateApplicationEntryValidator
                         && validatable.getData().getNumberOfRespondents() != 0)) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
-                    "Bulk respondent not required for code %s"
-                            .formatted(validatable.getData().getApplicationCode()));
+                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
+                            validatable.getData().getApplicationCode()));
         }
 
         // if we are setting multiple respondents, check that the application code allows it
@@ -354,8 +356,8 @@ public class CreateApplicationEntryValidator
                         && validatable.getData().getNumberOfRespondents() == 0)) {
             throw new AppRegistryException(
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
-                    "Bulk respondent not required for code %s"
-                            .formatted(validatable.getData().getApplicationCode()));
+                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
+                            validatable.getData().getApplicationCode()));
         }
 
         log.debug("Validated the respondent details");

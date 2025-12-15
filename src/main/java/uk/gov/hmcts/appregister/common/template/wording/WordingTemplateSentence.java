@@ -52,18 +52,20 @@ public class WordingTemplateSentence implements TemplateableSentence {
     /** The regular expression to identify the template regex. */
     private static final String TEMPLATE_REGEX = "\\" + START_CHARACTER + "(.*?)\\" + END_CHARACTER;
 
+    private static final String PARSING_LOG_MESSAGE = "Parsing wording template: {}";
+
     public WordingTemplateSentence(String templateString) {
         this.template = templateString;
         templateWithPositionalPlaceholders = template;
         Pattern p = Pattern.compile(TEMPLATE_REGEX, Pattern.DOTALL);
         Matcher m = p.matcher(templateString);
 
-        log.debug("Parsing wording template: {}", templateString);
+        log.debug(PARSING_LOG_MESSAGE, templateString);
 
         int positionIndex = 0;
         while (m.find()) {
             String grp = m.group(1);
-            log.debug("Parsing wording template: {}", grp);
+            log.debug(PARSING_LOG_MESSAGE, grp);
 
             try {
                 WordingTemplate wordingTemplate = new WordingTemplate(grp);
@@ -315,7 +317,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             Pattern p = Pattern.compile(TEMPLATE_REGEX, Pattern.DOTALL);
             Matcher m = p.matcher(template);
 
-            log.debug("Parsing wording template: {}", template);
+            log.debug(PARSING_LOG_MESSAGE, template);
 
             boolean found = m.find();
             if (!found) {
@@ -324,7 +326,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             }
 
             String grp = m.group(1);
-            log.debug("Parsing wording template: {}", grp);
+            log.debug(PARSING_LOG_MESSAGE, grp);
 
             return new WordingTemplate(grp);
         }
