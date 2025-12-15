@@ -53,6 +53,7 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListL
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.ListDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -140,7 +141,9 @@ public class ApplicationListServiceImplTest {
 
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
 
-    @Mock private ApplicationListDeletionValidator deletionValidator;
+    @Spy
+    private DummyApplicationDeleteListLocationValidator deletionValidator =
+            new DummyApplicationDeleteListLocationValidator(repository);
 
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
@@ -338,12 +341,13 @@ public class ApplicationListServiceImplTest {
     @Test
     void delete_validId_deletesEntry() {
         UUID id = UUID.randomUUID();
-        when(repository.findByUuid(id)).thenReturn(Optional.of(new ApplicationList()));
+        ListDeleteValidationSuccess success = new ListDeleteValidationSuccess();
+        success.setApplicationList(new ApplicationList());
+        deletionValidator.setSuccess(success);
 
         service.delete(id);
 
-        verify(deletionValidator).validate(id);
-        verify(repository).findByUuid(id);
+        verify(deletionValidator).validate(eq(id), notNull());
         verify(repository).save(any(ApplicationList.class));
     }
 
@@ -1028,6 +1032,22 @@ public class ApplicationListServiceImplTest {
                         createApplicationSupplier,
                 boolean doNotFailOnMissing) {
             return createApplicationSupplier.apply(dto, success);
+        }
+    }
+
+    @Setter
+    class DummyApplicationDeleteListLocationValidator extends ApplicationListDeletionValidator {
+        private ListDeleteValidationSuccess success;
+
+        public DummyApplicationDeleteListLocationValidator(ApplicationListRepository repository) {
+            super(repository);
+        }
+
+        @Override
+        public <R> R validate(
+                UUID uuid,
+                BiFunction<UUID, ListDeleteValidationSuccess, R> createApplicationSupplier) {
+            return createApplicationSupplier.apply(uuid, success);
         }
     }
 }
