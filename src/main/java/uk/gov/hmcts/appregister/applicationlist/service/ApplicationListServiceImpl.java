@@ -537,7 +537,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return new AuditableResult<>(
                 matchService.matchOnRequest(
                         () -> {
-                            var savedEntity = repository.save(applicationList);
+                            repository.save(applicationList);
                             return MatchResponse.of(null, List.of());
                         },
                         List.of(applicationList)),

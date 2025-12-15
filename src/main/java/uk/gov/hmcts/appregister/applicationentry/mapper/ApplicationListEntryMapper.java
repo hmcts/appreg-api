@@ -44,7 +44,6 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -54,8 +53,6 @@ public abstract class ApplicationListEntryMapper {
     @Autowired ApplicantMapper applicantMapper;
 
     @Autowired OfficialMapper officialMapper;
-
-    @Autowired StandardApplicantMapper standardApplicantMapper;
 
     public abstract ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
@@ -339,7 +336,8 @@ public abstract class ApplicationListEntryMapper {
         if (projection.getAnameAddress() != null) {
             return applicantMapper.toApplicant(projection.getAnameAddress());
         } else if (projection.getStandardApplicant() != null) {
-            return standardApplicantMapper.toApplicant(projection.getStandardApplicant());
+            return applicantMapper.toApplicant(
+                    applicantMapper.toApplicantEntity(projection.getStandardApplicant()));
         }
 
         return null;
@@ -356,7 +354,8 @@ public abstract class ApplicationListEntryMapper {
     public Applicant toApplicant(
             ApplicationListEntry applicationListEntry, StandardApplicant standardApplicant) {
         if (standardApplicant != null) {
-            return standardApplicantMapper.toApplicant(standardApplicant);
+            return applicantMapper.toApplicant(
+                    applicantMapper.toApplicantEntity(standardApplicant));
         }
 
         return applicantMapper.toApplicant(applicationListEntry.getAnamedaddress());

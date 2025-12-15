@@ -6,7 +6,14 @@ import java.util.List;
  * A templateable sentence that can have its multiple templateable items substituted. This interface
  * represents is a collection of all templateable items in the sentence.
  */
-public interface TemplateableSentence extends List<Templateable> {
+public interface TemplateableSentence {
+
+    /**
+     * gets contained array of templateable items that have been parsed.
+     *
+     * @return The templateable array
+     */
+    Templateable[] getTemplateableContents();
 
     /**
      * gets the erroneous templates that were found if any.

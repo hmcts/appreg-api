@@ -623,7 +623,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testCreateListEntryWithAllData() throws Exception {
+    public void givenValidRequest_whenCreateListEntry_thenReturn201() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -646,6 +646,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
+
+        // assert we have a location header
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
 
         EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
@@ -684,7 +687,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(createdDto.getId(), page.getContent().get(0).getId());
 
         differenceLogAsserter.assertNoErrors();
-
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
@@ -714,7 +716,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantMutualExclusiveWithAllApplicants() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenCreateEntryWithApplicantApplicantMutualExclusiveInvalid_400IsReturned()
+                    throws Exception {
         // setup the payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -781,7 +785,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantMutualExclusiveWithTwoApplicants() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenCreateEntryWithAppicantApplicantMutualExclusiveInvalid2_400IsReturned()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -825,7 +831,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantMutualExclusiveWithAllRespondent() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenCreateEntryWithRespondentMutualExclusiveInvalid_400IsReturned()
+                    throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
 
@@ -886,7 +894,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantNoApplicationList() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenApplicationListDoesNotexist_404IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -908,7 +917,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantNoCorrectState() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectState_400IsReturned()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -934,7 +945,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantDeletedList() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectStateDeleted_400IsReturned()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -960,7 +973,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantNoCodeExists() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenApplicationCodeDoesNotExist_404IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -987,7 +1001,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantFeeRequired() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenFeeNotExist_404IsReturned() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1013,7 +1027,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantRespondentRequired() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenRespondentNotExist_404IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1040,7 +1055,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantRespondentNotRequired() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenRespondentNotRequired_400IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1067,7 +1083,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testApplicantRespondentBulkNotAllowed() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenApplicantBulkNotAllowed_400IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1094,7 +1111,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testWordingTemplateIncorrectFields() throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenWordingTemplateFieldsNotSufficient_400IsReturned()
+                    throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1121,7 +1140,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testWordingLengthFailure() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenWordingLengthNotSufficient_400IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1152,7 +1172,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testWordingDataTypeFailure() throws Exception {
+    public void givenAnInvalidCreateEntryRequest_whenWordingDataTypeFailure_400IsReturned()
+            throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();

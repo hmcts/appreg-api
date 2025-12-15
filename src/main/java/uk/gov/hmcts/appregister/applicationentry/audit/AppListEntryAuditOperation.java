@@ -20,7 +20,6 @@ public enum AppListEntryAuditOperation implements AuditOperation {
     DELETE_APPLICANT("Delete Applicant", CrudEnum.DELETE),
     CREATE_RESPONDENT("Create Respondent", CrudEnum.CREATE),
     DELETE_RESPONDENT("Delete Respondent", CrudEnum.DELETE);
-
     private final String eventName;
 
     private final CrudEnum type;

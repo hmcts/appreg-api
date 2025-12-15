@@ -76,7 +76,9 @@ public class WordingTemplateTest {
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> collection.substituteForTemplate(collection.get(0), "not date"));
+                        () ->
+                                collection.substituteForTemplate(
+                                        collection.getTemplateableContents()[0], "not date"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
     }
@@ -89,7 +91,8 @@ public class WordingTemplateTest {
                         AppRegistryException.class,
                         () ->
                                 collection.substituteForTemplate(
-                                        collection.get(0), "this value exceeds length"));
+                                        collection.getTemplateableContents()[0],
+                                        "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }

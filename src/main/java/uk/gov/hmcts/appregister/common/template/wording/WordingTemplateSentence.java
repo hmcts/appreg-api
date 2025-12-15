@@ -13,7 +13,6 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.Templateable;
 import uk.gov.hmcts.appregister.common.template.TemplateableSentence;
 import uk.gov.hmcts.appregister.common.template.type.DataType;
-import uk.gov.hmcts.appregister.common.util.ReadOnlyList;
 
 /**
  * A class that allows us to parse a Wording Templates sentence containing multiple work templates
@@ -26,8 +25,9 @@ import uk.gov.hmcts.appregister.common.util.ReadOnlyList;
  */
 @Slf4j
 @ToString
-public class WordingTemplateSentence extends ReadOnlyList<Templateable>
-        implements TemplateableSentence {
+public class WordingTemplateSentence implements TemplateableSentence {
+    private List<Templateable> contents = new ArrayList<>();
+
     /** The starting character. */
     private static final String START_CHARACTER = "{";
 
@@ -55,7 +55,6 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
     private static final String TEMPLATE_REGEX = "\\" + START_CHARACTER + "(.*?)\\" + END_CHARACTER;
 
     public WordingTemplateSentence(String templateString) {
-        super(new ArrayList<>());
         this.template = templateString;
         templateWithPositionalPlaceholders = template;
         Pattern p = Pattern.compile(TEMPLATE_REGEX, Pattern.DOTALL);
@@ -71,7 +70,7 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
             try {
                 WordingTemplate wordingTemplate = new WordingTemplate(grp);
                 log.debug("Parsed wording template: {}", wordingTemplate.getReference());
-                backing.add(wordingTemplate);
+                contents.add(wordingTemplate);
 
                 // replace the pattern with a placeholder
                 templateWithPositionalPlaceholders =
@@ -99,13 +98,20 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
      * @param templateToCopy The template to copy
      * @param templateWithPlaceholders The processed placeholder string to work with
      */
-    public WordingTemplateSentence(
-            WordingTemplateSentence templateToCopy, String templateWithPlaceholders) {
-        super(templateToCopy.backing);
+    WordingTemplateSentence(
+            WordingTemplateSentence templateToCopy,
+            String templateWithPlaceholders,
+            List<Templateable> contents) {
         this.templateWithPositionalPlaceholders = templateWithPlaceholders;
         this.erroneous = templateToCopy.erroneous;
         this.positionalPlaceholderPrefix = templateToCopy.positionalPlaceholderPrefix;
         this.template = templateToCopy.template;
+        this.contents = contents;
+    }
+
+    @Override
+    public Templateable[] getTemplateableContents() {
+        return contents.toArray(new Templateable[0]);
     }
 
     /**
@@ -121,8 +127,8 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
     @Override
     public List<String> getReferences() {
         List<String> references = new ArrayList<>();
-        for (int i = 0; i < size(); i++) {
-            references.add(get(i).getReference());
+        for (int i = 0; i < contents.size(); i++) {
+            references.add(contents.get(i).getReference());
         }
         return references;
     }
@@ -136,25 +142,25 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
     public String substitute(List<String> values) {
         String returnedString = templateWithPositionalPlaceholders;
 
-        if ((values == null || values.isEmpty()) && size() == 0) {
+        if ((values == null || values.isEmpty()) && contents.isEmpty()) {
             log.debug("No substitution values provided, returning original template");
             return returnedString;
         }
 
-        if (values.size() != size()) {
+        if (values.size() != contents.size()) {
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
-                    "Number of values exceeds number of templates",
+                    "Number of values incorrect for template",
                     Map.of(
-                            "templateSize", Integer.toString(size()),
+                            "templateSize", Integer.toString(contents.size()),
                             "valueSize", Integer.toString(values.size())));
         }
 
         for (int i = 0; i < values.size(); i++) {
             // if we have a value to substitute then substitute it into one of the valid templates
-            log.debug("Substituting options into template: {}", get(i).toString());
+            log.debug("Substituting options into template: {}", contents.get(i).toString());
 
-            String subs = get(i).substitute(values.get(i));
+            String subs = contents.get(i).substitute(values.get(i));
 
             // replace the template placeholder with the template value
             returnedString = returnedString.replace(getPlaceholderForPosition(i), subs);
@@ -184,26 +190,26 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
         String returnedString = templateWithPositionalPlaceholders;
 
         // find the template to substitute
-        for (int i = 0; i < size(); i++) {
+        for (int i = 0; i < contents.size(); i++) {
 
             // find the matching template reference
-            if (get(i).equals(values)) {
+            if (contents.get(i).equals(values)) {
 
-                String sub = get(i).substitute(value);
+                String sub = contents.get(i).substitute(value);
 
-                log.debug("Substituted value into template: {}", get(i).toString());
+                log.debug("Substituted value into template: {}", contents.get(i).toString());
 
                 // replace the template placeholder with the template value
                 returnedString = returnedString.replace(getPlaceholderForPosition(i), sub);
 
-                log.debug("Substituted value into the sentence: {}", get(i).toString());
+                log.debug("Substituted value into the sentence: {}", contents.get(i).toString());
 
                 // now copy the exists sentence but remove the substituted template
                 WordingTemplateSentence newCollection =
-                        new WordingTemplateSentence(this, returnedString);
+                        new WordingTemplateSentence(this, returnedString, contents);
 
                 // remove the already substituted template from the collection
-                newCollection.backing.remove(newCollection.get(i));
+                newCollection.contents.remove(contents.get(i));
 
                 log.debug(
                         "Returning a new sentence with the template replaced : {}",
@@ -224,9 +230,9 @@ public class WordingTemplateSentence extends ReadOnlyList<Templateable>
 
     @Override
     public Templateable getTemplateForReference(String referenceValue) {
-        for (int i = 0; i < size(); i++) {
-            if (get(i).getReference().equals(referenceValue)) {
-                return get(i);
+        for (int i = 0; i < contents.size(); i++) {
+            if (contents.get(i).getReference().equals(referenceValue)) {
+                return contents.get(i);
             }
         }
 

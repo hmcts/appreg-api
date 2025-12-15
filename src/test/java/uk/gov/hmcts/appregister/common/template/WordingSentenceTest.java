@@ -28,7 +28,7 @@ public class WordingSentenceTest {
     public void testParseWordingTemplateMultipleSuccess() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
-        Assertions.assertEquals(2, collection.size());
+        Assertions.assertEquals(2, collection.getTemplateableContents().length);
 
         Assertions.assertEquals("Applicant officer", collection.getReferences().get(0));
         Assertions.assertEquals("No.of accounts", collection.getReferences().get(1));
@@ -46,7 +46,7 @@ public class WordingSentenceTest {
     public void testParseWordingTemplateSingleSuccess() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
 
-        Assertions.assertEquals(1, collection.size());
+        Assertions.assertEquals(1, collection.getTemplateableContents().length);
 
         java.lang.String result = collection.substitute(List.of("2025-03-17"));
         Assertions.assertEquals("This is a test 2025-03-17 with a date", result);
@@ -56,11 +56,12 @@ public class WordingSentenceTest {
     @Test
     public void testParseWordingTemplateMultipleSuccessForEachTemplateSeparately() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
-        Assertions.assertEquals(2, collection.size());
+        Assertions.assertEquals(2, collection.getTemplateableContents().length);
         TemplateableSentence sentence =
-                collection.substituteForTemplate(collection.get(1), "2025-03-17");
-        Assertions.assertEquals(1, sentence.size());
-        sentence = sentence.substituteForTemplate(collection.get(0), "Test");
+                collection.substituteForTemplate(
+                        collection.getTemplateableContents()[1], "2025-03-17");
+        Assertions.assertEquals(1, sentence.getTemplateableContents().length);
+        sentence = sentence.substituteForTemplate(sentence.getTemplateableContents()[0], "Test");
         Assertions.assertEquals(
                 "Application by Test for a production ord covering 2025-03-17 accounts(s) "
                         + "requiring the respondent to either produce or allow access to material that is in their "
@@ -80,7 +81,7 @@ public class WordingSentenceTest {
     public void testParseWordingParsingInvalidTemplates() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_INVALID);
 
-        Assertions.assertEquals(1, collection.size());
+        Assertions.assertEquals(1, collection.getTemplateableContents().length);
         Assertions.assertEquals(3, collection.getErroneousTemplates().size());
         Assertions.assertEquals(
                 "NoType|No.of accounts|3", collection.getErroneousTemplates().get(0));
@@ -95,7 +96,9 @@ public class WordingSentenceTest {
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(
                         AppRegistryException.class,
-                        () -> collection.substituteForTemplate(collection.get(1), "not date"));
+                        () ->
+                                collection.substituteForTemplate(
+                                        collection.getTemplateableContents()[1], "not date"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
     }
@@ -108,7 +111,8 @@ public class WordingSentenceTest {
                         AppRegistryException.class,
                         () ->
                                 collection.substituteForTemplate(
-                                        collection.get(0), "this value exceeds length"));
+                                        collection.getTemplateableContents()[0],
+                                        "this value exceeds length"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_LENGTH_FAILURE, appRegistryException.getCode());
     }

@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.util;
 
 import java.util.AbstractList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * Implements a delegate pattern to prevent modification of the underlying list.
@@ -22,5 +24,35 @@ public class ReadOnlyList<E> extends AbstractList<E> {
     @Override
     public int size() {
         return backing.size();
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<E> operator) {
+        throw new IllegalArgumentException("Cannot replace read-only list");
+    }
+
+    @Override
+    public void addFirst(E e) {
+        throw new IllegalArgumentException("Cannot add read-only list");
+    }
+
+    @Override
+    public void addLast(E e) {
+        throw new IllegalArgumentException("Cannot add read-only list");
+    }
+
+    @Override
+    public E removeFirst() {
+        throw new IllegalArgumentException("Cannot remove read-only list");
+    }
+
+    @Override
+    public E removeLast() {
+        throw new IllegalArgumentException("Cannot remove read-only list");
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        throw new IllegalArgumentException("Cannot remove read-only list");
     }
 }

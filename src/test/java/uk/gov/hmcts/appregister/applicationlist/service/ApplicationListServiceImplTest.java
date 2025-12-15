@@ -984,22 +984,6 @@ public class ApplicationListServiceImplTest {
     }
 
     @Setter
-    class DummyApplicationDeleteListLocationValidator extends ApplicationListDeletionValidator {
-        private ListDeleteValidationSuccess success;
-
-        public DummyApplicationDeleteListLocationValidator(ApplicationListRepository repository) {
-            super(repository);
-        }
-
-        @Override
-        public <R> R validate(
-                UUID uuid,
-                BiFunction<UUID, ListDeleteValidationSuccess, R> createApplicationSupplier) {
-            return createApplicationSupplier.apply(uuid, success);
-        }
-    }
-
-    @Setter
     class DummyApplicationUpdateListLocationValidator
             extends ApplicationUpdateListLocationValidator {
         private ListUpdateValidationSuccess success;
@@ -1049,6 +1033,22 @@ public class ApplicationListServiceImplTest {
                         createApplicationSupplier,
                 boolean doNotFailOnMissing) {
             return createApplicationSupplier.apply(dto, success);
+        }
+    }
+
+    @Setter
+    class DummyApplicationDeleteListLocationValidator extends ApplicationListDeletionValidator {
+        private ListDeleteValidationSuccess success;
+
+        public DummyApplicationDeleteListLocationValidator(ApplicationListRepository repository) {
+            super(repository);
+        }
+
+        @Override
+        public <R> R validate(
+                UUID uuid,
+                BiFunction<UUID, ListDeleteValidationSuccess, R> createApplicationSupplier) {
+            return createApplicationSupplier.apply(uuid, success);
         }
     }
 }
