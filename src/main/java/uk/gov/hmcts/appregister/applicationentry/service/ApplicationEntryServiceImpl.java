@@ -315,8 +315,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         // save the applicant
         NameAddress applicantToSave = null;
         if (entryCreateDto.getData().getApplicant() != null
-                        && entryCreateDto.getData().getApplicant().getOrganisation() != null
-                || entryCreateDto.getData().getApplicant().getPerson() != null) {
+                && (entryCreateDto.getData().getApplicant().getOrganisation() != null
+                        || entryCreateDto.getData().getApplicant().getPerson() != null)) {
 
             applicantToSave =
                     auditService.processAudit(
