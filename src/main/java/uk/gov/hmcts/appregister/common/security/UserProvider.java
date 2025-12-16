@@ -20,10 +20,10 @@ import uk.gov.hmcts.appregister.common.exception.JwtError;
 @SuppressWarnings({"java:S1135", "java:S3516"})
 public class UserProvider {
 
-    private static final String ROLES_CLAIM = "roles";
-    private static final String TENET_ID_CLAIM = "tid";
-    private static final String OBJECT_ID_CLAIM = "oid";
-    private static final String EMAIL_CLAIM = "preferred_username";
+    public static final String ROLES_CLAIM = "roles";
+    public static final String TENET_ID_CLAIM = "tid";
+    public static final String OBJECT_ID_CLAIM = "oid";
+    public static final String EMAIL_CLAIM = "preferred_username";
 
     public String[] getRoles() {
         return getJwt().getClaimAsStringList(ROLES_CLAIM).toArray(new String[0]);

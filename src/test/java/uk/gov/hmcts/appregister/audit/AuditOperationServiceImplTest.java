@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class AuditOperationServiceImplTest {
     void setup() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper);
+        auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper, List.of());
     }
 
     @Test

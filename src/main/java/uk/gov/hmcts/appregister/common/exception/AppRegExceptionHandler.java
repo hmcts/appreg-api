@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.exception;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -33,19 +32,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         log.error("A app register exception occurred", exception);
 
-        ProblemDetail problemDetail = getDetailFromEnum(error);
+        ProblemDetail problemDetail = getDetailFromEnum(exception.getCode(), exception);
 
         return new ResponseEntity<>(problemDetail, error.getCode().getHttpCode());
-    }
-
-    /**
-     * creates a problem details for a given error enum and exception.
-     *
-     * @param error The error
-     * @return The problem detail
-     */
-    private ProblemDetail getDetailFromEnum(ErrorCodeEnum error) {
-        return getDetailFromEnum(error, null);
     }
 
     /**
@@ -60,11 +49,24 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                 ProblemDetail.forStatusAndDetail(
                         error.getCode().getHttpCode(), error.getCode().getMessage());
 
-        // take the message from the exception. We need to be careful about exposing internal
-        // details here
-        // so it needs to be performed selectively based on exception type
-        if (e != null) {
-            problemDetail.setDetail(e.getMessage());
+        // if the exception has properties, add them to the problem detail as they should be exposed
+        if (e instanceof AppRegistryException appRegistryException
+                && appRegistryException.getDetails() != null
+                && !appRegistryException.getDetails().isEmpty()) {
+
+            problemDetail.setDetail("");
+
+            for (String key : appRegistryException.getDetails().keySet()) {
+                // add to the map
+                problemDetail.setDetail(
+                        problemDetail.getDetail()
+                                + key
+                                + "="
+                                + appRegistryException.getDetails().get(key)
+                                + System.lineSeparator());
+            }
+        } else {
+            problemDetail.setDetail(error.getCode().getMessage());
         }
 
         Optional<URI> uri = error.getCode().getType();
@@ -72,9 +74,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         // map the type and title if we have a code
         uri.ifPresent(problemDetail::setType);
 
+        // set the title and detail according to the code
         if (error.getCode().getMessage() != null) {
             problemDetail.setTitle(error.getCode().getMessage());
         }
+
         return problemDetail;
     }
 
@@ -84,6 +88,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             ConstraintViolationException ex) {
         log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
+
+        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
@@ -91,6 +98,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> mismatchType(MethodArgumentTypeMismatchException ex) {
         log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.TYPE_MISMATCH_ERROR, ex);
+
+        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
@@ -104,14 +114,16 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
+        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : "").concat(". "));
+
         // add the failure specifics to the problem detail properties
         for (FieldError fieldError : ex.getFieldErrors()) {
-            if (problemDetail.getProperties() == null) {
-                problemDetail.setProperties(new HashMap<>());
-            }
-            problemDetail
-                    .getProperties()
-                    .put(fieldError.getField(), fieldError.getDefaultMessage());
+            problemDetail.setDetail(
+                    problemDetail.getDetail()
+                            + fieldError.getField()
+                            + "="
+                            + fieldError.getDefaultMessage()
+                            + System.lineSeparator());
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
@@ -127,6 +139,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An exception occurred", ex);
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_VALIDATION_INVALID_ERROR, ex);
+
+        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 
@@ -139,10 +154,17 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An exception occurred", ex);
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
-        ProblemDetail problemDetail =
-                getDetailFromEnum(
-                        CommonAppError.NOT_READABLE_ERROR,
-                        dateException == null ? ex : dateException);
+
+        ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
+
+        // if we have a date exception use that as it gives us a more specific error message
+        if (dateException != null) {
+            problemDetail.setDetail(
+                    (dateException.getMessage() != null ? dateException.getMessage() : ""));
+        } else {
+            problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+        }
+
         return new ResponseEntity<>(problemDetail, HttpStatus.BAD_REQUEST);
     }
 

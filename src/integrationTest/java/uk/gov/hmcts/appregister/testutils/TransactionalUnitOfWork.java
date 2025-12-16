@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.testutils;
 
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +16,9 @@ public class TransactionalUnitOfWork {
 
     @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
     @Transactional
-    public <T> T inTransaction(Callable<T> supplier) {
+    public <T> T inTransaction(Supplier<T> supplier) {
         try {
-            return supplier.call();
+            return supplier.get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

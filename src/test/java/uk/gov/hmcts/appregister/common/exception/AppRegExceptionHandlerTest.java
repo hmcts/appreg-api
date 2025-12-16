@@ -34,7 +34,8 @@ class AppRegExceptionHandlerTest {
                     throws Exception {
         // setup
         AppRegistryException exception =
-                new AppRegistryException(ApplicationCodeError.CODE_NOT_FOUND, "Test message", null);
+                new AppRegistryException(
+                        ApplicationCodeError.CODE_NOT_FOUND, "Test message", (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -68,7 +69,7 @@ class AppRegExceptionHandlerTest {
                                 new DefaultErrorDetail(
                                         HttpStatus.BAD_REQUEST, customMessage, customType),
                         "Test message",
-                        null);
+                        (Throwable) null);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -148,7 +149,8 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
         Assertions.assertEquals(
-                customMessage, ((ProblemDetail) problemDetail.getBody()).getDetail());
+                "Custom message. field=defaultMessage" + System.lineSeparator(),
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
@@ -230,7 +232,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
 
-        Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
         Assertions.assertEquals(
                 dateExContent,
                 ((ProblemDetail) (ProblemDetail) problemDetail.getBody()).getDetail());
