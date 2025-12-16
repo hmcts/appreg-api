@@ -41,7 +41,33 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     "The application list is not in a deletable state",
                     "AL-8")),
     LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-9"));
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-9")),
+    ENTRY_NOT_PROVIDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "'entryIds' must be provided and non-empty", "AL-10")),
+    INVALID_LIST_STATUS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot move the applications because either the source or target list have a CLOSED 'status'",
+                    "AL-11")),
+    ENTRY_NOT_IN_SOURCE_LIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-12")),
+    SOURCE_LIST_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-13")),
+    TARGET_LIST_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-14")),
+    INVALID_NEW_LIST_STATUS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Cannot create the application because the " + "list has a CLOSED 'status'",
+                    "AL-15")),
+    INVALID_TIME(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Times in the format HH:MM:SS are not allowed in the application list; only the HH:MM format is"
+                            + " supported.",
+                    "AL-16"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

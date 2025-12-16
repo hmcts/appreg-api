@@ -48,13 +48,13 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
-import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListDeletionValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
+import uk.gov.hmcts.appregister.applicationlist.validator.ListDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
@@ -78,6 +78,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
@@ -125,7 +126,12 @@ public class ApplicationListServiceImplTest {
     private DummyApplicationListGetValidator getValidator =
             new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
 
+    @Spy
+    private DummyApplicationDeleteListValidator deletionValidator =
+            new DummyApplicationDeleteListValidator(repository);
+
     @Mock private PageMapper pageMapper;
+
     @Mock private ApplicationListEntryMapper entryMapper;
 
     @Mock private EntityManager entityManager;
@@ -140,8 +146,6 @@ public class ApplicationListServiceImplTest {
             };
 
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
-
-    @Mock private ApplicationListDeletionValidator deletionValidator;
 
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
@@ -357,6 +361,8 @@ public class ApplicationListServiceImplTest {
 
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
+
+        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(0L), notNull());
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
@@ -369,14 +375,31 @@ public class ApplicationListServiceImplTest {
 
     @Test
     void delete_validId_deletesEntry() {
+        doNothing().when(entityManager).flush();
+        doNothing().when(entityManager).refresh(any(ApplicationList.class));
+
+        // the app list that is deleted
+        ApplicationList applicationList = new ApplicationList();
         UUID id = UUID.randomUUID();
-        when(repository.findByUuid(id)).thenReturn(Optional.of(new ApplicationList()));
+        applicationList.setUuid(id);
+
+        ListDeleteValidationSuccess success = new ListDeleteValidationSuccess();
+        success.setApplicationList(applicationList);
+
+        deletionValidator.setSuccess(success);
+
+        ApplicationList entityToSave = new ApplicationList();
+
+        ApplicationList saved = new ApplicationList();
+        when(repository.save(entityToSave)).thenReturn(saved);
 
         service.delete(id);
 
-        verify(deletionValidator).validate(id);
-        verify(repository).findByUuid(id);
+        verify(deletionValidator).validate(eq(id), notNull());
         verify(repository).save(any(ApplicationList.class));
+
+        verify(entityManager).flush();
+        verify(entityManager).refresh(saved);
     }
 
     @Test
@@ -396,13 +419,18 @@ public class ApplicationListServiceImplTest {
         row.setCja(cja);
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Pageable pageable = mock(Pageable.class);
+        LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         eq(cja),
                         eq(DEFAULT_DATE),
                         eq(DEFAULT_TIME),
+                        eq(expectedEndTime),
+                        eq(false),
                         eq("morning"),
                         eq("town hall"),
                         eq(pageable)))
@@ -459,12 +487,16 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
+
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.CLOSED),
+                        eq(Status.CLOSED),
                         eq("LOC123"),
                         isNull(),
                         eq(DEFAULT_DATE),
                         eq(DEFAULT_TIME),
+                        eq(expectedEndTime),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -482,6 +514,8 @@ public class ApplicationListServiceImplTest {
                         .cjaCode(null)
                         .date(DEFAULT_DATE)
                         .time(DEFAULT_TIME);
+
+        when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
 
         // When
         ApplicationListPage result = service.getPage(filter, pageable);
@@ -511,13 +545,17 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         eq(cja),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         eq("town"),
                         eq(pageable)))
@@ -551,13 +589,17 @@ public class ApplicationListServiceImplTest {
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = Page.empty();
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -593,13 +635,17 @@ public class ApplicationListServiceImplTest {
 
         Pageable pageable = mock(Pageable.class);
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -628,14 +674,18 @@ public class ApplicationListServiceImplTest {
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Some Court");
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -657,21 +707,25 @@ public class ApplicationListServiceImplTest {
     @Test
     void getPage_noCourtOrCja_derivesLocation_usesFallback() {
 
-        Pageable pageable = mock(Pageable.class);
-
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
 
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+
+        Pageable pageable = mock(Pageable.class);
+
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
-                        eq(ApplicationListStatus.OPEN),
+                        eq(Status.OPEN),
                         isNull(),
                         isNull(),
                         isNull(),
                         isNull(),
+                        isNull(),
+                        eq(false),
                         isNull(),
                         isNull(),
                         eq(pageable)))
@@ -687,6 +741,84 @@ public class ApplicationListServiceImplTest {
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
+    }
+
+    @Test
+    void getPage_minuteToMidnightTime_callsFindAllByFilterWithWrapsMidnightTrue() {
+
+        // Resolve CJA
+        CriminalJusticeArea cja = new CriminalJusticeArea();
+        cja.setDescription("CJA Desc");
+
+        ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
+        success.setCriminalJusticeArea(cja);
+        getValidator.setSuccess(success);
+
+        // DB results
+        ApplicationList row = new ApplicationList();
+        row.setUuid(UUID.randomUUID());
+        row.setCja(cja);
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
+
+        Pageable pageable = mock(Pageable.class);
+        LocalTime time = LocalTime.of(23, 59);
+        LocalTime expectedEndTime = LocalTime.of(0, 0);
+
+        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
+        when(repository.findAllByFilter(
+                        eq(Status.OPEN),
+                        isNull(),
+                        eq(cja),
+                        eq(DEFAULT_DATE),
+                        eq(time),
+                        eq(expectedEndTime),
+                        eq(true),
+                        eq("morning"),
+                        eq("town hall"),
+                        eq(pageable)))
+                .thenReturn(dbPage);
+
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
+
+        // Page metadata mapping
+        doAnswer(
+                        inv -> {
+                            ApplicationListPage target = inv.getArgument(1);
+                            target.totalPages(1);
+                            target.elementsOnPage(1);
+                            return null;
+                        })
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class));
+
+        // Given a filter with CJA + otherLocation (court is null)
+        ApplicationListGetFilterDto filter =
+                new ApplicationListGetFilterDto()
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(null)
+                        .cjaCode("52")
+                        .date(DEFAULT_DATE)
+                        .time(time)
+                        .description("morning")
+                        .otherLocationDescription("town hall");
+
+        // When
+        ApplicationListPage result = service.getPage(filter, pageable);
+
+        // Then
+        verify(repository)
+                .findAllByFilter(
+                        eq(Status.OPEN),
+                        isNull(),
+                        eq(cja),
+                        eq(DEFAULT_DATE),
+                        eq(time),
+                        eq(expectedEndTime),
+                        eq(true),
+                        eq("morning"),
+                        eq("town hall"),
+                        eq(pageable));
     }
 
     @Test
@@ -849,15 +981,21 @@ public class ApplicationListServiceImplTest {
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
-            Optional<AuditableResult<T, E>> optional =
-                    execution.apply(
-                            new CompleteEvent(
-                                    new StartEvent(
-                                            AppListAuditOperation.CREATE_APP_LIST,
-                                            UUID.randomUUID().toString(),
-                                            null),
-                                    "result",
-                                    null));
+
+            // Build a StartEvent using the passed auditType so tests reflect the correct operation
+            StartEvent start = new StartEvent(auditType, UUID.randomUUID().toString(), null);
+
+            // Create a CompleteEvent (mimics production lifecycle) and run the supplied function.
+            CompleteEvent complete = new CompleteEvent(start, "result", null);
+
+            Optional<AuditableResult<T, E>> optional = execution.apply(complete);
+
+            // Fail fast and clearly if the supplier returned empty (avoid obscure NPEs in tests)
+            if (optional.isEmpty()) {
+                throw new IllegalStateException(
+                        "Audit execution returned empty Optional for operation: " + auditType);
+            }
+
             return optional.get().getResultingValue();
         }
     }
@@ -935,4 +1073,25 @@ public class ApplicationListServiceImplTest {
             return createApplicationSupplier.apply(dto, success);
         }
     }
+
+    @Setter
+    class DummyApplicationDeleteListValidator extends ApplicationListDeletionValidator {
+        private ListDeleteValidationSuccess success;
+
+        public DummyApplicationDeleteListValidator(ApplicationListRepository repository) {
+            super(repository);
+        }
+
+        @Override
+        public <R> R validate(
+                UUID deletionId, BiFunction<UUID, ListDeleteValidationSuccess, R> deleteSupplier) {
+
+            return deleteSupplier.apply(deletionId, success);
+        }
+    }
+
+    /*@SuppressWarnings("unchecked")
+    private static <T> ArgumentCaptor<T> captorOf() {
+        return (ArgumentCaptor<T>) ArgumentCaptor.forClass((Class) BiFunction.class);
+    }*/
 }

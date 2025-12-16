@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -56,6 +57,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final String VALID_COURT_CODE2 = "BCC006";
 
     private static final String VALID_CJA_CODE = "CD";
+    private static final String VALID_CJA_CODE2 = "CE";
+
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
 
     private static final String UNKNOWN_COURT_CODE = "ZZZ999";
@@ -65,7 +68,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
 
     private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
-    private static final LocalTime TEST_TIME2 = LocalTime.parse("10:30");
+    private static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
 
     @Autowired private ApplicationListRepository applicationListRepository;
 
@@ -85,7 +88,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning list (court)")
+                        .description("Morning_list_(court)")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(2)
@@ -108,7 +111,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(0L); // per seed: Version = 0
         assertThat(dto.getDate()).isEqualTo(TEST_DATE);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME); // mapper emits "HH:mm" when seconds = 0
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court)");
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         // Court populated, CJA null
@@ -154,7 +157,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         TableNames.APPICATION_LIST,
                         "list_description",
                         "",
-                        "Morning list \\(court\\)",
+                        "Morning_list_\\(court\\)",
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
@@ -196,7 +199,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning list (cja)")
+                        .description("Morning_list_(cja)")
                         .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE)
                         .otherLocationDescription(VALID_OTHER_LOCATION)
@@ -218,7 +221,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(0L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME);
-        assertThat(dto.getDescription()).isEqualTo("Morning list (cja)");
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(cja)");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         // CJA populated, Court null
@@ -254,7 +257,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
-                        "Morning list \\(cja\\)",
+                        "Morning_list_\\(cja\\)",
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
@@ -403,13 +406,61 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
+    void givenClosedStatus_whenCreate_then400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))
                         .build()
                         .fetchTokenForRole();
 
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning_list_(court)")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(
+                uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError
+                        .INVALID_NEW_LIST_STATUS
+                        .getCode(),
+                resp);
+    }
+
+    @Test
+    void givenInvalidTime_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.now())
+                        .description("list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
         courtLocationGetDetailDto.setStartDate(LocalDate.now());
@@ -419,21 +470,26 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning_list_(court)_update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2)
                         .durationHours(4)
                         .durationMinutes(32);
 
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        // clear the logs before the update
+        differenceLogAsserter.clearLogs();
+
         Response resp =
                 restAssuredClient.executePutRequest(
-                        URI.create(
-                                        getLocalUrl(WEB_CONTEXT)
-                                                + "/"
-                                                + getFirstOpenListToUpdate().toString())
-                                .toURL(),
-                        token,
-                        req);
+                        URI.create(createdLocation[0]).toURL(), token, req);
 
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
@@ -443,10 +499,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getId()).isNotNull();
-        assertThat(dto.getVersion()).isEqualTo(2L); // per seed: Version = 0
-        assertThat(dto.getDate()).isEqualTo(LocalDate.parse("2025-10-19"));
-        assertThat(dto.getTime()).isEqualTo("10:30"); // mapper emits "HH:mm" when seconds = 0
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
+        assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(dto.getDurationHours()).isEqualTo(4);
         assertThat(dto.getDurationMinutes()).isEqualTo(32);
@@ -456,19 +513,114 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).hasSize(5);
-        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
-                .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("APPC");
-        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
-                .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(1).getResult().get()).isEqualTo("AUTH");
-        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
-                .isEqualTo("Copy documents (electronic)");
-        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
-                .isEqualTo("Extract from the Court Register");
-        assertThat(dto.getEntriesSummary().get(4).getApplicationTitle())
-                .isEqualTo("Certificate of Satisfaction");
+
+        differenceLogAsserter.assertDiffCount(11, true);
+
+        String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
+        String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_name",
+                        "Cardiff Crown Court",
+                        "Bristol Crown Court",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_code",
+                        VALID_COURT_CODE,
+                        VALID_COURT_CODE2,
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        ApplicationListStatus.OPEN.name(),
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        "Morning_list_\\(court\\)",
+                        "Morning_list_\\(court\\)_update",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        TEST_TIME.toString(),
+                        TEST_TIME2.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        TEST_DATE.toString(),
+                        TEST_DATE2.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_hour",
+                        "2",
+                        "4",
+                        operation,
+                        eventName));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_minute",
+                        "30",
+                        "32",
+                        operation,
+                        eventName));
+    }
+
+    @Test
+    void givenValidRequest_whenUpdateWithCourtNoChangesNoDiff_then200AndBody() throws Exception {
+
+        String[] createdLocation = createAppListUsingRestApi();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Morning_list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        // clear the logs before the update
+        differenceLogAsserter.clearLogs();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
+
+        differenceLogAsserter.assertDiffCount(11, true);
     }
 
     @Test
@@ -546,6 +698,76 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isNull();
     }
 
+    @Test
+    void givenValidRequest_whenUpdateWithCourtWithReturnedEntrySummaries_then200AndBody()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
+        courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
+        courtLocationGetDetailDto.setStartDate(LocalDate.now());
+        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setName("Manchester Crown Court");
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(
+                                        getLocalUrl(WEB_CONTEXT)
+                                                + "/"
+                                                + getFirstOpenListToUpdate().toString())
+                                .toURL(),
+                        token,
+                        req);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
+
+        // Location header should point to /application-lists/{uuid}
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(2L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(LocalDate.parse("2025-10-19"));
+        assertThat(dto.getTime()).isEqualTo("11:30"); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getDurationHours()).isEqualTo(4);
+        assertThat(dto.getDurationMinutes()).isEqualTo(32);
+
+        // Court populated, CJA null
+        assertThat(dto.getCourtCode()).isEqualTo(VALID_COURT_CODE2);
+        assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
+        assertThat(dto.getCjaCode()).isNull();
+        assertThat(dto.getOtherLocationDescription()).isNull();
+        assertThat(dto.getEntriesSummary()).hasSize(5);
+        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("APPC");
+        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(1).getResult().get()).isEqualTo("AUTH");
+        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
+                .isEqualTo("Copy documents (electronic)");
+        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
+                .isEqualTo("Extract from the Court Register");
+        assertThat(dto.getEntriesSummary().get(4).getApplicationTitle())
+                .isEqualTo("Certificate of Satisfaction");
+    }
+
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
     void givenValidRequest_whenUpdateWithCja_then201() throws Exception {
@@ -557,13 +779,15 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         String[] createdLocation = createAppListUsingRestApi();
 
+        differenceLogAsserter.clearLogs();
+
         var req =
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning_list_(court)_update")
                         .status(ApplicationListStatus.CLOSED)
-                        .cjaCode(VALID_CJA_CODE)
+                        .cjaCode(VALID_CJA_CODE2)
                         .durationHours(4)
                         .durationMinutes(32)
                         .otherLocationDescription("Updated other location");
@@ -580,14 +804,88 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(1L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
 
         // CJA populated, Court null
-        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE);
+        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE2);
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+
+        differenceLogAsserter.assertDiffCount(12, true);
+
+        String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
+        String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_name",
+                        "Cardiff Crown Court",
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_code",
+                        VALID_COURT_CODE,
+                        "",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_status",
+                        ApplicationListStatus.OPEN.name(),
+                        req.getStatus().toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        "Morning_list_\\(court\\)",
+                        "Morning_list_\\(court\\)_update",
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        TEST_TIME.toString(),
+                        TEST_TIME2.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        TEST_DATE.toString(),
+                        TEST_DATE2.toString(),
+                        operation,
+                        eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_hour",
+                        "2",
+                        "4",
+                        operation,
+                        eventName));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "duration_minute",
+                        "30",
+                        "32",
+                        operation,
+                        eventName));
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -601,16 +899,18 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         String[] createdLocation = createAppListUsingRestApi();
 
+        differenceLogAsserter.clearLogs();
+
         var req =
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
-                        .cjaCode(VALID_CJA_CODE)
+                        .cjaCode(VALID_CJA_CODE2)
                         .durationHours(4)
                         .durationMinutes(32)
-                        .otherLocationDescription("Updated other location");
+                        .otherLocationDescription("Updated_other_location");
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -628,8 +928,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
 
         // CJA populated, Court null
-        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE);
-        assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
+        assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE2);
+
+        assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated_other_location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
     }
@@ -649,7 +950,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning list (court) update")
-                        .status(ApplicationListStatus.CLOSED)
+                        .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE)
                         .durationHours(4)
                         .durationMinutes(32)
@@ -789,6 +1090,42 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ProblemAssertUtil.assertEquals(ApplicationListError.CJA_NOT_FOUND.getCode(), resp);
     }
 
+    @Test
+    @DisplayName("UPDATE: 404 when updating a soft-deleted list")
+    void givenSoftDeleted_whenUpdate_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-update", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Attempt update on soft-deleted")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(2)
+                        .durationMinutes(15);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), token, req);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
+    }
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         var validPayload =
@@ -867,7 +1204,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning list (court)")
+                        .description("Morning_list_(court)")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(2)
@@ -932,7 +1269,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithConflict_then204() throws Exception {
+    void givenValidRequest_whenDeleteTwice_thenSecondDeleteReturns404() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -957,20 +1294,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         UUID id = dto.getId();
 
-        // fire tests
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-
-        // assert success
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
-        // prove the delete has been made
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
-
-        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
-                problemDetail.getType().toString());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
@@ -1184,6 +1512,40 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @DisplayName("GET: filter by 23:59")
+    void givenTimeFilter_thenSlot() throws Exception {
+
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t2359 = LocalTime.of(23, 59);
+
+        createWithCourt(prefix + " - keep", day, t2359);
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("time", "23:59"),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(1);
+        var only = page.getContent().getFirst();
+        assertThat(only.getTime()).isEqualTo(t2359);
+    }
+
+    @Test
     @DisplayName("GET: filter by courtLocationCode")
     void givenCourtFilter_thenOnlyCourtRows() throws Exception {
 
@@ -1252,6 +1614,44 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
+    }
+
+    @Test
+    @DisplayName("GET: does not return soft deleted list")
+    void givenDefaults_whenGet_then200AndNoSoftDeletedSlot() throws Exception {
+
+        // setup a record for deletion
+        String prefix = uniquePrefix("soft-deleted");
+        ApplicationListGetDetailDto dto =
+                createWithCourt(
+                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        UUID id = dto.getId();
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeDeleteRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + id), userToken);
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(), // Rely on default sort
+                        getLocalUrl(WEB_CONTEXT),
+                        userToken,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+
+        assertThat(page.getContent()).hasSize(0);
     }
 
     @Test
@@ -1359,8 +1759,48 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         dto = resp.as(ApplicationListGetDetailDto.class);
         assertThat(dto.getDescription()).isEqualToIgnoringCase(description);
+        assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
         assertThat(dto.getEntriesSummary()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("GET Application List")
+    void givenValidRequest_whenGetApplicationList_then400IdFormatting() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        String description = "List for testing get application list";
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(description)
+                        .status(ApplicationListStatus.OPEN)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(VALID_OTHER_LOCATION)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        // setup a record for retrieval
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
+        // fire test
+        resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/232322"), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
+        assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
+        assertThat(problemDetail.getStatus()).isEqualTo(400);
     }
 
     @Test
@@ -1388,6 +1828,35 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .fetchTokenForRole();
 
         UUID id = UUID.fromString(UNKNOWN_APPLICATION_LIST_ID);
+
+        // fire test
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert success
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
+    @DisplayName("GET Application List: 404 when list soft deleted")
+    void givenSoftDeletedApplicationList_whenGetApplicationList_then404() throws Exception {
+        ApplicationListGetDetailDto created =
+                createWithCourt("soft-deleted-get", TEST_DATE, TEST_TIME);
+        UUID id = created.getId();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response deleteResp =
+                restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+        deleteResp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
         // fire test
         Response resp =

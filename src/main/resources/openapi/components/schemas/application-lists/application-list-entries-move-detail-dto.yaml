@@ -1,0 +1,11 @@
+type: object
+description: Represents the result of an Application List Entries move operation.
+required:
+  - results
+
+properties:
+
+  results:
+    type: array
+    items: { $ref: 'application-list-entry-move-result.yaml' }
+    description: A list of lightweight summaries of entries.

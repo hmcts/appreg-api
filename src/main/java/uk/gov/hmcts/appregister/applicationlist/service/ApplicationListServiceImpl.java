@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.service;
 
 import jakarta.persistence.EntityManager;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -43,6 +43,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -101,6 +102,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
+    public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
+
     /**
      * {@inheritDoc}
      *
@@ -148,9 +151,18 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 applicationUpdateListLocationValidator.validate(
                         dto,
                         (updateDto, success) ->
-                                success.hasCourt()
-                                        ? updateWithCourt(updateDto, success)
-                                        : updateWithCja(updateDto, success));
+                                auditService.processAudit(
+                                        BeanUtil.copyBean(success.getApplicationList()),
+                                        AppListAuditOperation.UPDATE_APP_LIST,
+                                        (evnt) -> {
+                                            return success.hasCourt()
+                                                    ? Optional.of(
+                                                            updateWithCourt(updateDto, success))
+                                                    : Optional.of(
+                                                            updateWithCja(updateDto, success));
+                                        },
+                                        auditLifecycleListeners.toArray(
+                                                new AuditOperationLifecycleListener[0])));
 
         log.debug("Finish: Request to update application list : {}", response.getPayload());
         return response;
@@ -183,10 +195,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         Long entryCount = fetchEntryCounts(List.of(id)).getOrDefault(id, ZERO_ENTITIES);
 
         return buildGetDetailDto(list, entryCount, summaries);
-    }
-
-    private static boolean hasCourt(ApplicationListCreateDto dto) {
-        return StringUtils.hasText(dto.getCourtLocationCode());
     }
 
     /**
@@ -262,34 +270,35 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> updateWithCourt(
-            PayloadForUpdate<ApplicationListUpdateDto> updateDto,
-            ListUpdateValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            updateWithCourt(
+                    PayloadForUpdate<ApplicationListUpdateDto> updateDto,
+                    ListUpdateValidationSuccess success) {
         var court = success.getNationalCourtHouse();
 
         mapper.toUpdateEntityWithCourt(
                 updateDto.getData(), null, court, success.getApplicationList());
 
-        return matchService.matchOnRequest(
-                success.getApplicationList().getUuid(),
-                success.getApplicationList(),
-                () -> {
-                    var savedEntity = repository.save(success.getApplicationList());
-                    var hydrated = refreshEntity(savedEntity);
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                matchService.matchOnRequest(
+                        success.getApplicationList().getUuid(),
+                        success.getApplicationList(),
+                        () -> {
+                            var savedEntity = repository.save(success.getApplicationList());
+                            var hydrated = refreshEntity(savedEntity);
+                            ApplicationListGetDetailDto applicationListGetDetailDto =
+                                    get(hydrated.getUuid(), Pageable.unpaged());
 
-                    // gets the summaries for the unpaged summaries.
-                    ApplicationListGetDetailDto applicationListGetDetailDto =
-                            get(hydrated.getUuid(), Pageable.unpaged());
-
-                    return MatchResponse.of(
-                            hydrated.getUuid(),
-                            hydrated,
-                            mapper.toGetDetailDto(
+                            return MatchResponse.of(
+                                    hydrated.getUuid(),
                                     hydrated,
-                                    null,
-                                    ZERO_ENTITIES,
-                                    applicationListGetDetailDto.getEntriesSummary()));
-                });
+                                    mapper.toGetDetailDto(
+                                            hydrated,
+                                            null,
+                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary()));
+                        }),
+                success.getApplicationList());
     }
 
     /**
@@ -302,47 +311,55 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * @param success The validation validated details
      * @return the created Application List DTO
      */
-    private MatchResponse<ApplicationListGetDetailDto> updateWithCja(
-            PayloadForUpdate<ApplicationListUpdateDto> updateDto,
-            ListUpdateValidationSuccess success) {
+    private AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>
+            updateWithCja(
+                    PayloadForUpdate<ApplicationListUpdateDto> updateDto,
+                    ListUpdateValidationSuccess success) {
         var cja = success.getCriminalJusticeArea();
         ApplicationList applicationList = success.getApplicationList();
-
         mapper.toUpdateEntityWithCja(updateDto.getData(), cja, applicationList);
 
-        return matchService.matchOnRequest(
-                success.getApplicationList().getUuid(),
-                success.getApplicationList(),
-                () -> {
-                    var savedEntity = repository.save(applicationList);
-                    var hydrated = refreshEntity(savedEntity);
+        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+                matchService.matchOnRequest(
+                        success.getApplicationList().getUuid(),
+                        success.getApplicationList(),
+                        () -> {
+                            var savedEntity = repository.save(applicationList);
+                            var hydrated = refreshEntity(savedEntity);
 
-                    // gets the summaries for the unpaged summaries.
-                    ApplicationListGetDetailDto applicationListGetDetailDto =
-                            get(hydrated.getUuid(), Pageable.unpaged());
+                            // gets the summaries for the unpaged summaries.
+                            ApplicationListGetDetailDto applicationListGetDetailDto =
+                                    get(hydrated.getUuid(), Pageable.unpaged());
 
-                    return MatchResponse.of(
-                            hydrated.getUuid(),
-                            hydrated,
-                            mapper.toGetDetailDto(
+                            return MatchResponse.of(
+                                    hydrated.getUuid(),
                                     hydrated,
-                                    cja,
-                                    ZERO_ENTITIES,
-                                    applicationListGetDetailDto.getEntriesSummary()));
-                });
+                                    mapper.toGetDetailDto(
+                                            hydrated,
+                                            cja,
+                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary()));
+                        }),
+                success.getApplicationList());
     }
 
     @Override
     @Transactional
     public void delete(UUID idToDelete) {
         log.debug("Start: Deleting Application List with id: {}", idToDelete);
-        deletionValidator.validate(idToDelete);
-        Optional<ApplicationList> applicationList = repository.findByUuid(idToDelete);
 
-        if (applicationList.isPresent()) {
-            applicationList.get().setDeleted(true);
-            repository.save(applicationList.get());
-        }
+        deletionValidator.validate(
+                idToDelete,
+                (id, success) -> {
+                    auditService.processAudit(
+                            BeanUtil.copyBean(success.getApplicationList()),
+                            AppListAuditOperation.DELETE_APP_LIST,
+                            (ev) -> Optional.of(performDelete(success.getApplicationList())),
+                            auditLifecycleListeners.toArray(
+                                    new AuditOperationLifecycleListener[0]));
+                    return null;
+                });
+
         log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
@@ -361,8 +378,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             ApplicationList list,
             Long entriesCount,
             List<ApplicationListEntrySummary> entriesSummary) {
+
         ApplicationListGetDetailDto dto =
-                mapper.toGetDetailDto(list, null, entriesCount, entriesSummary);
+                mapper.toGetDetailDto(list, list.getCja(), entriesCount, entriesSummary);
         dto.setEntriesSummary(entriesSummary);
 
         return dto;
@@ -391,16 +409,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional(readOnly = true)
     @Override
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+        TimeWindow timeWindow = computeTimeWindow(dto);
+
         return applicationListGetValidator.validateCja(
                 dto,
                 (getDto, success) -> {
                     final Page<ApplicationList> dbPage =
                             repository.findAllByFilter(
-                                    dto.getStatus(),
+                                    entryMapper.toStatus(dto.getStatus()),
                                     dto.getCourtLocationCode(),
                                     success.getCriminalJusticeArea(),
                                     dto.getDate(),
-                                    dto.getTime(),
+                                    timeWindow.start,
+                                    timeWindow.end,
+                                    timeWindow.wrapsMidnight,
                                     dto.getDescription(),
                                     dto.getOtherLocationDescription(),
                                     pageable);
@@ -519,5 +541,46 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             return al.getCja().getDescription();
         }
         return "Location not set";
+    }
+
+    /* Convert a user-supplied "HH:mm" time into a minute-range.
+    The repository uses [start, end] to match all seconds within that minute.
+    When the computed end value wraps to midnight (e.g., 23:59 -> 00:00),
+    we record this so the repository can handle the boundary correctly. */
+    private TimeWindow computeTimeWindow(ApplicationListGetFilterDto dto) {
+        if (dto.getTime() != null) {
+            LocalTime start = dto.getTime().withSecond(0).withNano(0);
+            LocalTime end = start.plusMinutes(1);
+            boolean wrapsMidnight = end.equals(LocalTime.MIDNIGHT);
+
+            return new TimeWindow(start, end, wrapsMidnight);
+        }
+
+        return new TimeWindow(null, null, false);
+    }
+
+    /**
+     * Delete an Application List.
+     *
+     * @param applicationList the application list entity to delete
+     * @return an AuditableResult containing a MatchResponse with the soft-deleted ApplicationList
+     */
+    private AuditableResult<MatchResponse<Void>, ApplicationList> performDelete(
+            ApplicationList applicationList) {
+
+        // mark entity as soft-deleted
+        applicationList.setDeleted(true);
+
+        return new AuditableResult<>(
+                matchService.matchOnRequest(
+                        applicationList.getUuid(),
+                        applicationList,
+                        () -> {
+                            var savedEntity = repository.save(applicationList);
+                            var hydrated = refreshEntity(savedEntity);
+
+                            return MatchResponse.of(hydrated.getUuid(), hydrated, null);
+                        }),
+                applicationList);
     }
 }

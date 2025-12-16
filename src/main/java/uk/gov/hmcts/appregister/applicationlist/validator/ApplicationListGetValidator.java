@@ -1,11 +1,13 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
+import java.time.LocalTime;
 import java.util.function.Function;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
 /**
  * Validator component for {@link uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto}
@@ -39,6 +41,16 @@ public class ApplicationListGetValidator
     @Override
     Function<ApplicationListGetFilterDto, String> getLocationDescription() {
         return ApplicationListGetFilterDto::getOtherLocationDescription;
+    }
+
+    @Override
+    Function<ApplicationListGetFilterDto, ApplicationListStatus> getStatus() {
+        return ApplicationListGetFilterDto::getStatus;
+    }
+
+    @Override
+    Function<ApplicationListGetFilterDto, LocalTime> getTime() {
+        return ApplicationListGetFilterDto::getTime;
     }
 
     @Override

@@ -1,15 +1,21 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
@@ -109,6 +115,103 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
 
     /**
+     * Retrieves the paginated summary results.
+     *
+     * @param hasHearingDate Whether to filter by hearing date
+     * @param hearingDate The hearing date to use for filtering if hasHearingDate is true
+     * @param courtCode The court code to filter by.
+     * @param otherLocationDescription The other location description to filter by. Partial matches
+     *     allowed
+     * @param cjaCode The criminal justice area code to filter by.
+     * @param applicantOrganisation The applicant organisation to filter by. Partial matches allowed
+     * @param applicantSurname The applicant surname to filter by. Partial matches allowed
+     * @param standardApplicantCode The standard applicant code to filter by. Partial matches
+     *     allowed
+     * @param status The status to filter by
+     * @param respondentOrganisation The respondent organisation to filter by. Partial matches
+     *     allowed
+     * @param respondentSurname The respondent surname to filter by. Partial matches allowed
+     * @param respondentPostcode The respondent postcode to filter by. Partial matches allowed
+     * @param accountReference The account reference to filter by. Partial matches allowed
+     * @param pageable The pagination information
+     * @return A page of ApplicationListEntryGetSummaryProjection matching the criteria
+     */
+    @Query(
+            """
+         SELECT
+                ale.applicationList.date  AS date,
+                ale.uuid AS uuid,
+                ale.id AS id,
+                ale.applicationList.courtCode  AS courtCode,
+                ac.legislation as legislation,
+                ac.feeDue feeRequired,
+                aler.id as result,
+                cja.code AS cjaCode,
+                ale.applicationList.otherLocation AS otherLocationDescription,
+                ana as anameAddress,
+                ale.standardApplicant.applicantCode AS standardApplicantCode,
+                rna as rnameAddress,
+                ale.applicationCode.title as title,
+                al.status AS status,
+                al.date as dateOfAl,
+                ale.anamedaddress.name as applicationorganisation,
+                ale.anamedaddress.surname as applicantSurname,
+                ale.rnameaddress.name as respondentOrganisation,
+                ale.rnameaddress.surname as respondentSurname,
+                ale.rnameaddress.postcode as respondentPostcode,
+                ale.caseReference as  accountReference,
+                sa as standardApplicant
+            from ApplicationListEntry ale
+            LEFT JOIN ale.anamedaddress ana
+            LEFT JOIN ale.standardApplicant sa
+            LEFT JOIN ale.rnameaddress rna
+            LEFT JOIN ale.applicationCode ac
+            LEFT JOIN ale.applicationList al
+            LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale AND aler.id = (SELECT MAX(sub.id)
+                                                                                      FROM AppListEntryResolution sub
+                                                                                      WHERE sub.applicationList = ale)
+        WHERE  (:hasHearingDate = false OR ale.applicationList.date = :hearingDate)
+                AND (:otherLocationDescription IS NULL OR ale.applicationList.otherLocation
+                        LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
+                AND (:courtCode IS NULL OR ale.applicationList.courtCode = :courtCode)
+                AND (:cjaCode IS NULL OR ale.applicationList.cja.code=:cjaCode)
+                AND (:applicantOrganisation IS NULL OR  ale.anamedaddress.name
+                        LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
+                        AND ale.anamedaddress.code='AP')
+                AND (:applicantSurname IS NULL OR ale.anamedaddress.surname
+                         LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
+                        AND ale.anamedaddress.code='AP')
+                AND (:standardApplicantCode IS NULL OR ale.standardApplicant.applicantCode
+                        LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
+                AND (:status IS NULL OR :status=ale.applicationList.status)
+                AND (:respondentOrganisation IS NULL OR ale.rnameaddress.name LIKE CONCAT('%',
+                        cast(:respondentOrganisation AS string), '%') AND ale.rnameaddress.code='RE')
+                AND (:respondentSurname IS NULL OR ale.rnameaddress.surname LIKE CONCAT('%',
+                        cast(:respondentSurname AS string), '%') AND ale.rnameaddress.code='RE')
+                AND (:respondentPostcode IS NULL OR ale.rnameaddress.postcode=
+                        cast(:respondentPostcode AS string) AND ale.rnameaddress.code='RE')
+                AND (:accountReference IS NULL OR  ale.caseReference
+                        LIKE CONCAT('%', cast(:accountReference AS string), '%'))
+                AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
+        """)
+    Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
+            boolean hasHearingDate,
+            @Param("hearingDate") LocalDate hearingDate,
+            @Param("courtCode") String courtCode,
+            @Param("otherLocationDescription") String otherLocationDescription,
+            @Param("cjaCode") String cjaCode,
+            @Param("applicantOrganisation") String applicantOrganisation,
+            @Param("applicantSurname") String applicantSurname,
+            @Param("standardApplicantCode") String standardApplicantCode,
+            @Param("status") Status status,
+            @Param("respondentOrganisation") String respondentOrganisation,
+            @Param("respondentSurname") String respondentSurname,
+            @Param("respondentPostcode") String respondentPostcode,
+            @Param("accountReference") String accountReference,
+            Pageable pageable);
+
+    /**
      * Retrieves list of entries for a given application list.
      *
      * @param id the ID of the ApplicationList
@@ -165,4 +268,29 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
+
+    /**
+     * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
+     * rows updated.
+     *
+     * @param entryUuids the set of entry UUIDs to move; only entries matching these UUIDs and
+     *     belonging to the sourceListUuid will be updated
+     * @param targetList the ApplicationList entity representing the new target list to which the
+     *     entries will be reassigned; this value is written to the applicationList field of all
+     *     matching entries
+     * @param sourceListUuid the UUID of the source ApplicationList; only entries currently
+     *     associated with this list will be updated
+     * @return the number of rows updated; may be less than the number of provided UUIDs if some
+     *     entries are not found in the source list
+     */
+    @Modifying()
+    @Query(
+            """
+        UPDATE ApplicationListEntry ale
+        SET ale.applicationList = :targetList
+        WHERE ale.uuid IN :entryUuids
+        AND ale.applicationList.uuid = :sourceListUuid
+        """)
+    int bulkMoveByUuidAndSourceList(
+            Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
 }

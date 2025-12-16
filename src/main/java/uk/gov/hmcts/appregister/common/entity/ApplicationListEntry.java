@@ -22,6 +22,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
@@ -32,7 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
  * the database.
  */
 @Entity
-@Table(name = "application_list_entries")
+@Table(name = TableNames.APPLICATION_LISTS_ENTRY)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -130,5 +132,6 @@ public class ApplicationListEntry extends BaseChangeableEntity
     private List<AppListEntryFeeId> entryFeeIds;
 
     @Column(name = "id")
+    @Generated(event = EventType.INSERT)
     private UUID uuid;
 }
