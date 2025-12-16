@@ -24,6 +24,7 @@ properties:
   numberOfRespondents:
     type: integer
     description: Number of respondents required by the Application.
+    format: int16
     example: 0
 
   wordingFields:

@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.projection;
 
+import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
+
 public interface ApplicationListEntryOfficialPrintProjection {
 
     Long getEntryId();
 
-    String getType();
+    OfficialType getType();
 
     String getTitle();
 

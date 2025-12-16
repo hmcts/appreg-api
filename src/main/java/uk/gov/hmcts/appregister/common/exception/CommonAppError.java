@@ -13,17 +13,30 @@ public enum CommonAppError implements ErrorCodeEnum {
     SORT_DIRECTION_NOT_SUITABLE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Sort direction not suitable", "COMMON-4")),
+    WORDING_DATA_TYPE_FAILURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Wording data type failure", "COMMON-5")),
+    WORDING_LENGTH_FAILURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Wording length exceeded failure", "COMMON-6")),
+    WORDING_TEMPLATE_FORMAT_FAILURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Template format failure", "COMMON-7")),
+    WORDING_SUBSTITUTE_SIZE_MISMATCH(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Values to be substituted does not match substituting values",
+                    "COMMON-8")),
     CONSTRAINT_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Constraint Error", "COMMON-5")),
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Constraint Error", "COMMON-9")),
     TYPE_MISMATCH_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Type Mismatch Error", "COMMON-6")),
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Type Mismatch Error", "COMMON-10")),
     METHOD_ARGUMENT_INVALID_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Error", "COMMON-7")),
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Error", "COMMON-11")),
     METHOD_VALIDATION_INVALID_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-8")),
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Method Invalid Type", "COMMON-12")),
     NOT_READABLE_ERROR(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Not Readable Error", "COMMON-9")),
-    ;
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Not Readable Error", "COMMON-13"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

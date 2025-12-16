@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
-import java.util.UUID;
+import java.util.List;
 import lombok.Getter;
-import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 
 /**
@@ -18,7 +18,15 @@ public class MatchResponse<T> {
         this.payload = payload;
     }
 
-    public static <T> MatchResponse<T> of(UUID uuid, Versionable entity, T payload) {
-        return new MatchResponse<>(EtagUtil.generateEtag(uuid, entity), payload);
+    /**
+     * Factory method to create a MatchResponse instance.
+     *
+     * @param payload the payload to be included in the response
+     * @param entities the list of entities used to generate the ETag
+     * @param <T> the type of the payload
+     * @return a new MatchResponse instance
+     */
+    public static <T> MatchResponse<T> of(T payload, List<Keyable> entities) {
+        return new MatchResponse<>(EtagUtil.generateEtag(entities), payload);
     }
 }

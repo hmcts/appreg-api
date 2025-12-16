@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.standardapplicant.mapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 
@@ -15,6 +16,7 @@ public class StandardApplicantMapperTest {
         standardApplicant.setName(null);
 
         StandardApplicantMapper standardApplicantMapper = new StandardApplicantMapperImpl();
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
         StandardApplicantGetDetailDto standardApplicantGetDetailDto =
                 standardApplicantMapper.toReadGetDto(standardApplicant);
 
@@ -127,6 +129,8 @@ public class StandardApplicantMapperTest {
         StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
 
         StandardApplicantMapper standardApplicantMapper = new StandardApplicantMapperImpl();
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
+
         StandardApplicantGetDetailDto standardApplicantGetDetailDto =
                 standardApplicantMapper.toReadGetDto(standardApplicant);
 

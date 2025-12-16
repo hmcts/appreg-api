@@ -1,16 +1,15 @@
 package uk.gov.hmcts.appregister.common.concurrency;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -24,62 +23,56 @@ public class MatchServiceImplTest {
 
     @Test
     public void testProcessMatchSuccess() {
-        UUID id = UUID.randomUUID();
-        Versionable versionable = mock(Versionable.class);
-        when(versionable.getVersion()).thenReturn(1L);
+        DummyKeyableThatIsVersionable versionable = new DummyKeyableThatIsVersionable(1L);
+        versionable.setVersion(1L);
+
         String payload = "payload";
 
-        MatchResponse<String> matchResponse = MatchResponse.of(id, versionable, payload);
+        MatchResponse<String> matchResponse = MatchResponse.of(payload, List.of(versionable));
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
         matchService.matchOnRequest(
-                id,
-                versionable,
                 () -> {
-                    ;
                     return matchResponse;
-                });
+                },
+                List.of(versionable));
     }
 
     @Test
     void testProcessMatchFailOnVersion() {
-        UUID id = UUID.randomUUID();
-        Versionable versionable = mock(Versionable.class);
-        when(versionable.getVersion()).thenReturn(1L);
+        DummyKeyableThatIsVersionable versionable = new DummyKeyableThatIsVersionable(1L);
+        versionable.setVersion(0L);
+
         String payload = "payload";
 
-        MatchResponse<String> matchResponse = MatchResponse.of(id, versionable, payload);
-
+        MatchResponse<String> matchResponse = MatchResponse.of(payload, List.of(versionable));
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
         // change the version to simulate a conflict
-        Versionable versionable1 = mock(Versionable.class);
-        when(versionable1.getVersion()).thenReturn(2L);
+        DummyKeyableThatIsVersionable versionable1 = new DummyKeyableThatIsVersionable(1L);
+        versionable1.setVersion(1L);
 
         AppRegistryException exception =
                 Assertions.assertThrows(
                         AppRegistryException.class,
                         () ->
                                 matchService.matchOnRequest(
-                                        id,
-                                        versionable1,
                                         () -> {
-                                            ;
-
-                                            return MatchResponse.of(id, versionable1, "test");
-                                        }));
+                                            return MatchResponse.of("test", List.of(versionable));
+                                        },
+                                        List.of(versionable1)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 
     @Test
     void testProcessMatchFailOnId() {
-        UUID id = UUID.randomUUID();
-        Versionable versionable = mock(Versionable.class);
-        when(versionable.getVersion()).thenReturn(1L);
+        DummyKeyableThatIsVersionable versionable = new DummyKeyableThatIsVersionable(1L);
         String payload = "payload";
 
-        MatchResponse<String> matchResponse = MatchResponse.of(id, versionable, payload);
+        MatchResponse<String> matchResponse = MatchResponse.of(payload, List.of(versionable));
+
+        DummyKeyableThatIsVersionable versionable1 = new DummyKeyableThatIsVersionable(2L);
 
         when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
 
@@ -89,32 +82,45 @@ public class MatchServiceImplTest {
                         AppRegistryException.class,
                         () ->
                                 matchService.matchOnRequest(
-                                        UUID.randomUUID(),
-                                        versionable,
-                                        () -> MatchResponse.of(id, versionable, payload)));
+                                        () -> MatchResponse.of(payload, List.of(versionable1)),
+                                        List.of(versionable1)));
         Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
     }
 
-    @Test
-    void testProcessMatchFailOnType() {
-        UUID id = UUID.randomUUID();
-        Versionable versionable = mock(Versionable.class);
-        when(versionable.getVersion()).thenReturn(1L);
-        String payload = "payload";
+    class DummyKeyable implements Keyable {
+        private final Long id;
 
-        MatchResponse<String> matchResponse = MatchResponse.of(id, versionable, payload);
+        public DummyKeyable(Long id) {
+            this.id = id;
+        }
 
-        when(matchRequest.getEtag()).thenReturn(matchResponse.getEtag());
+        @Override
+        public Long getId() {
+            return id;
+        }
+    }
 
-        // change the id to simulate a conflict
-        AppRegistryException exception =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                matchService.matchOnRequest(
-                                        id,
-                                        new ApplicationList(),
-                                        () -> MatchResponse.of(id, versionable, payload)));
-        Assertions.assertEquals(CommonAppError.MATCH_ETAG_FAILURE, exception.getCode());
+    class DummyKeyableThatIsVersionable implements Keyable, Versionable {
+        private final Long id;
+        private Long version = 0L;
+
+        public DummyKeyableThatIsVersionable(Long id) {
+            this.id = id;
+        }
+
+        @Override
+        public Long getId() {
+            return id;
+        }
+
+        @Override
+        public void setVersion(Long version) {
+            this.version = version;
+        }
+
+        @Override
+        public Long getVersion() {
+            return version;
+        }
     }
 }

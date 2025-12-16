@@ -117,7 +117,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(7, true);
+        differenceLogAsserter.assertDiffCount(8, true);
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST, "id", "", null, operation, eventName));
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -226,7 +230,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(8, true);
+        differenceLogAsserter.assertDiffCount(9, true);
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -236,6 +240,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         req.getStatus().toString(),
                         operation,
                         eventName));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        "application_lists", "id", null, null, operation, eventName));
+
         differenceLogAsserter.assertFieldLogNotPresent(
                 TableNames.APPICATION_LIST, "courthouse_code", true);
 
@@ -1718,7 +1727,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // assert success
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
-        assertThat(problemDetail.getType().toString()).isEqualTo("COMMON-6");
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode());
         assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
     }

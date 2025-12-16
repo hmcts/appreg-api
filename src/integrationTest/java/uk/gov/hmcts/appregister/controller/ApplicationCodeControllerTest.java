@@ -28,6 +28,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
@@ -54,7 +55,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     @MockitoBean private Clock clock; // replaces Clock bean in Spring context
 
     // The total app codes inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_APP_CODES_COUNT = 42;
+    private static final int TOTAL_APP_CODES_COUNT = 44;
 
     private static final String FEE_DESCRIPTION = "JP perform function away from court";
     private static final String OFFSITE_FEE_DESCRIPTION =
@@ -384,7 +385,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // make the assertions
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 14, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 15, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -442,7 +443,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the response
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 21, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 22, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
@@ -660,7 +661,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 problemDetail.getDetail().endsWith("must be greater than or equal to 1"));
         Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
         Assertions.assertEquals(400, problemDetail.getStatus());
-        Assertions.assertEquals("COMMON-5", problemDetail.getType().toString());
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
@@ -697,7 +700,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 problemDetail.getDetail().endsWith("must be less than or equal to 100"));
         Assertions.assertEquals("Constraint Error", problemDetail.getTitle());
         Assertions.assertEquals(400, problemDetail.getStatus());
-        Assertions.assertEquals("COMMON-5", problemDetail.getType().toString());
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     @Test
