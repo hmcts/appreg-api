@@ -69,7 +69,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
     LIST_ENTRY_NOT_FOUND(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "No application list entry was found that belongs to" + "the specified list",
+                    "No application list entry was found that belongs to " + " the specified list",
                     "ALE-14"));
 
     private final DefaultErrorDetail defaultErrorCode;
