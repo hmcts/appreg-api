@@ -1,12 +1,16 @@
 package uk.gov.hmcts.appregister.audit.listener.diff;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Size;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.EqualsAndHashCode;
@@ -17,8 +21,13 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.Changeable;
+import uk.gov.hmcts.appregister.common.entity.base.Deletable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
+import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 
@@ -50,7 +59,7 @@ public class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.CREATE, test2);
 
-        Assertions.assertEquals(6, differenceList.size());
+        Assertions.assertEquals(11, differenceList.size());
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test2.id.toString()),
                 differenceList.get(0));
@@ -97,7 +106,7 @@ public class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
 
-        Assertions.assertEquals(3, differenceList.size());
+        Assertions.assertEquals(8, differenceList.size());
 
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test.id.toString()),
@@ -141,7 +150,7 @@ public class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
 
-        Assertions.assertEquals(6, differenceList.size());
+        Assertions.assertEquals(11, differenceList.size());
 
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test.id.toString()),
@@ -195,84 +204,67 @@ public class ReflectiveAuditorTest {
 
     @Test
     public void testWithSuperFields() {
-        ApplicationList oldAppLst = new AppListTestData().someComplete();
-        oldAppLst.setId(123L);
+        TestEntityAuditable test = new TestEntityAuditable();
 
-        ApplicationList newAppLst = new AppListTestData().someComplete();
-        newAppLst.setId(123L);
+        test.resolutionWording = "32";
+        test.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
+        test.id = 123L;
+        test.name = "random name";
+        test.setChangedBy("old user");
+        test.setChangedDate(OffsetDateTime.now());
 
-        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
+        TestEntityAuditable newTest = new TestEntityAuditable();
+
+        newTest.resolutionWording = "37";
+        newTest.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
+        newTest.id = 1235L;
+        newTest.name = "random name New";
+        newTest.setChangedBy("new user");
+        newTest.setChangedDate(OffsetDateTime.now());
+
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
+
+        // no annotations for update so return all data
         List<AuditableData> differenceList =
-                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, oldAppLst);
+                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.UPDATE, test);
         List<AuditableData> newDifferenceList =
-                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, newAppLst);
+                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.UPDATE, newTest);
 
         Assertions.assertNotNull(findByField("changed_date", differenceList));
         Assertions.assertNotNull(findByField("changed_by", differenceList));
-        Assertions.assertNotNull(
-                oldAppLst.getDescription(),
-                findByField("list_description", differenceList).getValue());
-        Assertions.assertNotNull(
-                newAppLst.getDescription(),
-                findByField("list_description", newDifferenceList).getValue());
 
-        Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", newDifferenceList).getValue());
-        Assertions.assertEquals(
-                Short.valueOf(oldAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", differenceList).getValue());
-
-        Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", newDifferenceList).getValue());
-        Assertions.assertEquals(
-                Short.valueOf(oldAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", differenceList).getValue());
-
+        Assertions.assertNotNull("old user", findByField("changed_by", differenceList).getValue());
         Assertions.assertNotNull(
-                newAppLst.getTime(),
-                findByField("application_list_time", newDifferenceList).getValue());
+                "new user", findByField("changed_by", newDifferenceList).getValue());
+        Assertions.assertNotNull("random name", findByField("myname", differenceList).getValue());
         Assertions.assertNotNull(
-                oldAppLst.getTime(),
-                findByField("application_list_time", differenceList).getValue());
-
+                "random name New", findByField("myname", newDifferenceList).getValue());
         Assertions.assertNotNull(
-                newAppLst.getDate(),
-                findByField("application_list_date", newDifferenceList).getValue());
+                test.getCriminalJusticeArea().getCode(),
+                findByField("cja_code", differenceList).getValue());
         Assertions.assertNotNull(
-                oldAppLst.getDate(),
-                findByField("application_list_date", differenceList).getValue());
+                newTest.getCriminalJusticeArea().getCode(),
+                findByField("cja_code", differenceList).getValue());
     }
 
     @Test
-    public void testWithSuperFieldsAndRecursionOff() {
-        ApplicationList newAppLst = new AppListTestData().someComplete();
-
-        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(false);
+    public void testDeleteAppListAuditData() {
+        ApplicationList appList = new AppListTestData().someComplete();
+        appList.setId(123L);
+        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
         List<AuditableData> differenceList =
-                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, newAppLst);
-        Assertions.assertNotNull(findByField("changed_date", differenceList));
-        Assertions.assertNotNull(findByField("changed_by", differenceList));
-        Assertions.assertNotNull(
-                newAppLst.getDescription(),
-                findByField("list_description", differenceList).getValue());
+                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, appList);
 
+        // only id should be audited on delete
+        Assertions.assertEquals(2, differenceList.size());
         Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationMinutes()).toString(),
-                findByField("duration_minute", differenceList).getValue());
-
+                new AuditableData(
+                        TableNames.APPLICATION_LISTS, "al_id", appList.getId().toString()),
+                findByField("al_id", differenceList));
         Assertions.assertEquals(
-                Short.valueOf(newAppLst.getDurationHours()).toString(),
-                findByField("duration_hour", differenceList).getValue());
-
-        Assertions.assertEquals(
-                newAppLst.getTime().toString(),
-                findByField("application_list_time", differenceList).getValue());
-
-        Assertions.assertEquals(
-                newAppLst.getDate().toString(),
-                findByField("application_list_date", differenceList).getValue());
+                new AuditableData(
+                        TableNames.APPLICATION_LISTS, "version", appList.getVersion().toString()),
+                findByField("version", differenceList));
     }
 
     private AuditableData findByField(String fieldName, List<AuditableData> differences) {
@@ -284,11 +276,34 @@ public class ReflectiveAuditorTest {
         return null;
     }
 
+    @MappedSuperclass
+    @Getter
+    @Setter
+    @EntityListeners(PreCreateUpdateEntityListener.class)
+    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+    public class BaseEntity implements Changeable, Deletable {
+        @Column(name = "changed_by", nullable = false)
+        private String changedBy;
+
+        @Column(name = "changed_date", nullable = false)
+        private OffsetDateTime changedDate;
+
+        @Column(name = "delete_by")
+        private String deletedBy;
+
+        @Column(name = "delete_date")
+        private OffsetDateTime deletedDate;
+
+        @Convert(converter = YesNoConverter.class)
+        @Column(name = "is_deleted")
+        private YesOrNo deleted;
+    }
+
     /** Setup some test data. */
     @Getter
     @AuditEnabled(types = {CrudEnum.DELETE})
     @Table(name = "test_entity")
-    class TestEntityAuditable implements Keyable {
+    class TestEntityAuditable extends BaseEntity implements Keyable {
         @Id
         @Column(name = "adr_id", nullable = false, updatable = false)
         @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "adr_gen")

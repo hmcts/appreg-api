@@ -127,7 +127,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_name",
-                        "",
+                        null,
                         "Cardiff Crown Court",
                         operation,
                         eventName));
@@ -135,7 +135,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_code",
-                        "",
+                        null,
                         VALID_COURT_CODE,
                         operation,
                         eventName));
@@ -143,7 +143,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_status",
-                        "",
+                        null,
                         req.getStatus().toString(),
                         operation,
                         eventName));
@@ -151,7 +151,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
-                        "",
+                        null,
                         "Morning_list_\\(court\\)",
                         operation,
                         eventName));
@@ -159,7 +159,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
-                        "",
+                        null,
                         TEST_TIME.toString(),
                         operation,
                         eventName));
@@ -167,7 +167,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 AuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
-                        "",
+                        null,
                         TEST_DATE.toString(),
                         operation,
                         eventName));
@@ -176,7 +176,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         TableNames.APPICATION_LIST,
                         "other_courthouse",
                         "",
-                        "",
+                        null,
                         operation,
                         eventName));
     }
@@ -596,7 +596,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListCreateDto()
                         .date(TEST_DATE)
                         .time(TEST_TIME)
-                        .description("Morning_list_(court)")
+                        .description("Morning_list_\\(court\\)")
                         .status(ApplicationListStatus.OPEN)
                         .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(2)
@@ -636,7 +636,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning list \\(court\\) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2)
                         .durationHours(4)
@@ -664,7 +664,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning list \\(court\\) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2)
                         .durationHours(4)
@@ -685,7 +685,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getDescription()).isEqualTo("Morning list \\(court\\) update");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(dto.getDurationHours()).isEqualTo(4);
         assertThat(dto.getDurationMinutes()).isEqualTo(32);
@@ -834,7 +834,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning list \\(court\\) update")
                         .status(ApplicationListStatus.CLOSED)
                         .cjaCode(VALID_CJA_CODE2)
                         .durationHours(4)
@@ -853,7 +853,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getVersion()).isEqualTo(1L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
-        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getDescription()).isEqualTo("Morning list \\(court\\) update");
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
 
         // CJA populated, Court null
@@ -878,8 +878,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
-                        .status(ApplicationListStatus.OPEN)
+                        .description("Morning list \\(court\\) update")
+                        .status(ApplicationListStatus.CLOSED)
                         .cjaCode(VALID_CJA_CODE)
                         .durationHours(4)
                         .durationMinutes(32)
@@ -905,7 +905,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 new ApplicationListUpdateDto()
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
-                        .description("Morning list (court) update")
+                        .description("Morning list \\(court\\) update")
                         .status(ApplicationListStatus.CLOSED)
                         .cjaCode(VALID_CJA_CODE)
                         .durationHours(4)
@@ -1169,15 +1169,37 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
         UUID id = dto.getId();
 
+        differenceLogAsserter.clearLogs();
+
         // fire tests
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(2, false);
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "al_id",
+                        null,
+                        null,
+                        "DELETE",
+                        "Delete Application List"));
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "version",
+                        "0",
+                        null,
+                        "DELETE",
+                        "Delete Application List"));
 
         // assert success
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
     }
 
     @Test
-    void givenValidRequest_whenDeleteWithInvalidId_then204() throws Exception {
+    void givenValidRequest_whenDeleteWithInvalidId_then404() throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1195,6 +1217,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.DELETION_ID_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0, true);
     }
 
     @Test
@@ -1226,8 +1252,20 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
+        differenceLogAsserter.clearLogs();
+
+        // prove the delete has been made
         resp = restAssuredClient.executeDeleteRequest(getLocalUrl(WEB_CONTEXT + "/" + id), token);
-        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.DELETION_ALREADY_IN_DELETABLE_STATE.getCode().getAppCode(),
+                problemDetail.getType().toString());
+
+        // assert the diff audit log message
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0, true);
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
@@ -1643,12 +1681,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         null);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-    }
-
-    private String getExpectedDiffLog(
-            String tableName, String fieldName, String oldValue, String newValue) {
-        return "Saved data audit record: Difference(tableName=%s, fieldName=%s, oldValue=%s, newValue=%s)"
-                .formatted(tableName, fieldName, oldValue, newValue);
     }
 
     @Test

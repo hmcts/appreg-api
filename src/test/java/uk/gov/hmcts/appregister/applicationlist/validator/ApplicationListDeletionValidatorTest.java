@@ -27,7 +27,7 @@ class ApplicationListDeletionValidatorTest {
     void validationSuccess() {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuid(eq(uuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
                 .thenReturn(Optional.of(applicationList));
         validator.validate(uuid);
     }
@@ -35,7 +35,8 @@ class ApplicationListDeletionValidatorTest {
     @Test
     void validationFailNotFound() {
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuid(eq(uuid))).thenReturn(Optional.empty());
+        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(uuid));
@@ -47,7 +48,7 @@ class ApplicationListDeletionValidatorTest {
         ApplicationList applicationList = new AppListTestData().someMinimal().build();
         applicationList.setDeleted(true);
         UUID uuid = UUID.randomUUID();
-        when(applicationListRepository.findByUuid(eq(uuid)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(uuid)))
                 .thenReturn(Optional.of(applicationList));
 
         AppRegistryException ex =

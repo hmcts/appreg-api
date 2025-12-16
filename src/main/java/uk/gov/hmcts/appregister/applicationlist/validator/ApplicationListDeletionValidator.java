@@ -32,7 +32,8 @@ public class ApplicationListDeletionValidator
     public <R> R validate(
             UUID deletionId, BiFunction<UUID, ListDeleteValidationSuccess, R> createSupplier) {
 
-        Optional<ApplicationList> entry = applicationListRepository.findByUuid(deletionId);
+        Optional<ApplicationList> entry =
+                applicationListRepository.findByUuidIncludingDelete(deletionId);
 
         if (entry.isEmpty()) {
             throw new AppRegistryException(
