@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,10 +37,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
     @Override
     @Transactional
-    public void delete(UUID listId, UUID entryId, UUID resultId) {
-        log.debug("Start: Deleting Application List Entry Result with id: {}", resultId);
-
-        ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
+    public void delete(ListEntryResultDeleteArgs args) {
+        log.debug("Start: Deleting Application List Entry Result with id: {}", args.resultId());
 
         deletionValidator.validate(
                 args,
@@ -58,6 +55,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                     return null;
                 });
 
-        log.debug("Finish: Deleted Application List Entry Result with id: {}", resultId);
+        log.debug("Finish: Deleted Application List Entry Result with id: {}", args.resultId());
     }
 }

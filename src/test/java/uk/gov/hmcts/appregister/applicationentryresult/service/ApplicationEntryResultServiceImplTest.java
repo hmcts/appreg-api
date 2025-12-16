@@ -68,7 +68,8 @@ class ApplicationEntryResultServiceImplTest {
 
         deletionValidator.setSuccess(success);
 
-        service.delete(listId, entryId, resultId);
+        ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
+        service.delete(args);
 
         verify(deletionValidator).validate(any(ListEntryResultDeleteArgs.class), notNull());
         verify(appListEntryResolutionRepository).delete(any(AppListEntryResolution.class));

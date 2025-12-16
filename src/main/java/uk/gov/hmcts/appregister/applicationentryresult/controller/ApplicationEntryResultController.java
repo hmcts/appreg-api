@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.service.ApplicationEntryResultService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntryResultsApi;
@@ -40,7 +41,8 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> deleteApplicationListEntryResult(
             UUID listId, UUID entryId, UUID resultId) {
-        service.delete(listId, entryId, resultId);
+        ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
+        service.delete(args);
         log.info("Deleted Application List Entry Result with id: {}", resultId);
         return ResponseEntity.noContent().build();
     }

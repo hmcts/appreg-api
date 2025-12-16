@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
-import java.util.UUID;
+import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 
 /**
  * Service interface for managing application list entry results.
  */
 public interface ApplicationEntryResultService {
-    void delete(UUID listId, UUID entryId, UUID resultId);
+    void delete(ListEntryResultDeleteArgs args);
 }

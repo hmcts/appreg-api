@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.applicationentry.exception.ApplicationListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -110,7 +110,7 @@ class ApplicationEntryResultDeletionValidatorTest {
         ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
         AppRegistryException ex =
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(args));
-        Assertions.assertEquals(ApplicationListEntryError.LIST_ENTRY_NOT_FOUND, ex.getCode());
+        Assertions.assertEquals(AppListEntryError.LIST_ENTRY_NOT_FOUND, ex.getCode());
     }
 
     @Test

@@ -4,7 +4,7 @@ import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.exception.ApplicationListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -57,7 +57,7 @@ public class ApplicationEntryResultDeletionValidator
                 .orElseThrow(
                         () ->
                                 new AppRegistryException(
-                                        ApplicationListEntryError.LIST_ENTRY_NOT_FOUND,
+                                        AppListEntryError.LIST_ENTRY_NOT_FOUND,
                                         ("No application list entry was found for UUID '%s' that belongs to the"
                                                         + " specified list")
                                                 .formatted(args.entryId())));
