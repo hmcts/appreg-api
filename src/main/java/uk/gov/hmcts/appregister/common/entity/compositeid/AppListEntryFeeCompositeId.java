@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.entity.compositeid;
 
 import java.io.Serializable;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -9,6 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@RequiredArgsConstructor
 public class AppListEntryFeeCompositeId implements Serializable {
 
     private Long appListEntryId;

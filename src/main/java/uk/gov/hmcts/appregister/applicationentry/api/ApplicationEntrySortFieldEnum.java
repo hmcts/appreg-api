@@ -19,6 +19,7 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     private final String[] entityValue;
 
     ApplicationEntrySortFieldEnum(String apiValue, String... entityValue) {
+
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }

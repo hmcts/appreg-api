@@ -9,16 +9,19 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents a Name and Address entity mapped to the "name_address" table in the database.
@@ -31,12 +34,17 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.CREATE})
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
+    public static final String RESPONDENT_CODE = "RE";
+    public static final String APPLICANT_CODE = "AP";
+
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
     @SequenceGenerator(name = "na_gen", sequenceName = "na_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = {CrudEnum.CREATE})
     private Long id;
 
     @Column(name = "code")
@@ -108,7 +116,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private String userName;
 
     @Column(name = "date_of_birth")
-    private OffsetDateTime dateOfBirth;
+    private LocalDate dateOfBirth;
 
     @Column(name = "dms_id")
     @Size(max = 20)
@@ -122,5 +130,13 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @Override
     public void setCreatedUser(String user) {
         this.userName = user;
+    }
+
+    public boolean isApplicant() {
+        return code != null && code.startsWith(APPLICANT_CODE);
+    }
+
+    public boolean isRespondent() {
+        return code != null && code.startsWith(RESPONDENT_CODE);
     }
 }

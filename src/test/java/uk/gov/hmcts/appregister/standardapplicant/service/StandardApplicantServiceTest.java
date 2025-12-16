@@ -21,10 +21,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +32,8 @@ public class StandardApplicantServiceTest {
 
     @Mock private StandardApplicantRepository repository;
 
-    @Spy private StandardApplicantMapper mapper = new StandardApplicantMapperImpl();
+    @Spy
+    private StandardApplicantMapperImpl standardApplicantMapper = new StandardApplicantMapperImpl();
 
     @Mock private Clock clock;
 
@@ -47,6 +48,8 @@ public class StandardApplicantServiceTest {
         when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
+
+        standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
     }
 
     @Test

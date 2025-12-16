@@ -25,7 +25,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
     @Autowired private UserProvider loggedInUser;
 
     // The total app codes inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_APP_CODES_COUNT = 42;
+    private static final int TOTAL_APP_CODES_COUNT = 44;
 
     @Test
     public void testBasicInsertionUpdate() {

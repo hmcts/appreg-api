@@ -48,8 +48,7 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
         assertTrue(
                 nameAddress
                         .getDateOfBirth()
-                        .toLocalDate()
-                        .isEqual(nameAddressToAssertAgainst.get().getDateOfBirth().toLocalDate()));
+                        .isEqual(nameAddressToAssertAgainst.get().getDateOfBirth()));
         assertEquals(
                 nameAddress.getEmailAddress(), nameAddressToAssertAgainst.get().getEmailAddress());
         assertEquals(nameAddress.getForename1(), nameAddressToAssertAgainst.get().getForename1());
