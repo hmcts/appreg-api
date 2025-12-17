@@ -276,6 +276,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         WHERE ale.applicationList.uuid = :id
+        AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
