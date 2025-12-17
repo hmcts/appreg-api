@@ -111,6 +111,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                 )
             LEFT JOIN aler.resolutionCode rc
             WHERE ale.applicationList.uuid = :id
+            AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
             """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 
