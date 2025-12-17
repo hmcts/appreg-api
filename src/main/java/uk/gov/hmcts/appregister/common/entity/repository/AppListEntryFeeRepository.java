@@ -6,10 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.compositeid.AppListEntryFeeCompositeId;
 
-public interface AppListEntryFeeRepository
-        extends JpaRepository<AppListEntryFeeId, AppListEntryFeeCompositeId> {
+public interface AppListEntryFeeRepository extends JpaRepository<AppListEntryFeeId, Long> {
     /**
      * gets all fees for an entry id.
      *

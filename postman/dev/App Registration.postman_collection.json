@@ -823,6 +823,7 @@
 							"path": [
 								"application-lists",
 								"{{APP_LIST_ID}}",
+
 								"entries"
 							]
 						}

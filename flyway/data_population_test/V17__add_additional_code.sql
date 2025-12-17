@@ -3,3 +3,4 @@ INSERT INTO application_codes (ac_id, application_code, application_code_title, 
 VALUES
   (43, 'MS99007','Copy documents','Application for a warrant to enter premises at {TEXT|Premises Address|15} for date {DATE|Premises Date|10}','',1,1,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,1, 0, 0, '2016-01-01 00:00:00', 'admin', 'CO1.1'),
   (44, 'ZS99007','Copy documents','Application for a warrant to enter premises at {TEXT|Premises Address|20} for date {DATE|Premises Date|10}','',1,1,'','',TIMESTAMP '2016-01-01 00:00:00',NULL,0, 0, 0, '2016-01-01 00:00:00', 'admin', 'CO2.4');
+

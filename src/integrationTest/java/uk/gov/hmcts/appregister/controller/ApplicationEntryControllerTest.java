@@ -1104,7 +1104,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.NOT_RESPONDENT_REQUIRED.getCode().getType().get(),
+                AppListEntryError.RESPONDENT_NOT_REQUIRED.getCode().getType().get(),
                 problemDetail.getType());
     }
 
@@ -1270,7 +1270,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateListEntryWithAllData() throws Exception {
+    public void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -1450,7 +1450,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateWithUnknownEntry() throws Exception {
+    public void givenAFailureUpdate_whenAnEntryToUpdateDoesntExist_404Returned() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1480,7 +1480,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateWithEntryNotPartOfList() throws Exception {
+    public void givenAFailureUpdate_whenAnEntryIsNotPartOfList_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
         EntryGetDetailDto createdData = responseSpecCreate.as(EntryGetDetailDto.class);
 
@@ -1513,7 +1513,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateWithMatchOnFailure() throws Exception {
+    public void givenAFailureUpdate_whenAnEtagFailingMatch_412Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // create the token
@@ -1552,7 +1552,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithApplicantMutualExclusiveWithTwoApplicants() throws Exception {
+    public void givenAFailureUpdate_whenApplicantMutualExclusionFailure_400Returned()
+            throws Exception {
         final Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1593,7 +1594,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithApplicantMutualExclusiveWithAllRespondent() throws Exception {
+    public void
+            givenAFailureUpdate_whenApplicantMutualExclusionFailureWithAllValuesSet_400Returned()
+                    throws Exception {
         final Response entryResponse = createListEntryWithAllData();
 
         // setup the payload
@@ -1641,7 +1644,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithApplicantNoCodeExists() throws Exception {
+    public void givenAFailureUpdate_whenApplicantCodeDoesntExist_404Returned() throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1667,7 +1670,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithApplicantFeeRequired() throws Exception {
+    public void givenAFailureUpdate_whenApplicantFeeRequiredButNotSupplied_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1691,7 +1695,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithApplicantRespondentRequired() throws Exception {
+    public void givenAFailureUpdate_whenRespondentRequiredButNotSupplied_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1716,7 +1721,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithRespondentNotRequired() throws Exception {
+    public void givenAFailureUpdate_whenRespondentSuppliedButNotRequired_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1741,7 +1747,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithRespondentBulkNotAllowed() throws Exception {
+    public void givenAFailureUpdate_whenBulkRespondentNotExpected_400Returned() throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1761,12 +1767,13 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.NOT_RESPONDENT_REQUIRED.getCode().getType().get(),
+                AppListEntryError.RESPONDENT_NOT_REQUIRED.getCode().getType().get(),
                 problemDetail.getType());
     }
 
     @Test
-    public void testUpdateEntryWordingTemplateIncorrectFields() throws Exception {
+    public void givenAFailureUpdate_whenWordingTemplateFieldsNotAcceptable_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1791,7 +1798,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryLengthFailure() throws Exception {
+    public void givenAFailureUpdate_whenWordingTemplateFieldsLengthNotAcceptable_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1820,7 +1828,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWordingDataTypeFailure() throws Exception {
+    public void givenAFailureUpdate_whenWordingTemplateFieldsDataTypeNotAcceptable_400Returned()
+            throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token
@@ -1848,7 +1857,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void testUpdateEntryWithNonExistingStandardApplicant() throws Exception {
+    public void givenAFailureUpdate_whenStandardApplicantNotFound_404Returned() throws Exception {
         Response entryResponse = createListEntryWithAllData();
 
         // create the token

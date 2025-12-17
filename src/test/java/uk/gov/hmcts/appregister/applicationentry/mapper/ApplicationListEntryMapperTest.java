@@ -541,8 +541,7 @@ class ApplicationListEntryMapperTest {
         ApplicationCode code = applicationCodeTestData.someComplete();
         code.setWording(
                 "Test template {TEXT|Applicant officer1|10} and second template "
-                        + "{TEXT|Applicant officer2|10} and third\" +\n"
-                        + "                            \"template {TEXT|Applicant officer3|10}");
+                        + "{TEXT|Applicant officer2|10} and third template {TEXT|Applicant officer3|10}");
 
         AppListEntryFeeStatusTestData statusTestData = new AppListEntryFeeStatusTestData();
 
