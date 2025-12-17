@@ -5,14 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.saveApplicationListEntry;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +27,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
@@ -32,7 +37,6 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
-import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Transactional
@@ -83,7 +87,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testFindSummariesById_returnsExpectedSummaryProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                ApplicationListEntryUtil.saveApplicationListEntry(
+                saveApplicationListEntry(
                         entityManager, persistance, list, (short) 1);
 
         // test get
@@ -150,10 +154,10 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Short sequenceNumber1 = (short) 1;
         Short sequenceNumber2 = (short) 2;
         ApplicationListEntry data1 =
-                ApplicationListEntryUtil.saveApplicationListEntry(
+                saveApplicationListEntry(
                         entityManager, persistance, list, sequenceNumber1);
         ApplicationListEntry data2 =
-                ApplicationListEntryUtil.saveApplicationListEntry(
+                saveApplicationListEntry(
                         entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
@@ -182,7 +186,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testFindByIdForPrinting_returnsExpectedPrintProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                ApplicationListEntryUtil.saveApplicationListEntry(
+                saveApplicationListEntry(
                         entityManager, persistance, list, (short) 1);
 
         // test get
@@ -547,6 +551,53 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 2,
                 updatedCount,
                 "Should report two rows updated (only entries in source list moved)");
+    }
+
+    @Test
+    public void testCountByApplicationListUuids_groupsAndExcludesDeleted() {
+        // Given: three lists (one deleted)
+        ApplicationList listA = new AppListTestData().someMinimal().build();
+        persistance.save(listA);
+
+        ApplicationList listB = new AppListTestData().someMinimal().build();
+        persistance.save(listB);
+
+        ApplicationList deletedList = new AppListTestData().someMinimal().build();
+        // mark as deleted so it should be excluded by the query
+        deletedList.setDeleted(true);
+        persistance.save(deletedList);
+
+        // And: entries for each list
+        saveApplicationListEntry(entityManager, persistance, listA, (short) 1);
+        saveApplicationListEntry(entityManager, persistance, listA, (short) 2);
+
+        saveApplicationListEntry(entityManager, persistance, listB, (short) 1);
+
+        // entries for deleted list (should be excluded from counts)
+        saveApplicationListEntry(entityManager, persistance, deletedList, (short) 1);
+        saveApplicationListEntry(entityManager, persistance, deletedList, (short) 2);
+        saveApplicationListEntry(entityManager, persistance, deletedList, (short) 3);
+
+        // flush/clear so query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: invoking the repository method with all UUIDs
+        List<EntryCount> counts =
+            applicationListEntryRepository.countByApplicationListUuids(
+                List.of(listA.getUuid(), listB.getUuid(), deletedList.getUuid()));
+
+        // Then: deleted list is excluded; only listA and listB returned with expected counts
+        assertThat(counts.size()).isEqualTo(2);
+
+        Map<UUID, Long> countsByUuid =
+            counts.stream().collect(Collectors.toMap(EntryCount::getPrimaryKey,
+                                                     EntryCount::getCount));
+
+        assertEquals(2L, countsByUuid.get(listA.getUuid()).longValue());
+        assertEquals(1L, countsByUuid.get(listB.getUuid()).longValue());
+        // deletedList should not appear in the result map
+        assertNull(countsByUuid.get(deletedList.getUuid()));
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {
