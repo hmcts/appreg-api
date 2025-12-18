@@ -5,10 +5,8 @@ import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEquals;
 
-import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import java.net.MalformedURLException;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -179,13 +177,6 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
-    }
-
-    private TokenAndJwksKey getToken() throws JOSEException {
-        return getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
     }
 
     private Response deleteResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token)

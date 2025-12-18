@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.controller;
 
 import static org.mockito.Mockito.when;
 
-import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import jakarta.persistence.EntityManager;
 import java.net.MalformedURLException;
@@ -295,13 +294,6 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         return resp.as(ApplicationListPage.class);
-    }
-
-    private TokenAndJwksKey getToken() throws JOSEException {
-        return getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.USER))
-                .build()
-                .fetchTokenForRole();
     }
 
     private Response getMoveApplicationListEntriesResponse(
