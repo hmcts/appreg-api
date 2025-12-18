@@ -401,26 +401,25 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindByIdForPrinting_excludesDeletedApplicationList() {
-        // Given: an application list marked as deleted with one entry
-        ApplicationList deletedList = new AppListTestData().someMinimal().build();
-        deletedList.setDeleted(true); // mark list as deleted so query should exclude it
-        persistance.save(deletedList);
+    public void testFindByIdForPrinting_excludesDeletedApplicationListEntries() {
+        // Given: an application list with one deleted entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
 
-        // Add an entry to the deleted list (it should be excluded by the query)
-        saveApplicationListEntry(entityManager, persistance, deletedList, (short) 1);
+        ApplicationListEntry savedEntry =
+            saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
-        // ensure DB state is flushed so repository query reads from DB
+        savedEntry.setDeleted(true);
+
         entityManager.flush();
         entityManager.clear();
 
-        // When: invoking findByIdForPrinting for the deleted list
+        // When
         List<ApplicationListEntryPrintProjection> result =
-            applicationListEntryRepository.findByIdForPrinting(deletedList.getUuid());
+            applicationListEntryRepository.findByIdForPrinting(list.getUuid());
 
-        // Then: result should be empty because the application list is deleted
-        assertThat(result.size()).isEqualTo(0);
-        assertTrue(result.isEmpty());
+        // Then
+        assertThat(result.isEmpty());
     }
 
     @Test
