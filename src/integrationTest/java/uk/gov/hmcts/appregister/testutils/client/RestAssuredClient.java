@@ -198,6 +198,23 @@ public class RestAssuredClient {
     }
 
     /**
+     * deletes a request builder that can be used to make requests against the application with an
+     * If-Match header.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param ifMatch The If-Match (ETag) header value
+     * @return The specification of the response
+     */
+    public Response executeDeleteRequest(URL url, TokenAndJwksKey token, String ifMatch) {
+        return given().header("Authorization", "Bearer " + token.getToken())
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .header("If-Match", ifMatch)
+                .delete(url)
+                .andReturn();
+    }
+
+    /**
      * puts a request builder that can be used to make requests against the application.
      *
      * @param url The url context

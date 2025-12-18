@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.testutils;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.nimbusds.jose.JOSEException;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,9 +14,11 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
+import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 
@@ -75,5 +79,12 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
      */
     public TokenGenerator.TokenGeneratorBuilder getATokenWithValidCredentials() {
         return TokenGenerator.builder().issuer(issuer).audience(audience);
+    }
+
+    public TokenAndJwksKey getToken() throws JOSEException {
+        return getATokenWithValidCredentials()
+                .roles(List.of(RoleEnum.USER))
+                .build()
+                .fetchTokenForRole();
     }
 }

@@ -19,11 +19,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * The AppListEntryResolution entity represents a resolution entry for an application list entry.
@@ -37,6 +42,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
+@AuditEnabled(types = {CrudEnum.DELETE})
 public class AppListEntryResolution extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -44,6 +50,7 @@ public class AppListEntryResolution extends BaseChangeableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aler_gen")
     @SequenceGenerator(name = "aler_gen", sequenceName = "aler_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
+    @Audit(action = CrudEnum.DELETE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -57,15 +64,20 @@ public class AppListEntryResolution extends BaseChangeableEntity
     @Column(name = "al_entry_resolution_wording", nullable = false)
     private String resolutionWording;
 
-    @Column(name = "al_entry_resolution_officer ", nullable = false)
+    @Column(name = "al_entry_resolution_officer", nullable = false)
     @Size(max = 1000)
     private String resolutionOfficer;
 
     @Column(name = "version", nullable = false)
     @Version
+    @Audit(action = CrudEnum.DELETE)
     private Long version;
 
     @Column(name = "user_name")
     @Size(max = 250)
     private String createdUser;
+
+    @Generated(event = EventType.INSERT)
+    @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
+    private java.util.UUID uuid;
 }

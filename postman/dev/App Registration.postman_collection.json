@@ -817,6 +817,58 @@
 				}
 			]
 		},
+    {
+      "name": "application-list-entry-results",
+      "item": [
+        {
+          "name": "Delete Application List Entry Result",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}/entries/7913172a-28a4-4fb6-ac3b-16e269856960/results/4d34eb41-de4d-4707-aba1-2602c113abfc",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{created_id}}",
+                "entries",
+                "7913172a-28a4-4fb6-ac3b-16e269856960",
+                "results",
+                "4d34eb41-de4d-4707-aba1-2602c113abfc"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
 		{
 			"name": "Obtain Token",
 			"event": [
