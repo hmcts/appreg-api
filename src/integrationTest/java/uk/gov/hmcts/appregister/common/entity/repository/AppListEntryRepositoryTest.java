@@ -183,25 +183,23 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
-    public void testFindSummariesById_excludesDeletedApplicationList() {
-        // Given: an application list marked as deleted with one entry
-        ApplicationList deletedList = new AppListTestData().someMinimal().build();
-        deletedList.setDeleted(true); // mark list as deleted so query should exclude it
-        persistance.save(deletedList);
+    public void testFindSummariesById_excludesDeletedEntries() {
+        // Given: an application list with one entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
 
-        // Add an entry to the deleted list (it should be excluded by the query)
-        saveApplicationListEntry(entityManager, persistance, deletedList, (short) 1);
+        ApplicationListEntry entry = saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
-        // ensure DB state is flushed so repository query reads from DB
+        entry.setDeleted(true);
         entityManager.flush();
         entityManager.clear();
 
-        // When: invoking findSummariesById for the deleted list
+        // When: invoking findSummariesById for the list
         Pageable page = PageRequest.of(0, 10);
         Page<ApplicationListEntrySummaryProjection> result =
-            applicationListEntryRepository.findSummariesById(deletedList.getUuid(), page);
+            applicationListEntryRepository.findSummariesById(list.getUuid(), page);
 
-        // Then: result should be empty because the application list is deleted
+        // Then: result should be empty because the entry is deleted
         assertThat(result.getTotalElements()).isEqualTo(0);
         assertThat(result.getContent().isEmpty()).isTrue();
     }
@@ -675,7 +673,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
     @Test
     public void testCountByApplicationListUuids_excludesDeletedEntries() {
-        // Given: two non-deleted lists
+        // Given: two lists
         ApplicationList listA = new AppListTestData().someMinimal().build();
         persistance.save(listA);
 
