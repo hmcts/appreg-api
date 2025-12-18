@@ -558,6 +558,54 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testSearchForGetSummary_excludesDeletedApplicationListEntries() {
+        // Given: an application list with unique values to isolate this test
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        list.setCourtCode("UNQ001");
+        LocalDate hearingDate = LocalDate.of(2030, 1, 1);
+        list.setDate(hearingDate);
+        persistance.save(list);
+
+        // And: two entries in the list
+        saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        ApplicationListEntry deletedEntry =
+            saveApplicationListEntry(entityManager, persistance, list, (short) 2);
+
+        ApplicationListEntry managedDeletedEntry =
+            entityManager.find(ApplicationListEntry.class, deletedEntry.getId());
+
+        managedDeletedEntry.setDeleted(true);
+
+        // Flush and clear so repository query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: calling searchForGetSummary
+        Pageable page = PageRequest.of(0, 10);
+        Page<ApplicationListEntryGetSummaryProjection> result =
+            applicationListEntryRepository.searchForGetSummary(
+                true,
+                hearingDate,
+                "UNQ001",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                page
+            );
+
+        // Then: only the non-deleted entry is returned
+        assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
     @Transactional
     public void testBulkMoveByUuidAndSourceList_movesOnlyMatchingEntriesAndReturnsCount() {
         // Given: source, target and other lists
