@@ -120,7 +120,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         select ale.applicationList.uuid as primaryKey, count(ale) as count
         from ApplicationListEntry ale
         where ale.applicationList.uuid in :uuids
-        and (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
+        and (ale.deleted IS NULL OR ale.deleted <> '1')
         group by ale.applicationList.uuid
         """)
     List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
