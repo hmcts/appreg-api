@@ -42,6 +42,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             Long id, Long listId, String userId);
 
     /**
+     * Finds a single application list entries by list ID, ensuring it belongs to the specified
+     * application list and that the list is owned by the given user.
+     *
+     * @param listId The ID of the application list the application is expected to belong to
+     * @return The application, if found and accessible
+     */
+    List<ApplicationListEntry> findByApplicationListId(Long listId);
+
+    /**
      * Finds all applications with the given IDs that are accessible to a specific user. Only
      * applications belonging to lists owned by that user will be returned.
      *
@@ -293,4 +302,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         """)
     int bulkMoveByUuidAndSourceList(
             Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
+
+    /**
+     * Retrieves an application list entry by its UUID and the UUID of the application list it
+     * belongs to.
+     *
+     * @param entryUuid the UUID of the application list entry
+     * @param listUuid the UUID of the parent application list
+     * @return an Optional containing the entry if found, otherwise empty
+     */
+    Optional<ApplicationListEntry> findByUuidAndApplicationListUuid(UUID entryUuid, UUID listUuid);
 }

@@ -1,6 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntryPrintProjectionUtil.applicationListEntryPrintProjection;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONCODE1_CODE;
@@ -61,15 +63,49 @@ import static uk.gov.hmcts.appregister.util.TestConstants.PERSON5_SURNAME;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
+import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
+import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.data.FeeTestData;
+import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 
 class ApplicationListEntryMapperTest {
+
+    private ApplicationListEntryMapper mapper;
+
+    @BeforeEach
+    void beforeEach() {
+        mapper = new ApplicationListEntryMapperImpl();
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setOfficialMapper(new OfficialMapper());
+    }
 
     @Test
     void testToSummaryModel_provideValidData_validModelGenerated() {
@@ -264,8 +300,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(PERSON4_SURNAME, applicant.getName().getSurname());
         Assertions.assertEquals(MRS, respondent.getName().getTitle());
         Assertions.assertEquals(PERSON5_SURNAME, respondent.getName().getSurname());
-        Assertions.assertEquals(
-                PERSON5_DATE_OF_BIRTH.toLocalDate(), dto.getRespondent().getDateOfBirth());
+        Assertions.assertEquals(PERSON5_DATE_OF_BIRTH, dto.getRespondent().getDateOfBirth());
 
         assertApplicationDetailsEqual(dto);
     }
@@ -331,6 +366,377 @@ class ApplicationListEntryMapperTest {
                 ORGANISATION2_EMAIL);
 
         assertApplicationDetailsEqual(dto);
+    }
+
+    @Test
+    public void toEntrySummary() {
+        // the applicant does have a name so is an organisation
+        NameAddress applicant = new NameAddress();
+        applicant.setName("name");
+        applicant.setCode("acode");
+        applicant.setAddress1("aaddress1");
+        applicant.setAddress2("aaddress2");
+        applicant.setAddress3("aaddress3");
+        applicant.setAddress4("aaddress4");
+        applicant.setAddress5("aaddress5");
+        applicant.setEmailAddress("aemail");
+        applicant.setTelephoneNumber("atel");
+        applicant.setMobileNumber("amobile");
+        applicant.setPostcode("apostcode");
+
+        // the respondent is a person
+        NameAddress respondent = new NameAddress();
+        respondent.setSurname("rsurname");
+        respondent.setCode("rcode");
+        respondent.setAddress1("raddress1");
+        respondent.setAddress2("raddress2");
+        respondent.setAddress3("raddress3");
+        respondent.setAddress4("raddress4");
+        respondent.setAddress5("raddress5");
+        respondent.setEmailAddress("remail");
+        respondent.setTelephoneNumber("rtel");
+        respondent.setMobileNumber("rmobile");
+        respondent.setPostcode("rpostcode");
+        respondent.setForename1("rforename1");
+        respondent.setForename2("rforename2");
+        respondent.setForename3("rforename3");
+
+        ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
+                .thenReturn("org1");
+        when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
+        when(applicationListEntryGetSummaryProjection.getAnameAddress()).thenReturn(applicant);
+        when(applicationListEntryGetSummaryProjection.getRnameAddress()).thenReturn(respondent);
+        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+
+        when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
+        when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
+        when(applicationListEntryGetSummaryProjection.getCourtCode()).thenReturn("courtcode");
+        when(applicationListEntryGetSummaryProjection.getLegislation()).thenReturn("leg");
+        when(applicationListEntryGetSummaryProjection.getTitle()).thenReturn("title");
+
+        when(applicationListEntryGetSummaryProjection.getRespondentSurname())
+                .thenReturn("ressurname");
+        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn("2");
+        when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
+        when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.CLOSED);
+
+        UUID uuidForProjection = UUID.randomUUID();
+        when(applicationListEntryGetSummaryProjection.getUuid())
+                .thenReturn(uuidForProjection.toString());
+
+        // run test
+        EntryGetSummaryDto mappedResult =
+                mapper.toEntrySummary(applicationListEntryGetSummaryProjection);
+
+        // assert
+        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
+        Assertions.assertEquals("leg", mappedResult.getLegislation());
+        Assertions.assertEquals("title", mappedResult.getApplicationTitle());
+        Assertions.assertEquals("name", mappedResult.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "aaddress1",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine1());
+        Assertions.assertEquals(
+                "aaddress2",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2());
+        Assertions.assertEquals(
+                "aaddress3",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3());
+        Assertions.assertEquals(
+                "aaddress4",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4());
+        Assertions.assertEquals(
+                "aaddress5",
+                mappedResult
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5());
+        Assertions.assertEquals(
+                "atel",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "apostcode",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getPostcode());
+        Assertions.assertEquals(
+                "aemail",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "amobile",
+                mappedResult.getApplicant().getOrganisation().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "raddress1",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine1());
+        Assertions.assertEquals(
+                "raddress2",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine2());
+        Assertions.assertEquals(
+                "raddress3",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine3());
+        Assertions.assertEquals(
+                "raddress4",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine4());
+        Assertions.assertEquals(
+                "raddress5",
+                mappedResult.getRespondent().getPerson().getContactDetails().getAddressLine5());
+        Assertions.assertEquals(
+                "rtel", mappedResult.getRespondent().getPerson().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                "rpostcode",
+                mappedResult.getRespondent().getPerson().getContactDetails().getPostcode());
+        Assertions.assertEquals(
+                "remail", mappedResult.getRespondent().getPerson().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                "rmobile",
+                mappedResult.getRespondent().getPerson().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                "rsurname", mappedResult.getRespondent().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "rforename3",
+                mappedResult.getRespondent().getPerson().getName().getThirdForename());
+        Assertions.assertEquals(
+                "rforename1",
+                mappedResult.getRespondent().getPerson().getName().getFirstForename());
+        Assertions.assertEquals(
+                "rforename2",
+                mappedResult.getRespondent().getPerson().getName().getSecondForename());
+        Assertions.assertTrue(mappedResult.getIsResulted());
+        Assertions.assertFalse(mappedResult.getIsFeeRequired());
+        Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
+        Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
+    }
+
+    @Test
+    void toEntryGetDetailDto_provideValidData_validModelListGenerated() {
+        NameAddressTestData nameAddressTestData = new NameAddressTestData();
+        NameAddress applicant = nameAddressTestData.somePerson();
+        NameAddress respondent = nameAddressTestData.someOrganisation();
+        AppListEntryTestData appListEntryTestData = new AppListEntryTestData();
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+
+        // create the entity data to use
+        ApplicationListEntry appListEntry = appListEntryTestData.someComplete();
+        appListEntry.setRnameaddress(respondent);
+        appListEntry.setAnamedaddress(applicant);
+
+        ApplicationCode code = applicationCodeTestData.someComplete();
+        code.setWording(
+                "Test template {TEXT|Applicant officer1|10} and second template "
+                        + "{TEXT|Applicant officer2|10} and third template {TEXT|Applicant officer3|10}");
+
+        AppListEntryFeeStatusTestData statusTestData = new AppListEntryFeeStatusTestData();
+
+        appListEntry.setApplicationCode(code);
+        AppListEntryFeeStatus applicationListStatus = statusTestData.someComplete();
+        AppListEntryFeeStatus applicationListStatus2 = statusTestData.someComplete();
+
+        applicationListStatus.setAlefsFeeStatus(FeeStatusType.PAID);
+        applicationListStatus2.setAlefsFeeStatus(FeeStatusType.REMITTED);
+
+        AppListEntryOfficialTestData officialTestData = new AppListEntryOfficialTestData();
+
+        FeeTestData feeTestData = new FeeTestData();
+        AppListEntryOfficial appListEntryOfficial = officialTestData.someComplete();
+        appListEntryOfficial.setOfficialType(
+                uk.gov.hmcts.appregister.common.enumeration.OfficialType.CLERK);
+
+        AppListEntryOfficial appListEntryOfficial2 = officialTestData.someComplete();
+        appListEntryOfficial2.setOfficialType(
+                uk.gov.hmcts.appregister.common.enumeration.OfficialType.MAGISTRATE);
+
+        Fee fee = feeTestData.someComplete();
+
+        // execute the mapping
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+        EntryGetDetailDto entryGetDetailDto =
+                mapper.toEntryGetDetailDto(
+                        appListEntry,
+                        List.of(applicationListStatus, applicationListStatus2),
+                        fee,
+                        List.of(appListEntryOfficial, appListEntryOfficial2),
+                        null);
+
+        // assert on the main application list entry data
+        Assertions.assertEquals(
+                appListEntry.getCaseReference(), entryGetDetailDto.getCaseReference());
+        Assertions.assertEquals(appListEntry.getNotes(), entryGetDetailDto.getNotes());
+        Assertions.assertEquals(
+                appListEntry.getAccountNumber(), entryGetDetailDto.getAccountNumber());
+        Assertions.assertEquals(
+                appListEntry.getApplicationCode().getCode(),
+                entryGetDetailDto.getApplicationCode());
+        Assertions.assertEquals(
+                appListEntry.getStandardApplicant().getApplicantCode(),
+                entryGetDetailDto.getStandardApplicantCode());
+
+        // assert the applicant data
+        Assertions.assertEquals(
+                applicant.getSurname(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                applicant.getForename1(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getFirstForename());
+        Assertions.assertEquals(
+                applicant.getForename2(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getSecondForename());
+        Assertions.assertEquals(
+                applicant.getForename3(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getThirdForename());
+        Assertions.assertEquals(
+                applicant.getTitle(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getTitle());
+        Assertions.assertEquals(
+                applicant.getMobileNumber(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getMobile());
+        Assertions.assertEquals(
+                applicant.getEmailAddress(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                applicant.getPostcode(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getPostcode());
+        Assertions.assertEquals(
+                applicant.getTelephoneNumber(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                applicant.getAddress1(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        Assertions.assertEquals(
+                applicant.getAddress2(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine2());
+        Assertions.assertEquals(
+                applicant.getAddress3(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine3());
+        Assertions.assertEquals(
+                applicant.getAddress4(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine4());
+        Assertions.assertEquals(
+                applicant.getAddress5(),
+                entryGetDetailDto.getApplicant().getPerson().getContactDetails().getAddressLine5());
+
+        // assert the respondent details
+        Assertions.assertEquals(
+                respondent.getName(),
+                entryGetDetailDto.getRespondent().getOrganisation().getName());
+        Assertions.assertEquals(
+                respondent.getMobileNumber(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getMobile());
+        Assertions.assertEquals(
+                respondent.getEmailAddress(),
+                entryGetDetailDto.getRespondent().getOrganisation().getContactDetails().getEmail());
+        Assertions.assertEquals(
+                respondent.getPostcode(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getPostcode());
+        Assertions.assertEquals(
+                respondent.getTelephoneNumber(),
+                entryGetDetailDto.getRespondent().getOrganisation().getContactDetails().getPhone());
+        Assertions.assertEquals(
+                respondent.getAddress1(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine1());
+        Assertions.assertEquals(
+                respondent.getAddress2(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2());
+        Assertions.assertEquals(
+                respondent.getAddress3(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3());
+        Assertions.assertEquals(
+                respondent.getAddress4(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4());
+        Assertions.assertEquals(
+                respondent.getAddress5(),
+                entryGetDetailDto
+                        .getRespondent()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5());
+
+        Assertions.assertEquals(3, entryGetDetailDto.getWordingFields().size());
+        Assertions.assertEquals("Applicant officer1", entryGetDetailDto.getWordingFields().get(0));
+        Assertions.assertEquals("Applicant officer2", entryGetDetailDto.getWordingFields().get(1));
+        Assertions.assertEquals("Applicant officer3", entryGetDetailDto.getWordingFields().get(2));
+
+        Assertions.assertEquals(2, entryGetDetailDto.getOfficials().size());
+        Assertions.assertEquals(
+                appListEntryOfficial.getSurname(),
+                entryGetDetailDto.getOfficials().get(0).getSurname());
+        Assertions.assertEquals(
+                appListEntryOfficial.getForename(),
+                entryGetDetailDto.getOfficials().get(0).getForename());
+        Assertions.assertEquals(
+                OfficialType.CLERK, entryGetDetailDto.getOfficials().get(0).getType());
+        Assertions.assertEquals(
+                appListEntryOfficial.getTitle(),
+                entryGetDetailDto.getOfficials().get(0).getTitle());
+
+        Assertions.assertEquals(
+                appListEntryOfficial2.getSurname(),
+                entryGetDetailDto.getOfficials().get(1).getSurname());
+        Assertions.assertEquals(
+                appListEntryOfficial2.getForename(),
+                entryGetDetailDto.getOfficials().get(1).getForename());
+        Assertions.assertEquals(
+                OfficialType.MAGISTRATE, entryGetDetailDto.getOfficials().get(1).getType());
+        Assertions.assertEquals(
+                appListEntryOfficial2.getTitle(),
+                entryGetDetailDto.getOfficials().get(1).getTitle());
+
+        // assert the fee status details
+        Assertions.assertEquals(2, entryGetDetailDto.getFeeStatuses().size());
+
+        Assertions.assertEquals(
+                applicationListStatus.getAlefsPaymentReference(),
+                entryGetDetailDto.getFeeStatuses().get(0).getPaymentReference());
+        Assertions.assertEquals(
+                PaymentStatus.PAID, entryGetDetailDto.getFeeStatuses().get(0).getPaymentStatus());
+
+        Assertions.assertEquals(
+                applicationListStatus2.getAlefsPaymentReference(),
+                entryGetDetailDto.getFeeStatuses().get(1).getPaymentReference());
+        Assertions.assertEquals(
+                PaymentStatus.REMITTED,
+                entryGetDetailDto.getFeeStatuses().get(1).getPaymentStatus());
     }
 
     private static void assertApplicationListEntrySummary(

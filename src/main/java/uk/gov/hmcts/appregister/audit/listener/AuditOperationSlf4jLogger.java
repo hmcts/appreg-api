@@ -49,22 +49,22 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
     }
 
     public static String getLog(BaseAuditEvent event) {
-        return "\n"
+        return System.lineSeparator()
                 + "-"
                 + ACTION
                 + "="
                 + event.getRequestAction().getEventName()
-                + "\n"
+                + System.lineSeparator()
                 + "-"
                 + MESSAGE_UUID
                 + "="
                 + event.getMessageUuid()
-                + "\n"
+                + System.lineSeparator()
                 + "-"
                 + STATUS
                 + "="
                 + event.getMessageStatus().getStatus()
-                + "\n"
+                + System.lineSeparator()
                 + "-"
                 + CONTENT
                 + "="

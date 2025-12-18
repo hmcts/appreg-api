@@ -4,17 +4,33 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 /**
- * A useful mapper to convert standard applicant to applicant Dto.
+ * A useful mapper to convert to and from applicant and respondent dtos and the associated {@link
+ * NameAddress} entities.
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public abstract class ApplicantMapper {
+
+    /**
+     * Maps the applicant to a name address.
+     *
+     * @param applicant The applicant details
+     * @return The mapped entity
+     */
+    public NameAddress toApplicant(Applicant applicant) {
+        NameAddress nameAddress = toApplicantNameAddress(applicant);
+        nameAddress.setCode(NameAddress.APPLICANT_CODE);
+        return nameAddress;
+    }
+
     /**
      * A useful mapper to map the applicant details of the standard applicant.
      *
@@ -146,4 +162,58 @@ public abstract class ApplicantMapper {
             return null;
         }
     }
+
+    /**
+     * Generates the name address from an respondent.
+     *
+     * @param applicant The applicant details
+     * @return The name address
+     */
+    public NameAddress toRespondentNameAddress(Respondent applicant) {
+        if (applicant.getPerson() != null) {
+            NameAddress nameAddress = toPerson(applicant.getPerson());
+            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+            return nameAddress;
+        } else if (applicant.getOrganisation() != null) {
+            NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
+            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+            return nameAddress;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Maps the respondent to a name address.
+     *
+     * @param respondent The respondent details
+     * @return The mapped entity
+     */
+    public NameAddress toRespondent(Respondent respondent) {
+        NameAddress nameAddress = toRespondentNameAddress(respondent);
+        nameAddress.setCode(NameAddress.RESPONDENT_CODE);
+        return nameAddress;
+    }
+
+    /**
+     * There is a one to one between applicant and standard applicant. Map the values directly.
+     *
+     * @param standardApplicant The standard applicant
+     * @return The name address entity representation
+     */
+    @Mapping(target = "code", source = "applicantCode")
+    @Mapping(target = "title", source = "applicantTitle")
+    @Mapping(target = "forename1", source = "applicantForename1")
+    @Mapping(target = "forename2", source = "applicantForename2")
+    @Mapping(target = "forename3", source = "applicantForename3")
+    @Mapping(target = "surname", source = "applicantSurname")
+    @Mapping(target = "address1", source = "addressLine1")
+    @Mapping(target = "address2", source = "addressLine2")
+    @Mapping(target = "address3", source = "addressLine3")
+    @Mapping(target = "address4", source = "addressLine4")
+    @Mapping(target = "address5", source = "addressLine5")
+    @Mapping(target = "userName", source = "createdUser")
+    @Mapping(target = "dateOfBirth", ignore = true)
+    @Mapping(target = "dmsId", ignore = true)
+    public abstract NameAddress toApplicantEntity(StandardApplicant standardApplicant);
 }

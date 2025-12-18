@@ -95,6 +95,7 @@ public class ReflectionCaches {
      * @return the column name if present. Default message if not found
      */
     public static <T> String getTableName(Class<T> clazz) {
+
         // Try @JoinColumn next
         Table table = clazz.getAnnotation(Table.class);
         if (table != null) {

@@ -39,7 +39,7 @@ class CriminalJusticeAreaServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper());
+            new AuditOperationServiceImpl(new ObjectMapper(), listeners);
 
     @Spy private CriminalJusticeMapper criminalJusticeMapper = new CriminalJusticeMapperImpl();
 

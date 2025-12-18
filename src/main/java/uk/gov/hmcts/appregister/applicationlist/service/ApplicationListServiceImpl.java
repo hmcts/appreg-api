@@ -214,11 +214,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 MatchResponse.of(
-                        hydrated.getUuid(),
-                        hydrated,
-                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES)),
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES), List.of(hydrated)),
                 hydrated);
     }
 
@@ -240,11 +238,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
         var hydrated = refreshEntity(savedEntity);
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 MatchResponse.of(
-                        hydrated.getUuid(),
-                        hydrated,
-                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES)),
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES), List.of(hydrated)),
                 hydrated);
     }
 
@@ -264,18 +260,16 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         mapper.toUpdateEntityWithCourt(
                 updateDto.getData(), null, court, success.getApplicationList());
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 matchService.matchOnRequest(
-                        success.getApplicationList().getUuid(),
-                        success.getApplicationList(),
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
                             return MatchResponse.of(
-                                    hydrated.getUuid(),
-                                    hydrated,
-                                    mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES));
-                        }),
+                                    mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
                 success.getApplicationList());
     }
 
@@ -297,20 +291,18 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         ApplicationList applicationList = success.getApplicationList();
         mapper.toUpdateEntityWithCja(updateDto.getData(), cja, applicationList);
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 matchService.matchOnRequest(
-                        success.getApplicationList().getUuid(),
-                        success.getApplicationList(),
                         () -> {
                             var savedEntity = repository.save(applicationList);
                             var hydrated = refreshEntity(savedEntity);
 
                             return MatchResponse.of(
-                                    hydrated.getUuid(),
-                                    hydrated,
-                                    mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES));
-                        }),
-                applicationList);
+                                    mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
+                success.getApplicationList());
     }
 
     @Override
@@ -541,14 +533,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 matchService.matchOnRequest(
-                        applicationList.getUuid(),
-                        applicationList,
                         () -> {
-                            var savedEntity = repository.save(applicationList);
-                            var hydrated = refreshEntity(savedEntity);
-
-                            return MatchResponse.of(hydrated.getUuid(), hydrated, null);
-                        }),
+                            repository.save(applicationList);
+                            return MatchResponse.of(null, List.of());
+                        },
+                        List.of(applicationList)),
                 applicationList);
     }
 }

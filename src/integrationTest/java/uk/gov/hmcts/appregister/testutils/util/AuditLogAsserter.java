@@ -237,7 +237,7 @@ public class AuditLogAsserter {
             }
         }
 
-        Assertions.assertEquals(count, assertCount);
+        Assertions.assertEquals(assertCount, count);
     }
 
     record DataAuditResult(String oldAuditRegex, String newAuditRegex, String dataAuditRegex) {}
