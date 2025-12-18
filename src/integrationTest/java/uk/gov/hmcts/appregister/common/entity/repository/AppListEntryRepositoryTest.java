@@ -601,6 +601,79 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    @Transactional
+    public void testBulkMoveByUuidAndSourceList_whenAnyEntryIsDeleted_movesOnlyNonDeleted() {
+        // Given: source and target lists
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        persistance.save(sourceList);
+
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        persistance.save(targetList);
+
+        // And: two entries in the source list
+        ApplicationListEntry activeEntry = saveEntryInSourceList(sourceList);
+        ApplicationListEntry deletedEntry = saveEntryInSourceList(sourceList);
+
+        // Mark one entry as deleted
+        deletedEntry.setDeleted(true);
+        persistance.save(deletedEntry);
+
+        // Prepare the UUID set (both entries requested)
+        Set<UUID> uuidsToMove = Set.of(
+            activeEntry.getUuid(),
+            deletedEntry.getUuid()
+        );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: attempting bulk move including a deleted entry
+        int updatedCount =
+            applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                uuidsToMove,
+                targetList,
+                sourceList.getUuid()
+            );
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Then: only the non-deleted entry is moved
+        // Expect updatedCount == 1 (only activeEntry moved)
+        assertEquals(
+            1,
+            updatedCount,
+            "Only non-deleted entries should be moved"
+        );
+
+        // Reload entries to verify their lists and deleted flags
+        ApplicationListEntry movedActive = entityManager.createQuery(
+                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid", ApplicationListEntry.class)
+            .setParameter("uuid", activeEntry.getUuid())
+            .getSingleResult();
+
+        ApplicationListEntry stillDeleted = entityManager.createQuery(
+                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid", ApplicationListEntry.class)
+            .setParameter("uuid", deletedEntry.getUuid())
+            .getSingleResult();
+
+        // activeEntry should now point at targetList
+        assertEquals(
+            targetList.getUuid(),
+            movedActive.getApplicationList().getUuid(),
+            "Active entry should have been moved to the target list"
+        );
+
+        // deletedEntry should remain in the source list and still be marked deleted
+        assertEquals(
+            sourceList.getUuid(),
+            stillDeleted.getApplicationList().getUuid(),
+            "Deleted entry should remain in the source list"
+        );
+        assertTrue(stillDeleted.isDeleted(), "Deleted entry should still be marked deleted");
+    }
+
+    @Test
     public void testCountByApplicationListUuids_groupsAndExcludesDeleted() {
         // Given: three lists (one deleted)
         ApplicationList listA = new AppListTestData().someMinimal().build();

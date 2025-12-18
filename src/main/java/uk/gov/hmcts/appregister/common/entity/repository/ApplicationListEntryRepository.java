@@ -302,6 +302,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         SET ale.applicationList = :targetList
         WHERE ale.uuid IN :entryUuids
         AND ale.applicationList.uuid = :sourceListUuid
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     int bulkMoveByUuidAndSourceList(
             Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
