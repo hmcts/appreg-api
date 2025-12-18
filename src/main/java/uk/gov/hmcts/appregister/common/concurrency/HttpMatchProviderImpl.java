@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.concurrency;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 
@@ -11,10 +12,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class HttpMatchProviderImpl implements MatchProvider {
     private final HttpServletRequest request;
 
     public String getEtag() {
-        return request.getHeader(HttpHeaders.IF_MATCH);
+        try {
+            return request.getHeader(HttpHeaders.IF_MATCH);
+        } catch (IllegalStateException e) {
+            log.error("No current HTTP request available to obtain ETag", e);
+        }
+        return null;
     }
 }

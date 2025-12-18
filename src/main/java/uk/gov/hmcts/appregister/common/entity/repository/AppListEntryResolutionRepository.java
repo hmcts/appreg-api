@@ -46,4 +46,15 @@ public interface AppListEntryResolutionRepository
             """)
     List<ApplicationListEntryResolutionPrintProjection> findByApplicationListUuidForPrinting(
             UUID listUuid);
+
+    /**
+     * Finds an AppListEntryResolution by its unique identifier and the UUID of the associated
+     * application list entry.
+     *
+     * @param resolutionUuid the UUID of the AppListEntryResolution to find
+     * @param entryUuid the UUID of the associated application list entry
+     * @return an Optional containing the matching AppListEntryResolution if found
+     */
+    Optional<AppListEntryResolution> findByUuidAndApplicationList_Uuid(
+            UUID resolutionUuid, UUID entryUuid);
 }

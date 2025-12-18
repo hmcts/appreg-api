@@ -7,10 +7,10 @@ import lombok.Getter;
  */
 @Getter
 public enum FeeStatusType {
-    DUE("Due"),
-    PAID("Paid"),
-    REMITTED("Remitted"),
-    UNDERTAKING("Undertaking");
+    DUE("D"),
+    PAID("P"),
+    REMITTED("R"),
+    UNDERTAKING("U");
 
     private final String displayName;
 
@@ -25,5 +25,14 @@ public enum FeeStatusType {
             }
         }
         throw new IllegalArgumentException("Unknown fee status: " + displayName);
+    }
+
+    public static FeeStatusType fromValue(String value) {
+        for (FeeStatusType status : FeeStatusType.values()) {
+            if (status.getDisplayName().equalsIgnoreCase(value)) {
+                return status;
+            }
+        }
+        throw new IllegalArgumentException("Unknown value: " + value);
     }
 }

@@ -194,6 +194,7 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             // store the new and old values based on the state
             setNewAndOldAuditValues(
                     audit, diff, getCorrespondingData(diff, secondaryList), event, primaryOld);
+
             // save the audit record
             dataAuditRepository.save(audit);
 

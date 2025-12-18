@@ -188,7 +188,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
         // Map each projection to a summary model
-        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
+        dbPage.forEach(
+                projection -> {
+                    summaries.add(entryMapper.toSummaryDto(projection));
+                });
 
         // Fetch the number of entries linked to this list.
         // Avoids running a separate count query later when mapping to a DTO.
@@ -220,13 +223,12 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 MatchResponse.of(
-                        hydrated.getUuid(),
-                        hydrated,
                         mapper.toGetDetailDto(
                                 hydrated,
                                 null,
                                 ZERO_ENTITIES,
-                                applicationListGetDetailDto.getEntriesSummary())),
+                                applicationListGetDetailDto.getEntriesSummary()),
+                        List.of(hydrated)),
                 hydrated);
     }
 
@@ -253,13 +255,12 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 get(hydrated.getUuid(), Pageable.unpaged());
         return new AuditableResult<>(
                 MatchResponse.of(
-                        hydrated.getUuid(),
-                        hydrated,
                         mapper.toGetDetailDto(
                                 hydrated,
                                 cja,
                                 ZERO_ENTITIES,
-                                applicationListGetDetailDto.getEntriesSummary())),
+                                applicationListGetDetailDto.getEntriesSummary()),
+                        List.of(hydrated)),
                 hydrated);
     }
 
@@ -281,8 +282,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
                 matchService.matchOnRequest(
-                        success.getApplicationList().getUuid(),
-                        success.getApplicationList(),
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
@@ -290,14 +289,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     get(hydrated.getUuid(), Pageable.unpaged());
 
                             return MatchResponse.of(
-                                    hydrated.getUuid(),
-                                    hydrated,
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             null,
                                             ZERO_ENTITIES,
-                                            applicationListGetDetailDto.getEntriesSummary()));
-                        }),
+                                            applicationListGetDetailDto.getEntriesSummary()),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
                 success.getApplicationList());
     }
 
@@ -321,8 +320,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
                 matchService.matchOnRequest(
-                        success.getApplicationList().getUuid(),
-                        success.getApplicationList(),
                         () -> {
                             var savedEntity = repository.save(applicationList);
                             var hydrated = refreshEntity(savedEntity);
@@ -332,14 +329,14 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     get(hydrated.getUuid(), Pageable.unpaged());
 
                             return MatchResponse.of(
-                                    hydrated.getUuid(),
-                                    hydrated,
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             cja,
                                             ZERO_ENTITIES,
-                                            applicationListGetDetailDto.getEntriesSummary()));
-                        }),
+                                            applicationListGetDetailDto.getEntriesSummary()),
+                                    List.of(hydrated));
+                        },
+                        List.of(success.getApplicationList())),
                 success.getApplicationList());
     }
 
@@ -573,14 +570,12 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 matchService.matchOnRequest(
-                        applicationList.getUuid(),
-                        applicationList,
                         () -> {
-                            var savedEntity = repository.save(applicationList);
-                            var hydrated = refreshEntity(savedEntity);
+                            repository.save(applicationList);
 
-                            return MatchResponse.of(hydrated.getUuid(), hydrated, null);
-                        }),
+                            return MatchResponse.of(null, List.of());
+                        },
+                        List.of(applicationList)),
                 applicationList);
     }
 }

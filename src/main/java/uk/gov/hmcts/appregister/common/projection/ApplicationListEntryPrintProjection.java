@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.common.projection;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 public interface ApplicationListEntryPrintProjection {
 
@@ -66,7 +66,7 @@ public interface ApplicationListEntryPrintProjection {
 
     String getRespondentEmail();
 
-    OffsetDateTime getRespondentDateOfBirth();
+    LocalDate getRespondentDateOfBirth();
 
     String getRespondentName();
 

@@ -47,7 +47,7 @@ public class CourtLocationServiceImplTest {
 
     @Spy
     private AuditOperationService auditOperationService =
-            new AuditOperationServiceImpl(new ObjectMapper());
+            new AuditOperationServiceImpl(new ObjectMapper(), auditListeners);
 
     @Spy private CourtLocationMapper mapper = new CourtLocationMapperImpl();
 

@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.util;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 
 public final class ApplicationListEntryPrintProjectionUtil {
@@ -41,7 +41,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
         private String respondentPhone;
         private String respondentMobile;
         private String respondentEmail;
-        private OffsetDateTime respondentDateOfBirth;
+        private LocalDate respondentDateOfBirth;
         private String respondentName;
         private String applicationCode;
         private String applicationTitle;
@@ -205,7 +205,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
             return this;
         }
 
-        public Builder respondentDateOfBirth(OffsetDateTime respondentDateOfBirth) {
+        public Builder respondentDateOfBirth(LocalDate respondentDateOfBirth) {
             this.respondentDateOfBirth = respondentDateOfBirth;
             return this;
         }
@@ -321,7 +321,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
         private final String respondentPhone;
         private final String respondentMobile;
         private final String respondentEmail;
-        private final OffsetDateTime respondentDateOfBirth;
+        private final LocalDate respondentDateOfBirth;
         private final String respondentName;
         private final String applicationCode;
         private final String applicationTitle;
@@ -362,7 +362,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
                 String respondentPhone,
                 String respondentMobile,
                 String respondentEmail,
-                OffsetDateTime respondentDateOfBirth,
+                LocalDate respondentDateOfBirth,
                 String respondentName,
                 String applicationCode,
                 String applicationTitle,
@@ -567,7 +567,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
         }
 
         @Override
-        public OffsetDateTime getRespondentDateOfBirth() {
+        public LocalDate getRespondentDateOfBirth() {
             return respondentDateOfBirth;
         }
 

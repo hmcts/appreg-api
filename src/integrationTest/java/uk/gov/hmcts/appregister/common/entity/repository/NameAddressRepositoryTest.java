@@ -45,9 +45,10 @@ public class NameAddressRepositoryTest extends BaseRepositoryTest {
         assertEquals(nameAddress.getCode(), nameAddressToAssertAgainst.get().getCode());
         assertEquals(nameAddress.getDmsId(), nameAddressToAssertAgainst.get().getDmsId());
         assertEquals(nameAddress.getDmsId(), nameAddressToAssertAgainst.get().getDmsId());
-        assertEquals(
-                nameAddress.getDateOfBirth().toLocalDate(),
-                nameAddressToAssertAgainst.get().getDateOfBirth().toLocalDate());
+        assertTrue(
+                nameAddress
+                        .getDateOfBirth()
+                        .isEqual(nameAddressToAssertAgainst.get().getDateOfBirth()));
         assertEquals(
                 nameAddress.getEmailAddress(), nameAddressToAssertAgainst.get().getEmailAddress());
         assertEquals(nameAddress.getForename1(), nameAddressToAssertAgainst.get().getForename1());

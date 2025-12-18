@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.DELETE})
 public class ApplicationList extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -53,11 +53,12 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "al_gen")
     @SequenceGenerator(name = "al_gen", sequenceName = "al_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.DELETE, CrudEnum.UPDATE})
     private Long id;
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
+    @Audit(action = {CrudEnum.CREATE})
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
@@ -112,7 +113,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Column(name = "version")
     @Version
-    @Audit(action = {CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.UPDATE, CrudEnum.DELETE})
     private Long version;
 
     public boolean isOpen() {
