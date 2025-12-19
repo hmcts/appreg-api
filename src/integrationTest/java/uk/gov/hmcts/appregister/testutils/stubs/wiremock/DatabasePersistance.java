@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -12,7 +13,9 @@ import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -23,6 +26,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
 /**
@@ -52,6 +56,10 @@ public class DatabasePersistance {
 
     @Autowired
     private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
+
+    @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
+
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     public ApplicationCode save(ApplicationCode data) {
 
@@ -133,5 +141,22 @@ public class DatabasePersistance {
 
     public AppListEntryOfficial save(AppListEntryOfficial data) {
         return applicationListEntryOfficialRepository.saveAndFlush(data);
+    }
+
+    public AppListEntryResolution save(AppListEntryResolution entryResult) {
+
+        if (entryResult.getApplicationList() != null) {
+            save(entryResult.getApplicationList());
+        }
+
+        if (entryResult.getResolutionCode() != null) {
+            save(entryResult.getResolutionCode());
+        }
+
+        return appListEntryResolutionRepository.saveAndFlush(entryResult);
+    }
+
+    public ResolutionCode save(ResolutionCode resolutionCode) {
+        return resolutionCodeRepository.saveAndFlush(resolutionCode);
     }
 }

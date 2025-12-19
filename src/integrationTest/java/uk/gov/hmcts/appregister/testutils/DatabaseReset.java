@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -19,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepo
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
 /**
@@ -43,6 +45,10 @@ public class DatabaseReset {
     @Autowired private final ApplicationListRepository applicationListRepository;
 
     @Autowired private final ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private final ResolutionCodeRepository resolutionCodeRepository;
+
+    @Autowired private final AppListEntryResolutionRepository appListEntryResolutionRepository;
 
     @Autowired private final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
 
@@ -75,6 +81,10 @@ public class DatabaseReset {
 
         applicationRegisterRepository.deleteAll(
                 applicationRegisterRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        appListEntryResolutionRepository.deleteAll(
+                appListEntryResolutionRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        resolutionCodeRepository.deleteAll(
+                resolutionCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         applicationListEntryRepository.deleteAll(
                 applicationListEntryRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
 
