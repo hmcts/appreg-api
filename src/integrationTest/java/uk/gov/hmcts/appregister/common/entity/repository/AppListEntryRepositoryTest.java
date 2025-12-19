@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -87,8 +86,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testFindSummariesById_returnsExpectedSummaryProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                saveApplicationListEntry(
-                        entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         // test get
         Pageable page = PageRequest.of(0, 10);
@@ -154,11 +152,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Short sequenceNumber1 = (short) 1;
         Short sequenceNumber2 = (short) 2;
         ApplicationListEntry data1 =
-                saveApplicationListEntry(
-                        entityManager, persistance, list, sequenceNumber1);
+                saveApplicationListEntry(entityManager, persistance, list, sequenceNumber1);
         ApplicationListEntry data2 =
-                saveApplicationListEntry(
-                        entityManager, persistance, list, sequenceNumber2);
+                saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 1);
@@ -188,7 +184,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         ApplicationList list = new AppListTestData().someMinimal().build();
         persistance.save(list);
 
-        ApplicationListEntry entry = saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+        ApplicationListEntry entry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         entry.setDeleted(true);
         entityManager.flush();
@@ -197,7 +194,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: invoking findSummariesById for the list
         Pageable page = PageRequest.of(0, 10);
         Page<ApplicationListEntrySummaryProjection> result =
-            applicationListEntryRepository.findSummariesById(list.getUuid(), page);
+                applicationListEntryRepository.findSummariesById(list.getUuid(), page);
 
         // Then: result should be empty because the entry is deleted
         assertThat(result.getTotalElements()).isEqualTo(0);
@@ -208,8 +205,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testFindByIdForPrinting_returnsExpectedPrintProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                saveApplicationListEntry(
-                        entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         // test get
         List<ApplicationListEntryPrintProjection>
@@ -407,7 +403,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         persistance.save(list);
 
         ApplicationListEntry savedEntry =
-            saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         savedEntry.setDeleted(true);
 
@@ -416,7 +412,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // When
         List<ApplicationListEntryPrintProjection> result =
-            applicationListEntryRepository.findByIdForPrinting(list.getUuid());
+                applicationListEntryRepository.findByIdForPrinting(list.getUuid());
 
         // Then
         assertThat(result.isEmpty());
@@ -570,10 +566,10 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         ApplicationListEntry deletedEntry =
-            saveApplicationListEntry(entityManager, persistance, list, (short) 2);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2);
 
         ApplicationListEntry managedDeletedEntry =
-            entityManager.find(ApplicationListEntry.class, deletedEntry.getId());
+                entityManager.find(ApplicationListEntry.class, deletedEntry.getId());
 
         managedDeletedEntry.setDeleted(true);
 
@@ -584,22 +580,21 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: calling searchForGetSummary
         Pageable page = PageRequest.of(0, 10);
         Page<ApplicationListEntryGetSummaryProjection> result =
-            applicationListEntryRepository.searchForGetSummary(
-                true,
-                hearingDate,
-                "UNQ001",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                page
-            );
+                applicationListEntryRepository.searchForGetSummary(
+                        true,
+                        hearingDate,
+                        "UNQ001",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        page);
 
         // Then: only the non-deleted entry is returned
         assertThat(result.getTotalElements()).isEqualTo(1);
@@ -664,57 +659,51 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         persistance.save(deletedEntry);
 
         // Prepare the UUID set (both entries requested)
-        Set<UUID> uuidsToMove = Set.of(
-            activeEntry.getUuid(),
-            deletedEntry.getUuid()
-        );
+        Set<UUID> uuidsToMove = Set.of(activeEntry.getUuid(), deletedEntry.getUuid());
 
         entityManager.flush();
         entityManager.clear();
 
         // When: attempting bulk move including a deleted entry
         int updatedCount =
-            applicationListEntryRepository.bulkMoveByUuidAndSourceList(
-                uuidsToMove,
-                targetList,
-                sourceList.getUuid()
-            );
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        uuidsToMove, targetList, sourceList.getUuid());
 
         entityManager.flush();
         entityManager.clear();
 
         // Then: only the non-deleted entry is moved
         // Expect updatedCount == 1 (only activeEntry moved)
-        assertEquals(
-            1,
-            updatedCount,
-            "Only non-deleted entries should be moved"
-        );
+        assertEquals(1, updatedCount, "Only non-deleted entries should be moved");
 
         // Reload entries to verify their lists and deleted flags
-        ApplicationListEntry movedActive = entityManager.createQuery(
-                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid", ApplicationListEntry.class)
-            .setParameter("uuid", activeEntry.getUuid())
-            .getSingleResult();
+        ApplicationListEntry movedActive =
+                entityManager
+                        .createQuery(
+                                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid",
+                                ApplicationListEntry.class)
+                        .setParameter("uuid", activeEntry.getUuid())
+                        .getSingleResult();
 
-        ApplicationListEntry stillDeleted = entityManager.createQuery(
-                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid", ApplicationListEntry.class)
-            .setParameter("uuid", deletedEntry.getUuid())
-            .getSingleResult();
+        ApplicationListEntry stillDeleted =
+                entityManager
+                        .createQuery(
+                                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid",
+                                ApplicationListEntry.class)
+                        .setParameter("uuid", deletedEntry.getUuid())
+                        .getSingleResult();
 
         // activeEntry should now point at targetList
         assertEquals(
-            targetList.getUuid(),
-            movedActive.getApplicationList().getUuid(),
-            "Active entry should have been moved to the target list"
-        );
+                targetList.getUuid(),
+                movedActive.getApplicationList().getUuid(),
+                "Active entry should have been moved to the target list");
 
         // deletedEntry should remain in the source list and still be marked deleted
         assertEquals(
-            sourceList.getUuid(),
-            stillDeleted.getApplicationList().getUuid(),
-            "Deleted entry should remain in the source list"
-        );
+                sourceList.getUuid(),
+                stillDeleted.getApplicationList().getUuid(),
+                "Deleted entry should remain in the source list");
         assertTrue(stillDeleted.isDeleted(), "Deleted entry should still be marked deleted");
     }
 
@@ -730,12 +719,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // And: two entries for listA (we will delete one of them)
         saveApplicationListEntry(entityManager, persistance, listA, (short) 1);
         ApplicationListEntry deletedEntryA =
-            saveApplicationListEntry(entityManager, persistance, listA, (short) 2);
+                saveApplicationListEntry(entityManager, persistance, listA, (short) 2);
 
         entityManager.flush();
 
         ApplicationListEntry managedDeletedEntryA =
-            entityManager.find(ApplicationListEntry.class, deletedEntryA.getId());
+                entityManager.find(ApplicationListEntry.class, deletedEntryA.getId());
         managedDeletedEntryA.setDeleted(true);
 
         entityManager.flush();
@@ -749,21 +738,53 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // When: invoking the repository method with the non-deleted lists' UUIDs
         List<EntryCount> counts =
-            applicationListEntryRepository.countByApplicationListUuids(
-                List.of(listA.getUuid(), listB.getUuid()));
+                applicationListEntryRepository.countByApplicationListUuids(
+                        List.of(listA.getUuid(), listB.getUuid()));
 
         // Then: both lists are returned, but listA count excludes the deleted entry
         assertThat(counts.size()).isEqualTo(2);
 
         Map<UUID, Long> countsByUuid =
-            counts.stream().collect(Collectors.toMap(EntryCount::getPrimaryKey,
-                                                     EntryCount::getCount));
+                counts.stream()
+                        .collect(Collectors.toMap(EntryCount::getPrimaryKey, EntryCount::getCount));
 
         // listA had 2 entries originally but one was marked deleted -> expect 1
         assertEquals(1L, countsByUuid.get(listA.getUuid()).longValue());
 
         // listB has 1 entry
         assertEquals(1L, countsByUuid.get(listB.getUuid()).longValue());
+    }
+
+    @Test
+    public void testFindByUuidAndApplicationListUuid_excludesDeletedEntries() {
+        // Given: an application list and an entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry savedEntry =
+            saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        // Ensure the entry can be found when not deleted
+        Optional<ApplicationListEntry> foundBeforeDelete =
+            applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                savedEntry.getUuid(), list.getUuid());
+        assertTrue(foundBeforeDelete.isPresent(), "Entry should be found before marking deleted");
+
+        // Mark the entry as deleted (soft delete)
+        ApplicationListEntry managed = entityManager.find(ApplicationListEntry.class, savedEntry.getId());
+        managed.setDeleted(true);
+
+        // Flush/clear so the repository query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: calling the repository method for the same UUIDs
+        Optional<ApplicationListEntry> foundAfterDelete =
+            applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                savedEntry.getUuid(), list.getUuid());
+
+        // Then: the result should be empty because the entry is soft-deleted
+        assertTrue(foundAfterDelete.isEmpty(), "Soft-deleted entries should be excluded from results");
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {

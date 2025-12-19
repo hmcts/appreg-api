@@ -316,5 +316,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param listUuid the UUID of the parent application list
      * @return an Optional containing the entry if found, otherwise empty
      */
-    Optional<ApplicationListEntry> findByUuidAndApplicationListUuid(UUID entryUuid, UUID listUuid);
+    @Query("""
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryUuid
+          AND ale.applicationList.uuid = :listUuid
+          AND (ale.deleted IS NULL OR ale.deleted <> '1')
+        """)
+    Optional<ApplicationListEntry> findActiveByUuidAndApplicationListUuid(
+        @Param("entryUuid") UUID entryUuid,
+        @Param("listUuid") UUID listUuid
+    );
 }
