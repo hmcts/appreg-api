@@ -16,7 +16,6 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
-import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,7 +25,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
-import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeServiceImpl;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -39,6 +37,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationCodeControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-codes";
@@ -61,6 +60,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     private static final String OFFSITE_FEE_DESCRIPTION =
             "Offsite: JP perform function away from court";
     private static final String APPCODE_CODE = "AD99002";
+    private static final String DUPLICATE_APPCODE_CODE = "MS99006";
+
     private static final String DATE_TO_FIND_CODE = "2016-01-01T00:00Z";
     private static final String START_AUDIT_LOG = "Start audit";
     private static final String COMPLETION_AUDIT_LOG = "Completion audit";
@@ -370,7 +371,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // execute the functionality
-        int pageSize = 3;
+        int pageSize = 2;
         int pageNumber = 1;
         Response responseSpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -385,7 +386,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // make the assertions
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 15, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 22, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -784,9 +785,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    public void
-            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
-                    throws Exception {
+    public void givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn400()
+            throws Exception {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -795,9 +795,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-        String id = APPCODE_CODE;
-        LogCaptor appCodeServiceLogCaptor = LogCaptor.forClass(ApplicationCodeServiceImpl.class);
-
+        String id = DUPLICATE_APPCODE_CODE;
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
@@ -805,37 +803,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                                 OffsetDateTime.parse("2016-01-01T00:00:00Z")),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(200);
-        ApplicationCodeGetDetailDto codeDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
-
-        // assert
-        ApplicationCodeGetDetailDto applicationCodeDto =
-                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(70.0));
-
-        assertApplicationCode(codeDto, applicationCodeDto);
-
-        // assert that we see a warning in the logs
-        Assertions.assertTrue(
-                appCodeServiceLogCaptor
-                        .getWarnLogs()
-                        .get(0)
-                        .startsWith("Too many records found for code"));
-
-        // assert the audit log message
-        Assertions.assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        Assertions.assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODE_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
+        responseSpec.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                ApplicationCodeError.DUPLICATE_CODE_FOUND.getCode(), responseSpec);
     }
 
     private ApplicationCodeGetSummaryDto
