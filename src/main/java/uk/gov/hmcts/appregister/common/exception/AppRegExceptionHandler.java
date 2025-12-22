@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -90,6 +90,17 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
 
+        problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
+
+        // add the failure specifics to the problem detail properties
+        for (ConstraintViolation fieldError : ex.getConstraintViolations()) {
+            problemDetail.setDetail(
+                    problemDetail.getDetail()
+                            + fieldError.getPropertyPath()
+                            + "="
+                            + fieldError.getMessage());
+        }
+
         problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
@@ -117,7 +128,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
-        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : "").concat(". "));
+        problemDetail.setDetail("Validation failed for fields:" + System.lineSeparator());
 
         // add the failure specifics to the problem detail properties
         for (FieldError fieldError : ex.getFieldErrors()) {
@@ -128,22 +139,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                             + fieldError.getDefaultMessage()
                             + System.lineSeparator());
         }
-
-        return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
-    }
-
-    @Override
-    @SuppressWarnings("java:S2259")
-    protected ResponseEntity<Object> handleHandlerMethodValidationException(
-            HandlerMethodValidationException ex,
-            HttpHeaders headers,
-            HttpStatusCode status,
-            WebRequest request) {
-        log.error("An exception occurred", ex);
-        ProblemDetail problemDetail =
-                getDetailFromEnum(CommonAppError.METHOD_VALIDATION_INVALID_ERROR, ex);
-
-        problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }

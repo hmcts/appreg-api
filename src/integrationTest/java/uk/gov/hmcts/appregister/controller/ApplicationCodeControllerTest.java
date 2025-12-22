@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller;
 
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -755,6 +756,50 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(400, problemDetail.getStatus());
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = maxPageSize;
+        int pageNumber = 0;
+        OpenApiPageMetaData openApiPageMetaData = new OpenApiPageMetaData();
+        String token = tokenGenerator.fetchTokenForRole().getToken();
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        req -> {
+                            RequestSpecification specification =
+                                    given().header("Authorization", "Bearer " + token);
+                            specification =
+                                    specification.queryParam(
+                                            openApiPageMetaData.getPageSizeQueryName(),
+                                            "invalid-type");
+                            return specification;
+                        },
+                        openApiPageMetaData);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                "Problem with value invalid-type for parameter "
+                        + openApiPageMetaData.getPageSizeQueryName(),
+                problemDetail.getDetail());
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 
