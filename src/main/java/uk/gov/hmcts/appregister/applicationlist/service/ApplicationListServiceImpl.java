@@ -106,7 +106,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
-    /** The entries for a list paging. This guarantees order of summaries. */
+    /**
+     * The default internal application entry summary page. This guarantees a stable set of
+     * summaries.
+     */
     public static final Pageable ENTRY_SUMMARY_SORT =
             Pageable.unpaged(Sort.by(Sort.Direction.ASC, ApplicationListEntry_.ID));
 
