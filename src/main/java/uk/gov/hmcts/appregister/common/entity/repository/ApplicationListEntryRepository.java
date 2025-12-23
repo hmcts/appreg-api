@@ -181,12 +181,12 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             = ale AND aler.id = (SELECT MAX(sub.id)
                               FROM AppListEntryResolution sub
                               WHERE sub.applicationList = ale)
-            WHERE  (:hasHearingDate = false OR ale.applicationList.date = :hearingDate)
-                    AND (:otherLocationDescription IS NULL OR ale.applicationList.otherLocation
+            WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
+                    AND (:otherLocationDescription IS NULL OR al.otherLocation
                             LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
-                    AND (:courtCode IS NULL OR ale.applicationList.courtCode = :courtCode)
+                    AND (:courtCode IS NULL OR al.courtCode = :courtCode)
                     AND (:cjaCode IS NULL OR cja.code=:cjaCode)
-                    AND (:applicantOrganisation IS NULL OR  ana.name
+                    AND (:applicantOrganisation IS NULL OR ana.name
                             LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
                             AND ana.code='AP')
                     AND (:applicantSurname IS NULL OR ana.surname
@@ -203,7 +203,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             cast(:respondentPostcode AS string) AND rna.code='RE')
                     AND (:accountReference IS NULL OR  ale.caseReference
                             LIKE CONCAT('%', cast(:accountReference AS string), '%'))
-                    AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
+                    AND (al.deleted IS NULL OR al.deleted <> '1')
             """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             boolean hasHearingDate,
