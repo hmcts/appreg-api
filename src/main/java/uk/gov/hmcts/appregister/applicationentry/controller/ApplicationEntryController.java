@@ -80,7 +80,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                 .id(listId)
                                 .data(entryCreateDto)
                                 .build());
-
         log.info(
                 "Successfully created Application List Entry with id:{}",
                 entryGetDetailDto.getPayload().getId());

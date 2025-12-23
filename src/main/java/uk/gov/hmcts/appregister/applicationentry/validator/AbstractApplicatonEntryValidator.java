@@ -418,7 +418,7 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
         if (applicationCode.getRequiresRespondent() == YesOrNo.NO
                 && getRespondent(validatable) != null) {
             throw new AppRegistryException(
-                    AppListEntryError.NOT_RESPONDENT_REQUIRED,
+                    AppListEntryError.RESPONDENT_NOT_REQUIRED,
                     BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
                             getApplicationCode(validatable)));
         }

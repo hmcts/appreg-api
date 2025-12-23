@@ -150,7 +150,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
         if (values.size() != contents.size()) {
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
-                    "Number of values incorrect for template",
+                    "Number of values exceeds number of templates",
                     Map.of(
                             "templateSize", Integer.toString(contents.size()),
                             "valueSize", Integer.toString(values.size())));

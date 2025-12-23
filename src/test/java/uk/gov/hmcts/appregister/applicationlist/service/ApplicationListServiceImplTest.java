@@ -210,12 +210,15 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
+
         verify(mapper).toGetDetailDto(saved, null, 0L);
     }
 
     @Test
     void update_validCourt_savesAndReturnsDto() {
-
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
@@ -292,6 +295,9 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -336,6 +342,10 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.UPDATE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -350,6 +360,9 @@ public class ApplicationListServiceImplTest {
 
         verify(deletionValidator).validate(eq(id), notNull());
         verify(repository).save(any(ApplicationList.class));
+        verify(auditOperationService)
+                .processAudit(
+                        any(), eq(AppListAuditOperation.DELETE_APP_LIST), notNull(), notNull());
     }
 
     @Test

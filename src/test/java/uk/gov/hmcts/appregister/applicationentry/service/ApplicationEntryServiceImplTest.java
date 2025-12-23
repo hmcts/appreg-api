@@ -162,12 +162,6 @@ public class ApplicationEntryServiceImplTest {
     private ApplicationEntryService service;
 
     @Spy
-    private final ApplicationListEntryEntityMapper entryEntityMapper =
-            new ApplicationListEntryEntityMapperImpl();
-
-    @Spy private final PageMapper pageMapper = new PageMapper();
-
-    @Spy
     private DummyCreateApplicationEntryValidator createApplicationEntryValidator =
             new DummyCreateApplicationEntryValidator(
                     applicationListRepository,
@@ -175,6 +169,12 @@ public class ApplicationEntryServiceImplTest {
                     feeRepository,
                     clock,
                     standardApplicantRepository);
+
+    @Spy
+    private final ApplicationListEntryEntityMapper entryEntityMapper =
+            new ApplicationListEntryEntityMapperImpl();
+
+    @Spy private final PageMapper pageMapper = new PageMapper();
 
     @Spy
     private DummyUpdateApplicationEntryValidator updateApplicationEntryValidator =
@@ -220,9 +220,6 @@ public class ApplicationEntryServiceImplTest {
 
     @Test
     public void testSearchForGetSummary() {
-
-        // capture the mocked callback and execute it
-
         ApplicationListEntryMapper mapStructMapper = new ApplicationListEntryMapperImpl();
         mapStructMapper.setApplicantMapper(new ApplicantMapperImpl());
         service =
@@ -281,6 +278,8 @@ public class ApplicationEntryServiceImplTest {
                 new PageImpl<ApplicationListEntryGetSummaryProjection>(
                         List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
 
+        when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
+                .thenReturn(Status.OPEN);
         when(applicationListEntryRepository.searchForGetSummary(
                         eq(true),
                         eq(entryGetFilterDto.getDate()),
