@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
@@ -104,6 +106,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
 
+    /** The entries for a list paging. This guarantees order of summaries. */
+    public static final Pageable ENTRY_SUMMARY_SORT =
+            Pageable.unpaged(Sort.by(Sort.Direction.ASC, ApplicationListEntry_.ID));
+
     /**
      * {@inheritDoc}
      *
@@ -171,6 +177,17 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public ApplicationListGetDetailDto get(UUID id, Pageable pageable) {
+        return getListDetailDto(id, pageable);
+    }
+
+    /**
+     * gets the list detail without a transaction. This method should be called by a method that has
+     * already established a transaction
+     *
+     * @param id The uuid of the application list
+     * @param pageable The paging for the entries summary
+     */
+    private ApplicationListGetDetailDto getListDetailDto(UUID id, Pageable pageable) {
         ApplicationList list =
                 repository
                         .findByUuid(id)
@@ -217,17 +234,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCourt(createDto, court));
         var hydrated = refreshEntity(savedEntity);
 
-        // gets the summaries for the unpaged summaries.
-        ApplicationListGetDetailDto applicationListGetDetailDto =
-                get(hydrated.getUuid(), Pageable.unpaged());
-
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(
-                                hydrated,
-                                null,
-                                ZERO_ENTITIES,
-                                applicationListGetDetailDto.getEntriesSummary()),
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES, List.of()),
                         List.of(hydrated)),
                 hydrated);
     }
@@ -251,15 +260,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var hydrated = refreshEntity(savedEntity);
 
         // gets the summaries for the unpaged summaries.
-        ApplicationListGetDetailDto applicationListGetDetailDto =
-                get(hydrated.getUuid(), Pageable.unpaged());
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(
-                                hydrated,
-                                cja,
-                                ZERO_ENTITIES,
-                                applicationListGetDetailDto.getEntriesSummary()),
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES, List.of()),
                         List.of(hydrated)),
                 hydrated);
     }
@@ -280,13 +283,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         mapper.toUpdateEntityWithCourt(
                 updateDto.getData(), null, court, success.getApplicationList());
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 matchService.matchOnRequest(
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
                             ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    get(hydrated.getUuid(), Pageable.unpaged());
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
@@ -318,7 +321,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         ApplicationList applicationList = success.getApplicationList();
         mapper.toUpdateEntityWithCja(updateDto.getData(), cja, applicationList);
 
-        return new AuditableResult<MatchResponse<ApplicationListGetDetailDto>, ApplicationList>(
+        return new AuditableResult<>(
                 matchService.matchOnRequest(
                         () -> {
                             var savedEntity = repository.save(applicationList);
@@ -326,7 +329,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
                             // gets the summaries for the unpaged summaries.
                             ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    get(hydrated.getUuid(), Pageable.unpaged());
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(

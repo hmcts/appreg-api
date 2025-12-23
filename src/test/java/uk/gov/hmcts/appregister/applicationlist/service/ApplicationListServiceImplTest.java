@@ -35,9 +35,6 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.Setter;
-import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -206,28 +203,18 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        ApplicationListEntrySummary entryGetSummaryDto =
-                Instancio.of(ApplicationListEntrySummary.class).withSettings(settings).create();
-
-        when(entryMapper.toSummaryDto(notNull())).thenReturn(entryGetSummaryDto);
-
         ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
                 ArgumentCaptor.forClass(List.class);
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expected);
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
-
-        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(result.getPayload(), expected);
-        Assertions.assertEquals(1, summaryCaptor.getValue().size());
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper, times(2)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper, times(1)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     @Test
@@ -264,7 +251,7 @@ public class ApplicationListServiceImplTest {
                 .thenReturn(expectedDto);
 
         when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
-        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
+        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -309,17 +296,10 @@ public class ApplicationListServiceImplTest {
                 ArgumentCaptor.forClass(List.class);
         when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expected);
-        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
-
-        // setup return summaries
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
-        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(expected, result.getPayload());
-        Assertions.assertEquals(1, summaryCaptor.getValue().size());
 
         verify(validator).validate(eq(dto), notNull());
         verify(repository).save(saved);
@@ -329,8 +309,6 @@ public class ApplicationListServiceImplTest {
 
         verify(mapper, times(1))
                 .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
-        verify(mapper, times(1))
-                .toGetDetailDto(eq(saved), isNull(), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test
@@ -368,10 +346,10 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
-                new PayloadForUpdate<>(dto, UUID.randomUUID());
+                new PayloadForUpdate<>(dto, saved.getUuid());
 
         when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
-        mockFindSummariesById(saved.getUuid(), Pageable.unpaged());
+        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -972,8 +950,8 @@ public class ApplicationListServiceImplTest {
                         .feeRequired(feeRequired)
                         .result(result)
                         .build();
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 

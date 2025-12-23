@@ -89,6 +89,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     @Query(
             """
             SELECT
+                ale.id AS id,
                 ale.uuid AS uuid,
                 ale.sequenceNumber AS sequenceNumber,
                 ale.accountNumber AS accountNumber,
