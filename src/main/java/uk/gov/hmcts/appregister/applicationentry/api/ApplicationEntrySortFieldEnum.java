@@ -35,4 +35,8 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     public static SortableOperationEnum getEntityValue(String apiValue) {
         return MAPPINGS.get(apiValue);
     }
+
+    public static SortableOperationEnum getApiValue(String apiValue) {
+        return MAPPINGS.get(apiValue);
+    }
 }

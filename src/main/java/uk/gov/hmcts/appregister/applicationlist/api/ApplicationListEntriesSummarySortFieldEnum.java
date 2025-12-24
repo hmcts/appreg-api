@@ -1,11 +1,10 @@
 package uk.gov.hmcts.appregister.applicationlist.api;
 
-import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
+import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 
 /**
  * Defines the API field names exposed by the Application List endpoints.
@@ -13,20 +12,14 @@ import java.util.Map;
  * <p>These constants represent the property names that clients can use in filters, sorting, or
  * query parameters.
  */
-public final class ApplicationListEntriesSortFieldEnum  implements SortableOperationEnum {
-    DATE("date",ApplicationList_.DATE, "id"),
-    CODE("code",ApplicationCode_.CODE),
-    TIME("time", ApplicationList_.TIME),
-    STATUS("status", ApplicationList_.STATUS),
-    LOCATION("courtLocationCode", ApplicationList_.COURT_CODE),
-    CJA("cja", ApplicationList_.CJA),
-    DESCRIPTION("description", ApplicationList_.DESCRIPTION),
-    OTHER("otherLocationDescription", ApplicationList_.OTHER_LOCATION);
+@Getter
+public enum ApplicationListEntriesSummarySortFieldEnum implements SortableOperationEnum {
+    SEQUENCE_NUMBER(ApplicationListEntry_.SEQUENCE_NUMBER, ApplicationListEntry_.SEQUENCE_NUMBER);
 
     private final String apiValue;
     private final String[] entityValue;
 
-    ApplicationListSortFieldEnum(String apiValue, String... entityValue) {
+    ApplicationListEntriesSummarySortFieldEnum(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }

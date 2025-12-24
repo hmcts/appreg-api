@@ -2,14 +2,18 @@ package uk.gov.hmcts.appregister.common.mapper;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.api.SortableField;
+import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 
 /**
  * A parser class that allows mapping of pageable parameters to the {@link
@@ -34,13 +38,15 @@ public class PageableMapper {
      *     comma
      * @param defaultSortProperty The default property to sort on if no sort is specified
      * @param defaultDirection The default direction to sort if no sort is specified
+     * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
      */
-    public org.springframework.data.domain.Pageable from(
+    public <T extends SortableOperationEnum> PagingWrapper from(
             Integer page,
             Integer size,
             List<String> sort,
-            String defaultSortProperty,
-            Sort.Direction defaultDirection) {
+            T defaultSortProperty,
+            Sort.Direction defaultDirection,
+            Function<String, T> findSortFieldEnum) {
 
         if (size != null && size > maxPageSize) {
             size = maxPageSize;
@@ -49,15 +55,30 @@ public class PageableMapper {
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
         Sort sortSpec;
 
+        List<SortableField> sortableFields = null;
+
         // process the sorts or default the sort
         if (sort != null && !sort.isEmpty()) {
-            sortSpec = parseSort(sort);
+            List<String> mappedSorts = new ArrayList<>();
+            sortableFields = SortableField.of(sort.toArray(new String[0]));
+            for (SortableField sortableField : sortableFields) {
+                mappedSorts.addAll(
+                        sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+            }
+            sortSpec = parseSort(mappedSorts);
         } else {
-            // default the sort
-            sortSpec = Sort.by(defaultDirection, defaultSortProperty);
+            sortableFields =
+                    SortableField.of(
+                            defaultSortProperty.getApiValue() + "," + defaultDirection.name());
+            List<String> mappedSorts =
+                    new ArrayList<>(
+                            sortableFields
+                                    .getFirst()
+                                    .toSortStringUsingSortableOperation(findSortFieldEnum));
+            sortSpec = parseSort(mappedSorts);
         }
 
-        return PageRequest.of(p, s, sortSpec);
+        return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
     }
 
     /**
@@ -66,7 +87,7 @@ public class PageableMapper {
      * @param sort The list of sort parameters
      * @return The spring sort
      */
-    private Sort parseSort(List<String> sort) {
+    public Sort parseSort(List<String> sort) {
         if (sort == null || sort.isEmpty()) {
             return Sort.unsorted();
         }

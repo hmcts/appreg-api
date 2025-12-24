@@ -1,25 +1,20 @@
-package uk.gov.hmcts.appregister.applicationentry.api;
+package uk.gov.hmcts.appregister.criminaljusticearea.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea_;
 
 @Getter
-public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
-    // ensure we always add id to guarantee a consistent sort order in searches
-    CODE("courtCode", "courtCode", "id"),
-    LOCATION("otherLocationDescription", "otherLocationDescription", "id"),
-    LEGISLATION("legislation", "legislation", "id"),
-    CJA_CODE("cjaCode", "cjaCode", "id"),
-    ACCOUNT_REFERENCE("accountReference", "accountReference", "id"),
-    STATUS("status", "status", "id"),
-    DATE("hearingDate", "date", "id");
+public enum CriminalJusticeSortFieldEnum implements SortableOperationEnum {
+    CODE("code", CriminalJusticeArea_.CODE),
+    DESCRIPTION("description", CriminalJusticeArea_.DESCRIPTION);
+
     private final String apiValue;
     private final String[] entityValue;
 
-    ApplicationEntrySortFieldEnum(String apiValue, String... entityValue) {
-
+    CriminalJusticeSortFieldEnum(String apiValue, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
     }
@@ -35,9 +30,4 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     public static SortableOperationEnum getEntityValue(String apiValue) {
         return MAPPINGS.get(apiValue);
     }
-
-    public static SortableOperationEnum getApiValue(String apiValue) {
-        return MAPPINGS.get(apiValue);
-    }
-
 }

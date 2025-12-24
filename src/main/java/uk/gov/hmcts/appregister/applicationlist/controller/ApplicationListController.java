@@ -18,14 +18,14 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListSortMapper;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
-import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
-import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -64,9 +64,6 @@ public class ApplicationListController implements ApplicationListsApi {
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
-
-    // Mapper converting API sort params to internal db fields.
-    private final ApplicationListSortMapper sortMapper;
 
     /**
      * Creates a new Application List.
@@ -139,7 +136,7 @@ public class ApplicationListController implements ApplicationListsApi {
      * @param page the page number to retrieve (zero-based)
      * @param size the number of records per page
      * @param sort a list of sort parameters (e.g., {@code ["sequenceNumber,asc"]}); validated and
-     *     mapped by {@link ApplicationListSortMapper}
+     *     mapped by {@link PageableMapper}
      * @return {@link ResponseEntity} containing the application list details
      */
     @Override
@@ -149,13 +146,14 @@ public class ApplicationListController implements ApplicationListsApi {
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by sequence number
         // ascending
-        Pageable pageable =
+        PagingWrapper pageable =
                 pageableMapper.from(
                         page,
                         size,
                         sort,
-                        ApplicationListEntry_.SEQUENCE_NUMBER,
-                        Sort.Direction.ASC);
+                        ApplicationListEntriesSummarySortFieldEnum.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC,
+                        ApplicationListEntriesSummarySortFieldEnum::getEntityValue);
 
         ApplicationListGetDetailDto retrieved = service.get(id, pageable);
 
@@ -210,10 +208,14 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListPage> getApplicationLists(
             ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
 
-        List<String> mappedSort = sortMapper.mapAndValidate(sort);
-        Pageable pageInfo =
+        PagingWrapper pageInfo =
                 pageableMapper.from(
-                        page, size, mappedSort, ApplicationList_.DESCRIPTION, Sort.Direction.ASC);
+                        page,
+                        size,
+                        sort,
+                        ApplicationListSortFieldEnum.DESCRIPTION,
+                        Sort.Direction.ASC,
+                        ApplicationListSortFieldEnum::getEntityValue);
 
         var applicationListPage = service.getPage(filter, pageInfo);
         log.info("Retrieved Application Lists");

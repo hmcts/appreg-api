@@ -8,7 +8,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
@@ -23,6 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 
@@ -45,7 +45,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationCodePage findAll(String appCode, String appTitle, Pageable pageable) {
+    public ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
         var todayUk = LocalDate.now(clock.withZone(ukZone));
@@ -60,10 +60,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             pageable);
 
                     final Page<ApplicationCode> applicationCodeList =
-                            repository.search(appCode, appTitle, todayUk, pageable);
+                            repository.search(appCode, appTitle, todayUk, pageable.getPageable());
 
                     ApplicationCodePage newPage = new ApplicationCodePage();
-                    pageMapper.toPage(applicationCodeList, newPage);
+                    pageMapper.toPage(applicationCodeList, newPage, pageable.getSortStrings());
 
                     // Map each entity to a summary DTO and add to the page content
                     applicationCodeList.map(

@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -391,6 +392,17 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                             List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole());
+
+            EntryPage page = responseSpec.as(EntryPage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
             responseSpec.then().statusCode(200);
         }
 

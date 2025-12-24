@@ -20,7 +20,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 public class SortableField {
     private final String field;
     private final String direction;
-
+    private final String originalSortString;
     private static final String ASC = "asc";
     private static final String DESC = "desc";
 
@@ -54,7 +54,7 @@ public class SortableField {
                 direction = checkDirection(sortParts, apiField);
             }
 
-            sortableFields.add(new SortableField(apiField, direction));
+            sortableFields.add(new SortableField(apiField, direction, field));
         }
 
         return sortableFields;
@@ -66,8 +66,8 @@ public class SortableField {
      * @param lookup function to map API field names to SortableFieldsEnum
      * @return The string mapping the sortable field in the format "entityField,direction"
      */
-    public List<String> toSortStringUsingSortableOperation(
-            Function<String, SortableOperationEnum> lookup) {
+    public <T extends SortableOperationEnum> List<String> toSortStringUsingSortableOperation(
+            Function<String, T> lookup) {
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField == null) {
             throw new AppRegistryException(
@@ -78,7 +78,8 @@ public class SortableField {
         return getSortParts(lookup);
     }
 
-    private List<String> getSortParts(Function<String, SortableOperationEnum> lookup) {
+    private <T extends SortableOperationEnum> List<String> getSortParts(
+            Function<String, T> lookup) {
         List<String> sortPartsLst = new ArrayList<>();
         for (String sort : lookup.apply(field).getEntityValue()) {
             if (direction != null) {
@@ -100,5 +101,9 @@ public class SortableField {
                             .formatted(direction, apiField));
         }
         return norm;
+    }
+
+    public boolean isDirectionDescending() {
+        return DESC.equalsIgnoreCase(this.direction);
     }
 }

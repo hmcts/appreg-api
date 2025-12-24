@@ -8,6 +8,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
@@ -70,8 +72,10 @@ public class StandardApplicantServiceTest {
 
         when(repository.search(eq(code), eq(name), isNotNull(), eq(pageable))).thenReturn(pageImpl);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
         StandardApplicantPage standardApplicantPage =
-                standardApplicantService.findAll(code, name, pageable);
+                standardApplicantService.findAll(code, name, wrapper);
 
         Assertions.assertEquals(2, standardApplicantPage.getTotalElements());
         Assertions.assertEquals(
