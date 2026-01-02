@@ -376,7 +376,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithAllSortKeys() throws Exception {
+    public void
+            givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+                    throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
                 ApplicationEntrySortFieldEnum.values()) {
 
@@ -396,6 +398,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
             EntryPage page = responseSpec.as(EntryPage.class);
 
             // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
             Assertions.assertEquals(1, page.getSort().getOrders().size());
             Assertions.assertEquals(
                     SortOrdersInner.DirectionEnum.DESC,
@@ -403,7 +406,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
             Assertions.assertEquals(
                     applicationEntrySortFieldEnum.getApiValue(),
                     page.getSort().getOrders().get(0).getProperty());
-            responseSpec.then().statusCode(200);
         }
 
         Assertions.assertTrue(ApplicationEntrySortFieldEnum.values().length > 0);

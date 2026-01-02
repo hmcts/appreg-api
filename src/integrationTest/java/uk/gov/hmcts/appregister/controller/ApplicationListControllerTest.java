@@ -22,6 +22,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -34,9 +35,12 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -1656,6 +1660,41 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent().get(2).getDescription()).endsWith("A");
     }
 
+    @StabilityTest
+    public void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (ApplicationListSortFieldEnum applicationEntrySortFieldEnum :
+                ApplicationListSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            ApplicationListPage page = responseSpec.as(ApplicationListPage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+            responseSpec.then().statusCode(200);
+        }
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
+    }
+
     @Test
     @DisplayName("GET: disallowed sort (cja) -> 400")
     void givenDisallowedSort_then400() throws Exception {
@@ -1685,6 +1724,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     @Test
     @DisplayName("GET Application List")
+    @StabilityTest
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
         var token =
                 getATokenWithValidCredentials()

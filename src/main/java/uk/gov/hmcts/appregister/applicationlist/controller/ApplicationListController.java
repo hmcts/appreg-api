@@ -199,7 +199,7 @@ public class ApplicationListController implements ApplicationListsApi {
      * @param page the page number to retrieve (zero-based)
      * @param size the number of records per page
      * @param sort a list of sort parameters (e.g., {@code ["description,asc",
-     *     "createdDate,desc"]}); validated and mapped by {@link ApplicationListSortMapper}
+     *     "createdDate,desc"]}); validated and mapped by {@link PageableMapper}
      * @return {@link ResponseEntity} containing the requested page of application lists wrapped in
      *     an {@link ApplicationListPage} object
      */
