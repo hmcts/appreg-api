@@ -312,18 +312,18 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         deletionValidator.validate(
                 idToDelete,
-                (id, success) -> {
-                    auditService.processAudit(
-                            BeanUtil.copyBean(success.getApplicationList()),
-                            AppListAuditOperation.DELETE_APP_LIST,
-                            req -> {
-                                performDelete(success.getApplicationList());
-                                Optional<AuditableResult<Void, ApplicationList>> ret =
-                                        Optional.empty();
-                                return ret;
-                            });
-                    return null;
-                });
+                (id, success) ->
+                        auditService.processAudit(
+                                BeanUtil.copyBean(success.getApplicationList()),
+                                AppListAuditOperation.DELETE_APP_LIST,
+                                req -> {
+                                    performDelete(success.getApplicationList());
+                                    Optional<AuditableResult<Void, ApplicationList>> ret =
+                                            Optional.empty();
+                                    return ret;
+                                },
+                                auditLifecycleListeners.toArray(
+                                        new AuditOperationLifecycleListener[0])));
 
         log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
