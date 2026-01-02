@@ -431,7 +431,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "Sarah Johnson",
                         "Johnson",
                         "XY9 8ZZ",
-                        "232323232",
+                        "29345",
                         page);
 
         // Then
@@ -484,7 +484,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "Jac",
                         "Turn",
                         "AB11 2CD",
-                        "CASE",
+                        null,
                         page);
 
         // Then

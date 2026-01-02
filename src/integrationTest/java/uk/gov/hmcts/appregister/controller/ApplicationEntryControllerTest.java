@@ -173,7 +173,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("Turner");
-        filterDto.setAccountReference("232323232");
+        filterDto.setAccountReference("29345");
         filterDto.setStatus(ApplicationListStatus.OPEN);
         filterDto.setCjaCode("CJ");
         filterDto.setCourtCode("RCJ001");
@@ -278,7 +278,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("rn");
-        filterDto.setAccountReference("323232");
+        filterDto.setAccountReference("29345");
         filterDto.setStatus(ApplicationListStatus.OPEN);
         filterDto.setCjaCode("CJ");
         filterDto.setCourtCode("RCJ001");
