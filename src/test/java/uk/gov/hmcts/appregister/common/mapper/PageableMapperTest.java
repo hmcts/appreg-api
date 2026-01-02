@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
+import uk.gov.hmcts.appregister.common.api.TestSortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -34,6 +35,13 @@ class PageableMapperTest {
         Assertions.assertEquals(
                 Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().findFirst().get().getDirection());
+
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.CJA_CODE.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(1).getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.ASC,
+                pageable.getPageable().getSort().get().toList().get(1).getDirection());
     }
 
     @Test
@@ -85,26 +93,20 @@ class PageableMapperTest {
         Assertions.assertEquals(
                 Sort.Direction.DESC,
                 pageable.getPageable().getSort().get().findFirst().get().getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.CJA_CODE.getEntityValue()[1],
-                pageable.getPageable().getSort().get().toList().get(1).getProperty());
-        Assertions.assertEquals(
-                Sort.Direction.DESC,
-                pageable.getPageable().getSort().get().toList().get(1).getDirection());
 
         Assertions.assertEquals(
                 ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[0],
+                pageable.getPageable().getSort().get().toList().get(1).getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.ASC,
+                pageable.getPageable().getSort().get().toList().get(1).getDirection());
+
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getTieBreaker(),
                 pageable.getPageable().getSort().get().toList().get(2).getProperty());
         Assertions.assertEquals(
                 Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().toList().get(2).getDirection());
-
-        Assertions.assertEquals(
-                Sort.Direction.ASC,
-                pageable.getPageable().getSort().get().toList().get(3).getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[1],
-                pageable.getPageable().getSort().get().toList().get(3).getProperty());
 
         Assertions.assertEquals(
                 ApplicationEntrySortFieldEnum.CJA_CODE.getApiValue(),
@@ -146,23 +148,17 @@ class PageableMapperTest {
                 Sort.Direction.DESC,
                 pageable.getPageable().getSort().get().findFirst().get().getDirection());
         Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.CJA_CODE.getEntityValue()[1],
+                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[0],
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
         Assertions.assertEquals(
-                Sort.Direction.DESC,
+                Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().toList().get(1).getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[0],
-                pageable.getPageable().getSort().get().toList().get(2).getProperty());
         Assertions.assertEquals(
                 Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().toList().get(2).getDirection());
         Assertions.assertEquals(
-                Sort.Direction.ASC,
-                pageable.getPageable().getSort().get().toList().get(3).getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[1],
-                pageable.getPageable().getSort().get().toList().get(3).getProperty());
+                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(2).getProperty());
         Assertions.assertEquals(
                 ApplicationEntrySortFieldEnum.CJA_CODE.getApiValue(),
                 pageable.getSortStrings().get(0).getField());
@@ -194,6 +190,8 @@ class PageableMapperTest {
                         ApplicationEntrySortFieldEnum.CJA_CODE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
+
+        Assertions.assertEquals(100, pageable.getPageable().getPageSize());
         Assertions.assertEquals(
                 ApplicationEntrySortFieldEnum.CJA_CODE.getEntityValue()[0],
                 pageable.getPageable().getSort().get().findFirst().get().getProperty());
@@ -201,23 +199,17 @@ class PageableMapperTest {
                 Sort.Direction.DESC,
                 pageable.getPageable().getSort().get().findFirst().get().getDirection());
         Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.CJA_CODE.getEntityValue()[1],
+                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[0],
                 pageable.getPageable().getSort().get().toList().get(1).getProperty());
         Assertions.assertEquals(
-                Sort.Direction.DESC,
+                Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().toList().get(1).getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[0],
-                pageable.getPageable().getSort().get().toList().get(2).getProperty());
         Assertions.assertEquals(
                 Sort.Direction.ASC,
                 pageable.getPageable().getSort().get().toList().get(2).getDirection());
         Assertions.assertEquals(
-                Sort.Direction.ASC,
-                pageable.getPageable().getSort().get().toList().get(3).getDirection());
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getEntityValue()[1],
-                pageable.getPageable().getSort().get().toList().get(3).getProperty());
+                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(2).getProperty());
         Assertions.assertEquals(
                 ApplicationEntrySortFieldEnum.CJA_CODE.getApiValue(),
                 pageable.getSortStrings().get(0).getField());
@@ -270,5 +262,86 @@ class PageableMapperTest {
                                         ApplicationListEntriesSummarySortFieldEnum
                                                 ::getEntityValue));
         Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());
+    }
+
+    @Test
+    void testPageableWithoutTieBreaker() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.from(
+                        null,
+                        300,
+                        List.of(
+                                TestSortableOperationEnum.TEST_NO_TIE_BREAKER.getApiValue()
+                                        + ", DESC"),
+                        TestSortableOperationEnum.TEST2_NO_TIE_BREAKER,
+                        Sort.Direction.ASC,
+                        TestSortableOperationEnum::getEntityValue);
+
+        Assertions.assertEquals(1, pageable.getPageable().getSort().get().toList().size());
+        Assertions.assertEquals(
+                TestSortableOperationEnum.TEST_NO_TIE_BREAKER.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().findFirst().get().getDirection());
+    }
+
+    @Test
+    void testPageableWithoutTieBreakerDefaultSort() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.from(
+                        null,
+                        300,
+                        List.of(),
+                        TestSortableOperationEnum.TEST2_NO_TIE_BREAKER,
+                        Sort.Direction.ASC,
+                        TestSortableOperationEnum::getEntityValue);
+
+        Assertions.assertEquals(1, pageable.getPageable().getSort().get().toList().size());
+        Assertions.assertEquals(
+                TestSortableOperationEnum.TEST2_NO_TIE_BREAKER.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.ASC,
+                pageable.getPageable().getSort().get().findFirst().get().getDirection());
+    }
+
+    @Test
+    void testPageableWithTieBreaker() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.from(
+                        null,
+                        300,
+                        List.of(
+                                TestSortableOperationEnum.TEST2_TIE_BREAKER.getApiValue()
+                                        + ", DESC"),
+                        TestSortableOperationEnum.TEST_TIE_BREAKER,
+                        Sort.Direction.ASC,
+                        TestSortableOperationEnum::getEntityValue);
+
+        Assertions.assertEquals(
+                TestSortableOperationEnum.TEST2_TIE_BREAKER.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().findFirst().get().getDirection());
+        Assertions.assertEquals(
+                TestSortableOperationEnum.TEST2_TIE_BREAKER.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(1).getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().toList().get(1).getDirection());
     }
 }

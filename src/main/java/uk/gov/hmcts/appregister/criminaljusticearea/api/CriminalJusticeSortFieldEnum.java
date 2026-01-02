@@ -8,15 +8,17 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea_;
 
 @Getter
 public enum CriminalJusticeSortFieldEnum implements SortableOperationEnum {
-    CODE("code", CriminalJusticeArea_.CODE),
-    DESCRIPTION("description", CriminalJusticeArea_.DESCRIPTION);
+    CODE("code", CriminalJusticeArea_.ID, CriminalJusticeArea_.CODE),
+    DESCRIPTION("description", CriminalJusticeArea_.ID, CriminalJusticeArea_.DESCRIPTION);
 
     private final String apiValue;
     private final String[] entityValue;
+    private final String tieBreaker;
 
-    CriminalJusticeSortFieldEnum(String apiValue, String... entityValue) {
+    CriminalJusticeSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
+        this.tieBreaker = tieBreaker;
     }
 
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();

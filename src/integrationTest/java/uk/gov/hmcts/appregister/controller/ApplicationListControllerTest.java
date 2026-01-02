@@ -1674,7 +1674,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("cja1,asc"),
+                        List.of("cja,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         userToken,
                         rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),

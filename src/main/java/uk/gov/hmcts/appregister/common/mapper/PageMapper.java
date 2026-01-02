@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.mapper;
 
 import java.util.List;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.generated.model.Sort;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 

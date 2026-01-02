@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -51,32 +50,46 @@ public class PageableMapper {
         if (size != null && size > maxPageSize) {
             size = maxPageSize;
         }
-        int p = (page == null || page < 0) ? 0 : page; // Spring pages are 0-based
-        int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
         Sort sortSpec;
 
         List<SortableField> sortableFields = null;
 
+        String tieBreaker = null;
+        List<String> mappedSorts = new ArrayList<>();
+
         // process the sorts or default the sort
         if (sort != null && !sort.isEmpty()) {
-            List<String> mappedSorts = new ArrayList<>();
+
             sortableFields = SortableField.of(sort.toArray(new String[0]));
             for (SortableField sortableField : sortableFields) {
                 mappedSorts.addAll(
                         sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+
+                tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
             }
-            sortSpec = parseSort(mappedSorts);
         } else {
-            sortableFields =
+            SortableField sortableField =
                     SortableField.of(
-                            defaultSortProperty.getApiValue() + "," + defaultDirection.name());
-            List<String> mappedSorts =
-                    new ArrayList<>(
-                            sortableFields
-                                    .getFirst()
-                                    .toSortStringUsingSortableOperation(findSortFieldEnum));
-            sortSpec = parseSort(mappedSorts);
+                                    defaultSortProperty.getApiValue()
+                                            + ","
+                                            + defaultDirection.name())
+                            .getFirst();
+
+            mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+
+            tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
         }
+
+        // if we have a tie breaker then add it to the end of the sort list
+        if (tieBreaker != null) {
+            mappedSorts.add(tieBreaker);
+        }
+
+        // apply disambiguation
+        sortSpec = parseSort(mappedSorts);
+
+        int p = (page == null || page < 0) ? 0 : page; // Spring pages are 0-based
+        int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
     }

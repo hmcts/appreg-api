@@ -14,20 +14,22 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList_;
  */
 @Getter
 public enum ApplicationListSortFieldEnum implements SortableOperationEnum {
-    DATE("date", ApplicationList_.DATE),
-    TIME("time", ApplicationList_.TIME),
-    STATUS("status", ApplicationList_.STATUS),
-    LOCATION("courtLocationCode", ApplicationList_.COURT_CODE),
-    CJA("cja", ApplicationList_.CJA),
-    DESCRIPTION("description", ApplicationList_.DESCRIPTION),
-    OTHER_LOCATION("otherLocationDescription", ApplicationList_.OTHER_LOCATION);
+    DATE("date", ApplicationList_.ID, ApplicationList_.DATE),
+    TIME("time", ApplicationList_.ID, ApplicationList_.TIME),
+    STATUS("status", ApplicationList_.ID, ApplicationList_.STATUS),
+    LOCATION("courtLocationCode", ApplicationList_.ID, ApplicationList_.COURT_CODE),
+    DESCRIPTION("description", ApplicationList_.ID, ApplicationList_.DESCRIPTION),
+    OTHER_LOCATION(
+            "otherLocationDescription", ApplicationList_.ID, ApplicationList_.OTHER_LOCATION);
 
     private final String apiValue;
     private final String[] entityValue;
+    private final String tieBreaker;
 
-    ApplicationListSortFieldEnum(String apiValue, String... entityValue) {
+    ApplicationListSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
+        this.tieBreaker = tieBreaker;
     }
 
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();

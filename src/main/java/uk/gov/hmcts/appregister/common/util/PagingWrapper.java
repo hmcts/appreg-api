@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import uk.gov.hmcts.appregister.common.api.SortableField;
+import uk.gov.hmcts.appregister.common.mapper.SortableField;
 
 /**
  * A pageable wrapper class that holds the original Pageable details as well as the original sort

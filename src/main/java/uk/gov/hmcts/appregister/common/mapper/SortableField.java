@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.common.api;
+package uk.gov.hmcts.appregister.common.mapper;
 
 import static java.util.Locale.ROOT;
 
@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
@@ -76,6 +77,20 @@ public class SortableField {
         }
 
         return getSortParts(lookup);
+    }
+
+    /**
+     * Maps this entry to the tie breaker field.
+     *
+     * @param lookup function to map API field names to SortableFieldsEnum
+     * @return The tie breaker
+     */
+    public <T extends SortableOperationEnum> String toTieBreaker(Function<String, T> lookup) {
+        SortableOperationEnum sortableField = lookup.apply(this.field);
+        if (sortableField.getTieBreaker() != null) {
+            return sortableField.getTieBreaker() + SORT_DELIMITER + direction;
+        }
+        return null;
     }
 
     private <T extends SortableOperationEnum> List<String> getSortParts(
