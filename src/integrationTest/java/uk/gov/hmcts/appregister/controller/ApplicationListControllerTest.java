@@ -1761,7 +1761,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ProblemDetail problemDetail = resp.as(ProblemDetail.class);
         assertThat(problemDetail.getType().toString())
                 .isEqualTo(CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode());
-        assertThat(problemDetail.getDetail()).contains("Invalid UUID string: 232322");
+        assertThat(problemDetail.getDetail())
+                .contains("Problem with value 232322 for parameter listId");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
     }
 
