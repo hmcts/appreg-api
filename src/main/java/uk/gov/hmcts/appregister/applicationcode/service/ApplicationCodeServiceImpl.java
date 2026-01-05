@@ -12,8 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
-import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
+import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -21,8 +21,8 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 
@@ -42,6 +42,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final PageMapper pageMapper;
     private final Clock clock;
     private final ZoneId ukZone;
+    private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,45 +93,44 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
     @Override
     @Transactional(readOnly = true)
-    public ApplicationCodeGetDetailDto findByCode(String code, LocalDate date) {
+    public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     log.debug(
                             "Start: Find active Application Code using code: {} date: {}",
-                            code,
-                            date);
+                            payloadForGet.getCode(),
+                            payloadForGet.getDate());
 
-                    final List<ApplicationCode> applicationCodeResults =
-                            repository.findByCodeAndDate(code, date);
+                    return getApplicationCodeValidator.validate(
+                            payloadForGet,
+                            (payload, success) -> {
+                                FeePair feePair =
+                                        feeService.resolveFeePair(
+                                                success.getApplicationCode().getFeeReference());
 
-                    ApplicationCode codeToConsider = null;
+                                AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
+                                        result =
+                                                new AuditableResult<>(
+                                                        applicationCodeMapper
+                                                                .toApplicationCodeGetDetailDto(
+                                                                        success
+                                                                                .getApplicationCode(),
+                                                                        feePair != null
+                                                                                ? feePair.mainFee()
+                                                                                : null,
+                                                                        feePair != null
+                                                                                ? feePair
+                                                                                        .offsiteFee()
+                                                                                : null),
+                                                        null);
 
-                    if (applicationCodeResults.isEmpty()) {
-                        throw new AppRegistryException(
-                                ApplicationCodeError.CODE_NOT_FOUND,
-                                "No code found for code %s and date %s".formatted(code, date));
-                    } else {
-                        if (applicationCodeResults.size() > 1) {
-                            log.warn(
-                                    "Too many records found for code: {} and date: {}. Defaulting to first one",
-                                    code,
-                                    date);
-                        }
-
-                        codeToConsider = applicationCodeResults.getFirst();
-                    }
-
-                    FeePair feePair = feeService.resolveFeePair(codeToConsider.getFeeReference());
-                    log.debug("Finish: Find Application for app code: {} date: {}", code, date);
-                    AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode> result =
-                            new AuditableResult<>(
-                                    applicationCodeMapper.toApplicationCodeGetDetailDto(
-                                            codeToConsider,
-                                            feePair != null ? feePair.mainFee() : null,
-                                            feePair != null ? feePair.offsiteFee() : null),
-                                    null);
-                    return Optional.of(result);
+                                log.debug(
+                                        "Finish: Find Application for app code: {} date: {}",
+                                        payload.getCode(),
+                                        payload.getDate());
+                                return Optional.of(result);
+                            });
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
