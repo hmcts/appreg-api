@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller;
 
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -362,6 +363,59 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    public void givenValidRequest_whenGetApplicationCodesDateIsNotCorrectlyFormatted_thenReturn400()
+            throws Exception {
+        // a date that is within range for the offset but out of range for the main fee
+        when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
+                        tokenGenerator.fetchTokenForRole(),
+                        new SpecificApplicationCodeRequestFilter(
+                                Optional.of("invalid-date-format")));
+
+        responseSpec.then().statusCode(400);
+
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getHttpCode().value(),
+                problemDetail.getStatus());
+        assertEquals(
+                "Problem with value invalid-date-format for parameter date",
+                problemDetail.getDetail());
+    }
+
+    @Test
+    public void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400()
+            throws Exception {
+        // a date that is within range for the offset but out of range for the main fee
+        when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
+                        tokenGenerator.fetchTokenForRole(),
+                        new SpecificApplicationCodeRequestFilter(Optional.empty()));
+
+        responseSpec.then().statusCode(400);
+
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        assertEquals(
+                CommonAppError.PARAMETER_REQUIRED.getCode().getHttpCode().value(),
+                problemDetail.getStatus());
+        assertEquals("Required request parameter 'date' is missing", problemDetail.getDetail());
+    }
+
+    @Test
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
                     throws Exception {
@@ -707,6 +761,50 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    public void
+            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeType_thenReturn200()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = maxPageSize;
+        int pageNumber = 0;
+        OpenApiPageMetaData openApiPageMetaData = new OpenApiPageMetaData();
+        String token = tokenGenerator.fetchTokenForRole().getToken();
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        req -> {
+                            RequestSpecification specification =
+                                    given().header("Authorization", "Bearer " + token);
+                            specification =
+                                    specification.queryParam(
+                                            openApiPageMetaData.getPageSizeQueryName(),
+                                            "invalid-type");
+                            return specification;
+                        },
+                        openApiPageMetaData);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                "Problem with value invalid-type for parameter "
+                        + openApiPageMetaData.getPageSizeQueryName(),
+                problemDetail.getDetail());
+        Assertions.assertEquals(400, problemDetail.getStatus());
+        Assertions.assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
+    @Test
     public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
             throws Exception {
 
@@ -1013,6 +1111,25 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
             if (appTitle.isPresent()) {
                 rs = rs.queryParam("title", appTitle.get());
+            }
+
+            return rs;
+        }
+    }
+
+    /**
+     * A request specification that knows what filters can be applied to get specific application
+     * code.
+     */
+    @RequiredArgsConstructor
+    static class SpecificApplicationCodeRequestFilter
+            implements UnaryOperator<RequestSpecification> {
+        private final Optional<String> dateValue;
+
+        @Override
+        public RequestSpecification apply(RequestSpecification rs) {
+            if (dateValue.isPresent()) {
+                rs = rs.queryParam("date", dateValue.get());
             }
 
             return rs;
