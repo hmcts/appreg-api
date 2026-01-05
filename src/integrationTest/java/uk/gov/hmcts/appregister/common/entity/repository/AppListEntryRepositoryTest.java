@@ -762,16 +762,17 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         persistance.save(list);
 
         ApplicationListEntry savedEntry =
-            saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         // Ensure the entry can be found when not deleted
         Optional<ApplicationListEntry> foundBeforeDelete =
-            applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                savedEntry.getUuid(), list.getUuid());
+                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        savedEntry.getUuid(), list.getUuid());
         assertTrue(foundBeforeDelete.isPresent(), "Entry should be found before marking deleted");
 
         // Mark the entry as deleted (soft delete)
-        ApplicationListEntry managed = entityManager.find(ApplicationListEntry.class, savedEntry.getId());
+        ApplicationListEntry managed =
+                entityManager.find(ApplicationListEntry.class, savedEntry.getId());
         managed.setDeleted(true);
 
         // Flush/clear so the repository query reads from DB
@@ -780,11 +781,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
 
         // When: calling the repository method for the same UUIDs
         Optional<ApplicationListEntry> foundAfterDelete =
-            applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                savedEntry.getUuid(), list.getUuid());
+                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        savedEntry.getUuid(), list.getUuid());
 
         // Then: the result should be empty because the entry is soft-deleted
-        assertTrue(foundAfterDelete.isEmpty(), "Soft-deleted entries should be excluded from results");
+        assertTrue(
+                foundAfterDelete.isEmpty(), "Soft-deleted entries should be excluded from results");
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {

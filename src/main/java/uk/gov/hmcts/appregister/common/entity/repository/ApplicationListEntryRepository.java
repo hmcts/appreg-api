@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -316,7 +317,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param listUuid the UUID of the parent application list
      * @return an Optional containing the entry if found, otherwise empty
      */
-    @Query("""
+    @Query(
+            """
         SELECT ale
         FROM ApplicationListEntry ale
         WHERE ale.uuid = :entryUuid
@@ -324,7 +326,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
           AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Optional<ApplicationListEntry> findActiveByUuidAndApplicationListUuid(
-        @Param("entryUuid") UUID entryUuid,
-        @Param("listUuid") UUID listUuid
-    );
+            @Param("entryUuid") UUID entryUuid, @Param("listUuid") UUID listUuid);
+
+    /**
+     * Soft-deletes an application list entry by UUID.
+     *
+     * @param entryUuid the UUID of the application list entry to delete
+     * @return number of rows updated (0 or 1)
+     */
+    @Modifying
+    @Transactional
+    @Query(
+            """
+        UPDATE ApplicationListEntry ale
+        SET ale.deleted = '1'
+        WHERE ale.uuid = :entryUuid
+        """)
+    int softDeleteByUuid(@Param("entryUuid") UUID entryUuid);
 }

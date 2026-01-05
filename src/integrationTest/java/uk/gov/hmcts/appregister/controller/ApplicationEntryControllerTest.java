@@ -46,6 +46,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationEntryControllerTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "application-list-entries";
@@ -619,7 +620,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
@@ -783,7 +784,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
@@ -825,7 +826,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
             givenAnInvalidCreateEntryRequest_whenCreateEntryWithRespondentMutualExclusiveInvalid_400IsReturned()
                     throws Exception {
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
@@ -891,7 +892,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         // test the functionality
         Response responseSpecCreate =
@@ -915,7 +916,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         // test the functionality
         Response responseSpecCreate =
@@ -946,7 +947,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         // test the functionality
         Response responseSpecCreate =
@@ -976,7 +977,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setApplicationCode("INVALID_CODE");
 
         // test the functionality
@@ -1003,7 +1004,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.getFeeStatuses().clear();
 
         // test the functionality
@@ -1030,7 +1031,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
 
         // test the functionality
@@ -1058,7 +1059,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
 
         // test the functionality
@@ -1086,7 +1087,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setApplicationCode("AD99001");
 
         // test the functionality
@@ -1115,7 +1116,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of("only one field", "extra field", "too many"));
 
         // test the functionality
@@ -1143,7 +1144,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(
                 List.of("only one field that exceeds length", "extra field"));
 
@@ -1175,7 +1176,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
-        EntryCreateDto entryCreateDto = getCorrectCreateEntryDto();
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of("value", "extra field not a date"));
 
         // test the functionality
@@ -1196,47 +1197,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 problemDetail.getType());
         Assertions.assertEquals(
                 "Premises Date=extra field not a date", problemDetail.getDetail().trim());
-    }
-
-    /**
-     * gets the correct payload to make a successful create entry.
-     *
-     * @return The created payload
-     */
-    private EntryCreateDto getCorrectCreateEntryDto() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-
-        List<Official> officials = Instancio.ofList(Official.class).size(4).create();
-        EntryCreateDto entryCreateDto =
-                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
-        entryCreateDto.setOfficials(officials);
-
-        entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
-
-        entryCreateDto.getRespondent().setOrganisation(null);
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
-
-        entryCreateDto.setNumberOfRespondents(10);
-        entryCreateDto.setNumberOfRespondents(null);
-        entryCreateDto.setApplicationCode("MS99007");
-        entryCreateDto.setStandardApplicantCode(null);
-        String surnameToLookup = UUID.randomUUID().toString();
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
-
-        // fill the template with the two parameters
-        entryCreateDto.setWordingFields(List.of("test wording", LocalDate.now().toString()));
-        return entryCreateDto;
     }
 
     /**
@@ -1321,7 +1281,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                                 + UUID.randomUUID()
                                                 + "/entries"))
                         .method(HttpMethod.POST)
-                        .payload(getCorrectCreateEntryDto())
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());

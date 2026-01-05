@@ -19,12 +19,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -34,15 +36,21 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationListControllerTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "application-lists";
+    private static final String GET_ENTRIES_CONTEXT = "application-list-entries";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
     private static final String UNKNOWN_APPLICATION_LIST_ID =
             "ffffffff-ffff-ffff-ffff-ffffffffffff";
@@ -65,6 +73,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
     private static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
+
+    @Autowired private ApplicationListEntryRepository aleRepository;
 
     // --- Happy path: create with COURT --------------------------------------------------------
 
@@ -1682,6 +1692,96 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         null);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+    }
+
+    @Test
+    @DisplayName("GET page: entriesCount excludes soft-deleted entry")
+    void givenEntryDeleted_whenGetApplicationLists_thenEntriesCountExcludesDeleted()
+            throws Exception {
+
+        // 1) Create application list via API
+        String prefix = uniquePrefix("entries-delete");
+        ApplicationListGetDetailDto created =
+                createWithCourt(prefix + " - list", TEST_DATE, TEST_TIME);
+        UUID listId = created.getId();
+
+        // 2) Prepare token to create entries
+        var token = getToken();
+
+        // 3) Build two EntryCreateDto payloads
+        EntryCreateDto entryCreateDto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        EntryCreateDto entryCreateDto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        // 4) Create entries
+        Response createResp1 =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
+                        token,
+                        entryCreateDto1);
+        createResp1.then().statusCode(HttpStatus.CREATED.value());
+        EntryGetDetailDto createdEntry1 = createResp1.as(EntryGetDetailDto.class);
+
+        Response createResp2 =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
+                        token,
+                        entryCreateDto2);
+        createResp2.then().statusCode(HttpStatus.CREATED.value());
+        EntryGetDetailDto createdEntry2 = createResp2.as(EntryGetDetailDto.class);
+
+        // 5) Call the entries search endpoint to fetch entries for this list
+        Response entriesPageResp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(20),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(GET_ENTRIES_CONTEXT),
+                        token);
+
+        entriesPageResp.then().statusCode(HttpStatus.OK.value());
+
+        EntryPage entriesPage = entriesPageResp.as(EntryPage.class);
+        assertThat(entriesPage.getContent()).isNotNull();
+
+        boolean foundCreated2 =
+                entriesPage.getContent().stream()
+                        .anyMatch(e -> createdEntry2.getId().equals(e.getId()));
+        assertThat(foundCreated2)
+                .withFailMessage("createdEntry2 must be present in entries search results")
+                .isTrue();
+
+        UUID idFromSearch =
+                entriesPage.getContent().stream()
+                        .map(EntryGetSummaryDto::getId)
+                        .filter(id -> createdEntry2.getId().equals(id))
+                        .findFirst()
+                        .orElseThrow(
+                                () -> new AssertionError("Entry id not found by entries search"));
+
+        // 6) soft-delete the entry
+        aleRepository.softDeleteByUuid(idFromSearch);
+        aleRepository.flush(); // ensure DB is updated for subsequent controller query
+
+        // 7) Call the GET /application-lists endpoint
+        Response pageResp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl("application-lists"),
+                        token,
+                        rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
+                        null);
+
+        // 8) Assert that entriesCount excludes the deleted entry
+        pageResp.then().statusCode(HttpStatus.OK.value());
+        ApplicationListPage page = pageResp.as(ApplicationListPage.class);
+
+        var list = page.getContent().getFirst();
+        assertThat(list.getEntriesCount())
+                .withFailMessage("entriesCount should exclude the deleted entry removed via repo")
+                .isEqualTo(1L);
     }
 
     @Test
