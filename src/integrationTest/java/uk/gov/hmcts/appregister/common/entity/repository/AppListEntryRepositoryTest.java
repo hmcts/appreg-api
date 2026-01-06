@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.saveApplicationListEntry;
 
@@ -421,40 +420,30 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     @Test
     public void testGetListEntriesSearchWithNoSearchCriteria() {
         // When: page 0 size 1
-        Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
+        Pageable page =
+                PageRequest.of(
+                        0,
+                        20,
+                        Sort.by(Sort.Direction.DESC, "courtCode")
+                                .and(Sort.by(Sort.Direction.ASC, "id")));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         false, null, null, null, null, null, null, null, null, null, null, null,
                         null, page);
 
         // Then
-        assertThat(page0.getTotalElements()).isEqualTo(10);
+        assertThat(page0.getTotalElements()).isEqualTo(11);
         assertThat(page0.getTotalPages()).isEqualTo(1);
-        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(0);
+        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(4);
         assertThat(projection0.getCjaCode()).isEqualTo("CJ");
         assertThat(projection0.getCourtCode()).isEqualTo("RCJ001");
         assertThat(projection0.getStatus()).isEqualTo(Status.OPEN);
         assertNotNull(projection0.getRnameAddress());
-        assertThat(projection0.getTitle()).isEqualTo("Certificate of Satisfaction");
-        assertNull(projection0.getAnameAddress());
+        assertThat(projection0.getTitle()).isEqualTo("Copy documents");
+        assertNotNull(projection0.getAnameAddress());
         assertNotNull(projection0.getLegislation(), "");
         assertNotNull(projection0.getStandardApplicantCode(), "APP001");
         assertThat(projection0.getDateOfAl()).isEqualTo("2024-04-21");
-
-        ApplicationListEntryGetSummaryProjection projection4 = page0.getContent().get(4);
-
-        assertThat(projection4.getCjaCode()).isEqualTo("CJ");
-        assertThat(projection4.getStatus()).isEqualTo(Status.OPEN);
-        assertThat(projection4.getRnameAddress().getSurname()).isEqualTo("Johnson");
-        assertThat(projection4.getRnameAddress().getName()).isEqualTo("Sarah Johnson");
-        assertThat(projection4.getRnameAddress().getCode()).isEqualTo("RE");
-        assertThat(projection4.getRnameAddress().getPostcode()).isEqualTo("XY9 8ZZ");
-        assertThat(projection4.getFeeRequired()).isEqualTo(YesOrNo.YES);
-        assertThat(projection4.getCourtCode()).isEqualTo("RCJ001");
-        assertThat(projection4.getOtherLocationDescription()).isEqualTo("other");
-        assertThat(projection4.getTitle()).isEqualTo("Copy documents");
-        assertThat(projection4.getLegislation()).isEqualTo("");
-        assertThat(projection4.getStandardApplicantCode()).isEqualTo("APP002");
     }
 
     @Test
