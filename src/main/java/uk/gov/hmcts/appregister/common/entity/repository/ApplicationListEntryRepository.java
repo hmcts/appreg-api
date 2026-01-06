@@ -298,7 +298,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return the number of rows updated; may be less than the number of provided UUIDs if some
      *     entries are not found in the source list
      */
-    @Modifying()
+    @Modifying
     @Query(
             """
         UPDATE ApplicationListEntry ale
