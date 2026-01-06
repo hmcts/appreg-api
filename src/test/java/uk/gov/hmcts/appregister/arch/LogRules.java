@@ -15,42 +15,23 @@ import com.tngtech.archunit.lang.ConditionEvents;
 
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
+import uk.gov.hmcts.appregister.arch.rules.LoggingCondition;
+
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
-@AnalyzeClasses(packages = "uk.gov.hmcts.appregister", importOptions = { ImportOption.DoNotIncludeTests.class })
-public class LogRules {
-    private static final String BASE_PACKAGE = "uk.gov.hmcts.appregister";
-
+/**
+ * The rules around logging.
+ */
+@AnalyzeClasses(packages = BaseRules.BASE_PACKAGE, importOptions = { ImportOption.DoNotIncludeTests.class })
+public class LogRules extends BaseRules {
     @ArchTest
-    static final ArchRule enforce_logging_controller =
+    static final ArchRule feature_controller_has_logging =
         classes().that().resideInAPackage(BASE_PACKAGE + ".(*).controller..")
             .should(new LoggingCondition());
 
     @ArchTest
-    static final ArchRule enforce_logging_service =
+    static final ArchRule feature_service_has_logging =
         classes()
             .that().resideInAPackage(BASE_PACKAGE + ".(*).service..")
             .should(new LoggingCondition());
-
-    static class LoggingCondition extends ArchCondition<JavaClass> {
-        public LoggingCondition() {
-            super("have a log field");
-        }
-
-        @Override
-        public void check(JavaClass javaClass, ConditionEvents events) {
-            if (!javaClass.isInterface() && !javaClass.getName().contains("$")) {
-                boolean hasLogField = javaClass.getFields().stream()
-                    .anyMatch(f -> f.getName().equals("log"));
-
-                if (!hasLogField) {
-                    events.add(SimpleConditionEvent.violated(
-                        javaClass,
-                        "Controller %s does not declare a field named 'log'".formatted(javaClass.getName())
-                    ));
-                }
-            }
-        }
-    }
-
 }

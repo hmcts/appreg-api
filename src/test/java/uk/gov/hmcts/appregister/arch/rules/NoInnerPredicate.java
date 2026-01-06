@@ -3,9 +3,12 @@ package uk.gov.hmcts.appregister.arch.rules;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 
-public class NoInnerClass extends DescribedPredicate<JavaClass> {
-    public NoInnerClass() {
-        super("have a log field");
+/**
+ * Predicate to match classes that are not inner classes or interfaces.
+ */
+public class NoInnerPredicate extends DescribedPredicate<JavaClass> {
+    public NoInnerPredicate() {
+        super("no interface or inner class");
     }
 
     @Override

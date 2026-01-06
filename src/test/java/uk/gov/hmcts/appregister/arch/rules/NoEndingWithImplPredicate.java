@@ -3,9 +3,12 @@ package uk.gov.hmcts.appregister.arch.rules;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 
-public class IgnoreImplClass extends DescribedPredicate<JavaClass> {
-    public IgnoreImplClass() {
-        super("have a log field");
+/**
+ * A predicate to filter based on a class not ending with Impl.
+ */
+public class NoEndingWithImplPredicate extends DescribedPredicate<JavaClass> {
+    public NoEndingWithImplPredicate() {
+        super("no end with impl");
     }
 
     @Override
