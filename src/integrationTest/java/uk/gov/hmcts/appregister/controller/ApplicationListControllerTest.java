@@ -39,11 +39,13 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -1941,102 +1943,45 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     void givenEntrySoftDeleted_whenGetApplicationList_thenDeletedEntryExcludedFromSummaryAndCount()
             throws Exception {
 
-        // 1) create an application list
         var token = getToken();
 
-        String prefix = uniquePrefix("get-by-id-exclude-deleted");
-        var createListReq =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(TEST_TIME)
-                        .description(prefix + " - list")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(1)
-                        .durationMinutes(0);
+        // create list
+        UUID listId = createApplicationList(token, uniquePrefix("get-by-id-exclude-deleted"));
 
-        Response createListResp =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WEB_CONTEXT), token, createListReq);
-        createListResp.then().statusCode(HttpStatus.CREATED.value());
+        // create two entries
+        final EntryGetDetailDto entry1 = createEntry(listId);
+        final EntryGetDetailDto entry2 = createEntry(listId);
 
-        ApplicationListGetDetailDto createdList =
-                createListResp.as(ApplicationListGetDetailDto.class);
-        UUID listId = createdList.getId();
+        // sanity-check that initial GET shows two entries
+        ApplicationListGetDetailDto initial = getApplicationListDetail(listId, token);
+        assertThat(initial.getEntriesCount()).isEqualTo(2L);
+        assertThat(initial.getEntriesSummary()).isNotNull();
+        assertThat(initial.getEntriesSummary().size()).isGreaterThanOrEqualTo(2);
 
-        // 2) create two entries for that list via REST
-        var entryDto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        var entryDto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        // soft-delete 2nd entry
+        softDeleteEntry(entry2.getId());
 
-        Response createEntryResp1 =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
-                        getToken(),
-                        entryDto1);
-        createEntryResp1.then().statusCode(HttpStatus.CREATED.value());
-
-        Response createEntryResp2 =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"),
-                        getToken(),
-                        entryDto2);
-        createEntryResp2.then().statusCode(HttpStatus.CREATED.value());
-
-        // 3) sanity-check: GET application-list returns entriesCount == 2 and two summaries
-        Response initialGetResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId),
-                        token,
-                        rs -> rs.header("Accept", VND_JSON_V1));
-        initialGetResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-
-        ApplicationListGetDetailDto initialDto =
-                initialGetResp.as(ApplicationListGetDetailDto.class);
-        assertThat(initialDto.getEntriesCount()).isEqualTo(2L);
-        assertThat(initialDto.getEntriesSummary()).isNotNull();
-        // entriesSummary is a paginated object; ensure at least both entries are discoverable
-        // across pages.
-        // For simplicity assert content size >= 2 for default page/size
-        assertThat(initialDto.getEntriesSummary().size()).isGreaterThanOrEqualTo(2);
-
-        // 4) soft-delete the second entry using repository utility and flush
-        EntryGetDetailDto createdEntry2 = createEntryResp2.as(EntryGetDetailDto.class);
-        aleRepository.softDeleteByUuid(createdEntry2.getId());
-        aleRepository.flush();
-
-        // 5) call the controller endpoint (GET /application-lists/{id}) again (default paging)
-        Response afterDeleteGetResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId),
-                        token,
-                        rs -> rs.header("Accept", VND_JSON_V1));
-        afterDeleteGetResp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
-
-        ApplicationListGetDetailDto afterDto =
-                afterDeleteGetResp.as(ApplicationListGetDetailDto.class);
-
-        // 6) Assert entriesCount decreased to 1 and entriesSummary no longer contains the
-        // soft-deleted id
-        assertThat(afterDto.getEntriesCount())
+        // GET again and assert
+        ApplicationListGetDetailDto after = getApplicationListDetail(listId, token);
+        assertThat(after.getEntriesCount())
                 .withFailMessage("entriesCount should exclude the soft-deleted entry")
                 .isEqualTo(1L);
 
-        assertThat(afterDto.getEntriesSummary())
+        assertThat(after.getEntriesSummary())
                 .withFailMessage("entriesSummary must be present")
                 .isNotNull();
 
         List<UUID> returnedEntryIds =
-                afterDto.getEntriesSummary().stream()
+                after.getEntriesSummary().stream()
                         .map(ApplicationListEntrySummary::getUuid)
                         .toList();
 
         assertThat(returnedEntryIds)
                 .withFailMessage("Soft-deleted entry must not appear in entriesSummary")
-                .doesNotContain(createdEntry2.getId());
+                .doesNotContain(entry2.getId());
 
         // sanity: remaining entry should be the first created one
-        EntryGetDetailDto createdEntry1 = createEntryResp1.as(EntryGetDetailDto.class);
-        assertThat(returnedEntryIds).contains(createdEntry1.getId());
+        assertThat(returnedEntryIds).contains(entry1.getId());
     }
 
     @Test
@@ -2119,5 +2064,97 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+    }
+
+    @Test
+    @DisplayName("Print Application List: entries exclude soft-deleted entries")
+    void givenEntrySoftDeleted_whenPrintApplicationList_thenDeletedEntryExcludedFromPrint()
+            throws Exception {
+
+        var token = getToken();
+
+        // create list
+        UUID listId = createApplicationList(token, uniquePrefix("print-exclude-deleted"));
+
+        // create two entries
+        final EntryGetDetailDto entry1 = createEntry(listId);
+        final EntryGetDetailDto entry2 = createEntry(listId);
+
+        // soft-delete 2nd entry
+        softDeleteEntry(entry2.getId());
+
+        // call print endpoint
+        ApplicationListGetPrintDto printDto = getApplicationListPrint(listId, token);
+
+        assertThat(printDto.getEntries())
+                .withFailMessage("entries in print output must not be null")
+                .isNotNull();
+
+        List<UUID> returnedEntryIds =
+                printDto.getEntries().stream().map(EntryGetPrintDto::getId).toList();
+
+        assertThat(returnedEntryIds)
+                .withFailMessage("Soft-deleted entry must not appear in print entries")
+                .doesNotContain(entry2.getId());
+
+        // sanity: remaining printed entry should include the first created one
+        assertThat(returnedEntryIds).contains(entry1.getId());
+    }
+
+    private UUID createApplicationList(TokenAndJwksKey token, String prefix) throws Exception {
+        var createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(prefix + " - list")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response createListResp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT), token, createListReq);
+        createListResp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto createdList =
+                createListResp.as(ApplicationListGetDetailDto.class);
+        return createdList.getId();
+    }
+
+    private EntryGetDetailDto createEntry(UUID listId) throws Exception {
+        var entryDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        Response createEntryResp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries"), getToken(), entryDto);
+        createEntryResp.then().statusCode(HttpStatus.CREATED.value());
+
+        return createEntryResp.as(EntryGetDetailDto.class);
+    }
+
+    private void softDeleteEntry(UUID entryId) {
+        aleRepository.softDeleteByUuid(entryId);
+        aleRepository.flush();
+    }
+
+    private ApplicationListGetDetailDto getApplicationListDetail(UUID listId, TokenAndJwksKey token)
+            throws Exception {
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId),
+                        token,
+                        rs -> rs.header("Accept", VND_JSON_V1));
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        return resp.as(ApplicationListGetDetailDto.class);
+    }
+
+    private ApplicationListGetPrintDto getApplicationListPrint(UUID listId, TokenAndJwksKey token)
+            throws Exception {
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId + "/print"), token);
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        return resp.as(ApplicationListGetPrintDto.class);
     }
 }

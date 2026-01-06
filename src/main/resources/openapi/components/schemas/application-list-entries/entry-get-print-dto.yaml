@@ -1,12 +1,19 @@
 type: object
 description: An application view, used specifically for printing.
 required:
+  - id
   - applicant
   - applicationCode
   - applicationTitle
   - applicationWording
 
 properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier of the Application List Entry.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
   applicant:
     $ref: '../participants/applicant.yaml'

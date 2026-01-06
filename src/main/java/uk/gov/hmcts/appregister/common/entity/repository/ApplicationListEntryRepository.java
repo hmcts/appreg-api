@@ -234,6 +234,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             """
         SELECT
             ale.id AS id,
+            ale.uuid AS uuid,
             ale.sequenceNumber AS sequenceNumber,
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
             COALESCE(ana.surname, sa.applicantSurname) AS applicantSurname,
