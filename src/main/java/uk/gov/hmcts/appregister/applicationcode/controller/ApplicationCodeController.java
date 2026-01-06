@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.api.SortableField;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.mapper.SortMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationCodesApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -63,8 +64,9 @@ public class ApplicationCodeController implements ApplicationCodesApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationCodeGetDetailDto> getApplicationCodeByCodeAndDate(
             String code, LocalDate date) {
+        PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(date).build();
         ResponseEntity<ApplicationCodeGetDetailDto> response =
-                ResponseEntity.ok(service.findByCode(code, date));
+                ResponseEntity.ok(service.findByCode(payloadForGet));
         log.info("getApplicationCodes: code: {}, date: {}", code, date);
         return response;
     }
