@@ -18,7 +18,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.*;
+import uk.gov.hmcts.appregister.common.entity.base.Accountable;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.UnmanagedChangeable;
+import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
  * Represents a Fee entity mapped to the "fee" table in the database.

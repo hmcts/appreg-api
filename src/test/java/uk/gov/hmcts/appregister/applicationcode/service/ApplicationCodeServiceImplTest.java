@@ -12,7 +12,9 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl;
+import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidationSuccess;
+import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
@@ -38,6 +42,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
@@ -58,6 +63,9 @@ public class ApplicationCodeServiceImplTest {
 
     @Spy private final PageMapper pageMapper = new PageMapper();
 
+    private final DummyGetApplicationCodeValidator dummyGetApplicationCodeValidator =
+            new DummyGetApplicationCodeValidator(repository);
+
     private ZoneId ukZone;
     private Clock fixedClock;
     private ApplicationCodeServiceImpl applicationCodeService;
@@ -77,7 +85,8 @@ public class ApplicationCodeServiceImplTest {
                         auditLifecycleListeners,
                         pageMapper,
                         fixedClock,
-                        ukZone);
+                        ukZone,
+                        dummyGetApplicationCodeValidator);
     }
 
     @Test
@@ -88,10 +97,15 @@ public class ApplicationCodeServiceImplTest {
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
-        when(repository.findByCodeAndDate(code, offsetDateTime))
-                .thenReturn(List.of(applicationCode));
+        GetApplicationCodeValidationSuccess success =
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build();
+        dummyGetApplicationCodeValidator.setSuccess(success);
+
+        PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
-                applicationCodeService.findByCode(code, localDate);
+                applicationCodeService.findByCode(payloadForGet);
 
         Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
     }
@@ -303,6 +317,22 @@ public class ApplicationCodeServiceImplTest {
                                     "result",
                                     null));
             return optional.get().getResultingValue();
+        }
+    }
+
+    @Setter
+    class DummyGetApplicationCodeValidator extends GetApplicationCodeValidator {
+        private GetApplicationCodeValidationSuccess success;
+
+        public DummyGetApplicationCodeValidator(ApplicationCodeRepository repository) {
+            super(repository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForGet payload,
+                BiFunction<PayloadForGet, GetApplicationCodeValidationSuccess, R> getCode) {
+            return getCode.apply(payload, success);
         }
     }
 }

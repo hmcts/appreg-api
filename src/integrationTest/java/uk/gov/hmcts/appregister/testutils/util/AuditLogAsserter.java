@@ -15,8 +15,7 @@ import uk.gov.hmcts.appregister.common.audit.listener.diff.ReflectiveAuditor;
 @Slf4j
 @RequiredArgsConstructor
 public class AuditLogAsserter {
-    protected final LogCaptor dataAuditLogger =
-            LogCaptor.forClass(DataAuditLogger.class);
+    protected final LogCaptor dataAuditLogger = LogCaptor.forClass(DataAuditLogger.class);
 
     protected final LogCaptor reflectiveDifferentiator =
             LogCaptor.forClass(ReflectiveAuditor.class);
@@ -79,13 +78,13 @@ public class AuditLogAsserter {
     }
 
     /**
-     * The log regex pattern of the {@link DataAuditLogger}.
+     * The log regex pattern of the {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
      */
     private static final String DIFF_NEW_LOG_PATTERN =
             DIFF_NEW_PREFIX + " AuditableData\\(tableName=%s, fieldName=%s, value=%s\\)";
 
     /**
-     * The log regex pattern of the {@link DataAuditLogger}.
+     * The log regex pattern of the {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
      */
     private static final String DIFF_OLD_LOG_PATTERN =
             DIFF_OLD_PREFIX + " AuditableData\\(tableName=%s, fieldName=%s, value=%s\\)";
@@ -199,7 +198,7 @@ public class AuditLogAsserter {
 
     /**
      * clears the underlying logs from the {@link
-     * DataAuditLogger}.
+     * uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
      */
     public void clearLogs() {
         dataAuditLogger.clearLogs();

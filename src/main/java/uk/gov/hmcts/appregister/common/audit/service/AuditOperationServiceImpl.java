@@ -23,9 +23,8 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
 /**
  * Encapsulates a unit of work for the lifecycle of an auditable operation. Behaviour of each audit
- * lifecycle event can be controlled by passing in {@link
- * AuditOperationLifecycleListener} that will be invoked at
- * the start and end of the operation.
+ * lifecycle event can be controlled by passing in {@link AuditOperationLifecycleListener} that will
+ * be invoked at the start and end of the operation.
  */
 @Slf4j
 @RequiredArgsConstructor

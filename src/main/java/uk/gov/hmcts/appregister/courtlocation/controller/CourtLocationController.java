@@ -112,7 +112,7 @@ public class CourtLocationController implements CourtLocationsApi {
             return List.of();
         }
         return sortMapper.map(
-            SortableField.of(sort.toArray(new String[0])),
-            CourtLocationSortFieldEnum::getEntityValue);
+                SortableField.of(sort.toArray(new String[0])),
+                CourtLocationSortFieldEnum::getEntityValue);
     }
 }

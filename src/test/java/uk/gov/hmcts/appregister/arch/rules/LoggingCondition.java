@@ -19,14 +19,15 @@ public class LoggingCondition extends ArchCondition<JavaClass> {
         if (!javaClass.isInterface() && !javaClass.getName().contains("$")) {
 
             // check for the log field which is the standard name for slf logger
-            boolean hasLogField = javaClass.getFields().stream()
-                .anyMatch(f -> f.getName().equals("log"));
+            boolean hasLogField =
+                    javaClass.getFields().stream().anyMatch(f -> f.getName().equals("log"));
 
             if (!hasLogField) {
-                events.add(SimpleConditionEvent.violated(
-                    javaClass,
-                    "Controller %s does not declare a field named 'log'".formatted(javaClass.getName())
-                ));
+                events.add(
+                        SimpleConditionEvent.violated(
+                                javaClass,
+                                "Controller %s does not declare a field named 'log'"
+                                        .formatted(javaClass.getName())));
             }
         }
     }

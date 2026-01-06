@@ -13,6 +13,6 @@ public class NoInnerPredicate extends DescribedPredicate<JavaClass> {
 
     @Override
     public boolean test(JavaClass javaClass) {
-        return  (!javaClass.isInterface() && !javaClass.getName().contains("$"));
+        return (!javaClass.isInterface() && !javaClass.getName().contains("$"));
     }
 }

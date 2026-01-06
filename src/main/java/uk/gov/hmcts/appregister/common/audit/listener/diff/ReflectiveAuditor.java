@@ -31,9 +31,8 @@ import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
  *
  * <p>We can toggle recursion of nested objects via the constructor parameters.
  *
- * <p>The class supports use of the {@link Audit} and
- * {@link AuditEnabled} annotations to tailor the way
- * in which it detects audit data.
+ * <p>The class supports use of the {@link Audit} and {@link AuditEnabled} annotations to tailor the
+ * way in which it detects audit data.
  */
 @Slf4j
 @Getter

@@ -88,30 +88,30 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      */
     @Query(
             """
-            SELECT
-                ale.uuid AS uuid,
-                ale.sequenceNumber AS sequenceNumber,
-                ale.accountNumber AS accountNumber,
-                COALESCE(ana.name, sa.name) AS applicant,
-                rna.name AS respondent,
-                rna.postcode AS postCode,
-                ac.title AS applicationTitle,
-                CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
-                rc.resultCode AS result
-            FROM ApplicationListEntry ale
-            LEFT JOIN ale.anamedaddress ana
-            LEFT JOIN ale.standardApplicant sa
-            LEFT JOIN ale.rnameaddress rna
-            LEFT JOIN ale.applicationCode ac
-            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
-                AND aler.changedDate = (
-                    SELECT MAX(sub.changedDate)
-                    FROM AppListEntryResolution sub
-                    WHERE sub.applicationList = ale
-                )
-            LEFT JOIN aler.resolutionCode rc
-            WHERE ale.applicationList.uuid = :id
-            """)
+        SELECT
+            ale.uuid AS uuid,
+            ale.sequenceNumber AS sequenceNumber,
+            ale.accountNumber AS accountNumber,
+            COALESCE(ana.name, sa.name) AS applicant,
+            rna.name AS respondent,
+            rna.postcode AS postCode,
+            ac.title AS applicationTitle,
+            CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
+            rc.resultCode AS result
+        FROM ApplicationListEntry ale
+        LEFT JOIN ale.anamedaddress ana
+        LEFT JOIN ale.standardApplicant sa
+        LEFT JOIN ale.rnameaddress rna
+        LEFT JOIN ale.applicationCode ac
+        LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+            AND aler.changedDate = (
+                SELECT MAX(sub.changedDate)
+                FROM AppListEntryResolution sub
+                WHERE sub.applicationList = ale
+            )
+        LEFT JOIN aler.resolutionCode rc
+        WHERE ale.applicationList.uuid = :id
+        """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 
     @Query(
@@ -147,63 +147,64 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      */
     @Query(
             """
-         SELECT
-                ale.applicationList.date  AS date,
-                ale.uuid AS uuid,
-                ale.id AS id,
-                ale.applicationList.courtCode  AS courtCode,
-                ac.legislation as legislation,
-                ac.feeDue feeRequired,
-                aler.id as result,
-                cja.code AS cjaCode,
-                ale.applicationList.otherLocation AS otherLocationDescription,
-                ana as anameAddress,
-                ale.standardApplicant.applicantCode AS standardApplicantCode,
-                rna as rnameAddress,
-                ale.applicationCode.title as title,
-                al.status AS status,
-                al.date as dateOfAl,
-                ale.anamedaddress.name as applicationorganisation,
-                ale.anamedaddress.surname as applicantSurname,
-                ale.rnameaddress.name as respondentOrganisation,
-                ale.rnameaddress.surname as respondentSurname,
-                ale.rnameaddress.postcode as respondentPostcode,
-                ale.caseReference as  accountReference,
-                sa as standardApplicant
-            from ApplicationListEntry ale
-            LEFT JOIN ale.anamedaddress ana
-            LEFT JOIN ale.standardApplicant sa
-            LEFT JOIN ale.rnameaddress rna
-            LEFT JOIN ale.applicationCode ac
-            LEFT JOIN ale.applicationList al
-            LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale AND aler.id = (SELECT MAX(sub.id)
-                                                                                      FROM AppListEntryResolution sub
-                                                                                      WHERE sub.applicationList = ale)
-        WHERE  (:hasHearingDate = false OR ale.applicationList.date = :hearingDate)
-                AND (:otherLocationDescription IS NULL OR ale.applicationList.otherLocation
-                        LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
-                AND (:courtCode IS NULL OR ale.applicationList.courtCode = :courtCode)
-                AND (:cjaCode IS NULL OR ale.applicationList.cja.code=:cjaCode)
-                AND (:applicantOrganisation IS NULL OR  ale.anamedaddress.name
-                        LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
-                        AND ale.anamedaddress.code='AP')
-                AND (:applicantSurname IS NULL OR ale.anamedaddress.surname
-                         LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
-                        AND ale.anamedaddress.code='AP')
-                AND (:standardApplicantCode IS NULL OR ale.standardApplicant.applicantCode
-                        LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
-                AND (:status IS NULL OR :status=ale.applicationList.status)
-                AND (:respondentOrganisation IS NULL OR ale.rnameaddress.name LIKE CONCAT('%',
-                        cast(:respondentOrganisation AS string), '%') AND ale.rnameaddress.code='RE')
-                AND (:respondentSurname IS NULL OR ale.rnameaddress.surname LIKE CONCAT('%',
-                        cast(:respondentSurname AS string), '%') AND ale.rnameaddress.code='RE')
-                AND (:respondentPostcode IS NULL OR ale.rnameaddress.postcode=
-                        cast(:respondentPostcode AS string) AND ale.rnameaddress.code='RE')
-                AND (:accountReference IS NULL OR  ale.caseReference
-                        LIKE CONCAT('%', cast(:accountReference AS string), '%'))
-                AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
-        """)
+             SELECT
+                    al.date  AS date,
+                    ale.uuid AS uuid,
+                    ale.id AS id,
+                    al.courtCode  AS courtCode,
+                    ac.legislation as legislation,
+                    ac.feeDue feeRequired,
+                    aler.id as result,
+                    cja.code AS cjaCode,
+                    al.otherLocation AS otherLocationDescription,
+                    ana as anameAddress,
+                    sa.applicantCode AS standardApplicantCode,
+                    rna as rnameAddress,
+                    ac.title as title,
+                    al.status AS status,
+                    al.date as dateOfAl,
+                    ana.name as applicationorganisation,
+                    ana.surname as applicantSurname,
+                    rna.name as respondentOrganisation,
+                    rna.surname as respondentSurname,
+                    rna.postcode as respondentPostcode,
+                    ale.caseReference as  accountReference,
+                    sa as standardApplicant
+                from ApplicationListEntry ale
+                LEFT JOIN ale.anamedaddress ana
+                LEFT JOIN ale.standardApplicant sa
+                LEFT JOIN ale.rnameaddress rna
+                LEFT JOIN ale.applicationCode ac
+                LEFT JOIN ale.applicationList al
+                LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList
+                            = ale AND aler.id = (SELECT MAX(sub.id)
+                              FROM AppListEntryResolution sub
+                              WHERE sub.applicationList = ale)
+            WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
+                    AND (:otherLocationDescription IS NULL OR al.otherLocation
+                            LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
+                    AND (:courtCode IS NULL OR al.courtCode = :courtCode)
+                    AND (:cjaCode IS NULL OR cja.code=:cjaCode)
+                    AND (:applicantOrganisation IS NULL OR ana.name
+                            LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
+                            AND ana.code='AP')
+                    AND (:applicantSurname IS NULL OR ana.surname
+                             LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
+                            AND ana.code='AP')
+                    AND (:standardApplicantCode IS NULL OR sa.applicantCode
+                            LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
+                    AND (:status IS NULL OR :status=ale.applicationList.status)
+                    AND (:respondentOrganisation IS NULL OR rna.name LIKE CONCAT('%',
+                            cast(:respondentOrganisation AS string), '%') AND rna.code='RE')
+                    AND (:respondentSurname IS NULL OR rna.surname LIKE CONCAT('%',
+                            cast(:respondentSurname AS string), '%') AND rna.code='RE')
+                    AND (:respondentPostcode IS NULL OR rna.postcode=
+                            cast(:respondentPostcode AS string) AND rna.code='RE')
+                    AND (:accountReference IS NULL OR  ale.caseReference
+                            LIKE CONCAT('%', cast(:accountReference AS string), '%'))
+                    AND (al.deleted IS NULL OR al.deleted <> '1')
+            """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             boolean hasHearingDate,
             @Param("hearingDate") LocalDate hearingDate,

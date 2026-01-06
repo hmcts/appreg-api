@@ -16,7 +16,11 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.common.entity.base.*;
+import uk.gov.hmcts.appregister.common.entity.base.Accountable;
+import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 
 /**
  * JPA entity representing a row in the {@code resolution_code} table.
