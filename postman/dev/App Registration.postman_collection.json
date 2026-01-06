@@ -57,7 +57,13 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "raw",
 							"raw": "{\r\n  \"date\": \"2025-10-16\",\r\n  \"time\": \"10:30:00\",\r\n  \"description\": \"Wills test List.\",\r\n  \"status\": \"OPEN\",\r\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\r\n  \"courtLocationCode\": \"RCJ001\",\r\n  \"cjaCode\": \"02\",\r\n  \"durationHours\": 2,\r\n  \"durationMinutes\": 30\r\n}",
@@ -158,6 +164,45 @@
 					"response": []
 				},
 				{
+					"name": "Application List",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}:4550/application-lists/3f324c49-84ab-41df-9240-e64acbcf7f42?page=0&size=1",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"port": "4550",
+							"path": [
+								"application-lists",
+								"3f324c49-84ab-41df-9240-e64acbcf7f42"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Print Application List",
 					"request": {
 						"auth": {
@@ -220,7 +265,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json",
+								"value": "application/vnd.hmcts.appreg.v1+json",
 								"type": "text"
 							}
 						],
@@ -234,12 +279,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:4550/application-lists",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
 								"application-lists"
 							]
@@ -278,12 +321,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:4550/application-lists/{{created_id}}",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
 								"application-lists",
 								"{{created_id}}"
@@ -309,7 +350,7 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json",
+								"value": "application/vnd.hmcts.appreg.v1+json",
 								"type": "text"
 							}
 						],
@@ -323,12 +364,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:4550/application-lists/{{created_id}}",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
 								"application-lists",
 								"{{created_id}}"
@@ -420,7 +459,7 @@
 							"query": [
 								{
 									"key": "date",
-									"value": "2012-07-25"
+									"value": "asdasdas"
 								}
 							]
 						}
@@ -484,12 +523,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:4550/application-codes?page=2&pageSize=5&sort=code,desc",
-							"protocol": "http",
+							"raw": "{{APP_REG_HOST}}/application-codes?page=2&pageSize=5&sort=code,desc",
 							"host": [
-								"localhost"
+								"{{APP_REG_HOST}}"
 							],
-							"port": "4550",
 							"path": [
 								"application-codes"
 							],
@@ -520,6 +557,66 @@
 		{
 			"name": "criminal-justice-areas",
 			"item": []
+		},
+		{
+			"name": "application_list_entries",
+			"item": [
+				{
+					"name": "Get Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-list-entries"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-04-21"
+								},
+								{
+									"key": "cjaCode",
+									"value": "CJ"
+								},
+								{
+									"key": "courtCode",
+									"value": "RCJ001"
+								},
+								{
+									"key": "applicantSurname",
+									"value": "rn"
+								},
+								{
+									"key": "status",
+									"value": "OPEN"
+								},
+								{
+									"key": "respondentOrganisation",
+									"value": "ah%20Johnson"
+								},
+								{
+									"key": "respondentPostcode",
+									"value": "XY9%208ZZ"
+								},
+								{
+									"key": "accountReference",
+									"value": "323232"
+								},
+								{
+									"key": "standardApplicantCode",
+									"value": "APP0"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "Standard Applicants",
@@ -577,6 +674,56 @@
 							],
 							"path": [
 								"standard-applicants"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "actions",
+			"item": [
+				{
+					"name": "Move Application List Entries",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.hmcts.appreg.v1+json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"targetListId\": \"47a8edf1-6167-4fbf-806d-68cd88e6382e\",\r\n  \"entryIds\": [\r\n    \"7913172a-28a4-4fb6-ac3b-16e269856960\",\r\n    \"6490e071-12f6-4356-a1cb-14b7326573b5\"\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists/4e87812d-d307-40a1-a127-6d038a7462e4/entries/move",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists",
+								"4e87812d-d307-40a1-a127-6d038a7462e4",
+								"entries",
+								"move"
 							]
 						}
 					},
@@ -687,7 +834,6 @@
 							"path": [
 								"application-lists",
 								"{{APP_LIST_ID}}",
-
 								"entries"
 							]
 						}
@@ -757,58 +903,58 @@
 				}
 			]
 		},
-    {
-      "name": "application-list-entry-results",
-      "item": [
-        {
-          "name": "Delete Application List Entry Result",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}/entries/7913172a-28a4-4fb6-ac3b-16e269856960/results/4d34eb41-de4d-4707-aba1-2602c113abfc",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-lists",
-                "{{created_id}}",
-                "entries",
-                "7913172a-28a4-4fb6-ac3b-16e269856960",
-                "results",
-                "4d34eb41-de4d-4707-aba1-2602c113abfc"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
+		{
+			"name": "application-list-entry-results",
+			"item": [
+				{
+					"name": "Delete Application List Entry Result",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}/entries/7913172a-28a4-4fb6-ac3b-16e269856960/results/4d34eb41-de4d-4707-aba1-2602c113abfc",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists",
+								"{{created_id}}",
+								"entries",
+								"7913172a-28a4-4fb6-ac3b-16e269856960",
+								"results",
+								"4d34eb41-de4d-4707-aba1-2602c113abfc"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Obtain Token",
 			"event": [
