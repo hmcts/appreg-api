@@ -116,12 +116,18 @@ public abstract class AbstractApplicationListLocationValidator<
         boolean hasOther = StringUtils.hasText(other);
 
         // XOR rule: either courtLocationCode OR (cjaCode AND otherLocationDescription)
-        boolean valid = hasCourt ^ (hasCja && hasOther);
+        boolean valid = hasCourt ^ hasCja;
 
         if (!valid) {
             throw new AppRegistryException(
                     ApplicationListError.INVALID_LOCATION_COMBINATION,
                     "Provide either 'courtLocation', or both a 'cja code' and a 'otherLocationDescription'.");
+        }
+
+        if(hasCja && !hasOther) {
+            throw new AppRegistryException(
+                ApplicationListError.INVALID_LOCATION_COMBINATION,
+                "Provide both a 'cja code' and a 'otherLocationDescription'.");
         }
 
         O createApplication = getResult();
