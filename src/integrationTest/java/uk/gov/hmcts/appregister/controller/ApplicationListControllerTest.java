@@ -340,6 +340,38 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 resp);
     }
 
+    // --- Validation: XOR rule (court supplied, cja supplied, other description not supplied ----
+    @Test
+    void givenInvalidLocationCombination_cjaMissingOtherDescription_whenCreate_then400()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("Invalid XOR: both")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .cjaCode(VALID_CJA_CODE)
+                        .otherLocationDescription(null);
+
+        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // AL-1 (INVALID_LOCATION_COMBINATION)
+        ProblemAssertUtil.assertEquals(
+                uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError
+                        .INVALID_LOCATION_COMBINATION
+                        .getCode(),
+                resp);
+    }
+
     // --- Not found: court ---------------------------------------------------------------------
     @Test
     void givenUnknownCourt_whenCreate_then404() throws Exception {
