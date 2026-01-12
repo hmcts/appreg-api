@@ -18,7 +18,26 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Cannot delete the entry result because the list has a CLOSED 'status'",
-                    "ALER-3"));
+                    "ALER-3")),
+    APPLICATION_LIST_DOES_NOT_EXIST(
+        DefaultErrorDetail.create(
+            HttpStatus.NOT_FOUND, "The application list does not exist", "ALER-4")),
+    APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST,
+            "The application list state is not suitable to have an entry result added for it",
+            "ALER-5")),
+    APPLICATION_ENTRY_DOES_NOT_EXIST(
+        DefaultErrorDetail.create(
+            HttpStatus.NOT_FOUND, "The application list entry does not exist", "ALER-6")),
+    APPLICATION_ENTRY_NOT_IN_LIST(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST, "The application list entry isn't in the application list",
+            "ALER-7")),
+    RESOLUTION_CODE_DOES_NOT_EXIST(
+        DefaultErrorDetail.create(
+            HttpStatus.BAD_REQUEST, "The result code does not exist",
+            "ALER-8"));
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListEntryResultError(DefaultErrorDetail defaultErrorCode) {

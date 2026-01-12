@@ -14,7 +14,6 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
-import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -35,7 +34,6 @@ public class ApplicationEntryResultCreationValidator
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final ResolutionCodeRepository resolutionCodeRepository;
-    private final Clock clock;
 
     @Override
     public void validate(PayloadForCreateEntryResult<ResultCreateDto> validatable) {
@@ -62,9 +60,9 @@ public class ApplicationEntryResultCreationValidator
 
         ListEntryResultCreateValidationSuccess success =
             ListEntryResultCreateValidationSuccess.builder()
-                .entry(entry)
-                .resolutionCodeId(resolutionCode.getId())
-                .template(wordingTemplate)
+                .applicationListEntry(entry)
+                .resolutionCode(resolutionCode)
+                .wordingSentence(wordingTemplate)
                 .build();
 
         return validateSuccess.apply(validatable, success);
