@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.controller;
 
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
 import io.restassured.response.Response;
-import jakarta.persistence.EntityManager;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.List;
@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -37,7 +36,6 @@ import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 public class ActionControllerTest extends AbstractSecurityControllerTest {
-    @Autowired private EntityManager entityManager;
     @MockitoBean private UserProvider provider;
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
@@ -54,33 +52,14 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
     @Test
     @DisplayName("Move Application List Entries")
     void givenValidRequest_whenMove_then200() throws Exception {
-        // Given: source, target and other lists
-        ApplicationList sourceList = new AppListTestData().someMinimal().build();
         ApplicationListEntry sourceEntry = new AppListEntryTestData().someMinimal().build();
-        sourceEntry.setApplicationList(sourceList);
 
-        persistance.save(sourceEntry);
-        sourceList.setStatus(Status.OPEN);
-        persistance.save(sourceList);
+        ApplicationList sourceList = createOpenListWithEntry(sourceEntry);
 
-        ApplicationList targetList = new AppListTestData().someMinimal().build();
-        ApplicationListEntry targetListEntry = new AppListEntryTestData().someMinimal().build();
-        targetListEntry.setApplicationList(targetList);
+        ApplicationList targetList = createOpenTargetList();
 
-        persistance.save(targetListEntry);
-        targetList.setStatus(Status.OPEN);
-        persistance.save(targetList);
+        Response resp = moveEntries(sourceList, targetList, Set.of(sourceEntry.getUuid()));
 
-        Set<UUID> uuidsToMove = Set.of(sourceEntry.getUuid());
-
-        var token = getToken();
-
-        // fire test
-        Response resp =
-                getMoveApplicationListEntriesResponse(
-                        sourceList.getUuid(), targetList.getUuid(), uuidsToMove, token);
-
-        // assert success
         resp.then().statusCode(HttpStatus.OK.value());
     }
 
@@ -261,6 +240,26 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                 problemDetail.getType().toString());
     }
 
+    @Test
+    @DisplayName("Move Application List Entries: 400 when entry is deleted")
+    void givenDeletedEntry_whenMove_then400() throws Exception {
+        ApplicationListEntry deletedEntry = new AppListEntryTestData().someMinimal().build();
+        deletedEntry.setDeleted(YES);
+
+        ApplicationList sourceList = createOpenListWithEntry(deletedEntry);
+
+        ApplicationList targetList = createOpenTargetList();
+
+        Response resp = moveEntries(sourceList, targetList, Set.of(deletedEntry.getUuid()));
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST.getCode().getAppCode(),
+                problemDetail.getType().toString());
+    }
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         Set<UUID> entryIds = new HashSet<>();
@@ -304,5 +303,35 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
         // fire test
         return restAssuredClient.executePostRequest(
                 getLocalUrl(WEB_CONTEXT + "/" + sourceListId + "/entries/move"), token, req);
+    }
+
+    private ApplicationList createOpenListWithEntry(ApplicationListEntry entry) {
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        entry.setApplicationList(list);
+
+        persistance.save(entry);
+        list.setStatus(Status.OPEN);
+        persistance.save(list);
+
+        return list;
+    }
+
+    private ApplicationList createOpenTargetList() {
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        ApplicationListEntry targetEntry = new AppListEntryTestData().someMinimal().build();
+        targetEntry.setApplicationList(targetList);
+
+        persistance.save(targetEntry);
+        targetList.setStatus(Status.OPEN);
+        persistance.save(targetList);
+
+        return targetList;
+    }
+
+    private Response moveEntries(
+            ApplicationList sourceList, ApplicationList targetList, Set<UUID> uuidsToMove)
+            throws Exception {
+        return getMoveApplicationListEntriesResponse(
+                sourceList.getUuid(), targetList.getUuid(), uuidsToMove, getToken());
     }
 }

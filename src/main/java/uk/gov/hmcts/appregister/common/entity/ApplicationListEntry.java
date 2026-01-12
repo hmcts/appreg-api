@@ -27,7 +27,7 @@ import org.hibernate.generator.EventType;
 import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
-import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
+import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableAndDeletableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
@@ -46,7 +46,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
 @AuditEnabled(types = {CrudEnum.CREATE})
-public class ApplicationListEntry extends BaseChangeableEntity
+public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
 
     @Id
