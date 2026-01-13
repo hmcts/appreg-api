@@ -96,14 +96,7 @@ public class ApplicationEntryResultCreationValidator
         if (entry.isEmpty()) {
             throw new AppRegistryException(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
-                "The application list entry does not exist %s".formatted(entryId));
-        }
-
-        // Ensure the entry belongs to the listId from the path
-        if (!entry.get().getApplicationList().getId().equals(list.getId())) {
-            throw new AppRegistryException(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_NOT_IN_LIST,
-                "Entry %s does not belong to application list %s".formatted(entryId, list.getUuid()));
+                "No application list entry exists that belongs to the specified list %s".formatted(entryId));
         }
 
         log.debug("Validated application list entry {} belongs to list {}", entryId, list.getUuid());

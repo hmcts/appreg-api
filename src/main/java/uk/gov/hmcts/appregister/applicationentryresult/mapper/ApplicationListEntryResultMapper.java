@@ -14,7 +14,7 @@ public abstract class ApplicationListEntryResultMapper {
 
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "entryId", source = "applicationList.uuid")
-    @Mapping(target = "resultCode", source = "resolutionCode.code") // change 'code' if needed
+    @Mapping(target = "resultCode", source = "resolutionCode.resultCode")
     @Mapping(
         target = "wordingFields",
         expression = "java(getTemplateKeys(appListEntryResolution.getResolutionCode()))")
