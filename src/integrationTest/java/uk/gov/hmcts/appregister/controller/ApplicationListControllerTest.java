@@ -1056,7 +1056,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationHours(4)
                         .durationMinutes(32)
                         .courtLocationCode("Unknown")
-                        .otherLocationDescription("Updated other location");
+                        .otherLocationDescription(null);
 
         Response resp =
                 restAssuredClient.executePutRequest(
