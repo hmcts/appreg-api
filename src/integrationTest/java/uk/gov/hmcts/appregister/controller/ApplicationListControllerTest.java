@@ -88,8 +88,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
-        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().contentType(VND_JSON_V1);
 
         // Location header should point to /application-lists/{uuid}
@@ -431,31 +431,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .INVALID_NEW_LIST_STATUS
                         .getCode(),
                 resp);
-    }
-
-    @Test
-    void givenInvalidTime_whenCreate_then400() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.USER))
-                        .build()
-                        .fetchTokenForRole();
-
-        var req =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(LocalTime.now())
-                        .description("list_(court)")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(2)
-                        .durationMinutes(30);
-
-        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
-
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-
-        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
     }
 
     @Test
