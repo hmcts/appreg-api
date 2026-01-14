@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e264a76e-4509-4c22-b662-64f4159cfb84",
+		"_postman_id": "25b35594-05ec-4278-84c8-efef6a0b80a2",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-e264a76e-4509-4c22-b662-64f4159cfb84?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-25b35594-05ec-4278-84c8-efef6a0b80a2?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -442,19 +442,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=2012-07-25",
+							"raw": "{{APP_REG_HOST}}/application-codes/MS99007",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-codes",
-								"AP99001"
-							],
-							"query": [
-								{
-									"key": "date",
-									"value": "asdasdas"
-								}
+								"MS99007"
 							]
 						}
 					},
