@@ -2,14 +2,27 @@ package uk.gov.hmcts.appregister.testutils.client;
 
 import static io.restassured.RestAssured.given;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import io.restassured.RestAssured;
+import io.restassured.config.ObjectMapperConfig;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.apache.http.HttpHeaders;
+import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -25,6 +38,29 @@ public class RestAssuredClient {
 
     @Value("${spring.data.web.sort.sort-parameter}")
     private String sortQueryName;
+
+    // Initialize RestAssured configuration
+    {
+        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+
+        // Setup the serializer and deserializer for LocalTime with format "HH:mm"
+        DateTimeFormatter formatter =
+                new DateTimeFormatterBuilder().appendPattern("HH:mm").toFormatter();
+        timeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(formatter));
+        timeModule.addSerializer(
+                LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm")));
+        objectMapper.registerModule(timeModule);
+        objectMapper.registerModule(new JsonNullableModule());
+        RestAssured.config =
+                RestAssuredConfig.config()
+                        .objectMapperConfig(
+                                ObjectMapperConfig.objectMapperConfig()
+                                        .jackson2ObjectMapperFactory(
+                                                (cls, charset) -> objectMapper));
+    }
 
     /**
      * gets a request builder that can be used to make requests against the application.

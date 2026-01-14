@@ -101,8 +101,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
-        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().contentType(VND_JSON_V1);
 
         // Location header should point to /application-lists/{uuid}
@@ -479,6 +479,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+<<<<<<< Updated upstream
     void givenInvalidTime_whenCreate_then400() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -505,6 +506,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+=======
+>>>>>>> Stashed changes
     void givenValidRequest_whenUpdateWithCourt_then200AndBody() throws Exception {
         CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
         courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);

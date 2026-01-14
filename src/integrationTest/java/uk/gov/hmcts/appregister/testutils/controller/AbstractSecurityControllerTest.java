@@ -1,22 +1,15 @@
 package uk.gov.hmcts.appregister.testutils.controller;
 
-import static io.restassured.config.ObjectMapperConfig.objectMapperConfig;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.restassured.RestAssured;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
@@ -30,24 +23,6 @@ public abstract class AbstractSecurityControllerTest extends BaseIntegration {
 
     /** The stream of negative security contexts to be tested. */
     protected abstract Stream<RestEndpointDescription> getDescriptions() throws Exception;
-
-    @BeforeAll
-    static void configureRestAssuredObjectMapper() {
-        RestAssured.config =
-                RestAssured.config()
-                        .objectMapperConfig(
-                                objectMapperConfig()
-                                        .jackson2ObjectMapperFactory(
-                                                (cls, charset) -> {
-                                                    ObjectMapper mapper = new ObjectMapper();
-                                                    mapper.registerModule(new JavaTimeModule());
-                                                    mapper.registerModule(new JsonNullableModule());
-                                                    mapper.disable(
-                                                            SerializationFeature
-                                                                    .WRITE_DATES_AS_TIMESTAMPS);
-                                                    return mapper;
-                                                }));
-    }
 
     @ParameterizedTest
     @MethodSource("getDescriptions")
