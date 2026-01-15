@@ -1,12 +1,13 @@
 package uk.gov.hmcts.appregister.config;
 
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
-import java.time.format.DateTimeFormatter;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.LocalTime;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeDeserializer;
+import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 
 @Configuration
 public class JacksonConfig {
@@ -20,10 +21,10 @@ public class JacksonConfig {
      */
     @Bean
     Jackson2ObjectMapperBuilderCustomizer jsonNullableCustomizer() {
-        return builder ->
-                builder.modulesToInstall(new JsonNullableModule())
-                        .serializers(new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm")))
-                        .deserializers(
-                                new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm")));
+        JavaTimeModule module = new JavaTimeModule();
+        module.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
+        module.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
+
+        return builder -> builder.modulesToInstall(new JsonNullableModule(), module);
     }
 }
