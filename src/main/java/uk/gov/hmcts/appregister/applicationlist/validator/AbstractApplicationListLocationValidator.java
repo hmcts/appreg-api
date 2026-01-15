@@ -134,6 +134,8 @@ public abstract class AbstractApplicationListLocationValidator<
 
         validateStatus(dto);
 
+        validateTime(dto);
+
         if (createApplicationSupplier != null) {
             return createApplicationSupplier.apply(dto, createApplication);
         }
@@ -222,6 +224,17 @@ public abstract class AbstractApplicationListLocationValidator<
                         ApplicationListError.INVALID_NEW_LIST_STATUS,
                         "A closed application list is not allowed to be created");
             }
+        }
+    }
+
+    private void validateTime(T dto) {
+        LocalTime time = getTime().apply(dto);
+
+        if (time != null && time.getSecond() != 0) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_TIME,
+                    "An application list is not allowed to be created with a time in the format HH:MM:SS, only the"
+                            + "HH:MM format is supported");
         }
     }
 }

@@ -203,6 +203,21 @@ public class ApplicationListCreateValidatorTest {
         assertDoesNotThrow(() -> validator.validate(appList));
     }
 
+    @Test
+    void create_invalidTime_throwsAppRegException() {
+        // given
+        var appList = buildDto(Field.COURT);
+        when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+                .thenReturn(List.of(new NationalCourtHouse()));
+
+        appList.setTime(LocalTime.now());
+
+        // expect
+        AppRegistryException ex =
+                assertThrows(AppRegistryException.class, () -> validator.validate(appList));
+        assertEquals(ApplicationListError.INVALID_TIME, ex.getCode());
+    }
+
     // ---- TESTS ----
     @Nested
     class ValidCombinations {
