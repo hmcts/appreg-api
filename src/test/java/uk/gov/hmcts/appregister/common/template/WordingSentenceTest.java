@@ -171,7 +171,7 @@ public class WordingSentenceTest {
     }
 
     @Test
-    public void testInvalidNumberOfArguments() {
+    public void testInvalidNumberOfArgumentsTooMany() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
         Assertions.assertEquals(2, collection.getTemplateableContents().length);
@@ -201,6 +201,60 @@ public class WordingSentenceTest {
                         () ->
                                 collection.substitute(
                                         List.of(substitution, substitution2, substitution3)));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
+    }
+
+    @Test
+    public void testInvalidNumberOfArgumentsTooFew() {
+        WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+
+        Assertions.assertEquals(2, collection.getTemplateableContents().length);
+
+        Assertions.assertEquals(
+                "Applicant officer",
+                collection.getDetail().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "No.of accounts",
+                collection.getDetail().getSubstitutionKeyConstraints().get(1).getKey());
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("My Test");
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> collection.substitute(List.of(substitution)));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
+    }
+
+    @Test
+    public void testInvalidArgumentSubstitutionKey() {
+        WordingTemplateSentence collection = WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+
+        Assertions.assertEquals(2, collection.getTemplateableContents().length);
+
+        Assertions.assertEquals(
+                "Applicant officer",
+                collection.getDetail().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "No.of accounts",
+                collection.getDetail().getSubstitutionKeyConstraints().get(1).getKey());
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Applicant officer");
+        substitution.setValue("My Test");
+
+        TemplateSubstitution substitution2 = new TemplateSubstitution();
+        substitution.setKey("No.of accounts wrong");
+        substitution.setValue("My Test");
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> collection.substitute(List.of(substitution, substitution2)));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }

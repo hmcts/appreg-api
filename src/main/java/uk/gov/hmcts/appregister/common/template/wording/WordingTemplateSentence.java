@@ -162,7 +162,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             return returnedString;
         }
 
-        if (values.size() > contents.size()) {
+        if (values.size() > contents.size() || values.size() < contents.size()) {
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
                     "Number of values exceeds number of templates",
@@ -170,6 +170,9 @@ public class WordingTemplateSentence implements TemplateableSentence {
                             "templateSize", Integer.toString(contents.size()),
                             "valueSize", Integer.toString(values.size())));
         }
+
+        // check the reference keys are valid according to the template details
+        checkReferenceKeysAreValid(values);
 
         for (int i = 0; i < values.size(); i++) {
             if (values.get(i).getKey().equals(contents.get(i).getDetail().getKey())) {
@@ -193,6 +196,37 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         log.debug("Substituted value: {}", returnedString);
         return returnedString;
+    }
+
+    /**
+     * check the reference key is valid.
+     *
+     * @param values The list of substitution values provided
+     */
+    private void checkReferenceKeysAreValid(List<TemplateSubstitution> values) {
+        for (TemplateSubstitution substitution : values) {
+            if (getTemplateableForKey(substitution.getKey()) == null) {
+                throw new AppRegistryException(
+                        CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                        "Number of values exceeds number of templates. Invalid reference key: "
+                                + substitution.getKey());
+            }
+        }
+    }
+
+    /**
+     * gets a templateable entry for the key specified.
+     *
+     * @param key The key to find
+     * @return The templateable entry or null if not found
+     */
+    private Templateable getTemplateableForKey(String key) {
+        for (Templateable templatable : contents) {
+            if (templatable.getDetail().getKey().equals(key)) {
+                return templatable;
+            }
+        }
+        return null;
     }
 
     /**

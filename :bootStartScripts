@@ -1,0 +1,17 @@
+> :generateTestCommonEffectiveLombokConfig
+> :generateFunctionalTestEffectiveLombokConfig
+> :generateIntegrationTestEffea/uk/gov/hmcts/appregister/common/exception/AppRegistryException.java:11: warning: [serial] serializable class AppRegistryException has no definition of serialVersionUID
+public class AppRegistryException extends RuntimeException {
+       ^
+/Users/supportadmin/code/appreg-api/src/main/java/uk/gov/hmcts/appregister/common/exception/AppRegistryException.java:15: warning: [serial] non-transient instance field of a serializable class declared with a non-serializable type
+    private Map<String, String> details = new HashMap<>();
+                                ^
+/Users/supportadmin/code/appreg-api/src/main/java/uk/gov/hmcts/appregister/common/exception/AppRegExceptionHandler.java:96: warning: [rawtypes] found raw type: ConstraintViolation
+        for (ConstraintViolation fieldError : ex.getConstraintViolations()) {
+             ^
+  missing type arguments for generic class ConstraintViolation<T>
+  where T is a type-variable:
+    T extends Object declared in interface ConstraintViolation
+10 warnings
+<===----------> 29% EXECUTING [12s]
+> :bootStartScripts

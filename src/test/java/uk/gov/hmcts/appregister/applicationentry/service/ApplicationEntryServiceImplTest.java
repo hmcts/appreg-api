@@ -338,21 +338,21 @@ public class ApplicationEntryServiceImplTest {
         }
 
         TemplateSubstitution templateSubstitution = new TemplateSubstitution();
-        templateSubstitution.setKey("wording");
-        templateSubstitution.setValue("wordingValue");
+        templateSubstitution.setKey("Applicant officer");
+        templateSubstitution.setValue("off");
 
         TemplateSubstitution templateSubstitution2 = new TemplateSubstitution();
-        templateSubstitution2.setKey("wording1");
-        templateSubstitution2.setValue("wordingValue1");
+        templateSubstitution2.setKey("Applicant officer1");
+        templateSubstitution2.setValue("off1");
 
         TemplateSubstitution templateSubstitution3 = new TemplateSubstitution();
-        templateSubstitution3.setKey("wording2");
-        templateSubstitution3.setValue("wordingValue2");
+        templateSubstitution3.setKey("Applicant officer2");
+        templateSubstitution3.setValue("off2");
 
         entryCreateDto.setWordingFields(
                 List.of(templateSubstitution, templateSubstitution2, templateSubstitution3));
         code.setWording(
-                "Test template {TEXT|Applicant officer1|10} and second template {TEXT|Applicant officer1|10} and third"
+                "Test template {TEXT|Applicant officer|10} and second template {TEXT|Applicant officer1|10} and third"
                         + "template {TEXT|Applicant officer2|10}");
 
         NameAddressTestData nameAddressTestData = new NameAddressTestData();
