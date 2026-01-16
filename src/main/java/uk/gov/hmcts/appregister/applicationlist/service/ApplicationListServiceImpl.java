@@ -307,7 +307,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     /**
-     * Update an Application List associated with a Criminal Justice Area.
+     * - an Application List associated with a Criminal Justice Area.
      *
      * <p>Validates that exactly one CJA exists for the provided code. If multiple or none exist, an
      * exception is thrown. Otherwise, the list is persisted and returned as a DTO.

@@ -46,4 +46,6 @@ public interface ApplicationListEntryGetSummaryProjection {
     String getAccountReference();
 
     StandardApplicant getStandardApplicant();
+
+    Long getId();
 }

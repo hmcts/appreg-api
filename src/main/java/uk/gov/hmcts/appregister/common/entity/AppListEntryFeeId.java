@@ -35,17 +35,17 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
 @Setter
-@AuditEnabled(types = {CrudEnum.CREATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class AppListEntryFeeId extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id
     @Column(name = "ale_ale_id", nullable = false)
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long appListEntryId;
 
     @Id
     @Column(name = "fee_fee_id", nullable = false)
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long feeId;
 
     @Column(name = "version", nullable = false)
