@@ -116,7 +116,7 @@ public abstract class AbstractApplicationListLocationValidator<
         boolean hasOther = StringUtils.hasText(other);
 
         // XOR rule: either courtLocationCode OR (cjaCode AND otherLocationDescription)
-        boolean valid = hasCourt ^ (hasCja && hasOther);
+        boolean valid = hasCourt ^ hasCja;
 
         if (!valid) {
             throw new AppRegistryException(
@@ -127,8 +127,19 @@ public abstract class AbstractApplicationListLocationValidator<
         O createApplication = getResult();
         // validate the court and justice area
         if (hasCourt) {
+            // double-check to make sure other description has not been included
+            if (hasOther) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_LOCATION_COMBINATION,
+                        "Provide either 'courtLocation', or both a 'cja code' and a 'otherLocationDescription'.");
+            }
             validateCourt(dto, createApplication);
         } else {
+            if (!hasOther) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_LOCATION_COMBINATION,
+                        "Provide both a 'cja code' and a 'otherLocationDescription'.");
+            }
             validateCja(dto, createApplication);
         }
 

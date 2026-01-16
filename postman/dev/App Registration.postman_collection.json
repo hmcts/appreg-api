@@ -1,10 +1,18 @@
 {
 	"info": {
+<<<<<<< HEAD
 		"_postman_id": "b1ae45ae-d2d1-4188-a116-252368eac3e4",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
 		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-b1ae45ae-d2d1-4188-a116-252368eac3e4?action=share&source=collection_link&creator=15829068"
+=======
+		"_postman_id": "a7829e9e-0391-4cee-9a3d-2e85ef24a263",
+		"name": "App Registration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "15829068",
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-a7829e9e-0391-4cee-9a3d-2e85ef24a263?action=share&source=collection_link&creator=15829068"
+>>>>>>> master
 	},
 	"item": [
 		{
@@ -236,7 +244,7 @@
 								"exec": [
 									"pm.expect(pm.response.code).to.equal(201);\r",
 									"const response = pm.response.json();\r",
-									"pm.environment.set(\"created_id\", response.id);"
+									"pm.environment.set(\"APP_LIST_ID\", response.id);"
 								],
 								"type": "text/javascript",
 								"packages": {},
@@ -315,13 +323,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists",
-								"{{created_id}}"
+								"{{APP_LIST_ID}}"
 							]
 						}
 					},
@@ -358,13 +366,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists",
-								"{{created_id}}"
+								"{{APP_LIST_ID}}"
 							]
 						}
 					},
@@ -442,7 +450,11 @@
 						"method": "GET",
 						"header": [],
 						"url": {
+<<<<<<< HEAD
 							"raw": "{{APP_REG_HOST}}/application-codes/MS99007?date=2017-07-25",
+=======
+							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=asdasdas",
+>>>>>>> master
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
@@ -551,66 +563,6 @@
 		{
 			"name": "criminal-justice-areas",
 			"item": []
-		},
-		{
-			"name": "application_list_entries",
-			"item": [
-				{
-					"name": "Get Summary",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{APP_REG_HOST}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
-							"host": [
-								"{{APP_REG_HOST}}"
-							],
-							"path": [
-								"application-list-entries"
-							],
-							"query": [
-								{
-									"key": "date",
-									"value": "2024-04-21"
-								},
-								{
-									"key": "cjaCode",
-									"value": "CJ"
-								},
-								{
-									"key": "courtCode",
-									"value": "RCJ001"
-								},
-								{
-									"key": "applicantSurname",
-									"value": "rn"
-								},
-								{
-									"key": "status",
-									"value": "OPEN"
-								},
-								{
-									"key": "respondentOrganisation",
-									"value": "ah%20Johnson"
-								},
-								{
-									"key": "respondentPostcode",
-									"value": "XY9%208ZZ"
-								},
-								{
-									"key": "accountReference",
-									"value": "323232"
-								},
-								{
-									"key": "standardApplicantCode",
-									"value": "APP0"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
 		},
 		{
 			"name": "Standard Applicants",
@@ -785,6 +737,22 @@
 				},
 				{
 					"name": "Create Entry",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.expect(pm.response.code).to.equal(201);",
+									"const response = pm.response.json();",
+									"pm.environment.set(\"CREATED_ENTRY_ID\", response.id);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -804,14 +772,49 @@
 							}
 						},
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}/entries",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists",
-								"{{created_id}}",
+								"{{APP_LIST_ID}}",
 								"entries"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Entry",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.hmcts.appreg.v1+json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"standardApplicantCode\" : null,\n  \"applicationCode\" : \"ZS99007\",\n  \"applicant\" : {\n    \"person\" : null,\n    \"organisation\" : {\n      \"name\" : \"CRWD\",\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BDNJZ\",\n        \"addressLine2\" : \"JPCS\",\n        \"addressLine3\" : \"OBYTF\",\n        \"addressLine4\" : \"PQRSULKEIJ\",\n        \"addressLine5\" : \"ERYYEAM\",\n        \"postcode\" : \"AA1 12B\",\n        \"phone\" : \"MRWIDMXQ\",\n        \"mobile\" : \"HQFHZ\",\n        \"email\" : \"test@org.com\"\n      }\n    }\n  },\n  \"respondent\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"WTFOHQEMHC\",\n        \"surname\" : \"YGBYV\",\n        \"firstForename\" : \"HDKZ\",\n        \"secondForename\" : \"YSZMBRCM\",\n        \"thirdForename\" : \"KVJZWKOOR\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BCRQHTJJ\",\n        \"addressLine2\" : \"SZRUV\",\n        \"addressLine3\" : \"JHVFRDRFJ\",\n        \"addressLine4\" : \"TVE\",\n        \"addressLine5\" : \"HHFXL\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"CWIHLRFQ\",\n        \"mobile\" : \"OVPBNCBOSZ\",\n        \"email\" : \"test@test.com\"\n      }\n    },\n    \"dateOfBirth\" : [ 2084, 5, 15 ],\n    \"organisation\" : null\n  },\n  \"numberOfRespondents\" : null,\n  \"wordingFields\" : [ \"test wording\", \"2025-12-09\" ],\n  \"feeStatuses\" : [ {\n    \"paymentReference\" : \"FJFNJW\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2021, 5, 22 ]\n  }, {\n    \"paymentReference\" : \"OMVZYQZDQD\",\n    \"paymentStatus\" : \"PAID\",\n    \"statusDate\" : [ 2023, 8, 12 ]\n  }, {\n    \"paymentReference\" : \"QGN\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2081, 6, 16 ]\n  }, {\n    \"paymentReference\" : \"QUBGYVSB\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2068, 8, 28 ]\n  }, {\n    \"paymentReference\" : \"CTNVTIX\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2016, 5, 12 ]\n  } ],\n  \"hasOffsiteFee\" : true,\n  \"caseReference\" : \"IYQELBGV\",\n  \"accountNumber\" : \"HMIY\",\n  \"notes\" : \"JBBCLCW\",\n  \"lodgementDate\" : [ 2074, 5, 31 ],\n  \"officials\" : [ {\n    \"title\" : \"LXCWS\",\n    \"surname\" : \"MNEGZXJZX\",\n    \"forename\" : \"OGJUMVX\",\n    \"type\" : \"CLERK\"\n  }, {\n    \"title\" : \"MVKEYF\",\n    \"surname\" : \"XCLWTILNBH\",\n    \"forename\" : \"WBZEW\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"KYZH\",\n    \"surname\" : \"USPB\",\n    \"forename\" : \"UJRVOSR\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"ZULBGQNP\",\n    \"surname\" : \"PIVPA\",\n    \"forename\" : \"BFSPTNRO\",\n    \"type\" : \"CLERK\"\n  } ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists",
+								"{{APP_LIST_ID}}",
+								"entries",
+								"{{CREATED_ENTRY_ID}}"
 							]
 						}
 					},
@@ -980,6 +983,13 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "app_list_id",
+			"value": "",
+			"type": "default"
 		}
 	]
 }

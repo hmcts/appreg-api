@@ -52,6 +52,8 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
     private TemplateDetail templateDetail;
 
+    private static final String PARSING_LOG_MESSAGE = "Parsing wording template: {}";
+
     /**
      * The placeholder UUID that is used as a unique placeholder with the template. Without this we
      * can not guarantee a unique substitution key.
@@ -60,8 +62,6 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
     /** The regular expression to identify the template regex. */
     private static final String TEMPLATE_REGEX = "\\" + START_CHARACTER + "(.*?)\\" + END_CHARACTER;
-
-    private static final String PARSING_LOG_MESSAGE = "Parsing wording template: {}";
 
     public WordingTemplateSentence(String templateString) {
         this.template = templateString;
@@ -157,7 +157,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
     public String substitute(List<TemplateSubstitution> values) {
         String returnedString = templateWithProcessedPlaceholders;
 
-        if (values == null || values.isEmpty()) {
+        if ((values == null || values.isEmpty()) && contents.isEmpty()) {
             log.debug("No substitution values provided, returning original template");
             return returnedString;
         }
@@ -321,7 +321,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             return templateKeyWithConstraint;
         }
 
-        public WordingTemplate(String templateString) {
+        private WordingTemplate(String templateString) {
             // check the template string is valid
             if (!PATTERN.matcher(templateString).find()) {
                 throw new AppRegistryException(

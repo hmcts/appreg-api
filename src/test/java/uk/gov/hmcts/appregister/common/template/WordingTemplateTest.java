@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.template;
 
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -61,6 +62,16 @@ public class WordingTemplateTest {
 
         Assertions.assertTrue(wordingTemplate.doesSubstitute("2024-12-31"));
         Assertions.assertEquals("2024-12-31", wordingTemplate.substitute("2024-12-31"));
+    }
+
+    @Test
+    public void testParameterSizeMismatch() {
+        WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> collection.substitute(List.of()));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test

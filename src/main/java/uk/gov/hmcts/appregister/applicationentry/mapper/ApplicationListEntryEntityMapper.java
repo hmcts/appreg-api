@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.mapper;
 import lombok.Setter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
@@ -15,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
@@ -65,6 +67,41 @@ public abstract class ApplicationListEntryEntityMapper {
             NameAddress respondent,
             ApplicationCode code,
             ApplicationList applicationList);
+
+    @Mapping(target = "applicationListEntryWording", source = "substituteWording")
+    @Mapping(target = "applicationCode", source = "code")
+    @Mapping(target = "standardApplicant", source = "standardApplicant")
+    @Mapping(target = "anamedaddress", ignore = true)
+    @Mapping(target = "rnameaddress", ignore = true)
+    @Mapping(target = "accountNumber", source = "entryUpdateDto.accountNumber")
+    @Mapping(target = "caseReference", source = "entryUpdateDto.caseReference")
+    @Mapping(target = "lodgementDate", source = "entryUpdateDto.lodgementDate")
+    @Mapping(target = "notes", source = "entryUpdateDto.notes")
+    @Mapping(target = "applicationList", source = "applicationList")
+    @Mapping(target = "numberOfBulkRespondents", source = "entryUpdateDto.numberOfRespondents")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "bulkUpload", ignore = true)
+    @Mapping(target = "tcepStatus", ignore = true)
+    @Mapping(target = "messageUuid", ignore = true)
+    @Mapping(target = "retryCount", ignore = true)
+    @Mapping(target = "resolutions", ignore = true)
+    @Mapping(target = "entryFeeIds", ignore = true)
+    @Mapping(target = "entryFeeStatuses", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    @Mapping(target = "entryRescheduled", constant = "N")
+    @Mapping(target = "sequenceNumber", constant = "1")
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "changedBy", ignore = true)
+    @Mapping(target = "changedDate", ignore = true)
+    public abstract void toApplicationListEntry(
+            EntryUpdateDto entryUpdateDto,
+            String substituteWording,
+            StandardApplicant standardApplicant,
+            ApplicationCode code,
+            ApplicationList applicationList,
+            @MappingTarget ApplicationListEntry entry);
 
     @Mapping(target = "alefsFeeStatus", expression = "java(toStatus(feeStatus.getPaymentStatus()))")
     @Mapping(target = "appListEntry", source = "applicationListEntry")
