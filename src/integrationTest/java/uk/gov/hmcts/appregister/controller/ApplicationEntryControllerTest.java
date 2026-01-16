@@ -871,7 +871,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
-        responseSpecCreate.then().statusCode(404);
+        responseSpecCreate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
@@ -1433,7 +1433,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         entryUpdateDto);
 
         // assert the response
-        responseSpecUpdate.then().statusCode(404);
+        responseSpecUpdate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
@@ -1466,7 +1466,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         entryUpdateDto);
 
         // assert the response
-        responseSpecUpdate.then().statusCode(400);
+        responseSpecUpdate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
@@ -1849,6 +1849,33 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
+    @StabilityTest
+    public void testGetApplicationEntrySuccess() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids[1]),
+                        tokenGenerator.fetchTokenForRole());
+
+        EntryGetDetailDto entryGetDetailDto = responseSpec.as(EntryGetDetailDto.class);
+        Assertions.assertEquals(responseSpec.getStatusCode(), 200);
+        Assertions.assertEquals("APP002", entryGetDetailDto.getStandardApplicantCode());
+        Assertions.assertEquals("AD99002", entryGetDetailDto.getApplicationCode());
+        Assertions.assertEquals("Rescheduled due to missing docs", entryGetDetailDto.getNotes());
+        Assertions.assertEquals("CASE123457", entryGetDetailDto.getCaseReference());
+        Assertions.assertFalse(entryGetDetailDto.getHasOffsiteFee());
+        Assertions.assertEquals(uuids[1], entryGetDetailDto.getId());
+        Assertions.assertEquals(uuids[0], entryGetDetailDto.getListId());
+    }
+
+    @Test
     public void testGetApplicationEntryListDoesNotExist() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -1867,7 +1894,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                         + "/entries/"
                                         + uuids[1]),
                         tokenGenerator.fetchTokenForRole());
-        responseSpec.then().statusCode(404);
+        responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         // asert the problem
@@ -1944,7 +1971,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         getLocalUrl(
                                 CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids2[1]),
                         tokenGenerator.fetchTokenForRole());
-        responseSpec.then().statusCode(400);
+        responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         // assert the problem
@@ -1971,7 +1998,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                         + "/entries/"
                                         + UUID.randomUUID()),
                         tokenGenerator.fetchTokenForRole());
-        responseSpec.then().statusCode(404);
+        responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         // asert the problem

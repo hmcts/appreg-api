@@ -295,7 +295,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             """
         SELECT ale
         FROM ApplicationListEntry ale
-        WHERE ale.uuid = :entryId
+        WHERE ale.uuid = :entryId AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
 
@@ -311,6 +311,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         SELECT ale
         FROM ApplicationListEntry ale
         WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
+                AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
 

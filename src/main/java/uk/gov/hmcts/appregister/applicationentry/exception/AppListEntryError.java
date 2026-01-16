@@ -56,7 +56,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     APPLICATION_LIST_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALE-11")),
+                    HttpStatus.CONFLICT, "The application list does not exist", "ALE-11")),
 
     APPLICATION_LIST_STATE_IS_INCORRECT(
             DefaultErrorDetail.create(
@@ -76,11 +76,11 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "Application entry does not exist", "ALE-15")),
+                    HttpStatus.CONFLICT, "Application entry does not exist", "ALE-15")),
 
     ENTRY_IS_NOT_WITHIN_LIST(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "Application entry is not within application list",
                     "ALE-16")),
 
@@ -90,7 +90,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     LIST_ENTRY_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "No application list entry was found that belongs to " + " the specified list",
                     "ALE-18"));
 
