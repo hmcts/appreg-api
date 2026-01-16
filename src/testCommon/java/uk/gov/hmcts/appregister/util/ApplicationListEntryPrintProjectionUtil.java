@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.util;
 
 import java.time.LocalDate;
+import java.util.UUID;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 
 public final class ApplicationListEntryPrintProjectionUtil {
@@ -11,6 +12,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
 
     public static final class Builder {
         private Long id;
+        private UUID uuid;
         private short sequenceNumber;
         private String applicantTitle;
         private String applicantSurname;
@@ -248,6 +250,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
         public ApplicationListEntryPrintProjection build() {
             return new Impl(
                     id,
+                    uuid,
                     sequenceNumber,
                     applicantTitle,
                     applicantSurname,
@@ -291,6 +294,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
 
     private static final class Impl implements ApplicationListEntryPrintProjection {
         private final Long id;
+        private final UUID uuid;
         private final short sequenceNumber;
         private final String applicantTitle;
         private final String applicantSurname;
@@ -332,6 +336,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
 
         Impl(
                 Long id,
+                UUID uuid,
                 short sequenceNumber,
                 String applicantTitle,
                 String applicantSurname,
@@ -371,6 +376,7 @@ public final class ApplicationListEntryPrintProjectionUtil {
                 String accountReference,
                 String notes) {
             this.id = id;
+            this.uuid = uuid;
             this.sequenceNumber = sequenceNumber;
             this.applicantTitle = applicantTitle;
             this.applicantSurname = applicantSurname;
@@ -414,6 +420,11 @@ public final class ApplicationListEntryPrintProjectionUtil {
         @Override
         public Long getId() {
             return id;
+        }
+
+        @Override
+        public UUID getUuid() {
+            return uuid;
         }
 
         @Override

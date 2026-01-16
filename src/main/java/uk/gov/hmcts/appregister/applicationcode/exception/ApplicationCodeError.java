@@ -20,7 +20,7 @@ public enum ApplicationCodeError implements ErrorCodeEnum {
      * <p>HTTP 409 Conflict <br>
      * Business code: APPCODE-2
      */
-    DUPLICATE_COURT_FOUND(
+    DUPLICATE_CODE_FOUND(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Multiple Application Codes found when only one was expected",

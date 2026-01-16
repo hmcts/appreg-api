@@ -1,10 +1,13 @@
 package uk.gov.hmcts.appregister.common.projection;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 public interface ApplicationListEntryPrintProjection {
 
     Long getId();
+
+    UUID getUuid();
 
     short getSequenceNumber();
 
