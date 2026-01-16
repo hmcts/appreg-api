@@ -233,15 +233,16 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         resp.then().body("wordingFields", equalTo(List.of("Name of Crown Court")));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "version",
-                null,
-                null,
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getType().name(),
-                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName()
-            )
-        );
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
     }
 
     @Test
@@ -252,16 +253,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload =
-            buildCreatePayload(APPC_CODE, List.of("test wording"));
+        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
 
         Response resp = createResult(listId, entryId, token, payload);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(),
-            resp
-        );
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -271,16 +269,15 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload =
-            buildCreatePayload(APPC_CODE, List.of("test wording"));
+        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
 
         Response resp = createResult(list.getUuid(), UUID.randomUUID(), token, payload);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE.getCode(),
-            resp
-        );
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
+                        .getCode(),
+                resp);
     }
 
     @Test
@@ -295,9 +292,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
-            resp
-        );
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -309,13 +304,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload =
-            buildCreatePayload("UNKNOWN_CODE", List.of("test wording"));
+        Map<String, Object> payload = buildCreatePayload("UNKNOWN_CODE", List.of("test wording"));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
     // -------------------------------------------------------------------------
@@ -328,28 +323,40 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         UUID entryId = UUID.randomUUID();
         UUID resultId = UUID.randomUUID();
 
-        Map<String, Object> postPayload = Map.of(
-            "resultCode", "SOME_CODE",
-            "resolutionWording", "Some wording"
-        );
+        Map<String, Object> postPayload =
+                Map.of(
+                        "resultCode", "SOME_CODE",
+                        "resolutionWording", "Some wording");
 
         return Stream.of(
-            RestEndpointDescription.builder()
-                .url(getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"))
-                .method(HttpMethod.POST)
-                .payload(postPayload)
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-
-            RestEndpointDescription.builder()
-                .url(getLocalUrl(
-                    WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results/" + resultId))
-                .method(HttpMethod.DELETE)
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build()
-        );
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results"))
+                        .method(HttpMethod.POST)
+                        .payload(postPayload)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results/"
+                                                + resultId))
+                        .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
     }
 
     // -------------------------------------------------------------------------
@@ -409,27 +416,24 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     }
 
     private Response createResult(UUID listId, UUID entryId, TokenAndJwksKey token, Object body)
-        throws MalformedURLException {
+            throws MalformedURLException {
 
         return restAssuredClient.executePostRequest(
-            getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"),
-            token,
-            body
-        );
+                getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"),
+                token,
+                body);
     }
 
     private Map<String, Object> buildCreatePayload(String resultCode, List<String> wordings) {
         return Map.of(
-            "resultCode", resultCode,
-            "wordingFields", wordings
-        );
+                "resultCode", resultCode,
+                "wordingFields", wordings);
     }
 
     private Response createResultForEntry(UUID listUuid, UUID entryUuid) throws Exception {
         var token = getToken();
 
-        Map<String, Object> payload =
-            buildCreatePayload(APPC_CODE, List.of("test wording"));
+        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
 
         return createResult(listUuid, entryUuid, token, payload);
     }

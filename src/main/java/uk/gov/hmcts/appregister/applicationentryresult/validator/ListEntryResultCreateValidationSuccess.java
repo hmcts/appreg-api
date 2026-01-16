@@ -18,4 +18,3 @@ public class ListEntryResultCreateValidationSuccess {
     ResolutionCode resolutionCode;
     WordingTemplateSentence wordingSentence;
 }
-

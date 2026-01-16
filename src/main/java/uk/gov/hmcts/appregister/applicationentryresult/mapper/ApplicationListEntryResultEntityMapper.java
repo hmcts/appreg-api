@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.mapper;
 
 import lombok.Setter;
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -22,15 +21,11 @@ public abstract class ApplicationListEntryResultEntityMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "uuid", ignore = true)
-    //@Mapping(target = "resolutionOfficer", ignore = true)
-    @Mapping(target = "resolutionOfficer", constant = "SYSTEM")
+    @Mapping(target = "resolutionOfficer", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     public abstract AppListEntryResolution toApplicationListEntryResult(
-        ResultCreateDto resultCreateDto,
-        String substituteWording,
-        //String resolutionOfficer,
-        ResolutionCode resolutionCode,
-        ApplicationListEntry applicationListEntry//,
-        //String createdUser
-    );
+            ResultCreateDto resultCreateDto,
+            String substituteWording,
+            ResolutionCode resolutionCode,
+            ApplicationListEntry applicationListEntry);
 }

@@ -9,15 +9,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence.with;
 
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
-import jakarta.persistence.EntityManager;
 import lombok.Setter;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +23,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -52,6 +49,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 
@@ -66,6 +64,7 @@ class ApplicationEntryResultServiceImplTest {
     @Mock private ApplicationListEntryResultMapper applicationListEntryResultMapper;
     @Mock private ApplicationListEntryResultEntityMapper applicationListEntryResultEntityMapper;
     @Mock private EntityManager entityManager;
+    @Mock private UserProvider userProvider;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -76,10 +75,10 @@ class ApplicationEntryResultServiceImplTest {
 
     @Spy
     private DummyApplicationEntryResultCreationValidator creationValidator =
-        new DummyApplicationEntryResultCreationValidator(
-            applicationListRepository,
-            applicationListEntryRepository,
-            resolutionCodeRepository);
+            new DummyApplicationEntryResultCreationValidator(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -90,8 +89,6 @@ class ApplicationEntryResultServiceImplTest {
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
 
     private ApplicationEntryResultServiceImpl service;
-
-    private ListEntryResultCreateValidationSuccess success;
 
     @BeforeEach
     void setUp() {
@@ -105,7 +102,8 @@ class ApplicationEntryResultServiceImplTest {
                         List.of(auditOperationLifecycleListener),
                         applicationListEntryResultMapper,
                         applicationListEntryResultEntityMapper,
-                        entityManager);
+                        entityManager,
+                        userProvider);
     }
 
     @Test
@@ -136,24 +134,17 @@ class ApplicationEntryResultServiceImplTest {
         ResultCreateDto createDto = new ResultCreateDto();
         createDto.setWordingFields(List.of("wf1"));
 
-        PayloadForCreateEntryResult<ResultCreateDto> payload =
-            new PayloadForCreateEntryResult<>(
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                createDto
-            );
-
         var code = mock(ResolutionCode.class);
         var appListEntry = mock(ApplicationListEntry.class);
 
         String wordingTemplate = "Some wording template {TEXT|field1|10}";
 
-        success =
-            ListEntryResultCreateValidationSuccess.builder()
-                .wordingSentence(with(wordingTemplate))
-                .resolutionCode(code)
-                .applicationListEntry(appListEntry)
-                .build();
+        ListEntryResultCreateValidationSuccess success =
+                ListEntryResultCreateValidationSuccess.builder()
+                        .wordingSentence(with(wordingTemplate))
+                        .resolutionCode(code)
+                        .applicationListEntry(appListEntry)
+                        .build();
 
         creationValidator.setSuccess(success);
 
@@ -163,11 +154,8 @@ class ApplicationEntryResultServiceImplTest {
         saved.setVersion(1L);
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
-            eq(createDto),
-            eq("Some wording template wf1"),
-            eq(code),
-            eq(appListEntry)
-        )).thenReturn(saved);
+                        eq(createDto), eq("Some wording template wf1"), eq(code), eq(appListEntry)))
+                .thenReturn(saved);
 
         when(appListEntryResolutionRepository.save(saved)).thenReturn(saved);
         doNothing().when(entityManager).refresh(saved);
@@ -175,9 +163,12 @@ class ApplicationEntryResultServiceImplTest {
         var resultGetDto = new ResultGetDto();
         when(applicationListEntryResultMapper.toResultGetDto(saved)).thenReturn(resultGetDto);
 
+        when(userProvider.getEmail()).thenReturn("email");
+
         // Act
-        MatchResponse<ResultGetDto> response =
-            service.create(payload);
+        PayloadForCreateEntryResult<ResultCreateDto> payload =
+                new PayloadForCreateEntryResult<>(UUID.randomUUID(), UUID.randomUUID(), createDto);
+        MatchResponse<ResultGetDto> response = service.create(payload);
 
         // Assert
         Assertions.assertNotNull(response);
@@ -185,12 +176,8 @@ class ApplicationEntryResultServiceImplTest {
 
         verify(creationValidator).validate(eq(payload), notNull());
         verify(applicationListEntryResultEntityMapper)
-            .toApplicationListEntryResult(
-                eq(createDto),
-                eq("Some wording template wf1"),
-                eq(code),
-                eq(appListEntry)
-            );
+                .toApplicationListEntryResult(
+                        eq(createDto), eq("Some wording template wf1"), eq(code), eq(appListEntry));
         verify(appListEntryResolutionRepository).save(saved);
         verify(entityManager).refresh(saved);
         verify(applicationListEntryResultMapper).toResultGetDto(saved);
@@ -223,25 +210,29 @@ class ApplicationEntryResultServiceImplTest {
 
     @Setter
     static class DummyApplicationEntryResultCreationValidator
-        extends ApplicationEntryResultCreationValidator {
+            extends ApplicationEntryResultCreationValidator {
 
         private ListEntryResultCreateValidationSuccess success;
 
         public DummyApplicationEntryResultCreationValidator(
-            ApplicationListRepository applicationListRepository,
-            ApplicationListEntryRepository applicationListEntryRepository,
-            ResolutionCodeRepository resolutionCodeRepository) {
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository) {
 
-            super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
+            super(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository);
         }
 
         @Override
         public <R> R validate(
-            PayloadForCreateEntryResult<ResultCreateDto> validatable,
-            BiFunction<
-                PayloadForCreateEntryResult<ResultCreateDto>,
-                ListEntryResultCreateValidationSuccess,
-                R> validateSuccess) {
+                PayloadForCreateEntryResult<ResultCreateDto> validatable,
+                BiFunction<
+                                PayloadForCreateEntryResult<ResultCreateDto>,
+                                ListEntryResultCreateValidationSuccess,
+                                R>
+                        validateSuccess) {
 
             return validateSuccess.apply(validatable, success);
         }
@@ -251,41 +242,42 @@ class ApplicationEntryResultServiceImplTest {
 
         @Override
         public <T, E extends Keyable> T processAudit(
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
 
-            return processAudit(null, auditType, execution, (AuditOperationLifecycleListener[]) null);
+            return processAudit(
+                    null, auditType, execution, (AuditOperationLifecycleListener[]) null);
         }
 
         @Override
         public <T, E extends Keyable> T processAudit(
-            E oldValue,
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
 
-            return processAudit(oldValue, auditType, execution, (AuditOperationLifecycleListener[]) null);
+            return processAudit(
+                    oldValue, auditType, execution, (AuditOperationLifecycleListener[]) null);
         }
 
         @Override
         public <T, E extends Keyable> T processAudit(
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-            AuditOperationLifecycleListener... listener) {
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
 
             return processAudit(null, auditType, execution, listener);
         }
 
         @Override
         public <T, E extends Keyable> T processAudit(
-            E oldValue,
-            AuditOperation auditType,
-            Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
-            AuditOperationLifecycleListener... listener) {
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
 
             StartEvent event = new StartEvent(auditType, "test-trace-id", oldValue);
             Optional<AuditableResult<T, E>> result = execution.apply(event);
             return result.map(AuditableResult::getResultingValue).orElse(null);
         }
     }
-
 }

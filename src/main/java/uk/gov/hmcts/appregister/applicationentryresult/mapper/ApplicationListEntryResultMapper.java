@@ -16,8 +16,8 @@ public abstract class ApplicationListEntryResultMapper {
     @Mapping(target = "entryId", source = "applicationList.uuid")
     @Mapping(target = "resultCode", source = "resolutionCode.resultCode")
     @Mapping(
-        target = "wordingFields",
-        expression = "java(getTemplateKeys(appListEntryResolution.getResolutionCode()))")
+            target = "wordingFields",
+            expression = "java(getTemplateKeys(appListEntryResolution.getResolutionCode()))")
     public abstract ResultGetDto toResultGetDto(AppListEntryResolution appListEntryResolution);
 
     /**

@@ -1,15 +1,13 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
+import jakarta.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
@@ -25,6 +23,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
@@ -50,12 +49,13 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
-    //Mappers
+    // Mappers
     private final ApplicationListEntryResultMapper applicationListEntryResultMapper;
     private final ApplicationListEntryResultEntityMapper applicationListEntryResultEntityMapper;
 
     // Infrastructure
     private final EntityManager entityManager;
+    private final UserProvider userProvider;
 
     @Override
     @Transactional
@@ -100,43 +100,56 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
     @Override
     @Transactional
-    public MatchResponse<ResultGetDto> create(PayloadForCreateEntryResult<ResultCreateDto> resultCreateDto) {
+    public MatchResponse<ResultGetDto> create(
+            PayloadForCreateEntryResult<ResultCreateDto> resultCreateDto) {
         // creates the entity and return the etag for matching
         log.debug("Start: Creating Application List Entry Result: {}", resultCreateDto);
         log.debug("Creating application entry result for entry {}", resultCreateDto.getEntryId());
 
         MatchResponse<ResultGetDto> getDto =
-            creationValidator.validate(
-                resultCreateDto,
-                (payload, success) ->
-                    auditService.processAudit(
-                    AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT,
-                    req -> {
+                creationValidator.validate(
+                        resultCreateDto,
+                        (payload, success) ->
+                                auditService.processAudit(
+                                        AppListEntryResultAuditOperation
+                                                .CREATE_APP_LIST_ENTRY_RESULT,
+                                        req -> {
 
-                        // save the entry result
-                        AppListEntryResolution listEntryResultEntity =
-                            applicationListEntryResultEntityMapper.toApplicationListEntryResult(
-                                payload.getData(),
-                                success.getWordingSentence().substitute(payload.getData().getWordingFields()),
-                                success.getResolutionCode(),
-                                success.getApplicationListEntry()
-                            );
+                                            // save the entry result
+                                            AppListEntryResolution listEntryResultEntity =
+                                                    applicationListEntryResultEntityMapper
+                                                            .toApplicationListEntryResult(
+                                                                    payload.getData(),
+                                                                    success.getWordingSentence()
+                                                                            .substitute(
+                                                                                    payload.getData()
+                                                                                            .getWordingFields()),
+                                                                    success.getResolutionCode(),
+                                                                    success
+                                                                            .getApplicationListEntry());
 
-                        listEntryResultEntity = refreshEntity(repository.save(listEntryResultEntity));
-                        log.debug("Created application list entry result with id: {}", listEntryResultEntity.getId());
+                                            listEntryResultEntity.setResolutionOfficer(
+                                                    userProvider.getEmail());
 
-                        ResultGetDto resultGetDto =
-                            applicationListEntryResultMapper.toResultGetDto(
-                                listEntryResultEntity
-                            );
+                                            listEntryResultEntity =
+                                                    refreshEntity(
+                                                            repository.save(listEntryResultEntity));
+                                            log.debug(
+                                                    "Created application list entry result with id: {}",
+                                                    listEntryResultEntity.getId());
 
-                        return Optional.of(
-                            new AuditableResult<>(
-                                MatchResponse.of(
-                                    resultGetDto,
-                                    getKeyablesForCreateUpdateEtag(listEntryResultEntity)),
-                                listEntryResultEntity));
-                    }));
+                                            ResultGetDto resultGetDto =
+                                                    applicationListEntryResultMapper.toResultGetDto(
+                                                            listEntryResultEntity);
+
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            MatchResponse.of(
+                                                                    resultGetDto,
+                                                                    getKeyablesForCreateUpdateEtag(
+                                                                            listEntryResultEntity)),
+                                                            listEntryResultEntity));
+                                        }));
 
         log.debug("Finish: Created Application List Entry Result: {}", resultCreateDto);
 
