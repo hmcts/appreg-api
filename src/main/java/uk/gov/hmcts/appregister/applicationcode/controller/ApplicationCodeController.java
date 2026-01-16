@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationcode.service.ApplicationCodeService;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationCodesApi;
@@ -58,8 +59,9 @@ public class ApplicationCodeController implements ApplicationCodesApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationCodeGetDetailDto> getApplicationCodeByCodeAndDate(
             String code, LocalDate date) {
+        PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(date).build();
         ResponseEntity<ApplicationCodeGetDetailDto> response =
-                ResponseEntity.ok(service.findByCode(code, date));
+                ResponseEntity.ok(service.findByCode(payloadForGet));
         log.info("getApplicationCodes: code: {}, date: {}", code, date);
         return response;
     }

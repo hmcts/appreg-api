@@ -1,13 +1,18 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Set;
+import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
+import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -15,9 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 
 class AppRegExceptionHandlerTest {
@@ -90,15 +93,23 @@ class AppRegExceptionHandlerTest {
 
         String customMessage = "Custom message";
 
+        ConstraintViolation<?> cv =
+                ConstraintViolationImpl.forReturnValueValidation(
+                        "invalid value",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "propertyPath",
+                        "val",
+                        PathImpl.createPathFromString("propertyPath"),
+                        null,
+                        null,
+                        null);
         // setup
         ConstraintViolationException exception =
-                new ConstraintViolationException(customMessage, null) {
-                    ;
-                    @Override
-                    public String getMessage() {
-                        return customMessage;
-                    }
-                };
+                new ConstraintViolationException(customMessage, Set.of(cv));
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
@@ -149,35 +160,10 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
         Assertions.assertEquals(
-                "Custom message. field=defaultMessage" + System.lineSeparator(),
+                "Validation failed for fields:\n" + "field=defaultMessage" + System.lineSeparator(),
                 ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-                ((ProblemDetail) problemDetail.getBody()).getType());
-    }
-
-    @Test
-    void
-            givenHandleMethodValidationExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
-
-        MethodValidationResult result = Mockito.mock(MethodValidationResult.class);
-
-        // setup
-        HandlerMethodValidationException exception = new HandlerMethodValidationException(result);
-
-        // execute
-        ResponseEntity<Object> problemDetail =
-                exceptionHandler.handleHandlerMethodValidationException(
-                        exception, null, null, null);
-
-        // assert
-        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
-        Assertions.assertNotNull(problemDetail.getBody());
-        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
-        Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
-        Assertions.assertEquals(
-                CommonAppError.METHOD_VALIDATION_INVALID_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
     }
 
@@ -189,7 +175,8 @@ class AppRegExceptionHandlerTest {
         String content = "test";
 
         // setup
-        HttpMessageNotReadableException exception = new HttpMessageNotReadableException(content);
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, (HttpInputMessage) null);
 
         // execute
         ResponseEntity<Object> problemDetail =
@@ -201,8 +188,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
 
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
-        Assertions.assertEquals(
-                content, ((ProblemDetail) (ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(content, ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
@@ -221,7 +207,7 @@ class AppRegExceptionHandlerTest {
 
         // setup
         HttpMessageNotReadableException exception =
-                new HttpMessageNotReadableException(content, dateTimeParseException);
+                new HttpMessageNotReadableException(content, dateTimeParseException, null);
 
         // execute
         ResponseEntity<Object> problemDetail =
@@ -234,8 +220,7 @@ class AppRegExceptionHandlerTest {
 
         Assertions.assertEquals(400, problemDetail.getStatusCode().value());
         Assertions.assertEquals(
-                dateExContent,
-                ((ProblemDetail) (ProblemDetail) problemDetail.getBody()).getDetail());
+                dateExContent, ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());

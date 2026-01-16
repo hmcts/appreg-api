@@ -42,7 +42,7 @@ public class CheckErrorCodeTest {
 
         List<String> errorCodesForAllClasses = new ArrayList<>();
         for (BeanDefinition bd : candidates) {
-            Class cls = Class.forName(bd.getBeanClassName());
+            Class<?> cls = Class.forName(bd.getBeanClassName());
 
             // check that all enums are enums
             Assertions.assertTrue(cls.isEnum());

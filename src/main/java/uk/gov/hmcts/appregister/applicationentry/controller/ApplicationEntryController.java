@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @Controller
@@ -51,7 +53,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         log.info("Retrieved Application Entry Lists");
         return ResponseEntity.ok()
-                .varyBy("Accept")
+                .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(applicationEntryService.search(filter, pageInfo));
     }
@@ -73,6 +75,24 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         return ResponseEntity.created(locationOf(entryGetDetailDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
+                .eTag(entryGetDetailDto.getEtag())
+                .body(entryGetDetailDto.getPayload());
+    }
+
+    @Override
+    public ResponseEntity<EntryGetDetailDto> updateApplicationListEntry(
+            UUID listId, UUID entryId, EntryUpdateDto entryUpdateDto) {
+        PayloadForUpdateEntry payloadForUpdateEntry =
+                new PayloadForUpdateEntry(entryUpdateDto, listId, entryId);
+
+        // create the entry
+        MatchResponse<EntryGetDetailDto> entryGetDetailDto =
+                applicationEntryService.updateEntry(payloadForUpdateEntry);
+        log.info("Update Application List Entry");
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(entryGetDetailDto.getPayload().getId())))
                 .eTag(entryGetDetailDto.getEtag())
                 .body(entryGetDetailDto.getPayload());
     }

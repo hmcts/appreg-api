@@ -46,7 +46,7 @@ class ApplicationEntryResultDeletionValidatorTest {
 
         when(applicationListRepository.findByUuid(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
-        when(applicationListEntryRepository.findByUuidAndApplicationListUuid(
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))
                 .thenReturn(Optional.of(entry));
         when(appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
@@ -103,7 +103,7 @@ class ApplicationEntryResultDeletionValidatorTest {
 
         when(applicationListRepository.findByUuid(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
-        when(applicationListEntryRepository.findByUuidAndApplicationListUuid(
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))
                 .thenReturn(Optional.empty());
 
@@ -126,7 +126,7 @@ class ApplicationEntryResultDeletionValidatorTest {
 
         when(applicationListRepository.findByUuid(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
-        when(applicationListEntryRepository.findByUuidAndApplicationListUuid(
+        when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))
                 .thenReturn(Optional.of(entry));
         when(appListEntryResultRepository.findByUuidAndApplicationList_Uuid(

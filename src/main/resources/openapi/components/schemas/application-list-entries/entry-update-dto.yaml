@@ -28,6 +28,7 @@ properties:
     type: integer
     description: Number of respondents required by the Application.
     example: 0
+    format: int16
 
   wordingFields:
     type: array

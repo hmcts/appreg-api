@@ -53,7 +53,7 @@ public class ApplicationEntryResultDeletionValidator
         validateList(applicationList);
 
         applicationListEntryRepository
-                .findByUuidAndApplicationListUuid(args.entryId(), args.listId())
+                .findActiveByUuidAndApplicationListUuid(args.entryId(), args.listId())
                 .orElseThrow(
                         () ->
                                 new AppRegistryException(
