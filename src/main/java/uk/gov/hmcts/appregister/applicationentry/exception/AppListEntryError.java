@@ -31,7 +31,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     APPLICANT_CODE_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The supplied application code does not exist", "ALE-5")),
+                    HttpStatus.NOT_FOUND, "The supplied applicant code does not exist", "ALE-5")),
 
     FEE_REQUIRED(
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "The code requires a fee", "ALE-6")),

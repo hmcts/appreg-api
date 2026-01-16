@@ -60,6 +60,7 @@ public abstract class ApplicationListEntryMapper {
     public abstract List<ApplicationListEntrySummary> toSummaryDtoList(
             List<ApplicationListEntrySummaryProjection> summaryProjections);
 
+    @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
     @Mapping(target = "applicant.person.name.surname", source = "applicantSurname")
     @Mapping(target = "applicant.person.name.firstForename", source = "applicantForename1")

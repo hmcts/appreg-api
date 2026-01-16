@@ -202,9 +202,7 @@ public class DataAuditLoggerTest {
 
         Long id = 123L;
         newCode.setId(id);
-
-        Long id1 = 123L;
-        oldCode.setId(id1);
+        oldCode.setId(id);
 
         StartEvent startEvent = new StartEvent(TestAuditOperation.UPDATE, "ID", oldCode);
         CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);

@@ -151,7 +151,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.setNumberOfRespondents(0);
 
         // use the applicant standard applicant
         entryCreateDto.setStandardApplicantCode("APP001");
@@ -463,8 +462,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.getRespondent().setOrganisation(null);
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-
-        updateDto.setNumberOfRespondents(10);
 
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("MS99007");

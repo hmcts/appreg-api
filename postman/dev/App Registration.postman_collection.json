@@ -242,7 +242,7 @@
 								"exec": [
 									"pm.expect(pm.response.code).to.equal(201);\r",
 									"const response = pm.response.json();\r",
-									"pm.environment.set(\"created_id\", response.id);"
+									"pm.environment.set(\"APP_LIST_ID\", response.id);"
 								],
 								"type": "text/javascript",
 								"packages": {},
@@ -321,13 +321,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists",
-								"{{created_id}}"
+								"{{APP_LIST_ID}}"
 							]
 						}
 					},
@@ -364,13 +364,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists/{{created_id}}",
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists",
-								"{{created_id}}"
+								"{{APP_LIST_ID}}"
 							]
 						}
 					},
@@ -448,7 +448,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=2012-07-25",
+							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=asdasdas",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
