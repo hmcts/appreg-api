@@ -69,10 +69,28 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             Pageable pageable);
 
     /**
-     * Retrieve a Resolution Code by its code, ignoring case.
-     *
-     * @param resultCode the resolution code (e.g. "RC123")
-     * @return an Optional containing the matching {@link ResolutionCode} if found
+     * Find the active ResolutionCode for a given result code (case-insensitive),
+     * prioritising open-ended rows (endDate IS NULL) when multiple are active.
+     * <p>
+     * "Active" is interpreted as:
+     *  - startDate <= today
+     *  - and (endDate is null OR endDate >= today)
      */
-    Optional<ResolutionCode> findByResultCodeIgnoreCase(String resultCode);
+    @Query(
+            """
+        select rc
+        from ResolutionCode rc
+        where lower(rc.resultCode) = lower(:resultCode)
+        and rc.startDate <= CURRENT_DATE
+        and (rc.endDate is null or rc.endDate >= CURRENT_DATE)
+        order by
+            case when rc.endDate is null then 0 else 1 end,
+            rc.endDate desc,
+            rc.startDate desc,
+            rc.id desc
+        """)
+    List<ResolutionCode> findActiveByResultCodeIgnoreCasePreferNullEndDate(
+        @Param("resultCode") String resultCode,
+        Pageable pageable
+    );
 }

@@ -5,6 +5,8 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
@@ -110,8 +112,11 @@ public class ApplicationEntryResultCreationValidator
     }
 
     private ResolutionCode validateResolutionCode(String resolutionCode) {
-        Optional<ResolutionCode> code =
-                resolutionCodeRepository.findByResultCodeIgnoreCase(resolutionCode);
+        var list = resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+            resolutionCode,
+            PageRequest.of(0, 1));
+
+        Optional<ResolutionCode> code = list.stream().findFirst();
 
         if (code.isEmpty()) {
             throw new AppRegistryException(
