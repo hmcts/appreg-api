@@ -10,12 +10,17 @@ get:
   parameters:
     - in: query
       name: code
-      schema: { type: string }
+      schema:
+        type: string
+        pattern: '^SA.*$'
+        maxLength: 10
       description: Filter by code (contains, case-insensitive).
     - in: query
       name: title
-      schema: { type: string }
       description: Filter by title (contains, case-insensitive).
+      schema:
+        type: string
+        maxLength: 500
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

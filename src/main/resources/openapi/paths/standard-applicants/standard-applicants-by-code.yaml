@@ -2,8 +2,11 @@ parameters:
   - in: path
     name: code
     required: true
-    schema: { type: string }
     description: Code used to identify the Standard Applicant (case-insensitive).
+    schema:
+      type: string
+      pattern: '^SA.*$'
+      maxLength: 10
   - in: query
     name: date
     required: true

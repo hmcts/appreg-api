@@ -2,8 +2,11 @@ parameters:
   - in: path
     name: code
     required: true
-    schema: { type: string }
     description: Code used to identify the Court Location (case-insensitive).
+    schema:
+      type: string
+      maxLength: 10
+      pattern: '^SA.*$'
   - in: query
     name: date
     required: true
