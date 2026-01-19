@@ -202,7 +202,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Attends to swear a complaint for the issue of "
                                     + "a summons for the debtor to answer an application for a "
                                     + "liability order in relation to unpaid council tax (reference"
-                                    + " test wording)",
+                                    + " {test wording})",
                             List.of("Reference"));
                 });
     }
@@ -436,7 +436,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
                 applicationListEntry.get(),
                 update.getPayload(),
-                "Application for a warrant to enter premises at value for date " + LocalDate.now(),
+                "Application for a warrant to enter premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
                 List.of("Premises Address", "Premises Date"),
                 feeStatusBeforeUpdate);
     }
@@ -547,8 +549,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Application for a warrant to enter"
-                        + " premises at value for date "
-                        + LocalDate.now(),
+                        + " premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
                 List.of("Premises Address", "Premises Date"),
                 feeStatusBeforeUpdate);
     }
@@ -662,7 +665,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 update.getPayload(),
                 "Attends to swear a complaint for the issue of a summons for the "
                         + "debtor to answer an application for a liability order in relation "
-                        + "to unpaid council tax (reference test wording)",
+                        + "to unpaid council tax (reference {test wording})",
                 List.of("Reference"),
                 feeStatusBeforeUpdate);
     }
@@ -735,8 +738,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListEntry,
                             response.getPayload(),
                             "Application for a warrant to ente"
-                                    + "r premises at test wording for date "
-                                    + LocalDate.now(),
+                                    + "r premises at {test wording} for date {"
+                                    + LocalDate.now()
+                                    + "}",
                             List.of("Premises Address", "Premises Date"));
                 });
 

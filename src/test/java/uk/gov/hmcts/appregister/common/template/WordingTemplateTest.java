@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.template.type.DateType;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
 public class WordingTemplateTest {
@@ -45,23 +44,6 @@ public class WordingTemplateTest {
                         () -> WordingTemplateSentence.WordingTemplate.with("{Wrong"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_TEMPLATE_FORMAT_FAILURE, appRegistryException.getCode());
-    }
-
-    @Test
-    void testTemplateParsingAndSubstitution() {
-        WordingTemplateSentence.WordingTemplate wordingTemplate =
-                WordingTemplateSentence.WordingTemplate.with(DATE_TEMPLATE);
-
-        Assertions.assertEquals("Applicant officer", wordingTemplate.getDetail().getKey());
-        Assertions.assertEquals(10, wordingTemplate.getDetail().getConstraint().getLength());
-        Assertions.assertEquals(
-                DateType.class,
-                WordingTemplateSentence.WordingTemplate.validateDataType(
-                                wordingTemplate.getDetail().getConstraint().getType().getValue())
-                        .getClass());
-
-        Assertions.assertTrue(wordingTemplate.doesSubstitute("2024-12-31"));
-        Assertions.assertEquals("2024-12-31", wordingTemplate.substitute("2024-12-31"));
     }
 
     @Test

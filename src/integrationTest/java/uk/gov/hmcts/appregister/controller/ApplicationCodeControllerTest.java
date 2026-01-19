@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -996,6 +997,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         TemplateDetail templateDetail = new TemplateDetail();
         templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
         applicationCodeGetSummaryDto.setWording(templateDetail);
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
@@ -1040,6 +1042,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
         applicationCodeGetSummaryDto.setWording(templateDetail);
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
 
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);

@@ -62,7 +62,7 @@ public class CreateEntryDtoUtil {
         substitution1.setValue(LocalDate.now().toString());
 
         // fill the template with the two parameters
-        entryCreateDto.setWordingFields(List.of(substitution, substitution));
+        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
         return entryCreateDto;
     }
 }

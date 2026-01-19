@@ -6,6 +6,10 @@ properties:
       type: string
       description: Field key for substitution into the template.
       example: "account-number"
+    value:
+      type: string
+      description: The optional value for the key.
+      example: "12345678"
     constraint:
       type: object
       description: The constraint details for the field

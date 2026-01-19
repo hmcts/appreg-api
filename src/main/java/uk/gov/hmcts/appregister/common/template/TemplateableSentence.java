@@ -5,8 +5,8 @@ import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
- * A templateable sentence that can have its multiple templateable items substituted. This interface
- * represents is a collection of all templateable items in the sentence.
+ * A templateable sentence that can have multiple templateable items substituted. This interface
+ * represents a collection of all templateable items in the sentence.
  */
 public interface TemplateableSentence {
 
@@ -39,7 +39,7 @@ public interface TemplateableSentence {
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException The first error that
      *     is seen
      */
-    String substitute(List<TemplateSubstitution> values);
+    SubstitutedSentence substitute(List<TemplateSubstitution> values);
 
     /**
      * Substitutes a single value into a sentence.
@@ -55,13 +55,27 @@ public interface TemplateableSentence {
      *
      * @return the substituted string so far
      */
-    String getSubstitutedSentence();
+    SubstitutedSentence getSubstitutedSentence();
 
     /**
-     * gets the template by the reference.
+     * gets an unsubstituted reference key.
      *
-     * @param referenceValue The reference
-     * @return Gets the first reference in the collection if multiple exist
+     * @param referenceKey The reference key
+     * @return Gets the first reference in the collection or null if not found
      */
-    Templateable getTemplateForReference(String referenceValue);
+    Templateable getTemplateForReference(String referenceKey);
+
+    /**
+     * gets the keys that need to be substituted.
+     *
+     * @return The key/value pairs that need to be substituted
+     */
+    List<TemplateSubstitution> getKeysToBeSubstituted();
+
+    /**
+     * Is substitute complete.
+     *
+     * @return Is substitute complete
+     */
+    boolean isSubstitutionComplete();
 }

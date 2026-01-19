@@ -27,6 +27,11 @@ public enum CommonAppError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "Values to be substituted does not match substituting values",
                     "COMMON-8")),
+    WORDING_SUBSTITUTE_KEY_NOT_FOUND(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Substitution key not found in the template",
+                    "COMMON-15")),
     CONSTRAINT_ERROR(
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Constraint Error", "COMMON-9")),
     TYPE_MISMATCH_ERROR(
