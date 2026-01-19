@@ -868,7 +868,58 @@
 						}
 					},
 					"response": []
-				}
+				},
+        {
+          "name": "Create Application List Entry Result",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    \"The Central Criminal Court\"\r\n  ]\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{listId}}/entries/{{entryId}}/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{listId}}",
+                "entries",
+                "{{entryId}}",
+                "results"
+              ]
+            }
+          },
+          "response": []
+        }
 			]
 		},
 		{
