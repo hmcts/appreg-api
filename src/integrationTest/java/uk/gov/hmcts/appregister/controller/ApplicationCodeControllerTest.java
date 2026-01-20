@@ -26,7 +26,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -34,8 +36,10 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -83,6 +87,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -120,6 +125,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -152,6 +158,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
@@ -195,6 +202,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -237,6 +245,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -277,6 +286,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
             throws Exception {
         // a date that is within range for the main but out of range for the offsite fee
@@ -321,6 +331,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
                     throws Exception {
@@ -394,6 +405,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
@@ -419,6 +431,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
                     throws Exception {
@@ -478,6 +491,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
                     throws Exception {
@@ -513,6 +527,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
             throws Exception {
 
@@ -541,6 +556,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
                     throws Exception {
@@ -571,6 +587,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
             throws Exception {
 
@@ -601,6 +618,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
             throws Exception {
         // create the token
@@ -632,6 +650,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
@@ -660,6 +679,41 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         Assertions.assertNull(page.getContent());
+    }
+
+    @StabilityTest
+    public void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (ApplicationCodeSortFieldEnum applicationCodeSortFieldEnum :
+                ApplicationCodeSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationCodeSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationCodeSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+            responseSpec.then().statusCode(200);
+        }
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
     @Test
@@ -692,7 +746,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn200()
+    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -730,7 +784,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     // accordingly
     @Test
     public void
-            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
+            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -809,6 +863,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
             throws Exception {
 
@@ -887,8 +942,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn400()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
+                    throws Exception {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));

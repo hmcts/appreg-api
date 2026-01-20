@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -13,6 +12,7 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
@@ -45,15 +45,20 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     }
 
     @Override
-    public CriminalJusticeAreaPage findAll(String code, String description, Pageable pageable) {
+    public CriminalJusticeAreaPage findAll(
+            String code, String description, PagingWrapper pageable) {
         return auditService.processAudit(
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
                 (req) -> {
                     org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
-                            criminalJusticeAreaRepository.search(code, description, pageable);
+                            criminalJusticeAreaRepository.search(
+                                    code, description, pageable.getPageable());
 
                     CriminalJusticeAreaPage criminalJusticeAreaPage = new CriminalJusticeAreaPage();
-                    pageMapper.toPage(criminalJusticeList, criminalJusticeAreaPage);
+                    pageMapper.toPage(
+                            criminalJusticeList,
+                            criminalJusticeAreaPage,
+                            pageable.getSortStrings());
                     criminalJusticeList.stream()
                             .forEach(
                                     (entry) ->

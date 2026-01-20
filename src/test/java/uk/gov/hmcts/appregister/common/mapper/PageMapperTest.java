@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -23,8 +24,9 @@ public class PageMapperTest {
         PageMapper mapper = new PageMapper();
         Page<?> page = new PageImpl<CriminalJusticeAreaGetDto>(List.of(), pageable, 25);
 
+        PagingWrapper wrapper = PagingWrapper.of(SortableField.of("apiSortField,desc"), pageable);
         CriminalJusticeAreaPage criminalJusticeAreaPage = new CriminalJusticeAreaPage();
-        mapper.toPage(page, criminalJusticeAreaPage);
+        mapper.toPage(page, criminalJusticeAreaPage, wrapper.getSortStrings());
 
         Assertions.assertEquals(0, criminalJusticeAreaPage.getPageNumber());
         Assertions.assertEquals(10, criminalJusticeAreaPage.getPageSize());
@@ -34,8 +36,7 @@ public class PageMapperTest {
                 SortOrdersInner.DirectionEnum.DESC,
                 criminalJusticeAreaPage.getSort().getOrders().get(0).getDirection());
         Assertions.assertEquals(
-                "testSortField",
-                criminalJusticeAreaPage.getSort().getOrders().get(0).getProperty());
+                "apiSortField", criminalJusticeAreaPage.getSort().getOrders().get(0).getProperty());
     }
 
     @Test
@@ -45,8 +46,10 @@ public class PageMapperTest {
         PageMapper mapper = new PageMapper();
         Page<?> page = new PageImpl<CriminalJusticeAreaGetDto>(List.of(), pageable, 25);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
         CriminalJusticeAreaPage criminalJusticeAreaPage = new CriminalJusticeAreaPage();
-        mapper.toPage(page, criminalJusticeAreaPage);
+        mapper.toPage(page, criminalJusticeAreaPage, wrapper.getSortStrings());
 
         Assertions.assertEquals(0, criminalJusticeAreaPage.getPageNumber());
         Assertions.assertEquals(10, criminalJusticeAreaPage.getPageSize());
