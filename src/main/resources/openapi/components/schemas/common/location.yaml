@@ -19,4 +19,4 @@ properties:
       type: string
       description: Criminal Justice Area code (exact match).
       example: "52"
-      maximum: 10
+      maximum: 2

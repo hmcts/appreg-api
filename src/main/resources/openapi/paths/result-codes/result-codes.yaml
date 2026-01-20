@@ -13,7 +13,7 @@ get:
       description: Filter by code (contains, case-insensitive).
       schema:
         type: string
-        maxLength: 2
+        maxLength: 10
     - in: query
       name: title
       description: Filter by title (contains, case-insensitive).

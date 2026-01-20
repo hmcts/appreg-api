@@ -42,7 +42,7 @@ properties:
     type: string
     description: Criminal Justice Area code.
     example: "CJA001"
-    maxLength: 10
+    maxLength: 2
 
   durationHours:
     type: integer

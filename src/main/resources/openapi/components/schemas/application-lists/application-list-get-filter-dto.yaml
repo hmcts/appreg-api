@@ -24,7 +24,7 @@ properties:
     type: string
     description: CJA code (exact match).
     example: "52"
-    maxLength: 10
+    maxLength: 2
 
   description:
     type: string

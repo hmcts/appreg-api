@@ -25,7 +25,7 @@ properties:
     type: string
     description: The Criminal Justice Area (CJA) associated with the application. This has to be Exact.
     example: "CJA-2025-001"
-    maxLength: 10
+    maxLength: 2
 
   applicantOrganisation:
     type: string

@@ -19,7 +19,7 @@ get:
       description: Filter by Court Location code (contains, case-insensitive).
       schema:
         type: string
-        maxLength: 100
+        maxLength: 10
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
