@@ -2090,11 +2090,11 @@ SELECT setval('aler_seq'::regclass, (SELECT MAX(aler_id)::bigint FROM app_list_e
 
 -- Insert our test data for V1
 INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
-VALUES ('24', 'test_support', 'check_data_expected_v24_present')
+VALUES ('25', 'test_support', 'check_data_expected_v25_present')
 ON CONFLICT DO NOTHING;
 
 -- Create the test as a function that RAISES EXCEPTION on failure
-CREATE OR REPLACE FUNCTION test_support.check_data_expected_v24_present()
+CREATE OR REPLACE FUNCTION test_support.check_data_expected_v25_present()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
     -- Check for national_court_houses that are not CHOA

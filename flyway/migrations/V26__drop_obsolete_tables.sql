@@ -32,13 +32,13 @@ DROP TABLE petty_sessional_areas;
 
 DROP SEQUENCE IF EXISTS psa_seq;
 
--- Insert our test data for V21
+-- Insert our test data for V26
 INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
-VALUES ('25', 'test_support', 'check_schema_objects_v25_present')
+VALUES ('26', 'test_support', 'check_schema_objects_v26_present')
 ON CONFLICT DO NOTHING;
 
 -- Create the test as a function that RAISES EXCEPTION on failure
-CREATE OR REPLACE FUNCTION test_support.check_schema_objects_v25_present()
+CREATE OR REPLACE FUNCTION test_support.check_schema_objects_v26_present()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
     -- Check addresses table is dropped
@@ -72,7 +72,7 @@ INSERT INTO test_support.test_registry (version, routine_schema, routine_name)
 VALUES ('3', 'test_support', 'check_schema_objects_v3_present')
 ON CONFLICT DO NOTHING;
 
--- Modify V3 script based on corrections becuase of running V23
+-- Modify V3 script based on corrections becuase of running V26
 CREATE OR REPLACE FUNCTION test_support.check_schema_objects_v3_present()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
