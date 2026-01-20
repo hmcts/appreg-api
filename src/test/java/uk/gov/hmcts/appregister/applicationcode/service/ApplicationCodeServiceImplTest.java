@@ -43,6 +43,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
@@ -134,7 +135,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(code, null, Pageable.ofSize(10));
+                applicationCodeService.findAll(
+                        code, null, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -176,7 +178,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(null, title, Pageable.ofSize(10));
+                applicationCodeService.findAll(
+                        null, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -219,7 +222,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(code, title, Pageable.ofSize(10));
+                applicationCodeService.findAll(
+                        code, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -259,7 +263,8 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(null, null, Pageable.ofSize(10).withPage(0));
+                applicationCodeService.findAll(
+                        null, null, PagingWrapper.of(List.of(), Pageable.ofSize(10).withPage(0)));
 
         // make assertion
         Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());

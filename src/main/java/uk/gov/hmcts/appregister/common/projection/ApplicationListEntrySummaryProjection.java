@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.projection;
 import java.util.UUID;
 
 public interface ApplicationListEntrySummaryProjection {
+    Long getId();
 
     UUID getUuid();
 

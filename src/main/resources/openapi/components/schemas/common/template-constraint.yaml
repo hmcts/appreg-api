@@ -1,0 +1,13 @@
+type: object
+description: The template field with an associated value
+required: [type, length]
+properties:
+    type:
+      type: string
+      description: The data type of the value.
+      enum: [ DATE, TEXT ]
+      example: "TEXT"
+    length:
+      type: integer
+      description: The length of the data value.
+      example: 1234

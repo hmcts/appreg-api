@@ -27,10 +27,13 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.client.request.DateGetRequest;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
@@ -258,6 +261,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -282,6 +286,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         Assertions.assertEquals("APP003", returnedSc.getCode());
     }
 
+    @StabilityTest
     @Test
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithoutExplicitSort_thenReturn200()
@@ -348,6 +353,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithExplicitSort_thenReturn200()
                     throws Exception {
@@ -395,6 +401,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetStandardApplicantWithPagingNoResult_thenReturn200()
             throws Exception {
 
@@ -423,6 +430,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
                     throws Exception {
@@ -456,6 +464,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
                     throws Exception {
@@ -485,6 +494,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForOrganisation_thenReturn200()
                     throws Exception {
@@ -523,6 +533,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForNameOfIndividual_thenReturn200()
                     throws Exception {
@@ -585,6 +596,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForSurNameOfIndividual_thenReturn200()
                     throws Exception {
@@ -636,6 +648,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetStandardApplicantWithPagingAllFilter_thenReturn200()
             throws Exception {
         // create the token
@@ -667,6 +680,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
@@ -693,6 +707,41 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         Assertions.assertNull(page.getContent());
+    }
+
+    @StabilityTest
+    public void givenSASuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(standardApplicantSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    standardApplicantSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+        }
+
+        Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
     }
 
     @Test
@@ -724,7 +773,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     // returns a 500
     @Test
     public void
-            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn200()
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn400()
                     throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -755,7 +804,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
     // accordingly
     @Test
     public void
-            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
         // create the token
         TokenGenerator tokenGenerator =

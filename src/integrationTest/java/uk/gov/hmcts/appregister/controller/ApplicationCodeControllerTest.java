@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -25,7 +26,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -33,6 +36,10 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
+import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -80,6 +87,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -117,6 +125,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -149,6 +158,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithOffsiteFeeButNoMain_thenReturn200()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
@@ -192,6 +202,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -234,6 +245,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
                     throws Exception {
@@ -274,6 +286,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
             throws Exception {
         // a date that is within range for the main but out of range for the offsite fee
@@ -318,6 +331,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
                     throws Exception {
@@ -391,6 +405,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesDateIsNotSet_thenReturn400()
             throws Exception {
         // a date that is within range for the offset but out of range for the main fee
@@ -416,6 +431,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithoutExplicitSort_thenReturn200()
                     throws Exception {
@@ -447,7 +463,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         assertEquals("AD99003", firstEntry.getApplicationCode());
         assertEquals("Extract from the Court Register", firstEntry.getTitle());
-        assertEquals("Certified extract from the court register", firstEntry.getWording());
+        assertEquals(
+                "Certified extract from the court register", firstEntry.getWording().getTemplate());
         assertTrue(firstEntry.getIsFeeDue());
         Assertions.assertFalse(firstEntry.getRequiresRespondent());
         Assertions.assertFalse(firstEntry.getBulkRespondentAllowed());
@@ -463,7 +480,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertEquals(
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
-                secondEntry.getWording());
+                secondEntry.getWording().getTemplate());
         Assertions.assertFalse(secondEntry.getIsFeeDue());
         Assertions.assertFalse(secondEntry.getRequiresRespondent());
         Assertions.assertFalse(secondEntry.getBulkRespondentAllowed());
@@ -474,6 +491,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingCriteriaWithExplicitSort_thenReturn200()
                     throws Exception {
@@ -509,6 +527,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingNoResult_thenReturn200()
             throws Exception {
 
@@ -537,6 +556,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPagingApplicationCodeFilter_thenReturn200()
                     throws Exception {
@@ -567,6 +587,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingTitleFilter_thenReturn200()
             throws Exception {
 
@@ -597,6 +618,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesWithPagingAllFilter_thenReturn200()
             throws Exception {
         // create the token
@@ -628,6 +650,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
@@ -656,6 +679,41 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         Assertions.assertNull(page.getContent());
+    }
+
+    @StabilityTest
+    public void givenApplicationCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (ApplicationCodeSortFieldEnum applicationCodeSortFieldEnum :
+                ApplicationCodeSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationCodeSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationCodeSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+            responseSpec.then().statusCode(200);
+        }
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
     @Test
@@ -688,7 +746,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     // 0 and returns a 200. Our implementation
     // returns a 500
     @Test
-    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn200()
+    public void givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageNumber_thenReturn400()
             throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -726,7 +784,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     // accordingly
     @Test
     public void
-            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
+            givenValidRequest_whenGetApplicationCodesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -805,6 +863,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeNotValid_thenReturn404()
             throws Exception {
 
@@ -883,8 +942,9 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
     }
 
     @Test
-    public void givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn400()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
+                    throws Exception {
 
         // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
@@ -906,6 +966,81 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 ApplicationCodeError.DUPLICATE_CODE_FOUND.getCode(), responseSpec);
     }
 
+    @Test
+    public void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
+
+        String id = "SW99007";
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
+
+        // assert
+        Assertions.assertEquals(
+                "Application for an order to allow the applicant "
+                        + "to inspect or take copies of bankers books held by {{Name of Bank}} in respect "
+                        + "of criminal proceedings at {{Name of Court}}.",
+                response.getWording().getTemplate());
+        Assertions.assertEquals(2, response.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Name of Bank",
+                response.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                100,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+
+        Assertions.assertEquals(
+                "Name of Court",
+                response.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                100,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+
+        // assert the audit log message
+        assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
+                        logCaptor.getInfoLogs().get(0)));
+
+        assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                COMPLETION_AUDIT_LOG,
+                                GET_APPCODE_AUDIT_ACTION,
+                                OperationStatus.COMPLETED),
+                        logCaptor.getInfoLogs().get(1)));
+    }
+
     private ApplicationCodeGetSummaryDto
             generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
                     Optional<String> mainFeeDesc,
@@ -915,8 +1050,11 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 new ApplicationCodeGetSummaryDto();
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
         applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
-        applicationCodeGetSummaryDto.setWording(
+        TemplateDetail templateDetail = new TemplateDetail();
+        templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
+        applicationCodeGetSummaryDto.setWording(templateDetail);
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
@@ -956,8 +1094,12 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
         applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
-        applicationCodeGetSummaryDto.setWording(
+        TemplateDetail templateDetail = new TemplateDetail();
+        templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
+        applicationCodeGetSummaryDto.setWording(templateDetail);
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
+
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);

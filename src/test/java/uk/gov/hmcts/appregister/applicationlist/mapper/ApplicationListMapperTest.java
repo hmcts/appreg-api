@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.UUID;
 import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
@@ -182,8 +186,13 @@ public class ApplicationListMapperTest {
                             .version(3L)
                             .build();
 
+            Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+            ApplicationListEntrySummary entrySummary =
+                    Instancio.of(ApplicationListEntrySummary.class).withSettings(settings).create();
+
             // When
-            ApplicationListGetDetailDto dto = mapper.toGetDetailDto(appList, null, 0L);
+            ApplicationListGetDetailDto dto =
+                    mapper.toGetDetailDto(appList, null, 0L, List.of(entrySummary));
 
             assertNull(dto.getCjaCode());
             assertNull(dto.getOtherLocationDescription());
@@ -198,6 +207,7 @@ public class ApplicationListMapperTest {
             assertEquals(2, dto.getDurationHours());
             assertEquals(30, dto.getDurationMinutes());
             assertEquals(3L, dto.getVersion());
+            assertEquals(entrySummary, dto.getEntriesSummary().get(0));
         }
     }
 

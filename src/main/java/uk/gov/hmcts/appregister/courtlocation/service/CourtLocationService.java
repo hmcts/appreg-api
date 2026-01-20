@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.courtlocation.service;
 
 import java.time.LocalDate;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 
@@ -44,5 +45,5 @@ public interface CourtLocationService {
      * @param pageable Spring Data paging and sorting configuration
      * @return a page of summarised Court Locations with metadata
      */
-    CourtLocationPage getPage(String name, String code, Pageable pageable);
+    CourtLocationPage getPage(String name, String code, PagingWrapper pageable);
 }

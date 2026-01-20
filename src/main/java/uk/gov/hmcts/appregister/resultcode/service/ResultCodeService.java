@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.resultcode.service;
 
 import java.time.LocalDate;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 
@@ -44,5 +45,5 @@ public interface ResultCodeService {
      * @param pageable Spring Data paging and sorting configuration
      * @return a page of summarised Result Codes with metadata
      */
-    ResultCodePage findAll(String codeFilter, String titleFilter, Pageable pageable);
+    ResultCodePage findAll(String codeFilter, String titleFilter, PagingWrapper pageable);
 }

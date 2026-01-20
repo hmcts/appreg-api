@@ -13,10 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -49,6 +52,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     private static final int TOTAL_CJA_COUNT = 4;
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
             throws Exception {
         // create the token
@@ -110,6 +114,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeArea_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -148,6 +153,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaWithPaging_thenReturn200()
             throws Exception {
         // create the token
@@ -192,6 +198,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaSort_thenReturn200() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
@@ -256,6 +263,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaFilterByCode_thenReturn200()
             throws Exception {
         // create the token
@@ -298,6 +306,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaFilterByDescription_thenReturn200()
             throws Exception {
         // create the token
@@ -340,6 +349,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
     }
 
     @Test
+    @StabilityTest
     public void
             givenValidRequest_whenGetCriminalJusticeAreaFilterByCodeAndDescription_thenReturn200()
                     throws Exception {
@@ -381,6 +391,41 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
+    }
+
+    @StabilityTest
+    public void givenCriminalJusticeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (CriminalJusticeSortFieldEnum criminalJusticeSortFieldEnum :
+                CriminalJusticeSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(criminalJusticeSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            CriminalJusticeAreaPage page = responseSpec.as(CriminalJusticeAreaPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    criminalJusticeSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+        }
+
+        Assertions.assertTrue(CriminalJusticeSortFieldEnum.values().length > 0);
     }
 
     private CriminalJusticeAreaGetDto generateDefaultCriminalJusticeDtoAssertionPayload(
