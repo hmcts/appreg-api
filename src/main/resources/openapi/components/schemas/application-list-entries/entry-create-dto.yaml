@@ -35,7 +35,6 @@ properties:
     description: >
       An array of user-provided values used to populate placeholders in the 'wording'. The wording is a field belonging
       to the linked Application Code. Each string is applied to the wording in the order they are provided.
-    example: ["25 October 2025", "London"]
 
   feeStatuses:
     type: array

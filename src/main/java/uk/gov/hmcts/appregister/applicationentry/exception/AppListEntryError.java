@@ -6,19 +6,19 @@ import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 
 /**
- * An enumeration to capture the errors for the application entry list.
+ * An enumeration to capture the errors for the application list entry.
  */
 public enum AppListEntryError implements ErrorCodeEnum {
     RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "The respondent type can only be an organsisation or person",
+                    "The respondent type can only be an organisation or person",
                     "ALE-1")),
 
     APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "The applicant type can only be an organsisation, person, or standard applicant",
+                    "The applicant type can only be an organisation, person, or standard applicant",
                     "ALE-2")),
 
     APPLICATION_CODE_DOES_NOT_EXIST(

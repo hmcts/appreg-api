@@ -97,7 +97,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         PayloadForUpdateEntry payloadForUpdateEntry =
                 new PayloadForUpdateEntry(entryUpdateDto, listId, entryId);
 
-        // create the entry
+        // update the entry
         MatchResponse<EntryGetDetailDto> entryGetDetailDto =
                 applicationEntryService.updateEntry(payloadForUpdateEntry);
         log.info("Update Application List Entry");
@@ -134,7 +134,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     /**
-     * Builds the resource location URI for a given Application List ID.
+     * Builds the resource location URI for a given Application List Entry ID.
      *
      * @param entry the unique is for the entry
      * @return a {@link URI} pointing to the resource location

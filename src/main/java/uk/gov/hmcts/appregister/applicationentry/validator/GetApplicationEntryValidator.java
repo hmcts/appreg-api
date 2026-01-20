@@ -63,7 +63,7 @@ public class GetApplicationEntryValidator
             throw new AppRegistryException(
                     AppListEntryError.ENTRY_DOES_NOT_EXIST,
                     "The application entry %s does not exist in application list %s"
-                            .formatted(validatable.getEntryId(), validatable.getEntryId()));
+                            .formatted(validatable.getEntryId(), validatable.getListId()));
         }
 
         log.debug(" application list entry is found {}", validatable.getEntryId());

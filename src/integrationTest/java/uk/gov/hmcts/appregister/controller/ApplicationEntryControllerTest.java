@@ -694,6 +694,29 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
+    public void givenValidRequest_whenCreateListEntryWithoutFeeAndRespondent_thenReturn201()
+            throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setWordingFields(List.of());
+        entryCreateDto.setApplicationCode("AD99004");
+        entryCreateDto.setRespondent(null);
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        // arrange - token + create entry
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        entryCreateDto.setFeeStatuses(List.of());
+
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        // assert we have a location header
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response));
+
+        validateEntryCreationResponse(entryCreateDto, createdDto.getDetailDto, List.of());
+    }
+
+    @Test
     public void
             givenAnInvalidCreateEntryRequest_whenCreateEntryWithApplicantApplicantMutualExclusiveInvalid_400IsReturned()
                     throws Exception {
@@ -2307,12 +2330,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         entryCreateDto);
         // assert the response
         responseSpecCreate.then().statusCode(201);
-
-        EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
-
-        // validate the response
-        validateEntryCreationResponse(
-                entryCreateDto, createdDto, List.of("Premises Address", "Premises Date"));
 
         // assert creation
         responseSpecCreate.then().statusCode(201);

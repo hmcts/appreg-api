@@ -10,7 +10,3 @@ properties:
     type: string
     description: The field value to substitute into the template key
     example: "1234"
-example:
-  fields:
-    - property: "account"
-      value: "1234"
