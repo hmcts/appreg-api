@@ -2,16 +2,27 @@ package uk.gov.hmcts.appregister.testutils.client;
 
 import static io.restassured.RestAssured.given;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.restassured.RestAssured;
+import io.restassured.config.ObjectMapperConfig;
+import io.restassured.config.RestAssuredConfig;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.apache.http.HttpHeaders;
+import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeDeserializer;
+import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 @Component
@@ -25,6 +36,26 @@ public class RestAssuredClient {
 
     @Value("${spring.data.web.sort.sort-parameter}")
     private String sortQueryName;
+
+    // Initialize RestAssured configuration
+    {
+        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+
+        // Setup the serializer and deserializer for LocalTime with format "HH:mm"
+        timeModule.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
+        timeModule.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
+        objectMapper.registerModule(timeModule);
+        objectMapper.registerModule(new JsonNullableModule());
+        RestAssured.config =
+                RestAssuredConfig.config()
+                        .objectMapperConfig(
+                                ObjectMapperConfig.objectMapperConfig()
+                                        .jackson2ObjectMapperFactory(
+                                                (cls, charset) -> objectMapper));
+    }
 
     /**
      * gets a request builder that can be used to make requests against the application.
@@ -176,6 +207,21 @@ public class RestAssuredClient {
      * @return The specification of the response
      */
     public Response executePostRequest(URL url, TokenAndJwksKey token, Object object) {
+        return given().body(object)
+                .header("Authorization", "Bearer " + token.getToken())
+                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .post(url)
+                .andReturn();
+    }
+
+    /**
+     * posts a request builder that can be used to make requests against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @return The specification of the response
+     */
+    public Response executePostRequest(URL url, TokenAndJwksKey token, String object) {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")

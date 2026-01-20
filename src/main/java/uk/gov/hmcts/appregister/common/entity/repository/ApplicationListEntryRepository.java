@@ -286,6 +286,35 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
 
     /**
+     * Finds an entry for Uuid.
+     *
+     * @param entryId The entry id
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuid(UUID entryId);
+
+    /**
+     * Finds all entities with the given IDs, within the associated list.
+     *
+     * @param entryId The entry id
+     * @param listId The list that the entry resides in
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
+
+    /**
      * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
      * rows updated.
      *

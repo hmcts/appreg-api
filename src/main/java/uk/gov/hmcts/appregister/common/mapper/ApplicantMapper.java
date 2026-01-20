@@ -154,9 +154,9 @@ public abstract class ApplicantMapper {
      * @return The name address
      */
     public NameAddress toApplicantNameAddress(Applicant applicant) {
-        if (applicant.getPerson() != null) {
+        if (applicant != null && applicant.getPerson() != null) {
             return toPerson(applicant.getPerson());
-        } else if (applicant.getOrganisation() != null) {
+        } else if (applicant != null && applicant.getOrganisation() != null) {
             return toOrganisation(applicant.getOrganisation());
         } else {
             return null;
@@ -170,11 +170,11 @@ public abstract class ApplicantMapper {
      * @return The name address
      */
     public NameAddress toRespondentNameAddress(Respondent applicant) {
-        if (applicant.getPerson() != null) {
+        if (applicant != null && applicant.getPerson() != null) {
             NameAddress nameAddress = toPerson(applicant.getPerson());
             nameAddress.setDateOfBirth(applicant.getDateOfBirth());
             return nameAddress;
-        } else if (applicant.getOrganisation() != null) {
+        } else if (applicant != null && applicant.getOrganisation() != null) {
             NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
             nameAddress.setDateOfBirth(applicant.getDateOfBirth());
             return nameAddress;

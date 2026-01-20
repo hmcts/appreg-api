@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE})
 public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -54,12 +54,12 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
     @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)

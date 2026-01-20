@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.CREATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
     public static final String RESPONDENT_CODE = "RE";
     public static final String APPLICANT_CODE = "AP";
@@ -44,7 +44,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "na_gen")
     @SequenceGenerator(name = "na_gen", sequenceName = "na_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long id;
 
     @Column(name = "code")

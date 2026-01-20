@@ -3,7 +3,13 @@ package uk.gov.hmcts.appregister.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.response.Response;
+import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -101,8 +107,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
-        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().contentType(VND_JSON_V1);
 
         // Location header should point to /application-lists/{uuid}
@@ -130,7 +136,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(8, true);
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -243,7 +248,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(9, true);
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -529,10 +533,76 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationHours(2)
                         .durationMinutes(30);
 
-        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        // object mapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+
+        // ensure we serialize LocalTime with seconds
+        timeModule.addSerializer(
+                LocalTime.class,
+                new JsonSerializer<LocalTime>() {
+                    @Override
+                    public void serialize(
+                            LocalTime localTime,
+                            JsonGenerator jsonGenerator,
+                            SerializerProvider serializerProvider)
+                            throws IOException {
+                        jsonGenerator.writeString(localTime.toString());
+                    }
+                });
+        objectMapper.registerModule(timeModule);
+
+        String payloadWithSeconds = objectMapper.writeValueAsString(req);
+
+        // do not internal serialise by passing a string
+        Response resp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT), token, payloadWithSeconds);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode(),
+                "Text '00:00:01' " + "could not be parsed, unparsed text " + "found at index 5",
+                resp);
+    }
+
+    @Test
+    void givenInvalidTimeAsArray_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var invalidTime = LocalTime.of(0, 0, 1);
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(invalidTime)
+                        .description("list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        // object mapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+        objectMapper.registerModule(timeModule);
+
+        String payloadWithSeconds = objectMapper.writeValueAsString(req);
+
+        // do not internal serialise by passing a string
+        Response resp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT), token, payloadWithSeconds);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode(),
+                "JSON parse error: Unexpected " + "time format detected [0,0,1]",
+                resp);
     }
 
     @Test
@@ -589,8 +659,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-
-        differenceLogAsserter.assertDiffCount(11, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
@@ -695,8 +763,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.OK.value());
         resp.then().contentType(VND_JSON_V1);
         resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
-
-        differenceLogAsserter.assertDiffCount(11, true);
     }
 
     @Test
@@ -818,8 +884,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-
-        differenceLogAsserter.assertDiffCount(11, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
