@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -8,6 +9,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
@@ -57,9 +59,12 @@ public interface ApplicationListMapper {
     @Mapping(target = "durationMinutes", source = "appList.durationMinutes")
     @Mapping(target = "version", source = "appList.version")
     @Mapping(target = "entriesCount", source = "entryCount")
-    @Mapping(target = "entriesSummary", ignore = true)
+    @Mapping(target = "entriesSummary", source = "entriesSummary")
     ApplicationListGetDetailDto toGetDetailDto(
-            ApplicationList appList, CriminalJusticeArea cja, long entryCount);
+            ApplicationList appList,
+            CriminalJusticeArea cja,
+            long entryCount,
+            List<ApplicationListEntrySummary> entriesSummary);
 
     @Mapping(target = "id", source = "appList.uuid")
     @Mapping(target = "date", source = "appList.date")

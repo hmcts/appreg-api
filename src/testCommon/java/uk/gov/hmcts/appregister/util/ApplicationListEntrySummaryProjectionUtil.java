@@ -10,6 +10,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
     }
 
     public static final class Builder {
+        private Long id;
         private UUID uuid;
         private short sequenceNumber;
         private String accountNumber;
@@ -65,8 +66,14 @@ public final class ApplicationListEntrySummaryProjectionUtil {
             return this;
         }
 
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
         public ApplicationListEntrySummaryProjection build() {
             return new Impl(
+                    id,
                     uuid,
                     sequenceNumber,
                     accountNumber,
@@ -80,6 +87,8 @@ public final class ApplicationListEntrySummaryProjectionUtil {
     }
 
     private static final class Impl implements ApplicationListEntrySummaryProjection {
+
+        private final Long id;
         private final UUID uuid;
         private final short sequenceNumber;
         private final String accountNumber;
@@ -91,6 +100,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         private final String result;
 
         Impl(
+                Long id,
                 UUID uuid,
                 short sequenceNumber,
                 String accountNumber,
@@ -109,6 +119,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
             this.applicationTitle = applicationTitle;
             this.feeRequired = feeRequired;
             this.result = result;
+            this.id = id;
         }
 
         @Override
@@ -154,6 +165,11 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         @Override
         public String getResult() {
             return result;
+        }
+
+        @Override
+        public Long getId() {
+            return id;
         }
     }
 }

@@ -11,6 +11,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -33,6 +34,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
+import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -447,7 +450,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         assertEquals("AD99003", firstEntry.getApplicationCode());
         assertEquals("Extract from the Court Register", firstEntry.getTitle());
-        assertEquals("Certified extract from the court register", firstEntry.getWording());
+        assertEquals(
+                "Certified extract from the court register", firstEntry.getWording().getTemplate());
         assertTrue(firstEntry.getIsFeeDue());
         Assertions.assertFalse(firstEntry.getRequiresRespondent());
         Assertions.assertFalse(firstEntry.getBulkRespondentAllowed());
@@ -463,7 +467,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         assertEquals(
                 "Request for a certificate of satisfaction of debt registered in the register "
                         + "of judgements, orders and fines",
-                secondEntry.getWording());
+                secondEntry.getWording().getTemplate());
         Assertions.assertFalse(secondEntry.getIsFeeDue());
         Assertions.assertFalse(secondEntry.getRequiresRespondent());
         Assertions.assertFalse(secondEntry.getBulkRespondentAllowed());
@@ -906,6 +910,81 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 ApplicationCodeError.DUPLICATE_CODE_FOUND.getCode(), responseSpec);
     }
 
+    @Test
+    public void givenValidRequest_whenGetWithMultipleTemplateValues_thenReturn200()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
+
+        String id = "SW99007";
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
+
+        // assert
+        Assertions.assertEquals(
+                "Application for an order to allow the applicant "
+                        + "to inspect or take copies of bankers books held by {{Name of Bank}} in respect "
+                        + "of criminal proceedings at {{Name of Court}}.",
+                response.getWording().getTemplate());
+        Assertions.assertEquals(2, response.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Name of Bank",
+                response.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                100,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+
+        Assertions.assertEquals(
+                "Name of Court",
+                response.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                100,
+                response.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+
+        // assert the audit log message
+        assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
+                        logCaptor.getInfoLogs().get(0)));
+
+        assertTrue(
+                Pattern.matches(
+                        getExpectedLog(
+                                COMPLETION_AUDIT_LOG,
+                                GET_APPCODE_AUDIT_ACTION,
+                                OperationStatus.COMPLETED),
+                        logCaptor.getInfoLogs().get(1)));
+    }
+
     private ApplicationCodeGetSummaryDto
             generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
                     Optional<String> mainFeeDesc,
@@ -915,8 +994,11 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 new ApplicationCodeGetSummaryDto();
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
         applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
-        applicationCodeGetSummaryDto.setWording(
+        TemplateDetail templateDetail = new TemplateDetail();
+        templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
+        applicationCodeGetSummaryDto.setWording(templateDetail);
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
@@ -956,8 +1038,12 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
         applicationCodeGetSummaryDto.setTitle("Copy documents (electronic)");
-        applicationCodeGetSummaryDto.setWording(
+        TemplateDetail templateDetail = new TemplateDetail();
+        templateDetail.setTemplate(
                 "Request for copy documents on computer disc or in electronic form");
+        applicationCodeGetSummaryDto.setWording(templateDetail);
+        templateDetail.setSubstitutionKeyConstraints(new ArrayList<>());
+
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);

@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -86,11 +84,6 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
     // Foreign key reference to a linked location record.
     @Column(name = "loc_loc_id")
     private Long locationId;
-
-    // Foreign key reference to the petty sessions area (PSA).
-    @ManyToOne()
-    @JoinColumn(name = "psa_psa_id", nullable = false)
-    private PettySessionalArea psaId;
 
     // Business reference code for this court location, used in integrations.
     @Column(name = "court_location_code")
