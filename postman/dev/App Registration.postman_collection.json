@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "a7829e9e-0391-4cee-9a3d-2e85ef24a263",
+		"_postman_id": "d6ba91e7-9f82-4f69-be37-2a94c3187865",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-a7829e9e-0391-4cee-9a3d-2e85ef24a263?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-d6ba91e7-9f82-4f69-be37-2a94c3187865?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -442,7 +442,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=asdasdas",
+							"raw": "{{APP_REG_HOST}}/application-codes/MS99007?date=2017-07-25",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],

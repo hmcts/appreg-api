@@ -3,7 +3,13 @@ package uk.gov.hmcts.appregister.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.response.Response;
+import java.io.IOException;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -26,8 +32,10 @@ import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -44,6 +52,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
@@ -81,6 +90,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
     private static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
 
+    @Autowired private ApplicationListRepository applicationListRepository;
+
+    @Autowired private TransactionalUnitOfWork unitOfWork;
+
     @Autowired private ApplicationListEntryRepository aleRepository;
 
     // --- Happy path: create with COURT --------------------------------------------------------
@@ -105,8 +118,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
 
-        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
         resp.then().contentType(VND_JSON_V1);
 
         // Location header should point to /application-lists/{uuid}
@@ -128,6 +141,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtName()).isEqualTo(VALID_COURT_NAME);
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
+        assertThat(dto.getEntriesSummary()).isNotNull();
 
         String eventName = "Create Application List";
         String operation = "CREATE";
@@ -240,6 +254,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo(VALID_OTHER_LOCATION);
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+        assertThat(dto.getEntriesSummary()).isNotNull();
 
         String eventName = "Create Application List";
         String operation = "CREATE";
@@ -531,10 +546,76 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .durationHours(2)
                         .durationMinutes(30);
 
-        Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
+        // object mapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+
+        // ensure we serialize LocalTime with seconds
+        timeModule.addSerializer(
+                LocalTime.class,
+                new JsonSerializer<LocalTime>() {
+                    @Override
+                    public void serialize(
+                            LocalTime localTime,
+                            JsonGenerator jsonGenerator,
+                            SerializerProvider serializerProvider)
+                            throws IOException {
+                        jsonGenerator.writeString(localTime.toString());
+                    }
+                });
+        objectMapper.registerModule(timeModule);
+
+        String payloadWithSeconds = objectMapper.writeValueAsString(req);
+
+        // do not internal serialise by passing a string
+        Response resp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT), token, payloadWithSeconds);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        ProblemAssertUtil.assertEquals(ApplicationListError.INVALID_TIME.getCode(), resp);
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode(),
+                "Text '00:00:01' " + "could not be parsed, unparsed text " + "found at index 5",
+                resp);
+    }
+
+    @Test
+    void givenInvalidTimeAsArray_whenCreate_then400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        var invalidTime = LocalTime.of(0, 0, 1);
+
+        var req =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(invalidTime)
+                        .description("list_(court)")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(2)
+                        .durationMinutes(30);
+
+        // object mapper
+        ObjectMapper objectMapper = new ObjectMapper();
+        JavaTimeModule timeModule = new JavaTimeModule();
+        objectMapper.registerModule(timeModule);
+
+        String payloadWithSeconds = objectMapper.writeValueAsString(req);
+
+        // do not internal serialise by passing a string
+        Response resp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WEB_CONTEXT), token, payloadWithSeconds);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode(),
+                "JSON parse error: Unexpected " + "time format detected [0,0,1]",
+                resp);
     }
 
     @Test
@@ -772,6 +853,76 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isNull();
     }
 
+    @Test
+    void givenValidRequest_whenUpdateWithCourtWithReturnedEntrySummaries_then200AndBody()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        CourtLocationGetDetailDto courtLocationGetDetailDto = new CourtLocationGetDetailDto();
+        courtLocationGetDetailDto.setLocationCode(VALID_COURT_CODE2);
+        courtLocationGetDetailDto.setStartDate(LocalDate.now());
+        courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
+        courtLocationGetDetailDto.setName("Manchester Crown Court");
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(
+                                        getLocalUrl(WEB_CONTEXT)
+                                                + "/"
+                                                + getFirstOpenListToUpdate().toString())
+                                .toURL(),
+                        token,
+                        req);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().contentType(VND_JSON_V1);
+        resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
+
+        // Location header should point to /application-lists/{uuid}
+        // Assert
+        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+        assertThat(dto.getId()).isNotNull();
+        assertThat(dto.getVersion()).isEqualTo(2L); // per seed: Version = 0
+        assertThat(dto.getDate()).isEqualTo(LocalDate.parse("2025-10-19"));
+        assertThat(dto.getTime()).isEqualTo("11:30"); // mapper emits "HH:mm" when seconds = 0
+        assertThat(dto.getDescription()).isEqualTo("Morning list (court) update");
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getDurationHours()).isEqualTo(4);
+        assertThat(dto.getDurationMinutes()).isEqualTo(32);
+
+        // Court populated, CJA null
+        assertThat(dto.getCourtCode()).isEqualTo(VALID_COURT_CODE2);
+        assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
+        assertThat(dto.getCjaCode()).isNull();
+        assertThat(dto.getOtherLocationDescription()).isNull();
+        assertThat(dto.getEntriesSummary()).hasSize(5);
+        assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("APPC");
+        assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
+                .isEqualTo("Copy documents");
+        assertThat(dto.getEntriesSummary().get(1).getResult().get()).isEqualTo("AUTH");
+        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
+                .isEqualTo("Copy documents (electronic)");
+        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
+                .isEqualTo("Extract from the Court Register");
+        assertThat(dto.getEntriesSummary().get(4).getApplicationTitle())
+                .isEqualTo("Certificate of Satisfaction");
+    }
+
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
     void givenValidRequest_whenUpdateWithCja_then201() throws Exception {
@@ -816,6 +967,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
+
+        differenceLogAsserter.assertDiffCount(12, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
@@ -2157,6 +2310,20 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         Assertions.assertEquals(
                 ApplicationListError.LIST_NOT_FOUND.getCode().getAppCode(),
                 problemDetail.getType().toString());
+    }
+
+    /**
+     * gets the first open list.
+     *
+     * @return The uuid of the first open list
+     */
+    private UUID getFirstOpenListToUpdate() {
+        ApplicationList applicationList =
+                unitOfWork.inTransaction(
+                        () -> {
+                            return applicationListRepository.findAll().getFirst();
+                        });
+        return applicationList.getUuid();
     }
 
     @Test

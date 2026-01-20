@@ -15,6 +15,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -46,7 +48,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
-import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
@@ -87,6 +88,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryPro
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
@@ -125,6 +127,10 @@ public class ApplicationListServiceImplTest {
     private DummyApplicationListGetValidator getValidator =
             new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
 
+    @Spy
+    private DummyApplicationDeleteListValidator deletionValidator =
+            new DummyApplicationDeleteListValidator(repository);
+
     @Mock private PageMapper pageMapper;
 
     @Mock private ApplicationListEntryMapper entryMapper;
@@ -141,10 +147,6 @@ public class ApplicationListServiceImplTest {
             };
 
     @Spy private MatchService matchService = new MatchServiceImpl(NULL_MATCH_PROVIDER);
-
-    @Spy
-    private DummyApplicationDeleteListLocationValidator deletionValidator =
-            new DummyApplicationDeleteListLocationValidator(repository);
 
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
@@ -181,9 +183,6 @@ public class ApplicationListServiceImplTest {
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
-        // given
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
-
         NationalCourtHouse court = new NationalCourtHouse();
 
         ListLocationValidationSuccess success = new ListLocationValidationSuccess();
@@ -191,35 +190,37 @@ public class ApplicationListServiceImplTest {
 
         validator.setSuccess(success);
 
-        ApplicationList entityToSave = new ApplicationList();
-
-        when(mapper.toCreateEntityWithCourt(dto, court)).thenReturn(entityToSave);
-
         ApplicationList saved = new ApplicationList();
-        saved.setId(2L);
-        saved.setVersion(3L);
+        saved.setUuid(UUID.randomUUID());
+        saved.setId(1L);
+        saved.setVersion(9L);
 
-        when(repository.save(entityToSave)).thenReturn(saved);
+        // given
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+
+        when(mapper.toCreateEntityWithCourt(dto, court)).thenReturn(saved);
+
+        when(repository.save(saved)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expected);
+
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(result.getPayload(), expected);
-
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
-
-        verify(mapper).toGetDetailDto(saved, null, 0L);
+        verify(mapper, times(1)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     @Test
     void update_validCourt_savesAndReturnsDto() {
+
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
@@ -234,16 +235,24 @@ public class ApplicationListServiceImplTest {
         success.setApplicationList(applicationList);
         updateValidator.setSuccess(success);
 
+        ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
+        saved.setId(1L);
+        saved.setVersion(9L);
+
         ApplicationList entityToSave = new ApplicationList();
 
-        ApplicationList saved = new ApplicationList();
-        saved.setId(2L);
-        saved.setVersion(3L);
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
-        when(mapper.toGetDetailDto(saved, null, 0L)).thenReturn(expectedDto);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expectedDto);
+
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
+        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate.builder().id(UUID.randomUUID()).data(dto).build();
@@ -256,6 +265,8 @@ public class ApplicationListServiceImplTest {
 
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
+
+        verify(mapper, times(2)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
     }
 
     // -------- CJA PATH --------
@@ -266,39 +277,39 @@ public class ApplicationListServiceImplTest {
         doNothing().when(entityManager).flush();
         doNothing().when(entityManager).refresh(any(ApplicationList.class));
 
-        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
         CriminalJusticeArea cja = new CriminalJusticeArea();
 
         ListLocationValidationSuccess success = new ListLocationValidationSuccess();
         success.setCriminalJusticeArea(cja);
         validator.setSuccess(success);
 
-        ApplicationList entityToSave = new ApplicationList();
-        when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(entityToSave);
-
         ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
+        saved.setVersion(2L);
         saved.setId(2L);
-        saved.setVersion(3L);
+        when(repository.save(saved)).thenReturn(saved);
 
-        when(repository.save(entityToSave)).thenReturn(saved);
+        ApplicationListCreateDto dto = mock(ApplicationListCreateDto.class);
+        when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
+                ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.create(dto);
         Assertions.assertNotNull(result.getEtag());
         Assertions.assertEquals(expected, result.getPayload());
 
         verify(validator).validate(eq(dto), notNull());
-        verify(repository).save(entityToSave);
-        verify(mapper).toGetDetailDto(saved, cja, 0L);
-
+        verify(repository).save(saved);
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.CREATE_APP_LIST), notNull(), notNull());
+
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test
@@ -317,20 +328,29 @@ public class ApplicationListServiceImplTest {
 
         updateValidator.setSuccess(success);
 
+        ApplicationList saved = new ApplicationList();
+        saved.setUuid(UUID.randomUUID());
+        saved.setVersion(2L);
+        saved.setId(9L);
+
         ApplicationList entityToSave = new ApplicationList();
 
-        ApplicationList saved = new ApplicationList();
-        saved.setId(2L);
-        saved.setVersion(3L);
         when(repository.save(entityToSave)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        when(mapper.toGetDetailDto(saved, cja, 0L)).thenReturn(expected);
+        ArgumentCaptor<List> summaryCaptor = ArgumentCaptor.forClass(List.class);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
-                new PayloadForUpdate<>(dto, UUID.randomUUID());
+                new PayloadForUpdate<>(dto, saved.getUuid());
+
+        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
+        mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
         Assertions.assertNotNull(result.getEtag());
@@ -339,30 +359,38 @@ public class ApplicationListServiceImplTest {
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
 
-        verify(mapper).toGetDetailDto(saved, cja, 0L);
+        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(0L), notNull());
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.UPDATE_APP_LIST), notNull(), notNull());
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
+        verify(mapper, times(1))
+                .toGetDetailDto(eq(saved), isNull(), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test
     void delete_validId_deletesEntry() {
+        // the app list that is deleted
+        ApplicationList applicationList = new ApplicationList();
         UUID id = UUID.randomUUID();
+        applicationList.setUuid(id);
+
         ListDeleteValidationSuccess success = new ListDeleteValidationSuccess();
-        success.setApplicationList(new ApplicationList());
+        success.setApplicationList(applicationList);
+
         deletionValidator.setSuccess(success);
+
+        ApplicationList entityToSave = new ApplicationList();
+
+        ApplicationList saved = new ApplicationList();
+        when(repository.save(entityToSave)).thenReturn(saved);
 
         service.delete(id);
 
         verify(deletionValidator).validate(eq(id), notNull());
         verify(repository).save(any(ApplicationList.class));
-        verify(auditOperationService)
-                .processAudit(
-                        any(), eq(AppListAuditOperation.DELETE_APP_LIST), notNull(), notNull());
     }
 
     @Test
@@ -452,7 +480,6 @@ public class ApplicationListServiceImplTest {
         Pageable pageable = mock(Pageable.class);
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
         LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
 
         when(repository.findAllByFilter(
@@ -517,8 +544,6 @@ public class ApplicationListServiceImplTest {
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
-        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
-
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
                         isNull(),
@@ -610,7 +635,6 @@ public class ApplicationListServiceImplTest {
         row.setCja(cja);
 
         Pageable pageable = mock(Pageable.class);
-        when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
@@ -689,11 +713,13 @@ public class ApplicationListServiceImplTest {
 
     @Test
     void getPage_noCourtOrCja_derivesLocation_usesFallback() {
+
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
         ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
+
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Pageable pageable = mock(Pageable.class);
@@ -817,7 +843,7 @@ public class ApplicationListServiceImplTest {
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        when(mapper.toGetDetailDto(saved, saved.getCja(), 0L)).thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
 
         ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
@@ -947,8 +973,8 @@ public class ApplicationListServiceImplTest {
                         .feeRequired(feeRequired)
                         .result(result)
                         .build();
-        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
 
+        Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 
@@ -984,15 +1010,21 @@ public class ApplicationListServiceImplTest {
                 AuditOperation auditType,
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
-            Optional<AuditableResult<T, E>> optional =
-                    execution.apply(
-                            new CompleteEvent(
-                                    new StartEvent(
-                                            AppListAuditOperation.CREATE_APP_LIST,
-                                            UUID.randomUUID().toString(),
-                                            null),
-                                    "result",
-                                    null));
+
+            // Build a StartEvent using the passed auditType so tests reflect the correct operation
+            StartEvent start = new StartEvent(auditType, UUID.randomUUID().toString(), null);
+
+            // Create a CompleteEvent (mimics production lifecycle) and run the supplied function.
+            CompleteEvent complete = new CompleteEvent(start, "result", null);
+
+            Optional<AuditableResult<T, E>> optional = execution.apply(complete);
+
+            // Fail fast and clearly if the supplier returned empty (avoid obscure NPEs in tests)
+            if (optional.isEmpty()) {
+                throw new IllegalStateException(
+                        "Audit execution returned empty Optional for operation: " + auditType);
+            }
+
             return optional.get().getResultingValue();
         }
     }
@@ -1072,18 +1104,23 @@ public class ApplicationListServiceImplTest {
     }
 
     @Setter
-    class DummyApplicationDeleteListLocationValidator extends ApplicationListDeletionValidator {
+    class DummyApplicationDeleteListValidator extends ApplicationListDeletionValidator {
         private ListDeleteValidationSuccess success;
 
-        public DummyApplicationDeleteListLocationValidator(ApplicationListRepository repository) {
+        public DummyApplicationDeleteListValidator(ApplicationListRepository repository) {
             super(repository);
         }
 
         @Override
         public <R> R validate(
-                UUID uuid,
-                BiFunction<UUID, ListDeleteValidationSuccess, R> createApplicationSupplier) {
-            return createApplicationSupplier.apply(uuid, success);
+                UUID deletionId, BiFunction<UUID, ListDeleteValidationSuccess, R> deleteSupplier) {
+
+            return deleteSupplier.apply(deletionId, success);
         }
     }
+
+    /*@SuppressWarnings("unchecked")
+    private static <T> ArgumentCaptor<T> captorOf() {
+        return (ArgumentCaptor<T>) ArgumentCaptor.forClass((Class) BiFunction.class);
+    }*/
 }
