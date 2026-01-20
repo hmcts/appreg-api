@@ -41,7 +41,7 @@ properties:
   cjaCode:
     type: string
     description: Criminal Justice Area code.
-    example: "CJA001"
+    example: "CJ"
     maxLength: 2
 
   durationHours:
