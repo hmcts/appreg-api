@@ -448,7 +448,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-codes/AP99001?date=asdasdas",
+							"raw": "{{APP_REG_HOST}}/application-codes/MS99007?date=2017-07-25",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
