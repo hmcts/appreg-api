@@ -13,7 +13,6 @@ get:
       description: Filter by code (contains, case-insensitive).
       schema:
         type: string
-        pattern: '^SA.*$'
         maxLength: 2
     - in: query
       name: description

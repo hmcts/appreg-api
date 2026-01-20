@@ -527,7 +527,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new ApplicationCodeRequestFilter(
-                                Optional.of("does not exist"), Optional.of("does not exist")),
+                                Optional.of("not exist"), Optional.of("does not exist")),
                         new OpenApiPageMetaData());
 
         // assert the response is successful with no content
@@ -809,7 +809,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
             throws Exception {
 
         // execute the functionality
-        String id = "doesntexist";
+        String id = "notexist";
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(WEB_CONTEXT + "/" + id, OffsetDateTime.now()),

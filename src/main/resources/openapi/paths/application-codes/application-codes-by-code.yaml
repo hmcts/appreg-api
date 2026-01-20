@@ -6,7 +6,6 @@ parameters:
     schema:
       type: string
       maxLength: 10
-      pattern: '^SA.*$'
   - in: query
     name: date
     required: true

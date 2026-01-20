@@ -1617,7 +1617,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
         // setup the payload
-        entryUpdateDto.setApplicationCode("INVALID_CODE");
+        entryUpdateDto.setApplicationCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =
@@ -1829,7 +1829,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setApplicant(null);
-        entryUpdateDto.setStandardApplicantCode("INVALID_CODE");
+        entryUpdateDto.setStandardApplicantCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =

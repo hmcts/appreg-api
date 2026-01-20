@@ -4,7 +4,6 @@ parameters:
     required: true
     schema:
       type: string
-      pattern: '^SA.*$'
       maxLength: 10
     description: Code used to identify the Result Code (case-insensitive).
   - in: query

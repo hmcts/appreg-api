@@ -5,7 +5,6 @@ parameters:
     description: Code used to identify the Result Code (case-insensitive).
     schema:
       type: string
-      pattern: '^SA.*$'
       maxLength: 10
 get:
   operationId: getCriminalJusticeAreaByCode

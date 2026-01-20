@@ -12,7 +12,7 @@ get:
       name: name
       schema:
         type: string
-        pattern: '^SA.*$'
+        maxLength: 100
       description: Filter by court name (contains, case-insensitive).
     - in: query
       name: code

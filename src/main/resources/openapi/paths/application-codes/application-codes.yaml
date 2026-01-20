@@ -12,7 +12,6 @@ get:
       name: code
       schema:
         type: string
-        pattern: '^SA.*$'
         maxLength: 10
       description: Filter by code (contains, case-insensitive).
     - in: query
