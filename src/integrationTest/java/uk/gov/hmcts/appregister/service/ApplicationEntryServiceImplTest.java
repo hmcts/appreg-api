@@ -40,6 +40,7 @@ import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -145,18 +146,24 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
 
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Reference");
+        substitution.setValue("test wording");
+
         // set the organisation and person applicant to null so we use the standard applicant
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.setNumberOfRespondents(0);
+        entryCreateDto.setWordingFields(List.of(substitution));
 
         // use the applicant standard applicant
         entryCreateDto.setStandardApplicantCode("APP001");
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("CT99002");
-        entryCreateDto.setWordingFields(List.of("test wording"));
+        entryCreateDto.setWordingFields(List.of(substitution));
 
         MatchResponse<EntryGetDetailDto> response;
 
@@ -195,7 +202,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Attends to swear a complaint for the issue of "
                                     + "a summons for the debtor to answer an application for a "
                                     + "liability order in relation to unpaid council tax (reference"
-                                    + " test wording)",
+                                    + " {test wording})",
                             List.of("Reference"));
                 });
     }
@@ -351,7 +358,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setApplicant(null);
         entryUpdateDto.setStandardApplicantCode("APP001");
         entryUpdateDto.setApplicationCode("ZS99007");
-        entryUpdateDto.setWordingFields(List.of("test wording", LocalDate.now().toString()));
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("value");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
+        entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
@@ -420,8 +436,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
                 applicationListEntry.get(),
                 update.getPayload(),
-                "Application for a warrant to enter premises at test wording for date "
-                        + LocalDate.now(),
+                "Application for a warrant to enter premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
                 List.of("Premises Address", "Premises Date"),
                 feeStatusBeforeUpdate);
     }
@@ -467,8 +484,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.setApplicationCode("MS99007");
         updateDto.setStandardApplicantCode(null);
 
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("value");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
         // fill the template with the two parameters
-        updateDto.setWordingFields(List.of("test wording", LocalDate.now().toString()));
+        updateDto.setWordingFields(List.of(substitution, substitution1));
 
         // execute the test
         PayloadForUpdateEntry payloadForCreate =
@@ -524,8 +549,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Application for a warrant to enter"
-                        + " premises at test wording for date "
-                        + LocalDate.now(),
+                        + " premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
                 List.of("Premises Address", "Premises Date"),
                 feeStatusBeforeUpdate);
     }
@@ -574,7 +600,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.setStandardApplicantCode("APP001");
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("CT99002");
-        updateDto.setWordingFields(List.of("test wording"));
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Reference");
+        substitution.setValue("test wording");
+
+        updateDto.setWordingFields(List.of(substitution));
 
         // execute the test
         PayloadForUpdateEntry payloadForCreate =
@@ -634,7 +665,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 update.getPayload(),
                 "Attends to swear a complaint for the issue of a summons for the "
                         + "debtor to answer an application for a liability order in relation "
-                        + "to unpaid council tax (reference test wording)",
+                        + "to unpaid council tax (reference {test wording})",
                 List.of("Reference"),
                 feeStatusBeforeUpdate);
     }
@@ -662,8 +693,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
 
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("test wording");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
         // fill the template with the two parameters
-        entryCreateDto.setWordingFields(List.of("test wording", LocalDate.now().toString()));
+        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
         MatchResponse<EntryGetDetailDto> response;
 
@@ -699,8 +738,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListEntry,
                             response.getPayload(),
                             "Application for a warrant to ente"
-                                    + "r premises at test wording for date "
-                                    + LocalDate.now(),
+                                    + "r premises at {test wording} for date {"
+                                    + LocalDate.now()
+                                    + "}",
                             List.of("Premises Address", "Premises Date"));
                 });
 

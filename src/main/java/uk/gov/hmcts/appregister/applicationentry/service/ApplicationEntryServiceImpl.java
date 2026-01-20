@@ -166,7 +166,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                         .substitute(
                                                                                 entryCreateDto
                                                                                         .getData()
-                                                                                        .getWordingFields()),
+                                                                                        .getWordingFields())
+                                                                        .getSubstitutedString(),
                                                                 success.getSa(),
                                                                 applicantToSave,
                                                                 respondentToSave,
@@ -258,7 +259,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                             .substitute(
                                                                                     updateEntry
                                                                                             .getData()
-                                                                                            .getWordingFields()),
+                                                                                            .getWordingFields())
+                                                                            .getSubstitutedString(),
                                                                     success.getSa(),
                                                                     success.getApplicationCode(),
                                                                     success.getApplicationList(),

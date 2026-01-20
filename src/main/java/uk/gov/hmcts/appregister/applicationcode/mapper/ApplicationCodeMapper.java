@@ -14,9 +14,11 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 
 /**
  * Mapper for ApplicationCode entity and ApplicationCodeDto.
@@ -82,7 +84,7 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
-    @Mapping(target = "wording", source = "entity.wording")
+    @Mapping(target = "wording", expression = "java(getTemplateDetail(entity))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(
@@ -104,6 +106,20 @@ public abstract class ApplicationCodeMapper {
             ApplicationCode entity, Fee fee, Fee offsiteFee);
 
     /**
+     * gets a template detail from the code.
+     *
+     * @param entity The application code entity
+     * @return The template details
+     */
+    public TemplateDetail getTemplateDetail(ApplicationCode entity) {
+        if (entity.getWording() != null) {
+            WordingTemplateSentence sentence = WordingTemplateSentence.with(entity.getWording());
+            return sentence.getDetail();
+        }
+        return null;
+    }
+
+    /**
      * maps the application code entity to detail dto.
      *
      * @param entity the application code entity
@@ -115,7 +131,7 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
-    @Mapping(target = "wording", source = "entity.wording")
+    @Mapping(target = "wording", expression = "java(getTemplateDetail(entity))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(

@@ -1,24 +1,26 @@
 package uk.gov.hmcts.appregister.common.template;
 
-import uk.gov.hmcts.appregister.common.template.type.DataType;
+import uk.gov.hmcts.appregister.generated.model.TemplateKeyWithConstraint;
 
 /**
  * A class that supports a template which values can be substituted into. Templates are assumed to
  * contain data that supports the validity of values that are substituted.
- *
- * <p>1) Reference string 2) Data type e.g. text, date, integer etc 3) Length.
  */
 public interface Templateable {
 
     /**
-     * Gets the reference string of the template.
+     * Gets value for the template.
+     *
+     * @return The value for the template
+     */
+    String getValue();
+
+    /**
+     * Gets the ket constraint of the template.
      *
      * @return The reference string of the template.
      */
-    String getReference();
-
-    /** Substitutes the given value into the template. */
-    String substitute(String value);
+    TemplateKeyWithConstraint getDetail();
 
     /**
      * Can substitute be performed with the given options.
@@ -28,6 +30,19 @@ public interface Templateable {
      */
     void canValueBeSubstituted(String value);
 
+    /**
+     * Is substitute complete.
+     *
+     * @return Is substitute complete
+     */
+    boolean isSubstitutionComplete();
+
+    /**
+     * does value substitute according to the rules.
+     *
+     * @param value The value to check
+     * @return True or false
+     */
     default boolean doesSubstitute(String value) {
         try {
             canValueBeSubstituted(value);
@@ -36,18 +51,4 @@ public interface Templateable {
             return false;
         }
     }
-
-    /**
-     * gets the type of the template.
-     *
-     * @return The type of the template
-     */
-    DataType getType();
-
-    /**
-     * The length of the template restriction.
-     *
-     * @return The length restriction
-     */
-    Integer getLength();
 }

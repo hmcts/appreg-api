@@ -44,6 +44,8 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.generated.model.TemplateKeyWithConstraint;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -469,7 +471,16 @@ public abstract class ApplicationListEntryMapper {
      * @return The list of template keys (references)
      */
     public List<String> getTemplateKeys(ApplicationCode code) {
-        return WordingTemplateSentence.with(code.getWording()).getReferences();
+        ArrayList<String> retKeys = new ArrayList<>();
+        TemplateDetail templateDetail = WordingTemplateSentence.with(code.getWording()).getDetail();
+        if (templateDetail.getSubstitutionKeyConstraints() != null) {
+            for (TemplateKeyWithConstraint substitution :
+                    templateDetail.getSubstitutionKeyConstraints()) {
+                retKeys.add(substitution.getKey());
+            }
+        }
+
+        return retKeys;
     }
 
     public List<FeeStatus> getFeeStatusList(List<AppListEntryFeeStatus> feeStatusList) {
