@@ -1,0 +1,12 @@
+type: object
+description: The template details
+properties:
+    template:
+      type: string
+      description: The template name. It contains the field names between curly braces.
+      example: "This is a test {{Applicant officer}} with a date"
+    substitution-key-constraints:
+      type: array
+      description: A list of fields and the associated constraints
+      items:
+       $ref: "../common/template-key-with-constraint.yaml"
