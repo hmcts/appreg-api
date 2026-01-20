@@ -468,7 +468,7 @@ dependencies {
 
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
-  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.6'
+  testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.5.7'
   testImplementation("org.openapitools:jackson-databind-nullable:0.2.8")
   testImplementation 'org.springframework.security:spring-security-test'
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
