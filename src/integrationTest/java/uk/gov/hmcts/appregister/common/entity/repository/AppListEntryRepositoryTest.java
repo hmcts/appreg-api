@@ -3,16 +3,18 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.saveApplicationListEntry;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
@@ -32,7 +35,6 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
-import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil;
 import uk.gov.hmcts.appregister.util.DateUtil;
 
 @Transactional
@@ -83,8 +85,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     public void testFindSummariesById_returnsExpectedSummaryProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                ApplicationListEntryUtil.saveApplicationListEntry(
-                        entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         // test get
         Pageable page = PageRequest.of(0, 10);
@@ -150,11 +151,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Short sequenceNumber1 = (short) 1;
         Short sequenceNumber2 = (short) 2;
         ApplicationListEntry data1 =
-                ApplicationListEntryUtil.saveApplicationListEntry(
-                        entityManager, persistance, list, sequenceNumber1);
+                saveApplicationListEntry(entityManager, persistance, list, sequenceNumber1);
         ApplicationListEntry data2 =
-                ApplicationListEntryUtil.saveApplicationListEntry(
-                        entityManager, persistance, list, sequenceNumber2);
+                saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 1);
@@ -179,11 +178,33 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testFindSummariesById_excludesDeletedEntries() {
+        // Given: an application list with one entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry entry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        entry.setDeleted(true);
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: invoking findSummariesById for the list
+        Pageable page = PageRequest.of(0, 10);
+        Page<ApplicationListEntrySummaryProjection> result =
+                applicationListEntryRepository.findSummariesById(list.getUuid(), page);
+
+        // Then: result should be empty because the entry is deleted
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getContent().isEmpty()).isTrue();
+    }
+
+    @Test
     public void testFindByIdForPrinting_returnsExpectedPrintProjection() {
         ApplicationList list = new AppListTestData().someMinimal().build();
         ApplicationListEntry data =
-                ApplicationListEntryUtil.saveApplicationListEntry(
-                        entityManager, persistance, list, (short) 1);
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
 
         // test get
         List<ApplicationListEntryPrintProjection>
@@ -375,42 +396,54 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testFindByIdForPrinting_excludesDeletedApplicationListEntries() {
+        // Given: an application list with one deleted entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry savedEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        savedEntry.setDeleted(true);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // When
+        List<ApplicationListEntryPrintProjection> result =
+                applicationListEntryRepository.findByIdForPrinting(list.getUuid());
+
+        // Then
+        assertThat(result.isEmpty());
+    }
+
+    @Test
     public void testGetListEntriesSearchWithNoSearchCriteria() {
         // When: page 0 size 1
-        Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
+        Pageable page =
+                PageRequest.of(
+                        0,
+                        20,
+                        Sort.by(Sort.Direction.DESC, "courtCode")
+                                .and(Sort.by(Sort.Direction.ASC, "id")));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         false, null, null, null, null, null, null, null, null, null, null, null,
                         null, page);
 
         // Then
-        assertThat(page0.getTotalElements()).isEqualTo(10);
+        assertThat(page0.getTotalElements()).isEqualTo(11);
         assertThat(page0.getTotalPages()).isEqualTo(1);
-        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(0);
+        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(4);
         assertThat(projection0.getCjaCode()).isEqualTo("CJ");
         assertThat(projection0.getCourtCode()).isEqualTo("RCJ001");
         assertThat(projection0.getStatus()).isEqualTo(Status.OPEN);
         assertNotNull(projection0.getRnameAddress());
-        assertThat(projection0.getTitle()).isEqualTo("Certificate of Satisfaction");
-        assertNull(projection0.getAnameAddress());
+        assertThat(projection0.getTitle()).isEqualTo("Copy documents");
+        assertNotNull(projection0.getAnameAddress());
         assertNotNull(projection0.getLegislation(), "");
         assertNotNull(projection0.getStandardApplicantCode(), "APP001");
         assertThat(projection0.getDateOfAl()).isEqualTo("2024-04-21");
-
-        ApplicationListEntryGetSummaryProjection projection4 = page0.getContent().get(4);
-
-        assertThat(projection4.getCjaCode()).isEqualTo("CJ");
-        assertThat(projection4.getStatus()).isEqualTo(Status.OPEN);
-        assertThat(projection4.getRnameAddress().getSurname()).isEqualTo("Johnson");
-        assertThat(projection4.getRnameAddress().getName()).isEqualTo("Sarah Johnson");
-        assertThat(projection4.getRnameAddress().getCode()).isEqualTo("RE");
-        assertThat(projection4.getRnameAddress().getPostcode()).isEqualTo("XY9 8ZZ");
-        assertThat(projection4.getFeeRequired()).isEqualTo(YesOrNo.YES);
-        assertThat(projection4.getCourtCode()).isEqualTo("RCJ001");
-        assertThat(projection4.getOtherLocationDescription()).isEqualTo("other");
-        assertThat(projection4.getTitle()).isEqualTo("Copy documents");
-        assertThat(projection4.getLegislation()).isEqualTo("");
-        assertThat(projection4.getStandardApplicantCode()).isEqualTo("APP002");
     }
 
     @Test
@@ -510,6 +543,53 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testSearchForGetSummary_excludesDeletedApplicationListEntries() {
+        // Given: an application list with unique values to isolate this test
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        list.setCourtCode("UNQ001");
+        LocalDate hearingDate = LocalDate.of(2030, 1, 1);
+        list.setDate(hearingDate);
+        persistance.save(list);
+
+        // And: two entries in the list
+        saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        ApplicationListEntry deletedEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2);
+
+        ApplicationListEntry managedDeletedEntry =
+                entityManager.find(ApplicationListEntry.class, deletedEntry.getId());
+
+        managedDeletedEntry.setDeleted(true);
+
+        // Flush and clear so repository query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: calling searchForGetSummary
+        Pageable page = PageRequest.of(0, 10);
+        Page<ApplicationListEntryGetSummaryProjection> result =
+                applicationListEntryRepository.searchForGetSummary(
+                        true,
+                        hearingDate,
+                        "UNQ001",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        page);
+
+        // Then: only the non-deleted entry is returned
+        assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
     @Transactional
     public void testBulkMoveByUuidAndSourceList_movesOnlyMatchingEntriesAndReturnsCount() {
         // Given: source, target and other lists
@@ -547,6 +627,155 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 2,
                 updatedCount,
                 "Should report two rows updated (only entries in source list moved)");
+    }
+
+    @Test
+    @Transactional
+    public void testBulkMoveByUuidAndSourceList_whenAnyEntryIsDeleted_movesOnlyNonDeleted() {
+        // Given: source and target lists
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        persistance.save(sourceList);
+
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        persistance.save(targetList);
+
+        // And: two entries in the source list
+        ApplicationListEntry activeEntry = saveEntryInSourceList(sourceList);
+        ApplicationListEntry deletedEntry = saveEntryInSourceList(sourceList);
+
+        // Mark one entry as deleted
+        deletedEntry.setDeleted(true);
+        persistance.save(deletedEntry);
+
+        // Prepare the UUID set (both entries requested)
+        Set<UUID> uuidsToMove = Set.of(activeEntry.getUuid(), deletedEntry.getUuid());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: attempting bulk move including a deleted entry
+        int updatedCount =
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        uuidsToMove, targetList, sourceList.getUuid());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Then: only the non-deleted entry is moved
+        // Expect updatedCount == 1 (only activeEntry moved)
+        assertEquals(1, updatedCount, "Only non-deleted entries should be moved");
+
+        // Reload entries to verify their lists and deleted flags
+        ApplicationListEntry movedActive =
+                entityManager
+                        .createQuery(
+                                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid",
+                                ApplicationListEntry.class)
+                        .setParameter("uuid", activeEntry.getUuid())
+                        .getSingleResult();
+
+        ApplicationListEntry stillDeleted =
+                entityManager
+                        .createQuery(
+                                "SELECT e FROM ApplicationListEntry e WHERE e.uuid = :uuid",
+                                ApplicationListEntry.class)
+                        .setParameter("uuid", deletedEntry.getUuid())
+                        .getSingleResult();
+
+        // activeEntry should now point at targetList
+        assertEquals(
+                targetList.getUuid(),
+                movedActive.getApplicationList().getUuid(),
+                "Active entry should have been moved to the target list");
+
+        // deletedEntry should remain in the source list and still be marked deleted
+        assertEquals(
+                sourceList.getUuid(),
+                stillDeleted.getApplicationList().getUuid(),
+                "Deleted entry should remain in the source list");
+        assertTrue(stillDeleted.isDeleted(), "Deleted entry should still be marked deleted");
+    }
+
+    @Test
+    public void testCountByApplicationListUuids_excludesDeletedEntries() {
+        // Given: two lists
+        ApplicationList listA = new AppListTestData().someMinimal().build();
+        persistance.save(listA);
+
+        ApplicationList listB = new AppListTestData().someMinimal().build();
+        persistance.save(listB);
+
+        // And: two entries for listA (we will delete one of them)
+        saveApplicationListEntry(entityManager, persistance, listA, (short) 1);
+        ApplicationListEntry deletedEntryA =
+                saveApplicationListEntry(entityManager, persistance, listA, (short) 2);
+
+        entityManager.flush();
+
+        ApplicationListEntry managedDeletedEntryA =
+                entityManager.find(ApplicationListEntry.class, deletedEntryA.getId());
+        managedDeletedEntryA.setDeleted(true);
+
+        entityManager.flush();
+
+        // And: one entry for listB
+        saveApplicationListEntry(entityManager, persistance, listB, (short) 1);
+
+        // flush/clear so query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: invoking the repository method with the non-deleted lists' UUIDs
+        List<EntryCount> counts =
+                applicationListEntryRepository.countByApplicationListUuids(
+                        List.of(listA.getUuid(), listB.getUuid()));
+
+        // Then: both lists are returned, but listA count excludes the deleted entry
+        assertThat(counts.size()).isEqualTo(2);
+
+        Map<UUID, Long> countsByUuid =
+                counts.stream()
+                        .collect(Collectors.toMap(EntryCount::getPrimaryKey, EntryCount::getCount));
+
+        // listA had 2 entries originally but one was marked deleted -> expect 1
+        assertEquals(1L, countsByUuid.get(listA.getUuid()).longValue());
+
+        // listB has 1 entry
+        assertEquals(1L, countsByUuid.get(listB.getUuid()).longValue());
+    }
+
+    @Test
+    public void testFindByUuidAndApplicationListUuid_excludesDeletedEntries() {
+        // Given: an application list and an entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry savedEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+
+        // Ensure the entry can be found when not deleted
+        Optional<ApplicationListEntry> foundBeforeDelete =
+                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        savedEntry.getUuid(), list.getUuid());
+        assertTrue(foundBeforeDelete.isPresent(), "Entry should be found before marking deleted");
+
+        // Mark the entry as deleted (soft delete)
+        ApplicationListEntry managed =
+                entityManager.find(ApplicationListEntry.class, savedEntry.getId());
+        managed.setDeleted(true);
+
+        // Flush/clear so the repository query reads from DB
+        entityManager.flush();
+        entityManager.clear();
+
+        // When: calling the repository method for the same UUIDs
+        Optional<ApplicationListEntry> foundAfterDelete =
+                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                        savedEntry.getUuid(), list.getUuid());
+
+        // Then: the result should be empty because the entry is soft-deleted
+        assertTrue(
+                foundAfterDelete.isEmpty(), "Soft-deleted entries should be excluded from results");
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry_;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
@@ -45,6 +47,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -103,6 +106,13 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     public record TimeWindow(LocalTime start, LocalTime end, Boolean wrapsMidnight) {}
+
+    /**
+     * The default internal application entry summary page. This guarantees a stable set of
+     * summaries.
+     */
+    public static final Pageable ENTRY_SUMMARY_SORT =
+            Pageable.unpaged(Sort.by(Sort.Direction.ASC, ApplicationListEntry_.ID));
 
     /**
      * {@inheritDoc}
@@ -170,7 +180,18 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     @Override
     @Transactional
-    public ApplicationListGetDetailDto get(UUID id, Pageable pageable) {
+    public ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable) {
+        return getListDetailDto(id, pageable.getPageable());
+    }
+
+    /**
+     * gets the list detail without a transaction. This method should be called by a method that has
+     * already established a transaction
+     *
+     * @param id The uuid of the application list
+     * @param pageable The paging for the entries summary
+     */
+    private ApplicationListGetDetailDto getListDetailDto(UUID id, Pageable pageable) {
         ApplicationList list =
                 repository
                         .findByUuid(id)
@@ -188,7 +209,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
         // Map each projection to a summary model
-        dbPage.forEach(projection -> summaries.add(entryMapper.toSummaryDto(projection)));
+        dbPage.forEach(
+                projection -> {
+                    summaries.add(entryMapper.toSummaryDto(projection));
+                });
 
         // Fetch the number of entries linked to this list.
         // Avoids running a separate count query later when mapping to a DTO.
@@ -216,7 +240,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES), List.of(hydrated)),
+                        mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES, List.of()),
+                        List.of(hydrated)),
                 hydrated);
     }
 
@@ -238,9 +263,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         var savedEntity = repository.save(mapper.toCreateEntityWithCja(createDto, cja));
         var hydrated = refreshEntity(savedEntity);
 
+        // gets the summaries for the unpaged summaries.
         return new AuditableResult<>(
                 MatchResponse.of(
-                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES), List.of(hydrated)),
+                        mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES, List.of()),
+                        List.of(hydrated)),
                 hydrated);
     }
 
@@ -265,8 +292,15 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                         () -> {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
+                            ApplicationListGetDetailDto applicationListGetDetailDto =
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
+
                             return MatchResponse.of(
-                                    mapper.toGetDetailDto(hydrated, null, ZERO_ENTITIES),
+                                    mapper.toGetDetailDto(
+                                            hydrated,
+                                            null,
+                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary()),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -274,7 +308,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     /**
-     * Update an Application List associated with a Criminal Justice Area.
+     * - an Application List associated with a Criminal Justice Area.
      *
      * <p>Validates that exactly one CJA exists for the provided code. If multiple or none exist, an
      * exception is thrown. Otherwise, the list is persisted and returned as a DTO.
@@ -297,8 +331,16 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var savedEntity = repository.save(applicationList);
                             var hydrated = refreshEntity(savedEntity);
 
+                            // gets the summaries for the unpaged summaries.
+                            ApplicationListGetDetailDto applicationListGetDetailDto =
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
+
                             return MatchResponse.of(
-                                    mapper.toGetDetailDto(hydrated, cja, ZERO_ENTITIES),
+                                    mapper.toGetDetailDto(
+                                            hydrated,
+                                            cja,
+                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary()),
                                     List.of(hydrated));
                         },
                         List.of(success.getApplicationList())),
@@ -340,7 +382,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             ApplicationList list,
             Long entriesCount,
             List<ApplicationListEntrySummary> entriesSummary) {
-        ApplicationListGetDetailDto dto = mapper.toGetDetailDto(list, list.getCja(), entriesCount);
+
+        ApplicationListGetDetailDto dto =
+                mapper.toGetDetailDto(list, list.getCja(), entriesCount, entriesSummary);
         dto.setEntriesSummary(entriesSummary);
 
         return dto;
@@ -368,7 +412,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      */
     @Transactional(readOnly = true)
     @Override
-    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable) {
         TimeWindow timeWindow = computeTimeWindow(dto);
 
         return applicationListGetValidator.validateCja(
@@ -385,7 +429,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     timeWindow.wrapsMidnight,
                                     dto.getDescription(),
                                     dto.getOtherLocationDescription(),
-                                    pageable);
+                                    pageable.getPageable());
 
                     // Pre-fetch the number of entries linked to each list in the page.
                     // Avoids having to do a separate count query per list when mapping to DTOs.
@@ -395,7 +439,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     : fetchEntryCounts(
                                             dbPage.map(ApplicationList::getUuid).toList());
 
-                    return assembleResponsePage(dbPage, entriesPerListCounter);
+                    return assembleResponsePage(dbPage, entriesPerListCounter, pageable);
                 },
                 true);
     }
@@ -475,9 +519,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     private ApplicationListPage assembleResponsePage(
-            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter) {
+            Page<ApplicationList> appLists,
+            Map<UUID, Long> entriesPerListCounter,
+            PagingWrapper pagingWrapper) {
         var responsePage = new ApplicationListPage();
-        pageMapper.toPage(appLists, responsePage);
+        pageMapper.toPage(appLists, responsePage, pagingWrapper.getSortStrings());
 
         // Ensure content is never null:
         // API spec requires an array, so return an empty one instead of null.
@@ -535,6 +581,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 matchService.matchOnRequest(
                         () -> {
                             repository.save(applicationList);
+
                             return MatchResponse.of(null, List.of());
                         },
                         List.of(applicationList)),

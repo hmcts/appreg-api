@@ -11,9 +11,9 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.proxy.HibernateProxy;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.ReflectionCaches;
 
 /**
@@ -86,7 +86,7 @@ public class ReflectiveAuditor implements Auditor {
         if (val != null) {
 
             for (ReflectionCaches.MethodData method :
-                    ReflectionCaches.METHOD_CACHE.get(getClassForType(val)).methods()) {
+                    ReflectionCaches.METHOD_CACHE.get(BeanUtil.getProxyClass(val)).methods()) {
 
                 // if we are using annotations check if the method is annotated for this crud
                 // operation
@@ -115,21 +115,6 @@ public class ReflectiveAuditor implements Auditor {
                 }
             }
         }
-    }
-
-    /**
-     * Ensure that we work with the real class behind any hibernate proxy. This applies if a entity
-     * is lazy loading
-     *
-     * @param val The value to check
-     * @return The class to use
-     */
-    private static Class<?> getClassForType(Object val) {
-        if (val instanceof HibernateProxy proxy) {
-            return proxy.getHibernateLazyInitializer().getPersistentClass();
-        }
-
-        return val.getClass();
     }
 
     /**

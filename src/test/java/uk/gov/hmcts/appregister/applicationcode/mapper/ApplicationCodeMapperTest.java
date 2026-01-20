@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class ApplicationCodeMapperTest {
 
@@ -35,10 +36,34 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
         // assert
+        Assertions.assertEquals(
+                "namely {{Specify Document Lost}}", summaryDto.getWording().getTemplate());
+        Assertions.assertEquals(
+                "Specify Document Lost",
+                summaryDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                100,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+
         Assertions.assertEquals("appcode", summaryDto.getApplicationCode());
         Assertions.assertEquals(23234L, summaryDto.getFeeAmount().get().getValue());
         Assertions.assertEquals(

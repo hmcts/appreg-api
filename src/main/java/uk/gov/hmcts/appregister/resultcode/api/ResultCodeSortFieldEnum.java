@@ -14,15 +14,17 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
  */
 @Getter
 public enum ResultCodeSortFieldEnum implements SortableOperationEnum {
-    TITLE("title", ResolutionCode_.TITLE),
-    CODE("code", ResolutionCode_.RESULT_CODE);
+    TITLE("title", ResolutionCode_.ID, ResolutionCode_.TITLE),
+    CODE("code", ResolutionCode_.ID, ResolutionCode_.RESULT_CODE);
 
     private final String apiValue;
     private final String[] entityValue;
+    private final String tieBreaker;
 
-    ResultCodeSortFieldEnum(String apiValue, String... entityValue) {
+    ResultCodeSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
+        this.tieBreaker = tieBreaker;
     }
 
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();

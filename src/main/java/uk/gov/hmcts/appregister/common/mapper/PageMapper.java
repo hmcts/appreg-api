@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
+import java.util.List;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.generated.model.Sort;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -14,10 +15,12 @@ public class PageMapper {
      *
      * @param from The spring page object
      * @param to The custom page object
+     * @param originalSort The original sort values
      */
     public void toPage(
             org.springframework.data.domain.Page<?> from,
-            uk.gov.hmcts.appregister.generated.model.Page to) {
+            uk.gov.hmcts.appregister.generated.model.Page to,
+            List<SortableField> originalSort) {
         to.setTotalElements(from.getTotalElements());
         to.setElementsOnPage(from.getNumberOfElements());
         to.setTotalPages(from.getTotalPages());
@@ -25,30 +28,29 @@ public class PageMapper {
         to.setPageSize(from.getPageable().getPageSize());
         to.setFirst(from.isFirst());
         to.setLast(from.isLast());
-        to.setSort(toSort(from.getSort()));
+        to.setSort(toSort(originalSort));
     }
 
     /**
-     * gets the sort object from spring and maps it to our custom sort object.
+     * gets the domain specific sort object from a list of sort values.
      *
-     * @param from The spring sort object
+     * @param sortValues The spring sort object
      * @return The sort object
      */
-    private Sort toSort(org.springframework.data.domain.Sort from) {
-
-        if (from == null || from.isUnsorted()) {
+    public Sort toSort(List<SortableField> sortValues) {
+        if (sortValues == null) {
             // Open API Schema allows null for sort.
             return null;
         }
 
-        var s = new Sort();
-        for (org.springframework.data.domain.Sort.Order o : from) {
+        Sort s = new Sort();
+        for (SortableField sortValue : sortValues) {
             var item = new SortOrdersInner();
-            item.setProperty(o.getProperty());
+            item.setProperty(sortValue.getField());
             item.setDirection(
-                    o.getDirection() == org.springframework.data.domain.Sort.Direction.ASC
-                            ? SortOrdersInner.DirectionEnum.ASC
-                            : SortOrdersInner.DirectionEnum.DESC);
+                    sortValue.isDirectionDescending()
+                            ? SortOrdersInner.DirectionEnum.DESC
+                            : SortOrdersInner.DirectionEnum.ASC);
             s.addOrdersItem(item);
         }
         return s;

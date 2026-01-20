@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.common.template;
 
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.template.type.DateType;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
 public class WordingTemplateTest {
@@ -47,16 +47,13 @@ public class WordingTemplateTest {
     }
 
     @Test
-    void testTemplateParsingAndSubstitution() {
-        WordingTemplateSentence.WordingTemplate wordingTemplate =
-                WordingTemplateSentence.WordingTemplate.with(DATE_TEMPLATE);
-
-        Assertions.assertEquals("Applicant officer", wordingTemplate.getReference());
-        Assertions.assertEquals(10, wordingTemplate.getLength());
-        Assertions.assertEquals(DateType.class, wordingTemplate.getType().getClass());
-
-        Assertions.assertTrue(wordingTemplate.doesSubstitute("2024-12-31"));
-        Assertions.assertEquals("2024-12-31", wordingTemplate.substitute("2024-12-31"));
+    public void testParameterSizeMismatch() {
+        WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> collection.substitute(List.of()));
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test

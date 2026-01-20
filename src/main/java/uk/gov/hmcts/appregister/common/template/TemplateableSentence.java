@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.template;
 
 import java.util.List;
+import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
- * A templateable sentence that can have its multiple templateable items substituted. This interface
- * represents is a collection of all templateable items in the sentence.
+ * A templateable sentence that can have multiple templateable items substituted. This interface
+ * represents a collection of all templateable items in the sentence.
  */
 public interface TemplateableSentence {
 
@@ -27,7 +29,7 @@ public interface TemplateableSentence {
      *
      * @return list of all template references in he correct order they were processed
      */
-    List<String> getReferences();
+    TemplateDetail getDetail();
 
     /**
      * Substitutes the templates in the sentence with the provided options.
@@ -37,7 +39,7 @@ public interface TemplateableSentence {
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException The first error that
      *     is seen
      */
-    String substitute(List<String> values);
+    SubstitutedSentence substitute(List<TemplateSubstitution> values);
 
     /**
      * Substitutes a single value into a sentence.
@@ -53,20 +55,27 @@ public interface TemplateableSentence {
      *
      * @return the substituted string so far
      */
-    String getSubstitutedSentence();
+    SubstitutedSentence getSubstitutedSentence();
 
     /**
-     * gets the template by the reference.
+     * gets an unsubstituted reference key.
      *
-     * @param referenceValue The reference
-     * @return Gets the first reference in the collection if multiple exist
+     * @param referenceKey The reference key
+     * @return Gets the first reference in the collection or null if not found
      */
-    Templateable getTemplateForReference(String referenceValue);
+    Templateable getTemplateForReference(String referenceKey);
 
     /**
-     * The sentence template with placeholders for the templates.
+     * gets the keys that need to be substituted.
      *
-     * @return the template with placeholders
+     * @return The key/value pairs that need to be substituted
      */
-    String getSentenceTemplate();
+    List<TemplateSubstitution> getKeysToBeSubstituted();
+
+    /**
+     * Is substitute complete.
+     *
+     * @return Is substitute complete
+     */
+    boolean isSubstitutionComplete();
 }

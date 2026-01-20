@@ -2,8 +2,13 @@ package uk.gov.hmcts.appregister.service;
 
 import static org.mockito.Mockito.when;
 
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -14,30 +19,35 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
-import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
+import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
-import uk.gov.hmcts.appregister.generated.model.Applicant;
+import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.ApplicantAssertion;
+import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryAssertion;
+import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryWrapperDto;
 
+@Slf4j
 public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationEntryService applicationEntryService;
@@ -48,12 +58,20 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
 
+    @Autowired private AppListEntryFeeRepository appListEntryFeeRepository;
+
     @Autowired private FeeRepository feeRepository;
 
     @Autowired
     private ApplicationListEntryOfficialRepository applicationListEntryOfficialRepository;
 
+    @Autowired private NameAddressRepository nameAddressRepository;
+
     @Autowired private TransactionalUnitOfWork unitOfWork;
+
+    @Autowired private EntityManager entityManager;
+
+    @Autowired private ApplicationListEntryAssertion applicationListEntryAssertion;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -65,6 +83,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     public void createEntryNoRespondentWithOffsiteFee() {
+        createEntryNoRespondentWithOffsiteFeeForTest();
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -112,8 +131,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
                     // validate the database based on the request data and the response
                     // based on the database contents
-                    validateEntityAndResponseForEntryCreation(
-                            entryCreateDto,
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
                             "Request to copy documents",
@@ -127,6 +146,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
 
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Reference");
+        substitution.setValue("test wording");
+
         // set the organisation and person applicant to null so we use the standard applicant
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
@@ -134,12 +157,13 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setNumberOfRespondents(0);
+        entryCreateDto.setWordingFields(List.of(substitution));
 
         // use the applicant standard applicant
         entryCreateDto.setStandardApplicantCode("APP001");
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("CT99002");
-        entryCreateDto.setWordingFields(List.of("test wording"));
+        entryCreateDto.setWordingFields(List.of(substitution));
 
         MatchResponse<EntryGetDetailDto> response;
 
@@ -171,20 +195,490 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
                     // validate the database based on the request data and the response
                     // based on the database contents
-                    validateEntityAndResponseForEntryCreation(
-                            entryCreateDto,
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
                             "Attends to swear a complaint for the issue of "
                                     + "a summons for the debtor to answer an application for a "
                                     + "liability order in relation to unpaid council tax (reference"
-                                    + " test wording)",
+                                    + " {test wording})",
                             List.of("Reference"));
                 });
     }
 
     @Test
     public void createEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+        createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
+    }
+
+    @Test
+    @Transactional
+    public void updateEntryNoRespondentWithOffsiteFee() {
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        // build the payload
+        EntryUpdateDto entryUpdateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setApplicationCode("AD99001");
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(null);
+        entryUpdateDto.setHasOffsiteFee(true);
+
+        UUID uuid = createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        List<AppListEntryOfficial> feeOfficial =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // execute the test
+        PayloadForUpdateEntry payloadForCreate =
+                new PayloadForUpdateEntry(
+                        entryUpdateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+
+        // get the existing applicant and respondent for later comparison
+        NameAddress respondentBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
+        NameAddress applicantBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
+
+        // get the ids of the status and officials
+        final List<Long> feeStatusBeforeUpdate =
+                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeOfficialBeforeUpdate =
+                feeOfficial.stream().map(fs -> fs.getId()).toList();
+
+        MatchResponse<EntryGetDetailDto> update =
+                applicationEntryService.updateEntry(payloadForCreate);
+
+        // assert that the update was successful
+        Assertions.assertNotNull(update.getEtag());
+
+        final List<AppListEntryFeeStatus> feeStatusesUpdated =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        final List<AppListEntryOfficial> feeOfficialUpdated =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // assert that old name does not exist
+        Assertions.assertNotNull(respondentBeforeUpdate);
+        Assertions.assertNotNull(applicantBeforeUpdate);
+
+        entityManager.clear();
+
+        Assertions.assertTrue(
+                nameAddressRepository.findById(respondentBeforeUpdate.getId()).isEmpty());
+        Assertions.assertTrue(
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+
+        // make sure we do not recognise the officials that existing before
+        Assertions.assertEquals(
+                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        for (Long id : feeOfficialBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
+                    "Found official with id " + id + " that should have been deleted");
+        }
+
+        // make sure we have preserved the old status fees
+        Assertions.assertEquals(
+                update.getPayload().getFeeStatuses().size(),
+                (long) entryUpdateDto.getFeeStatuses().size()
+                        + (long) feeStatusBeforeUpdate.size());
+        for (Long id : feeStatusBeforeUpdate) {
+            Assertions.assertTrue(
+                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
+                    "Did not find fee status with id " + id + " that should have been preserved");
+        }
+
+        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
+        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
+                new ApplicationListEntryWrapperDto(entryUpdateDto),
+                applicationListEntry.get(),
+                update.getPayload(),
+                "Request to copy documents",
+                List.of(),
+                feeStatusBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    public void updateEntryWithOffsiteFeeAndStandardApplicant() {
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        UUID uuid = createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        List<AppListEntryOfficial> feeOfficial =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // get the ids of the status and officials
+        final List<Long> feeStatusBeforeUpdate =
+                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeOfficialBeforeUpdate =
+                feeOfficial.stream().map(fs -> fs.getId()).toList();
+
+        // get the existing applicant and respondent for later comparison
+        final NameAddress respondentBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
+        final NameAddress applicantBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
+
+        // build the payload
+        EntryUpdateDto entryUpdateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setApplicant(null);
+        entryUpdateDto.setStandardApplicantCode("APP001");
+        entryUpdateDto.setApplicationCode("ZS99007");
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("value");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
+        entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
+        entryUpdateDto.setHasOffsiteFee(true);
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        // execute the test
+        PayloadForUpdateEntry payloadForCreate =
+                new PayloadForUpdateEntry(
+                        entryUpdateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+        MatchResponse<EntryGetDetailDto> update =
+                applicationEntryService.updateEntry(payloadForCreate);
+
+        entityManager.clear();
+
+        // assert that the update was successful
+        Assertions.assertNotNull(update.getEtag());
+
+        final List<AppListEntryFeeStatus> feeStatusesUpdated =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        final List<AppListEntryOfficial> feeOfficialUpdated =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // assert that old name does not exist
+        Assertions.assertNotNull(respondentBeforeUpdate);
+        Assertions.assertNotNull(applicantBeforeUpdate);
+
+        Assertions.assertTrue(
+                nameAddressRepository.findById(respondentBeforeUpdate.getId()).isEmpty());
+        Assertions.assertTrue(
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+
+        // make sure the fee is mapped correctly to the entry
+        List<Fee> fees =
+                appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.get().getId());
+        Assertions.assertEquals(1, fees.size());
+        Assertions.assertEquals(
+                "Application to state a case for the High Court", fees.get(0).getDescription());
+
+        // make sure we do not recognise the officials that existing before
+        Assertions.assertEquals(
+                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        for (Long id : feeOfficialBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
+                    "Found official with id " + id + " that should have been deleted");
+        }
+
+        // make sure we have preserved the old status fees
+        Assertions.assertEquals(
+                update.getPayload().getFeeStatuses().size(),
+                (long) entryUpdateDto.getFeeStatuses().size()
+                        + (long) feeStatusBeforeUpdate.size());
+        for (Long id : feeStatusBeforeUpdate) {
+            Assertions.assertTrue(
+                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
+                    "Did not find fee status with id " + id + " that should have been preserved");
+        }
+
+        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
+
+        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
+                new ApplicationListEntryWrapperDto(entryUpdateDto),
+                applicationListEntry.get(),
+                update.getPayload(),
+                "Application for a warrant to enter premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
+                List.of("Premises Address", "Premises Date"),
+                feeStatusBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    public void updateEntryWithCodeThatAllowsRespondentBulkRespondentAndFee() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        List<AppListEntryOfficial> feeOfficial =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // get the ids of the status and officials
+        final List<Long> feeStatusBeforeUpdate =
+                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeOfficialBeforeUpdate =
+                feeOfficial.stream().map(fs -> fs.getId()).toList();
+
+        // get the existing applicant and respondent for later comparison
+        final NameAddress respondentBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
+        final NameAddress applicantBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
+
+        final EntryUpdateDto updateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+        updateDto.getApplicant().setOrganisation(null);
+        updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        updateDto.setNumberOfRespondents(null);
+        updateDto.setApplicationCode("MS99007");
+        updateDto.setStandardApplicantCode(null);
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("value");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
+        // fill the template with the two parameters
+        updateDto.setWordingFields(List.of(substitution, substitution1));
+
+        // execute the test
+        PayloadForUpdateEntry payloadForCreate =
+                new PayloadForUpdateEntry(
+                        updateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+        MatchResponse<EntryGetDetailDto> update =
+                applicationEntryService.updateEntry(payloadForCreate);
+
+        entityManager.clear();
+
+        // assert that the update was successful
+        Assertions.assertNotNull(update.getEtag());
+
+        final List<AppListEntryFeeStatus> feeStatusesUpdated =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        final List<AppListEntryOfficial> feeOfficialUpdated =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // assert that old name does not exist
+        Assertions.assertNull(respondentBeforeUpdate);
+        Assertions.assertNotNull(applicantBeforeUpdate);
+
+        Assertions.assertTrue(
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+
+        // make sure we do not recognise the officials that existing before
+        Assertions.assertEquals(
+                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        for (Long id : feeOfficialBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
+                    "Found official with id " + id + " that should have been deleted");
+        }
+
+        // make sure we have preserved the old status fees
+        Assertions.assertEquals(
+                update.getPayload().getFeeStatuses().size(),
+                (long) updateDto.getFeeStatuses().size() + (long) feeStatusBeforeUpdate.size());
+        for (Long id : feeStatusBeforeUpdate) {
+            Assertions.assertTrue(
+                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
+                    "Did not find fee status with id " + id + " that should have been preserved");
+        }
+
+        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
+        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
+                new ApplicationListEntryWrapperDto(updateDto),
+                applicationListEntry.get(),
+                update.getPayload(),
+                "Application for a warrant to enter"
+                        + " premises at {value} for date {"
+                        + LocalDate.now()
+                        + "}",
+                List.of("Premises Address", "Premises Date"),
+                feeStatusBeforeUpdate);
+    }
+
+    @Test
+    @Transactional
+    public void updateEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        List<AppListEntryOfficial> feeOfficial =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // get the ids of the status and officials
+        final List<Long> feeStatusBeforeUpdate =
+                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeOfficialBeforeUpdate =
+                feeOfficial.stream().map(fs -> fs.getId()).toList();
+
+        // get the existing applicant and respondent for later comparison
+        final NameAddress respondentBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
+        final NameAddress applicantBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
+
+        final EntryUpdateDto updateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+        // set the organisation and person applicant to null so we use the standard applicant
+        updateDto.getApplicant().setOrganisation(null);
+        updateDto.getApplicant().setPerson(null);
+        updateDto.setFeeStatuses(null);
+        updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        updateDto.setNumberOfRespondents(0);
+
+        // use the applicant standard applicant
+        updateDto.setStandardApplicantCode("APP001");
+        updateDto.setNumberOfRespondents(null);
+        updateDto.setApplicationCode("CT99002");
+
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Reference");
+        substitution.setValue("test wording");
+
+        updateDto.setWordingFields(List.of(substitution));
+
+        // execute the test
+        PayloadForUpdateEntry payloadForCreate =
+                new PayloadForUpdateEntry(
+                        updateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+        MatchResponse<EntryGetDetailDto> update =
+                applicationEntryService.updateEntry(payloadForCreate);
+
+        entityManager.clear();
+
+        // assert that the update was successful
+        Assertions.assertNotNull(update.getEtag());
+
+        final List<AppListEntryFeeStatus> feeStatusesUpdated =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        final List<AppListEntryOfficial> feeOfficialUpdated =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // assert that old name does not exist
+        Assertions.assertNull(respondentBeforeUpdate);
+        Assertions.assertNotNull(applicantBeforeUpdate);
+
+        Assertions.assertTrue(
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+
+        // make sure we do not recognise the officials that existing before
+        Assertions.assertEquals(
+                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        for (Long id : feeOfficialBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
+                    "Found official with id " + id + " that should have been deleted");
+        }
+
+        // make sure we have preserved the old status fees
+        Assertions.assertEquals(
+                update.getPayload().getFeeStatuses().size(),
+                updateDto.getFeeStatuses() != null
+                        ? updateDto.getFeeStatuses().size()
+                        : (long) feeStatusBeforeUpdate.size());
+
+        for (Long id : feeStatusBeforeUpdate) {
+            Assertions.assertTrue(
+                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
+                    "Did not find fee status with id " + id + " that should have been preserved");
+        }
+
+        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
+        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
+                new ApplicationListEntryWrapperDto(updateDto),
+                applicationListEntry.get(),
+                update.getPayload(),
+                "Attends to swear a complaint for the issue of a summons for the "
+                        + "debtor to answer an application for a liability order in relation "
+                        + "to unpaid council tax (reference {test wording})",
+                List.of("Reference"),
+                feeStatusBeforeUpdate);
+    }
+
+    // useful method to create an entry with respondent, bulk respondent and fee statuses for update
+    // purposes
+
+    /**
+     * Creates an entry and returns the UUID.
+     *
+     * @return The UUID of the created entry
+     */
+    private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         final EntryCreateDto entryCreateDto =
@@ -196,12 +690,19 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         entryCreateDto.setNumberOfRespondents(10);
 
-        entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
 
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Premises Address");
+        substitution.setValue("test wording");
+
+        TemplateSubstitution substitution1 = new TemplateSubstitution();
+        substitution1.setKey("Premises Date");
+        substitution1.setValue(LocalDate.now().toString());
+
         // fill the template with the two parameters
-        entryCreateDto.setWordingFields(List.of("test wording", LocalDate.now().toString()));
+        entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
         MatchResponse<EntryGetDetailDto> response;
 
@@ -232,228 +733,74 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
                     // validate the database based on the request data and the response
                     // based on the database contents
-                    validateEntityAndResponseForEntryCreation(
-                            entryCreateDto,
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
                             "Application for a warrant to ente"
-                                    + "r premises at test wording for date "
-                                    + LocalDate.now(),
+                                    + "r premises at {test wording} for date {"
+                                    + LocalDate.now()
+                                    + "}",
                             List.of("Premises Address", "Premises Date"));
                 });
+
+        return response.getPayload().getId();
     }
 
-    /**
-     * validates the database and the restful output based on the input payload.
-     *
-     * @param entryCreateDto The entry create dto
-     * @param applicationListEntry The application list database entity that was created
-     * @param response The response from the service
-     */
-    private void validateEntityAndResponseForEntryCreation(
-            EntryCreateDto entryCreateDto,
-            ApplicationListEntry applicationListEntry,
-            EntryGetDetailDto response,
-            String assertWording,
-            List<String> expectedWordingFields) {
-        // validate applicant
-        if (entryCreateDto.getStandardApplicantCode() != null) {
-            // make sure the list is mapped to the code
-            Assertions.assertEquals(
-                    entryCreateDto.getStandardApplicantCode(),
-                    applicationListEntry.getStandardApplicant().getApplicantCode());
-        } else {
-            if (entryCreateDto.getApplicant().getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        entryCreateDto.getApplicant().getPerson(),
-                        applicationListEntry.getAnamedaddress());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        entryCreateDto.getApplicant().getOrganisation(),
-                        applicationListEntry.getAnamedaddress());
-            }
-        }
+    public UUID createEntryNoRespondentWithOffsiteFeeForTest() {
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        final EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
-        // validate respondent
-        if (entryCreateDto.getRespondent() != null) {
-            if (entryCreateDto.getRespondent().getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        entryCreateDto.getRespondent().getPerson(),
-                        applicationListEntry.getRnameaddress());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        entryCreateDto.getRespondent().getOrganisation(),
-                        applicationListEntry.getRnameaddress());
-            }
-            Assertions.assertEquals(
-                    entryCreateDto.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
-        }
+        entryCreateDto.setNumberOfRespondents(null);
 
-        // make sure the code of the applicant and respondent are set correctly
-        if (entryCreateDto.getApplicant().getPerson() != null
-                || entryCreateDto.getApplicant().getOrganisation() != null) {
-            // validate the application code
-            Assertions.assertEquals(
-                    NameAddress.APPLICANT_CODE, applicationListEntry.getAnamedaddress().getCode());
-        } else if (entryCreateDto.getRespondent().getPerson() != null
-                || entryCreateDto.getRespondent().getOrganisation() != null) {
-            // validate the application code
-            Assertions.assertEquals(
-                    NameAddress.RESPONDENT_CODE, applicationListEntry.getRnameaddress().getCode());
-        }
+        // no respondent for this code
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setWordingFields(null);
+        entryCreateDto.setHasOffsiteFee(true);
 
-        // if number or respondents is set make sure it was saved
-        if (entryCreateDto.getNumberOfRespondents() != null) {
-            Assertions.assertNull(applicationListEntry.getNumberOfBulkRespondents());
-        }
+        MatchResponse<EntryGetDetailDto> response;
 
-        // assert offsite fee in the database is set if provided
-        if (entryCreateDto.getFeeStatuses() != null && !entryCreateDto.getFeeStatuses().isEmpty()) {
-            Assertions.assertEquals(
-                    entryCreateDto.getHasOffsiteFee(),
-                    feeRepository
-                            .findById(applicationListEntry.getEntryFeeIds().get(0).getFeeId())
-                            .get()
-                            .isOffsite());
-        }
+        // run the test
+        response =
+                unitOfWork.inTransaction(
+                        () -> {
+                            ApplicationList applicationList =
+                                    applicationListRepository.findAll().getFirst();
+                            PayloadForCreate<EntryCreateDto> payloadForCreate =
+                                    PayloadForCreate.<EntryCreateDto>builder()
+                                            .id(applicationList.getUuid())
+                                            .data(entryCreateDto)
+                                            .build();
+                            return applicationEntryService.createEntry(payloadForCreate);
+                        });
 
-        // make sure the core data is part of the entry
-        Assertions.assertEquals(
-                entryCreateDto.getCaseReference(), applicationListEntry.getCaseReference());
-        Assertions.assertEquals(entryCreateDto.getNotes(), applicationListEntry.getNotes());
-        Assertions.assertEquals(
-                entryCreateDto.getAccountNumber(), applicationListEntry.getAccountNumber());
-        Assertions.assertEquals(
-                entryCreateDto.getLodgementDate(), applicationListEntry.getLodgementDate());
-        Assertions.assertEquals(
-                assertWording, applicationListEntry.getApplicationListEntryWording());
+        // make the assertions
+        unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository.findAll().getFirst();
+                    List<ApplicationListEntry> entries =
+                            applicationListEntryRepository.findByApplicationListId(
+                                    applicationList.getId());
 
-        // validate the fees are created in the database
-        List<AppListEntryFeeStatus> fees =
-                appListEntryFeeStatusRepository.findByAppListEntryId(applicationListEntry.getId());
+                    // gets the last added entry
+                    ApplicationListEntry applicationListEntry = entries.getLast();
 
-        if (entryCreateDto.getFeeStatuses() != null) {
-            for (int i = 0; i < entryCreateDto.getFeeStatuses().size(); i++) {
-                Assertions.assertEquals(
-                        entryCreateDto.getFeeStatuses().get(i).getPaymentReference(),
-                        fees.get(i).getAlefsPaymentReference());
-                Assertions.assertEquals(
-                        ApplicationListEntryEntityMapper.toStatus(
-                                entryCreateDto.getFeeStatuses().get(i).getPaymentStatus()),
-                        fees.get(i).getAlefsFeeStatus());
-            }
-        }
-
-        // validate the original are created
-        List<AppListEntryOfficial> originals =
-                applicationListEntryOfficialRepository.findByAppListEntryId(
-                        applicationListEntry.getId());
-
-        if (entryCreateDto.getOfficials() != null) {
-            for (int i = 0; i < entryCreateDto.getOfficials().size(); i++) {
-                Assertions.assertEquals(
-                        entryCreateDto.getOfficials().get(i).getTitle(),
-                        originals.get(i).getTitle());
-                Assertions.assertEquals(
-                        entryCreateDto.getOfficials().get(i).getForename(),
-                        originals.get(i).getForename());
-                Assertions.assertEquals(
-                        entryCreateDto.getOfficials().get(i).getSurname(),
-                        originals.get(i).getSurname());
-                Assertions.assertEquals(
-                        new OfficialMapperImpl()
-                                .toOfficial(entryCreateDto.getOfficials().get(i).getType()),
-                        originals.get(i).getOfficialType());
-            }
-        }
-
-        // validate applicant in response
-        if (entryCreateDto.getStandardApplicantCode() != null) {
-            Applicant applicant =
-                    new ApplicantMapperImpl()
-                            .toApplicant(
-                                    new ApplicantMapperImpl()
-                                            .toApplicantEntity(
-                                                    applicationListEntry.getStandardApplicant()));
-            if (applicant.getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        response.getApplicant().getPerson(),
-                        applicationListEntry.getStandardApplicant());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        response.getApplicant().getOrganisation(),
-                        applicationListEntry.getStandardApplicant());
-            }
-        } else {
-            if (entryCreateDto.getApplicant().getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        response.getApplicant().getPerson(),
-                        applicationListEntry.getAnamedaddress());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        response.getApplicant().getOrganisation(),
-                        applicationListEntry.getAnamedaddress());
-            }
-        }
-
-        // validate respondent
-        if (entryCreateDto.getRespondent() != null) {
-            if (entryCreateDto.getRespondent().getPerson() != null) {
-                ApplicantAssertion.validatePerson(
-                        response.getRespondent().getPerson(),
-                        applicationListEntry.getRnameaddress());
-            } else {
-                ApplicantAssertion.validateOrganisation(
-                        response.getRespondent().getOrganisation(),
-                        applicationListEntry.getRnameaddress());
-            }
-            Assertions.assertEquals(
-                    response.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
-        }
-
-        // validate the response fields
-        Assertions.assertEquals(entryCreateDto.getCaseReference(), response.getCaseReference());
-        Assertions.assertEquals(entryCreateDto.getNotes(), response.getNotes());
-        Assertions.assertEquals(entryCreateDto.getAccountNumber(), response.getAccountNumber());
-        Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
-        Assertions.assertEquals(
-                applicationListEntry.getApplicationList().getUuid(), response.getListId());
-        Assertions.assertEquals(applicationListEntry.getUuid(), response.getId());
-        Assertions.assertEquals(
-                entryCreateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
-        Assertions.assertEquals(entryCreateDto.getLodgementDate(), response.getLodgementDate());
-
-        Assertions.assertEquals(entryCreateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
-
-        // ensure the response fees align
-        for (int i = 0; i < response.getFeeStatuses().size(); i++) {
-            Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getPaymentReference(),
-                    response.getFeeStatuses().get(i).getPaymentReference());
-            Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getStatusDate(),
-                    response.getFeeStatuses().get(i).getStatusDate());
-            Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getPaymentStatus(),
-                    response.getFeeStatuses().get(i).getPaymentStatus());
-        }
-
-        // ensure the response fees align
-        for (int i = 0; i < response.getOfficials().size(); i++) {
-            Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getType(),
-                    response.getOfficials().get(i).getType());
-            Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getSurname(),
-                    response.getOfficials().get(i).getSurname());
-            Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getTitle(),
-                    response.getOfficials().get(i).getTitle());
-            Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getForename(),
-                    response.getOfficials().get(i).getForename());
-        }
+                    // validate the database based on the request data and the response
+                    // based on the database contents
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
+                            applicationListEntry,
+                            response.getPayload(),
+                            "Request to copy documents",
+                            List.of());
+                });
+        return response.getPayload().getId();
     }
 }

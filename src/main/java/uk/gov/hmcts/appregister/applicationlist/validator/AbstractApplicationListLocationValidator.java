@@ -116,7 +116,7 @@ public abstract class AbstractApplicationListLocationValidator<
         boolean hasOther = StringUtils.hasText(other);
 
         // XOR rule: either courtLocationCode OR (cjaCode AND otherLocationDescription)
-        boolean valid = hasCourt ^ (hasCja && hasOther);
+        boolean valid = hasCourt ^ hasCja;
 
         if (!valid) {
             throw new AppRegistryException(
@@ -127,14 +127,23 @@ public abstract class AbstractApplicationListLocationValidator<
         O createApplication = getResult();
         // validate the court and justice area
         if (hasCourt) {
+            // double-check to make sure other description has not been included
+            if (hasOther) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_LOCATION_COMBINATION,
+                        "Provide either 'courtLocation', or both a 'cja code' and a 'otherLocationDescription'.");
+            }
             validateCourt(dto, createApplication);
         } else {
+            if (!hasOther) {
+                throw new AppRegistryException(
+                        ApplicationListError.INVALID_LOCATION_COMBINATION,
+                        "Provide both a 'cja code' and a 'otherLocationDescription'.");
+            }
             validateCja(dto, createApplication);
         }
 
         validateStatus(dto);
-
-        validateTime(dto);
 
         if (createApplicationSupplier != null) {
             return createApplicationSupplier.apply(dto, createApplication);
@@ -224,17 +233,6 @@ public abstract class AbstractApplicationListLocationValidator<
                         ApplicationListError.INVALID_NEW_LIST_STATUS,
                         "A closed application list is not allowed to be created");
             }
-        }
-    }
-
-    private void validateTime(T dto) {
-        LocalTime time = getTime().apply(dto);
-
-        if (time != null && time.getSecond() != 0) {
-            throw new AppRegistryException(
-                    ApplicationListError.INVALID_TIME,
-                    "An application list is not allowed to be created with a time in the format HH:MM:SS, only the"
-                            + "HH:MM format is supported");
         }
     }
 }

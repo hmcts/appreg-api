@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
@@ -88,30 +89,31 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      */
     @Query(
             """
-            SELECT
-                ale.uuid AS uuid,
-                ale.sequenceNumber AS sequenceNumber,
-                ale.accountNumber AS accountNumber,
-                COALESCE(ana.name, sa.name) AS applicant,
-                rna.name AS respondent,
-                rna.postcode AS postCode,
-                ac.title AS applicationTitle,
-                CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
-                rc.resultCode AS result
-            FROM ApplicationListEntry ale
-            LEFT JOIN ale.anamedaddress ana
-            LEFT JOIN ale.standardApplicant sa
-            LEFT JOIN ale.rnameaddress rna
-            LEFT JOIN ale.applicationCode ac
-            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
-                AND aler.changedDate = (
-                    SELECT MAX(sub.changedDate)
-                    FROM AppListEntryResolution sub
-                    WHERE sub.applicationList = ale
-                )
-            LEFT JOIN aler.resolutionCode rc
-            WHERE ale.applicationList.uuid = :id
-            """)
+        SELECT
+            ale.uuid AS uuid,
+            ale.sequenceNumber AS sequenceNumber,
+            ale.accountNumber AS accountNumber,
+            COALESCE(ana.name, sa.name) AS applicant,
+            rna.name AS respondent,
+            rna.postcode AS postCode,
+            ac.title AS applicationTitle,
+            CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
+            rc.resultCode AS result
+        FROM ApplicationListEntry ale
+        LEFT JOIN ale.anamedaddress ana
+        LEFT JOIN ale.standardApplicant sa
+        LEFT JOIN ale.rnameaddress rna
+        LEFT JOIN ale.applicationCode ac
+        LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+            AND aler.changedDate = (
+                SELECT MAX(sub.changedDate)
+                FROM AppListEntryResolution sub
+                WHERE sub.applicationList = ale
+            )
+        LEFT JOIN aler.resolutionCode rc
+        WHERE ale.applicationList.uuid = :id
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
+        """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 
     @Query(
@@ -119,6 +121,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         select ale.applicationList.uuid as primaryKey, count(ale) as count
         from ApplicationListEntry ale
         where ale.applicationList.uuid in :uuids
+        and (ale.deleted IS NULL OR ale.deleted <> '1')
         group by ale.applicationList.uuid
         """)
     List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
@@ -147,63 +150,65 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      */
     @Query(
             """
-         SELECT
-                ale.applicationList.date  AS date,
-                ale.uuid AS uuid,
-                ale.id AS id,
-                ale.applicationList.courtCode  AS courtCode,
-                ac.legislation as legislation,
-                ac.feeDue feeRequired,
-                aler.id as result,
-                cja.code AS cjaCode,
-                ale.applicationList.otherLocation AS otherLocationDescription,
-                ana as anameAddress,
-                ale.standardApplicant.applicantCode AS standardApplicantCode,
-                rna as rnameAddress,
-                ale.applicationCode.title as title,
-                al.status AS status,
-                al.date as dateOfAl,
-                ale.anamedaddress.name as applicationorganisation,
-                ale.anamedaddress.surname as applicantSurname,
-                ale.rnameaddress.name as respondentOrganisation,
-                ale.rnameaddress.surname as respondentSurname,
-                ale.rnameaddress.postcode as respondentPostcode,
-                ale.accountNumber as  accountReference,
-                sa as standardApplicant
-            from ApplicationListEntry ale
-            LEFT JOIN ale.anamedaddress ana
-            LEFT JOIN ale.standardApplicant sa
-            LEFT JOIN ale.rnameaddress rna
-            LEFT JOIN ale.applicationCode ac
-            LEFT JOIN ale.applicationList al
-            LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-            LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale AND aler.id = (SELECT MAX(sub.id)
-                                                                                      FROM AppListEntryResolution sub
-                                                                                      WHERE sub.applicationList = ale)
-        WHERE  (:hasHearingDate = false OR ale.applicationList.date = :hearingDate)
-                AND (:otherLocationDescription IS NULL OR ale.applicationList.otherLocation
-                        LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
-                AND (:courtCode IS NULL OR ale.applicationList.courtCode = :courtCode)
-                AND (:cjaCode IS NULL OR ale.applicationList.cja.code=:cjaCode)
-                AND (:applicantOrganisation IS NULL OR  ale.anamedaddress.name
-                        LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
-                        AND ale.anamedaddress.code='AP')
-                AND (:applicantSurname IS NULL OR ale.anamedaddress.surname
-                         LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
-                        AND ale.anamedaddress.code='AP')
-                AND (:standardApplicantCode IS NULL OR ale.standardApplicant.applicantCode
-                        LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
-                AND (:status IS NULL OR :status=ale.applicationList.status)
-                AND (:respondentOrganisation IS NULL OR ale.rnameaddress.name LIKE CONCAT('%',
-                        cast(:respondentOrganisation AS string), '%') AND ale.rnameaddress.code='RE')
-                AND (:respondentSurname IS NULL OR ale.rnameaddress.surname LIKE CONCAT('%',
-                        cast(:respondentSurname AS string), '%') AND ale.rnameaddress.code='RE')
-                AND (:respondentPostcode IS NULL OR ale.rnameaddress.postcode=
-                        cast(:respondentPostcode AS string) AND ale.rnameaddress.code='RE')
-                AND (:accountReference IS NULL OR  ale.accountNumber
+             SELECT
+                    al.date  AS date,
+                    ale.uuid AS uuid,
+                    ale.id AS id,
+                    al.courtCode  AS courtCode,
+                    ac.legislation as legislation,
+                    ac.feeDue feeRequired,
+                    aler.id as result,
+                    cja.code AS cjaCode,
+                    al.otherLocation AS otherLocationDescription,
+                    ana as anameAddress,
+                    sa.applicantCode AS standardApplicantCode,
+                    rna as rnameAddress,
+                    ac.title as title,
+                    al.status AS status,
+                    al.date as dateOfAl,
+                    ana.name as applicationorganisation,
+                    ana.surname as applicantSurname,
+                    rna.name as respondentOrganisation,
+                    rna.surname as respondentSurname,
+                    rna.postcode as respondentPostcode,
+                    ale.caseReference as  accountReference,
+                    sa as standardApplicant
+                from ApplicationListEntry ale
+                LEFT JOIN ale.anamedaddress ana
+                LEFT JOIN ale.standardApplicant sa
+                LEFT JOIN ale.rnameaddress rna
+                LEFT JOIN ale.applicationCode ac
+                LEFT JOIN ale.applicationList al
+                LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList
+                            = ale AND aler.id = (SELECT MAX(sub.id)
+                              FROM AppListEntryResolution sub
+                              WHERE sub.applicationList = ale)
+            WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
+                    AND (:otherLocationDescription IS NULL OR al.otherLocation
+                            LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
+                    AND (:courtCode IS NULL OR al.courtCode = :courtCode)
+                    AND (:cjaCode IS NULL OR cja.code=:cjaCode)
+                    AND (:applicantOrganisation IS NULL OR ana.name
+                            LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
+                            AND ana.code='AP')
+                    AND (:applicantSurname IS NULL OR ana.surname
+                             LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
+                            AND ana.code='AP')
+                    AND (:standardApplicantCode IS NULL OR sa.applicantCode
+                            LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
+                    AND (:status IS NULL OR :status=ale.applicationList.status)
+                    AND (:respondentOrganisation IS NULL OR rna.name LIKE CONCAT('%',
+                            cast(:respondentOrganisation AS string), '%') AND rna.code='RE')
+                    AND (:respondentSurname IS NULL OR rna.surname LIKE CONCAT('%',
+                            cast(:respondentSurname AS string), '%') AND rna.code='RE')
+                    AND (:respondentPostcode IS NULL OR rna.postcode=
+                            cast(:respondentPostcode AS string) AND rna.code='RE')
+                    AND (:accountReference IS NULL OR  ale.accountNumber
                         LIKE CONCAT('%', cast(:accountReference AS string), '%'))
-                AND (ale.applicationList.deleted IS NULL OR ale.applicationList.deleted <> '1')
-        """)
+                    AND (al.deleted IS NULL OR al.deleted <> '1')
+                    AND (ale.deleted IS NULL OR ale.deleted <> '1')
+            """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             boolean hasHearingDate,
             @Param("hearingDate") LocalDate hearingDate,
@@ -230,6 +235,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             """
         SELECT
             ale.id AS id,
+            ale.uuid AS uuid,
             ale.sequenceNumber AS sequenceNumber,
             COALESCE(ana.title, sa.applicantTitle) AS applicantTitle,
             COALESCE(ana.surname, sa.applicantSurname) AS applicantSurname,
@@ -274,9 +280,39 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         WHERE ale.applicationList.uuid = :id
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
+
+    /**
+     * Finds an entry for Uuid.
+     *
+     * @param entryId The entry id
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuid(UUID entryId);
+
+    /**
+     * Finds all entities with the given IDs, within the associated list.
+     *
+     * @param entryId The entry id
+     * @param listId The list that the entry resides in
+     * @return A single matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
 
     /**
      * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
@@ -292,13 +328,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @return the number of rows updated; may be less than the number of provided UUIDs if some
      *     entries are not found in the source list
      */
-    @Modifying()
+    @Modifying
     @Query(
             """
         UPDATE ApplicationListEntry ale
         SET ale.applicationList = :targetList
         WHERE ale.uuid IN :entryUuids
         AND ale.applicationList.uuid = :sourceListUuid
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     int bulkMoveByUuidAndSourceList(
             Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
@@ -311,5 +348,30 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param listUuid the UUID of the parent application list
      * @return an Optional containing the entry if found, otherwise empty
      */
-    Optional<ApplicationListEntry> findByUuidAndApplicationListUuid(UUID entryUuid, UUID listUuid);
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryUuid
+          AND ale.applicationList.uuid = :listUuid
+          AND (ale.deleted IS NULL OR ale.deleted <> '1')
+        """)
+    Optional<ApplicationListEntry> findActiveByUuidAndApplicationListUuid(
+            @Param("entryUuid") UUID entryUuid, @Param("listUuid") UUID listUuid);
+
+    /**
+     * Soft-deletes an application list entry by UUID.
+     *
+     * @param entryUuid the UUID of the application list entry to delete
+     * @return number of rows updated (0 or 1)
+     */
+    @Modifying
+    @Transactional
+    @Query(
+            """
+        UPDATE ApplicationListEntry ale
+        SET ale.deleted = '1'
+        WHERE ale.uuid = :entryUuid
+        """)
+    int softDeleteByUuid(@Param("entryUuid") UUID entryUuid);
 }

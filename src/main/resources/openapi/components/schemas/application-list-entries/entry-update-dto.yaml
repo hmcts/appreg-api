@@ -28,10 +28,11 @@ properties:
     type: integer
     description: Number of respondents required by the Application.
     example: 0
+    format: int16
 
   wordingFields:
     type: array
-    items: {type: string}
+    items: {$ref: '../common/template-substitution.yaml' }
     description: An array of user-provided values used to populate placeholders in the entry wording template, applied in the order they are provided.
     example: ["25 October 2025", "London"]
 
