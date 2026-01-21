@@ -71,7 +71,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             """
         SELECT al
         FROM ApplicationList al
-        WHERE al.uuid = :id and al.deleted = 'Y'
+        WHERE al.uuid = :id
         """)
     Optional<ApplicationList> findByUuidIncludingDelete(UUID id);
 
