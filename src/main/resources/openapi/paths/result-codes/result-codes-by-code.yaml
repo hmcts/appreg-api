@@ -2,7 +2,9 @@ parameters:
   - in: path
     name: code
     required: true
-    schema: { type: string }
+    schema:
+      type: string
+      maxLength: 10
     description: Code used to identify the Result Code (case-insensitive).
   - in: query
     name: date

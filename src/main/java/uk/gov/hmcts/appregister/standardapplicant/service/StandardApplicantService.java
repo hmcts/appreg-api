@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
 import java.time.LocalDate;
-import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 
@@ -17,7 +17,7 @@ public interface StandardApplicantService {
      * @param pageable The pageable
      * @return The standard applicant page
      */
-    StandardApplicantPage findAll(String code, String name, Pageable pageable);
+    StandardApplicantPage findAll(String code, String name, PagingWrapper pageable);
 
     /**
      * finds a standard applicant by code and date.

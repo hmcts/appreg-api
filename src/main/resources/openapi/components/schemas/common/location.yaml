@@ -7,13 +7,16 @@ properties:
       type: string
       description: Court Location code (exact match).
       example: "LOC123"
+      maximum: 10
 
   otherLocationDescription:
       type: string
       description: Other location description (case-insensitive contains match).
       example: "town hall"
+      maximum: 200
 
   cjaCode:
       type: string
       description: Criminal Justice Area code (exact match).
       example: "52"
+      maximum: 2

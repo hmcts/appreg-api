@@ -182,19 +182,31 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getFeeStatuses() != null) {
             for (int i = 0; i < entryCreateUpdateDto.getFeeStatuses().size(); i++) {
                 if (i >= existingFeeStatuses.size()) {
+
+                    // find the actual fee status in the database
+                    AppListEntryFeeStatus actualFeeStatus =
+                            getFeeForReference(
+                                    fees,
+                                    entryCreateUpdateDto
+                                            .getFeeStatuses()
+                                            .get(i - existingFeeStatuses.size())
+                                            .getPaymentReference());
+
+                    Assertions.assertNotNull(actualFeeStatus);
                     Assertions.assertEquals(
                             entryCreateUpdateDto
                                     .getFeeStatuses()
                                     .get(i - existingFeeStatuses.size())
                                     .getPaymentReference(),
-                            fees.get(i).getAlefsPaymentReference());
+                            actualFeeStatus.getAlefsPaymentReference());
+
                     Assertions.assertEquals(
                             ApplicationListEntryEntityMapper.toStatus(
                                     entryCreateUpdateDto
                                             .getFeeStatuses()
                                             .get(i - existingFeeStatuses.size())
                                             .getPaymentStatus()),
-                            fees.get(i).getAlefsFeeStatus());
+                            actualFeeStatus.getAlefsFeeStatus());
                 }
             }
         }
@@ -338,5 +350,15 @@ public class ApplicationListEntryAssertion {
                     entryCreateUpdateDto.getOfficials().get(i).getForename(),
                     response.getOfficials().get(i).getForename());
         }
+    }
+
+    private AppListEntryFeeStatus getFeeForReference(
+            List<AppListEntryFeeStatus> statusLst, String ref) {
+        for (AppListEntryFeeStatus appListEntryFeeStatus : statusLst) {
+            if (appListEntryFeeStatus.getAlefsPaymentReference().equals(ref)) {
+                return appListEntryFeeStatus;
+            }
+        }
+        return null;
     }
 }
