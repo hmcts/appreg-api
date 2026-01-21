@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
@@ -2209,7 +2210,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         return unitOfWork.inTransaction(
                 () -> {
                     ApplicationList applicationList =
-                            applicationListRepository.findAll().getFirst();
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                     return applicationList.getUuid();
                 });
     }
@@ -2238,7 +2241,10 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     private UUID getClosedApplicationListId() {
         return unitOfWork.inTransaction(
                 () -> {
-                    ApplicationList applicationList = applicationListRepository.findAll().get(2);
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .get(2);
                     return applicationList.getUuid();
                 });
     }

@@ -1,8 +1,8 @@
 package uk.gov.hmcts.appregister.common.enumeration;
 
 public enum YesOrNo {
-    YES("1"),
-    NO("0");
+    YES("Y"),
+    NO("N");
 
     private final String value;
 

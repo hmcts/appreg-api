@@ -26,6 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -2322,7 +2323,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationList applicationList =
                 unitOfWork.inTransaction(
                         () -> {
-                            return applicationListRepository.findAll().getFirst();
+                            return applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                         });
         return applicationList.getUuid();
     }
