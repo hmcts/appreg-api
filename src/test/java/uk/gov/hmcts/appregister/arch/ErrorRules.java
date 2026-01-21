@@ -40,4 +40,16 @@ public class ErrorRules extends BaseRules {
                     .implement(ErrorCodeEnum.class)
                     .andShould()
                     .beAssignableTo(Enum.class);
+
+    @ArchTest
+    public static final com.tngtech.archunit.lang.ArchRule
+            feature_exception_enum_should_always_exist_in_package_exception =
+                    classes()
+                            .that()
+                            .implement(ErrorCodeEnum.class)
+                            .and(not(resideInAPackage(BASE_PACKAGE + "..common..")))
+                            .should()
+                            .haveSimpleNameEndingWith("Error")
+                            .andShould()
+                            .resideInAPackage(BASE_PACKAGE + "..(*).exception..");
 }

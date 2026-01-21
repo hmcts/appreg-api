@@ -15,6 +15,7 @@ import com.tngtech.archunit.library.dependencies.SliceRule;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.arch.predicate.NoEndingWithImplPredicate;
 import uk.gov.hmcts.appregister.arch.predicate.NoInnerPredicate;
 import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.validator.Validator;
@@ -204,18 +205,18 @@ public class FeatureRules extends BaseRules {
                     .should()
                     .resideInAPackage(BASE_PACKAGE + "..(*).audit..");
 
-    // TODO: We need to correct the mapper classes before enabling this rule
-    /*
     @ArchTest
-    static final com.tngtech.archunit.lang.ArchRule repositories_should_be_in_persistence_and_end_with_repository =
-        classes()
-            .that().resideInAPackage(BASE_PACKAGE + ".(*).mapper..")
-            .and(
-                not(resideInAnyPackage(BASE_PACKAGE + ".common.."))
-            ).and(new IgnoreImplClass())
-            .should().haveSimpleNameEndingWith("Mapper")
-            .andShould().beAnnotatedWith(Mapper.class);
-    */
+    static final com.tngtech.archunit.lang.ArchRule mapper_package_should_contain_mappers =
+            classes()
+                    .that()
+                    .resideInAPackage(BASE_PACKAGE + ".(*).mapper..")
+                    .and(not(resideInAnyPackage(BASE_PACKAGE + ".common..")))
+                    .and(new NoEndingWithImplPredicate())
+                    .and(new NoInnerPredicate())
+                    .should()
+                    .haveSimpleNameEndingWith("Mapper")
+                    .orShould()
+                    .haveSimpleNameEndingWith("MappingHelper");
 
     @ArchTest
     static final SliceRule no_depends_between_features =

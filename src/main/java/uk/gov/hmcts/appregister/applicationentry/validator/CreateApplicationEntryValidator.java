@@ -26,7 +26,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Component
 @Slf4j
 public class CreateApplicationEntryValidator
-        extends AbstractApplicatonEntryValidator<
+        extends AbstractApplicationEntryValidator<
                 PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess> {
 
     public CreateApplicationEntryValidator(
