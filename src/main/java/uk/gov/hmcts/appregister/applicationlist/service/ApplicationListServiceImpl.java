@@ -47,6 +47,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -179,8 +180,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
     @Override
     @Transactional
-    public ApplicationListGetDetailDto get(UUID id, Pageable pageable) {
-        return getListDetailDto(id, pageable);
+    public ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable) {
+        return getListDetailDto(id, pageable.getPageable());
     }
 
     /**
@@ -411,7 +412,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      */
     @Transactional(readOnly = true)
     @Override
-    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable) {
+    public ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable) {
         TimeWindow timeWindow = computeTimeWindow(dto);
 
         return applicationListGetValidator.validateCja(
@@ -428,7 +429,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     timeWindow.wrapsMidnight,
                                     dto.getDescription(),
                                     dto.getOtherLocationDescription(),
-                                    pageable);
+                                    pageable.getPageable());
 
                     // Pre-fetch the number of entries linked to each list in the page.
                     // Avoids having to do a separate count query per list when mapping to DTOs.
@@ -438,7 +439,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     : fetchEntryCounts(
                                             dbPage.map(ApplicationList::getUuid).toList());
 
-                    return assembleResponsePage(dbPage, entriesPerListCounter);
+                    return assembleResponsePage(dbPage, entriesPerListCounter, pageable);
                 },
                 true);
     }
@@ -518,9 +519,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     private ApplicationListPage assembleResponsePage(
-            Page<ApplicationList> appLists, Map<UUID, Long> entriesPerListCounter) {
+            Page<ApplicationList> appLists,
+            Map<UUID, Long> entriesPerListCounter,
+            PagingWrapper pagingWrapper) {
         var responsePage = new ApplicationListPage();
-        pageMapper.toPage(appLists, responsePage);
+        pageMapper.toPage(appLists, responsePage, pagingWrapper.getSortStrings());
 
         // Ensure content is never null:
         // API spec requires an array, so return an empty one instead of null.

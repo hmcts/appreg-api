@@ -9,6 +9,7 @@ properties:
     type: string
     description: Code that identifies the Result Code.
     example: "RC-001"
+    maxLength: 10
 
   wordingFields:
     type: array

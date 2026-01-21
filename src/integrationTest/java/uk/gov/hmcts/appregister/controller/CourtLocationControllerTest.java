@@ -10,17 +10,22 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
@@ -151,6 +156,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     // --- /court-locations (paged, filterable) -------------------------------------------------
 
     @Test
+    @StabilityTest
     void givenNoFilters_whenGetCourtLocations_then200AndDefaultSort() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -177,6 +183,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     }
 
     @Test
+    @StabilityTest
     void givenFilterByCodeContains_whenGetCourtLocations_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -207,6 +214,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     }
 
     @Test
+    @StabilityTest
     void givenFilterByNameContains_whenGetCourtLocations_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -237,6 +245,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     }
 
     @Test
+    @StabilityTest
     void givenFilterByCodeAndName_whenGetCourtLocations_then200OnlyBristol() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -265,6 +274,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     }
 
     @Test
+    @StabilityTest
     void givenValidSorts_whenGetCourtLocations_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -298,6 +308,41 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
+    @StabilityTest
+    public void givenCourtLocationSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (CourtLocationSortFieldMapper courtLocationSortFieldMapper :
+                CourtLocationSortFieldMapper.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(courtLocationSortFieldMapper.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            CourtLocationPage page = responseSpec.as(CourtLocationPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    courtLocationSortFieldMapper.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+        }
+
+        Assertions.assertTrue(CourtLocationSortFieldMapper.values().length > 0);
+    }
+
     @Test
     void givenInvalidSort_whenGetCourtLocations_then400() throws Exception {
         var token =
@@ -321,6 +366,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
     }
 
     @Test
+    @StabilityTest
     void givenPaging_whenGetCourtLocations_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()

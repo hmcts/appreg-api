@@ -4,16 +4,13 @@ import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RestController;
-import uk.gov.hmcts.appregister.common.api.SortableField;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
-import uk.gov.hmcts.appregister.common.mapper.SortMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ResultCodesApi;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
@@ -45,9 +42,6 @@ public class ResultCodeController implements ResultCodesApi {
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
-
-    // Maps and validates API sort parameters to entity field names.
-    private final SortMapper sortMapper;
 
     /**
      * Retrieve a single Result Code by its code and a date where the Result Code is "Active".
@@ -91,29 +85,19 @@ public class ResultCodeController implements ResultCodesApi {
     public ResponseEntity<ResultCodePage> getResultCodes(
             String code, String title, Integer page, Integer size, List<String> sort) {
 
-        final List<String> entitySortFields = toEntitySort(sort);
-
-        Pageable pageable =
+        PagingWrapper pageable =
                 pageableMapper.from(
                         page,
                         size,
-                        entitySortFields,
-                        ResolutionCode_.RESULT_CODE,
-                        Sort.Direction.ASC);
+                        sort,
+                        ResultCodeSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        ResultCodeSortFieldEnum::getEntityValue);
 
         var resultCodePage = resultCodeService.findAll(code, title, pageable);
 
         log.info(
                 "getResultCodes: code: {}, title: {}, page: {}, size: {}", code, title, page, size);
         return ResponseEntity.ok().body(resultCodePage);
-    }
-
-    private List<String> toEntitySort(List<String> sort) {
-        if (sort == null || sort.isEmpty()) {
-            return List.of();
-        }
-        return sortMapper.map(
-                SortableField.of(sort.toArray(new String[0])),
-                ResultCodeSortFieldEnum::getEntityValue);
     }
 }

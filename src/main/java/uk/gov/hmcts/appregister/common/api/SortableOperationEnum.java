@@ -13,4 +13,14 @@ public interface SortableOperationEnum {
 
     /** The backend entity value. */
     String[] getEntityValue();
+
+    /**
+     * A tie breaker to resolve any sort. This is typically the entity's ID field to ensure a
+     * consistent sort order.
+     *
+     * @return The
+     */
+    default String getTieBreaker() {
+        return null;
+    }
 }

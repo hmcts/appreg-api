@@ -1,27 +1,21 @@
-package uk.gov.hmcts.appregister.resultcode.api;
+package uk.gov.hmcts.appregister.criminaljusticearea.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
-import uk.gov.hmcts.appregister.common.entity.ResolutionCode_;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea_;
 
-/**
- * Defines the API sort field names exposed by the Result Code endpoint and the associated mapping
- * onto the backend database.
- *
- * <p>These constants represent the property names that clients/backend can use in sorting
- */
 @Getter
-public enum ResultCodeSortFieldEnum implements SortableOperationEnum {
-    TITLE("title", ResolutionCode_.ID, ResolutionCode_.TITLE),
-    CODE("code", ResolutionCode_.ID, ResolutionCode_.RESULT_CODE);
+public enum CriminalJusticeSortFieldEnum implements SortableOperationEnum {
+    CODE("code", CriminalJusticeArea_.ID, CriminalJusticeArea_.CODE),
+    DESCRIPTION("description", CriminalJusticeArea_.ID, CriminalJusticeArea_.DESCRIPTION);
 
     private final String apiValue;
     private final String[] entityValue;
     private final String tieBreaker;
 
-    ResultCodeSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
+    CriminalJusticeSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
         this.tieBreaker = tieBreaker;

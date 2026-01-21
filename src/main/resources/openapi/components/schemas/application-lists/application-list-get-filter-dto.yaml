@@ -18,21 +18,25 @@ properties:
     type: string
     description: Court Location code (exact match).
     example: "LOC123"
+    maxLength: 10
 
   cjaCode:
     type: string
     description: CJA code (exact match).
     example: "52"
+    maxLength: 2
 
   description:
     type: string
     description: Case-insensitive contains match on description.
     example: "morning session"
+    maxLength: 200
 
   otherLocationDescription:
     type: string
     description: Case-insensitive contains match on other location description.
     example: "town hall"
+    maxLength: 200
 
   status:
     $ref: "./application-list-status.yaml"

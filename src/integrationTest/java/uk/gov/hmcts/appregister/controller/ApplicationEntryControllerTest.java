@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
@@ -180,7 +181,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("Turner");
-        filterDto.setAccountReference("232323232");
+        filterDto.setAccountReference("29345");
         filterDto.setStatus(ApplicationListStatus.OPEN);
         filterDto.setCjaCode("CJ");
         filterDto.setCourtCode("RCJ001");
@@ -285,7 +286,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("rn");
-        filterDto.setAccountReference("323232");
+        filterDto.setAccountReference("29345");
         filterDto.setStatus(ApplicationListStatus.OPEN);
         filterDto.setCjaCode("CJ");
         filterDto.setCourtCode("RCJ001");
@@ -382,7 +383,9 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @StabilityTest
-    public void testGetApplicationEntriesSearchWithAllSortKeys() throws Exception {
+    public void
+            givenApplicationEntryListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+                    throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
                 ApplicationEntrySortFieldEnum.values()) {
 
@@ -398,7 +401,18 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                             List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole());
+
+            EntryPage page = responseSpec.as(EntryPage.class);
+
+            // make sure the order response marries with the request data
             responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
         }
 
         Assertions.assertTrue(ApplicationEntrySortFieldEnum.values().length > 0);
@@ -1696,7 +1710,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
         // setup the payload
-        entryUpdateDto.setApplicationCode("INVALID_CODE");
+        entryUpdateDto.setApplicationCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =
@@ -1941,7 +1955,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto.setApplicant(null);
-        entryUpdateDto.setStandardApplicantCode("INVALID_CODE");
+        entryUpdateDto.setStandardApplicantCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =

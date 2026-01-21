@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
@@ -157,6 +158,8 @@ public class CourtLocationServiceImplTest {
 
         when(repository.findAllActiveCourts(codeFilter, nameFilter, pageable)).thenReturn(dbPage);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
         // Simulate page meta copy so assertions have values.
         doAnswer(
                         inv -> {
@@ -168,9 +171,12 @@ public class CourtLocationServiceImplTest {
                             return null;
                         })
                 .when(pageMapper)
-                .toPage(eq(dbPage), ArgumentMatchers.any(CourtLocationPage.class));
+                .toPage(
+                        eq(dbPage),
+                        ArgumentMatchers.any(CourtLocationPage.class),
+                        eq(wrapper.getSortStrings()));
 
-        CourtLocationPage pageDto = service.getPage(nameFilter, codeFilter, pageable);
+        CourtLocationPage pageDto = service.getPage(nameFilter, codeFilter, wrapper);
 
         Assertions.assertEquals(5, pageDto.getTotalElements());
         Assertions.assertEquals(3, pageDto.getTotalPages());
@@ -204,6 +210,8 @@ public class CourtLocationServiceImplTest {
 
         when(repository.findAllActiveCourts(null, null, pageable)).thenReturn(emptyPage);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
         doAnswer(
                         inv -> {
                             CourtLocationPage out = inv.getArgument(1);
@@ -214,9 +222,12 @@ public class CourtLocationServiceImplTest {
                             return null;
                         })
                 .when(pageMapper)
-                .toPage(eq(emptyPage), org.mockito.ArgumentMatchers.any(CourtLocationPage.class));
+                .toPage(
+                        eq(emptyPage),
+                        org.mockito.ArgumentMatchers.any(CourtLocationPage.class),
+                        eq(wrapper.getSortStrings()));
 
-        CourtLocationPage pageDto = service.getPage(null, null, pageable);
+        CourtLocationPage pageDto = service.getPage(null, null, wrapper);
 
         Assertions.assertEquals(0, pageDto.getTotalElements());
         Assertions.assertEquals(0, pageDto.getTotalPages());
