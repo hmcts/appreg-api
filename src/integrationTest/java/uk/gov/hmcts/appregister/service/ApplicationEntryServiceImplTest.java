@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
@@ -35,6 +36,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -83,7 +85,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     public void createEntryNoRespondentWithOffsiteFee() {
-        createEntryNoRespondentWithOffsiteFeeForTest();
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -108,7 +109,17 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 unitOfWork.inTransaction(
                         () -> {
                             ApplicationList applicationList =
-                                    applicationListRepository.findAll().getFirst();
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
+
+                            // because of the random order of tests, this can fail so need to
+                            // make sure the application list is in a valid state
+                            applicationList.setStatus(Status.OPEN);
+                            applicationList.setDeleted(false);
+                            applicationListRepository.save(applicationList);
+                            applicationListRepository.flush();
+
                             PayloadForCreate<EntryCreateDto> payloadForCreate =
                                     PayloadForCreate.<EntryCreateDto>builder()
                                             .id(applicationList.getUuid())
@@ -121,7 +132,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         unitOfWork.inTransaction(
                 () -> {
                     ApplicationList applicationList =
-                            applicationListRepository.findAll().getFirst();
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                     List<ApplicationListEntry> entries =
                             applicationListEntryRepository.findByApplicationListId(
                                     applicationList.getId());
@@ -171,7 +184,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 unitOfWork.inTransaction(
                         () -> {
                             ApplicationList applicationList =
-                                    applicationListRepository.findAll().getFirst();
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
 
                             PayloadForCreate<EntryCreateDto> payloadForCreate =
                                     PayloadForCreate.<EntryCreateDto>builder()
@@ -185,7 +200,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         unitOfWork.inTransaction(
                 () -> {
                     ApplicationList applicationList =
-                            applicationListRepository.findAll().getFirst();
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                     List<ApplicationListEntry> entries =
                             applicationListEntryRepository.findByApplicationListId(
                                     applicationList.getId());
@@ -710,7 +727,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 unitOfWork.inTransaction(
                         () -> {
                             ApplicationList applicationList =
-                                    applicationListRepository.findAll().getFirst();
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .get(4);
                             PayloadForCreate<EntryCreateDto> payloadForCreate =
                                     PayloadForCreate.<EntryCreateDto>builder()
                                             .id(applicationList.getUuid())
@@ -723,7 +742,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         unitOfWork.inTransaction(
                 () -> {
                     ApplicationList applicationList =
-                            applicationListRepository.findAll().getFirst();
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .get(4);
                     List<ApplicationListEntry> entries =
                             applicationListEntryRepository.findByApplicationListId(
                                     applicationList.getId());
@@ -771,7 +792,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 unitOfWork.inTransaction(
                         () -> {
                             ApplicationList applicationList =
-                                    applicationListRepository.findAll().getFirst();
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
                             PayloadForCreate<EntryCreateDto> payloadForCreate =
                                     PayloadForCreate.<EntryCreateDto>builder()
                                             .id(applicationList.getUuid())
@@ -784,7 +807,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         unitOfWork.inTransaction(
                 () -> {
                     ApplicationList applicationList =
-                            applicationListRepository.findAll().getFirst();
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                     List<ApplicationListEntry> entries =
                             applicationListEntryRepository.findByApplicationListId(
                                     applicationList.getId());
