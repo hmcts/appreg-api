@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
-import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -17,7 +17,7 @@ public interface ApplicationEntryService {
      * @param pageable The pagination information
      * @return The entry page containing the search results
      */
-    EntryPage search(EntryGetFilterDto filterDto, Pageable pageable);
+    EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
 
     /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,

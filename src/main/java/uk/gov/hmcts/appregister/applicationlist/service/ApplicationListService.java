@@ -4,6 +4,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
@@ -72,7 +73,7 @@ public interface ApplicationListService {
      * @param pageable Spring Data paging and sorting configuration for entry summaries
      * @return a detailed DTO representing the retrieved application list
      */
-    ApplicationListGetDetailDto get(UUID id, Pageable pageable);
+    ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable);
 
     /**
      * Deletes an Application List.
@@ -103,7 +104,7 @@ public interface ApplicationListService {
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if invalid filter
      *     parameters are provided or underlying data retrieval fails
      */
-    ApplicationListPage getPage(ApplicationListGetFilterDto dto, Pageable pageable);
+    ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable);
 
     /**
      * Gets an Application List with all its Application List Entries.

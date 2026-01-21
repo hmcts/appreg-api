@@ -12,11 +12,13 @@ properties:
     type: string
     description: Code that identifies the Standard Applicant.
     example: "APP001"
+    maxLength: 10
 
   applicationCode:
     type: string
     description: Code that identifies the Application Code.
     example: "APP-CODE-001"
+    maxLength: 10
 
   applicant:
     $ref: '../participants/applicant.yaml'

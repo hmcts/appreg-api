@@ -97,7 +97,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             rna.name AS respondent,
             rna.postcode AS postCode,
             ac.title AS applicationTitle,
-            CASE WHEN ac.feeDue = "Y" THEN true ELSE false END AS feeRequired,
+            CASE WHEN ac.feeDue = "1" THEN true ELSE false END AS feeRequired,
             rc.resultCode AS result
         FROM ApplicationListEntry ale
         LEFT JOIN ale.anamedaddress ana
@@ -112,7 +112,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             )
         LEFT JOIN aler.resolutionCode rc
         WHERE ale.applicationList.uuid = :id
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Page<ApplicationListEntrySummaryProjection> findSummariesById(UUID id, Pageable pageable);
 
@@ -121,7 +121,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         select ale.applicationList.uuid as primaryKey, count(ale) as count
         from ApplicationListEntry ale
         where ale.applicationList.uuid in :uuids
-        and (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        and (ale.deleted IS NULL OR ale.deleted <> '1')
         group by ale.applicationList.uuid
         """)
     List<EntryCount> countByApplicationListUuids(@Param("uuids") List<UUID> uuids);
@@ -204,10 +204,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             cast(:respondentSurname AS string), '%') AND rna.code='RE')
                     AND (:respondentPostcode IS NULL OR rna.postcode=
                             cast(:respondentPostcode AS string) AND rna.code='RE')
-                    AND (:accountReference IS NULL OR  ale.caseReference
-                            LIKE CONCAT('%', cast(:accountReference AS string), '%'))
-                    AND (al.deleted IS NULL OR al.deleted <> 'Y')
-                    AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+                    AND (:accountReference IS NULL OR  ale.accountNumber
+                        LIKE CONCAT('%', cast(:accountReference AS string), '%'))
+                    AND (al.deleted IS NULL OR al.deleted <> '1')
+                    AND (ale.deleted IS NULL OR ale.deleted <> '1')
             """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
             boolean hasHearingDate,
@@ -280,7 +280,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         WHERE ale.applicationList.uuid = :id
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         ORDER BY ale.sequenceNumber
         """)
     List<ApplicationListEntryPrintProjection> findByIdForPrinting(UUID id);
@@ -335,7 +335,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         SET ale.applicationList = :targetList
         WHERE ale.uuid IN :entryUuids
         AND ale.applicationList.uuid = :sourceListUuid
-        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     int bulkMoveByUuidAndSourceList(
             Set<UUID> entryUuids, ApplicationList targetList, UUID sourceListUuid);
@@ -354,7 +354,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         FROM ApplicationListEntry ale
         WHERE ale.uuid = :entryUuid
           AND ale.applicationList.uuid = :listUuid
-          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+          AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Optional<ApplicationListEntry> findActiveByUuidAndApplicationListUuid(
             @Param("entryUuid") UUID entryUuid, @Param("listUuid") UUID listUuid);
@@ -370,7 +370,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     @Query(
             """
         UPDATE ApplicationListEntry ale
-        SET ale.deleted = 'Y'
+        SET ale.deleted = '1'
         WHERE ale.uuid = :entryUuid
         """)
     int softDeleteByUuid(@Param("entryUuid") UUID entryUuid);

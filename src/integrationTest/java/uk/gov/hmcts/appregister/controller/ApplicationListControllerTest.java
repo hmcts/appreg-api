@@ -30,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -51,11 +52,14 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.PageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -79,7 +83,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
 
     private static final String UNKNOWN_COURT_CODE = "ZZZ999";
-    private static final String UNKNOWN_CJA_CODE = "99X";
+    private static final String UNKNOWN_CJA_CODE = "99";
 
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
@@ -1201,7 +1205,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .status(ApplicationListStatus.CLOSED)
                         .durationHours(4)
                         .durationMinutes(32)
-                        .courtLocationCode("Unknown")
+                        .courtLocationCode("UN")
                         .otherLocationDescription(null);
 
         Response resp =
@@ -1231,7 +1235,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .status(ApplicationListStatus.CLOSED)
                         .durationHours(4)
                         .durationMinutes(32)
-                        .cjaCode("Unknown")
+                        .cjaCode("UN")
                         .otherLocationDescription("Updated other location");
 
         Response resp =
@@ -1280,14 +1284,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        var validPayload =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(TEST_TIME)
-                        .description("sec-matrix")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         ApplicationListUpdateDto uploadPayload =
                 Instancio.of(ApplicationListUpdateDto.class)
@@ -1299,8 +1295,17 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .ignore(field(ApplicationListUpdateDto::getDurationMinutes))
                         .create();
 
+        uploadPayload.setCjaCode(null);
         uploadPayload.setDurationHours(1);
         uploadPayload.setDurationMinutes(1);
+
+        var validPayload =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("sec-matrix")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE);
 
         return Stream.of(
                 RestEndpointDescription.builder()
@@ -1879,6 +1884,41 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent().get(2).getDescription()).endsWith("A");
     }
 
+    @StabilityTest
+    public void givenApplicationListSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (ApplicationListSortFieldEnum applicationEntrySortFieldEnum :
+                ApplicationListSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            ApplicationListPage page = responseSpec.as(ApplicationListPage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+            responseSpec.then().statusCode(200);
+        }
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
+    }
+
     @Test
     @DisplayName("GET: disallowed sort (cja) -> 400")
     void givenDisallowedSort_then400() throws Exception {
@@ -1998,6 +2038,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     @Test
     @DisplayName("GET Application List")
+    @StabilityTest
     void givenValidRequest_whenGetApplicationList_then200AndBody() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -2063,8 +2104,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // setup a record for retrieval
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
         resp.then().statusCode(HttpStatus.CREATED.value());
-
-        ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
 
         // fire test
         resp = restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/232322"), token);

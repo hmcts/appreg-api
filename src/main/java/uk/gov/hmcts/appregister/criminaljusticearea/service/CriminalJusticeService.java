@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.criminaljusticearea.service;
 
-import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 
@@ -24,5 +24,5 @@ public interface CriminalJusticeService {
      * @param pageable The pageable details to establish a page of data
      * @return The pageable data that is returned
      */
-    CriminalJusticeAreaPage findAll(String code, String description, Pageable pageable);
+    CriminalJusticeAreaPage findAll(String code, String description, PagingWrapper pageable);
 }

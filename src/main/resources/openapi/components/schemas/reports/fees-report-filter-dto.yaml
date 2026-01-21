@@ -25,16 +25,19 @@ properties:
     type: string
     description: Standard applicant code (exact match).
     example: "STD-00123"
+    maxLength: 10
 
   applicantSurname:
     type: string
     description: Applicant surname (case-insensitive contains match).
     example: "smith"
+    maxLength: 100
 
   organisationName:
     type: string
     description: Organisation name (case-insensitive contains match).
     example: "acme"
+    maxLength: 100
 
   location:
     $ref: '../common/location.yaml'
