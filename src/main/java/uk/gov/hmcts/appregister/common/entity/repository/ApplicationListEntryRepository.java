@@ -204,7 +204,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             cast(:respondentSurname AS string), '%') AND rna.code='RE')
                     AND (:respondentPostcode IS NULL OR rna.postcode=
                             cast(:respondentPostcode AS string) AND rna.code='RE')
-                    AND (:accountReference IS NULL OR  ale.caseReference
+                    AND (:accountReference IS NULL OR  ale.accountNumber
                             LIKE CONCAT('%', cast(:accountReference AS string), '%'))
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
