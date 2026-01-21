@@ -123,7 +123,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                     success.getWordingSentence()
                                                                             .substitute(
                                                                                     payload.getData()
-                                                                                            .getWordingFields()),
+                                                                                            .getWordingFields())
+                                                                            .getSubstitutedString(),
                                                                     success.getResolutionCode(),
                                                                     success
                                                                             .getApplicationListEntry());

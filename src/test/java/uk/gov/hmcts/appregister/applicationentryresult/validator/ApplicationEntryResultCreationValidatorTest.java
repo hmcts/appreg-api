@@ -3,6 +3,8 @@ package uk.gov.hmcts.appregister.applicationentryresult.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.instancio.Instancio;
@@ -17,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -83,8 +86,9 @@ class ApplicationEntryResultCreationValidatorTest {
                 .thenReturn(Optional.of(list));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
-        when(resolutionCodeRepository.findByResultCodeIgnoreCase(dto.getResultCode()))
-                .thenReturn(Optional.of(resolutionCode));
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                        dto.getResultCode(), PageRequest.of(0, 1)))
+                .thenReturn(List.of(resolutionCode));
     }
 
     @Test
@@ -162,8 +166,9 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_resolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findByResultCodeIgnoreCase(dto.getResultCode()))
-                .thenReturn(Optional.empty());
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                        dto.getResultCode(), PageRequest.of(0, 1)))
+                .thenReturn(Collections.emptyList());
 
         AppRegistryException ex =
                 Assertions.assertThrows(
@@ -182,8 +187,9 @@ class ApplicationEntryResultCreationValidatorTest {
         // because it's not "TYPE|REFERENCE|LENGTH" with valid LENGTH etc.
         resolutionCode.setWording("Some text {NOT_A_VALID_TEMPLATE} end.");
 
-        when(resolutionCodeRepository.findByResultCodeIgnoreCase(dto.getResultCode()))
-                .thenReturn(Optional.of(resolutionCode));
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                        dto.getResultCode(), PageRequest.of(0, 1)))
+                .thenReturn(List.of(resolutionCode));
 
         ListEntryResultCreateValidationSuccess success = validator.validate(payload, (v, s) -> s);
 

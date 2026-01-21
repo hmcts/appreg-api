@@ -52,6 +52,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationEntryResultServiceImplTest {
@@ -132,7 +133,10 @@ class ApplicationEntryResultServiceImplTest {
     void create_validPayload_createsEntryResult() {
         // Arrange
         ResultCreateDto createDto = new ResultCreateDto();
-        createDto.setWordingFields(List.of("wf1"));
+        TemplateSubstitution ts = new TemplateSubstitution();
+        ts.setKey("field1");
+        ts.setValue("wf1");
+        createDto.setWordingFields(List.of(ts));
 
         var code = mock(ResolutionCode.class);
         var appListEntry = mock(ApplicationListEntry.class);
@@ -154,7 +158,10 @@ class ApplicationEntryResultServiceImplTest {
         saved.setVersion(1L);
 
         when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
-                        eq(createDto), eq("Some wording template wf1"), eq(code), eq(appListEntry)))
+                        eq(createDto),
+                        eq("Some wording template {wf1}"),
+                        eq(code),
+                        eq(appListEntry)))
                 .thenReturn(saved);
 
         when(appListEntryResolutionRepository.save(saved)).thenReturn(saved);
@@ -177,7 +184,10 @@ class ApplicationEntryResultServiceImplTest {
         verify(creationValidator).validate(eq(payload), notNull());
         verify(applicationListEntryResultEntityMapper)
                 .toApplicationListEntryResult(
-                        eq(createDto), eq("Some wording template wf1"), eq(code), eq(appListEntry));
+                        eq(createDto),
+                        eq("Some wording template {wf1}"),
+                        eq(code),
+                        eq(appListEntry));
         verify(appListEntryResolutionRepository).save(saved);
         verify(entityManager).refresh(saved);
         verify(applicationListEntryResultMapper).toResultGetDto(saved);

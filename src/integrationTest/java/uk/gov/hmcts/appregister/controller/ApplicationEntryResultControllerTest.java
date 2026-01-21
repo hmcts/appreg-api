@@ -9,13 +9,16 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 
 import io.restassured.response.Response;
 import java.net.MalformedURLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -27,6 +30,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -44,6 +49,10 @@ import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 public class ApplicationEntryResultControllerTest extends AbstractSecurityControllerTest {
 
     @MockitoBean private UserProvider provider;
+
+    @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
+
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     private static final String WEB_CONTEXT = "application-lists";
     private static final String APPC_CODE = "APPC";
@@ -313,6 +322,115 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                 ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
+    @Test
+    @DisplayName(
+            "Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    void givenMultipleActiveResolutionCodes_whenCreate_thenPrefersNullEndDate() throws Exception {
+        // arrange
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        LocalDate today = LocalDate.now();
+
+        // Add two ACTIVE ResolutionCodes for same business code
+        saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
+
+        var token = getToken();
+        Map<String, Object> payload = buildCreatePayload("DUP1", List.of());
+
+        // act
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        // assert response
+        resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().body("entryId", equalTo(entry.getUuid().toString()));
+        resp.then().body("resultCode", equalTo("DUP1"));
+        resp.then().body("wordingFields", equalTo(List.of())); // expect empty
+
+        UUID resultUuid = UUID.fromString(resp.jsonPath().getString("id"));
+
+        var saved =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+
+        Assertions.assertNotNull(saved.getResolutionCode(), "resolutionCode should be set");
+
+        var preferredId =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                        .stream()
+                        .filter(rc -> rc.getEndDate() == null)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected active ResolutionCode with null endDate"
+                                                        + "not found"))
+                        .getId();
+
+        // Compare by id (proxy id access should not require session)
+        Assertions.assertEquals(
+                preferredId,
+                saved.getResolutionCode().getId(),
+                "Should prefer the ResolutionCode with null endDate");
+    }
+
+    @Test
+    @DisplayName(
+            "Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate()
+            throws Exception {
+        // arrange
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        LocalDate date = LocalDate.now();
+
+        // use the requested helper
+        var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
+
+        var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
+
+        var token = getToken();
+
+        // these test-only codes have no templates; send empty wordingFields to avoid template
+        // errors
+        Map<String, Object> payload = buildCreatePayload("DUP2", List.of());
+
+        // act
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        // assert response success
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        UUID createdId = UUID.fromString(resp.jsonPath().getString("id"));
+
+        // load using existing repository method (no new repo queries)
+        AppListEntryResolution created =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+
+        // SAFE: only access the proxy identifier (does not initialize the ResolutionCode)
+        Long chosenResolutionCodeId = created.getResolutionCode().getId();
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                latest.getId(),
+                chosenResolutionCodeId,
+                "Should choose the ResolutionCode with the latest endDate");
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(
+                older.getId(),
+                chosenResolutionCodeId,
+                "Should not choose the older ResolutionCode");
+    }
+
     // -------------------------------------------------------------------------
     // ENDPOINT DESCRIPTIONS (SECURITY)
     // -------------------------------------------------------------------------
@@ -436,5 +554,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
 
         return createResult(listUuid, entryUuid, token, payload);
+    }
+
+    private ResolutionCode saveActiveResolutionCode(String code, LocalDate start, LocalDate end) {
+        ResolutionCode rc = new ResolutionCodeTestData().someComplete();
+        rc.setResultCode(code);
+        rc.setStartDate(start);
+        rc.setEndDate(end);
+        return persistance.save(rc);
     }
 }

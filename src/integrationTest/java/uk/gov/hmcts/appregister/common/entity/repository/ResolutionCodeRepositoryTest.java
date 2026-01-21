@@ -6,7 +6,6 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -100,10 +99,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
         void returnsSeededAppc_prefersNullEndDate() {
             List<ResolutionCode> result =
-                repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
-                    "appc",
-                    PageRequest.of(0, 1)
-                );
+                    repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                            "appc", PageRequest.of(0, 1));
 
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
@@ -112,7 +109,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         }
 
         @Test
-        @DisplayName("when multiple rows are active for the same code, prefers endDate = null over a future endDate")
+        @DisplayName(
+                "when multiple rows are active for the same code, prefers endDate = null over a future endDate")
         void prefersNullEndDate_whenMultipleActive() {
             LocalDate t = today();
 
@@ -128,10 +126,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             repository.saveAndFlush(additionalActiveWithEndDate);
 
             List<ResolutionCode> result =
-                repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
-                    "APPC",
-                    PageRequest.of(0, 1)
-                );
+                    repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                            "APPC", PageRequest.of(0, 1));
 
             assertThat(result).hasSize(1);
 
@@ -145,10 +141,8 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
             List<ResolutionCode> result =
-                repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
-                    "DOES_NOT_EXIST",
-                    PageRequest.of(0, 1)
-                );
+                    repository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+                            "DOES_NOT_EXIST", PageRequest.of(0, 1));
 
             assertThat(result).isEmpty();
         }

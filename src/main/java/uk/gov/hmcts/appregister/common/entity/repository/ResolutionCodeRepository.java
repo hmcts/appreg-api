@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -69,12 +68,11 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             Pageable pageable);
 
     /**
-     * Find the active ResolutionCode for a given result code (case-insensitive),
-     * prioritising open-ended rows (endDate IS NULL) when multiple are active.
-     * <p>
-     * "Active" is interpreted as:
-     *  - startDate <= today
-     *  - and (endDate is null OR endDate >= today)
+     * Find the active ResolutionCode for a given result code (case-insensitive), prioritising
+     * open-ended rows (endDate IS NULL) when multiple are active.
+     *
+     * <p>"Active" is interpreted as: - startDate <= today - and (endDate is null OR endDate >=
+     * today)
      */
     @Query(
             """
@@ -90,7 +88,5 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             rc.id desc
         """)
     List<ResolutionCode> findActiveByResultCodeIgnoreCasePreferNullEndDate(
-        @Param("resultCode") String resultCode,
-        Pageable pageable
-    );
+            @Param("resultCode") String resultCode, Pageable pageable);
 }
