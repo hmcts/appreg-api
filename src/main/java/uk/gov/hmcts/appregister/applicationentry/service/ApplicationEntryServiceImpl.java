@@ -10,7 +10,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
@@ -46,6 +45,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -93,7 +93,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final Clock clock;
 
     @Override
-    public EntryPage search(EntryGetFilterDto filterDto, Pageable pageable) {
+    public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         Status status = applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
 
         log.debug(
@@ -116,11 +116,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         filterDto.getRespondentSurname(),
                         filterDto.getRespondentPostcode(),
                         filterDto.getAccountReference(),
-                        pageable);
+                        pageable.getPageable());
 
         // breaks name into individual and/or organisation parts
         EntryPage newPage = new EntryPage();
-        pageMapper.toPage(resultPage, newPage);
+        pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
 
         // Map each entity to a summary DTO and add to the page content
         resultPage.forEach(

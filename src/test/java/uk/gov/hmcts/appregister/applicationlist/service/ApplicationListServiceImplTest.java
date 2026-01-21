@@ -87,6 +87,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -429,6 +430,7 @@ public class ApplicationListServiceImplTest {
 
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         // Page metadata mapping
         doAnswer(
@@ -439,7 +441,7 @@ public class ApplicationListServiceImplTest {
                             return null;
                         })
                 .when(pageMapper)
-                .toPage(eq(dbPage), any(ApplicationListPage.class));
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         // Given a filter with CJA + otherLocation (court is null)
         ApplicationListGetFilterDto filter =
@@ -453,7 +455,7 @@ public class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         // Then
         assertThat(result).isNotNull();
@@ -477,6 +479,7 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
 
@@ -495,7 +498,9 @@ public class ApplicationListServiceImplTest {
 
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         // Given a filter with COURT (CJA is null)
         ApplicationListGetFilterDto filter =
@@ -509,7 +514,7 @@ public class ApplicationListServiceImplTest {
         when(entryMapper.toStatus(ApplicationListStatus.CLOSED)).thenReturn(Status.CLOSED);
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         // Then
         assertThat(result).isNotNull();
@@ -535,6 +540,7 @@ public class ApplicationListServiceImplTest {
         row.setCja(cja);
 
         Pageable pageable = mock(Pageable.class);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
@@ -554,7 +560,9 @@ public class ApplicationListServiceImplTest {
 
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         // Given CJA filter, no entry count returned
         ApplicationListGetFilterDto filter =
@@ -563,7 +571,7 @@ public class ApplicationListServiceImplTest {
                         .cjaCode("52")
                         .otherLocationDescription("town");
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -595,13 +603,16 @@ public class ApplicationListServiceImplTest {
                         isNull(),
                         eq(pageable)))
                 .thenReturn(dbPage);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result).isNotNull();
         assertThat(result.getContent()).isNotNull();
@@ -642,14 +653,17 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("CJA Name"));
@@ -682,14 +696,17 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
 
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Some Court"));
@@ -707,7 +724,7 @@ public class ApplicationListServiceImplTest {
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Pageable pageable = mock(Pageable.class);
-
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
         Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
@@ -724,11 +741,13 @@ public class ApplicationListServiceImplTest {
 
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(ApplicationListPage.class));
+        doAnswer(inv -> null)
+                .when(pageMapper)
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         ApplicationListGetFilterDto filter =
                 new ApplicationListGetFilterDto().status(ApplicationListStatus.OPEN);
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         assertThat(result.getContent()).isNotNull().hasSize(1);
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Location not set"));
@@ -772,6 +791,7 @@ public class ApplicationListServiceImplTest {
         when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
                 .thenReturn(List.of());
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
         // Page metadata mapping
         doAnswer(
                         inv -> {
@@ -781,7 +801,7 @@ public class ApplicationListServiceImplTest {
                             return null;
                         })
                 .when(pageMapper)
-                .toPage(eq(dbPage), any(ApplicationListPage.class));
+                .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
 
         // Given a filter with CJA + otherLocation (court is null)
         ApplicationListGetFilterDto filter =
@@ -795,7 +815,7 @@ public class ApplicationListServiceImplTest {
                         .otherLocationDescription("town hall");
 
         // When
-        ApplicationListPage result = service.getPage(filter, pageable);
+        ApplicationListPage result = service.getPage(filter, wrapper);
 
         // Then
         verify(repository)
@@ -819,13 +839,14 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         Pageable pageable = mock(Pageable.class);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
 
-        ApplicationListGetDetailDto actual = service.get(id, pageable);
+        ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
     }
@@ -836,7 +857,9 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.empty());
 
         Pageable pageable = mock(Pageable.class);
-        assertThatThrownBy(() -> service.get(id, pageable))
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
+        assertThatThrownBy(() -> service.get(id, wrapper))
                 .isInstanceOf(AppRegistryException.class)
                 .extracting(e -> ((AppRegistryException) e).getCode().getCode().getHttpCode())
                 .isEqualTo(HttpStatus.NOT_FOUND);

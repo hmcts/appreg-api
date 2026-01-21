@@ -46,7 +46,7 @@ public class StabilityTestExtension implements TestTemplateInvocationContextProv
                                 new TestTemplateInvocationContext() {
                                     @Override
                                     public String getDisplayName(int invocationIndex) {
-                                        return "Repetition " + i;
+                                        return "Stability Repetition " + i;
                                     }
                                 });
     }

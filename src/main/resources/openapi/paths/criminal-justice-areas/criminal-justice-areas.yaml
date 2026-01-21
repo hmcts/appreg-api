@@ -10,12 +10,16 @@ get:
   parameters:
     - in: query
       name: code
-      schema: { type: string }
       description: Filter by code (contains, case-insensitive).
+      schema:
+        type: string
+        maxLength: 2
     - in: query
       name: description
-      schema: { type: string }
       description: Filter by description (contains, case-insensitive).
+      schema:
+        type: string
+        maxLength: 35
     - in: query
       name: page
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

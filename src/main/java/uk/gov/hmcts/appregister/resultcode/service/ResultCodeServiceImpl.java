@@ -9,7 +9,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -20,6 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
@@ -115,7 +115,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
      * @return a page of Result Code summaries
      */
     @Override
-    public ResultCodePage findAll(String codeFilter, String titleFilter, Pageable pageable) {
+    public ResultCodePage findAll(String codeFilter, String titleFilter, PagingWrapper pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
         var todayUk = LocalDate.now(clock.withZone(ukZone));
@@ -129,7 +129,8 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                             titleFilter);
 
                     Page<ResolutionCode> dbPage =
-                            repository.findActiveOnDate(codeFilter, titleFilter, todayUk, pageable);
+                            repository.findActiveOnDate(
+                                    codeFilter, titleFilter, todayUk, pageable.getPageable());
 
                     var responsePage = new ResultCodePage();
 
@@ -137,7 +138,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                         responsePage.setContent(new ArrayList<>());
                     }
 
-                    pageMapper.toPage(dbPage, responsePage);
+                    pageMapper.toPage(dbPage, responsePage, pageable.getSortStrings());
 
                     // Map each entity to a summary DTO and add to the page content
                     dbPage.forEach(rc -> responsePage.addContentItem(mapper.toSummaryDto(rc)));

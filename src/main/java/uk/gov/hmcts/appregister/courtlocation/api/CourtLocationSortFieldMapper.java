@@ -8,17 +8,19 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse_;
 
 @Getter
 public enum CourtLocationSortFieldMapper implements SortableOperationEnum {
-    TITLE("name", NationalCourtHouse_.NAME),
-    CODE("code", NationalCourtHouse_.COURT_LOCATION_CODE);
+    TITLE("name", NationalCourtHouse_.ID, NationalCourtHouse_.NAME),
+    CODE("code", NationalCourtHouse_.ID, NationalCourtHouse_.COURT_LOCATION_CODE);
 
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();
 
     private final String apiValue;
     private final String[] entityValue;
+    private final String tieBreaker;
 
-    CourtLocationSortFieldMapper(String apiValue, String... entityValue) {
+    CourtLocationSortFieldMapper(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
+        this.tieBreaker = tieBreaker;
     }
 
     static {

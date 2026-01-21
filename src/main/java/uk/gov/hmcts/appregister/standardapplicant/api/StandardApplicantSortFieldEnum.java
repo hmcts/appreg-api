@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant_;
 public enum StandardApplicantSortFieldEnum implements SortableOperationEnum {
     NAME(
             "name",
+            StandardApplicant_.ID,
             StandardApplicant_.NAME,
             StandardApplicant_.APPLICANT_FORENAME1,
             StandardApplicant_.APPLICANT_SURNAME),
@@ -23,10 +24,12 @@ public enum StandardApplicantSortFieldEnum implements SortableOperationEnum {
 
     private final String apiValue;
     private final String[] entityValue;
+    private final String tieBreaker;
 
-    StandardApplicantSortFieldEnum(String apiValue, String... entityValue) {
+    StandardApplicantSortFieldEnum(String apiValue, String tieBreaker, String... entityValue) {
         this.apiValue = apiValue;
         this.entityValue = entityValue;
+        this.tieBreaker = tieBreaker;
     }
 
     private static final Map<String, SortableOperationEnum> MAPPINGS = new HashMap<>();

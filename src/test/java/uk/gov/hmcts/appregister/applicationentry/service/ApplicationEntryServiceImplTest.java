@@ -86,6 +86,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
@@ -298,8 +299,9 @@ public class ApplicationEntryServiceImplTest {
                         eq(mockPage)))
                 .thenReturn(page);
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
         // execute
-        EntryPage entryPage = service.search(entryGetFilterDto, mockPage);
+        EntryPage entryPage = service.search(entryGetFilterDto, wrapper);
 
         // assert
         Assertions.assertEquals(1, entryPage.getContent().size());

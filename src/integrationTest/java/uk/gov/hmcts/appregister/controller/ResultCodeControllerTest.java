@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -15,11 +16,15 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.resultcode.api.ResultCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -48,6 +53,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     // --- /result-codes/{code}?date=YYYY-MM-DD -----------------------------------------------
 
     @Test
+    @StabilityTest
     void givenValidRequest_whenGetResultCodeByCodeAndDate_APPC_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -72,6 +78,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenValidRequest_whenGetResultCodeByCodeAndDate_AUTH_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -148,6 +155,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     // --- /result-codes (paged, filterable) ---------------------------------------------------
 
     @Test
+    @StabilityTest
     void givenNoFilters_whenGetResultCodes_then200AndContainsExpectedSeeds() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -173,6 +181,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenFilterByCodeContains_whenGetResultCodes_then200ContainsAPPC() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -200,6 +209,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenFilterByTitleContains_whenGetResultCodes_then200ContainsAUTH() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -227,6 +237,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenFilterByCodeAndTitle_whenGetResultCodes_then200OnlyCASE() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -256,6 +267,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenValidSorts_whenGetResultCodes_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
@@ -283,6 +295,40 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
+    @StabilityTest
+    public void givenResultCodeSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (ResultCodeSortFieldEnum resultCodeSortFieldEnum : ResultCodeSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(resultCodeSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            ResultCodePage page = responseSpec.as(ResultCodePage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    resultCodeSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+        }
+
+        Assertions.assertTrue(ResultCodeSortFieldEnum.values().length > 0);
+    }
+
     @Test
     void givenInvalidSort_whenGetResultCodes_then400() throws Exception {
         var token =
@@ -306,6 +352,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
     }
 
     @Test
+    @StabilityTest
     void givenPaging_whenGetResultCodes_then200() throws Exception {
         var token =
                 getATokenWithValidCredentials()
