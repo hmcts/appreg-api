@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,8 +15,10 @@ import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperatio
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
@@ -83,6 +87,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     // Infrastructure
     private final EntityManager entityManager;
+
+    private final GetApplicationEntryValidator getEntryValidator;
+
+    private final Clock clock;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -773,6 +781,53 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
 
         return officialList;
+    }
+
+    @Override
+    public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
+            PayloadGetEntryInList entry) {
+        log.debug(
+                "Started: Getting application list entry detail: {} for list: {}",
+                entry.getEntryId(),
+                entry.getListId());
+
+        return getEntryValidator.validate(
+                entry,
+                (req, success) -> {
+                    getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
+                    EntryGetDetailDto dto =
+                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                                    success.getApplicationListEntry(),
+                                    hasOffsite(success.getApplicationListEntry()));
+                    log.debug(
+                            "Finished: Getting application list entry detail: {} for list: {}",
+                            entry.getEntryId(),
+                            entry.getListId());
+
+                    return MatchResponse.of(
+                            dto, getKeyablesForCreateUpdateEtag(success.getApplicationListEntry()));
+                });
+    }
+
+    /**
+     * has an offsite fee for the entry.
+     *
+     * @param entry The entry
+     * @return Whether we have an offsite fee
+     */
+    private boolean hasOffsite(ApplicationListEntry entry) {
+        if (!entry.getEntryFeeIds().isEmpty()) {
+            List<Long> feeIds =
+                    entry.getEntryFeeIds().stream().map(AppListEntryFeeId::getFeeId).toList();
+
+            if (!feeIds.isEmpty()) {
+                List<Fee> fees = feeRepository.findByIdsBetweenDate(feeIds, LocalDate.now(clock));
+
+                // take the first fee offsite if it exists
+                return !fees.isEmpty() && fees.getFirst().isOffsite();
+            }
+        }
+        return false;
     }
 
     /**

@@ -28,7 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractApplicatonEntryValidator<T, O> implements Validator<T, O> {
+public abstract class AbstractApplicationEntryValidator<T, O> implements Validator<T, O> {
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationCodeRepository applicationCodeRepository;
     private final FeeRepository feeRepository;
@@ -136,7 +136,7 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
         // if the state of the application is not open then we cant add an entry
         if (applicationList.get().getStatus() != Status.OPEN || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE,
+                    AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
                     "The application list id %s is not in the correct state or the application list is deleted %s"
                             .formatted(
                                     getApplicationListUuid(validatable),
@@ -349,15 +349,17 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
     private Fee validateFee(ApplicationCode applicationCode, T validatable) {
         Fee feeToReturn = null;
 
+        // gets the fee statuses from the payload or an empty list if none provided
+        List<FeeStatus> feeStatuses =
+                getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
+
         // check that the fee status payload make sense according to the application code
         YesOrNo yesOrNo = applicationCode.getFeeDue();
-        if (yesOrNo == YesOrNo.YES && getFeeStatuses(validatable).isEmpty()) {
+        if (yesOrNo == YesOrNo.YES && feeStatuses.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
-        } else if (yesOrNo == YesOrNo.NO
-                && getFeeStatuses(validatable) != null
-                && !getFeeStatuses(validatable).isEmpty()) {
+        } else if (yesOrNo == YesOrNo.NO && !feeStatuses.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_NOT_REQUIRED,
                     "Fee is provided but not required for code %s"
@@ -419,8 +421,7 @@ public abstract class AbstractApplicatonEntryValidator<T, O> implements Validato
                 && getRespondent(validatable) != null) {
             throw new AppRegistryException(
                     AppListEntryError.RESPONDENT_NOT_REQUIRED,
-                    BULK_RESPONDENT_NOT_REQUIRED_MESSAGE.formatted(
-                            getApplicationCode(validatable)));
+                    "Respondent is not required".formatted(getApplicationCode(validatable)));
         }
 
         // if we are setting multiple respondents, check that the application code allows it

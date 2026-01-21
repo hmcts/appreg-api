@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,8 +40,11 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
@@ -125,11 +129,11 @@ public class ApplicationEntryServiceImplTest {
 
     @Mock private Clock clock;
 
-    @Mock private ApplicationListEntryMapper mapper;
-
     private CreateApplicationEntryValidationSuccess success;
 
     private UpdateApplicationEntryValidationSuccess updateSuccess;
+
+    private GetEntryValidationSuccess getEntryValidationSuccess;
 
     // A null match provider that returns a null etag
     private static MatchProvider NULL_MATCH_PROVIDER =
@@ -184,8 +188,16 @@ public class ApplicationEntryServiceImplTest {
                     standardApplicantRepository,
                     applicationListEntryRepository);
 
+    @Spy
+    private GetApplicationEntryValidator getEntryValidator =
+            new DummyGetApplicationEntryValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
     @BeforeEach
     void setUp() {
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
+
         service =
                 new ApplicationEntryServiceImpl(
                         applicationListEntryRepository,
@@ -203,7 +215,9 @@ public class ApplicationEntryServiceImplTest {
                         applicationListEntryMapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
-                        entityManager);
+                        entityManager,
+                        getEntryValidator,
+                        clock);
     }
 
     @Test
@@ -227,7 +241,9 @@ public class ApplicationEntryServiceImplTest {
                         mapStructMapper,
                         applicantMapper,
                         applicationListEntryEntityMapper,
-                        entityManager);
+                        entityManager,
+                        getEntryValidator,
+                        clock);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -491,6 +507,83 @@ public class ApplicationEntryServiceImplTest {
         }
     }
 
+    @Test
+    void testToEntryGetDetailDto() {
+        ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        getEntryValidationSuccess =
+                GetEntryValidationSuccess.builder()
+                        .applicationListEntry(applicationListEntry)
+                        .applicationList(applicationList)
+                        .build();
+
+        applicationListEntry.getEntryFeeIds().clear();
+
+        // setup the fee
+        Long feeId = 1L;
+        AppListEntryFeeId entry = new AppListEntryFeeId();
+        entry.setFeeId(feeId);
+        applicationListEntry.getEntryFeeIds().add(entry);
+
+        Fee fee = new FeeTestData().someComplete();
+        fee.setOffsite(true);
+        when(feeRepository.findByIdsBetweenDate(notNull(), notNull())).thenReturn(List.of(fee));
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, true))
+                .thenReturn(entryGetDetailDto);
+
+        PayloadGetEntryInList payload =
+                PayloadGetEntryInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        // test
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                service.getApplicationListEntryDetail(payload);
+
+        // assert
+        Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
+        Assertions.assertNotNull(matchResponse.getEtag());
+    }
+
+    @Test
+    void testToEntryGetDetailDtoNoFees() {
+        ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        getEntryValidationSuccess =
+                GetEntryValidationSuccess.builder()
+                        .applicationListEntry(applicationListEntry)
+                        .applicationList(applicationList)
+                        .build();
+
+        applicationListEntry.getEntryFeeIds().clear();
+
+        EntryGetDetailDto entryGetDetailDto = new EntryGetDetailDto();
+        when(applicationListEntryMapStructMapper.toEntryGetDetailDto(applicationListEntry, false))
+                .thenReturn(entryGetDetailDto);
+
+        PayloadGetEntryInList payload =
+                PayloadGetEntryInList.builder()
+                        .listId(UUID.randomUUID())
+                        .entryId(UUID.randomUUID())
+                        .build();
+
+        // test
+        MatchResponse<EntryGetDetailDto> matchResponse =
+                service.getApplicationListEntryDetail(payload);
+
+        // assert
+        Assertions.assertEquals(entryGetDetailDto, matchResponse.getPayload());
+        Assertions.assertNotNull(matchResponse.getEtag());
+
+        // no fees were found or called for
+        verify(feeRepository, times(0)).findByIdsBetweenDate(notNull(), notNull());
+    }
+
     @Setter
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
@@ -588,6 +681,21 @@ public class ApplicationEntryServiceImplTest {
                 BiFunction<PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess, R>
                         validateSuccess) {
             return validateSuccess.apply(validatable, updateSuccess);
+        }
+    }
+
+    class DummyGetApplicationEntryValidator extends GetApplicationEntryValidator {
+        public DummyGetApplicationEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListEntryRepository, applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadGetEntryInList validatable,
+                BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
+            return validateSuccess.apply(validatable, getEntryValidationSuccess);
         }
     }
 }
