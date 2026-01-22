@@ -57,7 +57,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
         SELECT al
         FROM ApplicationList al
         WHERE al.uuid = :id
-          AND (al.deleted IS NULL OR al.deleted <> '1')
+          AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     Optional<ApplicationList> findByUuid(UUID id);
 
@@ -123,7 +123,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
                )
           AND (:description IS NULL OR lower(al.description) LIKE concat('%', lower(cast(:description AS string)), '%'))
           AND (:otherDesc IS NULL OR lower(al.otherLocation) LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
-          AND (al.deleted IS NULL OR al.deleted <> '1')
+          AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     Page<ApplicationList> findAllByFilter(
             @Param("status") Status status,

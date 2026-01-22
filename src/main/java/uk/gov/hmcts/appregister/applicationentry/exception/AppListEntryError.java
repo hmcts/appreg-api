@@ -6,19 +6,19 @@ import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 
 /**
- * An enumeration to capture the errors for the application entry list.
+ * An enumeration to capture the errors for the application list entry.
  */
 public enum AppListEntryError implements ErrorCodeEnum {
     RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "The respondent type can only be an organsisation or person",
+                    "The respondent type can only be an organisation or person",
                     "ALE-1")),
 
     APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "The applicant type can only be an organsisation, person, or standard applicant",
+                    "The applicant type can only be an organisation, person, or standard applicant",
                     "ALE-2")),
 
     APPLICATION_CODE_DOES_NOT_EXIST(
@@ -56,9 +56,9 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     APPLICATION_LIST_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The application list does not exist", "ALE-11")),
+                    HttpStatus.CONFLICT, "The application list does not exist", "ALE-11")),
 
-    APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE(
+    APPLICATION_LIST_STATE_IS_INCORRECT(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "The application list state is not suitable to have an entry added for it",
@@ -76,11 +76,11 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "Application entry does not exist", "ALE-15")),
+                    HttpStatus.CONFLICT, "Application entry does not exist", "ALE-15")),
 
     ENTRY_IS_NOT_WITHIN_LIST(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "Application entry is not within application list",
                     "ALE-16")),
 
@@ -90,7 +90,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     LIST_ENTRY_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "No application list entry was found that belongs to " + " the specified list",
                     "ALE-18"));
 

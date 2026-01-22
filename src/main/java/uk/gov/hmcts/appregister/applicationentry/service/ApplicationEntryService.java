@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -46,4 +47,13 @@ public interface ApplicationEntryService {
      *     Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
+
+    /**
+     * Retrieves an entry representation based on the entry details provided which contains the list
+     * id and entry id.
+     *
+     * @param entry The payment get detail
+     * @return A MatchResponse containing the entry details
+     */
+    MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(PayloadGetEntryInList entry);
 }

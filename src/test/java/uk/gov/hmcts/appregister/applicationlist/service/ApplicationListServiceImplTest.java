@@ -48,6 +48,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListOfficialMapper;
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationCreateListLocationValidator;
@@ -1011,21 +1012,16 @@ public class ApplicationListServiceImplTest {
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
 
-            // Build a StartEvent using the passed auditType so tests reflect the correct operation
-            StartEvent start = new StartEvent(auditType, UUID.randomUUID().toString(), null);
-
-            // Create a CompleteEvent (mimics production lifecycle) and run the supplied function.
-            CompleteEvent complete = new CompleteEvent(start, "result", null);
-
-            Optional<AuditableResult<T, E>> optional = execution.apply(complete);
-
-            // Fail fast and clearly if the supplier returned empty (avoid obscure NPEs in tests)
-            if (optional.isEmpty()) {
-                throw new IllegalStateException(
-                        "Audit execution returned empty Optional for operation: " + auditType);
-            }
-
-            return optional.get().getResultingValue();
+            Optional<AuditableResult<T, E>> optional =
+                    execution.apply(
+                            new CompleteEvent(
+                                    new StartEvent(
+                                            AppListAuditOperation.CREATE_APP_LIST,
+                                            UUID.randomUUID().toString(),
+                                            null),
+                                    "result",
+                                    null));
+            return optional.map(AuditableResult::getResultingValue).orElse(null);
         }
     }
 
