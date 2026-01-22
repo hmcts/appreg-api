@@ -13,31 +13,37 @@ properties:
     type: string
     description: Name of the court or session where the application is being heard. This has to be Exact.
     example: "Royal Courts of Justice"
+    maxLength: 10
 
   otherLocationDescription:
     type: string
     description: Description of an alternative location for the hearing. This can be Partial.
     example: "Bradford scout hut"
+    maxLength: 200
 
   cjaCode:
     type: string
     description: The Criminal Justice Area (CJA) associated with the application. This has to be Exact.
     example: "CJA-2025-001"
+    maxLength: 2
 
   applicantOrganisation:
     type: string
     description: The name of the organisation submitting the application. This can be Partial.
     example: "Smith Legal Services Ltd"
+    maxLength: 100
 
   applicantSurname:
     type: string
     description: The surname of the applicant if the applicant is an individual. This can be Partial.
     example: "Smith"
+    maxLength: 100
 
   standardApplicantCode:
     type: string
     description: Unique code identifying the standard applicant. This can be Partial.
     example: "APP001"
+    maxLength: 10
 
   status:
     $ref: "../application-lists/application-list-status.yaml"
@@ -46,17 +52,21 @@ properties:
     type: string
     description: The name of the organisation responding to the application.
     example: "Jones Consulting Group"
+    maxLength: 100
 
   respondentSurname:
     type: string
     description: The surname of the respondent if the respondent is an individual.
     example: "Jones"
+    maxLength: 100
 
   respondentPostcode:
     type: string
     description: The postcode associated with the respondent’s address. This has to be Exact.
     example: "SW1A 1AA"
+    maxLength: 8
 
   accountReference:
     type: string
     description: Reference code identifying the applicant’s account. This can be Partial.
+    maxLength: 15

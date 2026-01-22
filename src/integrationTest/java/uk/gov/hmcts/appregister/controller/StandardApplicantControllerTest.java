@@ -188,7 +188,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + "APP003NotExist"),
+                        getLocalUrl(WEB_CONTEXT + "/" + "NotExist"),
                         tokenGenerator.fetchTokenForRole(),
                         new DateGetRequest(LocalDate.now()));
 
@@ -420,7 +420,7 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("does not exist"), Optional.of("does not exist")),
+                                Optional.of("not exist"), Optional.of("does not exist")),
                         new OpenApiPageMetaData());
 
         // assert the response is successful with no content

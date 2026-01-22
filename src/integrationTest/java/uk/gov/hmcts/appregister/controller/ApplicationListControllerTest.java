@@ -26,6 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -82,7 +83,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
 
     private static final String UNKNOWN_COURT_CODE = "ZZZ999";
-    private static final String UNKNOWN_CJA_CODE = "99X";
+    private static final String UNKNOWN_CJA_CODE = "99";
 
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
@@ -1204,7 +1205,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .status(ApplicationListStatus.CLOSED)
                         .durationHours(4)
                         .durationMinutes(32)
-                        .courtLocationCode("Unknown")
+                        .courtLocationCode("UN")
                         .otherLocationDescription(null);
 
         Response resp =
@@ -1234,7 +1235,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .status(ApplicationListStatus.CLOSED)
                         .durationHours(4)
                         .durationMinutes(32)
-                        .cjaCode("Unknown")
+                        .cjaCode("UN")
                         .otherLocationDescription("Updated other location");
 
         Response resp =
@@ -1283,14 +1284,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        var validPayload =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(TEST_TIME)
-                        .description("sec-matrix")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         ApplicationListUpdateDto uploadPayload =
                 Instancio.of(ApplicationListUpdateDto.class)
@@ -1302,8 +1295,17 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .ignore(field(ApplicationListUpdateDto::getDurationMinutes))
                         .create();
 
+        uploadPayload.setCjaCode(null);
         uploadPayload.setDurationHours(1);
         uploadPayload.setDurationMinutes(1);
+
+        var validPayload =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("sec-matrix")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE);
 
         return Stream.of(
                 RestEndpointDescription.builder()
@@ -2321,7 +2323,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationList applicationList =
                 unitOfWork.inTransaction(
                         () -> {
-                            return applicationListRepository.findAll().getFirst();
+                            return applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
                         });
         return applicationList.getUuid();
     }

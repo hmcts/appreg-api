@@ -18,7 +18,7 @@ properties:
     type: string
     format: time
     description: The time of day at which the Application List is scheduled, seconds are optional.
-    example: "10:30:00, 10:30"
+    example: "10:30"
 
   description:
     type: string
@@ -30,16 +30,19 @@ properties:
     type: string
     description: Code that identifies the Court Location.
     example: "LOC123"
+    maxLength: 10
 
   otherLocationDescription:
     type: string
     description: Free-text location if not using a standard court.
     example: "Temporary Courtroom at Town Hall"
+    maxLength: 200
 
   cjaCode:
     type: string
     description: Criminal Justice Area code.
-    example: "CJA001"
+    example: "CJ"
+    maxLength: 2
 
   durationHours:
     type: integer

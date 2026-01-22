@@ -31,7 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Component
 @Slf4j
 public class UpdateApplicationEntryValidator
-        extends AbstractApplicatonEntryValidator<
+        extends AbstractApplicationEntryValidator<
                 PayloadForUpdateEntry, UpdateApplicationEntryValidationSuccess> {
     private final ApplicationListEntryRepository applicationListEntryRepository;
 

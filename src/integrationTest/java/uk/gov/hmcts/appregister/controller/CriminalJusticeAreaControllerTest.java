@@ -93,7 +93,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-        String invalidCode = "invalidCode";
+        String invalidCode = "IN";
 
         // test the functionality
         Response responseSpec =

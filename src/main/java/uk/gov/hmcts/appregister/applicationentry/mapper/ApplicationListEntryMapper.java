@@ -396,6 +396,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "accountNumber", source = "applicationListEntry.accountNumber")
     @Mapping(target = "notes", source = "applicationListEntry.notes")
     @Mapping(target = "officials", expression = "java(toOfficial(officials))")
+    @Mapping(target = "lodgementDate", source = "applicationListEntry.lodgementDate")
     public abstract EntryGetDetailDto toEntryGetDetailDto(
             ApplicationListEntry applicationListEntry,
             List<AppListEntryFeeStatus> statusList,
@@ -403,6 +404,53 @@ public abstract class ApplicationListEntryMapper {
             List<AppListEntryOfficial> officials,
             StandardApplicant applicant);
 
+    /**
+     * gets the entry detail dto from application list entry.
+     *
+     * @param applicationListEntry The application list entry
+     * @return The entry get detail dto
+     */
+    @Mapping(target = "id", expression = "java(applicationListEntry.getUuid())")
+    @Mapping(
+            target = "listId",
+            expression = "java(applicationListEntry.getApplicationList().getUuid())")
+    @Mapping(
+            target = "standardApplicantCode",
+            source = "applicationListEntry.standardApplicant.applicantCode")
+    @Mapping(target = "applicationCode", source = "applicationListEntry.applicationCode.code")
+    @Mapping(
+            target = "applicant",
+            expression =
+                    "java(toApplicant(applicationListEntry, applicationListEntry.getStandardApplicant()))")
+    @Mapping(
+            target = "respondent",
+            expression = "java(toRespondent(applicationListEntry.getRnameaddress()))")
+    @Mapping(
+            target = "numberOfRespondents",
+            source = "applicationListEntry.numberOfBulkRespondents")
+    @Mapping(
+            target = "wordingFields",
+            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+    @Mapping(
+            target = "feeStatuses",
+            expression = "java(getFeeStatusList(applicationListEntry.getEntryFeeStatuses()))")
+    @Mapping(target = "hasOffsiteFee", source = "hasOffsiteFee")
+    @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
+    @Mapping(target = "accountNumber", source = "applicationListEntry.accountNumber")
+    @Mapping(target = "notes", source = "applicationListEntry.notes")
+    @Mapping(
+            target = "officials",
+            expression = "java(toOfficial(applicationListEntry.getOfficials()))")
+    @Mapping(target = "lodgementDate", source = "applicationListEntry.lodgementDate")
+    public abstract EntryGetDetailDto toEntryGetDetailDto(
+            ApplicationListEntry applicationListEntry, boolean hasOffsiteFee);
+
+    /**
+     * converts the official entities to dto officials.
+     *
+     * @param officials The list of official entities
+     * @return The list of officials
+     */
     public List<Official> toOfficial(List<AppListEntryOfficial> officials) {
         List<Official> retOfficials = new ArrayList<>();
         for (AppListEntryOfficial official : officials) {
@@ -417,7 +465,7 @@ public abstract class ApplicationListEntryMapper {
     }
 
     /**
-     * gets the working refreence strings from template code.
+     * gets the working reference strings from template code.
      *
      * @param code The application code
      * @return The list of template keys (references)
@@ -448,6 +496,12 @@ public abstract class ApplicationListEntryMapper {
                 .toList();
     }
 
+    /**
+     * converts the fee status type to payment status.
+     *
+     * @param feeStatus The fee status type
+     * @return The dto payment status
+     */
     public PaymentStatus getStatus(FeeStatusType feeStatus) {
         if (feeStatus == FeeStatusType.DUE) {
             return PaymentStatus.DUE;

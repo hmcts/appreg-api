@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d6ba91e7-9f82-4f69-be37-2a94c3187865",
+		"_postman_id": "bfd0ba63-e3bc-4d52-975e-38a92df0b254",
 		"name": "App Registration",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-d6ba91e7-9f82-4f69-be37-2a94c3187865?action=share&source=collection_link&creator=15829068"
+		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-bfd0ba63-e3bc-4d52-975e-38a92df0b254?action=share&source=collection_link&creator=15829068"
 	},
 	"item": [
 		{
@@ -26,12 +26,18 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{APP_REG_HOST}}/application-lists",
+							"raw": "{{APP_REG_HOST}}/application-lists?page=0",
 							"host": [
 								"{{APP_REG_HOST}}"
 							],
 							"path": [
 								"application-lists"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0"
+								}
 							]
 						}
 					},
@@ -553,6 +559,66 @@
 			"item": []
 		},
 		{
+			"name": "application_list_entries",
+			"item": [
+				{
+					"name": "Get Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-list-entries"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-04-21"
+								},
+								{
+									"key": "cjaCode",
+									"value": "CJ"
+								},
+								{
+									"key": "courtCode",
+									"value": "RCJ001"
+								},
+								{
+									"key": "applicantSurname",
+									"value": "rn"
+								},
+								{
+									"key": "status",
+									"value": "OPEN"
+								},
+								{
+									"key": "respondentOrganisation",
+									"value": "ah%20Johnson"
+								},
+								{
+									"key": "respondentPostcode",
+									"value": "XY9%208ZZ"
+								},
+								{
+									"key": "accountReference",
+									"value": "323232"
+								},
+								{
+									"key": "standardApplicantCode",
+									"value": "APP0"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Standard Applicants",
 			"item": [
 				{
@@ -733,6 +799,7 @@
 									"pm.expect(pm.response.code).to.equal(201);",
 									"const response = pm.response.json();",
 									"pm.environment.set(\"CREATED_ENTRY_ID\", response.id);",
+									"pm.environment.set(\"APP_LIST_ID\", response.listId);",
 									""
 								],
 								"type": "text/javascript",
@@ -793,6 +860,32 @@
 								}
 							}
 						},
+						"url": {
+							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+							"host": [
+								"{{APP_REG_HOST}}"
+							],
+							"path": [
+								"application-lists",
+								"{{APP_LIST_ID}}",
+								"entries",
+								"{{CREATED_ENTRY_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get App Entry",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/vnd.hmcts.appreg.v1+json",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
 							"host": [
