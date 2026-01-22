@@ -34,7 +34,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -544,36 +543,36 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
     }
 
-
     @StabilityTest
-    public void givenApplicationListEntrySuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
-        throws Exception {
+    public void
+            givenApplicationListEntrySuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+                    throws Exception {
         for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
-            ApplicationEntrySortFieldEnum.values()) {
+                ApplicationEntrySortFieldEnum.values()) {
 
             // create the token
             TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
             // test the functionality
             Response responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                    Optional.of(10),
-                    Optional.of(0),
-                    List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
-                    getLocalUrl(WEB_CONTEXT),
-                    tokenGenerator.fetchTokenForRole());
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
 
             EntryPage page = responseSpec.as(EntryPage.class);
 
             // make sure the order response marries with the request data
             Assertions.assertEquals(1, page.getSort().getOrders().size());
             Assertions.assertEquals(
-                SortOrdersInner.DirectionEnum.DESC,
-                page.getSort().getOrders().get(0).getDirection());
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
             Assertions.assertEquals(
-                applicationEntrySortFieldEnum.getApiValue(),
-                page.getSort().getOrders().get(0).getProperty());
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
             responseSpec.then().statusCode(200);
         }
 
