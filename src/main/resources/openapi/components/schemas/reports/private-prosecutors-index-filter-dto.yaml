@@ -29,40 +29,40 @@ properties:
     type: string
     description: Applicant surname (case-insensitive contains match).
     example: "Smith"
-    maximum: 100
+    maxLength: 100
 
   applicantFirstName:
     type: string
     description: Applicant first name (case-insensitive contains match).
     example: "John"
-    maximum: 100
+    maxLength: 100
 
   applicantOrganisationName:
     type: string
     description: Applicant organisation name (case-insensitive contains match).
     example: "Acme Corp"
-    maximum: 100
+    maxLength: 100
 
   standardApplicantName:
     type: string
     description: Standard applicant name (case-insensitive contains match).
     example: "Crown Prosecution Service"
-    maximum: 100
+    maxLength: 100
 
   respondentSurname:
     type: string
     description: Respondent surname (case-insensitive contains match).
     example: "Doe"
-    maximum: 100
+    maxLength: 100
 
   respondentFirstName:
     type: string
     description: Respondent first name (case-insensitive contains match).
     example: "Jane"
-    maximum: 100
+    maxLength: 100
 
   respondentOrganisationName:
     type: string
     description: Respondent organisation name (case-insensitive contains match).
     example: "XYZ Ltd"
-    maximum: 100
+    maxLength: 100

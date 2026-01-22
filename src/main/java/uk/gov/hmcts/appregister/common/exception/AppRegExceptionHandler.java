@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -128,7 +130,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
-        problemDetail.setDetail("Validation failed for fields:" + System.lineSeparator());
+        problemDetail.setDetail("Validation failed for fields:");
 
         // add the failure specifics to the problem detail properties
         for (FieldError fieldError : ex.getFieldErrors()) {
@@ -136,8 +138,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                     problemDetail.getDetail()
                             + fieldError.getField()
                             + "="
-                            + fieldError.getDefaultMessage()
-                            + System.lineSeparator());
+                            + fieldError.getRejectedValue());
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
@@ -152,6 +153,8 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An exception occurred", ex);
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
+        ValueInstantiationException valueInstantiationException =
+                findCause(ex, ValueInstantiationException.class);
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
@@ -159,6 +162,13 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         if (dateException != null) {
             problemDetail.setDetail(
                     (dateException.getMessage() != null ? dateException.getMessage() : ""));
+        } else if (valueInstantiationException != null) {
+            for (JsonMappingException.Reference reference : valueInstantiationException.getPath()) {
+                problemDetail.setDetail(
+                        problemDetail.getDetail()
+                                + ". Cant read value from field:"
+                                + reference.getFieldName());
+            }
         } else {
             problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
         }
