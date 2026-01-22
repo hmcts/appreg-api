@@ -888,7 +888,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    \"The Central Criminal Court\"\r\n  ]\r\n}\r\n",
+              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Name of Crown Court\",\r\n      \"value\": \"The Central Criminal Court\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -911,7 +911,7 @@
           },
           "response": []
         }
-			]
+      ]
 		},
 		{
 			"name": "Obtain Token",
