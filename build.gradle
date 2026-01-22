@@ -488,7 +488,7 @@ dependencies {
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
   implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.50'
-  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.49'
+  implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:10.1.50'
 
   // Mapstruct dependency
   implementation 'org.mapstruct:mapstruct:1.6.3' // your version
