@@ -989,15 +989,15 @@
               }
             },
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{listId}}/entries/{{entryId}}/results",
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}/results",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
               "path": [
                 "application-lists",
-                "{{listId}}",
+                "{{APP_LIST_ID}}",
                 "entries",
-                "{{entryId}}",
+                "{{CREATED_ENTRY_ID}}",
                 "results"
               ]
             }
