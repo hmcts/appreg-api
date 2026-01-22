@@ -41,6 +41,8 @@ import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -56,6 +58,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
     private static final String WEB_CONTEXT = "application-lists";
     private static final String APPC_CODE = "APPC";
+    private static final String WORDING_KEY = "Name of Crown Court";
 
     @BeforeEach
     public void before() {
@@ -230,7 +233,14 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var entry = createEntry(list);
         persistance.save(entry);
 
-        Response resp = createResultForEntry(list.getUuid(), entry.getUuid());
+        var token = getToken();
+
+        var payload = buildCreatePayload(
+            APPC_CODE,
+            List.of(new TemplateSubstitution(WORDING_KEY, "The Central Criminal Court"))
+        );
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.CREATED.value());
         resp.then().header(HttpHeaders.LOCATION, notNullValue());
@@ -239,19 +249,17 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         resp.then().body("id", notNullValue());
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo(APPC_CODE));
+
         resp.then().body("wordingFields", equalTo(List.of("Name of Crown Court")));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "version",
-                        null,
-                        null,
-                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
-                                .getType()
-                                .name(),
-                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
-                                .getEventName()));
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                "version",
+                null,
+                null,
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getType().name(),
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName()));
     }
 
     @Test
@@ -262,13 +270,15 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
+        var payload = buildCreatePayload(
+            APPC_CODE,
+            List.of(new TemplateSubstitution(WORDING_KEY, "test wording"))
+        );
 
         Response resp = createResult(listId, entryId, token, payload);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
-        assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -278,15 +288,17 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
+        var payload = buildCreatePayload(
+            APPC_CODE,
+            List.of(new TemplateSubstitution(WORDING_KEY, "test wording"))
+        );
 
         Response resp = createResult(list.getUuid(), UUID.randomUUID(), token, payload);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
-                        .getCode(),
-                resp);
+            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE.getCode(),
+            resp);
     }
 
     @Test
@@ -297,11 +309,17 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var entry = createEntry(list2);
         persistance.save(entry);
 
-        Response resp = createResultForEntry(list.getUuid(), entry.getUuid());
+        var token = getToken();
+
+        var payload = buildCreatePayload(
+            APPC_CODE,
+            List.of(new TemplateSubstitution(WORDING_KEY, "test wording"))
+        );
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(
-                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -313,37 +331,35 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var token = getToken();
 
-        Map<String, Object> payload = buildCreatePayload("UNKNOWN_CODE", List.of("test wording"));
+        var payload = buildCreatePayload(
+            "UNKNOWN",
+            List.of(new TemplateSubstitution(WORDING_KEY, "test wording"))
+        );
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(
-                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName(
-            "Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    @DisplayName("Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
     void givenMultipleActiveResolutionCodes_whenCreate_thenPrefersNullEndDate() throws Exception {
-        // arrange
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
 
         LocalDate today = LocalDate.now();
 
-        // Add two ACTIVE ResolutionCodes for same business code
         saveActiveResolutionCode("DUP1", today.minusDays(10), null);
         saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
 
         var token = getToken();
-        Map<String, Object> payload = buildCreatePayload("DUP1", List.of());
 
-        // act
+        var payload = buildCreatePayload("DUP1", List.of());
+
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
-        // assert response
         resp.then().statusCode(HttpStatus.CREATED.value());
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo("DUP1"));
@@ -352,83 +368,68 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         UUID resultUuid = UUID.fromString(resp.jsonPath().getString("id"));
 
         var saved =
-                appListEntryResolutionRepository
-                        .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
-                        .orElseThrow(
-                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+            appListEntryResolutionRepository
+                .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
+                .orElseThrow(() -> new AssertionError("Saved AppListEntryResolution not found"));
 
         Assertions.assertNotNull(saved.getResolutionCode(), "resolutionCode should be set");
 
         var preferredId =
-                resolutionCodeRepository
-                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
-                        .stream()
-                        .filter(rc -> rc.getEndDate() == null)
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected active ResolutionCode with null endDate"
-                                                        + "not found"))
-                        .getId();
+            resolutionCodeRepository
+                .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                .stream()
+                .filter(rc -> rc.getEndDate() == null)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Expected active ResolutionCode with null endDate" +
+                                                          "not found"))
+                .getId();
 
-        // Compare by id (proxy id access should not require session)
         Assertions.assertEquals(
-                preferredId,
-                saved.getResolutionCode().getId(),
-                "Should prefer the ResolutionCode with null endDate");
+            preferredId,
+            saved.getResolutionCode().getId(),
+            "Should prefer the ResolutionCode with null endDate");
     }
 
     @Test
-    @DisplayName(
-            "Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
-    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate()
-            throws Exception {
-        // arrange
+    @DisplayName("Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
 
         LocalDate date = LocalDate.now();
 
-        // use the requested helper
-        var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
-
-        var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
+        var older = saveActiveResolutionCode(
+            "DUP2", date.minusDays(10), date.plusDays(5));
+        var latest = saveActiveResolutionCode(
+            "DUP2", date.minusDays(10), date.plusDays(20));
 
         var token = getToken();
 
-        // these test-only codes have no templates; send empty wordingFields to avoid template
-        // errors
-        Map<String, Object> payload = buildCreatePayload("DUP2", List.of());
+        var payload = buildCreatePayload("DUP2", List.of());
 
-        // act
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
-        // assert response success
         resp.then().statusCode(HttpStatus.CREATED.value());
 
         UUID createdId = UUID.fromString(resp.jsonPath().getString("id"));
 
-        // load using existing repository method (no new repo queries)
         AppListEntryResolution created =
-                appListEntryResolutionRepository
-                        .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
-                        .orElseThrow(
-                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+            appListEntryResolutionRepository
+                .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
+                .orElseThrow(() -> new AssertionError("Saved AppListEntryResolution not found"));
 
-        // SAFE: only access the proxy identifier (does not initialize the ResolutionCode)
         Long chosenResolutionCodeId = created.getResolutionCode().getId();
 
-        org.junit.jupiter.api.Assertions.assertEquals(
-                latest.getId(),
-                chosenResolutionCodeId,
-                "Should choose the ResolutionCode with the latest endDate");
+        Assertions.assertEquals(
+            latest.getId(),
+            chosenResolutionCodeId,
+            "Should choose the ResolutionCode with the latest endDate");
 
-        org.junit.jupiter.api.Assertions.assertNotEquals(
-                older.getId(),
-                chosenResolutionCodeId,
-                "Should not choose the older ResolutionCode");
+        Assertions.assertNotEquals(
+            older.getId(),
+            chosenResolutionCodeId,
+            "Should not choose the older ResolutionCode");
     }
 
     // -------------------------------------------------------------------------
@@ -542,18 +543,8 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                 body);
     }
 
-    private Map<String, Object> buildCreatePayload(String resultCode, List<String> wordings) {
-        return Map.of(
-                "resultCode", resultCode,
-                "wordingFields", wordings);
-    }
-
-    private Response createResultForEntry(UUID listUuid, UUID entryUuid) throws Exception {
-        var token = getToken();
-
-        Map<String, Object> payload = buildCreatePayload(APPC_CODE, List.of("test wording"));
-
-        return createResult(listUuid, entryUuid, token, payload);
+    private ResultCreateDto buildCreatePayload(String resultCode, List<TemplateSubstitution> wordingFields) {
+        return new ResultCreateDto(resultCode, wordingFields);
     }
 
     private ResolutionCode saveActiveResolutionCode(String code, LocalDate start, LocalDate end) {
