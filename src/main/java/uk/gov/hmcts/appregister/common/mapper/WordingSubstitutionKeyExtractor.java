@@ -11,7 +11,9 @@ public class WordingSubstitutionKeyExtractor {
 
     @NotNull
     public static List<String> getStrings(String wording) {
-        if (wording == null) return List.of();
+        if (wording == null) {
+            return List.of();
+        }
 
         ArrayList<String> retKeys = new ArrayList<>();
         TemplateDetail templateDetail = WordingTemplateSentence.with(wording).getDetail();
