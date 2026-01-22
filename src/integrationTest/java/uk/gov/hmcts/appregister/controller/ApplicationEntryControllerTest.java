@@ -1013,7 +1013,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setApplicationCode("INVALID_CODE");
+        entryCreateDto.setApplicationCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =
