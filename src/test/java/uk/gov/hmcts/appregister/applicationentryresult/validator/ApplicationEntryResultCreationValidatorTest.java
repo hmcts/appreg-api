@@ -86,7 +86,7 @@ class ApplicationEntryResultCreationValidatorTest {
                 .thenReturn(Optional.of(list));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
                         dto.getResultCode(), PageRequest.of(0, 1)))
                 .thenReturn(List.of(resolutionCode));
     }
@@ -166,7 +166,7 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_resolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
                         dto.getResultCode(), PageRequest.of(0, 1)))
                 .thenReturn(Collections.emptyList());
 
@@ -187,7 +187,7 @@ class ApplicationEntryResultCreationValidatorTest {
         // because it's not "TYPE|REFERENCE|LENGTH" with valid LENGTH etc.
         resolutionCode.setWording("Some text {NOT_A_VALID_TEMPLATE} end.");
 
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCasePreferNullEndDate(
+        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
                         dto.getResultCode(), PageRequest.of(0, 1)))
                 .thenReturn(List.of(resolutionCode));
 

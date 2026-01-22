@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
-import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyExtractor.getStrings;
+import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyExtractor.getWordingKeys;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -470,7 +470,7 @@ public abstract class ApplicationListEntryMapper {
      * @return The list of template keys (references)
      */
     public List<String> getTemplateKeys(ApplicationCode code) {
-        return getStrings(code.getWording());
+        return getWordingKeys(code.getWording());
     }
 
     public List<FeeStatus> getFeeStatusList(List<AppListEntryFeeStatus> feeStatusList) {

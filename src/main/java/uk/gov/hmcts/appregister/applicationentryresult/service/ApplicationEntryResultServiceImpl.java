@@ -127,7 +127,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                             .getSubstitutedString(),
                                                                     success.getResolutionCode(),
                                                                     success
-                                                                            .getApplicationListEntry());
+                                                                            .getApplicationListEntry(),
+                                                                    userProvider.getEmail());
 
                                             listEntryResultEntity.setResolutionOfficer(
                                                     userProvider.getEmail());

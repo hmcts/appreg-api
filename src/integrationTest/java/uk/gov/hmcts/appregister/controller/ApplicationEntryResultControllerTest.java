@@ -322,7 +322,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }

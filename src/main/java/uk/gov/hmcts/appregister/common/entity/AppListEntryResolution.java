@@ -42,15 +42,16 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
-@AuditEnabled(types = {CrudEnum.DELETE})
+@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE})
 public class AppListEntryResolution extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
+
     @Id
     @Column(name = "aler_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "aler_gen")
     @SequenceGenerator(name = "aler_gen", sequenceName = "aler_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = CrudEnum.DELETE)
+    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -70,7 +71,7 @@ public class AppListEntryResolution extends BaseChangeableEntity
 
     @Column(name = "version", nullable = false)
     @Version
-    @Audit(action = CrudEnum.DELETE)
+    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE})
     private Long version;
 
     @Column(name = "user_name")

@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentryresult.mapper;
 
-import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyExtractor.getStrings;
+import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyExtractor.getWordingKeys;
 
 import java.util.List;
 import org.mapstruct.Mapper;
@@ -28,6 +28,6 @@ public abstract class ApplicationListEntryResultMapper {
      * @return The list of template keys (references)
      */
     public List<String> getTemplateKeys(ResolutionCode code) {
-        return getStrings(code.getWording());
+        return getWordingKeys(code.getWording());
     }
 }

@@ -152,6 +152,8 @@ class ApplicationEntryResultServiceImplTest {
 
         creationValidator.setSuccess(success);
 
+        when(userProvider.getEmail()).thenReturn("email");
+
         // Entity mapping + persistence
         AppListEntryResolution saved = new AppListEntryResolution();
         saved.setId(123L);
@@ -161,7 +163,8 @@ class ApplicationEntryResultServiceImplTest {
                         eq(createDto),
                         eq("Some wording template {wf1}"),
                         eq(code),
-                        eq(appListEntry)))
+                        eq(appListEntry),
+                        eq("email")))
                 .thenReturn(saved);
 
         when(appListEntryResolutionRepository.save(saved)).thenReturn(saved);
@@ -169,8 +172,6 @@ class ApplicationEntryResultServiceImplTest {
 
         var resultGetDto = new ResultGetDto();
         when(applicationListEntryResultMapper.toResultGetDto(saved)).thenReturn(resultGetDto);
-
-        when(userProvider.getEmail()).thenReturn("email");
 
         // Act
         PayloadForCreateEntryResult<ResultCreateDto> payload =
@@ -182,12 +183,15 @@ class ApplicationEntryResultServiceImplTest {
         Assertions.assertEquals(resultGetDto, response.getPayload());
 
         verify(creationValidator).validate(eq(payload), notNull());
+
         verify(applicationListEntryResultEntityMapper)
                 .toApplicationListEntryResult(
                         eq(createDto),
                         eq("Some wording template {wf1}"),
                         eq(code),
-                        eq(appListEntry));
+                        eq(appListEntry),
+                        eq("email"));
+
         verify(appListEntryResolutionRepository).save(saved);
         verify(entityManager).refresh(saved);
         verify(applicationListEntryResultMapper).toResultGetDto(saved);

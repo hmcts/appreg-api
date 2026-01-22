@@ -12,6 +12,12 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 public interface ApplicationEntryResultService {
     void delete(ListEntryResultDeleteArgs args);
 
+    /**
+     * Creates a new application list entry result.
+     *
+     * @param resultCreateDto payload containing the data required to create the entry result
+     * @return a {@link MatchResponse} containing the created {@link ResultGetDto}
+     */
     MatchResponse<ResultGetDto> create(
             PayloadForCreateEntryResult<ResultCreateDto> resultCreateDto);
 }

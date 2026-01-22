@@ -29,7 +29,7 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
                     "ALER-5")),
     APPLICATION_ENTRY_DOES_NOT_EXIST(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.CONFLICT,
                     "No application list entry exists that belongs to the specified list",
                     "ALER-6")),
     RESOLUTION_CODE_DOES_NOT_EXIST(
