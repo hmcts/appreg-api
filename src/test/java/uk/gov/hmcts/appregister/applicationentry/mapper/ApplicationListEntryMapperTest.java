@@ -431,8 +431,7 @@ class ApplicationListEntryMapperTest {
                 .thenReturn(uuidForProjection.toString());
 
         UUID listId = UUID.randomUUID();
-        when(applicationListEntryGetSummaryProjection.getListId())
-                .thenReturn(listId.toString());
+        when(applicationListEntryGetSummaryProjection.getListId()).thenReturn(listId.toString());
 
         when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
 
