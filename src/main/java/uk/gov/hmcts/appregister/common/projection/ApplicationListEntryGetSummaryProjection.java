@@ -48,4 +48,6 @@ public interface ApplicationListEntryGetSummaryProjection {
     StandardApplicant getStandardApplicant();
 
     Long getId();
+
+    String getListId();
 }
