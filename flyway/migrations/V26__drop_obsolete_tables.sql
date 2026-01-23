@@ -2,33 +2,34 @@
 
 -- Version Control
 -- V1.0  	Matthew Harman      15/01/2026	Initial version
+-- V2.0     Matthew Harman	    22/01/2026  Added IF EXISTS on the drop tables
 --
 
 -- Addresses table is not used, created in error, drop it
-DROP TABLE addresses;
+DROP TABLE IF EXISTS addresses;
 
 DROP SEQUENCE IF EXISTS adr_seq;
 
 -- Link_Communication_Media table is not used, created in error, drop it
-DROP TABLE link_communication_media;
+DROP TABLE IF EXISTS link_communication_media;
 
 DROP SEQUENCE IF EXISTS lcm_seq;
 
 -- Communication_Media table is not used, created in error, drop it
-DROP TABLE communication_media;
+DROP TABLE IF EXISTS communication_media;
 
 DROP SEQUENCE IF EXISTS comm_seq;
 
 -- Link_Addresses table is not used, created in error, drop it
-DROP TABLE link_addresses;
+DROP TABLE IF EXISTS link_addresses;
 
 DROP SEQUENCE IF EXISTS la_seq;
 
 -- Petty_Sessional_Areas table is not used, created in error, drop it
 -- drop the constraint first
-ALTER TABLE national_court_houses DROP CONSTRAINT nch_psa_fk;
+ALTER TABLE national_court_houses DROP CONSTRAINT IF EXISTS nch_psa_fk;
 
-DROP TABLE petty_sessional_areas;
+DROP TABLE IF EXISTS petty_sessional_areas;
 
 DROP SEQUENCE IF EXISTS psa_seq;
 

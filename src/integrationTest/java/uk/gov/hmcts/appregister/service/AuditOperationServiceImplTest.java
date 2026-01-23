@@ -143,7 +143,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
 
         // make sure the processing was successful
         Assert.assertEquals("response", content);
-        differenceLogAsserter.assertDiffCount(6, true);
+        differenceLogAsserter.assertDiffCount(3, true);
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
                         "test_entity", "adr_id", "123", "123", "UPDATE", "Event Name"));
@@ -155,14 +155,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
                         "test_entity", "myname", "old", "new", "UPDATE", "Event Name"));
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "criminal_justice_area",
-                        "cja_code",
-                        criminalJusticeAreaOld.getCode(),
-                        criminalJusticeTestData.getCode(),
-                        "UPDATE",
-                        "Event Name"));
     }
 
     @Test

@@ -14,7 +14,7 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     CJA_CODE("cjaCode", "id", "cjaCode"),
     ACCOUNT_REFERENCE("accountReference", "id", "accountReference"),
     STATUS("status", "id", "status"),
-    DATE("hearingDate", "id", "date");
+    DATE("date", "id", "date");
     private final String apiValue;
     private final String[] entityValue;
     private final String tieBreaker;

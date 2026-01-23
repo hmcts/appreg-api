@@ -90,8 +90,8 @@ public class ReflectiveAuditor implements Auditor {
                 // if we are using annotations check if the method is annotated for this crud
                 // operation
                 // else ignore the method
-                if (useAnnotations
-                        && !isFieldAnnotatedForCrudAuditOperation(method.field(), crudEnum)) {
+                if (!useAnnotations
+                        || (!isFieldAnnotatedForCrudAuditOperation(method.field(), crudEnum))) {
                     log.debug(
                             "Skipping method {} as not annotated for {}",
                             method.method().getName(),

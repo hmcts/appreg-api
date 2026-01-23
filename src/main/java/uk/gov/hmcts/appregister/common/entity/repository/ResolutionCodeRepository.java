@@ -3,7 +3,9 @@ package uk.gov.hmcts.appregister.common.entity.repository;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -66,4 +68,57 @@ public interface ResolutionCodeRepository extends JpaRepository<ResolutionCode, 
             @Param("title") String title,
             @Param("date") LocalDate date,
             Pageable pageable);
+
+    /**
+     * Finds active {@link ResolutionCode} records for the given result code (case-insensitive),
+     * prioritising open-ended rows where {@code endDate IS NULL}.
+     *
+     * @param resultCode the result code to match (case-insensitive)
+     * @param pageable paging/sorting
+     * @return a list of active resolution codes ordered with open-ended rows first
+     */
+    default List<ResolutionCode> findPrioritisingNullEndDate(String resultCode, Pageable pageable) {
+        /* Keep caller-provided sorts (so we don't ignore them) but drop any existing endDate sort to prevent
+        duplicates/conflicts */
+        Sort callerSortWithoutEndDate =
+                Sort.by(
+                        pageable.getSort().stream()
+                                .filter(order -> !order.getProperty().equalsIgnoreCase("endDate"))
+                                .toList());
+
+        /* Primary enforced rule: endDate nulls first, then newest endDate first (desc)
+        (null precedence only matters for the endDate order) */
+        Sort enforced =
+                Sort.by(Sort.Order.desc("endDate").nullsFirst()).and(callerSortWithoutEndDate);
+
+        Pageable enforcedPageable =
+                PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), enforced);
+
+        return findActiveByResultCodeIgnoreCase(resultCode, enforcedPageable);
+    }
+
+    /**
+     * Finds active {@link ResolutionCode} records for the given result code (case-insensitive).
+     *
+     * <p>An active resolution code is defined as:
+     *
+     * <ul>
+     *   <li>{@code startDate <= CURRENT_DATE}
+     *   <li>{@code endDate IS NULL OR endDate >= CURRENT_DATE}
+     * </ul>
+     *
+     * @param resultCode the result code to match (case-insensitive)
+     * @param pageable paging/sorting
+     * @return a list of active resolution codes matching the given result code
+     */
+    @Query(
+            """
+        select rc
+        from ResolutionCode rc
+        where lower(rc.resultCode) = lower(:resultCode)
+        and rc.startDate <= CURRENT_DATE
+        and (rc.endDate is null or rc.endDate >= CURRENT_DATE)
+        """)
+    List<ResolutionCode> findActiveByResultCodeIgnoreCase(
+            @Param("resultCode") String resultCode, Pageable pageable);
 }

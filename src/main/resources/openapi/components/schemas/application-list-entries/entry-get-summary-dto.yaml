@@ -44,5 +44,17 @@ properties:
     type: boolean
     description: True if this application list entry has been resulted.
 
+  listId:
+    type: string
+    format: uuid
+    description: Unique Identifier of the Application List to which this entry belongs.
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+
+  date:
+    type: string
+    format: date
+    description: Single date of the Application List.
+    example: "2025-10-07"
+
   status:
     $ref: '../application-lists/application-list-status.yaml'

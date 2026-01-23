@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyMapper.getWordingKeys;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -29,7 +31,6 @@ import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -44,8 +45,6 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
-import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
-import uk.gov.hmcts.appregister.generated.model.TemplateKeyWithConstraint;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -326,6 +325,8 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
     @Mapping(target = "legislation", source = "projection.legislation")
     @Mapping(target = "isResulted", expression = "java(projection.getResult() != null)")
+    @Mapping(target = "date", expression = "java(projection.getDateOfAl())")
+    @Mapping(target = "listId", source = "projection.listId")
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
@@ -471,16 +472,7 @@ public abstract class ApplicationListEntryMapper {
      * @return The list of template keys (references)
      */
     public List<String> getTemplateKeys(ApplicationCode code) {
-        ArrayList<String> retKeys = new ArrayList<>();
-        TemplateDetail templateDetail = WordingTemplateSentence.with(code.getWording()).getDetail();
-        if (templateDetail.getSubstitutionKeyConstraints() != null) {
-            for (TemplateKeyWithConstraint substitution :
-                    templateDetail.getSubstitutionKeyConstraints()) {
-                retKeys.add(substitution.getKey());
-            }
-        }
-
-        return retKeys;
+        return getWordingKeys(code.getWording());
     }
 
     public List<FeeStatus> getFeeStatusList(List<AppListEntryFeeStatus> feeStatusList) {

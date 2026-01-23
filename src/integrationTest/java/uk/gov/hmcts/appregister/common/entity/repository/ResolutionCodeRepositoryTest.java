@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -87,6 +88,60 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getResultCode)
                     .containsExactly("CASE");
+        }
+    }
+
+    @Nested
+    @DisplayName("findActiveByResultCodeIgnoreCasePreferNullEndDate")
+    class FindActiveByResultCodePreferNullEndDate {
+
+        @Test
+        @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
+        void returnsSeededAppc_prefersNullEndDate() {
+            List<ResolutionCode> result =
+                    repository.findPrioritisingNullEndDate("appc", PageRequest.of(0, 1));
+
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
+            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
+            assertThat(result.getFirst().getEndDate()).isNull();
+        }
+
+        @Test
+        @DisplayName(
+                "when multiple rows are active for the same code, prefers endDate = null over a future endDate")
+        void prefersNullEndDate_whenMultipleActive() {
+            LocalDate t = today();
+
+            ResolutionCode additionalActiveWithEndDate = new ResolutionCode();
+            additionalActiveWithEndDate.setResultCode("APPC");
+            additionalActiveWithEndDate.setTitle("Some other APPC title (should not win)");
+            additionalActiveWithEndDate.setWording("Dummy wording");
+            additionalActiveWithEndDate.setStartDate(t.minusDays(10));
+            additionalActiveWithEndDate.setEndDate(t.plusDays(10));
+            additionalActiveWithEndDate.setChangedBy(1L);
+            additionalActiveWithEndDate.setChangedDate(OffsetDateTime.now(clock));
+
+            repository.saveAndFlush(additionalActiveWithEndDate);
+
+            List<ResolutionCode> result =
+                    repository.findPrioritisingNullEndDate("APPC", PageRequest.of(0, 1));
+
+            assertThat(result).hasSize(1);
+
+            // Key behavioural assertion: open-ended row should be chosen
+            assertThat(result.getFirst().getEndDate()).isNull();
+
+            assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
+        }
+
+        @Test
+        @DisplayName("returns empty when no active row exists for the given code")
+        void returnsEmpty_whenNotFound() {
+            List<ResolutionCode> result =
+                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", PageRequest.of(0, 1));
+
+            assertThat(result).isEmpty();
         }
     }
 }

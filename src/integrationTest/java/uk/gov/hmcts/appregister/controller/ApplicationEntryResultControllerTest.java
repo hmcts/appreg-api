@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
@@ -7,12 +9,17 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 
 import io.restassured.response.Response;
 import java.net.MalformedURLException;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,6 +30,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.base.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -32,6 +41,8 @@ import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -41,7 +52,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
     @MockitoBean private UserProvider provider;
 
+    @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
+
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
+
     private static final String WEB_CONTEXT = "application-lists";
+    private static final String APPC_CODE = "APPC";
+    private static final String WORDING_KEY = "Name of Crown Court";
 
     @BeforeEach
     public void before() {
@@ -49,6 +66,10 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         when(provider.getEmail()).thenReturn("email");
         when(provider.getRoles()).thenReturn(new String[] {"role"});
     }
+
+    // -------------------------------------------------------------------------
+    // DELETE
+    // -------------------------------------------------------------------------
 
     @Test
     @DisplayName("Delete Application List Entry Result: 204 when valid IDs")
@@ -201,24 +222,276 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
     }
 
+    // -------------------------------------------------------------------------
+    // CREATE
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Create Application List Entry Result: 201 when valid request")
+    void givenValidRequest_whenCreate_then201() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        var token = getToken();
+
+        var payload =
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        WORDING_KEY, "The Central Criminal Court")));
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().header(HttpHeaders.LOCATION, notNullValue());
+        resp.then().header(HttpHeaders.ETAG, notNullValue());
+
+        resp.then().body("id", notNullValue());
+        resp.then().body("entryId", equalTo(entry.getUuid().toString()));
+        resp.then().body("resultCode", equalTo(APPC_CODE));
+
+        resp.then().body("wordingFields", equalTo(List.of("Name of Crown Court")));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
+    }
+
+    @Test
+    @DisplayName("Create Application List Entry Result: 404 when list unknown")
+    void givenUnknownList_whenCreate_then404() throws Exception {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+
+        var token = getToken();
+
+        var payload =
+                buildCreatePayload(
+                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+
+        Response resp = createResult(listId, entryId, token, payload);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Create Application List Entry Result: 400 when list closed")
+    void givenClosedList_whenCreate_then400() throws Exception {
+        var list = createAndSaveList(CLOSED);
+
+        var token = getToken();
+
+        var payload =
+                buildCreatePayload(
+                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+
+        Response resp = createResult(list.getUuid(), UUID.randomUUID(), token, payload);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
+                        .getCode(),
+                resp);
+    }
+
+    @Test
+    @DisplayName("Create Application List Entry Result: 400 when entry not in list")
+    void givenEntryNotInList_whenCreate_then400() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var list2 = createAndSaveList(OPEN);
+        var entry = createEntry(list2);
+        persistance.save(entry);
+
+        var token = getToken();
+
+        var payload =
+                buildCreatePayload(
+                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Create Application List Entry Result: 400 when resolution code unknown")
+    void givenUnknownResolutionCode_whenCreate_then400() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        var token = getToken();
+
+        var payload =
+                buildCreatePayload(
+                        "UNKNOWN", List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        assertEquals(
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName(
+            "Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    void givenMultipleActiveResolutionCodes_whenCreate_thenPrefersNullEndDate() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        LocalDate today = LocalDate.now();
+
+        saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
+
+        var token = getToken();
+
+        var payload = buildCreatePayload("DUP1", List.of());
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        resp.then().statusCode(HttpStatus.CREATED.value());
+        resp.then().body("entryId", equalTo(entry.getUuid().toString()));
+        resp.then().body("resultCode", equalTo("DUP1"));
+        resp.then().body("wordingFields", equalTo(List.of())); // expect empty
+
+        UUID resultUuid = UUID.fromString(resp.jsonPath().getString("id"));
+
+        var saved =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+
+        Assertions.assertNotNull(saved.getResolutionCode(), "resolutionCode should be set");
+
+        var preferredId =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                        .stream()
+                        .filter(rc -> rc.getEndDate() == null)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected active ResolutionCode with null endDate"
+                                                        + "not found"))
+                        .getId();
+
+        Assertions.assertEquals(
+                preferredId,
+                saved.getResolutionCode().getId(),
+                "Should prefer the ResolutionCode with null endDate");
+    }
+
+    @Test
+    @DisplayName(
+            "Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate()
+            throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        LocalDate date = LocalDate.now();
+
+        var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
+        var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
+
+        var token = getToken();
+
+        var payload = buildCreatePayload("DUP2", List.of());
+
+        Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
+
+        resp.then().statusCode(HttpStatus.CREATED.value());
+
+        UUID createdId = UUID.fromString(resp.jsonPath().getString("id"));
+
+        AppListEntryResolution created =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
+
+        Long chosenResolutionCodeId = created.getResolutionCode().getId();
+
+        Assertions.assertEquals(
+                latest.getId(),
+                chosenResolutionCodeId,
+                "Should choose the ResolutionCode with the latest endDate");
+
+        Assertions.assertNotEquals(
+                older.getId(),
+                chosenResolutionCodeId,
+                "Should not choose the older ResolutionCode");
+    }
+
+    // -------------------------------------------------------------------------
+    // ENDPOINT DESCRIPTIONS (SECURITY)
+    // -------------------------------------------------------------------------
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        UUID resultId = UUID.randomUUID();
+
+        Map<String, Object> postPayload =
+                Map.of(
+                        "resultCode", "SOME_CODE",
+                        "resolutionWording", "Some wording");
+
         return Stream.of(
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrl(
                                         WEB_CONTEXT
                                                 + "/"
-                                                + UUID.randomUUID()
+                                                + listId
                                                 + "/entries/"
-                                                + UUID.randomUUID()
+                                                + entryId
+                                                + "/results"))
+                        .method(HttpMethod.POST)
+                        .payload(postPayload)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
                                                 + "/results/"
-                                                + UUID.randomUUID()))
+                                                + resultId))
                         .method(HttpMethod.DELETE)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
     }
+
+    // -------------------------------------------------------------------------
+    // HELPERS
+    // -------------------------------------------------------------------------
 
     private Response deleteResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token)
             throws MalformedURLException {
@@ -270,5 +543,27 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                         .resolutionCode(resolutionCode)
                         .build();
         return persistance.save(resolution);
+    }
+
+    private Response createResult(UUID listId, UUID entryId, TokenAndJwksKey token, Object body)
+            throws MalformedURLException {
+
+        return restAssuredClient.executePostRequest(
+                getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"),
+                token,
+                body);
+    }
+
+    private ResultCreateDto buildCreatePayload(
+            String resultCode, List<TemplateSubstitution> wordingFields) {
+        return new ResultCreateDto(resultCode, wordingFields);
+    }
+
+    private ResolutionCode saveActiveResolutionCode(String code, LocalDate start, LocalDate end) {
+        ResolutionCode rc = new ResolutionCodeTestData().someComplete();
+        rc.setResultCode(code);
+        rc.setStartDate(start);
+        rc.setEndDate(end);
+        return persistance.save(rc);
     }
 }
