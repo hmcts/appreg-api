@@ -7,7 +7,6 @@ import static uk.gov.hmcts.appregister.common.enumeration.Status.CLOSED;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEquals;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.response.Response;
 import java.net.MalformedURLException;
 import java.time.LocalDate;

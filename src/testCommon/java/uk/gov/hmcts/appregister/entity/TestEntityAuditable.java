@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
-@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE})
+@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE})
 @Table(name = "test_entity")
 @Getter
 @Setter
@@ -28,23 +28,23 @@ public class TestEntityAuditable implements Keyable {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "adr_gen")
     @SequenceGenerator(name = "adr_gen", sequenceName = "adr_id", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = CrudEnum.CREATE)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private Long id;
 
     @Column(name = "line1")
     @Size(max = 35)
-    @Audit(action = CrudEnum.CREATE)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private CriminalJusticeArea criminalJusticeArea;
 
     @Column(name = "al_entry_resolution_wording", nullable = false)
     private String resolutionWording;
 
     @Column(name = "myname", nullable = false)
-    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE})
     private String name;
 
     @Column(name = "entry", nullable = false)
-    @Audit(action = CrudEnum.DELETE)
+    @Audit(action = {CrudEnum.DELETE})
     private List<TestEntity2> entry = new ArrayList<>();
 
     @Column(name = "entry2", nullable = false)

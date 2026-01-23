@@ -86,7 +86,7 @@ class ApplicationEntryResultCreationValidatorTest {
                 .thenReturn(Optional.of(list));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(
                         dto.getResultCode(), PageRequest.of(0, 1)))
                 .thenReturn(List.of(resolutionCode));
     }
@@ -166,7 +166,7 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_resolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(
                         dto.getResultCode(), PageRequest.of(0, 1)))
                 .thenReturn(Collections.emptyList());
 
