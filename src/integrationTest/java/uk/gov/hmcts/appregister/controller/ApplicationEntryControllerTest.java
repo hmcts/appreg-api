@@ -25,6 +25,7 @@ import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -54,6 +55,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationEntryControllerTest extends AbstractSecurityControllerTest {
@@ -176,6 +178,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2025-04-21"));
+        assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }
 
     @StabilityTest
@@ -281,6 +285,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }
 
     @StabilityTest
@@ -386,6 +392,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }
 
     @StabilityTest
@@ -539,6 +547,44 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getListId()).isNotNull();
+    }
+
+    @StabilityTest
+    public void
+            givenApplicationListEntrySuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+                    throws Exception {
+        for (ApplicationEntrySortFieldEnum applicationEntrySortFieldEnum :
+                ApplicationEntrySortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(applicationEntrySortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            EntryPage page = responseSpec.as(EntryPage.class);
+
+            // make sure the order response marries with the request data
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    applicationEntrySortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+            responseSpec.then().statusCode(200);
+        }
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
     @StabilityTest
@@ -588,6 +634,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         tokenGenerator.fetchTokenForRole());
         // assert the response
         responseSpec.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(CommonAppError.SORT_NOT_SUITABLE.getCode(), responseSpec);
     }
 
     // NOTE: Spring is more forgiving in this scenario and defaults the page number to
@@ -1013,7 +1060,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setApplicationCode("INVALID_CODE");
+        entryCreateDto.setApplicationCode("INVALID");
 
         // test the functionality
         Response responseSpecCreate =
