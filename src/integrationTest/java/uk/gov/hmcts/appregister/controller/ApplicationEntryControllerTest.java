@@ -176,6 +176,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2025-04-21"));
+        assertThat(entryGetSummaryDto.getApplicationListId()).isNotNull();
     }
 
     @StabilityTest
@@ -281,6 +283,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getApplicationListId()).isNotNull();
     }
 
     @StabilityTest
@@ -386,6 +390,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getApplicationListId()).isNotNull();
     }
 
     @StabilityTest
@@ -539,6 +545,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
+        assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
+        assertThat(entryGetSummaryDto.getApplicationListId()).isNotNull();
     }
 
     @StabilityTest

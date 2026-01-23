@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.util;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
@@ -20,6 +21,8 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         private String applicationTitle;
         private boolean feeRequired;
         private String result;
+        private UUID applicationListId;
+        private LocalDate date;
 
         public Builder uuid(UUID uuid) {
             this.uuid = uuid;
@@ -71,6 +74,16 @@ public final class ApplicationListEntrySummaryProjectionUtil {
             return this;
         }
 
+        public Builder applicationListId(UUID applicationListId) {
+            this.applicationListId = applicationListId;
+            return this;
+        }
+
+        public Builder date(LocalDate date) {
+            this.date = date;
+            return this;
+        }
+
         public ApplicationListEntrySummaryProjection build() {
             return new Impl(
                     id,
@@ -82,7 +95,9 @@ public final class ApplicationListEntrySummaryProjectionUtil {
                     postCode,
                     applicationTitle,
                     feeRequired,
-                    result);
+                    result,
+                    applicationListId,
+                    date);
         }
     }
 
@@ -98,6 +113,8 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         private final String applicationTitle;
         private final boolean feeRequired;
         private final String result;
+        private final UUID applicationListId;
+        private final LocalDate date;
 
         Impl(
                 Long id,
@@ -109,7 +126,9 @@ public final class ApplicationListEntrySummaryProjectionUtil {
                 String postCode,
                 String applicationTitle,
                 boolean feeRequired,
-                String result) {
+                String result,
+                UUID applicationListId,
+                LocalDate date) {
             this.uuid = uuid;
             this.sequenceNumber = sequenceNumber;
             this.accountNumber = accountNumber;
@@ -120,6 +139,8 @@ public final class ApplicationListEntrySummaryProjectionUtil {
             this.feeRequired = feeRequired;
             this.result = result;
             this.id = id;
+            this.applicationListId = applicationListId;
+            this.date = date;
         }
 
         @Override
@@ -165,6 +186,16 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         @Override
         public String getResult() {
             return result;
+        }
+
+        @Override
+        public UUID getApplicationListId() {
+            return applicationListId;
+        }
+
+        @Override
+        public LocalDate getDate() {
+            return date;
         }
 
         @Override

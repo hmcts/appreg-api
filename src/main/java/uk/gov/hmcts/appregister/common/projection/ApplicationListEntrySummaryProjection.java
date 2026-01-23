@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.projection;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public interface ApplicationListEntrySummaryProjection {
@@ -22,4 +23,8 @@ public interface ApplicationListEntrySummaryProjection {
     boolean isFeeRequired();
 
     String getResult();
+
+    UUID getApplicationListId();
+
+    LocalDate getDate();
 }
