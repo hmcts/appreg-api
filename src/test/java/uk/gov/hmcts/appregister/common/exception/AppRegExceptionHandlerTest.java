@@ -135,7 +135,10 @@ class AppRegExceptionHandlerTest {
         BindingResult result = Mockito.mock(BindingResult.class);
 
         List<FieldError> fieldErrors =
-                List.of(new FieldError("objectName", "field", "defaultMessage"));
+                List.of(
+                        new FieldError(
+                                "objectName", "field", "rejectedValue", false, null, null, null));
+
         // setup
         MethodArgumentNotValidException exception =
                 new MethodArgumentNotValidException(null, result) {
@@ -160,7 +163,7 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
         Assertions.assertEquals(
-                "Validation failed for fields:\n" + "field=defaultMessage" + System.lineSeparator(),
+                "Validation failed for fields:field=rejectedValue",
                 ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
