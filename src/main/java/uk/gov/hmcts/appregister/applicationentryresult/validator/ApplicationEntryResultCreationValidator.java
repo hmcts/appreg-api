@@ -112,7 +112,7 @@ public class ApplicationEntryResultCreationValidator
 
     private ResolutionCode validateResolutionCode(String resolutionCode) {
         var list =
-                resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
+                resolutionCodeRepository.findPrioritisingNullEndDate(
                         resolutionCode, PageRequest.of(0, 1));
 
         Optional<ResolutionCode> code = list.stream().findFirst();

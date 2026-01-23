@@ -99,7 +99,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
         void returnsSeededAppc_prefersNullEndDate() {
             List<ResolutionCode> result =
-                    repository.findActiveByResultCodeIgnoreCase("appc", PageRequest.of(0, 1));
+                    repository.findPrioritisingNullEndDate("appc", PageRequest.of(0, 1));
 
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
@@ -125,7 +125,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             repository.saveAndFlush(additionalActiveWithEndDate);
 
             List<ResolutionCode> result =
-                    repository.findActiveByResultCodeIgnoreCase("APPC", PageRequest.of(0, 1));
+                    repository.findPrioritisingNullEndDate("APPC", PageRequest.of(0, 1));
 
             assertThat(result).hasSize(1);
 
@@ -139,8 +139,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
             List<ResolutionCode> result =
-                    repository.findActiveByResultCodeIgnoreCase(
-                            "DOES_NOT_EXIST", PageRequest.of(0, 1));
+                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", PageRequest.of(0, 1));
 
             assertThat(result).isEmpty();
         }

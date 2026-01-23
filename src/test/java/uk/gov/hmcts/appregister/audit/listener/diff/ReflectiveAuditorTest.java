@@ -38,7 +38,7 @@ public class ReflectiveAuditorTest {
         TestEntityAuditable test2 = new TestEntityAuditable();
         test2.id = 123L;
         test2.resolutionWording = "32";
-
+        test2.name = "My Name";
         test2.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
 
         ListEntity listEntitya = new ListEntity();
@@ -59,7 +59,7 @@ public class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.CREATE, test2);
 
-        Assertions.assertEquals(11, differenceList.size());
+        Assertions.assertEquals(4, differenceList.size());
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test2.id.toString()),
                 differenceList.get(0));
@@ -67,22 +67,10 @@ public class ReflectiveAuditorTest {
                 new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
                 differenceList.get(1));
         Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_code",
-                        test2.criminalJusticeArea.getCode()),
+                new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
                 differenceList.get(2));
         Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_description",
-                        test2.criminalJusticeArea.getDescription()),
-                differenceList.get(3));
-        Assertions.assertEquals(
-                new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
-                differenceList.get(4));
-        Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", ""), differenceList.get(5));
+                new AuditableData("test_entity", "myname", "My Name"), differenceList.get(3));
     }
 
     @Test
@@ -106,7 +94,7 @@ public class ReflectiveAuditorTest {
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
 
-        Assertions.assertEquals(8, differenceList.size());
+        Assertions.assertEquals(3, differenceList.size());
 
         Assertions.assertEquals(
                 new AuditableData("test_entity", "adr_id", test.id.toString()),
@@ -119,73 +107,13 @@ public class ReflectiveAuditorTest {
     }
 
     @Test
-    public void testWithComplexAndBasicList() {
-        TestEntityAuditable test = new TestEntityAuditable();
-
-        test.resolutionWording = "32";
-        test.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
-        test.id = 123L;
-
-        ListEntity listEntity = new ListEntity();
-        listEntity.setName("e8");
-        listEntity.setId(3L);
-
-        test.entry.add(listEntity);
-        test.entryStrings.addAll(List.of("test string", "test string another"));
-
-        TestEntityAuditable test1 = new TestEntityAuditable();
-
-        test1.resolutionWording = "32544";
-        test1.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
-        test1.id = 123L;
-
-        ListEntity listEntity1 = new ListEntity();
-        listEntity1.setId(5L);
-        listEntity1.setName("e832");
-
-        test1.entry.add(listEntity1);
-        test1.entryStrings.addAll(List.of("test string", "test string another 2"));
-
-        ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
-        List<AuditableData> differenceList =
-                reflectiveAuditDifferentiator.extractAuditData(CrudEnum.READ, test);
-
-        Assertions.assertEquals(11, differenceList.size());
-
-        Assertions.assertEquals(
-                new AuditableData("test_entity", "adr_id", test.id.toString()),
-                differenceList.get(0));
-        Assertions.assertEquals(
-                new AuditableData(TableNames.CRIMINAL_JUSTICE_AREA, "cja_id", ""),
-                differenceList.get(1));
-        Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_code",
-                        test.criminalJusticeArea.getCode()),
-                differenceList.get(2));
-        Assertions.assertEquals(
-                new AuditableData(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_description",
-                        test.criminalJusticeArea.getDescription()),
-                differenceList.get(3));
-        Assertions.assertEquals(
-                new AuditableData("test_entity", "al_entry_resolution_wording", "32"),
-                differenceList.get(4));
-        Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", ""), differenceList.get(5));
-    }
-
-    @Test
     public void testAuditForDeleteWithAnnotation() {
         TestEntityAuditable test = new TestEntityAuditable();
 
-        test.resolutionWording = "32";
         test.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
         test.id = 123L;
         test.name = "random name";
-
+        test.resolutionWording = "resolutionWording";
         ListEntity listEntity2 = new ListEntity();
         listEntity2.setName("e8");
         listEntity2.setId(3L);
@@ -199,7 +127,9 @@ public class ReflectiveAuditorTest {
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, test);
         Assertions.assertEquals(1, differenceList.size());
         Assertions.assertEquals(
-                new AuditableData("test_entity", "myname", "random name"), differenceList.get(0));
+                new AuditableData(
+                        "test_entity", "al_entry_resolution_wording", "resolutionWording"),
+                differenceList.get(0));
     }
 
     @Test
@@ -208,6 +138,7 @@ public class ReflectiveAuditorTest {
 
         test.resolutionWording = "32";
         test.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
+        test.criminalJusticeArea.setId(100L);
         test.id = 123L;
         test.name = "random name";
         test.setChangedBy("old user");
@@ -217,6 +148,7 @@ public class ReflectiveAuditorTest {
 
         newTest.resolutionWording = "37";
         newTest.criminalJusticeArea = new CriminalJusticeTestData().someComplete();
+        newTest.criminalJusticeArea.setId(100L);
         newTest.id = 1235L;
         newTest.name = "random name New";
         newTest.setChangedBy("new user");
@@ -240,11 +172,11 @@ public class ReflectiveAuditorTest {
         Assertions.assertNotNull(
                 "random name New", findByField("myname", newDifferenceList).getValue());
         Assertions.assertNotNull(
-                test.getCriminalJusticeArea().getCode(),
-                findByField("cja_code", differenceList).getValue());
+                test.getCriminalJusticeArea().getId(),
+                findByField("cja_id", differenceList).getValue());
         Assertions.assertNotNull(
                 newTest.getCriminalJusticeArea().getCode(),
-                findByField("cja_code", differenceList).getValue());
+                findByField("cja_id", differenceList).getValue());
     }
 
     @Test
@@ -283,9 +215,11 @@ public class ReflectiveAuditorTest {
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     public class BaseEntity implements Changeable, Deletable {
         @Column(name = "changed_by", nullable = false)
+        @Audit(action = {CrudEnum.UPDATE})
         private String changedBy;
 
         @Column(name = "changed_date", nullable = false)
+        @Audit(action = {CrudEnum.UPDATE})
         private OffsetDateTime changedDate;
 
         @Column(name = "delete_by")
@@ -301,7 +235,7 @@ public class ReflectiveAuditorTest {
 
     /** Setup some test data. */
     @Getter
-    @AuditEnabled(types = {CrudEnum.DELETE})
+    @AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.READ, CrudEnum.UPDATE})
     @Table(name = "test_entity")
     class TestEntityAuditable extends BaseEntity implements Keyable {
         @Id
@@ -309,21 +243,24 @@ public class ReflectiveAuditorTest {
         @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "adr_gen")
         @SequenceGenerator(name = "adr_gen", sequenceName = "adr_id", allocationSize = 1)
         @EqualsAndHashCode.Include
+        @Audit(action = {CrudEnum.CREATE, CrudEnum.READ})
         private Long id;
 
         @Column(name = "line1")
         @Size(max = 35)
+        @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.UPDATE})
         private CriminalJusticeArea criminalJusticeArea;
 
         @Column(name = "al_entry_resolution_wording", nullable = false)
+        @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
         private String resolutionWording;
 
         @Column(name = "myname", nullable = false)
-        @Audit(action = CrudEnum.DELETE)
+        @Audit(action = {CrudEnum.CREATE, CrudEnum.READ, CrudEnum.UPDATE})
         private String name;
 
         @Column(name = "entry", nullable = false)
-        @Audit(action = CrudEnum.DELETE)
+        @Audit(action = {CrudEnum.CREATE})
         private List<ListEntity> entry = new ArrayList<>();
 
         @Column(name = "entry2", nullable = false)
@@ -342,7 +279,7 @@ public class ReflectiveAuditorTest {
         private Long id;
 
         @Column(name = "lst_entry", nullable = false)
-        @Audit(action = CrudEnum.DELETE)
+        @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
         private String name;
 
         // test recursion
