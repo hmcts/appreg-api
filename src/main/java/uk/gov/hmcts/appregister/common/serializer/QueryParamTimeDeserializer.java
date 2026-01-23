@@ -6,8 +6,8 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 
 /**
- * A spring based converter to convert query time parameters to LocalTime so that
- * the time only has a hour and minute never seconds.
+ * A spring based converter to convert query time parameters to LocalTime so that the time only has
+ * a hour and minute never seconds.
  */
 @Component
 public class QueryParamTimeDeserializer implements Converter<String, LocalTime> {

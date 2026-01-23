@@ -119,23 +119,22 @@ public class DataConstraintControllerTest extends BaseIntegration {
     public void testTimeOnQueryFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response createListResp =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(APP_LIST_WEB_CONTEXT + "?time=24:00:23"),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(APP_LIST_WEB_CONTEXT + "?time=24:00:23"),
+                        tokenGenerator.fetchTokenForRole());
 
         // assert the response
         createListResp.then().statusCode(400);
         ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-            CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-            problemDetail.getType());
+                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
+                problemDetail.getType());
         Assertions.assertEquals(
-            "Validation failed for fields:time=24:00:23",
-            problemDetail.getDetail());
+                "Validation failed for fields:time=24:00:23", problemDetail.getDetail());
     }
 
     @Test
