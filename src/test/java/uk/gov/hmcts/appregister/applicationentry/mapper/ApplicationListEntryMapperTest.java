@@ -430,9 +430,9 @@ class ApplicationListEntryMapperTest {
         when(applicationListEntryGetSummaryProjection.getUuid())
                 .thenReturn(uuidForProjection.toString());
 
-        UUID applicationListId = UUID.randomUUID();
-        when(applicationListEntryGetSummaryProjection.getApplicationListId())
-                .thenReturn(applicationListId.toString());
+        UUID listId = UUID.randomUUID();
+        when(applicationListEntryGetSummaryProjection.getListId())
+                .thenReturn(listId.toString());
 
         when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
 
@@ -532,8 +532,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertFalse(mappedResult.getIsFeeRequired());
         Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
         Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
-        Assertions.assertEquals(
-                applicationListId.toString(), mappedResult.getApplicationListId().toString());
+        Assertions.assertEquals(listId.toString(), mappedResult.getListId().toString());
         Assertions.assertEquals(LocalDate.now(), mappedResult.getDate());
     }
 

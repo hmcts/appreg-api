@@ -172,7 +172,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     rna.surname as respondentSurname,
                     rna.postcode as respondentPostcode,
                     ale.caseReference as  accountReference,
-                    sa as standardApplicant,
                     al.uuid as applicationListId
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana

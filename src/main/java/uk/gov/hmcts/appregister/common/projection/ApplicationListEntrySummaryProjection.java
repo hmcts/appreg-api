@@ -24,7 +24,7 @@ public interface ApplicationListEntrySummaryProjection {
 
     String getResult();
 
-    UUID getApplicationListId();
+    UUID getListId();
 
     LocalDate getDate();
 }

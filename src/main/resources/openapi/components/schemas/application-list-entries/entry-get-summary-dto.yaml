@@ -44,7 +44,7 @@ properties:
     type: boolean
     description: True if this application list entry has been resulted.
 
-  applicationListId:
+  listId:
     type: string
     format: uuid
     description: Unique Identifier of the Application List to which this entry belongs.

@@ -189,7 +189,7 @@ public final class ApplicationListEntrySummaryProjectionUtil {
         }
 
         @Override
-        public UUID getApplicationListId() {
+        public UUID getListId() {
             return applicationListId;
         }
 
