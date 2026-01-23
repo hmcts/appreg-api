@@ -326,6 +326,8 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
     @Mapping(target = "legislation", source = "projection.legislation")
     @Mapping(target = "isResulted", expression = "java(projection.getResult() != null)")
+    @Mapping(target = "date", expression = "java(projection.getDateOfAl())")
+    @Mapping(target = "listId", source = "projection.listId")
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
