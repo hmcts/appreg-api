@@ -281,7 +281,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         Response resp = createResult(listId, entryId, token, payload);
 
-        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -301,8 +301,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
-                        .getCode(),
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
                 resp);
     }
 

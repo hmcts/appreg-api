@@ -84,7 +84,7 @@ public class ApplicationEntryResultCreationValidator
 
         if (!applicationList.get().isOpen() || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE,
+                    ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT,
                     "The application list id %s is not in the correct state or is deleted (status=%s)"
                             .formatted(listId, applicationList.get().getStatus()));
         }

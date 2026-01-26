@@ -13,12 +13,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.service.ApplicationEntryResultService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntryResultsApi;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 
 /**
  * REST controller for managing Application List Entry Results.
@@ -92,6 +94,42 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
         return ResponseEntity.created(locationOf(resultGetDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
+                .eTag(resultGetDto.getEtag())
+                .body(resultGetDto.getPayload());
+    }
+
+    /**
+     * Updates an Application List Entry Result.
+     *
+     * <p>
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param listId Public identifier of the Application List. (required)
+     * @param entryId Public identifier of the Application List Entry. (required)
+     * @param resultId Public identifier of the Application List Entry Result. (required)
+     * @param resultUpdateDto (required)
+     * @return Returns the updated Application List Entry Result (status code 200)
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ResultGetDto> updateApplicationListEntryResult(
+            UUID listId, UUID entryId, UUID resultId, ResultUpdateDto resultUpdateDto) {
+        PayloadForUpdateEntryResult payloadForUpdateEntryResult =
+                new PayloadForUpdateEntryResult(resultUpdateDto, listId, entryId, resultId);
+
+        // update the entry result
+        MatchResponse<ResultGetDto> resultGetDto = service.update(payloadForUpdateEntryResult);
+        log.info(
+                "Successfully updated Application List Entry Result with id:{}",
+                resultGetDto.getPayload().getId());
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(resultGetDto.getPayload().getId())))
                 .eTag(resultGetDto.getEtag())
                 .body(resultGetDto.getPayload());
     }
