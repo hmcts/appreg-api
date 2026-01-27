@@ -1621,6 +1621,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent().get(1).getDescription()).endsWith("Mango");
         assertThat(page.getContent().get(2).getDescription()).endsWith("Zebra");
 
+        assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
+        // TODO check to see whether all content pages has entry summaries or not.
+
         assertThat(page.getPageNumber()).isZero();
         assertThat(page.getPageSize()).isGreaterThanOrEqualTo(3);
         assertThat(page.getFirst()).isTrue();
@@ -1661,6 +1664,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.getElementsOnPage()).isEqualTo(1);
         assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -1700,10 +1704,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         ApplicationListPage page = resp.as(ApplicationListPage.class);
 
         assertThat(page.getContent()).hasSize(1);
+
         var only = page.getContent().getFirst();
         assertThat(only.getDate()).isEqualTo(day);
         assertThat(only.getTime()).isEqualTo(t0930);
         assertThat(only.getDescription()).endsWith("keep");
+        assertThat(only.getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -1738,6 +1744,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
         assertThat(only.getTime()).isEqualTo(t2359);
+        assertThat(only.getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -1774,6 +1781,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
         assertThat(only.getLocation()).isEqualTo(VALID_COURT_NAME);
+        assertThat(only.getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -1809,6 +1817,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
+
+        // get entries summary
+        assertThat(page.getContent().getFirst().getEntriesSummary()).isNotNull();
     }
 
     @Test
@@ -1882,6 +1893,8 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(page.getContent().get(0).getDescription()).endsWith("B");
         assertThat(page.getContent().get(1).getDescription()).endsWith("C");
         assertThat(page.getContent().get(2).getDescription()).endsWith("A");
+
+        // TODO add verification for getEntriesSummary
     }
 
     @StabilityTest
