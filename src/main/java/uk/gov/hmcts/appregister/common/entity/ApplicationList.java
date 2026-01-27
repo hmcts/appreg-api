@@ -10,12 +10,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -115,6 +117,9 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     @Version
     @Audit(action = {CrudEnum.UPDATE, CrudEnum.DELETE})
     private Long version;
+
+    @OneToMany(mappedBy = "applicationList")
+    private Set<ApplicationListEntry> entries;
 
     public boolean isOpen() {
         return this.status == Status.OPEN;
