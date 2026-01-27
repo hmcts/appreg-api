@@ -133,6 +133,36 @@ public class RestAssuredClient {
      * @param requestSpecificationConsumer A request specification that will be called before
      *     sending the request. Allows operation specific payload customisation i.e. request
      *     parameters to be added etc
+     * @return The specification of the response
+     */
+    public Response executeGetRequestWithPaging(
+            Optional<Integer> pageSize,
+            Optional<Integer> pageNumber,
+            List<String> pageSort,
+            URL url,
+            TokenAndJwksKey token,
+            UnaryOperator<RequestSpecification> requestSpecificationConsumer) {
+        return executeGetRequestWithPaging(
+                pageSize,
+                pageNumber,
+                pageSort,
+                url,
+                token,
+                requestSpecificationConsumer,
+                new OpenApiPageMetaData());
+    }
+
+    /**
+     * gets a request builder that can be used to make requests against the application.
+     *
+     * @param pageSize The page size of the reuest
+     * @param pageNumber The page number of the request
+     * @param pageSort The page sort number of the request
+     * @param url The url context
+     * @param token The bearer token
+     * @param requestSpecificationConsumer A request specification that will be called before
+     *     sending the request. Allows operation specific payload customisation i.e. request
+     *     parameters to be added etc
      * @param pageMetaData The meta data for the paging request
      * @return The specification of the response
      */
