@@ -45,6 +45,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
@@ -55,6 +56,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,8 +71,6 @@ class ApplicationEntryResultServiceImplTest {
     @Mock private ApplicationListEntryResultEntityMapper applicationListEntryResultEntityMapper;
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
-
-    private ListEntryResultUpdateValidationSuccess updateSuccess;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -211,6 +211,83 @@ class ApplicationEntryResultServiceImplTest {
         verify(applicationListEntryResultMapper).toResultGetDto(saved);
     }
 
+    @Test
+    void update_validPayload_updatesEntryResult() {
+        // Arrange
+        ResultUpdateDto updateDto = new ResultUpdateDto();
+        TemplateSubstitution ts = new TemplateSubstitution();
+        ts.setKey("field1");
+        ts.setValue("wf1");
+        updateDto.setWordingFields(List.of(ts));
+
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        UUID resultId = UUID.randomUUID();
+
+        PayloadForUpdateEntryResult payload = mock(PayloadForUpdateEntryResult.class);
+        when(payload.getId()).thenReturn(listId);
+        when(payload.getEntryId()).thenReturn(entryId);
+        when(payload.getResultId()).thenReturn(resultId);
+        when(payload.getData()).thenReturn(updateDto);
+
+        String wordingTemplate = "Some wording template {TEXT|field1|10}";
+
+        var code = mock(ResolutionCode.class);
+        var appListEntry = mock(ApplicationListEntry.class);
+
+        AppListEntryResolution existing = new AppListEntryResolution();
+        existing.setId(55L);
+        existing.setVersion(1L);
+
+        ApplicationList applicationList = mock(ApplicationList.class);
+
+        ListEntryResultUpdateValidationSuccess success =
+                new ListEntryResultUpdateValidationSuccess(
+                        with(wordingTemplate), code, applicationList, appListEntry, existing);
+
+        updateValidator.setSuccess(success);
+
+        when(userProvider.getEmail()).thenReturn("email");
+
+        doNothing()
+                .when(applicationListEntryResultEntityMapper)
+                .toApplicationListEntryResult(
+                        eq(updateDto),
+                        eq("Some wording template {wf1}"),
+                        eq(code),
+                        eq(appListEntry),
+                        eq("email"),
+                        eq(existing));
+
+        when(appListEntryResolutionRepository.save(existing)).thenReturn(existing);
+        doNothing().when(entityManager).refresh(existing);
+
+        ResultGetDto resultGetDto = new ResultGetDto();
+        when(applicationListEntryResultMapper.toResultGetDto(existing)).thenReturn(resultGetDto);
+
+        // Act
+        MatchResponse<ResultGetDto> response = service.update(payload);
+
+        // Assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(resultGetDto, response.getPayload());
+
+        verify(updateValidator).validate(eq(payload), notNull());
+
+        verify(applicationListEntryResultEntityMapper)
+                .toApplicationListEntryResult(
+                        eq(updateDto),
+                        eq("Some wording template {wf1}"),
+                        eq(code),
+                        eq(appListEntry),
+                        eq("email"),
+                        eq(existing));
+
+        verify(appListEntryResolutionRepository).save(existing);
+        verify(entityManager).refresh(existing);
+        verify(applicationListEntryResultMapper).toResultGetDto(existing);
+    }
+
     @Setter
     static class DummyApplicationEntryResultDeletionValidator
             extends ApplicationEntryResultDeletionValidator {
@@ -266,8 +343,11 @@ class ApplicationEntryResultServiceImplTest {
         }
     }
 
-    public class DummyApplicationEntryResultUpdateValidator
+    @Setter
+    static class DummyApplicationEntryResultUpdateValidator
             extends ApplicationEntryResultUpdateValidator {
+
+        private ListEntryResultUpdateValidationSuccess success;
 
         public DummyApplicationEntryResultUpdateValidator(
                 ApplicationListRepository applicationListRepository,
@@ -286,7 +366,7 @@ class ApplicationEntryResultServiceImplTest {
                 PayloadForUpdateEntryResult validatable,
                 BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
                         validateSuccess) {
-            return validateSuccess.apply(validatable, updateSuccess);
+            return validateSuccess.apply(validatable, success);
         }
     }
 

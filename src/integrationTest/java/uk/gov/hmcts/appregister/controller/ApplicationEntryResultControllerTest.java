@@ -461,18 +461,18 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var existingEntry = givenExistingEntry();
 
         var createPayload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(
-                    new TemplateSubstitution(
-                        APPC_WORDING_KEY, "Central Criminal Court")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        APPC_WORDING_KEY, "Central Criminal Court")));
 
         Response createResp =
-            createResult(
-                existingEntry.list().getUuid(),
-                existingEntry.entry().getUuid(),
-                existingEntry.token(),
-                createPayload);
+                createResult(
+                        existingEntry.list().getUuid(),
+                        existingEntry.entry().getUuid(),
+                        existingEntry.token(),
+                        createPayload);
 
         createResp.then().statusCode(HttpStatus.CREATED.value());
         createResp.then().header(HttpHeaders.ETAG, notNullValue());
@@ -481,20 +481,20 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         String currentEtag = createResp.getHeader(HttpHeaders.ETAG);
 
         var updatePayload =
-            buildUpdatePayload(
-                FRO_CODE,
-                List.of(
-                    new TemplateSubstitution(
-                        FRO_WORDING_KEY, "Caseworker discretion")));
+                buildUpdatePayload(
+                        FRO_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        FRO_WORDING_KEY, "Caseworker discretion")));
 
         Response updateResp =
-            whenUpdateResult(
-                existingEntry.list().getUuid(),
-                existingEntry.entry().getUuid(),
-                resultUuid,
-                existingEntry.token(),
-                updatePayload,
-                currentEtag);
+                whenUpdateResult(
+                        existingEntry.list().getUuid(),
+                        existingEntry.entry().getUuid(),
+                        resultUuid,
+                        existingEntry.token(),
+                        updatePayload,
+                        currentEtag);
 
         // ---------------------------------------------------------------------
         // RESPONSE ASSERTIONS
@@ -511,40 +511,40 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "al_entry_resolution_wording",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "al_entry_resolution_officer",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_officer",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "version",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
     }
 
     @Test
@@ -557,17 +557,11 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
-        Response resp =
-            whenUpdateResult(
-                listId,
-                entryId,
-                resultId,
-                token,
-                payload,
-                "\"any-etag\"");
+        Response resp = whenUpdateResult(listId, entryId, resultId, token, payload, "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
-        assertEquals(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -578,18 +572,18 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
         Response resp =
-            whenUpdateResult(
-                existingResult.list().getUuid(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                existingResult.token(),
-                payload,
-                "\"any-etag\"");
+                whenUpdateResult(
+                        existingResult.list().getUuid(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
-            resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                resp);
     }
 
     @Test
@@ -604,18 +598,17 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
         Response resp =
-            whenUpdateResult(
-                existingResult.list().getUuid(),
-                entryInOtherList.getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                "\"any-etag\"");
+                whenUpdateResult(
+                        existingResult.list().getUuid(),
+                        entryInOtherList.getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
-            resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -628,18 +621,17 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var payload = buildUpdatePayload("UNKNOWN", List.of());
 
         Response resp =
-            whenUpdateResult(
-                existingResult.list().getUuid(),
-                existingResult.entry().getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                currentEtag);
+                whenUpdateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        currentEtag);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
-            ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(),
-            resp);
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -650,13 +642,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         var payload = buildUpdatePayload(FRO_CODE, List.of());
 
         Response resp =
-            whenUpdateResult(
-                existingResult.list().getUuid(),
-                existingResult.entry().getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                "never going to match");
+                whenUpdateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "never going to match");
 
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
@@ -703,6 +695,21 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                                                 + "/results/"
                                                 + resultId))
                         .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results/"
+                                                + resultId))
+                        .method(HttpMethod.PUT)
+                        .payload(Map.of("resultCode", "SOME_CODE", "wordingFields", List.of()))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
@@ -815,17 +822,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     }
 
     private record ExistingEntryContext(
-        ApplicationList list,
-        ApplicationListEntry entry,
-        TokenAndJwksKey token
-    ) {}
+            ApplicationList list, ApplicationListEntry entry, TokenAndJwksKey token) {}
 
     private record ExistingEntryResultContext(
-        ApplicationList list,
-        ApplicationListEntry entry,
-        AppListEntryResolution entryResult,
-        TokenAndJwksKey token
-    ) {}
+            ApplicationList list,
+            ApplicationListEntry entry,
+            AppListEntryResolution entryResult,
+            TokenAndJwksKey token) {}
 
     private ExistingEntryContext givenExistingEntry() throws Exception {
         var list = createAndSaveList(OPEN);
@@ -858,13 +861,13 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     }
 
     private Response whenUpdateResult(
-        UUID listId,
-        UUID entryId,
-        UUID resultId,
-        TokenAndJwksKey token,
-        Object payload,
-        String ifMatch
-    ) throws Exception {
+            UUID listId,
+            UUID entryId,
+            UUID resultId,
+            TokenAndJwksKey token,
+            Object payload,
+            String ifMatch)
+            throws Exception {
         return updateResult(listId, entryId, resultId, token, payload, ifMatch);
     }
 }
