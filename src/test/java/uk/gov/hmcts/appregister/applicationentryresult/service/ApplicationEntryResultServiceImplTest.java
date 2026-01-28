@@ -27,10 +27,13 @@ import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEnt
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultDeletionValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultCreateValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultUpdateValidationSuccess;
 import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
 import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -67,6 +70,8 @@ class ApplicationEntryResultServiceImplTest {
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
 
+    private ListEntryResultUpdateValidationSuccess updateSuccess;
+
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
             new DummyApplicationEntryResultDeletionValidator(
@@ -80,6 +85,14 @@ class ApplicationEntryResultServiceImplTest {
                     applicationListRepository,
                     applicationListEntryRepository,
                     resolutionCodeRepository);
+
+    @Spy
+    private DummyApplicationEntryResultUpdateValidator updateValidator =
+            new DummyApplicationEntryResultUpdateValidator(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    appListEntryResolutionRepository);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -98,6 +111,7 @@ class ApplicationEntryResultServiceImplTest {
                         appListEntryResolutionRepository,
                         deletionValidator,
                         creationValidator,
+                        updateValidator,
                         matchService,
                         auditOperationService,
                         List.of(auditOperationLifecycleListener),
@@ -249,6 +263,30 @@ class ApplicationEntryResultServiceImplTest {
                         validateSuccess) {
 
             return validateSuccess.apply(validatable, success);
+        }
+    }
+
+    public class DummyApplicationEntryResultUpdateValidator
+            extends ApplicationEntryResultUpdateValidator {
+
+        public DummyApplicationEntryResultUpdateValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository,
+                AppListEntryResolutionRepository appListEntryResolutionRepository) {
+            super(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository,
+                    appListEntryResolutionRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForUpdateEntryResult validatable,
+                BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
+                        validateSuccess) {
+            return validateSuccess.apply(validatable, updateSuccess);
         }
     }
 

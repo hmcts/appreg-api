@@ -42,6 +42,7 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -57,8 +58,12 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     private static final String WEB_CONTEXT = "application-lists";
+
     private static final String APPC_CODE = "APPC";
-    private static final String WORDING_KEY = "Name of Crown Court";
+    private static final String APPC_WORDING_KEY = "Name of Crown Court";
+
+    private static final String FRO_CODE = "FRO";
+    private static final String FRO_WORDING_KEY = "Reason text";
 
     @BeforeEach
     public void before() {
@@ -240,7 +245,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                         APPC_CODE,
                         List.of(
                                 new TemplateSubstitution(
-                                        WORDING_KEY, "The Central Criminal Court")));
+                                        APPC_WORDING_KEY, "The Central Criminal Court")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
@@ -252,7 +257,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo(APPC_CODE));
 
-        resp.then().body("wordingFields", equalTo(List.of("Name of Crown Court")));
+        resp.then().body("wordingFields", equalTo(List.of(APPC_WORDING_KEY)));
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
@@ -277,7 +282,8 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var payload =
                 buildCreatePayload(
-                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(listId, entryId, token, payload);
 
@@ -295,11 +301,12 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var payload =
                 buildCreatePayload(
-                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), UUID.randomUUID(), token, payload);
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
                 ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
                 resp);
@@ -317,7 +324,8 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var payload =
                 buildCreatePayload(
-                        APPC_CODE, List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
@@ -337,11 +345,12 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
         var payload =
                 buildCreatePayload(
-                        "UNKNOWN", List.of(new TemplateSubstitution(WORDING_KEY, "test wording")));
+                        "UNKNOWN",
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
@@ -440,6 +449,101 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                 older.getId(),
                 chosenResolutionCodeId,
                 "Should not choose the older ResolutionCode");
+    }
+
+    // -------------------------------------------------------------------------
+    // UPDATE
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")
+    void givenValidRequest_whenUpdate_then200() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        var token = getToken();
+
+        var createPayload =
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        "Name of Crown Court", "Central Criminal Court")));
+
+        Response createResp = createResult(list.getUuid(), entry.getUuid(), token, createPayload);
+
+        createResp.then().statusCode(HttpStatus.CREATED.value());
+        createResp.then().header(HttpHeaders.ETAG, notNullValue());
+
+        UUID resultUuid = UUID.fromString(createResp.jsonPath().getString("id"));
+        String currentEtag = createResp.getHeader(HttpHeaders.ETAG);
+
+        var updatePayload =
+                buildUpdatePayload(
+                        FRO_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        FRO_WORDING_KEY, "Caseworker discretion")));
+
+        Response updateResp =
+                updateResult(
+                        list.getUuid(),
+                        entry.getUuid(),
+                        resultUuid,
+                        token,
+                        updatePayload,
+                        currentEtag);
+
+        // ---------------------------------------------------------------------
+        // RESPONSE ASSERTIONS
+        // ---------------------------------------------------------------------
+        updateResp.then().statusCode(HttpStatus.OK.value());
+        updateResp.then().header(HttpHeaders.LOCATION, notNullValue());
+        updateResp.then().header(HttpHeaders.ETAG, notNullValue());
+
+        updateResp.then().body("id", equalTo(resultUuid.toString()));
+        updateResp.then().body("entryId", equalTo(entry.getUuid().toString()));
+        updateResp.then().body("resultCode", equalTo("FRO"));
+        updateResp.then().body("wordingFields", equalTo(List.of("Reason text")));
+
+        differenceLogAsserter.assertNoErrors();
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_officer",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
     }
 
     // -------------------------------------------------------------------------
@@ -564,5 +668,33 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         rc.setStartDate(start);
         rc.setEndDate(end);
         return persistance.save(rc);
+    }
+
+    private Response updateResult(
+            UUID listId,
+            UUID entryId,
+            UUID resultId,
+            TokenAndJwksKey token,
+            Object body,
+            String ifMatch)
+            throws MalformedURLException {
+
+        return restAssuredClient.executePutRequest(
+                getLocalUrl(
+                        WEB_CONTEXT
+                                + "/"
+                                + listId
+                                + "/entries/"
+                                + entryId
+                                + "/results/"
+                                + resultId),
+                token,
+                body,
+                ifMatch);
+    }
+
+    private ResultUpdateDto buildUpdatePayload(
+            String resultCode, List<TemplateSubstitution> wordingFields) {
+        return new ResultUpdateDto(resultCode, wordingFields);
     }
 }

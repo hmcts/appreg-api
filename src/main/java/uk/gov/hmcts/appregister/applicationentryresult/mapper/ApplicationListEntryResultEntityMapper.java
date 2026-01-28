@@ -40,10 +40,10 @@ public abstract class ApplicationListEntryResultEntityMapper {
     @Mapping(target = "changedBy", ignore = true)
     @Mapping(target = "changedDate", ignore = true)
     public abstract void toApplicationListEntryResult(
-        ResultUpdateDto resultUpdateDto,
-        String substituteWording,
-        ResolutionCode resolutionCode,
-        ApplicationListEntry applicationListEntry,
-        String resolutionOfficer,
-        @MappingTarget AppListEntryResolution entryResolution);
+            ResultUpdateDto resultUpdateDto,
+            String substituteWording,
+            ResolutionCode resolutionCode,
+            ApplicationListEntry applicationListEntry,
+            String resolutionOfficer,
+            @MappingTarget AppListEntryResolution entryResolution);
 }

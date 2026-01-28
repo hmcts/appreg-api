@@ -101,8 +101,6 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
     /**
      * Updates an Application List Entry Result.
      *
-     * <p>
-     *
      * <ul>
      *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
      * </ul>
