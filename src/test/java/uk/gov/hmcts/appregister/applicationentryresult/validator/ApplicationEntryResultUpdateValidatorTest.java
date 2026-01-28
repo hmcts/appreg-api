@@ -28,7 +28,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionR
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
-import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 
@@ -36,20 +35,15 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultUpdateValidatorTest {
 
-    @Mock
-    private ApplicationListRepository applicationListRepository;
+    @Mock private ApplicationListRepository applicationListRepository;
 
-    @Mock
-    private ApplicationListEntryRepository applicationListEntryRepository;
+    @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
-    @Mock
-    private ResolutionCodeRepository resolutionCodeRepository;
+    @Mock private ResolutionCodeRepository resolutionCodeRepository;
 
-    @Mock
-    private AppListEntryResolutionRepository appListEntryResolutionRepository;
+    @Mock private AppListEntryResolutionRepository appListEntryResolutionRepository;
 
-    @InjectMocks
-    private ApplicationEntryResultUpdateValidator validator;
+    @InjectMocks private ApplicationEntryResultUpdateValidator validator;
 
     private UUID applicationListUuid;
     private UUID applicationListEntryUuid;
@@ -68,34 +62,35 @@ class ApplicationEntryResultUpdateValidatorTest {
         dto.setResultCode("RES_CODE");
 
         payload =
-            new PayloadForUpdateEntryResult(
-                dto, applicationListUuid, applicationListEntryUuid, resultUuid);
+                new PayloadForUpdateEntryResult(
+                        dto, applicationListUuid, applicationListEntryUuid, resultUuid);
 
         ApplicationList applicationList = new ApplicationList();
         applicationList.setStatus(OPEN);
 
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
         ResolutionCode resolutionCode = new ResolutionCode();
-        AppListEntryResolution entryResolution = new AppListEntryResolution();
 
         // Make the ResolutionCode wording parseable (avoid template parsing errors)
         resolutionCode.setWording("Some wording");
 
         // ---- base validations (AbstractApplicationEntryResultValidator) ----
         when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
-            .thenReturn(Optional.of(applicationList));
+                .thenReturn(Optional.of(applicationList));
 
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-            eq(applicationListEntryUuid), eq(applicationListUuid)))
-            .thenReturn(Optional.of(applicationListEntry));
+                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+                .thenReturn(Optional.of(applicationListEntry));
 
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(eq(dto.getResultCode()), any(Pageable.class)))
-            .thenReturn(List.of(resolutionCode));
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(
+                        eq(dto.getResultCode()), any(Pageable.class)))
+                .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-            eq(resultUuid), eq(applicationListEntryUuid)))
-            .thenReturn(Optional.of(entryResolution));
+                        eq(resultUuid), eq(applicationListEntryUuid)))
+                .thenReturn(Optional.of(entryResolution));
     }
 
     @Test
@@ -106,62 +101,67 @@ class ApplicationEntryResultUpdateValidatorTest {
     @Test
     void validateEntryResultDoesNotExist() {
         when(appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-            eq(resultUuid), eq(applicationListEntryUuid)))
-            .thenReturn(Optional.empty());
+                        eq(resultUuid), eq(applicationListEntryUuid)))
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
-            Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST
-                .getCode()
-                .getAppCode(),
-            ex.getCode().getCode().getAppCode());
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
     }
 
     @Test
     void validateApplicationListDoesNotExist() {
         when(applicationListRepository.findByUuidIncludingDelete(eq(applicationListUuid)))
-            .thenReturn(Optional.empty());
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
-            Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST
-                .getCode()
-                .getAppCode(),
-            ex.getCode().getCode().getAppCode());
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
     }
 
     @Test
     void validateApplicationListEntryDoesNotExist() {
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-            eq(applicationListEntryUuid), eq(applicationListUuid)))
-            .thenReturn(Optional.empty());
+                        eq(applicationListEntryUuid), eq(applicationListUuid)))
+                .thenReturn(Optional.empty());
 
         AppRegistryException ex =
-            Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
-                .getCode()
-                .getAppCode(),
-            ex.getCode().getCode().getAppCode());
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
     }
 
     @Test
     void validateResolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(eq(dto.getResultCode()), any(Pageable.class)))
-            .thenReturn(List.of());
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(
+                        eq(dto.getResultCode()), any(Pageable.class)))
+                .thenReturn(List.of());
 
         AppRegistryException ex =
-            Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-            ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST
-                .getCode()
-                .getAppCode(),
-            ex.getCode().getCode().getAppCode());
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST
+                        .getCode()
+                        .getAppCode(),
+                ex.getCode().getCode().getAppCode());
     }
 }
