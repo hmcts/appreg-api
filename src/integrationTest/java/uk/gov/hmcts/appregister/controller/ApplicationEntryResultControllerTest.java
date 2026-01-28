@@ -458,20 +458,21 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     @Test
     @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")
     void givenValidRequest_whenUpdate_then200() throws Exception {
-        var list = createAndSaveList(OPEN);
-        var entry = createEntry(list);
-        persistance.save(entry);
-
-        var token = getToken();
+        var existingEntry = givenExistingEntry();
 
         var createPayload =
-                buildCreatePayload(
-                        APPC_CODE,
-                        List.of(
-                                new TemplateSubstitution(
-                                        "Name of Crown Court", "Central Criminal Court")));
+            buildCreatePayload(
+                APPC_CODE,
+                List.of(
+                    new TemplateSubstitution(
+                        APPC_WORDING_KEY, "Central Criminal Court")));
 
-        Response createResp = createResult(list.getUuid(), entry.getUuid(), token, createPayload);
+        Response createResp =
+            createResult(
+                existingEntry.list().getUuid(),
+                existingEntry.entry().getUuid(),
+                existingEntry.token(),
+                createPayload);
 
         createResp.then().statusCode(HttpStatus.CREATED.value());
         createResp.then().header(HttpHeaders.ETAG, notNullValue());
@@ -480,20 +481,20 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         String currentEtag = createResp.getHeader(HttpHeaders.ETAG);
 
         var updatePayload =
-                buildUpdatePayload(
-                        FRO_CODE,
-                        List.of(
-                                new TemplateSubstitution(
-                                        FRO_WORDING_KEY, "Caseworker discretion")));
+            buildUpdatePayload(
+                FRO_CODE,
+                List.of(
+                    new TemplateSubstitution(
+                        FRO_WORDING_KEY, "Caseworker discretion")));
 
         Response updateResp =
-                updateResult(
-                        list.getUuid(),
-                        entry.getUuid(),
-                        resultUuid,
-                        token,
-                        updatePayload,
-                        currentEtag);
+            whenUpdateResult(
+                existingEntry.list().getUuid(),
+                existingEntry.entry().getUuid(),
+                resultUuid,
+                existingEntry.token(),
+                updatePayload,
+                currentEtag);
 
         // ---------------------------------------------------------------------
         // RESPONSE ASSERTIONS
@@ -503,47 +504,162 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         updateResp.then().header(HttpHeaders.ETAG, notNullValue());
 
         updateResp.then().body("id", equalTo(resultUuid.toString()));
-        updateResp.then().body("entryId", equalTo(entry.getUuid().toString()));
-        updateResp.then().body("resultCode", equalTo("FRO"));
-        updateResp.then().body("wordingFields", equalTo(List.of("Reason text")));
+        updateResp.then().body("entryId", equalTo(existingEntry.entry().getUuid().toString()));
+        updateResp.then().body("resultCode", equalTo(FRO_CODE));
+        updateResp.then().body("wordingFields", equalTo(List.of(FRO_WORDING_KEY)));
 
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_wording",
-                        null,
-                        null,
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getType()
-                                .name(),
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getEventName()));
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                "al_entry_resolution_wording",
+                null,
+                null,
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getType()
+                    .name(),
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "al_entry_resolution_officer",
-                        null,
-                        null,
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getType()
-                                .name(),
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getEventName()));
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                "al_entry_resolution_officer",
+                null,
+                null,
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getType()
+                    .name(),
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                        "version",
-                        null,
-                        null,
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getType()
-                                .name(),
-                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                                .getEventName()));
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                "version",
+                null,
+                null,
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getType()
+                    .name(),
+                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                    .getEventName()));
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 409 when list unknown")
+    void givenUnknownList_whenUpdate_thenError() throws Exception {
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        UUID resultId = UUID.randomUUID();
+        var token = getToken();
+
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+            whenUpdateResult(
+                listId,
+                entryId,
+                resultId,
+                token,
+                payload,
+                "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 409 when list closed")
+    void givenClosedList_whenUpdate_then400() throws Exception {
+        var existingResult = givenExistingEntryResult(CLOSED);
+
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+            whenUpdateResult(
+                existingResult.list().getUuid(),
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                existingResult.token(),
+                payload,
+                "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+            resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 409 when entry not in list")
+    void givenEntryNotInList_whenUpdate_then409() throws Exception {
+        var existingResult = givenExistingEntryResult();
+
+        var otherList = createAndSaveList(OPEN);
+        var entryInOtherList = createEntry(otherList);
+        persistance.save(entryInOtherList);
+
+        var payload = buildUpdatePayload(APPC_CODE, List.of());
+
+        Response resp =
+            whenUpdateResult(
+                existingResult.list().getUuid(),
+                entryInOtherList.getUuid(),
+                existingResult.entryResult().getUuid(),
+                existingResult.token(),
+                payload,
+                "\"any-etag\"");
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
+            resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 404 when resolution code unknown")
+    void givenUnknownResolutionCode_whenUpdate_then400() throws Exception {
+        var existingResult = givenExistingEntryResult();
+
+        String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
+
+        var payload = buildUpdatePayload("UNKNOWN", List.of());
+
+        Response resp =
+            whenUpdateResult(
+                existingResult.list().getUuid(),
+                existingResult.entry().getUuid(),
+                existingResult.entryResult().getUuid(),
+                existingResult.token(),
+                payload,
+                currentEtag);
+
+        resp.then().statusCode(HttpStatus.NOT_FOUND.value());
+        assertEquals(
+            ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(),
+            resp);
+    }
+
+    @Test
+    @DisplayName("Update Application List Entry Result: 412 when If-Match ETag does not match")
+    void givenEtagMismatch_whenUpdate_then412() throws Exception {
+        var existingResult = givenExistingEntryResult();
+
+        var payload = buildUpdatePayload(FRO_CODE, List.of());
+
+        Response resp =
+            whenUpdateResult(
+                existingResult.list().getUuid(),
+                existingResult.entry().getUuid(),
+                existingResult.entryResult().getUuid(),
+                existingResult.token(),
+                payload,
+                "never going to match");
+
+        resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
+        assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
     }
 
     // -------------------------------------------------------------------------
@@ -696,5 +812,59 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
     private ResultUpdateDto buildUpdatePayload(
             String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultUpdateDto(resultCode, wordingFields);
+    }
+
+    private record ExistingEntryContext(
+        ApplicationList list,
+        ApplicationListEntry entry,
+        TokenAndJwksKey token
+    ) {}
+
+    private record ExistingEntryResultContext(
+        ApplicationList list,
+        ApplicationListEntry entry,
+        AppListEntryResolution entryResult,
+        TokenAndJwksKey token
+    ) {}
+
+    private ExistingEntryContext givenExistingEntry() throws Exception {
+        var list = createAndSaveList(OPEN);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        var token = getToken();
+
+        return new ExistingEntryContext(list, entry, token);
+    }
+
+    private ExistingEntryResultContext givenExistingEntryResult() throws Exception {
+        return givenExistingEntryResult(OPEN);
+    }
+
+    private ExistingEntryResultContext givenExistingEntryResult(Status status) throws Exception {
+        var list = createAndSaveList(status);
+        var entry = createEntry(list);
+        persistance.save(entry);
+
+        var resolutionCode = new ResolutionCodeTestData().someComplete();
+        resolutionCode.setResultCode(APPC_CODE);
+        persistance.save(resolutionCode);
+
+        var entryResult = createAndSaveResolution(entry, resolutionCode);
+
+        var token = getToken();
+
+        return new ExistingEntryResultContext(list, entry, entryResult, token);
+    }
+
+    private Response whenUpdateResult(
+        UUID listId,
+        UUID entryId,
+        UUID resultId,
+        TokenAndJwksKey token,
+        Object payload,
+        String ifMatch
+    ) throws Exception {
+        return updateResult(listId, entryId, resultId, token, payload, ifMatch);
     }
 }

@@ -44,26 +44,32 @@ public class ApplicationEntryResultUpdateValidator
 
     @Override
     public <R> R validate(
-            PayloadForUpdateEntryResult validatable,
-            BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
-                    validateSuccess) {
+        PayloadForUpdateEntryResult validatable,
+        BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
+            validateSuccess) {
+
+        // Run base validations first
+        R result = super.validate(validatable, validateSuccess);
+
+        // Then check that the entry result exists
         Optional<AppListEntryResolution> entryResult =
-                appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        validatable.getResultId(), validatable.getEntryId());
+            appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                validatable.getResultId(), validatable.getEntryId());
+
         if (entryResult.isEmpty()) {
             throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
-                    ("The application entry result %s does not exist in application list %s and in application list"
-                                    + "entry %s")
-                            .formatted(
-                                    validatable.getResultId(),
-                                    getApplicationListUuid(validatable),
-                                    validatable.getEntryId()));
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
+                ("The application entry result %s does not exist in application list %s and in application list "
+                    + "entry %s")
+                    .formatted(
+                        validatable.getResultId(),
+                        getApplicationListUuid(validatable),
+                        validatable.getEntryId()));
         }
 
-        log.debug(" application list entry result is found {}", validatable.getResultId());
+        log.debug("application list entry result is found {}", validatable.getResultId());
 
-        return super.validate(validatable, validateSuccess);
+        return result;
     }
 
     @Override
