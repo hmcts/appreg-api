@@ -8,7 +8,6 @@ import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -76,7 +75,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "status", source = "appList.status")
     @Mapping(target = "entriesSummary", ignore = true)
     ApplicationListGetSummaryDto toGetSummaryDto(
-            ApplicationListSummaryProjection appList, long entryCount, String location);
+            ApplicationList appList, long entryCount, String location);
 
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")

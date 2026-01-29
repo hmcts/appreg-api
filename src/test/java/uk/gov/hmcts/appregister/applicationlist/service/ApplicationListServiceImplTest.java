@@ -86,7 +86,6 @@ import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -99,7 +98,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
-import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListServiceImplTest {
@@ -408,9 +406,10 @@ public class ApplicationListServiceImplTest {
         getValidator.setSuccess(success);
 
         // DB results
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        row.setCja(cja);
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
@@ -429,6 +428,8 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         // Page metadata mapping
@@ -461,6 +462,7 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
+        verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
     }
 
@@ -471,10 +473,10 @@ public class ApplicationListServiceImplTest {
         getValidator.setSuccess(success);
 
         // DB results
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Central Court");
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
@@ -494,6 +496,8 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         doAnswer(inv -> null)
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
@@ -517,6 +521,7 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent().size()).isEqualTo(1);
 
+        verify(aleRepository).countByApplicationListUuids(List.of(row.getUuid()));
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), eq("Central Court"));
     }
 
@@ -530,16 +535,16 @@ public class ApplicationListServiceImplTest {
         success.setCriminalJusticeArea(cja);
         getValidator.setSuccess(success);
 
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
-        row.setCjaDescription("CJA Desc");
+        row.setCja(cja);
 
         Pageable pageable = mock(Pageable.class);
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
                         isNull(),
@@ -553,6 +558,8 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         doAnswer(inv -> null)
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
@@ -583,7 +590,7 @@ public class ApplicationListServiceImplTest {
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
-        Page<ApplicationListSummaryProjection> dbPage = Page.empty();
+        Page<ApplicationList> dbPage = Page.empty();
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
                         isNull(),
@@ -611,6 +618,7 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent()).isNotNull();
         assertThat(result.getContent()).isEmpty();
 
+        verify(aleRepository, never()).countByApplicationListUuids(any());
         verify(mapper, never()).toGetSummaryDto(any(), anyLong(), anyString());
     }
 
@@ -623,15 +631,15 @@ public class ApplicationListServiceImplTest {
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
-        row.setCjaDescription("CJA Name");
+        row.setCja(cja);
 
         Pageable pageable = mock(Pageable.class);
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
                         isNull(),
@@ -646,6 +654,8 @@ public class ApplicationListServiceImplTest {
                 .thenReturn(dbPage);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         doAnswer(inv -> null)
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
@@ -665,13 +675,13 @@ public class ApplicationListServiceImplTest {
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
         row.setCourtName("Some Court");
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         Pageable pageable = mock(Pageable.class);
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
@@ -687,6 +697,8 @@ public class ApplicationListServiceImplTest {
                 .thenReturn(dbPage);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         doAnswer(inv -> null)
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
@@ -706,14 +718,14 @@ public class ApplicationListServiceImplTest {
         ListLocationValidationSuccess success = new ListUpdateValidationSuccess();
         getValidator.setSuccess(success);
 
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
 
         when(entryMapper.toStatus(ApplicationListStatus.OPEN)).thenReturn(Status.OPEN);
 
         Pageable pageable = mock(Pageable.class);
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
         when(repository.findAllByFilter(
                         eq(Status.OPEN),
                         isNull(),
@@ -727,6 +739,8 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
         doAnswer(inv -> null)
                 .when(pageMapper)
                 .toPage(eq(dbPage), any(ApplicationListPage.class), eq(wrapper.getSortStrings()));
@@ -751,9 +765,10 @@ public class ApplicationListServiceImplTest {
         getValidator.setSuccess(success);
 
         // DB results
-        ApplicationListSummaryProjectionImpl row = new ApplicationListSummaryProjectionImpl();
+        ApplicationList row = new ApplicationList();
         row.setUuid(UUID.randomUUID());
-        Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
+        row.setCja(cja);
+        Page<ApplicationList> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
         LocalTime time = LocalTime.of(23, 59);
@@ -772,6 +787,9 @@ public class ApplicationListServiceImplTest {
                         eq("town hall"),
                         eq(pageable)))
                 .thenReturn(dbPage);
+
+        when(aleRepository.countByApplicationListUuids(List.of(row.getUuid())))
+                .thenReturn(List.of());
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
         // Page metadata mapping

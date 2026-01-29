@@ -45,7 +45,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -422,7 +421,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return applicationListGetValidator.validateCja(
                 dto,
                 (getDto, success) -> {
-                    final Page<ApplicationListSummaryProjection> dbPage =
+                    final Page<ApplicationList> dbPage =
                             repository.findAllByFilter(
                                     entryMapper.toStatus(dto.getStatus()),
                                     dto.getCourtLocationCode(),
@@ -434,7 +433,16 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     dto.getDescription(),
                                     dto.getOtherLocationDescription(),
                                     pageable.getPageable());
-                    return assembleResponsePage(dbPage, pageable);
+
+                    // Pre-fetch the number of entries linked to each list in the page.
+                    // Avoids having to do a separate count query per list when mapping to DTOs.
+                    Map<UUID, Long> entriesPerListCounter =
+                            dbPage.isEmpty()
+                                    ? Map.of()
+                                    : fetchEntryCounts(
+                                            dbPage.map(ApplicationList::getUuid).toList());
+
+                    return assembleResponsePage(dbPage, entriesPerListCounter, pageable);
                 },
                 true);
     }
@@ -514,7 +522,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     }
 
     private ApplicationListPage assembleResponsePage(
-            Page<ApplicationListSummaryProjection> appLists, PagingWrapper pagingWrapper) {
+            Page<ApplicationList> appLists,
+            Map<UUID, Long> entriesPerListCounter,
+            PagingWrapper pagingWrapper) {
         var responsePage = new ApplicationListPage();
         pageMapper.toPage(appLists, responsePage, pagingWrapper.getSortStrings());
 
@@ -524,19 +534,20 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             responsePage.setContent(new ArrayList<>());
         }
 
-        for (ApplicationListSummaryProjection alp : appLists) {
-            String location = deriveLocation(alp);
-            responsePage.addContentItem(mapper.toGetSummaryDto(alp, alp.getEntryCount(), location));
+        for (ApplicationList al : appLists) {
+            long entryCount = entriesPerListCounter.getOrDefault(al.getUuid(), ZERO_ENTITIES);
+            String location = deriveLocation(al);
+            responsePage.addContentItem(mapper.toGetSummaryDto(al, entryCount, location));
         }
         return responsePage;
     }
 
-    private String deriveLocation(ApplicationListSummaryProjection al) {
+    private String deriveLocation(ApplicationList al) {
         if (al.getCourtName() != null) {
             return al.getCourtName();
         }
-        if (al.getCjaDescription() != null) {
-            return al.getCjaDescription();
+        if (al.getCja() != null) {
+            return al.getCja().getDescription();
         }
         return "Location not set";
     }
