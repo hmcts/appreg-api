@@ -52,35 +52,63 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
 
     // ---- HTTP helpers ----
     protected Response deleteResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token)
-        throws MalformedURLException {
+            throws MalformedURLException {
         return restAssuredClient.executeDeleteRequest(
-            getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results/" + resultId),
-            token);
+                getLocalUrl(
+                        WEB_CONTEXT
+                                + "/"
+                                + listId
+                                + "/entries/"
+                                + entryId
+                                + "/results/"
+                                + resultId),
+                token);
     }
 
-    protected Response deleteResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token, String ifMatch)
-        throws MalformedURLException {
+    protected Response deleteResult(
+            UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token, String ifMatch)
+            throws MalformedURLException {
         return restAssuredClient.executeDeleteRequest(
-            getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results/" + resultId),
-            token,
-            ifMatch);
+                getLocalUrl(
+                        WEB_CONTEXT
+                                + "/"
+                                + listId
+                                + "/entries/"
+                                + entryId
+                                + "/results/"
+                                + resultId),
+                token,
+                ifMatch);
     }
 
     protected Response createResult(UUID listId, UUID entryId, TokenAndJwksKey token, Object body)
-        throws MalformedURLException {
+            throws MalformedURLException {
         return restAssuredClient.executePostRequest(
-            getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"),
-            token,
-            body);
+                getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results"),
+                token,
+                body);
     }
 
-    protected Response updateResult(UUID listId, UUID entryId, UUID resultId, TokenAndJwksKey token, Object body, String ifMatch)
-        throws MalformedURLException {
+    protected Response updateResult(
+            UUID listId,
+            UUID entryId,
+            UUID resultId,
+            TokenAndJwksKey token,
+            Object body,
+            String ifMatch)
+            throws MalformedURLException {
         return restAssuredClient.executePutRequest(
-            getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/" + entryId + "/results/" + resultId),
-            token,
-            body,
-            ifMatch);
+                getLocalUrl(
+                        WEB_CONTEXT
+                                + "/"
+                                + listId
+                                + "/entries/"
+                                + entryId
+                                + "/results/"
+                                + resultId),
+                token,
+                body,
+                ifMatch);
     }
 
     // ---- data helpers ----
@@ -94,23 +122,25 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
         return new AppListEntryTestData().someMinimal().applicationList(list).build();
     }
 
-    protected AppListEntryResolution createAndSaveResolution(ApplicationListEntry entry,
-                                                             ResolutionCode resolutionCode) {
+    protected AppListEntryResolution createAndSaveResolution(
+            ApplicationListEntry entry, ResolutionCode resolutionCode) {
         var resolution =
-            new AppListEntryResolutionTestData()
-                .someMinimal()
-                .resolutionWording(AppListEntryResolutionTestData.WORDING_1)
-                .applicationList(entry)
-                .resolutionCode(resolutionCode)
-                .build();
+                new AppListEntryResolutionTestData()
+                        .someMinimal()
+                        .resolutionWording(AppListEntryResolutionTestData.WORDING_1)
+                        .applicationList(entry)
+                        .resolutionCode(resolutionCode)
+                        .build();
         return persistance.save(resolution);
     }
 
-    protected ResultCreateDto buildCreatePayload(String resultCode, List<TemplateSubstitution> wordingFields) {
+    protected ResultCreateDto buildCreatePayload(
+            String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultCreateDto(resultCode, wordingFields);
     }
 
-    protected ResultUpdateDto buildUpdatePayload(String resultCode, List<TemplateSubstitution> wordingFields) {
+    protected ResultUpdateDto buildUpdatePayload(
+            String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultUpdateDto(resultCode, wordingFields);
     }
 
@@ -125,15 +155,13 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
     // ---- context helpers ----
 
     protected record ExistingEntryContext(
-        ApplicationList list,
-        ApplicationListEntry entry,
-        TokenAndJwksKey token) {}
+            ApplicationList list, ApplicationListEntry entry, TokenAndJwksKey token) {}
 
     protected record ExistingEntryResultContext(
-        ApplicationList list,
-        ApplicationListEntry entry,
-        AppListEntryResolution entryResult,
-        TokenAndJwksKey token) {}
+            ApplicationList list,
+            ApplicationListEntry entry,
+            AppListEntryResolution entryResult,
+            TokenAndJwksKey token) {}
 
     protected ExistingEntryContext givenExistingEntry() throws Exception {
         var list = createAndSaveList(Status.OPEN);

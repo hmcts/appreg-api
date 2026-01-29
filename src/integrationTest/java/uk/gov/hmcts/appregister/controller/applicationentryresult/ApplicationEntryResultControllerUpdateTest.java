@@ -21,7 +21,8 @@ import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 
-public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicationEntryResultCrudTest {
+public class ApplicationEntryResultControllerUpdateTest
+        extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Update Application List Entry Result: 200 when valid request + If-Match matches")
@@ -29,16 +30,18 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var existingEntry = givenExistingEntry();
 
         var createPayload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "Central Criminal Court")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        APPC_WORDING_KEY, "Central Criminal Court")));
 
         Response createResp =
-            createResult(
-                existingEntry.list().getUuid(),
-                existingEntry.entry().getUuid(),
-                existingEntry.token(),
-                createPayload);
+                createResult(
+                        existingEntry.list().getUuid(),
+                        existingEntry.entry().getUuid(),
+                        existingEntry.token(),
+                        createPayload);
 
         createResp.then().statusCode(HttpStatus.CREATED.value());
         createResp.then().header(HttpHeaders.ETAG, notNullValue());
@@ -47,18 +50,20 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         String currentEtag = createResp.getHeader(HttpHeaders.ETAG);
 
         var updatePayload =
-            buildUpdatePayload(
-                FRO_CODE,
-                List.of(new TemplateSubstitution(FRO_WORDING_KEY, "Caseworker discretion")));
+                buildUpdatePayload(
+                        FRO_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        FRO_WORDING_KEY, "Caseworker discretion")));
 
         Response updateResp =
-            updateResult(
-                existingEntry.list().getUuid(),
-                existingEntry.entry().getUuid(),
-                resultUuid,
-                existingEntry.token(),
-                updatePayload,
-                currentEtag);
+                updateResult(
+                        existingEntry.list().getUuid(),
+                        existingEntry.entry().getUuid(),
+                        resultUuid,
+                        existingEntry.token(),
+                        updatePayload,
+                        currentEtag);
 
         updateResp.then().statusCode(HttpStatus.OK.value());
         updateResp.then().header(HttpHeaders.LOCATION, notNullValue());
@@ -72,40 +77,40 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "al_entry_resolution_wording",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "al_entry_resolution_officer",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_officer",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "version",
-                null,
-                null,
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
     }
 
     @Test
@@ -118,11 +123,11 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
         Response resp =
-            updateResult(listId, entryId, resultId, getToken(), payload, "\"any-etag\"");
+                updateResult(listId, entryId, resultId, getToken(), payload, "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -133,18 +138,18 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
         Response resp =
-            updateResult(
-                existingResult.list().getUuid(),
-                UUID.randomUUID(),
-                UUID.randomUUID(),
-                existingResult.token(),
-                payload,
-                "\"any-etag\"");
+                updateResult(
+                        existingResult.list().getUuid(),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
-            resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                resp);
     }
 
     @Test
@@ -159,17 +164,17 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var payload = buildUpdatePayload(APPC_CODE, List.of());
 
         Response resp =
-            updateResult(
-                existingResult.list().getUuid(),
-                entryInOtherList.getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                "\"any-etag\"");
+                updateResult(
+                        existingResult.list().getUuid(),
+                        entryInOtherList.getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "\"any-etag\"");
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -182,17 +187,17 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var payload = buildUpdatePayload("UNKNOWN", List.of());
 
         Response resp =
-            updateResult(
-                existingResult.list().getUuid(),
-                existingResult.entry().getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                currentEtag);
+                updateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        currentEtag);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
-            ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -203,13 +208,13 @@ public class ApplicationEntryResultControllerUpdateTest extends AbstractApplicat
         var payload = buildUpdatePayload(FRO_CODE, List.of());
 
         Response resp =
-            updateResult(
-                existingResult.list().getUuid(),
-                existingResult.entry().getUuid(),
-                existingResult.entryResult().getUuid(),
-                existingResult.token(),
-                payload,
-                "never going to match");
+                updateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        "never going to match");
 
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);

@@ -18,7 +18,8 @@ import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 
-public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicationEntryResultCrudTest {
+public class ApplicationEntryResultControllerDeleteTest
+        extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Delete Application List Entry Result: 204 when valid IDs")
@@ -36,38 +37,38 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
         String expectedEtag = EtagUtil.generateEtag(List.of(entryResult));
 
         Response resp =
-            deleteResult(
-                list.getUuid(),
-                entry.getUuid(),
-                entryResult.getUuid(),
-                token,
-                expectedEtag);
+                deleteResult(
+                        list.getUuid(),
+                        entry.getUuid(),
+                        entryResult.getUuid(),
+                        token,
+                        expectedEtag);
 
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "version",
-                null,
-                null,
-                AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                "aler_id",
-                null,
-                null,
-                AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
-                    .getType()
-                    .name(),
-                AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "aler_id",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                                .getType()
+                                .name(),
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                                .getEventName()));
     }
 
     @Test
@@ -80,7 +81,8 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
         Response resp = deleteResult(listId, entryId, resultId, getToken());
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
-        assertEquals(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -88,11 +90,13 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
     void givenClosedList_whenDelete_then409() throws Exception {
         var list = createAndSaveList(CLOSED);
 
-        Response resp = deleteResult(list.getUuid(), UUID.randomUUID(), UUID.randomUUID(), getToken());
+        Response resp =
+                deleteResult(list.getUuid(), UUID.randomUUID(), UUID.randomUUID(), getToken());
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                resp);
     }
 
     @Test
@@ -102,7 +106,8 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
         var entry = createEntry(list);
         persistance.save(entry);
 
-        Response resp = deleteResult(list.getUuid(), entry.getUuid(), UUID.randomUUID(), getToken());
+        Response resp =
+                deleteResult(list.getUuid(), entry.getUuid(), UUID.randomUUID(), getToken());
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
@@ -122,11 +127,11 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
         var entryResult = createAndSaveResolution(entry, resolutionCode);
 
         Response resp =
-            deleteResult(
-                list.getUuid(),
-                unrelatedEntry.getUuid(),
-                entryResult.getUuid(),
-                getToken());
+                deleteResult(
+                        list.getUuid(),
+                        unrelatedEntry.getUuid(),
+                        entryResult.getUuid(),
+                        getToken());
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         assertEquals(ApplicationListEntryResultError.LIST_ENTRY_RESULT_NOT_FOUND.getCode(), resp);
@@ -143,12 +148,12 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
         var entryResult = createAndSaveResolution(entry, resolutionCode);
 
         Response resp =
-            deleteResult(
-                list.getUuid(),
-                entry.getUuid(),
-                entryResult.getUuid(),
-                getToken(),
-                "never going to match");
+                deleteResult(
+                        list.getUuid(),
+                        entry.getUuid(),
+                        entryResult.getUuid(),
+                        getToken(),
+                        "never going to match");
 
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);

@@ -19,7 +19,8 @@ import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationList
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
-public class ApplicationEntryResultControllerCreateTest extends AbstractApplicationEntryResultCrudTest {
+public class ApplicationEntryResultControllerCreateTest
+        extends AbstractApplicationEntryResultCrudTest {
 
     @Test
     @DisplayName("Create Application List Entry Result: 201 when valid request")
@@ -31,9 +32,11 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         var token = getToken();
 
         var payload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "The Central Criminal Court")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(
+                                new TemplateSubstitution(
+                                        APPC_WORDING_KEY, "The Central Criminal Court")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
@@ -56,15 +59,15 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         var token = getToken();
 
         var payload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(listId, entryId, token, payload);
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -75,15 +78,16 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         var token = getToken();
 
         var payload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), UUID.randomUUID(), token, payload);
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                resp);
     }
 
     @Test
@@ -98,15 +102,15 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         var token = getToken();
 
         var payload =
-            buildCreatePayload(
-                APPC_CODE,
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
+                buildCreatePayload(
+                        APPC_CODE,
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
@@ -119,19 +123,20 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         var token = getToken();
 
         var payload =
-            buildCreatePayload(
-                "UNKNOWN",
-                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
+                buildCreatePayload(
+                        "UNKNOWN",
+                        List.of(new TemplateSubstitution(APPC_WORDING_KEY, "test wording")));
 
         Response resp = createResult(list.getUuid(), entry.getUuid(), token, payload);
 
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
-            ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    @DisplayName(
+            "Create Application List Entry Result: prefers active ResolutionCode with endDate NULL")
     void givenMultipleActiveResolutionCodes_whenCreate_thenPrefersNullEndDate() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
@@ -155,31 +160,36 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         UUID resultUuid = UUID.fromString(resp.jsonPath().getString("id"));
 
         var saved =
-            appListEntryResolutionRepository
-                .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
-                .orElseThrow(() -> new AssertionError("Saved AppListEntryResolution not found"));
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(resultUuid, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
 
         Assertions.assertNotNull(saved.getResolutionCode(), "resolutionCode should be set");
 
         var preferredId =
-            resolutionCodeRepository
-                .findActiveResolutionCodesByCodeAndDate("DUP1", today)
-                .stream()
-                .filter(rc -> rc.getEndDate() == null)
-                .findFirst()
-                .orElseThrow(
-                    () -> new AssertionError("Expected active ResolutionCode with null endDate not found"))
-                .getId();
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                        .stream()
+                        .filter(rc -> rc.getEndDate() == null)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected active ResolutionCode with null endDate not found"))
+                        .getId();
 
         Assertions.assertEquals(
-            preferredId,
-            saved.getResolutionCode().getId(),
-            "Should prefer the ResolutionCode with null endDate");
+                preferredId,
+                saved.getResolutionCode().getId(),
+                "Should prefer the ResolutionCode with null endDate");
     }
 
     @Test
-    @DisplayName("Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
-    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate() throws Exception {
+    @DisplayName(
+            "Create Application List Entry Result: when no endDate NULL exists, chooses latest endDate")
+    void givenMultipleActiveWithoutNullEndDate_whenCreate_thenChoosesLatestEndDate()
+            throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
         persistance.save(entry);
@@ -187,8 +197,7 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         LocalDate date = LocalDate.now();
 
         var older = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(5));
-        var latest = saveActiveResolutionCode("DUP2", date.minusDays(10),
-                                              date.plusDays(20));
+        var latest = saveActiveResolutionCode("DUP2", date.minusDays(10), date.plusDays(20));
 
         var token = getToken();
         var payload = buildCreatePayload("DUP2", List.of());
@@ -200,20 +209,21 @@ public class ApplicationEntryResultControllerCreateTest extends AbstractApplicat
         UUID createdId = UUID.fromString(resp.jsonPath().getString("id"));
 
         AppListEntryResolution created =
-            appListEntryResolutionRepository
-                .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
-                .orElseThrow(() -> new AssertionError("Saved AppListEntryResolution not found"));
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(createdId, entry.getUuid())
+                        .orElseThrow(
+                                () -> new AssertionError("Saved AppListEntryResolution not found"));
 
         Long chosenResolutionCodeId = created.getResolutionCode().getId();
 
         Assertions.assertEquals(
-            latest.getId(),
-            chosenResolutionCodeId,
-            "Should choose the ResolutionCode with the latest endDate");
+                latest.getId(),
+                chosenResolutionCodeId,
+                "Should choose the ResolutionCode with the latest endDate");
 
         Assertions.assertNotEquals(
-            older.getId(),
-            chosenResolutionCodeId,
-            "Should not choose the older ResolutionCode");
+                older.getId(),
+                chosenResolutionCodeId,
+                "Should not choose the older ResolutionCode");
     }
 }

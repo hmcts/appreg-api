@@ -18,26 +18,50 @@ public class ApplicationEntryResultControllerSecurityTest extends AbstractSecuri
         UUID resultId = UUID.randomUUID();
 
         return Stream.of(
-            RestEndpointDescription.builder()
-                .url(getLocalUrl("application-lists/" + listId + "/entries/" + entryId + "/results"))
-                .method(HttpMethod.POST)
-                .payload(Map.of("resultCode", "SOME_CODE", "resolutionWording", "Some wording"))
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-            RestEndpointDescription.builder()
-                .url(getLocalUrl("application-lists/" + listId + "/entries/" + entryId + "/results/" + resultId))
-                .method(HttpMethod.DELETE)
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-            RestEndpointDescription.builder()
-                .url(getLocalUrl("application-lists/" + listId + "/entries/" + entryId + "/results/" + resultId))
-                .method(HttpMethod.PUT)
-                .payload(Map.of("resultCode", "SOME_CODE", "wordingFields", List.of()))
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build()
-        );
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        "application-lists/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results"))
+                        .method(HttpMethod.POST)
+                        .payload(
+                                Map.of(
+                                        "resultCode",
+                                        "SOME_CODE",
+                                        "resolutionWording",
+                                        "Some wording"))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        "application-lists/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results/"
+                                                + resultId))
+                        .method(HttpMethod.DELETE)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        "application-lists/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
+                                                + "/results/"
+                                                + resultId))
+                        .method(HttpMethod.PUT)
+                        .payload(Map.of("resultCode", "SOME_CODE", "wordingFields", List.of()))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
     }
 }
