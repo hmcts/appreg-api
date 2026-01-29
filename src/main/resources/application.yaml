@@ -20,6 +20,11 @@ springdoc:
   writer-with-order-by-keys: true
 
 spring:
+  http:
+    converters:
+      preferred-json-mapper: true
+  jackson:
+    use-jackson2-defaults: true
   data:
     web:
       pageable:

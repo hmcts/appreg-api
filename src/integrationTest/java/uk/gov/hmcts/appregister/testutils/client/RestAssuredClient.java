@@ -9,6 +9,7 @@ import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URISyntaxException;
@@ -21,8 +22,8 @@ import org.apache.http.HttpHeaders;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeDeserializer;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 @Component
@@ -45,10 +46,10 @@ public class RestAssuredClient {
         JavaTimeModule timeModule = new JavaTimeModule();
 
         // Setup the serializer and deserializer for LocalTime with format "HH:mm"
-        timeModule.addDeserializer(LocalTime.class, new StrictLocalTimeDeserializer());
         timeModule.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
         objectMapper.registerModule(timeModule);
         objectMapper.registerModule(new JsonNullableModule());
+
         RestAssured.config =
                 RestAssuredConfig.config()
                         .objectMapperConfig(
@@ -65,7 +66,10 @@ public class RestAssuredClient {
      * @return The specification of the response
      */
     public Response executeGetRequest(URL url, TokenAndJwksKey token) throws URISyntaxException {
-        return given().header("Authorization", "Bearer " + token.getToken()).get(url).andReturn();
+        return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .header("Authorization", "Bearer " + token.getToken())
+                .get(url)
+                .andReturn();
     }
 
     /**

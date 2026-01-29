@@ -1,17 +1,21 @@
 package uk.gov.hmcts.appregister.config;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.time.LocalTime;
+import lombok.RequiredArgsConstructor;
+
 import org.openapitools.jackson.nullable.JsonNullableModule;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
+import org.springframework.boot.jackson2.autoconfigure.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeDeserializer;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 
-@Configuration
-public class JacksonConfig {
+import java.time.LocalTime;
 
+@Configuration
+@RequiredArgsConstructor
+public class JacksonConfig {
     /**
      * Registers Jackson modules required for OpenAPI-generated models. JsonNullableModule: supports
      * fields of type JsonNullable
