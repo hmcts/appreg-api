@@ -117,14 +117,10 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
           cja.description AS cjaDescription,
           al.otherLocation AS otherLocation,
           al.status AS status,
-            (
-            select count(ale2.id)
-            from ApplicationListEntry ale2
-            where ale2.applicationList = al
-              and (ale2.deleted is null or ale2.deleted <> 'Y')
-          ) as entryCount
+          COUNT(ale.id) AS entryCount
         FROM ApplicationList al
         LEFT JOIN al.cja cja
+        LEFT JOIN al.entries ale
         WHERE (:status IS NULL OR al.status = :status)
           AND (:courtCode IS NULL OR al.courtCode = :courtCode)
           AND (:cja IS NULL OR al.cja = :cja)
@@ -141,6 +137,8 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
           AND (:otherDesc IS NULL OR lower(al.otherLocation)
                   LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
           AND (al.deleted IS NULL OR al.deleted <> 'Y')
+          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        GROUP BY al, cja
         """)
     Page<ApplicationListSummaryProjection> findAllByFilter(
             @Param("status") Status status,

@@ -90,8 +90,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
         Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
-    // @StabilityTest: We need to improve the performance here by introducing indexes
-    @Test
+    @StabilityTest
     public void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
             throws Exception {
         // create the token
