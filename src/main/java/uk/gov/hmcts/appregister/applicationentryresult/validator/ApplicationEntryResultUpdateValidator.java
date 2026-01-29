@@ -27,15 +27,15 @@ public class ApplicationEntryResultUpdateValidator
         extends AbstractApplicationEntryResultValidator<
                 PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess> {
 
-    private final AppListEntryResolutionRepository appListEntryResolutionRepository;
+    private final AppListEntryResolutionRepository appListEntryResultRepository;
 
     public ApplicationEntryResultUpdateValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
             ResolutionCodeRepository resolutionCodeRepository,
-            AppListEntryResolutionRepository appListEntryResolutionRepository) {
+            AppListEntryResolutionRepository appListEntryResultRepository) {
         super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
-        this.appListEntryResolutionRepository = appListEntryResolutionRepository;
+        this.appListEntryResultRepository = appListEntryResultRepository;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ApplicationEntryResultUpdateValidator
         super.validate(validatable, null);
 
         Optional<AppListEntryResolution> entryResult =
-                appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                appListEntryResultRepository.findByUuidAndApplicationList_Uuid(
                         validatable.getResultId(), validatable.getEntryId());
 
         if (entryResult.isEmpty()) {
@@ -76,13 +76,25 @@ public class ApplicationEntryResultUpdateValidator
             ApplicationList applicationList,
             ApplicationListEntry applicationListEntry,
             PayloadForUpdateEntryResult payload) {
-        AppListEntryResolution resolution =
-                appListEntryResolutionRepository
+
+        AppListEntryResolution appListEntryResult =
+                appListEntryResultRepository
                         .findByUuidAndApplicationList_Uuid(
                                 payload.getResultId(), payload.getEntryId())
-                        .get();
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListEntryResultError
+                                                        .LIST_ENTRY_RESULT_NOT_FOUND,
+                                                ("No application list entry result was found for UUID '%s' that"
+                                                                + " belongs to the specified entry")
+                                                        .formatted(payload.getResultId())));
         return new ListEntryResultUpdateValidationSuccess(
-                wordingTemplateCollection, code, applicationList, applicationListEntry, resolution);
+                wordingTemplateCollection,
+                code,
+                applicationList,
+                applicationListEntry,
+                appListEntryResult);
     }
 
     @Override
