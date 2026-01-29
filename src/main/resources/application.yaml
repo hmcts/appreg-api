@@ -23,10 +23,7 @@ spring:
   http:
     converters:
       preferred-json-mapper: true
-<<<<<<< HEAD
   # Continue to use Jackson 2 for now
-=======
->>>>>>> f5258324de4b4467b498f4accf485356c9e514c4
   jackson:
     use-jackson2-defaults: true
   data:

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import java.time.LocalTime;
-
+import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 
@@ -31,7 +31,7 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
             if (token == JsonToken.VALUE_STRING) {
                 String text = p.getText().trim();
 
-                return LocalTime.parse(text);
+                return LocalTime.parse(text, DateTimeFormatter.ofPattern("HH:mm"));
             } else {
                 throw new HttpMessageNotReadableException("Unexpected time format detected", null);
             }

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
-import uk.gov.hmcts.appregister.common.mapper.SortableField;
+import uk.gov.hmcts.appregister.common.mapper.SortableFieldMapper;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.controller.testutils.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -30,8 +30,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 /**
- * A class that isolates the sort test capabilities of the application list controller operation GET
- * application-lists.
+ * A class that isolates the sort test capabilities of the application list controller.
  */
 public class GetApplicationListControllerSortTest extends BaseIntegration {
 
@@ -319,7 +318,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                         List.of(
                                 ApplicationListSortFieldEnum.LOCATION.getApiValue()
                                         + ","
-                                        + SortableField.DESC),
+                                        + SortableFieldMapper.DESC),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         GetApplicationListFilterSpecification.builder()
