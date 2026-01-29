@@ -79,20 +79,20 @@ public class ApplicationEntryResultControllerDeleteTest extends AbstractApplicat
 
         Response resp = deleteResult(listId, entryId, resultId, getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-        assertEquals(ApplicationListEntryResultError.ENTRY_RESULT_LIST_NOT_FOUND.getCode(), resp);
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 400 when list closed")
-    void givenClosedList_whenDelete_then400() throws Exception {
+    @DisplayName("Delete Application List Entry Result: 409 when list closed")
+    void givenClosedList_whenDelete_then409() throws Exception {
         var list = createAndSaveList(CLOSED);
 
         Response resp = deleteResult(list.getUuid(), UUID.randomUUID(), UUID.randomUUID(), getToken());
 
-        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
         assertEquals(
-            ApplicationListEntryResultError.INVALID_ENTRY_RESULT_LIST_STATUS.getCode(), resp);
+            ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), resp);
     }
 
     @Test

@@ -77,6 +77,7 @@ class ApplicationEntryResultServiceImplTest {
             new DummyApplicationEntryResultDeletionValidator(
                     applicationListRepository,
                     applicationListEntryRepository,
+                    resolutionCodeRepository,
                     appListEntryResolutionRepository);
 
     @Spy
@@ -296,10 +297,12 @@ class ApplicationEntryResultServiceImplTest {
         public DummyApplicationEntryResultDeletionValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository,
                 AppListEntryResolutionRepository appListEntryResolutionRepository) {
             super(
                     applicationListRepository,
                     applicationListEntryRepository,
+                    resolutionCodeRepository,
                     appListEntryResolutionRepository);
         }
 

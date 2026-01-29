@@ -24,70 +24,64 @@ import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 @Component
 @Slf4j
 public class ApplicationEntryResultUpdateValidator
-        extends AbstractApplicationEntryResultValidator<
-                PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess> {
+    extends AbstractApplicationEntryResultValidator<
+    PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess> {
+
     private final AppListEntryResolutionRepository appListEntryResolutionRepository;
 
     public ApplicationEntryResultUpdateValidator(
-            ApplicationListRepository applicationListRepository,
-            ApplicationListEntryRepository applicationListEntryRepository,
-            ResolutionCodeRepository resolutionCodeRepository,
-            AppListEntryResolutionRepository appListEntryResolutionRepository) {
+        ApplicationListRepository applicationListRepository,
+        ApplicationListEntryRepository applicationListEntryRepository,
+        ResolutionCodeRepository resolutionCodeRepository,
+        AppListEntryResolutionRepository appListEntryResolutionRepository) {
         super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
         this.appListEntryResolutionRepository = appListEntryResolutionRepository;
     }
 
     @Override
     public void validate(PayloadForUpdateEntryResult validatable) {
-        validate(validatable, null);
+        super.validate(validatable, null);
+
+        Optional<AppListEntryResolution> entryResult =
+            appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
+                validatable.getResultId(), validatable.getEntryId());
+
+        if (entryResult.isEmpty()) {
+            throw new AppRegistryException(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
+                ("The application entry result %s does not exist in application list %s and in application list "
+                    + "entry %s")
+                    .formatted(
+                        validatable.getResultId(),
+                        getApplicationListUuid(validatable),
+                        validatable.getEntryId()));
+        }
+
+        log.debug("application list entry result is found {}", validatable.getResultId());
     }
 
     @Override
     public <R> R validate(
-            PayloadForUpdateEntryResult validatable,
-            BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
-                    validateSuccess) {
-
-        // Run base validations first
-        R result = super.validate(validatable, validateSuccess);
-
-        // Then check that the entry result exists
-        Optional<AppListEntryResolution> entryResult =
-                appListEntryResolutionRepository.findByUuidAndApplicationList_Uuid(
-                        validatable.getResultId(), validatable.getEntryId());
-
-        if (entryResult.isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_ENTRY_RESULT_DOES_NOT_EXIST,
-                    ("The application entry result %s does not exist in application list %s and in application list "
-                                    + "entry %s")
-                            .formatted(
-                                    validatable.getResultId(),
-                                    getApplicationListUuid(validatable),
-                                    validatable.getEntryId()));
-        }
-
-        log.debug("application list entry result is found {}", validatable.getResultId());
-
-        return result;
+        PayloadForUpdateEntryResult validatable,
+        BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
+            validateSuccess) {
+        // Delegate to base validate which will call getResult(...) to build the success object.
+        return super.validate(validatable, validateSuccess);
     }
 
     @Override
     protected ListEntryResultUpdateValidationSuccess getResult(
-            ResolutionCode code,
-            WordingTemplateSentence wordingTemplateCollection,
-            ApplicationList applicationList,
-            ApplicationListEntry applicationListEntry,
-            PayloadForUpdateEntryResult payload) {
+        ResolutionCode code,
+        WordingTemplateSentence wordingTemplateCollection,
+        ApplicationList applicationList,
+        ApplicationListEntry applicationListEntry,
+        PayloadForUpdateEntryResult payload) {
+        AppListEntryResolution resolution =
+            appListEntryResolutionRepository
+                .findByUuidAndApplicationList_Uuid(payload.getResultId(), payload.getEntryId())
+                .get();
         return new ListEntryResultUpdateValidationSuccess(
-                wordingTemplateCollection,
-                code,
-                applicationList,
-                applicationListEntry,
-                appListEntryResolutionRepository
-                        .findByUuidAndApplicationList_Uuid(
-                                payload.getResultId(), payload.getEntryId())
-                        .get());
+            wordingTemplateCollection, code, applicationList, applicationListEntry, resolution);
     }
 
     @Override
@@ -100,6 +94,7 @@ public class ApplicationEntryResultUpdateValidator
         return validatable.getId();
     }
 
+    @Override
     protected UUID getApplicationListEntryUuid(PayloadForUpdateEntryResult validatable) {
         return validatable.getEntryId();
     }

@@ -30,9 +30,10 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
     }
 
     /**
-     * This validator has many rules. The rules are as such:- - The application list must exist and
-     * be in the open state - The application list entry must exist and be in the open state - The
-     * result code must exist
+     * This validator has many rules. The rules are as such:
+     * - The application list must exist and be in the OPEN state (and not deleted)
+     * - The application list entry must exist and be active (not deleted)
+     * - Optionally: the result code must exist (if the payload supplies a result code)
      *
      * @param validatable The validatable payload
      * @param validateSuccess The success function to call if validation is successful
@@ -43,22 +44,31 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
 
         ApplicationListEntry applicationListEntry = validateParentApplicationListEntry(validatable);
 
-        // validate that the result code exists
-        ResolutionCode code = validateResultCode(validatable);
-
-        // parse the wording template and error if not valid
-        WordingTemplateSentence wordingTemplateCollection =
-                WordingTemplateSentence.with(code.getWording());
+        String resultCode = getResultCode(validatable);
+        ResolutionCode code = null;
+        WordingTemplateSentence wordingTemplateCollection = null;
+        if (resultCode != null) {
+            List<ResolutionCode> list =
+                resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, PageRequest.of(0,
+                                                                                                1));
+            Optional<ResolutionCode> maybe = list.stream().findFirst();
+            if (maybe.isEmpty()) {
+                throw new AppRegistryException(
+                    ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
+                    "No valid resolution code could be found %s".formatted(resultCode));
+            }
+            code = maybe.get();
+            wordingTemplateCollection = WordingTemplateSentence.with(code.getWording());
+            log.debug("Validated the result code {}", resultCode);
+        } else {
+            log.debug("No result code provided; skipping resolution-code validation for {}",
+                      getApplicationListUuid(validatable));
+        }
 
         if (validateSuccess != null) {
             return validateSuccess.apply(
-                    validatable,
-                    getResult(
-                            code,
-                            wordingTemplateCollection,
-                            applicationList,
-                            applicationListEntry,
-                            validatable));
+                validatable,
+                getResult(code, wordingTemplateCollection, applicationList, applicationListEntry, validatable));
         }
         return null;
     }
@@ -66,19 +76,19 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
     /**
      * gets the result of the validation.
      *
-     * @param code The result code
-     * @param wordingTemplateCollection The wording template collection
+     * @param code The result code (may be null for operations that don't require it)
+     * @param wordingTemplateCollection The wording template collection (may be null)
      * @param applicationListEntry The application list entry
      */
     protected abstract O getResult(
-            ResolutionCode code,
-            WordingTemplateSentence wordingTemplateCollection,
-            ApplicationList applicationList,
-            ApplicationListEntry applicationListEntry,
-            T dto);
+        ResolutionCode code,
+        WordingTemplateSentence wordingTemplateCollection,
+        ApplicationList applicationList,
+        ApplicationListEntry applicationListEntry,
+        T dto);
 
     /**
-     * validate the application list for the app list entry result update. Validates that the
+     * validate the application list for the app list entry result operation. Validates that the
      * application list exists
      *
      * @param validatable The validatable payload
@@ -86,32 +96,27 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      */
     private ApplicationList validateParentApplicationList(T validatable) {
         Optional<ApplicationList> applicationList =
-                applicationListRepository.findByUuidIncludingDelete(
-                        getApplicationListUuid(validatable));
+            applicationListRepository.findByUuidIncludingDelete(getApplicationListUuid(validatable));
         if (applicationList.isEmpty()) {
             throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST,
-                    "The application list does not exist %s"
-                            .formatted(getApplicationListUuid(validatable)));
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST,
+                "The application list does not exist %s".formatted(getApplicationListUuid(validatable)));
         }
 
-        // if the state of the application is not open then we cant add an entry
         if (!applicationList.get().isOpen() || applicationList.get().isDeleted()) {
             throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT,
-                    "The application list id %s is not in the correct state or the application list is deleted %s"
-                            .formatted(
-                                    getApplicationListUuid(validatable),
-                                    applicationList.get().getStatus()));
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                "The application list id %s is not in the correct state or the application list is deleted %s"
+                    .formatted(getApplicationListUuid(validatable), applicationList.get().getStatus()));
         }
 
-        log.debug("Validated application list with id{}", getApplicationListUuid(validatable));
+        log.debug("Validated application list with id {}", getApplicationListUuid(validatable));
 
         return applicationList.get();
     }
 
     /**
-     * validate the application list entry for the app list entry result update. Validates that the
+     * validate the application list entry for the app list entry result operation. Validates that the
      * application list entry exists
      *
      * @param validatable The validatable payload
@@ -119,20 +124,17 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      */
     private ApplicationListEntry validateParentApplicationListEntry(T validatable) {
         Optional<ApplicationListEntry> entry =
-                applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
-                        getApplicationListEntryUuid(validatable),
-                        getApplicationListUuid(validatable));
+            applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
+                getApplicationListEntryUuid(validatable), getApplicationListUuid(validatable));
 
         if (entry.isEmpty()) {
             throw new AppRegistryException(
-                    ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
-                    "No application list entry exists that belongs to the specified list %s"
-                            .formatted(getApplicationListEntryUuid(validatable)));
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST,
+                "No application list entry exists that belongs to the specified list %s"
+                    .formatted(getApplicationListEntryUuid(validatable)));
         }
 
-        log.debug(
-                "Validated application list entry with id{}",
-                getApplicationListEntryUuid(validatable));
+        log.debug("Validated application list entry with id {}", getApplicationListEntryUuid(validatable));
 
         return entry.get();
     }
@@ -141,12 +143,12 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
      * gets the result code.
      *
      * @param validatable The validatable payload
-     * @return The result code
+     * @return The result code, or null if not applicable
      */
     protected abstract String getResultCode(T validatable);
 
     /**
-     * get app list.
+     * get app list uuid.
      *
      * @param validatable The validatable payload
      * @return The app list id
@@ -154,35 +156,10 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
     protected abstract UUID getApplicationListUuid(T validatable);
 
     /**
-     * get app list entry.
+     * get app list entry uuid.
      *
      * @param validatable The validatable payload
      * @return The app list entry id
      */
     protected abstract UUID getApplicationListEntryUuid(T validatable);
-
-    /**
-     * validate the provided code against the payload details.
-     *
-     * @param validatable The dto to validate
-     * @return The code if valid
-     * @throws AppRegistryException In the event of a failure
-     */
-    private ResolutionCode validateResultCode(T validatable) {
-        // validate that the result code exists
-        List<ResolutionCode> list =
-                resolutionCodeRepository.findPrioritisingNullEndDate(
-                        getResultCode(validatable), PageRequest.of(0, 1));
-
-        Optional<ResolutionCode> code = list.stream().findFirst();
-
-        if (code.isEmpty()) {
-            throw new AppRegistryException(
-                    ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
-                    "No valid resolution code could be found %s".formatted(code));
-        }
-
-        log.debug("Validated the result code {}", getResultCode(validatable));
-        return code.get();
-    }
 }
