@@ -429,6 +429,7 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-web'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
+  implementation 'org.springframework.boot:spring-boot-jackson2'
 
   // Allows us to use jackson 2 until we can succesfully migrate to Jackson 3.
   // // When we support Jackson 3, this dependency can be removed -->
@@ -478,6 +479,7 @@ dependencies {
   testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 
   // This causes us problems with testing. We need to use groovy 3 -->
+
   testImplementation (group: 'io.rest-assured', name: 'rest-assured', version: '5.5.0') {
     exclude(group : "org.apache.groovy", module : "groovy")
   }

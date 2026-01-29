@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -161,7 +162,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         LocalTime nineOneAm = LocalTime.of(9, 1);
 
         // When: filter ONLY by date and time; leave other filters null
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         null, // status
                         null, // courtCode
@@ -176,7 +177,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        ApplicationList only = result.getContent().getFirst();
+        ApplicationListSummaryProjection only = result.getContent().getFirst();
         assertThat(only.getDate()).isEqualTo(targetDay);
         assertThat(only.getTime()).isEqualTo(nineAm);
     }
@@ -187,15 +188,18 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         // Given
         LocalDate targetDay = LocalDate.of(2025, 1, 2);
         LocalTime nineAm = LocalTime.of(9, 0, 1);
-        LocalTime nineOneAm = LocalTime.of(9, 1);
+        LocalTime nineOneAm = LocalTime.of(9, 3);
 
-        // Matching row: 09:00
-        save("OPEN", "CCC003", null, targetDay, nineAm, "keep", "west");
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    // Matching row: 09:00
+                    save("OPEN", "CCC003", null, targetDay, nineAm, "keep", "west");
+                });
 
         Pageable page = PageRequest.of(0, 10);
 
         // When: filter ONLY by time; leave other filters null
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         null, // status
                         null, // courtCode
@@ -210,7 +214,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        ApplicationList only = result.getContent().getFirst();
+        ApplicationListSummaryProjection only = result.getContent().getFirst();
         assertThat(only.getTime()).isEqualTo(nineAm);
     }
 
@@ -228,7 +232,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         Pageable page = PageRequest.of(0, 10);
 
         // When: filter ONLY by time; leave other filters null
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         null, // status
                         null, // courtCode
@@ -243,7 +247,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        ApplicationList only = result.getContent().getFirst();
+        ApplicationListSummaryProjection only = result.getContent().getFirst();
         assertThat(only.getTime()).isEqualTo(startTime);
     }
 
@@ -259,13 +263,13 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         Pageable page = PageRequest.of(0, 10);
 
         // When
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         Status.OPEN, "CCC003", null, null, null, null, false, null, null, page);
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getCourtCode()).isEqualTo("CCC003");
+        assertThat(result.getContent().getFirst().getCourtName()).isEqualTo("Court CCC003");
         assertThat(result.getContent().getFirst().getStatus()).isEqualTo(Status.OPEN);
     }
 
@@ -280,7 +284,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         save("OPEN", null, cja53, DEFAULT_DATE, DEFAULT_TIME, "drop", "loc");
 
         // When
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         Status.OPEN,
                         null,
@@ -295,7 +299,8 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
 
         // Then
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getCja().getCode()).isEqualTo("52");
+        assertThat(result.getContent().getFirst().getCjaDescription())
+                .isEqualTo(cja52.getDescription());
     }
 
     @Test
@@ -309,7 +314,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         save("OPEN", null, null, date, time, "Afternoon list", "Hall");
 
         // When
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         null,
@@ -336,7 +341,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         save("OPEN", null, null, DEFAULT_DATE, DEFAULT_TIME, "x", "Library Room");
 
         // When
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         null,
                         null,
@@ -370,7 +375,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         Pageable page = PageRequest.of(0, 10);
 
         // When: filter ONLY by date and time; leave other filters null
-        Page<ApplicationList> result =
+        Page<ApplicationListSummaryProjection> result =
                 repository.findAllByFilter(
                         null, // status
                         null, // courtCode
@@ -399,7 +404,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
         save("OPEN", "PG1", null, d2, t, "second", "loc");
 
         // When: page 0 size 1
-        Page<ApplicationList> page0 =
+        Page<ApplicationListSummaryProjection> page0 =
                 repository.findAllByFilter(
                         Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",
@@ -414,7 +419,7 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
                                 0, 1, org.springframework.data.domain.Sort.by("date").ascending()));
 
         // And: page 1 size 1
-        Page<ApplicationList> page1 =
+        Page<ApplicationListSummaryProjection> page1 =
                 repository.findAllByFilter(
                         Status.valueOf(ApplicationListStatus.OPEN.getValue()),
                         "PG1",

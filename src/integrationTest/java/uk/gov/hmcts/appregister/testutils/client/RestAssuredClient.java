@@ -9,6 +9,7 @@ import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.parsing.Parser;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.net.URISyntaxException;
@@ -22,6 +23,7 @@ import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 @Component
@@ -122,6 +124,36 @@ public class RestAssuredClient {
             TokenAndJwksKey token) {
         return executeGetRequestWithPaging(
                 pageSize, pageNumber, pageSort, url, token, rs -> rs, new OpenApiPageMetaData());
+    }
+
+    /**
+     * gets a request builder that can be used to make requests against the application.
+     *
+     * @param pageSize The page size of the reuest
+     * @param pageNumber The page number of the request
+     * @param pageSort The page sort number of the request
+     * @param url The url context
+     * @param token The bearer token
+     * @param requestSpecificationConsumer A request specification that will be called before
+     *     sending the request. Allows operation specific payload customisation i.e. request
+     *     parameters to be added etc
+     * @return The specification of the response
+     */
+    public Response executeGetRequestWithPaging(
+            Optional<Integer> pageSize,
+            Optional<Integer> pageNumber,
+            List<String> pageSort,
+            URL url,
+            TokenAndJwksKey token,
+            UnaryOperator<RequestSpecification> requestSpecificationConsumer) {
+        return executeGetRequestWithPaging(
+                pageSize,
+                pageNumber,
+                pageSort,
+                url,
+                token,
+                requestSpecificationConsumer,
+                new OpenApiPageMetaData());
     }
 
     /**
