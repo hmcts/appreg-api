@@ -108,37 +108,39 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
      */
     @Query(
             """
-        SELECT
-          al.uuid AS uuid,
-          al.time AS time,
-          al.date AS date,
-          al.courtName AS courtName,
-          al.description AS description,
-          cja.description AS cjaDescription,
-          al.otherLocation AS otherLocation,
-          al.status AS status,
-          COUNT(ale.id) AS entryCount
-        FROM ApplicationList al
-        LEFT JOIN al.cja cja
-        LEFT JOIN al.entries ale
-        WHERE (:status IS NULL OR al.status = :status)
-          AND (:courtCode IS NULL OR al.courtCode = :courtCode)
-          AND (:cja IS NULL OR al.cja = :cja)
-          AND (al.date = COALESCE(:onDate, al.date))
-          AND (
-               COALESCE(:start, NULL) IS NULL
-                OR (
-                     (:wrapsMidnight = TRUE  AND al.time >= :start)
-                  OR (:wrapsMidnight = FALSE AND al.time >= :start AND al.time < :end)
-                )
-              )
-          AND (:description IS NULL OR lower(al.description)
-                  LIKE concat('%', lower(cast(:description AS string)), '%'))
-          AND (:otherDesc IS NULL OR lower(al.otherLocation)
-                  LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
-          AND (al.deleted IS NULL OR al.deleted <> 'Y')
-          AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
-        GROUP BY al, cja
+            SELECT
+              al.uuid AS uuid,
+              al.time AS time,
+              al.date AS date,
+              al.courtName AS courtName,
+              al.description AS description,
+              cja.description AS cjaDescription,
+              al.otherLocation AS otherLocation,
+              al.status AS status,
+              (
+                  SELECT COUNT(ale2.id)
+                  FROM ApplicationListEntry ale2
+                  WHERE ale2.applicationList = al
+                  AND (ale2.deleted IS NULL OR ale2.deleted <> 'Y')
+                ) AS entryCount
+            FROM ApplicationList al
+            LEFT JOIN al.cja cja
+            WHERE (:status IS NULL OR al.status = :status)
+              AND (:courtCode IS NULL OR al.courtCode = :courtCode)
+              AND (:cja IS NULL OR al.cja = :cja)
+              AND (al.date = COALESCE(:onDate, al.date))
+              AND (
+                   COALESCE(:start, NULL) IS NULL
+                    OR (
+                         (:wrapsMidnight = TRUE  AND al.time >= :start)
+                      OR (:wrapsMidnight = FALSE AND al.time >= :start AND al.time < :end)
+                    )
+                  )
+              AND (:description IS NULL OR lower(al.description)
+                      LIKE concat('%', lower(cast(:description AS string)), '%'))
+              AND (:otherDesc IS NULL OR lower(al.otherLocation)
+                      LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
+              AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     Page<ApplicationListSummaryProjection> findAllByFilter(
             @Param("status") Status status,
