@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,15 +20,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
-@WebMvcTest(useDefaultFilters = false)
 @Import({
-    SecurityConfig.class,
     SecurityConfigIntegrationTest.UserRoleController.class,
     SecurityConfigIntegrationTest.AdminRoleController.class
 })
 @TestPropertySource(properties = {"azure-tenant-id=dummy-tenant-id"})
-class SecurityConfigIntegrationTest {
+class SecurityConfigIntegrationTest extends BaseIntegration {
 
     @Autowired MockMvc mvc;
 
