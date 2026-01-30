@@ -45,7 +45,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 ext {
-  releaseTrainVersion = '2025.1.0' // Example: "2021.0.x" corresponds to Spring Boot 2.6.x or 2.7.x
+  releaseTrainVersion = '2025.1.1' // Example: "2021.0.x" corresponds to Spring Boot 2.6.x or 2.7.x
 }
 
 def buildNumber = System.getenv("RELEASE_VERSION")?: "DEV-SNAPSHOT"
