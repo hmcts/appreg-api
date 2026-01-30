@@ -91,8 +91,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
         Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
-    // @StabilityTest: We need to improve the performance here by introducing indexes
-    @Test
+    // @StabilityTest
     public void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
             throws Exception {
         // create the token
@@ -333,7 +332,6 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
         Assertions.assertEquals(listId, page.getContent().get(1).getId());
     }
 
-    @Test
     @DisplayName("GET: default paging + default sort (description ASC)")
     @StabilityTest
     void givenDefaults_whenGet_then200AndSortedByDescriptionAsc() throws Exception {
@@ -373,7 +371,6 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
         assertThat(page.getFirst()).isTrue();
     }
 
-    @Test
     @DisplayName("GET: allowed sort (date,desc & time,desc)")
     @StabilityTest
     void givenAllowedSort_thenSorted() throws Exception {
