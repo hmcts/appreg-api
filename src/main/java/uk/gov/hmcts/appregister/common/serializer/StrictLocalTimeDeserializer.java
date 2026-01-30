@@ -24,7 +24,8 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
 
         if (token == JsonToken.START_ARRAY) {
             throw new HttpMessageNotReadableException(
-                    "Unexpected time format detected %s".formatted(getErroneousArrayString(p)));
+                    "Unexpected time format detected %s".formatted(getErroneousArrayString(p)),
+                    null);
         } else {
             // Accept string only (you can also accept NUMBER if you want, but here we do not)
             if (token == JsonToken.VALUE_STRING) {
@@ -32,7 +33,7 @@ public class StrictLocalTimeDeserializer extends JsonDeserializer<LocalTime> {
 
                 return LocalTime.parse(text, DateTimeFormatter.ofPattern("HH:mm"));
             } else {
-                throw new HttpMessageNotReadableException("Unexpected time format detected");
+                throw new HttpMessageNotReadableException("Unexpected time format detected", null);
             }
         }
     }

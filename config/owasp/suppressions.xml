@@ -14,5 +14,17 @@
     <cve>CVE-2025-7962</cve>
   </suppress>
 
+  <!-- We do not use the nu html checker library -->
+  <suppress>
+    <notes>
+      False positive: CVE applies to Nu HTML Checker (validator.nu).
+      hibernate-validator-9.0.1.Final does not contain nu.validator classes (inspected on 2026-01-29).
+      Investigation: dependency-check matched a generic "validator" CPE.
+      Rationale: suppress to avoid noise; will revisit if package is updated or new evidence appears.
+      Investigated-by: Michael Estebanez
+    </notes>
+    <cve>CVE-2025-15104</cve>
+  </suppress>
+
   <!--End of false positives section -->
 </suppressions>

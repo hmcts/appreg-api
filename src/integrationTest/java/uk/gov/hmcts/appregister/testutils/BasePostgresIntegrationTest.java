@@ -9,9 +9,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.wiremock.spring.ConfigureWireMock;
+import org.wiremock.spring.EnableWireMock;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 
@@ -26,6 +29,8 @@ import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 @ActiveProfiles({"int"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
+@EnableWireMock({@ConfigureWireMock(port = 0)})
+@AutoConfigureMockMvc
 public abstract class BasePostgresIntegrationTest {
     protected static PostgresCommand postgresCommand = new PostgresCommand();
 

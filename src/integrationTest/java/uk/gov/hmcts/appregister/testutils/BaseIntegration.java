@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.testutils;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
 import com.nimbusds.jose.JOSEException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -8,9 +7,6 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
@@ -22,14 +18,10 @@ import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 
-@AutoConfigureWebTestClient
-@AutoConfigureWireMock(port = 0)
 @Slf4j
 public class BaseIntegration extends BasePostgresIntegrationTest {
 
     @Autowired protected TokenStub tokenStub;
-
-    @Autowired private TestRestTemplate restTemplate;
 
     @Autowired protected RestAssuredClient restAssuredClient;
 
@@ -42,13 +34,14 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     @Value("${spring.security.oauth2.resourceserver.jwt.audiences[0]}")
     protected String audience;
 
-    @Autowired protected WireMockServer wireMockServer;
-
     protected static PostgresCommand postgresCommand = new PostgresCommand();
 
     protected LogCaptor logCaptor;
 
     protected AuditLogAsserter differenceLogAsserter;
+
+    @Value("${wiremock.server.port}")
+    protected String token;
 
     @BeforeEach
     void setup() {
