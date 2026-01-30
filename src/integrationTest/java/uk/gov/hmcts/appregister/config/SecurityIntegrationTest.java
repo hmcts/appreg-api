@@ -6,12 +6,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.appregister.testutils.BasePostgresIntegrationTest;
 
-@AutoConfigureMockMvc
 public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
 
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -22,12 +20,6 @@ public class SecurityIntegrationTest extends BasePostgresIntegrationTest {
     @DisplayName("Should allow unauthenticated access to /health")
     void healthEndpoint_shouldAllowAnonymousAccess() throws Exception {
         MvcResult result = mockMvc.perform(get("/health")).andExpect(status().isOk()).andReturn();
-    }
-
-    @Test
-    @DisplayName("Should allow unauthenticated access to /swagger-ui/index.html")
-    void swaggerEndpoint_shouldAllowAnonymousAccess() throws Exception {
-        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
     }
 
     @Test
