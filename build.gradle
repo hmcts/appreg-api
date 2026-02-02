@@ -465,7 +465,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.41.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.42.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
