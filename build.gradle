@@ -485,7 +485,7 @@ dependencies {
   }
 
   // force Groovy 3
-  testImplementation("org.codehaus.groovy:groovy:3.0.17")
+  testImplementation("org.codehaus.groovy:groovy:3.0.25")
 
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
   testImplementation 'io.github.hakky54:logcaptor:2.12.2'
