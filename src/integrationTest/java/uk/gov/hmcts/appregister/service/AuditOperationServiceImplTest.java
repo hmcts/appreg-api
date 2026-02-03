@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.util.ActivityAuditLogAsserter;
@@ -52,8 +53,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
 
     @Autowired
     private AuditOperationService auditOperationService;
-
-    private ActivityAuditLogAsserter asserter = new ActivityAuditLogAsserter();
 
     @BeforeEach
     public void setUp() {
@@ -114,8 +113,8 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         applicationList.setUuid(pkId);
         applicationList.setId(20L);
 
-        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
-        ApplicationCode applicationCode = applicationCodeTestData.someComplete();
+        ApplicationListGetSummaryDto applicationListGetSummaryDto = new ApplicationListGetSummaryDto();
+        applicationListGetSummaryDto.setLocation("location");
 
         new TransactionalUnitOfWork().inTransaction(() -> {
             auditOperationService.processAudit(
@@ -123,7 +122,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                 TestAuditOperation.TEST_AUDIT_CREATE,
                 (event) -> {
                     return Optional.of(new AuditableResult<>(
-                        applicationCode,
+                        applicationListGetSummaryDto,
                         applicationList
                     ));
                 }
@@ -145,7 +144,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                     .TEST_AUDIT_DELETE.getEventName(),
                 Integer.valueOf(OperationStatus
                                     .COMPLETED.getStatus()).toString(),
-                "\\{\"name\":\"testName\"\\}");
+                mapper.writeValueAsString(applicationListGetSummaryDto));
 
         // assert the the activity log is entered
         activityAuditLogAsserter.assertCompletedLogContains(
@@ -154,7 +153,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
             "test-trace-id",
             Integer.valueOf(OperationStatus
                                 .COMPLETED.getStatus()).toString(),
-            "{\"name\":\"testName\"}"
+            mapper.writeValueAsString(applicationListGetSummaryDto)
         );
     }
 

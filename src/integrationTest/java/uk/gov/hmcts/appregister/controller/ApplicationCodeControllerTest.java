@@ -170,7 +170,7 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         activityAuditLogAsserter.assertCompletedLogContainsWithUnknownMessageId(
             GET_APPCODES_AUDIT_ACTION,
             Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
-            escapeRegex(mapper.writeValueAsString(page)));
+            mapper.writeValueAsString(page));
     }
 
     @Test

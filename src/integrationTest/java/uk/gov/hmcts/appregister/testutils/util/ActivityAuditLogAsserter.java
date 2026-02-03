@@ -51,7 +51,7 @@ public class ActivityAuditLogAsserter {
                                            String messageContent) {
         String completed =
             AuditOperationSlf4jLogger.getCompletedLogWithUnknownMessageIdRegEx(action, messageStatus,
-                                                                               messageContent);
+                                                                               escapeRegex(messageContent));
         boolean asserted = false;
         for (String logs: operationLogger.getInfoLogs()) {
             if (Pattern.matches(completed, logs)) {
@@ -60,5 +60,17 @@ public class ActivityAuditLogAsserter {
         }
 
         Assertions.assertTrue(asserted);
+    }
+
+    /**
+     * escapes regex.
+     * @param input the input string regex
+     * @return The escaped regex
+     */
+    protected String escapeRegex(String input) {
+        return input.replaceAll(
+            "[\\\\.^$|?*+()\\[\\]{}]",
+            "\\\\$0"
+        );
     }
 }

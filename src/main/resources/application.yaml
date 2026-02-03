@@ -86,7 +86,7 @@ logging:
     org.springframework.*: DEBUG
     uk.gov.hmcts.appregister: DEBUG
   pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} %X{user} %X{method} %X{path} - %msg%n"
     correlation: "[%X{traceId}/%X{spanId}]"
 
 

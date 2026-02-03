@@ -95,11 +95,4 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
                 .build()
                 .fetchTokenForRole();
     }
-
-    protected String escapeRegex(String input) {
-        return input.replaceAll(
-            "[\\\\.^$|?*+()\\[\\]{}]",
-            "\\\\$0"
-        );
-    }
 }
