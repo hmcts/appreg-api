@@ -68,25 +68,28 @@ public class RestAssuredClient {
     }
 
     /**
-     * gets a request builder that can be used to make requests (with trace) against the application.
+     * gets a request builder that can be used to make requests (with trace) against the
+     * application.
      *
      * @param url The url context
      * @param token The bearer token
      * @param trace The traceparent header value
-     * @return The specification of the response with W3C Trace header https://www.w3.org/TR/trace-context/
+     * @return The specification of the response with W3C Trace header
+     *     https://www.w3.org/TR/trace-context/
      */
-    public Response executeGetRequest(URL url, TokenAndJwksKey token, String trace) throws URISyntaxException {
+    public Response executeGetRequest(URL url, TokenAndJwksKey token, String trace)
+            throws URISyntaxException {
         if (trace != null) {
             return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
-                .header("Authorization", "Bearer " + token.getToken())
-                .header("traceparent", trace)
-                .get(url)
-                .andReturn();
+                    .header("Authorization", "Bearer " + token.getToken())
+                    .header("traceparent", trace)
+                    .get(url)
+                    .andReturn();
         } else {
             return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
-                .header("Authorization", "Bearer " + token.getToken())
-                .get(url)
-                .andReturn();
+                    .header("Authorization", "Bearer " + token.getToken())
+                    .get(url)
+                    .andReturn();
         }
     }
 

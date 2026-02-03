@@ -100,7 +100,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "version",
                         null,
@@ -112,7 +112,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "aler_id",
                         null,
@@ -255,7 +255,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
         resp.then().body("wordingFields", equalTo(List.of("Name of Crown Court")));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "version",
                         null,

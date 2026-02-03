@@ -151,11 +151,11 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST, "id", "", null, operation, eventName));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_name",
                         null,
@@ -163,7 +163,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_code",
                         null,
@@ -171,7 +171,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_status",
                         null,
@@ -179,7 +179,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
@@ -187,7 +187,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         null,
@@ -195,7 +195,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
                         null,
@@ -203,7 +203,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "other_courthouse",
                         "",
@@ -264,7 +264,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         "application_lists",
                         "application_list_status",
                         null,
@@ -273,7 +273,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         eventName));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         "application_lists", "id", null, null, operation, eventName));
 
         differenceLogAsserter.assertFieldLogNotPresent(
@@ -283,7 +283,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                 TableNames.APPICATION_LIST, "courthouse_name", true);
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
@@ -291,7 +291,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "other_courthouse",
                         null,
@@ -299,7 +299,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         null,
@@ -307,7 +307,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
                         null,
@@ -315,7 +315,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         null,
@@ -323,7 +323,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "other_courthouse",
                         "",
@@ -331,7 +331,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_status",
                         "",
@@ -677,7 +677,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_name",
                         "Cardiff Crown Court",
@@ -685,7 +685,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_code",
                         VALID_COURT_CODE,
@@ -693,7 +693,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_status",
                         ApplicationListStatus.OPEN.name(),
@@ -701,7 +701,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         "Morning_list_\\(court\\)",
@@ -709,7 +709,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         TEST_TIME.toString(),
@@ -717,7 +717,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
                         TEST_DATE.toString(),
@@ -725,10 +725,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "duration_hour",
                         "2",
@@ -737,7 +737,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         eventName));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "duration_minute",
                         "30",
@@ -969,13 +969,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
 
-        differenceLogAsserter.assertDiffCount(12, true);
+        differenceLogAsserter.assertDiffCount(13, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_name",
                         "Cardiff Crown Court",
@@ -983,7 +983,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_code",
                         VALID_COURT_CODE,
@@ -991,7 +991,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_status",
                         ApplicationListStatus.OPEN.name(),
@@ -999,7 +999,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         "Morning_list_\\(court\\)",
@@ -1007,7 +1007,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         TEST_TIME.toString(),
@@ -1015,7 +1015,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
                         TEST_DATE.toString(),
@@ -1023,10 +1023,10 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         operation,
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST, "version", "0", "1", operation, eventName));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "duration_hour",
                         "2",
@@ -1035,7 +1035,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         eventName));
 
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "duration_minute",
                         "30",
@@ -1404,9 +1404,9 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(2, false);
+        differenceLogAsserter.assertDiffCount(3, false);
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "al_id",
                         null,
@@ -1414,7 +1414,15 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         "DELETE",
                         "Delete Application List"));
         differenceLogAsserter.assertDataAuditChange(
-            DataAuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        null,
+                        null,
+                        "DELETE",
+                        "Delete Application List"));
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "version",
                         "0",

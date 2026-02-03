@@ -95,7 +95,8 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                         new CompleteEvent(
                                 event,
                                 responsePayload.get().getResultingValue() != null
-                                    ? getBodyAsString(responsePayload.get().getResultingValue()) : null,
+                                        ? getBodyAsString(responsePayload.get().getResultingValue())
+                                        : null,
                                 responsePayload.get().getNewEntity()),
                         listener);
             } else {
@@ -132,7 +133,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
                 && (!result.isPresent()
-                || (result.get().getNewEntity() == null || oldValue == null))) {
+                        || (result.get().getNewEntity() == null || oldValue == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
         } else if (eventEnum.getType().isDelete() && oldValue == null) {

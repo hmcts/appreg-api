@@ -3,52 +3,49 @@ package uk.gov.hmcts.appregister.common.filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
-
 import jakarta.servlet.http.HttpServletResponse;
-
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
-
 import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 
-import java.io.IOException;
-
 /**
- * A filter that allows us to setup an MDC with the user, the method name and the url context
+ * A filter that allows us to setup an MDC with the user, the method name and the url context.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class LogMdcFilter extends OncePerRequestFilter {
-    /** The user name */
+    /** The user name key that is stored in the log MDC. */
     public static final String USER = "user";
 
-    /** The method */
+    /** The method key that is stored in the log MDC. */
     public static final String METHOD = "method";
 
-    /** The Path */
+    /** The Path key that is stored in the log MDC. */
     public static final String PATH = "path";
 
     private final UserProvider userProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-        throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
-                MDC.put(USER, userProvider.getUserId());
+                try {
+                    MDC.put(USER, userProvider.getUserId());
+                } catch (AppRegistryException appRegistryException) {
+                    MDC.put(USER, "anonymous");
+                }
             } else {
                 MDC.put(USER, "anonymous");
             }
@@ -73,5 +70,4 @@ public class LogMdcFilter extends OncePerRequestFilter {
             MDC.clear();
         }
     }
-
 }
