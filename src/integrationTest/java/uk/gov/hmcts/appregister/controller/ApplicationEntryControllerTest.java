@@ -52,7 +52,7 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
@@ -728,7 +728,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // difference log / audit assertions
         differenceLogAsserter.assertNoErrors();
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "id",
                         "",
@@ -737,7 +737,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         "",
@@ -746,7 +746,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         "",
@@ -1461,7 +1461,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // assert the application entry update audit logs
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         "",
@@ -1470,7 +1470,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         "",
@@ -1479,7 +1479,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "na_id",
                         null,
@@ -1488,7 +1488,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_APPLICANT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "na_id",
                         null,
@@ -1497,7 +1497,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.DELETE_APPLICANT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "na_id",
                         null,
@@ -1506,7 +1506,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_RESPONDENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "na_id",
                         null,
@@ -1517,7 +1517,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(
                 entryUpdateDto.getFeeStatuses().size(),
                 differenceLogAsserter.assertDataAuditChange(
-                        AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                                 TableNames.APPLICATION_LISTS_FEE_STATUS,
                                 "alefs_id",
                                 null,
@@ -1529,7 +1529,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(
                 entryUpdateDto.getOfficials().size(),
                 differenceLogAsserter.assertDataAuditChange(
-                        AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                                 TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
                                 "aleo_id",
                                 null,
@@ -1538,7 +1538,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY.getEventName())));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL,
                         "aleo_id",
                         null,
@@ -1549,7 +1549,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         Assertions.assertEquals(
                 1,
                 differenceLogAsserter.assertDataAuditChange(
-                        AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                                 TableNames.APPLCATION_LISTS_ENTRY_FEE_ID,
                                 "ale_ale_id",
                                 null,
@@ -1558,7 +1558,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 AppListEntryAuditOperation.CREATE_FEE_ENTRY.getEventName())));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLCATION_LISTS_ENTRY_FEE_ID,
                         "ale_ale_id",
                         null,
@@ -2670,7 +2670,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         //        differenceLogAsserter.assertDiffCount(10, true);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "id",
                         "",
@@ -2679,7 +2679,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         null,
@@ -2688,7 +2688,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+            DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         "",

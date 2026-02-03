@@ -1,210 +1,221 @@
 package uk.gov.hmcts.appregister.service;
 
-import static org.mockito.Mockito.when;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-import java.util.Optional;
-import org.junit.Assert;
+import lombok.extern.slf4j.Slf4j;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import org.slf4j.MDC;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
-import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
+
+import uk.gov.hmcts.appregister.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
-import uk.gov.hmcts.appregister.entity.TestEntity2;
-import uk.gov.hmcts.appregister.entity.TestEntityAuditable;
+import uk.gov.hmcts.appregister.data.AppListTestData;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
+import uk.gov.hmcts.appregister.testutils.util.ActivityAuditLogAsserter;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.mockito.Mockito.when;
+
+/**
+ * A test class that allows us to verify the core audit service.
+ */
+@Slf4j
 public class AuditOperationServiceImplTest extends BaseIntegration {
 
-    @MockitoBean private UserProvider provider;
+    @MockitoBean
+    private UserProvider provider;
 
-    @Autowired private DataAuditLogger dataAuditLogger;
+    @Autowired
+    private DataAuditRepository dataAuditRepository;
 
-    @Autowired private AuditOperationService auditOperationService;
+    @Autowired
+    private AuditOperationService auditOperationService;
 
-    @Test
-    public void testCreateApplicationEntryAudit() {
+    private ActivityAuditLogAsserter asserter = new ActivityAuditLogAsserter();
+
+    @BeforeEach
+    public void setUp() {
+        // setup the trace id in the log MDC
+        MDC.put(AuditOperationServiceImpl.TRACE_ID, "test-trace-id");
         when(provider.getUserId()).thenReturn("user");
         when(provider.getEmail()).thenReturn("email");
-        when(provider.getRoles()).thenReturn(new String[] {"role"});
-
-        TestEntityAuditable test = new TestEntityAuditable();
-
-        CriminalJusticeArea criminalJusticeTestData = new CriminalJusticeTestData().someComplete();
-        criminalJusticeTestData.setId(999L);
-        test.setCriminalJusticeArea(criminalJusticeTestData);
-        test.setId(123L);
-        test.setName("test name");
-        TestEntity2 listEntity2 = new TestEntity2();
-        listEntity2.setName("e8");
-        listEntity2.setId(3L);
-
-        test.getEntry().add(listEntity2);
-        test.getEntryStrings().addAll(List.of("teststring", "teststring2"));
-
-        Object content =
-                auditOperationService.processAudit(
-                        AppListAuditOperation.CREATE_APP_LIST,
-                        (event) ->
-                                Optional.of(
-                                        AuditableResult.builder()
-                                                .newEntity(test)
-                                                .resultingValue("response")
-                                                .build()),
-                        dataAuditLogger);
-
-        differenceLogAsserter.assertNoErrors();
-
-        // make sure the processing was successful
-        Assert.assertEquals("response", content);
-        differenceLogAsserter.assertDiffCount(3, true);
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity", "adr_id", null, "123", "CREATE", "Create Application List"));
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "criminal_justice_area",
-                        "cja_id",
-                        null,
-                        "999",
-                        "CREATE",
-                        "Create Application List"));
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity",
-                        "myname",
-                        null,
-                        "test name",
-                        "CREATE",
-                        "Create Application List"));
+        when(provider.getRoles()).thenReturn(new String[]{"role"});
     }
 
     @Test
-    public void testUpdateApplicationEntryAudit() {
-        when(provider.getUserId()).thenReturn("user");
-        when(provider.getEmail()).thenReturn("email");
-        when(provider.getRoles()).thenReturn(new String[] {"role"});
+    void testOldValueAudit() throws Exception {
+        final UUID pkId = UUID.randomUUID();
 
-        TestEntityAuditable testNew = new TestEntityAuditable();
+        // run the audit operation
+        AppListTestData appListTestData = new AppListTestData();
+        ApplicationList applicationList = appListTestData.someComplete();
+        applicationList.setUuid(pkId);
+        applicationList.setId(20L);
 
-        CriminalJusticeArea criminalJusticeTestData = new CriminalJusticeTestData().someComplete();
-        criminalJusticeTestData.setId(999L);
-        testNew.setCriminalJusticeArea(criminalJusticeTestData);
-        testNew.setId(123L);
+        new TransactionalUnitOfWork().inTransaction(() -> {
+            auditOperationService.processAudit(
+                applicationList,
+                TestAuditOperation.TEST_AUDIT_DELETE,
+                (event) -> {
+                    return Optional.empty();
+                }
+            );
+        });
 
-        TestEntity2 listEntity2 = new TestEntity2();
-        testNew.setName("new");
+        // assert that we have logged activity and data audit
+        DataAudit dataAudit = dataAuditRepository
+            .findDataAuditForTableAndColumnAndOldValue(
+                TableNames.APPICATION_LIST,
+                "id",
+                pkId.toString()
+            ).get();
+        Assertions.assertNotNull(dataAudit);
 
-        testNew.getEntry().add(listEntity2);
-        testNew.getEntryStrings().addAll(List.of("teststring", "teststring2"));
-
-        CriminalJusticeArea criminalJusticeAreaOld = new CriminalJusticeTestData().someComplete();
-        criminalJusticeAreaOld.setId(999L);
-
-        TestEntityAuditable testOld = new TestEntityAuditable();
-        testOld.setName("old");
-        testOld.setId(123L);
-        testOld.setCriminalJusticeArea(criminalJusticeAreaOld);
-
-        testOld.getEntry().add(listEntity2);
-        testOld.getEntryStrings().addAll(List.of("teststring", "teststring2"));
-
-        Object content =
-                auditOperationService.processAudit(
-                        testOld,
-                        new AuditOperation() {
-                            @Override
-                            public String getEventName() {
-                                return "Event Name";
-                            }
-
-                            @Override
-                            public CrudEnum getType() {
-                                return CrudEnum.UPDATE;
-                            }
-                        },
-                        (event) ->
-                                Optional.of(
-                                        AuditableResult.builder()
-                                                .newEntity(testNew)
-                                                .resultingValue("response")
-                                                .build()),
-                        dataAuditLogger);
-
-        differenceLogAsserter.assertNoErrors();
-
-        // make sure the processing was successful
-        Assert.assertEquals("response", content);
-        differenceLogAsserter.assertDiffCount(3, true);
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity", "adr_id", "123", "123", "UPDATE", "Event Name"));
-
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "criminal_justice_area", "cja_id", "999", "999", "UPDATE", "Event Name"));
-
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity", "myname", "old", "new", "UPDATE", "Event Name"));
+        // assert the the activity log is entered
+        activityAuditLogAsserter.assertCompletedLogContains(
+            TestAuditOperation
+                .TEST_AUDIT_DELETE.getEventName(),
+            "test-trace-id",
+            Integer.valueOf(OperationStatus
+                                .COMPLETED.getStatus()).toString(),
+            "NULL"
+        );
     }
 
     @Test
-    public void testDeleteWithOldButNoNewApplicationEntryAudit() {
-        when(provider.getUserId()).thenReturn("user");
-        when(provider.getEmail()).thenReturn("email");
-        when(provider.getRoles()).thenReturn(new String[] {"role"});
+    void testNewValueAudit() throws Exception {
+        final UUID pkId = UUID.randomUUID();
 
-        TestEntityAuditable test = new TestEntityAuditable();
-        test.setName("My_Entity_Name");
-        CriminalJusticeArea criminalJusticeTestData = new CriminalJusticeTestData().someComplete();
-        criminalJusticeTestData.setId(999L);
-        test.setCriminalJusticeArea(criminalJusticeTestData);
-        test.setId(123L);
+        // run the audit operation
+        AppListTestData appListTestData = new AppListTestData();
+        ApplicationList applicationList = appListTestData.someComplete();
+        applicationList.setUuid(pkId);
+        applicationList.setId(20L);
 
-        TestEntity2 listEntity2 = new TestEntity2();
-        listEntity2.setName("e8");
-        listEntity2.setId(3L);
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        ApplicationCode applicationCode = applicationCodeTestData.someComplete();
 
-        test.getEntry().add(listEntity2);
-        test.getEntryStrings().addAll(List.of("teststring", "teststring2"));
+        new TransactionalUnitOfWork().inTransaction(() -> {
+            auditOperationService.processAudit(
+                null,
+                TestAuditOperation.TEST_AUDIT_CREATE,
+                (event) -> {
+                    return Optional.of(new AuditableResult<>(
+                        applicationCode,
+                        applicationList
+                    ));
+                }
+            );
+        });
 
-        Object content =
-                auditOperationService.processAudit(
-                        test,
-                        new AuditOperation() {
-                            @Override
-                            public String getEventName() {
-                                return "Event Name";
-                            }
+        // assert that we have logged activity and data audit
+        DataAudit dataAudit = dataAuditRepository
+            .findDataAuditForTableAndColumnAndNewValue(
+                TableNames.APPICATION_LIST,
+                "id",
+                pkId.toString()
+            ).get();
+        Assertions.assertNotNull(dataAudit);
 
-                            @Override
-                            public CrudEnum getType() {
-                                return CrudEnum.DELETE;
-                            }
-                        },
-                        (event) ->
-                                Optional.of(
-                                        AuditableResult.builder()
-                                                .resultingValue("response")
-                                                .build()),
-                        dataAuditLogger);
+        activityAuditLogAsserter
+            .assertCompletedLogContainsWithUnknownMessageId(
+                TestAuditOperation
+                    .TEST_AUDIT_DELETE.getEventName(),
+                Integer.valueOf(OperationStatus
+                                    .COMPLETED.getStatus()).toString(),
+                "\\{\"name\":\"testName\"\\}");
 
-        differenceLogAsserter.assertNoErrors();
+        // assert the the activity log is entered
+        activityAuditLogAsserter.assertCompletedLogContains(
+            TestAuditOperation
+                .TEST_AUDIT_DELETE.getEventName(),
+            "test-trace-id",
+            Integer.valueOf(OperationStatus
+                                .COMPLETED.getStatus()).toString(),
+            "{\"name\":\"testName\"}"
+        );
+    }
 
-        // make sure the processing was successful
-        Assert.assertEquals("response", content);
-        differenceLogAsserter.assertDiffCount(1, false);
-        differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                        "test_entity", "myname", "My_Entity_Name", null, "DELETE", "Event Name"));
+    @Test
+    void testOldAndNewValueAudit() throws Exception {
+        // setup the old data
+        final UUID oldPkId = UUID.randomUUID();
+        AppListTestData appListTestData = new AppListTestData();
+        ApplicationList applicationList = appListTestData.someComplete();
+        applicationList.setUuid(oldPkId);
+        applicationList.setId(20L);
+
+        // setup the new data
+        final UUID newPkId = UUID.randomUUID();
+        ApplicationList newApplicationList = appListTestData.someComplete();
+        newApplicationList.setUuid(newPkId);
+        newApplicationList.setId(20L);
+
+        new TransactionalUnitOfWork().inTransaction(() -> {
+            auditOperationService.processAudit(
+                applicationList,
+                TestAuditOperation.TEST_AUDIT_UPDATE,
+                (event) -> {
+                    return Optional.of(new AuditableResult<>(null, newApplicationList));
+                }
+            );
+        });
+
+        // assert that we have logged activity and data audit
+        Assertions.assertEquals(oldPkId, applicationList.getUuid());
+
+        // assert that the data audit is entered
+        DataAudit dataAudit = dataAuditRepository
+            .findDataAuditForTableAndColumnAndOldValueAndNewValue(
+                TableNames.APPICATION_LIST,
+                "id",
+                oldPkId.toString(),
+                newPkId.toString()
+            ).get();
+
+        Assertions.assertNotNull(dataAudit);
+        activityAuditLogAsserter.assertCompletedLogContains(
+            TestAuditOperation
+                .TEST_AUDIT_UPDATE.getEventName(),
+            "test-trace-id",
+            Integer.valueOf(OperationStatus
+                                .COMPLETED.getStatus()).toString(),
+            "NULL"
+        );
+    }
+
+    @RequiredArgsConstructor
+    @Getter
+    public enum TestAuditOperation implements AuditOperation {
+        TEST_AUDIT_DELETE("This is a test", CrudEnum.DELETE),
+        TEST_AUDIT_UPDATE("This is a test", CrudEnum.UPDATE),
+        TEST_AUDIT_CREATE("This is a test", CrudEnum.CREATE);
+
+        private final String eventName;
+
+        private final CrudEnum type;
     }
 }
+

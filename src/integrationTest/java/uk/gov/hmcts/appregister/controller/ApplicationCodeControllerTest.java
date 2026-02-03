@@ -5,6 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Clock;
@@ -98,7 +101,8 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
         // test the functionaity
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
+                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole(),
+                        "00-ecaf9ce5d2b348338cd6b7630c837186-7b3f6a2c9e4d1a8f-01");
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -116,12 +120,19 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the audit log message
         assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
+            Pattern.matches(
+                getExpectedLog(
+                    START_AUDIT_LOG,
+                    GET_APPCODES_AUDIT_ACTION,
+                    OperationStatus.STARTED),
+                logCaptor.getInfoLogs().get(0)));
+
+        activityAuditLogAsserter.assertCompletedLogContains(
+            GET_APPCODES_AUDIT_ACTION,
+            "ecaf9ce5d2b348338cd6b7630c837186",
+            Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
+            mapper.writeValueAsString(page)
+            );
     }
 
     @Test
@@ -149,12 +160,17 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
 
         // assert the audit log message
         assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG,
-                                GET_APPCODES_AUDIT_ACTION,
-                                OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
+            Pattern.matches(
+                getExpectedLog(
+                    START_AUDIT_LOG,
+                    GET_APPCODES_AUDIT_ACTION,
+                    OperationStatus.STARTED),
+                logCaptor.getInfoLogs().get(0)));
+
+        activityAuditLogAsserter.assertCompletedLogContainsWithUnknownMessageId(
+            GET_APPCODES_AUDIT_ACTION,
+            Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
+            escapeRegex(mapper.writeValueAsString(page)));
     }
 
     @Test

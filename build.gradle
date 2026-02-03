@@ -57,6 +57,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
+    mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.24.0")
   }
 }
 
@@ -430,6 +431,8 @@ dependencies {
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-json'
   implementation 'org.springframework.boot:spring-boot-jackson2'
+  implementation group: 'org.springframework.boot', name: 'spring-boot-micrometer-tracing-brave'
+  implementation 'io.micrometer:micrometer-tracing-bridge-brave'
 
   // Allows us to use jackson 2 until we can succesfully migrate to Jackson 3.
   // // When we support Jackson 3, this dependency can be removed -->
@@ -447,10 +450,6 @@ dependencies {
   implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4JVersion
   implementation group: 'org.apache.logging.log4j', name: 'log4j-to-slf4j', version: log4JVersion
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-security'
-
-  // correlation log support
-  implementation 'io.micrometer:micrometer-tracing-bridge-otel'
-  implementation 'io.micrometer:micrometer-tracing'
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
