@@ -22,8 +22,8 @@ public class SortableField {
     private final String field;
     private final String direction;
     private final String originalSortString;
-    private static final String ASC = "asc";
-    private static final String DESC = "desc";
+    public static final String ASC = "asc";
+    public static final String DESC = "desc";
 
     private static final int API_FIELD_INDEX = 0;
     private static final int DIRECTION_INDEX = 1;

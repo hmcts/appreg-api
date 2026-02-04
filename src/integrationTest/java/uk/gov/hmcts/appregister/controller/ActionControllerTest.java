@@ -278,7 +278,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
     }
 
     private ApplicationListPage getApplicationListPage(
-            TokenAndJwksKey token, ApplicationListStatus open) throws MalformedURLException {
+            TokenAndJwksKey token, ApplicationListStatus open) throws Exception {
         Response resp =
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(2),
