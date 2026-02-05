@@ -60,8 +60,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     @Override
     @Transactional
     public void delete(ListEntryResultDeleteArgs args) {
-        log.debug("Start: Deleting Application List Entry Result with id: {}", args.resultId());
-
         deletionValidator.validate(
                 args,
                 (id, success) -> {
@@ -94,17 +92,12 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
 
                     return null;
                 });
-
-        log.debug("Finish: Deleted Application List Entry Result with id: {}", args.resultId());
     }
 
     @Override
     @Transactional
     public MatchResponse<ResultGetDto> create(
             PayloadForCreateEntryResult<ResultCreateDto> resultCreateDto) {
-        // creates the entity and return the etag for matching
-        log.debug("Start: Creating Application List Entry Result: {}", resultCreateDto);
-        log.debug("Creating application entry result for entry {}", resultCreateDto.getEntryId());
 
         MatchResponse<ResultGetDto> getDto =
                 creationValidator.validate(
@@ -152,8 +145,6 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                                                             listEntryResultEntity)),
                                                             listEntryResultEntity));
                                         }));
-
-        log.debug("Finish: Created Application List Entry Result: {}", resultCreateDto);
 
         return getDto;
     }

@@ -81,7 +81,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         // before execution hook
         fireAuditEvent(event, listener);
 
-        log.debug("Processed start of auditable operation: {}", event);
+        log.debug("Processed start of auditable operation: {}", auditType.getEventName());
         Optional<AuditableResult<T, E>> responsePayload;
         try {
             responsePayload = execution.apply(event);
@@ -104,12 +104,12 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                 fireAuditEvent(new CompleteEvent(event, null, null), listener);
             }
 
-            log.debug("Processed success auditable operation: {}", event);
+            log.debug("Processed success auditable operation: {}", auditType.getEventName());
         } catch (Exception e) {
             // fire after the failure of an operation
             fireAuditEvent(new FailEvent(event), listener);
 
-            log.debug("Processed failure auditable operation: {}", event);
+            log.debug("Processed failure auditable operation: {}", auditType.getEventName());
             throw e;
         }
 

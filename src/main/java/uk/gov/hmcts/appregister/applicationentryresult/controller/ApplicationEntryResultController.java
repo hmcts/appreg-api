@@ -85,9 +85,6 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
                                 .entryId(entryId)
                                 .data(resultCreateDto)
                                 .build());
-        log.info(
-                "Successfully created Application List Entry Result with id:{}",
-                resultGetDto.getPayload().getId());
 
         return ResponseEntity.created(locationOf(resultGetDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)

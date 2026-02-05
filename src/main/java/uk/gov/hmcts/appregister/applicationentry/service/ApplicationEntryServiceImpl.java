@@ -96,11 +96,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         Status status = applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
 
-        log.debug(
-                "Started: Find Application Entry for criteria: {} with paging: {}",
-                filterDto,
-                pageable);
-
         Page<ApplicationListEntryGetSummaryProjection> resultPage =
                 applicationListEntryRepository.searchForGetSummary(
                         filterDto.getDate() != null,
@@ -129,10 +124,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             applicationListEntryMapStructMapper.toEntrySummary(entry));
                 });
 
-        log.debug(
-                "Finished: Find Application Entry for criteria: {} with paging: {}",
-                filterDto,
-                pageable);
         return newPage;
     }
 
@@ -211,20 +202,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     });
                         });
 
-        log.debug("Finish: Create Application Entry: {}", entryCreateDto);
-
         return getDetailDto;
     }
 
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
-        log.debug("Started: Update Application Entry: {}", updateEntry);
-        log.debug(
-                "Updating application entry with id: {} in list {}",
-                updateEntry.getEntryId(),
-                updateEntry.getId());
-
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
                 updateApplicationEntryValidator.validate(
@@ -318,8 +301,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     getKeyablesForCreateUpdateEtag(
                                             success.getApplicationEntryId()));
                         });
-
-        log.debug("Finish: Update Application Entry: {}", updateEntry);
 
         return getDetailDto;
     }

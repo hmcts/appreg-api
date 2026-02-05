@@ -8,6 +8,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.auditing.DateTimeProvider;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 @Configuration
+@EnableAspectJAutoProxy
 public class AppConfig implements WebMvcConfigurer {
 
     @Value("${app.timezone:Europe/London}")

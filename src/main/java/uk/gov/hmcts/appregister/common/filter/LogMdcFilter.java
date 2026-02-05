@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,7 +19,6 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
  */
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class LogMdcFilter extends OncePerRequestFilter {
     /** The user name key that is stored in the log MDC. */
     public static final String USER = "user";
@@ -49,7 +47,6 @@ public class LogMdcFilter extends OncePerRequestFilter {
             } else {
                 MDC.put(USER, "anonymous");
             }
-            log.debug("Extracted the user name");
 
             // add the context path
             String contextPath = request.getContextPath();
@@ -58,12 +55,10 @@ public class LogMdcFilter extends OncePerRequestFilter {
             } else {
                 MDC.put(PATH, "/");
             }
-            log.debug("Extracted the context of the request {}", contextPath);
 
             // add the method
             String method = request.getMethod();
             MDC.put(METHOD, method);
-            log.debug("Extracted the method of the request {}", method);
 
             filterChain.doFilter(request, response);
         } finally {
