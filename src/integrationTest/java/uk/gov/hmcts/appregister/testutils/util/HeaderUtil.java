@@ -18,6 +18,15 @@ public class HeaderUtil {
     }
 
     /**
+     * gets the trailing id from the location header value for the given response.
+     * @param locationString The location header value to get the trailing id from
+     * @return The trailing id from the location header value
+     */
+    public static String getTrailingIdFromLocation(String locationString) {
+        return locationString.substring(locationString.lastIndexOf("/") + 1);
+    }
+
+    /**
      * gets the etag header value for the given response.
      *
      * @param response The response to get the etag header from

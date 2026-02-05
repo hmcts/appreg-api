@@ -60,6 +60,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -637,6 +638,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         String[] createdLocation = createAppListUsingRestApi();
 
+        String listId = HeaderUtil.getTrailingIdFromLocation(createdLocation[0]);
+
+        // add 2 entries
+        createEntry(UUID.fromString(listId));
+        createEntry(UUID.fromString(listId));
+
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))
@@ -657,11 +664,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // Location header should point to /application-lists/{uuid}
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
         assertThat(dto.getId()).isNotNull();
         assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getEntriesCount()).isEqualTo(2);
 
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(dto.getDurationHours()).isEqualTo(4);
@@ -941,11 +950,17 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning_list_(court)_update")
-                        .status(ApplicationListStatus.CLOSED)
+                        .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE2)
                         .durationHours(4)
                         .durationMinutes(32)
                         .otherLocationDescription("Updated other location");
+
+        String listId = HeaderUtil.getTrailingIdFromLocation(createdLocation[0]);
+
+        // add 2 entries
+        createEntry(UUID.fromString(listId));
+        createEntry(UUID.fromString(listId));
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -955,12 +970,14 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
         assertThat(dto.getId()).isNotNull();
         assertThat(dto.getVersion()).isEqualTo(1L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
-        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(dto.getEntriesCount()).isEqualTo(2);
 
         // CJA populated, Court null
         assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE2);
@@ -968,7 +985,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
 
-        differenceLogAsserter.assertDiffCount(12, true);
+        differenceLogAsserter.assertDiffCount(54, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
