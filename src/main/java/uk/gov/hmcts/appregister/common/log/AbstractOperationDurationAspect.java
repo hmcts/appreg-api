@@ -30,7 +30,7 @@ public class AbstractOperationDurationAspect {
                         + "."
                         + pjp.getSignature().getName();
 
-        // add the operation
+        // add the operation to the MDC
         MDC.put(OPERATION, operation);
         long start = System.nanoTime();
 
@@ -68,7 +68,7 @@ public class AbstractOperationDurationAspect {
      * gets the arguments for logging, but ignores any pageable arguments as they can be very large.
      *
      * @param proceedingJoinPoint the join point
-     * @return The arguments to log
+     * @return The arguments to log excluding any pageable arguments
      */
     private Object[] getIgnorePageArguments(ProceedingJoinPoint proceedingJoinPoint) {
         return Arrays.stream(proceedingJoinPoint.getArgs())
@@ -85,9 +85,9 @@ public class AbstractOperationDurationAspect {
      * gets an obfuscated string for output logging.
      *
      * @param object the object to log
-     * @return The obfuscated string
+     * @return The obfuscated string where PII information is obfuscated.
      */
-    protected String getLogStringForOutput(Object object) {
+    protected String getLogStringForOutputObject(Object object) {
         return ObfuscationUtil.getObfuscatedString(object);
     }
 }

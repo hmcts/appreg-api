@@ -7,7 +7,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.stereotype.Component;
 
 /**
- * Calculate the duration of service and logs it. This class takes care of logging across the
+ * Calculate the duration of service calls and logs it. This class takes care of logging across the
  * service layer
  */
 @Aspect
@@ -24,7 +24,7 @@ public class ServiceLogAspect extends AbstractOperationDurationAspect {
                             log.debug("Duration of {} operation {} ms", name, duration);
                         },
                         pjp);
-        log.debug("Finish: Executed {} ", getLogStringForOutput(ret));
+        log.debug("Finish: Executed {} ", getLogStringForOutputObject(ret));
         return ret;
     }
 }
