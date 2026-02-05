@@ -19,22 +19,12 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.apache.http.HttpHeaders;
 import org.openapitools.jackson.nullable.JsonNullableModule;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 @Component
 public class RestAssuredClient {
-
-    @Value("${spring.data.web.pageable.page-parameter}")
-    private String pageNumberQueryName;
-
-    @Value("${spring.data.web.pageable.size-parameter}")
-    private String pageSizeQueryName;
-
-    @Value("${spring.data.web.sort.sort-parameter}")
-    private String sortQueryName;
 
     // Initialize RestAssured configuration
     {
@@ -205,27 +195,19 @@ public class RestAssuredClient {
         if (pageNumber.isPresent()) {
             requestSpecification =
                     requestSpecification.queryParam(
-                            pageMetaData == null
-                                    ? pageNumberQueryName
-                                    : pageMetaData.getPageNumberQueryName(),
-                            pageNumber.get());
+                            pageMetaData.getPageNumberQueryName(), pageNumber.get());
         }
 
         if (pageSize.isPresent()) {
             requestSpecification =
                     requestSpecification.queryParam(
-                            pageMetaData == null
-                                    ? pageSizeQueryName
-                                    : pageMetaData.getPageSizeQueryName(),
-                            pageSize.get());
+                            pageMetaData.getPageSizeQueryName(), pageSize.get());
         }
 
         if (!sortField.isEmpty()) {
             for (String sort : sortField) {
                 requestSpecification =
-                        requestSpecification.queryParam(
-                                pageMetaData == null ? sortQueryName : pageMetaData.getSortName(),
-                                sort);
+                        requestSpecification.queryParam(pageMetaData.getSortName(), sort);
             }
         }
         return requestSpecification;
