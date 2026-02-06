@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
 import org.hibernate.validator.internal.engine.path.PathImpl;
@@ -137,7 +138,15 @@ class AppRegExceptionHandlerTest {
         List<FieldError> fieldErrors =
                 List.of(
                         new FieldError(
-                                "objectName", "field", "rejectedValue", false, null, null, null));
+                                "objectName",
+                                "field",
+                                "rejectedValue",
+                                false,
+                                null,
+                                null,
+                                "defaultMessage"));
+
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
 
         // setup
         MethodArgumentNotValidException exception =
@@ -145,11 +154,6 @@ class AppRegExceptionHandlerTest {
                     @Override
                     public String getMessage() {
                         return customMessage;
-                    }
-
-                    @Override
-                    public List<FieldError> getFieldErrors() {
-                        return fieldErrors;
                     }
                 };
 
@@ -163,8 +167,13 @@ class AppRegExceptionHandlerTest {
         Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
         Assertions.assertEquals(400, ((ProblemDetail) problemDetail.getBody()).getStatus());
         Assertions.assertEquals(
-                "Validation failed for fields:field=rejectedValue",
+                "Validation failed for fields:",
                 ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                "defaultMessage",
+                ((Map) ((ProblemDetail) problemDetail.getBody()).getProperties().get("errors"))
+                        .get("field"));
+
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
