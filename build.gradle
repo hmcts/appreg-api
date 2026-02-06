@@ -489,8 +489,8 @@ dependencies {
 
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
   testImplementation 'io.github.hakky54:logcaptor:2.12.2'
-  testImplementation 'org.testcontainers:testcontainers:1.21.3'
-  testImplementation 'org.testcontainers:postgresql:1.21.3'
+  testImplementation 'org.testcontainers:testcontainers:1.21.4'
+  testImplementation 'org.testcontainers:postgresql:1.21.4'
   testImplementation 'io.github.hakky54:logcaptor:2.12.2'
   testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.0.9"
   testImplementation 'org.instancio:instancio-junit:5.5.1'
