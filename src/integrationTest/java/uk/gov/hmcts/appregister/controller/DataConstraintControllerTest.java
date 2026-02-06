@@ -2,13 +2,18 @@ package uk.gov.hmcts.appregister.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import io.restassured.response.Response;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.http.ProblemDetail;
+
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -33,62 +38,104 @@ public class DataConstraintControllerTest extends BaseIntegration {
     public void testSizeFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG?date=" + LocalDate.now()),
-                        tokenGenerator.fetchTokenForRole());
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG?date=" + LocalDate.now()),
+                tokenGenerator.fetchTokenForRole()
+            );
 
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
+            CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
         Assertions.assertEquals(
-                "getApplicationCodeByCodeAndDate.code: size must be between 0 and 10",
-                problemDetail.getDetail());
+            "getApplicationCodeByCodeAndDate.code: size must be between 0 and 10",
+            problemDetail.getDetail()
+        );
+    }
+
+    @Test
+    public void testSizeBodyFailure() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ApplicationListCreateDto createListReq =
+            new ApplicationListCreateDto()
+                .date(TEST_DATE)
+                .time(LocalTime.parse("01:00"))
+                .status(ApplicationListStatus.OPEN)
+                .courtLocationCode("TOOOOLOOOONG")
+                .durationHours(1)
+                .durationMinutes(2);
+
+        // test the functionality
+        Response responseSpec =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(APP_LIST_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(), createListReq
+            );
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        String expectedJson = """
+                {"type":"COMMON-11","title":"Method Error",
+                "status":400,"detail":"Validation failed for fields:",
+                "instance":"/application-lists",
+                "errors":{"courtLocationCode":
+                "size must be between 0 and 10",
+                "description":"must not be null"}}
+            """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), true);
+
+
     }
 
     @Test
     public void testDateFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/MS9900723?date=12-12-2025"),
-                        tokenGenerator.fetchTokenForRole());
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CODE_WEB_CONTEXT + "/MS9900723?date=12-12-2025"),
+                tokenGenerator.fetchTokenForRole()
+            );
 
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
-                problemDetail.getType());
+            CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
+            problemDetail.getType()
+        );
         Assertions.assertEquals(
-                "Problem with value 12-12-2025 for parameter date", problemDetail.getDetail());
+            "Problem with value 12-12-2025 for parameter date", problemDetail.getDetail());
     }
 
     @Test
     public void testTimeFailure() throws Exception {
         LocalTime midNight = LocalTime.parse("00:00");
         var createListReq =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(midNight)
-                        .description("description")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(1)
-                        .durationMinutes(0);
+            new ApplicationListCreateDto()
+                .date(TEST_DATE)
+                .time(midNight)
+                .description("description")
+                .status(ApplicationListStatus.OPEN)
+                .courtLocationCode(VALID_COURT_CODE)
+                .durationHours(1)
+                .durationMinutes(0);
 
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -99,42 +146,49 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // test the functionality
         Response createListResp =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(APP_LIST_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        invalidTimeRequest);
+            restAssuredClient.executePostRequest(
+                getLocalUrl(APP_LIST_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                invalidTimeRequest
+            );
 
         // assert the response
         createListResp.then().statusCode(400);
         ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
-                problemDetail.getType());
+            CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+            problemDetail.getType()
+        );
         Assertions.assertEquals(
-                "Text '24:00:23' could not be parsed, unparsed text found at index 5",
-                problemDetail.getDetail());
+            "Text '24:00:23' could not be parsed, unparsed text found at index 5",
+            problemDetail.getDetail()
+        );
     }
 
     @Test
     public void testTimeOnQueryFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response createListResp =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(APP_LIST_WEB_CONTEXT + "?time=24:00:23"),
-                        tokenGenerator.fetchTokenForRole());
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(APP_LIST_WEB_CONTEXT + "?time=24:00:23"),
+                tokenGenerator.fetchTokenForRole()
+            );
 
         // assert the response
         createListResp.then().statusCode(400);
-        ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-                problemDetail.getType());
-        Assertions.assertEquals(
-                "Validation failed for fields:time=24:00:23", problemDetail.getDetail());
+        createListResp.asString();
+
+        String expectedJson = """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":
+                "Validation failed for fields:","instance":"/application-lists","errors":
+                {"time":"Please ensure that any times are in the format HH:mm and dates are in the format yyyy-MM-dd"}}
+            """;
+
+        JSONAssert.assertEquals(expectedJson, createListResp.asString(), true);
     }
 
     @Test
@@ -142,53 +196,59 @@ public class DataConstraintControllerTest extends BaseIntegration {
         LocalTime midNight = LocalTime.parse("00:00");
         int minutesExceedingMax = 61;
         var createListReq =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(midNight)
-                        .description("description")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(1)
-                        .durationMinutes(minutesExceedingMax);
+            new ApplicationListCreateDto()
+                .date(TEST_DATE)
+                .time(midNight)
+                .description("description")
+                .status(ApplicationListStatus.OPEN)
+                .courtLocationCode(VALID_COURT_CODE)
+                .durationHours(1)
+                .durationMinutes(minutesExceedingMax);
 
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response createListResp =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(APP_LIST_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        createListReq);
+            restAssuredClient.executePostRequest(
+                getLocalUrl(APP_LIST_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                createListReq
+            );
 
         // assert the response
         createListResp.then().statusCode(400);
-        ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-                problemDetail.getType());
-        Assertions.assertEquals(
-                "Validation failed for fields:durationMinutes=61", problemDetail.getDetail());
+
+        String expectedJson = """
+               {"type":"COMMON-11","title":"Method Error",
+               "status":400,"detail":"Validation failed for fields:",
+               "instance":"/application-lists",
+               "errors":{"durationMinutes":"must be less than or equal to 59"}}
+            """;
+
+        JSONAssert.assertEquals(
+            expectedJson, createListResp.asString(), true
+        );
     }
 
     @Test
     public void testStateEnumFailure() throws Exception {
         LocalTime timeofEntry = LocalTime.parse("01:00");
         var createListReq =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(timeofEntry)
-                        .description("description")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE)
-                        .durationHours(1)
-                        .durationMinutes(2)
-                        .status(ApplicationListStatus.OPEN);
+            new ApplicationListCreateDto()
+                .date(TEST_DATE)
+                .time(timeofEntry)
+                .description("description")
+                .status(ApplicationListStatus.OPEN)
+                .courtLocationCode(VALID_COURT_CODE)
+                .durationHours(1)
+                .durationMinutes(2)
+                .status(ApplicationListStatus.OPEN);
 
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -196,69 +256,75 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // replace to use an invalid form of the enum entry
         String invalidStatus =
-                requestString.replace(ApplicationListStatus.OPEN.getValue(), "INVALID_STATUS");
+            requestString.replace(ApplicationListStatus.OPEN.getValue(), "INVALID_STATUS");
 
         // add a successful time
         invalidStatus = invalidStatus.replace("[1,0]", "\"01:00\"");
 
         // test the functionality
         Response createListResp =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(APP_LIST_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        invalidStatus);
+            restAssuredClient.executePostRequest(
+                getLocalUrl(APP_LIST_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                invalidStatus
+            );
 
         // assert the response
         createListResp.then().statusCode(400);
         ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
-                problemDetail.getType());
+            CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+            problemDetail.getType()
+        );
         Assertions.assertEquals(
-                "Not Readable Error. Cant read value from field:status", problemDetail.getDetail());
+            "Not Readable Error. Cant read value from field:status", problemDetail.getDetail());
     }
 
     @Test
     public void testMismatchFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/CODE1?date=NOTADATE"),
-                        tokenGenerator.fetchTokenForRole());
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CODE_WEB_CONTEXT + "/CODE1?date=NOTADATE"),
+                tokenGenerator.fetchTokenForRole()
+            );
 
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
-                problemDetail.getType());
+            CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
+            problemDetail.getType()
+        );
         Assertions.assertEquals(
-                "Problem with value NOTADATE for parameter date", problemDetail.getDetail());
+            "Problem with value NOTADATE for parameter date", problemDetail.getDetail());
     }
 
     @Test
     public void testParameterFailure() throws Exception {
         // create the token
         TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG"),
-                        tokenGenerator.fetchTokenForRole());
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(CODE_WEB_CONTEXT + "/TOOOOLOOOONG"),
+                tokenGenerator.fetchTokenForRole()
+            );
 
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
-                CommonAppError.PARAMETER_REQUIRED.getCode().getType().get(),
-                problemDetail.getType());
+            CommonAppError.PARAMETER_REQUIRED.getCode().getType().get(),
+            problemDetail.getType()
+        );
         Assertions.assertEquals(
-                "Required request parameter 'date' is missing", problemDetail.getDetail());
+            "Required request parameter 'date' is missing", problemDetail.getDetail());
     }
 }
