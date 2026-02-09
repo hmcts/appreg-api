@@ -12,7 +12,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.67'
-  id 'com.diffplug.spotless' version '8.1.0'
+  id 'com.diffplug.spotless' version '8.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'maven-publish'
 }
@@ -437,7 +437,7 @@ dependencies {
 
   implementation 'org.springframework.cloud:spring-cloud-starter'
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-jpa'
-  implementation "org.openapitools:jackson-databind-nullable:0.2.8"
+  implementation "org.openapitools:jackson-databind-nullable:0.2.9"
 
   // OAuth2 support
   implementation group: 'org.springframework.boot', name: 'spring-boot-starter-oauth2-resource-server'
@@ -489,10 +489,10 @@ dependencies {
 
   testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
   testImplementation 'io.github.hakky54:logcaptor:2.12.2'
-  testImplementation 'org.testcontainers:testcontainers:1.21.3'
-  testImplementation 'org.testcontainers:postgresql:1.21.3'
+  testImplementation 'org.testcontainers:testcontainers:1.21.4'
+  testImplementation 'org.testcontainers:postgresql:1.21.4'
   testImplementation 'io.github.hakky54:logcaptor:2.12.2'
-  testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.0.9"
+  testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.1.0"
   testImplementation 'org.instancio:instancio-junit:5.5.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
