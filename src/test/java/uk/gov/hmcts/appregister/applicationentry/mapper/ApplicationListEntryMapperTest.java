@@ -77,6 +77,7 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.OfficialType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -376,7 +377,7 @@ class ApplicationListEntryMapperTest {
         // the applicant does have a name so is an organisation
         NameAddress applicant = new NameAddress();
         applicant.setName("name");
-        applicant.setCode("acode");
+        applicant.setCode(NameAddressCodeType.APPLICANT);
         applicant.setAddress1("aaddress1");
         applicant.setAddress2("aaddress2");
         applicant.setAddress3("aaddress3");
@@ -390,7 +391,7 @@ class ApplicationListEntryMapperTest {
         // the respondent is a person
         NameAddress respondent = new NameAddress();
         respondent.setSurname("rsurname");
-        respondent.setCode("rcode");
+        respondent.setCode(NameAddressCodeType.RESPONDENT);
         respondent.setAddress1("raddress1");
         respondent.setAddress2("raddress2");
         respondent.setAddress3("raddress3");

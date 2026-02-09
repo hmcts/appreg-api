@@ -63,7 +63,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("filters by code contains (case-insensitive) — e.g. 'ap'")
         void filtersByCode() {
-            var page = repository.findActiveOnDate("ap", null, today(), PageRequest.of(0, 10));
+            var page = repository.findActiveOnDate("AP", null, today(), PageRequest.of(0, 10));
 
             assertThat(page.getContent())
                     .extracting(ResolutionCode::getResultCode)

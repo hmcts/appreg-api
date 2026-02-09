@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.EntityType;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
@@ -358,8 +359,9 @@ public abstract class ApplicationListEntryMapper {
     public Applicant toApplicant(
             ApplicationListEntry applicationListEntry, StandardApplicant standardApplicant) {
         if (standardApplicant != null) {
-            return applicantMapper.toApplicant(
-                    applicantMapper.toApplicantEntity(standardApplicant));
+            NameAddress nameAddress = applicantMapper.toApplicantEntity(standardApplicant);
+            nameAddress.setCode(NameAddressCodeType.APPLICANT);
+            return applicantMapper.toApplicant(nameAddress);
         }
 
         return applicantMapper.toApplicant(applicationListEntry.getAnamedaddress());

@@ -8,6 +8,7 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 
 public class NameAddressTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<
@@ -27,7 +28,6 @@ public class NameAddressTestData
                 .forename1("forename1" + uniqueId)
                 .forename2("forename2" + uniqueId)
                 .forename3("forename3" + uniqueId)
-                .code("code" + uniqueId)
                 .dmsId("dmsId" + uniqueId)
                 .emailAddress("emailAddress" + uniqueId)
                 .postcode("postcode" + uniqueId)
@@ -43,12 +43,17 @@ public class NameAddressTestData
     @Override
     public NameAddress someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        NameAddress address =
+                Instancio.of(NameAddress.class)
+                        .ignore(field(NameAddress::getId))
+                        .ignore(field(NameAddress::getVersion))
+                        .withSettings(settings)
+                        .create();
 
-        return Instancio.of(NameAddress.class)
-                .ignore(field(NameAddress::getId))
-                .ignore(field(NameAddress::getVersion))
-                .withSettings(settings)
-                .create();
+        // ensure an applicant that is an organisation
+        address.setCode(NameAddressCodeType.APPLICANT);
+        address.setName(null);
+        return address;
     }
 
     /**

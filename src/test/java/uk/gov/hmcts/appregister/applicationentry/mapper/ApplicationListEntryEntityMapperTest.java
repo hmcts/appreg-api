@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
@@ -133,7 +134,7 @@ class ApplicationListEntryEntityMapperTest {
         applicant.setOrganisation(null);
 
         NameAddress nameAddress = applicantMapper.toApplicant(applicant);
-        Assertions.assertEquals("AP", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.APPLICANT, nameAddress.getCode());
         Assertions.assertEquals(
                 applicant.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
@@ -175,7 +176,7 @@ class ApplicationListEntryEntityMapperTest {
         applicant.setPerson(null);
 
         NameAddress nameAddress = applicantMapper.toApplicant(applicant);
-        Assertions.assertEquals("AP", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.APPLICANT, nameAddress.getCode());
         Assertions.assertEquals(nameAddress.getName(), applicant.getOrganisation().getName());
         Assertions.assertEquals(
                 applicant.getOrganisation().getContactDetails().getPhone(),
@@ -211,7 +212,7 @@ class ApplicationListEntryEntityMapperTest {
         respondent.setOrganisation(null);
 
         NameAddress nameAddress = applicantMapper.toRespondent(respondent);
-        Assertions.assertEquals("RE", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.RESPONDENT, nameAddress.getCode());
         Assertions.assertEquals(
                 respondent.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
@@ -254,7 +255,7 @@ class ApplicationListEntryEntityMapperTest {
         respondent.setPerson(null);
 
         NameAddress nameAddress = applicantMapper.toRespondent(respondent);
-        Assertions.assertEquals("RE", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.RESPONDENT, nameAddress.getCode());
         Assertions.assertEquals(nameAddress.getName(), respondent.getOrganisation().getName());
         Assertions.assertEquals(
                 respondent.getOrganisation().getContactDetails().getPhone(),
