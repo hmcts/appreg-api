@@ -284,7 +284,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                         tokenGenerator.fetchTokenForRole(), createListReq);
 
         // add third list with different description so that is comes first in the sort list
-        createListReq.setOtherLocationDescription("anotherLocation");
+        createListReq.setOtherLocationDescription("Alternative Location");
 
         final UUID listId3 =
                 createApplicationListWithCourtCode(
@@ -294,7 +294,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(10),
                         Optional.of(0),
-                        List.of(ApplicationListSortFieldEnum.LOCATION.getApiValue() + "," + "desc"),
+                        List.of(ApplicationListSortFieldEnum.LOCATION.getApiValue() + "," + "asc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         GetApplicationListFilterSpecification.builder()
