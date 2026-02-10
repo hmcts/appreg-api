@@ -184,7 +184,7 @@ class AppRegExceptionHandlerTest {
             givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
 
-        String content = "test";
+        String content = "Type conversion problem. Something in the payload is not correct";
 
         // setup
         HttpMessageNotReadableException exception =
@@ -211,8 +211,8 @@ class AppRegExceptionHandlerTest {
             givenHttpMessageNotReadableDateExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
 
-        String content = "test";
-        String dateExContent = "date ex";
+        String content = "Not Readable Error";
+        String dateExContent = "Date type mismatch error somewhere in payload";
 
         DateTimeParseException dateTimeParseException =
                 new DateTimeParseException(dateExContent, "parsedString", 0);

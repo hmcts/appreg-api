@@ -615,7 +615,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemAssertUtil.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode(),
-                "JSON parse error: Unexpected " + "time format detected [0,0,1]",
+                "Type conversion problem. Something in the payload is not correct",
                 resp);
     }
 

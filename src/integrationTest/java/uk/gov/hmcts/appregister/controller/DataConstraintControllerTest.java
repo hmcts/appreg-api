@@ -52,7 +52,6 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 problemDetail.getDetail());
     }
 
-
     @Test
     public void testSizeBodyFailure() throws Exception {
         // create the token
@@ -262,7 +261,8 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Not Readable Error. Cant read value from field:status", problemDetail.getDetail());
+                "Type conversion problem. Something in the payload is not correct",
+                problemDetail.getDetail());
     }
 
     @Test
@@ -311,17 +311,13 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
     @Test
     public void testNumberAsString() throws Exception {
-        // create the token
-        TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
         ApplicationListCreateDto createListReq =
-            new ApplicationListCreateDto()
-                .date(TEST_DATE)
-                .time(LocalTime.parse("01:00"))
-                .status(ApplicationListStatus.OPEN)
-                .durationHours(-10)
-                .durationMinutes(2);
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.parse("01:00"))
+                        .status(ApplicationListStatus.OPEN)
+                        .durationHours(-10)
+                        .durationMinutes(2);
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
@@ -329,21 +325,26 @@ public class DataConstraintControllerTest extends BaseIntegration {
         requestString = requestString.replace("-10", "\"invalid\"");
         requestString = requestString.replace("[1,0]", "\"01:00\"");
 
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
         // test the functionality
         Response responseSpec =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(APP_LIST_WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                requestString);
-
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(APP_LIST_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        requestString);
 
         // assert the response
         responseSpec.then().statusCode(400);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
         Assertions.assertEquals(
-            CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
-            problemDetail.getType());
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                problemDetail.getType());
         Assertions.assertEquals(
-            "Problem setting value for durationHours", problemDetail.getDetail());
+                "Problem setting value for durationHours please"
+                        + " check the correct type is used",
+                problemDetail.getDetail());
     }
 }

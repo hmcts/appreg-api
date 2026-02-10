@@ -168,18 +168,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         log.error("An exception occurred", ex);
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
-        InvalidFormatException invalidFormatException =
-                findCause(ex, InvalidFormatException.class);
+        InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
         // if we have a date exception use that as it gives us a more specific error message
         if (dateException != null) {
-            problemDetail.setDetail("Type mismatch error somewhere in payload");
+            problemDetail.setDetail(dateException.getMessage());
         } else if (invalidFormatException != null) {
-            problemDetail.setDetail("Problem setting value for %s please check the correct type is used".formatted(
-                invalidFormatException.getPath().size() > 0
-                    ? invalidFormatException.getPath().get(0).getFieldName() : "unknown field"));
+            problemDetail.setDetail(
+                    "Problem setting value for %s please check the correct type is used"
+                            .formatted(
+                                    invalidFormatException.getPath().size() > 0
+                                            ? invalidFormatException.getPath().get(0).getFieldName()
+                                            : "unknown field"));
+        } else {
+            problemDetail.setDetail(
+                    "Type conversion problem. Something in the payload is not correct");
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
