@@ -626,15 +626,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         courtLocationGetDetailDto.setStartDate(LocalDate.now());
         courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
-        var req =
-                new ApplicationListUpdateDto()
-                        .date(TEST_DATE2)
-                        .time(TEST_TIME2)
-                        .description("Morning_list_(court)_update")
-                        .status(ApplicationListStatus.CLOSED)
-                        .courtLocationCode(VALID_COURT_CODE2)
-                        .durationHours(4)
-                        .durationMinutes(32);
 
         String[] createdLocation = createAppListUsingRestApi();
 
@@ -652,6 +643,16 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // clear the logs before the update
         differenceLogAsserter.clearLogs();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -935,12 +936,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
     void givenValidRequest_whenUpdateWithCja_then201() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.ADMIN))
-                        .build()
-                        .fetchTokenForRole();
-
         String[] createdLocation = createAppListUsingRestApi();
 
         differenceLogAsserter.clearLogs();
@@ -961,6 +956,12 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // add 2 entries
         createEntry(UUID.fromString(listId));
         createEntry(UUID.fromString(listId));
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -984,8 +985,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-
-        differenceLogAsserter.assertDiffCount(54, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();

@@ -19,6 +19,7 @@ public class HeaderUtil {
 
     /**
      * gets the trailing id from the location header value for the given response.
+     *
      * @param locationString The location header value to get the trailing id from
      * @return The trailing id from the location header value
      */
