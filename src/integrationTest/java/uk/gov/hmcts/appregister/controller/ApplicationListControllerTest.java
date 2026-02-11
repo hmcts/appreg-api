@@ -1730,6 +1730,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         GetApplicationListFilterSpecification.builder()
                                 .description(Optional.of(prefix))
                                 .courtLocationCode(Optional.of(VALID_COURT_CODE))
+                                .description(Optional.of("court-filter"))
                                 .build(),
                         null);
 
@@ -1766,6 +1767,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         GetApplicationListFilterSpecification.builder()
                                 .description(Optional.of(prefix))
                                 .cjaCode(Optional.of(VALID_CJA_CODE))
+                                .otherLocationDescription(Optional.of(VALID_CJA_CODE))
                                 .build(),
                         null);
 

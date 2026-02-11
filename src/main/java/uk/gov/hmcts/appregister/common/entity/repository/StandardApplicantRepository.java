@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 
 /**
  * Repository for StandardApplicant entities.
@@ -64,19 +65,21 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
             """
         SELECT c
         FROM StandardApplicant c
-        WHERE (:code IS NULL OR c.applicantCode ILIKE CONCAT('%', CAST(:code AS string), '%'))
+        WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
           AND (c.applicantStartDate < :active)
           AND (c.applicantEndDate IS NULL OR c.applicantEndDate > :active)
           AND (:name IS NULL
-                  OR (((c.name IS NOT NULL AND c.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
-                  OR (c.applicantForename1 IS NOT NULL AND c.applicantForename1
-                          ILIKE CONCAT('%', CAST(:name AS string), '%')))
+                  OR (((c.name IS NOT NULL AND LOWER(c.name) LIKE CONCAT('%',
+                          LOWER(CAST(:name AS string)), '%')  ESCAPE '\\')
+                  OR (c.applicantForename1 IS NOT NULL AND LOWER(c.applicantForename1)
+                          ILIKE CONCAT('%', LOWER(CAST(:name AS string)), '%')  ESCAPE '\\'))
                   OR (c.applicantSurname IS NOT NULL
-                          AND c.applicantSurname ILIKE CONCAT('%', CAST(:name AS string), '%'))))
+                          AND LOWER(c.applicantSurname) LIKE CONCAT('%',
+                                   LOWER(CAST(:name AS string)), '%')  ESCAPE '\\')))
         """)
     Page<StandardApplicant> search(
-            @Param("code") String code,
-            @Param("name") String name,
+            @LikeParam @Param("code") String code,
+            @LikeParam @Param("name") String name,
             @Param("active") LocalDate active,
             Pageable pageable);
 }
