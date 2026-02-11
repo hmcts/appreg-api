@@ -6,12 +6,12 @@ package uk.gov.hmcts.appregister.testutils.client;
 public class OpenApiPageMetaData implements PageMetaData {
     @Override
     public String getPageNumberQueryName() {
-        return "page";
+        return "pageNumber";
     }
 
     @Override
     public String getPageSizeQueryName() {
-        return "size";
+        return "pageSize";
     }
 
     @Override
