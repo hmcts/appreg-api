@@ -29,9 +29,9 @@ spring:
   data:
     web:
       pageable:
-        # When this value is set to true, we cant simply return the Spring Page object as a response from our controllers. The reason being that the response
-        # is always zero indexed for page numbers, so a request of page=2 will return a pageNumber of 1.
         one-indexed-parameters: false
+        # The page name parameters do not make any difference as they are
+        # hard coded into the open api spec
         page-parameter: page
         size-parameter: pageSize
         default-page-size: 10

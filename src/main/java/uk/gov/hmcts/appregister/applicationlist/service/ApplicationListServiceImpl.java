@@ -300,7 +300,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             null,
-                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary().size(),
                                             applicationListGetDetailDto.getEntriesSummary()),
                                     List.of(hydrated));
                         },
@@ -340,7 +340,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     mapper.toGetDetailDto(
                                             hydrated,
                                             cja,
-                                            ZERO_ENTITIES,
+                                            applicationListGetDetailDto.getEntriesSummary().size(),
                                             applicationListGetDetailDto.getEntriesSummary()),
                                     List.of(hydrated));
                         },
