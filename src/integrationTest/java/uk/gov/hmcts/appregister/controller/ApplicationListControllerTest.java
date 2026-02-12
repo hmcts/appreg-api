@@ -2239,6 +2239,65 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         assertThat(returnedEntryIds).contains(entry1.getId());
     }
 
+    @Test
+    @DisplayName("GET by id with full data set")
+    void givenGetById_whenGet_then200AndAllDataIsReturned() throws Exception {
+        // setup a record for deletion
+        String prefix = uniquePrefix("soft-deleted");
+        ApplicationListGetDetailDto dto =
+                createWithCourt(
+                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        UUID id = dto.getId();
+
+        // create a single entry
+        final EntryGetDetailDto entryGetDetailDto = createEntry(dto.getId());
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), userToken);
+
+        // make the assertions on the response
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
+
+        assertThat(page.getEntriesSummary().size()).isEqualTo(1);
+        Assertions.assertTrue(page.getDescription().startsWith("soft-deleted ::"));
+        Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
+        Assertions.assertEquals(1, page.getEntriesCount());
+        Assertions.assertEquals("CCC003", page.getCourtCode());
+        Assertions.assertEquals("Cardiff Crown Court", page.getCourtName());
+        Assertions.assertEquals(1, page.getEntriesSummary().size());
+        Assertions.assertEquals(
+                "Copy documents", page.getEntriesSummary().get(0).getApplicationTitle());
+        Assertions.assertEquals(
+                entryGetDetailDto.getAccountNumber(),
+                page.getEntriesSummary().get(0).getAccountNumber().get());
+        Assertions.assertEquals(1, page.getEntriesSummary().get(0).getSequenceNumber());
+        Assertions.assertEquals(
+                entryGetDetailDto.getRespondent().getPerson().getContactDetails().getPostcode(),
+                page.getEntriesSummary().get(0).getPostCode().get());
+        Assertions.assertEquals(
+                page.getEntriesSummary().get(0).getApplicant().get(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getSurname()
+                        + ", "
+                        + entryGetDetailDto.getApplicant().getPerson().getName().getFirstForename()
+                        + ", "
+                        + entryGetDetailDto.getApplicant().getPerson().getName().getTitle());
+
+        Assertions.assertEquals(
+                page.getEntriesSummary().get(0).getRespondent().get(),
+                entryGetDetailDto.getRespondent().getPerson().getName().getSurname()
+                        + ", "
+                        + entryGetDetailDto.getRespondent().getPerson().getName().getFirstForename()
+                        + ", "
+                        + entryGetDetailDto.getRespondent().getPerson().getName().getTitle());
+    }
+
     private UUID createApplicationList(TokenAndJwksKey token, String prefix) throws Exception {
         var createListReq =
                 new ApplicationListCreateDto()
