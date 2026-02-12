@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -49,6 +50,43 @@ public class DataConstraintControllerTest extends BaseIntegration {
         Assertions.assertEquals(
                 "getApplicationCodeByCodeAndDate.code: size must be between 0 and 10",
                 problemDetail.getDetail());
+    }
+
+    @Test
+    public void testSizeBodyFailure() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ApplicationListCreateDto createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.parse("01:00"))
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode("TOOOOLOOOONG")
+                        .durationHours(1)
+                        .durationMinutes(2);
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(APP_LIST_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        createListReq);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error",
+                "status":400,"detail":"Validation failed for fields:",
+                "instance":"/application-lists",
+                "errors":{"courtLocationCode":
+                "size must be between 0 and 10",
+                "description":"must not be null"}}
+            """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), true);
     }
 
     @Test
@@ -129,12 +167,16 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // assert the response
         createListResp.then().statusCode(400);
-        ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-                problemDetail.getType());
-        Assertions.assertEquals(
-                "Validation failed for fields:time=24:00:23", problemDetail.getDetail());
+        createListResp.asString();
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":
+                "Validation failed for fields:","instance":"/application-lists","errors":
+                {"time":"Please ensure that any times are in the format HH:mm and dates are in the format yyyy-MM-dd"}}
+            """;
+
+        JSONAssert.assertEquals(expectedJson, createListResp.asString(), true);
     }
 
     @Test
@@ -164,12 +206,16 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
         // assert the response
         createListResp.then().statusCode(400);
-        ProblemDetail problemDetail = createListResp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
-                problemDetail.getType());
-        Assertions.assertEquals(
-                "Validation failed for fields:durationMinutes=61", problemDetail.getDetail());
+
+        String expectedJson =
+                """
+               {"type":"COMMON-11","title":"Method Error",
+               "status":400,"detail":"Validation failed for fields:",
+               "instance":"/application-lists",
+               "errors":{"durationMinutes":"must be less than or equal to 59"}}
+            """;
+
+        JSONAssert.assertEquals(expectedJson, createListResp.asString(), true);
     }
 
     @Test
@@ -215,7 +261,8 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Not Readable Error. Cant read value from field:status", problemDetail.getDetail());
+                "Type conversion problem. Something in the payload is not correct",
+                problemDetail.getDetail());
     }
 
     @Test
@@ -260,5 +307,44 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 problemDetail.getType());
         Assertions.assertEquals(
                 "Required request parameter 'date' is missing", problemDetail.getDetail());
+    }
+
+    @Test
+    public void testNumberAsString() throws Exception {
+        ApplicationListCreateDto createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(LocalTime.parse("01:00"))
+                        .status(ApplicationListStatus.OPEN)
+                        .durationHours(-10)
+                        .durationMinutes(2);
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        String requestString = mapper.writeValueAsString(createListReq);
+        requestString = requestString.replace("-10", "\"invalid\"");
+        requestString = requestString.replace("[1,0]", "\"01:00\"");
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(APP_LIST_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        requestString);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                problemDetail.getType());
+        Assertions.assertEquals(
+                "Problem setting value for durationHours please"
+                        + " check the correct type is used",
+                problemDetail.getDetail());
     }
 }
