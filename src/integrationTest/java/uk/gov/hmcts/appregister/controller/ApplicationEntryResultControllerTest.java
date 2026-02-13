@@ -56,9 +56,9 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
 
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
-    private static final String WEB_CONTEXT = "application-lists";
-    private static final String APPC_CODE = "APPC";
-    private static final String WORDING_KEY = "Name of Crown Court";
+    public static final String WEB_CONTEXT = "application-lists";
+    public static final String APPC_CODE = "APPC";
+    public static final String WORDING_KEY = "Name of Crown Court";
 
     @BeforeEach
     public void before() {
@@ -554,7 +554,7 @@ public class ApplicationEntryResultControllerTest extends AbstractSecurityContro
                 body);
     }
 
-    private ResultCreateDto buildCreatePayload(
+    public static ResultCreateDto buildCreatePayload(
             String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultCreateDto(resultCode, wordingFields);
     }
