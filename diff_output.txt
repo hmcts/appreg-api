@@ -1,0 +1,157 @@
+diff --git a/src/integrationTest/java/uk/gov/hmcts/appregister/testutils/util/ApplicationListEntryAssertion.java b/src/integrationTest/java/uk/gov/hmcts/appregister/testutils/util/ApplicationListEntryAssertion.java
+index a6629249..62379518 100644
+--- a/src/integrationTest/java/uk/gov/hmcts/appregister/testutils/util/ApplicationListEntryAssertion.java
++++ b/src/integrationTest/java/uk/gov/hmcts/appregister/testutils/util/ApplicationListEntryAssertion.java
+@@ -112,14 +112,15 @@ public class ApplicationListEntryAssertion {
+                 ApplicantAssertion.validatePerson(
+                         entryCreateUpdateDto.getRespondent().getPerson(),
+                         applicationListEntry.getRnameaddress());
++
++                Assertions.assertEquals(
++                        entryCreateUpdateDto.getRespondent().getPerson().getDateOfBirth(),
++                        applicationListEntry.getRnameaddress().getDateOfBirth());
+             } else {
+                 ApplicantAssertion.validateOrganisation(
+                         entryCreateUpdateDto.getRespondent().getOrganisation(),
+                         applicationListEntry.getRnameaddress());
+             }
+-            Assertions.assertEquals(
+-                    entryCreateUpdateDto.getRespondent().getDateOfBirth(),
+-                    applicationListEntry.getRnameaddress().getDateOfBirth());
+         }
+ 
+         // make sure the code of the applicant and respondent are set correctly in the database
+@@ -278,9 +279,6 @@ public class ApplicationListEntryAssertion {
+                         response.getRespondent().getOrganisation(),
+                         applicationListEntry.getRnameaddress());
+             }
+-            Assertions.assertEquals(
+-                    response.getRespondent().getDateOfBirth(),
+-                    applicationListEntry.getRnameaddress().getDateOfBirth());
+         }
+ 
+         // validate the response fields
+diff --git a/src/main/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapper.java b/src/main/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapper.java
+index d5a1f758..001db73f 100644
+--- a/src/main/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapper.java
++++ b/src/main/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapper.java
+@@ -45,6 +45,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
+ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
+ import uk.gov.hmcts.appregister.generated.model.Person;
+ import uk.gov.hmcts.appregister.generated.model.Respondent;
++import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
+ 
+ @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
+ @Slf4j
+@@ -73,7 +74,7 @@ public abstract class ApplicationListEntryMapper {
+     @Mapping(target = "respondent.person.name.firstForename", source = "respondentForename1")
+     @Mapping(target = "respondent.person.name.secondForename", source = "respondentForename2")
+     @Mapping(target = "respondent.person.name.thirdForename", source = "respondentForename3")
+-    @Mapping(target = "respondent.dateOfBirth", source = "respondentDateOfBirth")
++    @Mapping(target = "respondent.person.dateOfBirth", source = "respondentDateOfBirth")
+     @Mapping(target = "respondent.organisation.name", source = "respondentName")
+     @Mapping(target = "resultWordings", ignore = true)
+     @Mapping(target = "officials", ignore = true)
+@@ -227,7 +228,7 @@ public abstract class ApplicationListEntryMapper {
+ 
+         if (respondentEntityType == EntityType.PERSON) {
+             if (dto.getRespondent().getPerson() == null) {
+-                dto.getRespondent().setPerson(new Person());
++                dto.getRespondent().setPerson(new RespondentPerson());
+             }
+ 
+             dto.getRespondent()
+@@ -535,14 +536,13 @@ public abstract class ApplicationListEntryMapper {
+                 respondentDto.setOrganisation(organisation);
+ 
+             } else {
+-                Person person = new Person();
++                RespondentPerson person = new RespondentPerson();
+                 FullName fullName = applicantMapper.toFullName(applicant);
+                 person.setContactDetails(contactDetails);
+                 person.setName(fullName);
++                person.setDateOfBirth(applicant.getDateOfBirth());
+                 respondentDto.setPerson(person);
+             }
+-
+-            respondentDto.setDateOfBirth(applicant.getDateOfBirth());
+         }
+ 
+         return respondentDto;
+diff --git a/src/main/java/uk/gov/hmcts/appregister/common/mapper/ApplicantMapper.java b/src/main/java/uk/gov/hmcts/appregister/common/mapper/ApplicantMapper.java
+index 268d3d44..609377bf 100644
+--- a/src/main/java/uk/gov/hmcts/appregister/common/mapper/ApplicantMapper.java
++++ b/src/main/java/uk/gov/hmcts/appregister/common/mapper/ApplicantMapper.java
+@@ -172,12 +172,10 @@ public abstract class ApplicantMapper {
+     public NameAddress toRespondentNameAddress(Respondent applicant) {
+         if (applicant != null && applicant.getPerson() != null) {
+             NameAddress nameAddress = toPerson(applicant.getPerson());
+-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
++            nameAddress.setDateOfBirth(applicant.getPerson().getDateOfBirth());
+             return nameAddress;
+         } else if (applicant != null && applicant.getOrganisation() != null) {
+-            NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
+-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+-            return nameAddress;
++            return toOrganisation(applicant.getOrganisation());
+         } else {
+             return null;
+         }
+diff --git a/src/main/resources/openapi/components/schemas/participants/respondent.yaml b/src/main/resources/openapi/components/schemas/participants/respondent.yaml
+index 52c24132..e29a3e13 100644
+--- a/src/main/resources/openapi/components/schemas/participants/respondent.yaml
++++ b/src/main/resources/openapi/components/schemas/participants/respondent.yaml
+@@ -4,13 +4,16 @@ description: The respondent to the application.
+ properties:
+ 
+   person:
+-    $ref: './person.yaml'
+-
+-  dateOfBirth:
+-    type: string
+-    format: date
+-    description: The DOB of the respondent, can be included if respondent is a person.
+-    example: "1990-01-01"
++    allOf:
++      - $ref: './person.yaml'
++      - type: object
++        description: Person details for a respondent (includes DOB).
++        properties:
++          dateOfBirth:
++            type: string
++            format: date
++            description: Date of birth (only applicable for person respondents).
++            example: "1990-01-01"
+ 
+   organisation:
+     $ref: './organisation.yaml'
+diff --git a/src/test/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapperTest.java b/src/test/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapperTest.java
+index 3d0b73e3..4b58e3c9 100644
+--- a/src/test/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapperTest.java
++++ b/src/test/java/uk/gov/hmcts/appregister/applicationentry/mapper/ApplicationListEntryMapperTest.java
+@@ -303,7 +303,8 @@ class ApplicationListEntryMapperTest {
+         Assertions.assertEquals(PERSON4_SURNAME, applicant.getName().getSurname());
+         Assertions.assertEquals(MRS, respondent.getName().getTitle());
+         Assertions.assertEquals(PERSON5_SURNAME, respondent.getName().getSurname());
+-        Assertions.assertEquals(PERSON5_DATE_OF_BIRTH, dto.getRespondent().getDateOfBirth());
++        Assertions.assertEquals(
++                PERSON5_DATE_OF_BIRTH, dto.getRespondent().getPerson().getDateOfBirth());
+ 
+         assertApplicationDetailsEqual(dto);
+     }
+@@ -1173,7 +1174,7 @@ class ApplicationListEntryMapperTest {
+                 entity.getAddress4(), respondent.getPerson().getContactDetails().getAddressLine4());
+         Assertions.assertEquals(
+                 entity.getAddress5(), respondent.getPerson().getContactDetails().getAddressLine5());
+-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
++        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getPerson().getDateOfBirth());
+     }
+ 
+     private void validateRespondentOrganisation(NameAddress entity, Respondent respondent) {
+@@ -1207,6 +1208,5 @@ class ApplicationListEntryMapperTest {
+         Assertions.assertEquals(
+                 entity.getAddress5(),
+                 respondent.getOrganisation().getContactDetails().getAddressLine5());
+-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
+     }
+ }
