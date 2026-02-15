@@ -34,7 +34,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled( types = {CrudEnum.READ})
+@AuditEnabled(types = {CrudEnum.READ})
 public class StandardApplicant extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id

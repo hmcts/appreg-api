@@ -15,9 +15,12 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * JPA entity representing a row in the {@code national_court_house} table.
@@ -51,6 +54,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.READ})
 public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
         implements Versionable, Keyable {
 
@@ -64,6 +68,7 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
 
     // Name of the courthouse (e.g. "Cardiff Crown Court").
     @Column(name = "courthouse_name", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private String name;
 
     @Column(name = "version_number", nullable = false)
@@ -87,6 +92,7 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
 
     // Business reference code for this court location, used in integrations.
     @Column(name = "court_location_code")
+    @Audit(action = {CrudEnum.READ})
     private String courtLocationCode;
 
     // Welsh-language name for the courthouse, if available.

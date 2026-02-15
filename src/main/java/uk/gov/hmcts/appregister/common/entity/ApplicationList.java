@@ -47,7 +47,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.DELETE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.DELETE, CrudEnum.READ})
 public class ApplicationList extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
     @Id

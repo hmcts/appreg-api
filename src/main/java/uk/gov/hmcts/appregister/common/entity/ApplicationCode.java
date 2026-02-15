@@ -20,11 +20,14 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 import uk.gov.hmcts.appregister.common.entity.converter.YesNoConverter;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 
 /*
@@ -44,6 +47,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @Getter
 @Setter
+@AuditEnabled(types = {CrudEnum.READ})
 public class ApplicationCode extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -56,6 +60,7 @@ public class ApplicationCode extends BaseUnmanagedChangeableEntity
 
     @Column(name = "application_code", nullable = false)
     @Size(max = 10)
+    @Audit(action = {CrudEnum.READ})
     private String code;
 
     @Column(name = "application_code_title", nullable = false)
