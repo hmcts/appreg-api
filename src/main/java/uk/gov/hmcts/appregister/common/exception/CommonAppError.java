@@ -43,7 +43,10 @@ public enum CommonAppError implements ErrorCodeEnum {
     NOT_READABLE_ERROR(
             DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Not Readable Error", "COMMON-13")),
     PARAMETER_REQUIRED(
-            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Parameter required", "COMMON-14"));
+            DefaultErrorDetail.create(HttpStatus.BAD_REQUEST, "Parameter required", "COMMON-14")),
+    REGEX_VALIDATION_MISMATCH_ERROR(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Regex Validation Mismatch", "COMMON-16"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

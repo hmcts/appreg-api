@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.common.validator.regex.DisallowedCharactersRegexValidator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
@@ -34,6 +35,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private final FeeRepository feeRepository;
     private final Clock clock;
     private final StandardApplicantRepository standardApplicantRepository;
+    private final DisallowedCharactersRegexValidator disallowedCharactersRegexValidator;
 
     private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
             "Bulk respondent not required for code %s";
@@ -446,6 +448,40 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                             .formatted(getApplicationCode(validatable)));
         }
 
+        validateRespondentDetails(validatable);
+
         log.debug("Validated the respondent details");
+    }
+
+    private void validateRespondentDetails(T validatable) {
+        if (getRespondent(validatable) != null) {
+            if (getRespondent(validatable).getOrganisation() != null) {
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getName());
+
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine1());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine2());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine3());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine4());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine5());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getEmail());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getMobile());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getPhone());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getPostcode());
+
+            } else if (getRespondent(validatable).getPerson() != null) {
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getName().toString());
+
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine1());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine2());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine3());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine4());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine5());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getEmail());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getMobile());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getPhone());
+                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getPostcode());
+
+            }
+        }
     }
 }
