@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
+import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -91,7 +92,43 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
         Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
     }
 
-    // @StabilityTest
+    @StabilityTest
+    public void
+            givenApplicationListSuccessfulDefaultSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+        ApplicationListPage page = responseSpec.as(ApplicationListPage.class);
+
+        // make sure the order response marries with the request data
+        Assertions.assertEquals(1, page.getSort().getOrders().size());
+        Assertions.assertEquals(
+                SortOrdersInner.DirectionEnum.ASC,
+                page.getSort().getOrders().get(0).getDirection());
+
+        // make sure we only return defaulted externalised api sort data
+        Assertions.assertEquals(
+                ApplicationListSortFieldEnum.DESCRIPTION.getApiValue(),
+                page.getSort().getOrders().get(0).getProperty());
+
+        Assertions.assertTrue(ApplicationListSortFieldEnum.values().length > 0);
+    }
+
+    // This test cant be made a stability test as slows the test run down
+    // TODO: look into this
+    @Test
     public void givenApplicationListSuccessfulSort_whenSortByEntryCount_thenSuccessResponse()
             throws Exception {
         // create the token
@@ -356,7 +393,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT),
                         userToken,
                         rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
-                        null);
+                        new OpenApiPageMetaData());
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         ApplicationListPage page = resp.as(ApplicationListPage.class);
@@ -395,7 +432,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT),
                         userToken,
                         rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
-                        null);
+                        new OpenApiPageMetaData());
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         ApplicationListPage page = resp.as(ApplicationListPage.class);
@@ -428,7 +465,7 @@ public class GetApplicationListControllerSortTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT),
                         userToken,
                         rs -> rs.header("Accept", VND_JSON_V1).queryParam("description", prefix),
-                        null);
+                        new OpenApiPageMetaData());
 
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
     }

@@ -253,6 +253,8 @@ public class ApplicationListServiceImplTest {
                 ArgumentCaptor.forClass(List.class);
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expectedDto);
+        when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
+                .thenReturn(expectedDto);
 
         when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
         mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
@@ -269,7 +271,8 @@ public class ApplicationListServiceImplTest {
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
 
-        verify(mapper, times(2)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper, times(1)).toGetDetailDto(saved, null, 0L, summaryCaptor.getValue());
+        verify(mapper, times(1)).toGetDetailDto(saved, null, 1L, summaryCaptor.getValue());
     }
 
     // -------- CJA PATH --------
@@ -343,9 +346,9 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
         ArgumentCaptor<List> summaryCaptor = ArgumentCaptor.forClass(List.class);
-        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
-                .thenReturn(expected);
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
+                .thenReturn(expected);
+        when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(1L), summaryCaptor.capture()))
                 .thenReturn(expected);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
@@ -362,15 +365,12 @@ public class ApplicationListServiceImplTest {
         verify(updateValidator).validate(eq(payloadForUpdate), notNull());
         verify(repository).save(entityToSave);
 
-        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(0L), notNull());
+        verify(mapper).toGetDetailDto(eq(saved), isNull(), eq(0L), notNull());
+        verify(mapper).toGetDetailDto(eq(saved), eq(cja), eq(1L), notNull());
+
         assertThat(result.getPayload()).isSameAs(expected);
         verify(entityManager).flush();
         verify(entityManager).refresh(saved);
-
-        verify(mapper, times(1))
-                .toGetDetailDto(eq(saved), eq(cja), eq(0L), eq(summaryCaptor.getValue()));
-        verify(mapper, times(1))
-                .toGetDetailDto(eq(saved), isNull(), eq(0L), eq(summaryCaptor.getValue()));
     }
 
     @Test

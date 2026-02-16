@@ -16,10 +16,10 @@ get:
   description: Returns a paginated list of Application List Entry Results linked to a specific Entry.
   parameters:
     - in: query
-      name: page
+      name: pageNumber
       schema: { type: integer, minimum: 0, default: 0 }
     - in: query
-      name: size
+      name: pageSize
       schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
   responses:
     "200":

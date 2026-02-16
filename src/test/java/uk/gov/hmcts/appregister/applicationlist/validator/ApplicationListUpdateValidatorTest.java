@@ -28,10 +28,10 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
-import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListUpdateValidatorTest {
@@ -125,7 +125,6 @@ public class ApplicationListUpdateValidatorTest {
     @Test
     void update_multipleCjaReturnedFromRepository_throwsAppRegException() {
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
-        CriminalJusticeAreaGetDto criminalJusticeAreaGetDto = mock(CriminalJusticeAreaGetDto.class);
         when(dto.getCourtLocationCode()).thenReturn(null);
         when(dto.getCjaCode()).thenReturn("X1");
         when(dto.getOtherLocationDescription()).thenReturn("Y2");
@@ -156,6 +155,21 @@ public class ApplicationListUpdateValidatorTest {
                 assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         Assertions.assertEquals(
                 ApplicationListError.APPLICATION_LIST_NOT_FOUND, exception.getCode());
+    }
+
+    @Test
+    void updateClosedListThrowsException() {
+        ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
+
+        UUID uuid = UUID.randomUUID();
+        ApplicationList appList = new ApplicationList();
+        appList.setStatus(Status.CLOSED);
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+        PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(payload));
+        Assertions.assertEquals(ApplicationListError.INVALID_LIST_STATUS, exception.getCode());
     }
 
     // ---- TESTS ----

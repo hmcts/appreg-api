@@ -13,10 +13,10 @@ get:
       schema:
         $ref: "../../components/schemas/application-lists/application-list-get-filter-dto.yaml"
     - in: query
-      name: page
+      name: pageNumber
       schema: { type: integer, minimum: 0, default: 0 }
     - in: query
-      name: size
+      name: pageSize
       schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
     - in: query
       name: sort

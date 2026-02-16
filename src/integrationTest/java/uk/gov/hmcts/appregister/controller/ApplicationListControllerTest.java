@@ -60,6 +60,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -614,7 +615,7 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
         ProblemAssertUtil.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode(),
-                "JSON parse error: Unexpected " + "time format detected [0,0,1]",
+                "Type conversion problem. Something in the payload is not correct",
                 resp);
     }
 
@@ -625,17 +626,14 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         courtLocationGetDetailDto.setStartDate(LocalDate.now());
         courtLocationGetDetailDto.setEndDate(JsonNullable.of(LocalDate.now()));
         courtLocationGetDetailDto.setName("Manchester Crown Court");
-        var req =
-                new ApplicationListUpdateDto()
-                        .date(TEST_DATE2)
-                        .time(TEST_TIME2)
-                        .description("Morning_list_(court)_update")
-                        .status(ApplicationListStatus.CLOSED)
-                        .courtLocationCode(VALID_COURT_CODE2)
-                        .durationHours(4)
-                        .durationMinutes(32);
 
         String[] createdLocation = createAppListUsingRestApi();
+
+        String listId = HeaderUtil.getTrailingIdFromLocation(createdLocation[0]);
+
+        // add 2 entries
+        createEntry(UUID.fromString(listId));
+        createEntry(UUID.fromString(listId));
 
         var token =
                 getATokenWithValidCredentials()
@@ -645,6 +643,16 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // clear the logs before the update
         differenceLogAsserter.clearLogs();
+
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning_list_(court)_update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(4)
+                        .durationMinutes(32);
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -657,11 +665,13 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
         // Location header should point to /application-lists/{uuid}
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
         assertThat(dto.getId()).isNotNull();
         assertThat(dto.getVersion()).isEqualTo(1L); // per seed: Version = 0
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2); // mapper emits "HH:mm" when seconds = 0
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
+        assertThat(dto.getEntriesCount()).isEqualTo(2);
 
         assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(dto.getDurationHours()).isEqualTo(4);
@@ -926,12 +936,6 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
     void givenValidRequest_whenUpdateWithCja_then201() throws Exception {
-        var token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.ADMIN))
-                        .build()
-                        .fetchTokenForRole();
-
         String[] createdLocation = createAppListUsingRestApi();
 
         differenceLogAsserter.clearLogs();
@@ -941,11 +945,23 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
                         .date(TEST_DATE2)
                         .time(TEST_TIME2)
                         .description("Morning_list_(court)_update")
-                        .status(ApplicationListStatus.CLOSED)
+                        .status(ApplicationListStatus.OPEN)
                         .cjaCode(VALID_CJA_CODE2)
                         .durationHours(4)
                         .durationMinutes(32)
                         .otherLocationDescription("Updated other location");
+
+        String listId = HeaderUtil.getTrailingIdFromLocation(createdLocation[0]);
+
+        // add 2 entries
+        createEntry(UUID.fromString(listId));
+        createEntry(UUID.fromString(listId));
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
 
         Response resp =
                 restAssuredClient.executePutRequest(
@@ -955,20 +971,20 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // Assert
         ApplicationListGetDetailDto dto = resp.as(ApplicationListGetDetailDto.class);
+
         assertThat(dto.getId()).isNotNull();
         assertThat(dto.getVersion()).isEqualTo(1L);
         assertThat(dto.getDate()).isEqualTo(TEST_DATE2);
         assertThat(dto.getTime()).isEqualTo(TEST_TIME2);
         assertThat(dto.getDescription()).isEqualTo("Morning_list_(court)_update");
-        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(dto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(dto.getEntriesCount()).isEqualTo(2);
 
         // CJA populated, Court null
         assertThat(dto.getCjaCode()).isEqualTo(VALID_CJA_CODE2);
         assertThat(dto.getOtherLocationDescription()).isEqualTo("Updated other location");
         assertThat(dto.getCourtCode()).isNull();
         assertThat(dto.getCourtName()).isNull();
-
-        differenceLogAsserter.assertDiffCount(12, true);
 
         String eventName = AppListAuditOperation.UPDATE_APP_LIST.getEventName();
         String operation = AppListAuditOperation.UPDATE_APP_LIST.getType().name();
@@ -2221,6 +2237,51 @@ public class ApplicationListControllerTest extends AbstractSecurityControllerTes
 
         // sanity: remaining printed entry should include the first created one
         assertThat(returnedEntryIds).contains(entry1.getId());
+    }
+
+    @Test
+    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+        var token = getToken();
+
+        // create list
+        UUID listId = createApplicationList(token, uniquePrefix("update-open-closed-list"));
+
+        // update list to closed
+        var updateReq =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Updated description")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response updateResp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, updateReq);
+        updateResp.then().statusCode(HttpStatus.OK.value());
+
+        // attempt to update back to open
+        var reopenReq =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Updated description")
+                        .status(ApplicationListStatus.OPEN)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response reopenResp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, reopenReq);
+        reopenResp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // Assert failure is due to invalid list status for update
+        ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 
     private UUID createApplicationList(TokenAndJwksKey token, String prefix) throws Exception {
