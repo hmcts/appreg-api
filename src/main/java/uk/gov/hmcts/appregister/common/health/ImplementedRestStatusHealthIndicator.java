@@ -1,15 +1,18 @@
 package uk.gov.hmcts.appregister.common.health;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.File;
 import java.lang.reflect.Method;
+import java.net.JarURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -184,16 +187,9 @@ public class ImplementedRestStatusHealthIndicator {
      * @param packageName The package name
      * @return The methods
      */
-    public List<ApiMethod> findAllInterfacesUsingClassLoader(String packageName) {
-        InputStream stream =
-                ClassLoader.getSystemClassLoader()
-                        .getResourceAsStream(packageName.replaceAll("[.]", "/"));
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+    public List<ApiMethod> findAllInterfacesUsingClassLoader(String packageName) throws Exception {
         List<Class> classes =
-                reader.lines()
-                        .filter(line -> line.endsWith(".class"))
-                        .map(line -> getClass(line, packageName))
+                findClasses(packageName).stream()
                         .filter(Class::isInterface)
                         .collect(Collectors.toList());
 
@@ -244,6 +240,60 @@ public class ImplementedRestStatusHealthIndicator {
             // handle the exception
         }
         return null;
+    }
+
+    /**
+     * This function gets classes under a package. This is needed for classes to be found when
+     * running in docker.
+     *
+     * @param packageName Take a package name and get the classes
+     * @return The classes under the package
+     */
+    public static Set<Class<?>> findClasses(String packageName) throws Exception {
+        Set<Class<?>> classes = new HashSet<>();
+        String path = packageName.replace('.', '/');
+
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        Enumeration<URL> resources = classLoader.getResources(path);
+
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+
+            if (resource.getProtocol().equals("file")) {
+                File dir = new File(resource.toURI());
+                for (File file : dir.listFiles()) {
+                    if (file.getName().endsWith(".class")) {
+                        String className = packageName + "." + file.getName().replace(".class", "");
+                        classes.add(Class.forName(className));
+                    }
+                }
+            }
+
+            if (resource.getProtocol().equals("jar")) {
+                JarURLConnection conn = (JarURLConnection) resource.openConnection();
+                try (JarFile jar = conn.getJarFile()) {
+                    jar.stream()
+                            .filter(
+                                    entry ->
+                                            entry.getName().startsWith(path)
+                                                    && entry.getName().endsWith(".class"))
+                            .forEach(
+                                    entry -> {
+                                        String className =
+                                                entry.getName()
+                                                        .replace("/", ".")
+                                                        .replace(".class", "");
+                                        try {
+                                            classes.add(Class.forName(className));
+                                        } catch (ClassNotFoundException ignored) {
+                                            log.warn("Error", ignored);
+                                        }
+                                    });
+                }
+            }
+        }
+
+        return classes;
     }
 
     /** An implementation of a controller method that allows us to extract the api details. */
