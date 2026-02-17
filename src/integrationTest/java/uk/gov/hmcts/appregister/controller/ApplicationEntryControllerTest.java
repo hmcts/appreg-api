@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -1350,6 +1351,48 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 "Entry that was soft-deleted via repository must NOT be returned by the search");
     }
 
+    @Test
+    public void
+            givenAnInvalidCreateEntryRequest_whenFeeStatusIsDueAndPaymentReferenceProvided_then400IsReturned()
+                    throws Exception {
+        // setup the payload
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        // Ensure we have at least one fee status to manipulate
+        Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
+        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+
+        // Set the first fee status to DUE but also pass a payment reference (invalid)
+        FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
+        feeStatus.setPaymentStatus(DUE);
+        feeStatus.setPaymentReference("PAYREF-123");
+
+        // create the token
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        // test the functionality
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(400);
+
+        ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getType()
+                        .get(),
+                problemDetail.getType());
+    }
+
     private EntryUpdateDto getCorrectUpdateDataDto() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1384,6 +1427,10 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         substitution1.setValue(LocalDate.now().toString());
 
         updateDto.setWordingFields(List.of(substitution, substitution1));
+
+        // Ensure rule compliance
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
+
         return updateDto;
     }
 
@@ -2037,6 +2084,44 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
                 AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    public void givenInvalidUpdate_whenFeeStatusDueAndPaymentReferenceProvided_400Returned()
+            throws Exception {
+        // Make the fee status invalid: DUE + paymentReference present
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(DUE);
+        feeStatus.setPaymentReference("PAYREF-123");
+        feeStatus.setStatusDate(LocalDate.now());
+
+        // Build an otherwise-valid update DTO
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        // Arrange – create a list entry we can update
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // Token
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        // Act – call the update endpoint
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // Assert
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getType()
+                        .get(),
                 problemDetail.getType());
     }
 

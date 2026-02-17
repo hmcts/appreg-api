@@ -92,7 +92,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "No application list entry was found that belongs to " + " the specified list",
-                    "ALE-18"));
+                    "ALE-18")),
+
+    PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Payment reference must not be provided when payment status is DUE",
+                    "ALE-19"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

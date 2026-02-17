@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.util;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +10,7 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -63,6 +66,26 @@ public class CreateEntryDtoUtil {
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+
+        // Ensure rule compliance
+        sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
         return entryCreateDto;
+    }
+
+    public static void sanitiseFeeStatusesForDueRule(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null) {
+            return;
+        }
+
+        for (FeeStatus fs : feeStatuses) {
+            if (fs == null) {
+                continue;
+            }
+
+            if (fs.getPaymentStatus() == DUE) {
+                fs.setPaymentReference(null);
+            }
+        }
     }
 }
