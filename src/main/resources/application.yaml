@@ -7,14 +7,11 @@ management:
   endpoint:
     health:
       show-details: "always"
-      # group:
-      #  readiness:
-      #   include: "db"
   endpoints:
     web:
       base-path: /
       exposure:
-        include: health, info, prometheus
+        include: health, info, prometheus, implementation-rest-status
 
 springdoc:
   writer-with-order-by-keys: true
