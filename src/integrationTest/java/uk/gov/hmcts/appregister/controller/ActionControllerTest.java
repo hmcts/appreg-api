@@ -31,6 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
+import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -157,7 +158,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         rs -> rs.header("Accept", VND_JSON_V1),
-                        null);
+                        new OpenApiPageMetaData());
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         ApplicationListPage page = resp.as(ApplicationListPage.class);
@@ -278,10 +279,10 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
     }
 
     private ApplicationListPage getApplicationListPage(
-            TokenAndJwksKey token, ApplicationListStatus open) throws MalformedURLException {
+            TokenAndJwksKey token, ApplicationListStatus open) throws Exception {
         Response resp =
                 restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(2),
+                        Optional.of(3),
                         Optional.of(0),
                         List.of(),
                         getLocalUrl(WEB_CONTEXT),
@@ -289,7 +290,7 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
                         rs ->
                                 rs.header("Accept", VND_JSON_V1)
                                         .queryParam("status", open.toString()),
-                        null);
+                        new OpenApiPageMetaData());
 
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         return resp.as(ApplicationListPage.class);

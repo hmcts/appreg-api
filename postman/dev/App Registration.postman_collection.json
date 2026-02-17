@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "707b1c94-5220-4d62-a105-122a50ca9996",
+    "_postman_id": "b533d999-921a-413b-98e3-3490243c8ac5",
     "name": "App Registration",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-707b1c94-5220-4d62-a105-122a50ca9996?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-b533d999-921a-413b-98e3-3490243c8ac5?source=collection_link"
   },
   "item": [
     {
@@ -44,7 +44,7 @@
               }
             },
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists?size=50",
+              "raw": "{{APP_REG_HOST}}/application-lists?pageSize=50",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
@@ -53,7 +53,7 @@
               ],
               "query": [
                 {
-                  "key": "size",
+                  "key": "pageSize",
                   "value": "50"
                 }
               ]
@@ -155,7 +155,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/5d842220-62b3-4868-a947-5c73d1ba005b?page=0&size=1",
+              "raw": "{{APP_REG_HOST}}/application-lists/5d842220-62b3-4868-a947-5c73d1ba005b?page=0&pageSize=1",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
@@ -169,7 +169,7 @@
                   "value": "0"
                 },
                 {
-                  "key": "size",
+                  "key": "pageSize",
                   "value": "1"
                 }
               ]
@@ -373,7 +373,7 @@
               }
             ],
             "url": {
-              "raw": "{{APP_REG_HOST}}/result-codes?page=0&size=21&sort=title,desc&code=nf",
+              "raw": "{{APP_REG_HOST}}/result-codes?page=0&pageSize=21&sort=title,desc&code=nf",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
@@ -386,7 +386,7 @@
                   "value": "0"
                 },
                 {
-                  "key": "size",
+                  "key": "pageSize",
                   "value": "21"
                 },
                 {

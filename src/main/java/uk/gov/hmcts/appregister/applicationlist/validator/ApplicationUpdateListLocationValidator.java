@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -59,6 +60,9 @@ public class ApplicationUpdateListLocationValidator
                     "The application list id does not exist : %s".formatted(dto.getId()));
         }
 
+        // validate the status
+        validateStatusForUpdate(applicationListList.get(), dto.getData());
+
         // validate the location fields
         return super.validate(
                 dto,
@@ -69,6 +73,22 @@ public class ApplicationUpdateListLocationValidator
                     }
                     return null;
                 });
+    }
+
+    /**
+     * Validates we can not reopen a closed record.
+     *
+     * @param currentList The current record data
+     * @param dto The payload for the update
+     */
+    private void validateStatusForUpdate(
+            ApplicationList currentList, ApplicationListUpdateDto dto) {
+        // fail any update on an already closed list
+        if (currentList.getStatus() == Status.CLOSED) {
+            throw new AppRegistryException(
+                    ApplicationListError.INVALID_LIST_STATUS,
+                    "A closed application list is not allowed to be updated");
+        }
     }
 
     @Override

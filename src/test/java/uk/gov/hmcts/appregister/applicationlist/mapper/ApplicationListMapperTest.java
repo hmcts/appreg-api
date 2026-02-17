@@ -26,6 +26,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 /**
  * Unit tests for {@link ApplicationListMapper}. Uses MapStruct's Mappers.getMapper(...) to obtain
@@ -230,12 +231,21 @@ public class ApplicationListMapperTest {
                             .time(LocalTime.of(9, 0, 0))
                             .build();
 
+            ApplicationListSummaryProjectionImpl applicationListEntryCountProjection =
+                    new ApplicationListSummaryProjectionImpl();
+            applicationListEntryCountProjection.setDescription("Morning session");
+            applicationListEntryCountProjection.setDate(LocalDate.of(2025, 9, 19));
+            applicationListEntryCountProjection.setTime(LocalTime.of(9, 0, 0));
+            applicationListEntryCountProjection.setStatus(Status.OPEN);
+            applicationListEntryCountProjection.setUuid(id);
+
             long entryCount = 5L;
             String location = "Bath Magistrates Court";
 
             // When
             ApplicationListGetSummaryDto dto =
-                    mapper.toGetSummaryDto(appList, entryCount, location);
+                    mapper.toGetSummaryDto(
+                            applicationListEntryCountProjection, entryCount, location);
 
             // Then
             assertNotNull(dto);

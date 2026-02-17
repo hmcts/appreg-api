@@ -8,6 +8,7 @@ import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -32,6 +33,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", source = "dto.time")
+    @Mapping(target = "entries", ignore = true)
     ApplicationList toCreateEntityWithCourt(ApplicationListCreateDto dto, NationalCourtHouse court);
 
     @Mapping(target = "id", ignore = true)
@@ -44,6 +46,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "description", source = "dto.description")
     @Mapping(target = "date", source = "dto.date")
     @Mapping(target = "time", source = "dto.time")
+    @Mapping(target = "entries", ignore = true)
     ApplicationList toCreateEntityWithCja(ApplicationListCreateDto dto, CriminalJusticeArea cja);
 
     @Mapping(target = "id", source = "appList.uuid")
@@ -75,7 +78,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "status", source = "appList.status")
     @Mapping(target = "entriesSummary", ignore = true)
     ApplicationListGetSummaryDto toGetSummaryDto(
-            ApplicationList appList, long entryCount, String location);
+            ApplicationListSummaryProjection appList, long entryCount, String location);
 
     @Mapping(target = "date", source = "appList.date")
     @Mapping(target = "time", source = "appList.time")
@@ -105,6 +108,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "deletedDate", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "entries", ignore = true)
     void toUpdateEntityWithCja(
             ApplicationListUpdateDto dto,
             CriminalJusticeArea cja,
@@ -127,6 +131,7 @@ public interface ApplicationListMapper {
     @Mapping(target = "deletedDate", ignore = true)
     @Mapping(target = "deleted", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "entries", ignore = true)
     void toUpdateEntityWithCourt(
             ApplicationListUpdateDto dto,
             CriminalJusticeArea cja,
