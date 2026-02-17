@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -112,7 +113,16 @@ public abstract class AbstractApplicationListTest extends AbstractSecurityContro
     }
 
     protected EntryGetDetailDto createEntry(UUID listId) throws Exception {
+        return createEntry(listId, null);
+    }
+
+    protected EntryGetDetailDto createEntry(UUID listId, Consumer<EntryCreateDto> modifyCallback)
+            throws Exception {
         var entryDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        if (modifyCallback != null) {
+            modifyCallback.accept(entryDto);
+        }
 
         Response createEntryResp =
                 restAssuredClient.executePostRequest(
