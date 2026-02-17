@@ -456,31 +456,100 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private void validateRespondentDetails(T validatable) {
         if (getRespondent(validatable) != null) {
             if (getRespondent(validatable).getOrganisation() != null) {
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getName());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getOrganisation().getName());
 
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine1());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine2());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine3());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine4());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getAddressLine5());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getEmail());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getMobile());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getPhone());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getOrganisation().getContactDetails().getPostcode());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine1());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine2());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine3());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine4());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getAddressLine5());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getEmail());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getMobile());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getPhone());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getPostcode());
 
             } else if (getRespondent(validatable).getPerson() != null) {
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getName().toString());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getName().getFirstForename());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getName().getSecondForename());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getName().getThirdForename());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getName().getSurname());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getName().getTitle());
 
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine1());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine2());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine3());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine4());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getAddressLine5());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getEmail());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getMobile());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getPhone());
-                disallowedCharactersRegexValidator.validate(getRespondent(validatable).getPerson().getContactDetails().getPostcode());
-
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine1());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine2());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine3());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine4());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable)
+                                .getPerson()
+                                .getContactDetails()
+                                .getAddressLine5());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getContactDetails().getEmail());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getContactDetails().getMobile());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getContactDetails().getPhone());
+                disallowedCharactersRegexValidator.validate(
+                        getRespondent(validatable).getPerson().getContactDetails().getPostcode());
             }
         }
     }

@@ -87,6 +87,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.validator.regex.DisallowedCharactersRegexValidator;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
@@ -164,13 +165,18 @@ public class ApplicationEntryServiceImplTest {
     private ApplicationEntryService service;
 
     @Spy
+    private DisallowedCharactersRegexValidator disallowedCharactersRegexValidator =
+            new DisallowedCharactersRegexValidator();
+
+    @Spy
     private DummyCreateApplicationEntryValidator createApplicationEntryValidator =
             new DummyCreateApplicationEntryValidator(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
                     clock,
-                    standardApplicantRepository);
+                    standardApplicantRepository,
+                    disallowedCharactersRegexValidator);
 
     @Spy
     private final ApplicationListEntryEntityMapper entryEntityMapper =
@@ -186,7 +192,8 @@ public class ApplicationEntryServiceImplTest {
                     feeRepository,
                     clock,
                     standardApplicantRepository,
-                    applicationListEntryRepository);
+                    applicationListEntryRepository,
+                    disallowedCharactersRegexValidator);
 
     @Spy
     private GetApplicationEntryValidator getEntryValidator =
@@ -592,13 +599,15 @@ public class ApplicationEntryServiceImplTest {
                 ApplicationCodeRepository applicationCodeRepository,
                 FeeRepository feeRepository,
                 Clock clock,
-                StandardApplicantRepository standardApplicantRepository) {
+                StandardApplicantRepository standardApplicantRepository,
+                DisallowedCharactersRegexValidator disallowedCharactersRegexValidator) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
                     clock,
-                    standardApplicantRepository);
+                    standardApplicantRepository,
+                    disallowedCharactersRegexValidator);
         }
 
         @Override
@@ -665,14 +674,16 @@ public class ApplicationEntryServiceImplTest {
                 FeeRepository feeRepository,
                 Clock clock,
                 StandardApplicantRepository standardApplicantRepository,
-                ApplicationListEntryRepository applicationListEntryRepository) {
+                ApplicationListEntryRepository applicationListEntryRepository,
+                DisallowedCharactersRegexValidator disallowedCharactersRegexValidator) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
                     clock,
                     standardApplicantRepository,
-                    applicationListEntryRepository);
+                    applicationListEntryRepository,
+                    disallowedCharactersRegexValidator);
         }
 
         @Override

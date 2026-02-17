@@ -21,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.validator.regex.DisallowedCharactersRegexValidator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
@@ -41,13 +42,15 @@ public class UpdateApplicationEntryValidator
             FeeRepository feeRepository,
             Clock clock,
             StandardApplicantRepository standardApplicantRepository,
-            ApplicationListEntryRepository applicationListEntryRepository) {
+            ApplicationListEntryRepository applicationListEntryRepository,
+            DisallowedCharactersRegexValidator disallowedCharactersRegexValidator) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
                 feeRepository,
                 clock,
-                standardApplicantRepository);
+                standardApplicantRepository,
+                disallowedCharactersRegexValidator);
         this.applicationListEntryRepository = applicationListEntryRepository;
     }
 

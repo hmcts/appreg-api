@@ -36,6 +36,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.validator.regex.DisallowedCharactersRegexValidator;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
@@ -55,6 +56,8 @@ public class CreateApplicationEntryValidatorTest {
     @Mock private Clock clock;
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
+
+    @Mock private DisallowedCharactersRegexValidator disallowedCharactersRegexValidator;
 
     @InjectMocks private CreateApplicationEntryValidator createApplicationEntryValidator;
 
