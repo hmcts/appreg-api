@@ -33,7 +33,7 @@ public class ImplementedRestfulTest {
 
     @Test
     public void testShouldNotBeImplemented() throws Exception {
-        Map<String, Object> implemented = new ImplementedRestStatusHealthIndicator().status();
+        Map<String, Object> implemented = new RestImplementedStatusHealthIndicator().status();
 
         Assertions.assertTrue(implemented.size() > 0);
         Assertions.assertEquals(
@@ -45,7 +45,7 @@ public class ImplementedRestfulTest {
         // assert against the unimplemented endpoints.
         for (String endpoint : UNIMPLEMENTED_ENDPOINTS) {
             Assertions.assertEquals(
-                    ImplementedRestStatusHealthIndicator.NOT_IMPLEMENTED,
+                    RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED,
                     implemented.get(endpoint));
         }
     }
@@ -53,7 +53,7 @@ public class ImplementedRestfulTest {
     private int countUnimplementedEndpoints(Map<String, Object> implemented) {
         int count = 0;
         for (String endpoint : implemented.keySet()) {
-            if (ImplementedRestStatusHealthIndicator.NOT_IMPLEMENTED.equals(
+            if (RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED.equals(
                     implemented.get(endpoint))) {
                 count++;
             }

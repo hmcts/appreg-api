@@ -11,7 +11,7 @@ management:
     web:
       base-path: /
       exposure:
-        include: health, info, prometheus, implementation-rest-status
+        include: health, info, prometheus, rest-implementation-status
 
 springdoc:
   writer-with-order-by-keys: true

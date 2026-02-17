@@ -29,9 +29,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * reflection together with Spring component scanning.
  */
 @Component
-@Endpoint(id = "implementation-rest-status")
+@Endpoint(id = "rest-implementation-status")
 @Slf4j
-public class ImplementedRestStatusHealthIndicator {
+public class RestImplementedStatusHealthIndicator {
 
     // markers for implemented and not implemented endpoints
     public static final String IMPLEMENTED = "Ready for Test";
