@@ -31,6 +31,8 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
@@ -1068,6 +1070,112 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                         URI.create(createdLocation[0]).toURL(), token, req);
         ProblemAssertUtil.assertEquals(
                 ApplicationListError.INVALID_FOR_CLOSE_DURATION.getCode(), resp);
+    }
+
+    @Test
+    public void givenInvalidRequestNoResultEntries_whenUpdateForClose_then400() throws Exception {
+        String[] createdLocation = createAppListUsingRestApi();
+
+        // create an entry
+        createEntry(UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])));
+
+        // close the app list
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.INVALID_FOR_CLOSE_NOT_RESULTED.getCode(), resp);
+    }
+
+    @Test
+    public void givenInvalidRequestNoOfficials_whenUpdateForClose_then400() throws Exception {
+        String[] createdLocation = createAppListUsingRestApi();
+
+        // create an entry
+        EntryGetDetailDto entryGetSummaryDto =
+                createEntry(
+                        UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
+                        (dto) -> dto.setOfficials(List.of()));
+
+        // create the result for the entry
+        createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
+
+        // close the app list
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.INVALID_FOR_CLOSE_NO_OFFICIAL.getCode(), resp);
+    }
+
+    @Test
+    public void givenInvalidRequestNotPaid_whenUpdateForClose_then400() throws Exception {
+        String[] createdLocation = createAppListUsingRestApi();
+
+        // create an entry
+        EntryGetDetailDto entryGetSummaryDto =
+                createEntry(
+                        UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
+                        (dto) -> {
+                            FeeStatus feeStatus = new FeeStatus();
+                            feeStatus.setStatusDate(LocalDate.now());
+
+                            // not paid so should fail
+                            feeStatus.setPaymentStatus(PaymentStatus.UNDERTAKEN);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        });
+
+        // create the result for the entry
+        createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
+
+        // close the app list
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID.getCode(), resp);
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
