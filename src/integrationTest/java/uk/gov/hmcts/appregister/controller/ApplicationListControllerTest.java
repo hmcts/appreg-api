@@ -29,7 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
@@ -857,50 +856,5 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
 
         // sanity: remaining printed entry should include the first created one
         assertThat(returnedEntryIds).contains(entry1.getId());
-    }
-
-    @Test
-    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
-        var token = getToken();
-
-        // create list
-        UUID listId = createApplicationList(token, uniquePrefix("update-open-closed-list"));
-
-        // update list to closed
-        var updateReq =
-                new ApplicationListUpdateDto()
-                        .date(TEST_DATE2)
-                        .time(TEST_TIME2)
-                        .description("Updated description")
-                        .status(ApplicationListStatus.CLOSED)
-                        .courtLocationCode(VALID_COURT_CODE2)
-                        .durationHours(1)
-                        .durationMinutes(0);
-
-        Response updateResp =
-                restAssuredClient.executePutRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, updateReq);
-        updateResp.then().statusCode(HttpStatus.OK.value());
-
-        // attempt to update back to open
-        var reopenReq =
-                new ApplicationListUpdateDto()
-                        .date(TEST_DATE2)
-                        .time(TEST_TIME2)
-                        .description("Updated description")
-                        .status(ApplicationListStatus.OPEN)
-                        .durationHours(1)
-                        .durationMinutes(0);
-
-        Response reopenResp =
-                restAssuredClient.executePutRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, reopenReq);
-        reopenResp.then().statusCode(HttpStatus.BAD_REQUEST.value());
-
-        // Assert failure is due to invalid list status for update
-        ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
-                problemDetail.getType().toString());
     }
 }

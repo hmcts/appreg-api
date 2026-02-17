@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.http.HttpHeaders;
 import org.instancio.Instancio;
@@ -74,6 +75,18 @@ public abstract class AbstractApplicationListTest extends AbstractSecurityContro
      *     the etag for optimistic locking at the api level
      */
     protected String[] createAppListUsingRestApi() throws Exception {
+        return createAppListUsingRestApi(null);
+    }
+
+    /**
+     * A utility method to create a new record.
+     *
+     * @param modifyCallback A callback that allows to modify the payload.
+     * @return A two part array:- [0] - the uuid that can be used to fetch or update the record [1]-
+     *     the etag for optimistic locking at the api level
+     */
+    protected String[] createAppListUsingRestApi(Consumer<ApplicationListCreateDto> modifyCallback)
+            throws Exception {
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))
@@ -89,6 +102,10 @@ public abstract class AbstractApplicationListTest extends AbstractSecurityContro
                         .courtLocationCode(VALID_COURT_CODE)
                         .durationHours(2)
                         .durationMinutes(30);
+
+        if (modifyCallback != null) {
+            modifyCallback.accept(req);
+        }
 
         Response resp = restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, req);
         return new String[] {resp.header(HttpHeaders.LOCATION), resp.header(HttpHeaders.ETAG)};
