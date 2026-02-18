@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.controller.testutils;
+package uk.gov.hmcts.appregister.testutils;
 
 import io.restassured.specification.RequestSpecification;
 import java.util.Optional;

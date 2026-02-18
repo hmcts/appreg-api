@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -26,7 +27,7 @@ import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
  * the data is reset before each test.
  */
 // load the local profile that will bootstrap the base line data
-@ActiveProfiles({"int"})
+@ActiveProfiles({"testing", "int"})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Slf4j
 @EnableWireMock({@ConfigureWireMock(port = 0)})
@@ -39,6 +40,8 @@ public abstract class BasePostgresIntegrationTest {
     @Autowired protected DatabasePersistance persistance;
 
     @LocalServerPort protected String port;
+
+    @Autowired private Environment environment;
 
     @BeforeEach
     public void beforeEachTest() {
