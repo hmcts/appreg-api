@@ -193,10 +193,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:cjaCode IS NULL OR cja.code=:cjaCode)
                     AND (:applicantOrganisation IS NULL OR ana.name
                             LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
-                            AND ana.code='AP')
+                            AND ana.code='NA')
                     AND (:applicantSurname IS NULL OR ana.surname
                              LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
-                            AND ana.code='AP')
+                            AND ana.code='NA')
                     AND (:standardApplicantCode IS NULL OR sa.applicantCode
                             LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
                     AND (:status IS NULL OR :status=ale.applicationList.status)

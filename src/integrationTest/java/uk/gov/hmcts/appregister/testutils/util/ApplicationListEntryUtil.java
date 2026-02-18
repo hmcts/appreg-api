@@ -32,11 +32,21 @@ import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 
 public final class ApplicationListEntryUtil {
 
+    /** Creates a new ApplicationListEntry with a standard applicant. */
     public static ApplicationListEntry saveApplicationListEntry(
             EntityManager entityManager,
             DatabasePersistance persistance,
             ApplicationList list,
             Short sequenceNumber) {
+        return saveApplicationListEntry(entityManager, persistance, list, sequenceNumber, true);
+    }
+
+    public static ApplicationListEntry saveApplicationListEntry(
+            EntityManager entityManager,
+            DatabasePersistance persistance,
+            ApplicationList list,
+            Short sequenceNumber,
+            boolean withStandardApplicant) {
         ResolutionCode resolutionCode = new ResolutionCodeTestData().someComplete();
         entityManager.persist(resolutionCode);
         entityManager.flush();
@@ -45,8 +55,18 @@ public final class ApplicationListEntryUtil {
                 new AppListEntryTestData().createApplicationListEntry(list, sequenceNumber);
 
         listEntryData.setAccountNumber("1234567890");
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
-        listEntryData.setStandardApplicant(standardApplicant);
+
+        if (withStandardApplicant) {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            listEntryData.setStandardApplicant(standardApplicant);
+        } else {
+            NameAddress nameAddress = new NameAddressTestData().someComplete();
+
+            // let this name address be a person not an organisation
+            nameAddress.setName(null);
+
+            listEntryData.setAnamedaddress(nameAddress);
+        }
         NameAddress nameAddress = new NameAddressTestData().someComplete();
         listEntryData.setRnameaddress(nameAddress);
 
