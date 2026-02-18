@@ -112,14 +112,15 @@ public class ApplicationListEntryAssertion {
                 ApplicantAssertion.validatePerson(
                         entryCreateUpdateDto.getRespondent().getPerson(),
                         applicationListEntry.getRnameaddress());
+
+                Assertions.assertEquals(
+                        entryCreateUpdateDto.getRespondent().getPerson().getDateOfBirth(),
+                        applicationListEntry.getRnameaddress().getDateOfBirth());
             } else {
                 ApplicantAssertion.validateOrganisation(
                         entryCreateUpdateDto.getRespondent().getOrganisation(),
                         applicationListEntry.getRnameaddress());
             }
-            Assertions.assertEquals(
-                    entryCreateUpdateDto.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
         }
 
         // make sure the code of the applicant and respondent are set correctly in the database
@@ -280,9 +281,6 @@ public class ApplicationListEntryAssertion {
                         response.getRespondent().getOrganisation(),
                         applicationListEntry.getRnameaddress());
             }
-            Assertions.assertEquals(
-                    response.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
         }
 
         // validate the response fields

@@ -20,6 +20,8 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public abstract class ApplicantMapper {
 
+    private static final String COMMA_DELIMITER = ", ";
+
     /**
      * Maps the applicant to a name address.
      *
@@ -173,12 +175,10 @@ public abstract class ApplicantMapper {
     public NameAddress toRespondentNameAddress(Respondent applicant) {
         if (applicant != null && applicant.getPerson() != null) {
             NameAddress nameAddress = toPerson(applicant.getPerson());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+            nameAddress.setDateOfBirth(applicant.getPerson().getDateOfBirth());
             return nameAddress;
         } else if (applicant != null && applicant.getOrganisation() != null) {
-            NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
-            return nameAddress;
+            return toOrganisation(applicant.getOrganisation());
         } else {
             return null;
         }
@@ -217,4 +217,67 @@ public abstract class ApplicantMapper {
     @Mapping(target = "dateOfBirth", ignore = true)
     @Mapping(target = "dmsId", ignore = true)
     public abstract NameAddress toApplicantEntity(StandardApplicant standardApplicant);
+
+    /**
+     * Decides the name that should take precedent based on an organisation or person.
+     *
+     * @param sa The standard applicant to use. This can be null.
+     * @param applicant The person to use. This can be null.
+     * @return The name that should be used for the applicant or respondent depending. If both are
+     *     present then the organisation name will be used. If a person, the name is in the format
+     *     title, forename1, surname. If an organisation the name is used. If all else fails then an
+     *     empty string is returned.
+     */
+    public String getNameForApplicant(StandardApplicant sa, NameAddress applicant) {
+        if (sa != null) {
+
+            // if the name is not set i.e. not an org then
+            // use the title, forename and surname
+            if (sa.getName() == null) {
+                if (sa.getApplicantTitle() != null) {
+                    return sa.getApplicantSurname()
+                            + COMMA_DELIMITER
+                            + sa.getApplicantForename1()
+                            + COMMA_DELIMITER
+                            + sa.getApplicantTitle();
+                } else {
+                    return sa.getApplicantSurname() + COMMA_DELIMITER + sa.getApplicantForename1();
+                }
+            } else {
+                return sa.getName();
+            }
+        } else if (applicant != null) {
+            return getNameForNameAddress(applicant);
+        }
+
+        // return an empty string
+        return "";
+    }
+
+    /**
+     * gets the name for the name address based on whether the name address has an organisation or
+     * not.
+     *
+     * @param nameAddress The name address to get the name. This can be null.
+     * @return The name string for the address in the format title, forename1, surname if a person
+     *     or the name if an organisation. If all else fails then an empty string is returned.
+     */
+    public String getNameForNameAddress(NameAddress nameAddress) {
+        String name = "";
+        if (nameAddress != null && nameAddress.getName() == null) {
+            if (nameAddress.getTitle() != null) {
+                name =
+                        nameAddress.getSurname()
+                                + COMMA_DELIMITER
+                                + nameAddress.getForename1()
+                                + COMMA_DELIMITER
+                                + nameAddress.getTitle();
+            } else {
+                name = nameAddress.getSurname() + COMMA_DELIMITER + nameAddress.getForename1();
+            }
+        } else if (nameAddress != null) {
+            name = nameAddress.getName();
+        }
+        return name;
+    }
 }

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntryPrintProjectionUtil.applicationListEntryPrintProjection;
-import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONCODE1_CODE;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONCODE1_TITLE;
 import static uk.gov.hmcts.appregister.util.TestConstants.APPLICATIONLISTENTRY1_ACCOUNTNUMBER;
@@ -99,6 +98,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
 class ApplicationListEntryMapperTest {
 
@@ -113,17 +113,25 @@ class ApplicationListEntryMapperTest {
 
     @Test
     void testToSummaryModel_provideValidData_validModelGenerated() {
-        var uuid = UUID.randomUUID();
-        var sequenceNumber = 1;
-        var accountNumber = "1234567890";
-        var applicant = "Mustafa's Org";
-        var respondent = "Ahmed, Mustafa, His Majesty";
+        NameAddress applicant = new NameAddress();
+        applicant.setName("Mustafa's Org");
+
+        NameAddress respondent = new NameAddress();
+        respondent.setTitle("His Majesty");
+        respondent.setForename1("Ahmed");
+        respondent.setSurname("Mustafa");
+
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
         var feeRequired = true;
         var result = "APPC";
+
+        var uuid = UUID.randomUUID();
+        short sequenceNumber = 1;
+        var accountNumber = "1234567890";
+
         var projection =
-                applicationListEntrySummaryProjection()
+                ApplicationListEntrySummaryProjectionBuilder.builder()
                         .uuid(uuid)
                         .sequenceNumber(sequenceNumber)
                         .accountNumber(accountNumber)
@@ -136,6 +144,7 @@ class ApplicationListEntryMapperTest {
                         .build();
 
         var mapper = new ApplicationListEntryMapperImpl();
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
         var model = mapper.toSummaryDto(projection);
 
         assertApplicationListEntrySummary(
@@ -143,8 +152,8 @@ class ApplicationListEntryMapperTest {
                 sequenceNumber,
                 model,
                 accountNumber,
-                applicant,
-                respondent,
+                "Mustafa's Org",
+                "Mustafa, Ahmed, His Majesty",
                 postCode,
                 applicationTitle,
                 feeRequired,
@@ -153,39 +162,32 @@ class ApplicationListEntryMapperTest {
 
     @Test
     void testToSummaryModelList_provideValidData_validModelListGenerated() {
-        var uuid1 = UUID.randomUUID();
-        var sequenceNumber1 = 1;
-        var accountNumber1 = "1234567890";
-        var applicant1 = "Mustafa's Org";
-        var respondent1 = "Ahmed, Mustafa, His Majesty";
-        var postCode1 = "SW1A 1AA";
-        var applicationTitle1 = "Request for Certificate of Refusal to State a Case (Civil)";
-        var feeRequired1 = true;
-        var result1 = "APPC";
-        var projection1 =
-                applicationListEntrySummaryProjection()
-                        .uuid(uuid1)
-                        .sequenceNumber(sequenceNumber1)
-                        .accountNumber(accountNumber1)
-                        .applicant(applicant1)
-                        .respondent(respondent1)
-                        .postCode(postCode1)
-                        .applicationTitle(applicationTitle1)
-                        .feeRequired(feeRequired1)
-                        .result(result1)
-                        .build();
+        NameAddress applicant1 = new NameAddress();
+        applicant1.setName("Mustafa's Org");
 
-        var uuid2 = UUID.randomUUID();
-        var sequenceNumber2 = 2;
+        NameAddress respondent1 = new NameAddress();
+        respondent1.setTitle("His Majesty");
+        respondent1.setSurname("Mustafa");
+        respondent1.setForename1("Ahmed");
+
+        NameAddress applicant2 = new NameAddress();
+        applicant2.setName("Mustafa's Org");
+
+        NameAddress respondent2 = new NameAddress();
+        respondent2.setForename1("Sarah");
+        respondent2.setSurname("Johnson");
+
         var accountNumber2 = "1234567891";
-        var applicant2 = "AW62958 300919";
-        var respondent2 = "Johnson, Sarah";
         var postCode2 = "EH1 3QR";
         var applicationTitle2 = "Copy documents";
         var feeRequired2 = false;
         var result2 = "RESP";
+
+        var uuid2 = UUID.randomUUID();
+        short sequenceNumber2 = 2;
+
         var projection2 =
-                applicationListEntrySummaryProjection()
+                ApplicationListEntrySummaryProjectionBuilder.builder()
                         .uuid(uuid2)
                         .sequenceNumber(sequenceNumber2)
                         .accountNumber(accountNumber2)
@@ -198,6 +200,30 @@ class ApplicationListEntryMapperTest {
                         .build();
 
         var mapper = new ApplicationListEntryMapperImpl();
+        mapper.setApplicantMapper(new ApplicantMapperImpl());
+
+        var uuid1 = UUID.randomUUID();
+        short sequenceNumber1 = 1;
+        var accountNumber1 = "1234567890";
+
+        var postCode1 = "SW1A 1AA";
+        var applicationTitle1 = "Request for Certificate of Refusal to State a Case (Civil)";
+        var feeRequired1 = true;
+        var result1 = "APPC";
+
+        var projection1 =
+                ApplicationListEntrySummaryProjectionBuilder.builder()
+                        .uuid(uuid1)
+                        .sequenceNumber(sequenceNumber1)
+                        .accountNumber(accountNumber1)
+                        .applicant(applicant1)
+                        .respondent(respondent1)
+                        .postCode(postCode1)
+                        .applicationTitle(applicationTitle1)
+                        .feeRequired(feeRequired1)
+                        .result(result1)
+                        .build();
+
         List<ApplicationListEntrySummary> list =
                 mapper.toSummaryDtoList(List.of(projection1, projection2));
 
@@ -208,8 +234,8 @@ class ApplicationListEntryMapperTest {
                 sequenceNumber1,
                 list.getFirst(),
                 accountNumber1,
-                applicant1,
-                respondent1,
+                "Mustafa's Org",
+                "Mustafa, Ahmed, His Majesty",
                 postCode1,
                 applicationTitle1,
                 feeRequired1,
@@ -220,8 +246,8 @@ class ApplicationListEntryMapperTest {
                 sequenceNumber2,
                 list.getLast(),
                 accountNumber2,
-                applicant2,
-                respondent2,
+                "Mustafa's Org",
+                "Johnson, Sarah",
                 postCode2,
                 applicationTitle2,
                 feeRequired2,
@@ -304,7 +330,8 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(PERSON4_SURNAME, applicant.getName().getSurname());
         Assertions.assertEquals(MRS, respondent.getName().getTitle());
         Assertions.assertEquals(PERSON5_SURNAME, respondent.getName().getSurname());
-        Assertions.assertEquals(PERSON5_DATE_OF_BIRTH, dto.getRespondent().getDateOfBirth());
+        Assertions.assertEquals(
+                PERSON5_DATE_OF_BIRTH, dto.getRespondent().getPerson().getDateOfBirth());
 
         assertApplicationDetailsEqual(dto);
     }
@@ -1174,7 +1201,7 @@ class ApplicationListEntryMapperTest {
                 entity.getAddress4(), respondent.getPerson().getContactDetails().getAddressLine4());
         Assertions.assertEquals(
                 entity.getAddress5(), respondent.getPerson().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
+        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getPerson().getDateOfBirth());
     }
 
     private void validateRespondentOrganisation(NameAddress entity, Respondent respondent) {
@@ -1208,6 +1235,5 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(
                 entity.getAddress5(),
                 respondent.getOrganisation().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
     }
 }
