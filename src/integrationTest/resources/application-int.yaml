@@ -5,13 +5,6 @@ spring:
         jwt:
           jwk-set-uri: http://localhost:${wiremock.server.port}/discovery/v2.0/keys
 
-  # Flyway configuration for local environment. Useful for integration testing.
-  flyway:
-    enabled: true
-    locations: classpath:/migrations,/data_population_test
-    default-schema: ${spring.jpa.properties.hibernate.default_schema}
-    mixed: true
-    baseline-on-migrate: true
 logging:
   level:
     org.springframework.security: TRACE

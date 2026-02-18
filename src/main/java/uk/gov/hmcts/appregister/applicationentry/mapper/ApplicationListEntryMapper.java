@@ -56,6 +56,20 @@ public abstract class ApplicationListEntryMapper {
 
     @Autowired OfficialMapper officialMapper;
 
+    @Mapping(
+            target = "applicant",
+            expression =
+                    "java(org.openapitools.jackson.nullable."
+                            + "JsonNullable.of("
+                            + "applicantMapper"
+                            + ".getNameForApplicant("
+                            + "summaryProjection.getStandardApplicant(), summaryProjection.getApplicant())))")
+    @Mapping(
+            target = "respondent",
+            expression =
+                    "java(org.openapitools.jackson.nullable."
+                            + "JsonNullable.of("
+                            + "applicantMapper.getNameForNameAddress(summaryProjection.getRespondent())))")
     public abstract ApplicationListEntrySummary toSummaryDto(
             ApplicationListEntrySummaryProjection summaryProjection);
 
