@@ -38,7 +38,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.testutils.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -53,6 +52,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.testutils.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;

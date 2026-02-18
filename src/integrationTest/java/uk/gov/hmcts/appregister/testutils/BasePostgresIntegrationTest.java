@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.core.env.Environment;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -32,6 +33,7 @@ import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 @Slf4j
 @EnableWireMock({@ConfigureWireMock(port = 0)})
 @AutoConfigureMockMvc
+@DirtiesContext
 public abstract class BasePostgresIntegrationTest {
     protected static PostgresCommand postgresCommand = new PostgresCommand();
 
