@@ -303,7 +303,8 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(PERSON4_SURNAME, applicant.getName().getSurname());
         Assertions.assertEquals(MRS, respondent.getName().getTitle());
         Assertions.assertEquals(PERSON5_SURNAME, respondent.getName().getSurname());
-        Assertions.assertEquals(PERSON5_DATE_OF_BIRTH, dto.getRespondent().getDateOfBirth());
+        Assertions.assertEquals(
+                PERSON5_DATE_OF_BIRTH, dto.getRespondent().getPerson().getDateOfBirth());
 
         assertApplicationDetailsEqual(dto);
     }
@@ -1173,7 +1174,7 @@ class ApplicationListEntryMapperTest {
                 entity.getAddress4(), respondent.getPerson().getContactDetails().getAddressLine4());
         Assertions.assertEquals(
                 entity.getAddress5(), respondent.getPerson().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
+        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getPerson().getDateOfBirth());
     }
 
     private void validateRespondentOrganisation(NameAddress entity, Respondent respondent) {
@@ -1207,6 +1208,5 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(
                 entity.getAddress5(),
                 respondent.getOrganisation().getContactDetails().getAddressLine5());
-        Assertions.assertEquals(entity.getDateOfBirth(), respondent.getDateOfBirth());
     }
 }
