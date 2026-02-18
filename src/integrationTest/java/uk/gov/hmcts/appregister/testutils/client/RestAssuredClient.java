@@ -73,10 +73,17 @@ public class RestAssuredClient {
             TokenAndJwksKey token,
             UnaryOperator<RequestSpecification> requestSpecificationConsumer)
             throws URISyntaxException {
-        return requestSpecificationConsumer
-                .apply(given().header("Authorization", "Bearer " + token.getToken()))
-                .get(url)
-                .andReturn();
+        RequestSpecification requestSpecification = given();
+
+        if (token != null) {
+            requestSpecification = given().header("Authorization", "Bearer " + token.getToken());
+        }
+
+        if (requestSpecificationConsumer != null) {
+            requestSpecificationConsumer.apply(requestSpecification);
+        }
+
+        return requestSpecification.get(url).andReturn();
     }
 
     /**

@@ -115,13 +115,15 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 applicationListEntrySummaryProjectionsToAssertAgainst
                         .getContent()
                         .getFirst()
-                        .getApplicant());
+                        .getStandardApplicant()
+                        .getName());
         assertEquals(
                 data.getRnameaddress().getName(),
                 applicationListEntrySummaryProjectionsToAssertAgainst
                         .getContent()
                         .getFirst()
-                        .getRespondent());
+                        .getRespondent()
+                        .getName());
         assertEquals(
                 data.getRnameaddress().getPostcode(),
                 applicationListEntrySummaryProjectionsToAssertAgainst
