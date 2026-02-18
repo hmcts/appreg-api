@@ -42,7 +42,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
-@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE})
+@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE})
 public class AppListEntryResolution extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -56,22 +56,26 @@ public class AppListEntryResolution extends BaseChangeableEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ale_ale_id", nullable = false)
+    @Audit(action = {CrudEnum.CREATE})
     private ApplicationListEntry applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rc_rc_id", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private ResolutionCode resolutionCode;
 
     @Column(name = "al_entry_resolution_wording", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String resolutionWording;
 
     @Column(name = "al_entry_resolution_officer", nullable = false)
     @Size(max = 1000)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String resolutionOfficer;
 
     @Column(name = "version", nullable = false)
     @Version
-    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE})
     private Long version;
 
     @Column(name = "user_name")
