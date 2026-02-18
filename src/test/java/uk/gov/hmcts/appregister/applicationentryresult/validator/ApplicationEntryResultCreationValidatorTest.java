@@ -123,7 +123,7 @@ class ApplicationEntryResultCreationValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());
@@ -141,7 +141,7 @@ class ApplicationEntryResultCreationValidatorTest {
                         AppRegistryException.class, () -> validator.validate(payload));
 
         Assertions.assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT_FOR_CREATE
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT
                         .getCode()
                         .getAppCode(),
                 ex.getCode().getCode().getAppCode());
