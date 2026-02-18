@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.core.env.Environment;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -42,7 +41,7 @@ public abstract class BasePostgresIntegrationTest {
     @Autowired protected DatabasePersistance persistance;
 
     @LocalServerPort protected String port;
-    
+
     @BeforeEach
     public void beforeEachTest() {
         reset.resetSequences();
