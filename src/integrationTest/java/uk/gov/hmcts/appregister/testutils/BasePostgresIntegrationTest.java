@@ -42,9 +42,7 @@ public abstract class BasePostgresIntegrationTest {
     @Autowired protected DatabasePersistance persistance;
 
     @LocalServerPort protected String port;
-
-    @Autowired private Environment environment;
-
+    
     @BeforeEach
     public void beforeEachTest() {
         reset.resetSequences();
