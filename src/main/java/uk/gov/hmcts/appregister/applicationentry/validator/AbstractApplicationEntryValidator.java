@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -456,100 +457,133 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private void validateRespondentDetails(T validatable) {
         if (getRespondent(validatable) != null) {
             if (getRespondent(validatable).getOrganisation() != null) {
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getOrganisation().getName());
+                var organisation = getRespondent(validatable).getOrganisation();
 
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine1());
+                        Map.of("field", "name", "value", organisation.getName()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine2());
+                        Map.of(
+                                "field",
+                                "addressLine1",
+                                "value",
+                                organisation.getContactDetails().getAddressLine1()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine3());
+                        Map.of(
+                                "field",
+                                "addressLine2",
+                                "value",
+                                organisation.getContactDetails().getAddressLine2()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine4());
+                        Map.of(
+                                "field",
+                                "addressLine3",
+                                "value",
+                                organisation.getContactDetails().getAddressLine3()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getAddressLine5());
+                        Map.of(
+                                "field",
+                                "addressLine4",
+                                "value",
+                                organisation.getContactDetails().getAddressLine4()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getEmail());
+                        Map.of(
+                                "field",
+                                "addressLine5",
+                                "value",
+                                organisation.getContactDetails().getAddressLine5()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getMobile());
+                        Map.of(
+                                "field",
+                                "email",
+                                "value",
+                                organisation.getContactDetails().getEmail()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getPhone());
+                        Map.of(
+                                "field",
+                                "mobile",
+                                "value",
+                                organisation.getContactDetails().getMobile()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getPostcode());
+                        Map.of(
+                                "field",
+                                "phone",
+                                "value",
+                                organisation.getContactDetails().getPhone()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of(
+                                "field",
+                                "postcode",
+                                "value",
+                                organisation.getContactDetails().getPostcode()));
 
             } else if (getRespondent(validatable).getPerson() != null) {
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getName().getFirstForename());
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getName().getSecondForename());
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getName().getThirdForename());
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getName().getSurname());
-                disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getName().getTitle());
+                var person = getRespondent(validatable).getPerson();
 
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine1());
+                        Map.of(
+                                "field",
+                                "firstForename",
+                                "value",
+                                person.getName().getFirstForename()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine2());
+                        Map.of(
+                                "field",
+                                "secondForename",
+                                "value",
+                                person.getName().getSecondForename()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine3());
+                        Map.of(
+                                "field",
+                                "thirdForename",
+                                "value",
+                                person.getName().getThirdForename()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine4());
+                        Map.of("field", "surname", "value", person.getName().getSurname()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable)
-                                .getPerson()
-                                .getContactDetails()
-                                .getAddressLine5());
+                        Map.of("field", "title", "value", person.getName().getTitle()));
+
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getContactDetails().getEmail());
+                        Map.of(
+                                "field",
+                                "addressLine1",
+                                "value",
+                                person.getContactDetails().getAddressLine1()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getContactDetails().getMobile());
+                        Map.of(
+                                "field",
+                                "addressLine2",
+                                "value",
+                                person.getContactDetails().getAddressLine2()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getContactDetails().getPhone());
+                        Map.of(
+                                "field",
+                                "addressLine3",
+                                "value",
+                                person.getContactDetails().getAddressLine3()));
                 disallowedCharactersRegexValidator.validate(
-                        getRespondent(validatable).getPerson().getContactDetails().getPostcode());
+                        Map.of(
+                                "field",
+                                "addressLine4",
+                                "value",
+                                person.getContactDetails().getAddressLine4()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of(
+                                "field",
+                                "addressLine5",
+                                "value",
+                                person.getContactDetails().getAddressLine5()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of("field", "email", "value", person.getContactDetails().getEmail()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of("field", "mobile", "value", person.getContactDetails().getMobile()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of("field", "phone", "value", person.getContactDetails().getPhone()));
+                disallowedCharactersRegexValidator.validate(
+                        Map.of(
+                                "field",
+                                "postcode",
+                                "value",
+                                person.getContactDetails().getPostcode()));
             }
         }
     }

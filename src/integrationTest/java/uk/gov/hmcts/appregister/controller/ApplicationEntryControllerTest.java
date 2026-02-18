@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +19,8 @@ import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
@@ -35,6 +39,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -42,6 +47,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -1310,6 +1316,104 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 "Premises Date=extra field not a date", problemDetail.getDetail().trim());
     }
 
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "\"keith\"",
+                "$am",
+                "^red",
+                "*en",
+                "[adam",
+                "craig]",
+                "{james",
+                "harry}",
+                "phil;",
+                "tom#",
+                "mike~",
+                "mustafa=",
+                "jason<",
+                "bredan>"
+            })
+    public void givenAnInvalidCreateEntryRequest_whenAFieldHasInvalidCharacter_400IsReturned(
+            String input) throws Exception {
+
+        // setup the payload
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        Method[] fullnameMethods = FullName.class.getDeclaredMethods();
+        List<Method> filteredFullNameMethods =
+                Arrays.stream(fullnameMethods).filter(p -> p.getName().startsWith("Set")).toList();
+
+        Method[] contactDetailsMethods = ContactDetails.class.getDeclaredMethods();
+        List<Method> filteredContactDetailsMethods =
+                Arrays.stream(contactDetailsMethods)
+                        .filter(p -> p.getName().startsWith("Set"))
+                        .toList();
+
+        for (Method method : filteredFullNameMethods) {
+
+            method.invoke(entryCreateDto.getRespondent().getPerson().getName(), input);
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpecCreate =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT
+                                            + "/"
+                                            + getOpenApplicationListId()
+                                            + "/entries"),
+                            tokenGenerator.fetchTokenForRole(),
+                            entryCreateDto);
+            responseSpecCreate.then().statusCode(400);
+            ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
+
+            Assertions.assertEquals(
+                    CommonAppError.REGEX_VALIDATION_MISMATCH_ERROR.getCode().getType().get(),
+                    problemDetail.getType());
+            Assertions.assertEquals("Regex Validation Mismatch", problemDetail.getTitle());
+            var field =
+                    Character.toLowerCase(method.getName().substring(3).charAt(0))
+                            + method.getName().substring(4);
+            Assertions.assertEquals(
+                    "field=%s\nvalue=%s".formatted(field, input), problemDetail.getDetail().trim());
+        }
+
+        for (Method method : filteredContactDetailsMethods) {
+            method.invoke(entryCreateDto.getRespondent().getPerson().getContactDetails(), input);
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpecCreate =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(
+                                    CREATE_ENTRY_CONTEXT
+                                            + "/"
+                                            + getOpenApplicationListId()
+                                            + "/entries"),
+                            tokenGenerator.fetchTokenForRole(),
+                            entryCreateDto);
+            responseSpecCreate.then().statusCode(400);
+            ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
+
+            Assertions.assertEquals(
+                    CommonAppError.REGEX_VALIDATION_MISMATCH_ERROR.getCode().getType().get(),
+                    problemDetail.getType());
+            Assertions.assertEquals("Regex Validation Mismatch", problemDetail.getTitle());
+            var field =
+                    Character.toLowerCase(method.getName().substring(3).charAt(0))
+                            + method.getName().substring(4);
+            Assertions.assertEquals(
+                    "field=%s\nvalue=%s".formatted(field, input), problemDetail.getDetail().trim());
+        }
+    }
+
     @StabilityTest
     public void givenCreatedEntrySoftDeletedViaRepository_whenSearchingEntries_thenEntryIsExcluded()
             throws Exception {
@@ -1565,6 +1669,76 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                         null,
                         AppListEntryAuditOperation.DELETE_FEE_ENTRY.getType().name(),
                         AppListEntryAuditOperation.DELETE_FEE_ENTRY.getEventName()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+            strings = {
+                "\"keith\"",
+                "$am",
+                "^red",
+                "*en",
+                "[adam",
+                "craig]",
+                "{james",
+                "harry}",
+                "phil;",
+                "tom#",
+                "mike~",
+                "mustafa=",
+                "jason<",
+                "bredan>"
+            })
+    public void givenAFailureUpdate_whenUpdatingRespondentWithInvalidCharacter_400Returned(
+            String input) throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Method[] fullnameMethods = FullName.class.getDeclaredMethods();
+        List<Method> filteredFullNameMethods =
+                Arrays.stream(fullnameMethods).filter(p -> p.getName().startsWith("Set")).toList();
+
+        Method[] contactDetailsMethods = ContactDetails.class.getDeclaredMethods();
+        List<Method> filteredContactDetailsMethods =
+                Arrays.stream(contactDetailsMethods)
+                        .filter(p -> p.getName().startsWith("Set"))
+                        .toList();
+
+        for (Method method : filteredFullNameMethods) {
+            // setup the payload
+            EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+
+            method.invoke(entryUpdateDto.getRespondent().getPerson().getName(), input);
+
+            // test the functionality
+            Response responseSpecUpdate =
+                    restAssuredClient.executePutRequest(
+                            HeaderUtil.getLocation(responseSpecCreate),
+                            tokenGenerator.fetchTokenForRole(),
+                            entryUpdateDto);
+
+            // assert the response
+            responseSpecUpdate.then().statusCode(400);
+        }
+
+        for (Method method : filteredContactDetailsMethods) {
+            // setup the payload
+            EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+            method.invoke(entryUpdateDto.getRespondent().getPerson().getName(), input);
+
+            // test the functionality
+            Response responseSpecUpdate =
+                    restAssuredClient.executePutRequest(
+                            HeaderUtil.getLocation(responseSpecCreate),
+                            tokenGenerator.fetchTokenForRole(),
+                            entryUpdateDto);
+
+            // assert the response
+            responseSpecUpdate.then().statusCode(400);
+        }
     }
 
     @Test
