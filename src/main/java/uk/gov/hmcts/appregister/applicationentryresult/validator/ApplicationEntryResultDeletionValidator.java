@@ -1,37 +1,48 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
+import java.util.UUID;
 import java.util.function.BiFunction;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
 /**
  * Validator responsible for ensuring that an application list, list entry, and entry result exist
  * and are in a valid state before a delete operation for an entry result is performed.
  */
-@RequiredArgsConstructor
 @Component
 @Slf4j
 public class ApplicationEntryResultDeletionValidator
-        implements Validator<ListEntryResultDeleteArgs, ListEntryResultDeleteValidationSuccess> {
+        extends AbstractApplicationEntryResultValidator<
+                ListEntryResultDeleteArgs, ListEntryResultDeleteValidationSuccess> {
 
-    private final ApplicationListRepository applicationListRepository;
-    private final ApplicationListEntryRepository applicationListEntryRepository;
     private final AppListEntryResolutionRepository appListEntryResultRepository;
+
+    public ApplicationEntryResultDeletionValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationListEntryRepository applicationListEntryRepository,
+            ResolutionCodeRepository resolutionCodeRepository,
+            AppListEntryResolutionRepository appListEntryResultRepository) {
+
+        super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
+        this.appListEntryResultRepository = appListEntryResultRepository;
+    }
 
     @Override
     public void validate(ListEntryResultDeleteArgs args) {
-        validate(args, (req, success) -> null);
+        validate(args, (a, s) -> null);
+        log.debug("Validated deletion for entry result {}", args.resultId());
     }
 
     @Override
@@ -39,32 +50,21 @@ public class ApplicationEntryResultDeletionValidator
             ListEntryResultDeleteArgs args,
             BiFunction<ListEntryResultDeleteArgs, ListEntryResultDeleteValidationSuccess, R>
                     createSupplier) {
-        ApplicationList applicationList =
-                applicationListRepository
-                        .findByUuid(args.listId())
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                ApplicationListEntryResultError
-                                                        .ENTRY_RESULT_LIST_NOT_FOUND,
-                                                "No application list found for UUID '%s'"
-                                                        .formatted(args.listId())));
 
-        validateList(applicationList);
+        return super.validate(args, createSupplier);
+    }
 
-        applicationListEntryRepository
-                .findActiveByUuidAndApplicationListUuid(args.entryId(), args.listId())
-                .orElseThrow(
-                        () ->
-                                new AppRegistryException(
-                                        AppListEntryError.LIST_ENTRY_NOT_FOUND,
-                                        ("No application list entry was found for UUID '%s' that belongs to the"
-                                                        + " specified list")
-                                                .formatted(args.entryId())));
+    @Override
+    protected ListEntryResultDeleteValidationSuccess getResult(
+            ResolutionCode code,
+            WordingTemplateSentence wordingSentence,
+            ApplicationList applicationList,
+            ApplicationListEntry applicationListEntry,
+            ListEntryResultDeleteArgs dto) {
 
         AppListEntryResolution appListEntryResult =
                 appListEntryResultRepository
-                        .findByUuidAndApplicationList_Uuid(args.resultId(), args.entryId())
+                        .findByUuidAndApplicationList_Uuid(dto.resultId(), dto.entryId())
                         .orElseThrow(
                                 () ->
                                         new AppRegistryException(
@@ -72,26 +72,24 @@ public class ApplicationEntryResultDeletionValidator
                                                         .LIST_ENTRY_RESULT_NOT_FOUND,
                                                 ("No application list entry result was found for UUID '%s' that"
                                                                 + " belongs to the specified entry")
-                                                        .formatted(args.resultId())));
+                                                        .formatted(dto.resultId())));
 
-        // Build success object and pass it into the caller-supplied function
-        ListEntryResultDeleteValidationSuccess success =
-                new ListEntryResultDeleteValidationSuccess();
-        success.setAppListEntryResult(appListEntryResult);
-
-        return createSupplier.apply(args, success);
+        return new ListEntryResultDeleteValidationSuccess(
+                wordingSentence, code, applicationList, applicationListEntry, appListEntryResult);
     }
 
-    private void validateList(ApplicationList list) {
-        if (!list.isOpen()) {
-            String msg =
-                    "Cannot delete the entry result because the following list is not OPEN: list (uuid=%s)"
-                            .formatted(list.getUuid());
+    @Override
+    protected String getResultCode(ListEntryResultDeleteArgs validatable) {
+        return null;
+    }
 
-            log.warn("List validation failed. {}", msg);
+    @Override
+    protected UUID getApplicationListUuid(ListEntryResultDeleteArgs validatable) {
+        return validatable.listId();
+    }
 
-            throw new AppRegistryException(
-                    ApplicationListEntryResultError.INVALID_ENTRY_RESULT_LIST_STATUS, msg);
-        }
+    @Override
+    protected UUID getApplicationListEntryUuid(ListEntryResultDeleteArgs validatable) {
+        return validatable.entryId();
     }
 }
