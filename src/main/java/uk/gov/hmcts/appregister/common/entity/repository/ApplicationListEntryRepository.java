@@ -188,16 +188,17 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                               FROM AppListEntryResolution sub
                               WHERE sub.applicationList = ale)
             WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
+<<<<<<< HEAD
                     AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
                             LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
                     AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
                     AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
-                            AND ana.code='AP')
+                            AND ana.code='NA')
                     AND (:applicantSurname IS NULL OR LOWER(ana.surname)
                              LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
-                            AND ana.code='AP')
+                            AND ana.code='NA')
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)

@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
@@ -29,7 +30,7 @@ public abstract class ApplicantMapper {
      */
     public NameAddress toApplicant(Applicant applicant) {
         NameAddress nameAddress = toApplicantNameAddress(applicant);
-        nameAddress.setCode(NameAddress.APPLICANT_CODE);
+        nameAddress.setCode(NameAddressCodeType.APPLICANT);
         return nameAddress;
     }
 
@@ -191,7 +192,7 @@ public abstract class ApplicantMapper {
      */
     public NameAddress toRespondent(Respondent respondent) {
         NameAddress nameAddress = toRespondentNameAddress(respondent);
-        nameAddress.setCode(NameAddress.RESPONDENT_CODE);
+        nameAddress.setCode(NameAddressCodeType.RESPONDENT);
         return nameAddress;
     }
 
@@ -201,7 +202,7 @@ public abstract class ApplicantMapper {
      * @param standardApplicant The standard applicant
      * @return The name address entity representation
      */
-    @Mapping(target = "code", source = "applicantCode")
+    @Mapping(target = "code", ignore = true)
     @Mapping(target = "title", source = "applicantTitle")
     @Mapping(target = "forename1", source = "applicantForename1")
     @Mapping(target = "forename2", source = "applicantForename2")

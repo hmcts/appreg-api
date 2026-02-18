@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
@@ -21,7 +23,10 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.constraint.ValidNameAddress;
+import uk.gov.hmcts.appregister.common.entity.converter.NameAddressConverter;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 
 /**
  * Represents a Name and Address entity mapped to the "name_address" table in the database.
@@ -35,9 +40,8 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
+@ValidNameAddress
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
-    public static final String RESPONDENT_CODE = "RE";
-    public static final String APPLICANT_CODE = "AP";
 
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)
@@ -48,7 +52,9 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private Long id;
 
     @Column(name = "code")
-    private String code;
+    @Convert(converter = NameAddressConverter.class)
+    @NotNull
+    private NameAddressCodeType code;
 
     @Column(name = "name")
     private String name;
@@ -133,10 +139,10 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     }
 
     public boolean isApplicant() {
-        return code != null && code.startsWith(APPLICANT_CODE);
+        return code != null && code == NameAddressCodeType.APPLICANT;
     }
 
     public boolean isRespondent() {
-        return code != null && code.startsWith(RESPONDENT_CODE);
+        return code != null && code == NameAddressCodeType.RESPONDENT;
     }
 }

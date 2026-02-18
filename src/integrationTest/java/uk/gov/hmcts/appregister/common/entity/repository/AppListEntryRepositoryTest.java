@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
@@ -486,7 +488,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Johnson");
         assertThat(page0.getContent().get(0).getRnameAddress().getName())
                 .isEqualTo("Sarah Johnson");
-        assertThat(page0.getContent().get(0).getRnameAddress().getCode()).isEqualTo("RE");
+        assertThat(page0.getContent().get(0).getRnameAddress().getCode())
+                .isEqualTo(NameAddressCodeType.RESPONDENT);
         assertThat(page0.getContent().get(0).getRnameAddress().getPostcode()).isEqualTo("XY9 8ZZ");
         assertThat(page0.getContent().get(0).getRnameAddress().getAddress1())
                 .isEqualTo("12 The Avenue");
@@ -535,7 +538,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Turner");
 
         assertThat(page0.getContent().get(0).getRnameAddress().getName()).isEqualTo("Jack Turner");
-        assertThat(page0.getContent().get(0).getRnameAddress().getCode()).isEqualTo("RE");
+        assertThat(page0.getContent().get(0).getRnameAddress().getCode())
+                .isEqualTo(NameAddressCodeType.RESPONDENT);
         assertThat(page0.getContent().get(0).getRnameAddress().getPostcode()).isEqualTo("AB11 2CD");
 
         assertThat(page0.getContent().get(0).getTitle()).isEqualTo("Appeal by Case Stated (Crime)");
@@ -778,6 +782,41 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // Then: the result should be empty because the entry is soft-deleted
         assertTrue(
                 foundAfterDelete.isEmpty(), "Soft-deleted entries should be excluded from results");
+    }
+
+    @Test
+    public void testSearchForFilterByApplicantSurname() {
+        // Given: an application list and an entry
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry savedEntry =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+
+        saveApplicationListEntry(entityManager, persistance, list, (short) 1, false);
+
+        // When: calling the repository method for the surname of the first applicant
+        Page<ApplicationListEntryGetSummaryProjection> applicationListEntryList =
+                applicationListEntryRepository.searchForGetSummary(
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        savedEntry.getAnamedaddress().getSurname(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        Pageable.ofSize(10));
+
+        // Then: the entry added is the entry returned
+        Assertions.assertThat(applicationListEntryList.getPageable().getPageSize() == 1);
+        Assertions.assertThat(savedEntry.getUuid().toString())
+                .isEqualTo(applicationListEntryList.stream().findFirst().get().getUuid());
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {
