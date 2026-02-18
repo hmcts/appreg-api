@@ -172,12 +172,10 @@ public abstract class ApplicantMapper {
     public NameAddress toRespondentNameAddress(Respondent applicant) {
         if (applicant != null && applicant.getPerson() != null) {
             NameAddress nameAddress = toPerson(applicant.getPerson());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+            nameAddress.setDateOfBirth(applicant.getPerson().getDateOfBirth());
             return nameAddress;
         } else if (applicant != null && applicant.getOrganisation() != null) {
-            NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
-            return nameAddress;
+            return toOrganisation(applicant.getOrganisation());
         } else {
             return null;
         }

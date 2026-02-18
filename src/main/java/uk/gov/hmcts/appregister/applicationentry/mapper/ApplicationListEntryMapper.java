@@ -45,6 +45,7 @@ import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -73,7 +74,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "respondent.person.name.firstForename", source = "respondentForename1")
     @Mapping(target = "respondent.person.name.secondForename", source = "respondentForename2")
     @Mapping(target = "respondent.person.name.thirdForename", source = "respondentForename3")
-    @Mapping(target = "respondent.dateOfBirth", source = "respondentDateOfBirth")
+    @Mapping(target = "respondent.person.dateOfBirth", source = "respondentDateOfBirth")
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
     @Mapping(target = "officials", ignore = true)
@@ -227,7 +228,7 @@ public abstract class ApplicationListEntryMapper {
 
         if (respondentEntityType == EntityType.PERSON) {
             if (dto.getRespondent().getPerson() == null) {
-                dto.getRespondent().setPerson(new Person());
+                dto.getRespondent().setPerson(new RespondentPerson());
             }
 
             dto.getRespondent()
@@ -535,14 +536,13 @@ public abstract class ApplicationListEntryMapper {
                 respondentDto.setOrganisation(organisation);
 
             } else {
-                Person person = new Person();
+                RespondentPerson person = new RespondentPerson();
                 FullName fullName = applicantMapper.toFullName(applicant);
                 person.setContactDetails(contactDetails);
                 person.setName(fullName);
+                person.setDateOfBirth(applicant.getDateOfBirth());
                 respondentDto.setPerson(person);
             }
-
-            respondentDto.setDateOfBirth(applicant.getDateOfBirth());
         }
 
         return respondentDto;
