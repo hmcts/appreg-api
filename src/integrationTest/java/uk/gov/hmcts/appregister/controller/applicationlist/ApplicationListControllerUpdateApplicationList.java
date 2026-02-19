@@ -248,12 +248,12 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                         eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                    TableNames.APPICATION_LIST,
-                    "application_list_date",
-                    null,
-                    TEST_DATE.toString(),
-                    operation,
-                    eventName));
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        null,
+                        TEST_DATE.toString(),
+                        operation,
+                        eventName));
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,

@@ -72,7 +72,7 @@ public class PageableMapper {
         } else {
             sortableFields = new ArrayList<>();
             SortableFieldMapper sortableField =
-                SortableFieldMapper.of(
+                    SortableFieldMapper.of(
                                     defaultSortProperty.getApiValue()
                                             + ","
                                             + defaultDirection.name())

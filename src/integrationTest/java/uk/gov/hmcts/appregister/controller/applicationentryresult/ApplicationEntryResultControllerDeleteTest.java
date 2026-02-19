@@ -48,14 +48,14 @@ public class ApplicationEntryResultControllerDeleteTest
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                    TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                    "version",
-                    null,
-                    null,
-                    AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
                                 .getType()
                                 .name(),
-                    AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
+                        AppListEntryResultAuditOperation.DELETE_APP_LIST_ENTRY_RESULT
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(

@@ -13,12 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 import uk.gov.hmcts.appregister.common.audit.event.OperationStatus;
 import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
-
 import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
@@ -77,7 +75,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         DataAudit dataAudit =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndOldValue(
-                            TableNames.APPICATION_LIST, "id", pkId.toString())
+                                TableNames.APPICATION_LIST, "id", pkId.toString())
                         .get();
         Assertions.assertNotNull(dataAudit);
 

@@ -78,14 +78,14 @@ public class ApplicationEntryResultControllerUpdateTest
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
-                    TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
-                    "al_entry_resolution_wording",
-                    null,
-                    null,
-                    AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        null,
+                        null,
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
                                 .getType()
                                 .name(),
-                    AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
+                        AppListEntryResultAuditOperation.UPDATE_APP_LIST_ENTRY_RESULT
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
