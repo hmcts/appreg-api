@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence.with;
 
 import jakarta.persistence.EntityManager;
@@ -13,10 +14,15 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.Setter;
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
@@ -37,6 +43,7 @@ import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
+import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -49,10 +56,13 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
-class ApplicationEntryResultServiceImplTest {
+public class ApplicationEntryResultServiceImplTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
@@ -112,6 +122,70 @@ class ApplicationEntryResultServiceImplTest {
                         applicationListEntryResultEntityMapper,
                         entityManager,
                         userProvider);
+    }
+
+    @Test
+    void createAnEntryResult() {
+        // setup the user that all tests will represent
+        when(userProvider.getEmail()).thenReturn("myemail@domain.com");
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        ResultCreateDto resultCreateDto =
+                Instancio.of(ResultCreateDto.class).withSettings(settings).create();
+
+        // setup the template to be used
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Date of Hearing");
+        substitution.setValue("My Substituted Value");
+
+        resultCreateDto.setWordingFields(List.of(substitution));
+
+        // setup the validation success
+        ApplicationList applicationList = Mockito.mock(ApplicationList.class);
+        ApplicationListEntry applicationListEntry = Mockito.mock(ApplicationListEntry.class);
+        ResolutionCode resolutionCode = Mockito.mock(ResolutionCode.class);
+
+        ListEntryResultCreateValidationSuccess success =
+                ListEntryResultCreateValidationSuccess.builder()
+                        .applicationList(applicationList)
+                        .applicationListEntry(applicationListEntry)
+                        .resolutionCode(resolutionCode)
+                        .wordingSentence(
+                                WordingTemplateSentence.with(
+                                        "This is a template {TEXT|Date of Hearing|20}"))
+                        .build();
+        creationValidator.setSuccess(success);
+
+        AppListEntryResolution entryToSave = new AppListEntryResolution();
+        entryToSave.setId(23232L);
+        entryToSave.setVersion(2L);
+
+        when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
+                        resultCreateDto,
+                        "This is a template {My Substituted Value}",
+                        resolutionCode,
+                        applicationListEntry,
+                        "myemail@domain.com"))
+                .thenReturn(entryToSave);
+
+        PayloadForCreateEntryResult<ResultCreateDto> payload =
+                new PayloadForCreateEntryResult(
+                        UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
+
+        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+
+        // setup the response of the call
+        ResultGetDto resultGetDto =
+                Instancio.of(ResultGetDto.class).withSettings(settings).create();
+        when(applicationListEntryResultMapper.toResultGetDto(entryToSave)).thenReturn(resultGetDto);
+
+        // make the call
+        MatchResponse<ResultGetDto> matchResponse = service.create(payload);
+
+        // assert the call
+        Assertions.assertNotNull(matchResponse);
+        Assertions.assertNotNull(matchResponse.getEtag());
+        Assertions.assertEquals(resultGetDto, matchResponse.getPayload());
     }
 
     @Test
