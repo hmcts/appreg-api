@@ -1,21 +1,14 @@
 package uk.gov.hmcts.appregister.controller.applicationlist;
 
-import static org.instancio.Select.field;
-
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.apache.http.HttpHeaders;
-import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -26,17 +19,15 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public abstract class AbstractApplicationListTest extends AbstractSecurityControllerTest {
+public abstract class AbstractApplicationListTest extends BaseIntegration {
 
     protected static final String WEB_CONTEXT = "application-lists";
     protected static final String GET_ENTRIES_CONTEXT = "application-list-entries";
@@ -275,57 +266,5 @@ public abstract class AbstractApplicationListTest extends AbstractSecurityContro
     // --- GET_ALL ---------------------------------------------------------------------
     protected static String uniquePrefix(String base) {
         return base + " :: " + UUID.randomUUID();
-    }
-
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        ApplicationListUpdateDto uploadPayload =
-                Instancio.of(ApplicationListUpdateDto.class)
-                        .withSettings(settings)
-                        .ignore(field(ApplicationListUpdateDto::getCourtLocationCode))
-
-                        // Instancio does not honour Max and Min annotations
-                        .ignore(field(ApplicationListUpdateDto::getDurationHours))
-                        .ignore(field(ApplicationListUpdateDto::getDurationMinutes))
-                        .create();
-
-        uploadPayload.setCjaCode(null);
-        uploadPayload.setDurationHours(1);
-        uploadPayload.setDurationMinutes(1);
-
-        var validPayload =
-                new ApplicationListCreateDto()
-                        .date(TEST_DATE)
-                        .time(TEST_TIME)
-                        .description("sec-matrix")
-                        .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(VALID_COURT_CODE);
-
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.POST)
-                        .payload(validPayload)
-                        .successRole(RoleEnum.USER)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.POST)
-                        .payload(validPayload)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
-                        .method(HttpMethod.PUT)
-                        .payload(uploadPayload)
-                        .successRole(RoleEnum.USER)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()))
-                        .method(HttpMethod.PUT)
-                        .payload(uploadPayload)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
     }
 }

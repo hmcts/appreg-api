@@ -21,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.controller.applicationlist.AbstractApplicationListTest;
+import uk.gov.hmcts.appregister.controller.applicationlist.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -34,7 +35,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
-import uk.gov.hmcts.appregister.testutils.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -52,21 +52,13 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
     // --- Seeded reference data ----------------------------------------------------
     private static final String VALID_COURT_CODE = "CCC003";
     private static final String VALID_COURT_NAME = "Cardiff Crown Court";
-    private static final String VALID_COURT_CODE2 = "BCC006";
 
     private static final String VALID_CJA_CODE = "CD";
-    private static final String VALID_CJA_CODE2 = "CE";
 
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
 
-    private static final String UNKNOWN_COURT_CODE = "ZZZ999";
-    private static final String UNKNOWN_CJA_CODE = "99";
-
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
-
-    private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
-    private static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
 
     @Autowired private ApplicationListRepository applicationListRepository;
 
