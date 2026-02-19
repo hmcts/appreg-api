@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntryPrintProjectionUtil.applicationListEntryPrintProjection;
-import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_SURNAME;
@@ -71,6 +70,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
@@ -101,6 +101,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -948,16 +949,23 @@ public class ApplicationListServiceImplTest {
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
         var uuid = UUID.randomUUID();
-        var sequenceNumber = 1;
+        short sequenceNumber = 1;
         var accountNumber = "1234567890";
-        var applicant = "Mustafa's Org";
-        var respondent = "Ahmed, Mustafa, His Majesty";
+
+        NameAddress applicant = new NameAddress();
+        applicant.setName("Mustafa's Org");
+
+        NameAddress respondent = new NameAddress();
+        applicant.setSurname("Ahmed");
+        applicant.setForename1("Mustafa");
+        applicant.setTitle("His Majesty");
+
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
         var feeRequired = true;
         var result = "APPC";
         var projection =
-                applicationListEntrySummaryProjection()
+                ApplicationListEntrySummaryProjectionBuilder.builder()
                         .uuid(uuid)
                         .sequenceNumber(sequenceNumber)
                         .accountNumber(accountNumber)

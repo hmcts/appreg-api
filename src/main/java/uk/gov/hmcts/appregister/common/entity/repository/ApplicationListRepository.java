@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 
@@ -126,7 +127,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
         FROM ApplicationList al
         LEFT JOIN al.cja cja
         WHERE (:status IS NULL OR al.status = :status)
-          AND (:courtCode IS NULL OR al.courtCode = :courtCode)
+          AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS STRING)))
           AND (:cja IS NULL OR al.cja = :cja)
           AND (al.date = COALESCE(:onDate, al.date))
           AND (
@@ -137,9 +138,9 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
                 )
               )
           AND (:description IS NULL OR lower(al.description)
-                  LIKE concat('%', lower(cast(:description AS string)), '%'))
+                  LIKE concat('%', lower(cast(:description AS string)), '%') ESCAPE '\\')
           AND (:otherDesc IS NULL OR lower(al.otherLocation)
-                  LIKE concat('%', lower(cast(:otherDesc AS string)), '%'))
+                  LIKE concat('%', lower(cast(:otherDesc AS string)), '%') ESCAPE '\\')
           AND (al.deleted IS NULL OR al.deleted <> 'Y')
         """)
     Page<ApplicationListSummaryProjection> findAllByFilter(
@@ -150,7 +151,7 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             @Param("start") LocalTime start,
             @Param("end") LocalTime end,
             @Param("wrapsMidnight") boolean wrapsMidnight,
-            @Param("description") String description,
-            @Param("otherDesc") String otherDesc,
+            @LikeParam @Param("description") String description,
+            @LikeParam @Param("otherDesc") String otherDesc,
             Pageable pageable);
 }

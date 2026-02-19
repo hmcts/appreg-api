@@ -18,8 +18,7 @@ public class PostgresCommand implements Command {
     private static final String PASSWORD = "password";
     private static final String DATABASE_NAME = "appreg-db";
 
-    private final PostgreSQLContainer<?> container =
-            new PostgreSQLContainer<>("postgres:17-alpine");
+    private PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:17-alpine");
 
     {
         container
@@ -28,7 +27,8 @@ public class PostgresCommand implements Command {
                 .withUsername(USERNAME)
                 .withCopyToContainer(
                         MountableFile.forHostPath("./init/001_init.sql"),
-                        "/docker-entrypoint-initdb.d/init.sql");
+                        "/docker-entrypoint-initdb.d/init.sql")
+                .withReuse(false);
     }
 
     @Override
@@ -39,6 +39,11 @@ public class PostgresCommand implements Command {
     @Override
     public boolean isSuccess() {
         return false;
+    }
+
+    /** stops and closes the container. */
+    public void stop() {
+        container.stop();
     }
 
     @Override
@@ -67,18 +72,5 @@ public class PostgresCommand implements Command {
     @Override
     public boolean isRunning() {
         return container.isRunning();
-    }
-
-    public void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", () -> container.getJdbcUrl());
-        registry.add("spring.datasource.username", () -> container.getUsername());
-        registry.add("spring.datasource.password", () -> container.getPassword());
-    }
-
-    public static void main(String[] args) throws Exception {
-        PostgresCommand postgresCommand = new PostgresCommand();
-        postgresCommand.start(null);
-        System.out.println("Postgres started on port: " + postgresCommand.getPortForContainer());
-        System.in.read();
     }
 }

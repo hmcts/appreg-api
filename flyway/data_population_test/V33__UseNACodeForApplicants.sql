@@ -1,0 +1,1 @@
+UPDATE NAME_ADDRESS SET code='NA' WHERE code='AP'

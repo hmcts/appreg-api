@@ -21,7 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.controller.applicationlist.AbstractApplicationListTest;
-import uk.gov.hmcts.appregister.controller.testutils.GetApplicationListFilterSpecification;
+import uk.gov.hmcts.appregister.controller.applicationlist.GetApplicationListFilterSpecification;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -51,21 +51,13 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
     // --- Seeded reference data ----------------------------------------------------
     private static final String VALID_COURT_CODE = "CCC003";
     private static final String VALID_COURT_NAME = "Cardiff Crown Court";
-    private static final String VALID_COURT_CODE2 = "BCC006";
 
     private static final String VALID_CJA_CODE = "CD";
-    private static final String VALID_CJA_CODE2 = "CE";
 
     private static final String VALID_OTHER_LOCATION = "CJA_CD_DESCRIPTION";
 
-    private static final String UNKNOWN_COURT_CODE = "ZZZ999";
-    private static final String UNKNOWN_CJA_CODE = "99";
-
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     private static final LocalTime TEST_TIME = LocalTime.of(10, 30);
-
-    private static final LocalDate TEST_DATE2 = LocalDate.of(2025, 10, 19);
-    private static final LocalTime TEST_TIME2 = LocalTime.of(11, 30);
 
     @Autowired private ApplicationListRepository applicationListRepository;
 
@@ -365,6 +357,7 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
                         GetApplicationListFilterSpecification.builder()
                                 .description(Optional.of(prefix))
                                 .courtLocationCode(Optional.of(VALID_COURT_CODE))
+                                .description(Optional.of("court-filter"))
                                 .build(),
                         null);
 
@@ -401,6 +394,7 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
                         GetApplicationListFilterSpecification.builder()
                                 .description(Optional.of(prefix))
                                 .cjaCode(Optional.of(VALID_CJA_CODE))
+                                .otherLocationDescription(Optional.of(VALID_CJA_CODE))
                                 .build(),
                         null);
 
@@ -856,5 +850,64 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
 
         // sanity: remaining printed entry should include the first created one
         assertThat(returnedEntryIds).contains(entry1.getId());
+    }
+
+    @Test
+    @DisplayName("GET by id with full data set")
+    void givenGetById_whenGet_then200AndAllDataIsReturned() throws Exception {
+        // setup a record for deletion
+        String prefix = uniquePrefix("soft-deleted");
+        ApplicationListGetDetailDto dto =
+                createWithCourt(
+                        prefix + " - Zebra", LocalDate.of(2025, 10, 15), LocalTime.of(10, 30));
+        UUID id = dto.getId();
+
+        // create a single entry
+        final EntryGetDetailDto entryGetDetailDto = createEntry(dto.getId());
+
+        var userToken =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequest(getLocalUrl(WEB_CONTEXT + "/" + id), userToken);
+
+        // make the assertions on the response
+        resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
+        ApplicationListGetDetailDto page = resp.as(ApplicationListGetDetailDto.class);
+
+        assertThat(page.getEntriesSummary().size()).isEqualTo(1);
+        Assertions.assertTrue(page.getDescription().startsWith("soft-deleted ::"));
+        Assertions.assertEquals(ApplicationListStatus.OPEN, page.getStatus());
+        Assertions.assertEquals(1, page.getEntriesCount());
+        Assertions.assertEquals("CCC003", page.getCourtCode());
+        Assertions.assertEquals("Cardiff Crown Court", page.getCourtName());
+        Assertions.assertEquals(1, page.getEntriesSummary().size());
+        Assertions.assertEquals(
+                "Copy documents", page.getEntriesSummary().get(0).getApplicationTitle());
+        Assertions.assertEquals(
+                entryGetDetailDto.getAccountNumber(),
+                page.getEntriesSummary().get(0).getAccountNumber().get());
+        Assertions.assertEquals(1, page.getEntriesSummary().get(0).getSequenceNumber());
+        Assertions.assertEquals(
+                entryGetDetailDto.getRespondent().getPerson().getContactDetails().getPostcode(),
+                page.getEntriesSummary().get(0).getPostCode().get());
+        Assertions.assertEquals(
+                page.getEntriesSummary().get(0).getApplicant().get(),
+                entryGetDetailDto.getApplicant().getPerson().getName().getSurname()
+                        + ", "
+                        + entryGetDetailDto.getApplicant().getPerson().getName().getFirstForename()
+                        + ", "
+                        + entryGetDetailDto.getApplicant().getPerson().getName().getTitle());
+
+        Assertions.assertEquals(
+                page.getEntriesSummary().get(0).getRespondent().get(),
+                entryGetDetailDto.getRespondent().getPerson().getName().getSurname()
+                        + ", "
+                        + entryGetDetailDto.getRespondent().getPerson().getName().getFirstForename()
+                        + ", "
+                        + entryGetDetailDto.getRespondent().getPerson().getName().getTitle());
     }
 }
