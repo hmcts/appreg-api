@@ -19,7 +19,6 @@ public class ImplementedRestfulTest {
                     "POST /application-lists/{listId}/entries/bulk-upload",
                     "DELETE /application-lists/{listId}/entries/{entryId}",
                     "GET /application-lists/{listId}/entries",
-                    "PUT /application-lists/{listId}/entries/{entryId}/results/{resultId}",
                     "GET /application-lists/{listId}/entries/{entryId}/results",
                     "GET /jobs/{jobId}",
                     "POST /reports/private-prosecutors-index/jobs",
@@ -36,18 +35,24 @@ public class ImplementedRestfulTest {
         Map<String, Object> implemented = new RestImplementedStatusHealthIndicator().status();
 
         Assertions.assertTrue(implemented.size() > 0);
-        Assertions.assertEquals(
-                UNIMPLEMENTED_ENDPOINTS.size(),
-                countUnimplementedEndpoints(implemented),
-                "The number of unimplemented endpoints has changed. "
-                        + " Please update the list of unimplemented endpoints accordingly.");
 
         // assert against the unimplemented endpoints.
         for (String endpoint : UNIMPLEMENTED_ENDPOINTS) {
             Assertions.assertEquals(
                     RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED,
-                    implemented.get(endpoint));
+                    implemented.get(endpoint),
+                    endpoint
+                            + " should be unimplemented. "
+                            + "Please remove from the list if this endpoint is implemented.");
         }
+
+        // make sure the count of unimplemented is
+        // as expected
+        Assertions.assertEquals(
+                UNIMPLEMENTED_ENDPOINTS.size(),
+                countUnimplementedEndpoints(implemented),
+                "The number of unimplemented endpoints has changed. "
+                        + " Please update the list of unimplemented endpoints accordingly.");
     }
 
     private int countUnimplementedEndpoints(Map<String, Object> implemented) {
