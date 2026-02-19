@@ -18,11 +18,17 @@ public class ControllerLogAspect extends AbstractOperationDurationAspect {
         return invokeOperationMDC(
                 (op) -> {
                     // Dont do anything here as we want to log
-                    // the duration in the after callback
+                    // the duration in the after callback only
                 },
                 (name, duration, result) -> {
                     log.debug("Duration of {} operation {} ms", name, duration);
-                    log.info("Finished Executing {} ", getLogStringForInputs(pjp));
+                    if (result != null) {
+                        log.debug(
+                                "Finish: Executed and returned {}",
+                                getLogStringForOutputObject(result));
+                    } else {
+                        log.debug("Finish: Executed and returned null");
+                    }
                 },
                 pjp);
     }
