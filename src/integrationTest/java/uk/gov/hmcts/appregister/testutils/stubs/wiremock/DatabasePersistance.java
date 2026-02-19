@@ -124,6 +124,10 @@ public class DatabasePersistance {
             save(entry.getRnameaddress());
         }
 
+        if (entry.getAnamedaddress() != null) {
+            save(entry.getAnamedaddress());
+        }
+
         return applicationListEntryRepository.saveAndFlush(entry);
     }
 

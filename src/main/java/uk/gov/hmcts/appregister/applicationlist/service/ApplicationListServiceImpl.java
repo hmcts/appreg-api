@@ -206,7 +206,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         // Fetch results from the repository using pagination
         Page<ApplicationListEntrySummaryProjection> dbPage =
                 aleRepository.findSummariesById(id, pageable);
-
         List<ApplicationListEntrySummary> summaries = new ArrayList<>();
 
         // Map each projection to a summary model

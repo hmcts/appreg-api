@@ -31,7 +31,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
-        // gets the core exception code that we used to apply the application specific code
+        // getss the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
         log.error("A app register exception occurred", exception);

@@ -433,6 +433,34 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         return new CriminalJusticeAreaGetDto(code, description);
     }
 
+    @StabilityTest
+    public void givenASuccessfulFilterPartialDescription_whenSearch_thenSuccessResponse()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new CriminalJusticeAreaFilter(Optional.empty(), Optional.of("_c")),
+                        new OpenApiPageMetaData());
+
+        CriminalJusticeAreaPage page = responseSpec.as(CriminalJusticeAreaPage.class);
+
+        // make sure the order response marries with the request data
+        responseSpec.then().statusCode(200);
+        Assertions.assertEquals(2, page.getContent().size());
+        Assertions.assertEquals("CD", page.getContent().get(0).getCode());
+        Assertions.assertEquals("CE", page.getContent().get(1).getCode());
+    }
+
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
