@@ -14,10 +14,12 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -1033,6 +1035,41 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
         resp.then().header("Etag", org.hamcrest.Matchers.notNullValue());
     }
 
+    @Test
+    public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
+        String[] createdLocation =
+                createAppListUsingRestApi((dto) -> dto.durationHours(null).durationMinutes(null));
+
+        // create an entry
+        EntryGetDetailDto entryGetSummaryDto =
+                createEntryForClose(
+                        UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])));
+
+        // create the result for the entry
+        createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
+
+        // close the app list
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req);
+        ProblemAssertUtil.assertEquals(
+                ApplicationListError.INVALID_FOR_CLOSE_DURATION.getCode(), resp);
+    }
+
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
     @Test
     void givenValidRequest_whenUpdateWithCjaWithMatch_then201() throws Exception {
@@ -1269,5 +1306,50 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         ProblemAssertUtil.assertEquals(
                 ApplicationListError.APPLICATION_LIST_NOT_FOUND.getCode(), resp);
+    }
+
+    @Test
+    public void givenEntryUpdate_whenOpeningClosedList_then400() throws Exception {
+        var token = getToken();
+
+        // create list
+        UUID listId = createApplicationList(token, uniquePrefix("update-open-closed-list"));
+
+        // update list to closed
+        var updateReq =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Updated description")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response updateResp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, updateReq);
+        updateResp.then().statusCode(HttpStatus.OK.value());
+
+        // attempt to update back to open
+        var reopenReq =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Updated description")
+                        .status(ApplicationListStatus.OPEN)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response reopenResp =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + listId), token, reopenReq);
+        reopenResp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        // Assert failure is due to invalid list status for update
+        ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
+                problemDetail.getType().toString());
     }
 }

@@ -240,26 +240,22 @@ tasks.register('smoke', Test) {
 }
 
 def commonJacocoExclusionsIntegration = [
-        "**/uk/gov/hmcts/appregister/generated/**/*.class",
-
-        // We need to reduce the code under mappers by using MapStruct
-        "**/uk/gov/hmcts/appregister/**/mapper/*.class",
-
-        // Do not include entity tests
-        "**/uk/gov/hmcts/appregister/**/entity/*.class"
+  "**/uk/gov/hmcts/appregister/generated/**/*.class"
 ]
 
 def commonJacocoExclusionsUnit = [
-        "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
-        "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/**/api/*.class",
+  "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
+  "**/uk/gov/hmcts/appregister/generated/**/*.class",
+  "**/uk/gov/hmcts/appregister/**/api/*.class",
+  "**/uk/gov/hmcts/appregister/**/audit/*.class",
 
-        // These are packages in which I do not envisage tests. These would be tested more appropriately in
-        // integration tests or other types of tests
-        "**/uk/gov/hmcts/appregister/**/controller/*.class",
-        "**/uk/gov/hmcts/appregister/**/dao/*.class",
-        "**/uk/gov/hmcts/appregister/**/config/*.class",
-        "**/uk/gov/hmcts/appregister/**/entity/*.class",
+  // These are packages in which I do not envisage tests. These would be tested more appropriately in
+  // integration tests or other types of tests
+  "**/uk/gov/hmcts/appregister/**/controller/*.class",
+  "**/uk/gov/hmcts/appregister/**/dao/*.class",
+  "**/uk/gov/hmcts/appregister/**/config/*.class",
+  "**/uk/gov/hmcts/appregister/**/entity/*.class",
+  "**/uk/gov/hmcts/appregister/**/entity/repository/*.class",
 ]
 
 tasks.register('jacocoUnitReport', JacocoReport) {
