@@ -59,9 +59,6 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "notes", "size must be between 1 and 4000");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "caseReference", "size must be between 1 and 15");
-
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "caseReference", "size must be between 1 and 15");
     }
 
     @Test
@@ -87,7 +84,7 @@ public class ApplicationEntryDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(5, constraintValidator.size());
+        Assertions.assertEquals(6, constraintValidator.size());
 
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "accountNumber", "size must be between 1 and 20");
@@ -97,9 +94,6 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "accountNumber", "size must be between 1 and 20");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "notes", "size must be between 1 and 4000");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "caseReference", "size must be between 1 and 15");
-
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "caseReference", "size must be between 1 and 15");
     }

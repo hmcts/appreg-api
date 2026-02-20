@@ -21,8 +21,7 @@ public class ConstraintAssertion {
             String propertyValue) {
         List<ConstraintViolation<Object>> constraintViolation =
                 listConstraint.stream()
-                        .filter(
-                                c -> c.getPropertyPath().toString().equals(propertyName))
+                        .filter(c -> c.getPropertyPath().toString().equals(propertyName))
                         .toList();
 
         // assert
