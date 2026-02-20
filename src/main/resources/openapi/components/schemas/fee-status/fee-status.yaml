@@ -11,6 +11,7 @@ properties:
     description: The reference code used to identify the payment.
     example: "PAY-001"
     maxLength: 12
+    minLength: 1
 
   paymentStatus:
     $ref: './payment-status.yaml'

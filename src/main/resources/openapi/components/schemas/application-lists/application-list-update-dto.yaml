@@ -26,28 +26,31 @@ properties:
     description: Human-readable description of the Application List (e.g. session title or purpose).
     example: "Morning session for traffic-related applications"
     maxLength: 200
+    minLength: 1
 
   status:
     $ref: './application-list-status.yaml'
-
 
   otherLocationDescription:
     type: string
     description: Free-text location if not using a standard court.
     example: "Temporary Courtroom at Town Hall"
     maxLength: 200
+    minLength: 1
 
   courtLocationCode:
     type: string
     description: Code that identifies the Court Location.
     example: "LOC123"
     maxLength: 10
+    minLength: 1
 
   cjaCode:
     type: string
     description: Criminal Justice Area code.
     example: "CJ"
     maxLength: 2
+    minLength: 1
 
   durationHours:
     type: integer

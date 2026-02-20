@@ -26,6 +26,7 @@ properties:
     description: Case-insensitive contains match on the Application List description.
     example: "morning session"
     maxLength: 200
+    minLength: 1
 
   location:
     $ref: '../common/location.yaml'

@@ -6,7 +6,9 @@ properties:
     type: string
     description: Field key for substitution into the template.
     example: "account-number"
+    minLength: 1
   value:
     type: string
     description: The field value to substitute into the template key
     example: "1234"
+    minLength: 1

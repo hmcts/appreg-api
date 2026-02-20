@@ -10,6 +10,7 @@ properties:
     description: Code that identifies the Result Code.
     example: "RC-001"
     maxLength: 10
+    minLength: 1
 
   wordingFields:
     type: array

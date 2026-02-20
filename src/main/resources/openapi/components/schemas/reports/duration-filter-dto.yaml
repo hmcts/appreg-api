@@ -14,12 +14,14 @@ properties:
     format: date
     description: Inclusive start date (YYYY-MM-DD).
     example: "2025-10-01"
+    minLength: 1
 
   dateTo:
     type: string
     format: date
     description: Inclusive end date (YYYY-MM-DD).
     example: "2025-10-31"
+    minLength: 1
 
   location:
     $ref: '../common/location.yaml'

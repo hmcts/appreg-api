@@ -21,11 +21,13 @@ properties:
     format: date
     description: Inclusive end date (YYYY-MM-DD).
     example: "2025-10-31"
+    minLength: 1
 
   username:
     type: string
     description: Exact username to audit.
     example: "jsmith"
+    minLength: 1
 
   activityTypes:
     type: array

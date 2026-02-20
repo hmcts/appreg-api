@@ -8,15 +8,18 @@ properties:
       description: Court Location code (exact match).
       example: "LOC123"
       maxLength: 10
+      minLength: 1
 
   otherLocationDescription:
       type: string
       description: Other location description (case-insensitive contains match).
       example: "town hall"
       maxLength: 200
+      minLength: 1
 
   cjaCode:
       type: string
       description: Criminal Justice Area code (exact match).
       example: "52"
       maxLength: 2
+      minLength: 1
