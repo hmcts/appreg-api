@@ -1,7 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -86,6 +88,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -96,6 +99,7 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -135,8 +139,6 @@ public class ApplicationEntryServiceImplTest {
     private UpdateApplicationEntryValidationSuccess updateSuccess;
 
     private GetEntryValidationSuccess getEntryValidationSuccess;
-
-    private GetApplicationListEntriesValidator getApplicationListEntriesValidator;
 
     // A null match provider that returns a null etag
     private static MatchProvider NULL_MATCH_PROVIDER =
@@ -195,6 +197,10 @@ public class ApplicationEntryServiceImplTest {
     private GetApplicationEntryValidator getEntryValidator =
             new DummyGetApplicationEntryValidator(
                     applicationListRepository, applicationListEntryRepository);
+
+    @Spy
+    private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
+        new DummyGetApplicationListEntriesValidator(applicationListRepository);
 
     @BeforeEach
     void setUp() {
@@ -589,6 +595,77 @@ public class ApplicationEntryServiceImplTest {
         verify(feeRepository, times(0)).findByIdsBetweenDate(notNull(), notNull());
     }
 
+    @Test
+    void testGetApplicationListEntries_success() {
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(1);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
+            mock(ApplicationListEntryGetSummaryProjection.class);
+
+        Page<ApplicationListEntryGetSummaryProjection> dbPage
+            = new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
+
+        doAnswer(inv -> null)
+            .when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
+
+        when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
+                        any(), eq(mockPage)))
+                .thenReturn(dbPage);
+
+        PayloadGetEntryInList payloadGetEntryInList =  PayloadGetEntryInList.builder()
+                .listId(applicationList.getUuid())
+                .build();
+
+        // test
+        EntryPage response =
+                service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+
+        // assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(1, response.getContent().size());
+    }
+
+    @Test
+    void testGetApplicationListEntries_emptyEntries_success() {
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+            .thenReturn(Optional.of(applicationList));
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(1);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        Page<ApplicationListEntryGetSummaryProjection> dbPage
+            = new PageImpl<>(List.of(), mockPage, 1);
+
+        doAnswer(inv -> null)
+            .when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
+
+        when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
+            any(), eq(mockPage)))
+            .thenReturn(dbPage);
+
+        PayloadGetEntryInList payloadGetEntryInList =  PayloadGetEntryInList.builder()
+            .listId(applicationList.getUuid())
+            .build();
+
+        // test
+        EntryPage response =
+            service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+
+        // assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(0, response.getContent().size());
+    }
+
     @Setter
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
@@ -701,6 +778,19 @@ public class ApplicationEntryServiceImplTest {
                 PayloadGetEntryInList validatable,
                 BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
             return validateSuccess.apply(validatable, getEntryValidationSuccess);
+        }
+    }
+
+    class DummyGetApplicationListEntriesValidator extends GetApplicationListEntriesValidator {
+        public DummyGetApplicationListEntriesValidator(ApplicationListRepository applicationListRepository) {
+            super(applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadGetEntryInList validatable,
+                BiFunction<PayloadGetEntryInList, ApplicationList, R> validateSuccess) {
+            return validateSuccess.apply(validatable, new ApplicationList());
         }
     }
 }
