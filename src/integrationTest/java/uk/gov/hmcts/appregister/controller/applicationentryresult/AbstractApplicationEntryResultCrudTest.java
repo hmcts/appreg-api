@@ -112,7 +112,7 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
     }
 
     // ---- data helpers ----
-    protected ApplicationList createAndSaveList(Status status) {
+    public ApplicationList createAndSaveList(Status status) {
         var list = new AppListTestData().someMinimal().status(status).build();
         persistance.save(list);
         return list;

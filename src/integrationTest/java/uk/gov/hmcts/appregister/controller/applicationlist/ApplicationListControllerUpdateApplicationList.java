@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateTest extends AbstractApplicationListTest {
+public class ApplicationListControllerUpdateApplicationList extends AbstractApplicationListTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
@@ -1040,7 +1040,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     @Test
     public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation =
-                createAppListUsingRestApi((dto) -> dto.durationHours(null).durationMinutes(null));
+                createAppListUsingRestApi((dto) -> dto.durationHours(0).durationMinutes(0));
 
         // create an entry
         EntryGetDetailDto entryGetSummaryDto =
@@ -1087,6 +1087,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(20);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1122,6 +1123,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1164,6 +1166,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
