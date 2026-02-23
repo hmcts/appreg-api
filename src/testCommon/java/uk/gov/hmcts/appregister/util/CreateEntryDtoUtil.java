@@ -79,11 +79,7 @@ public class CreateEntryDtoUtil {
         }
 
         for (FeeStatus fs : feeStatuses) {
-            if (fs == null) {
-                continue;
-            }
-
-            if (fs.getPaymentStatus() == DUE) {
+            if (fs != null && fs.getPaymentStatus() == DUE) {
                 fs.setPaymentReference(null);
             }
         }
