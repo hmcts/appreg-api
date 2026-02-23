@@ -9,6 +9,7 @@ properties:
   name:
     type: string
     description: The name of the organisation.
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     example: "ACME Industries LTD"
     maxLength: 100
 

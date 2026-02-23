@@ -8,6 +8,7 @@ properties:
 
   title:
     type: string
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     description: Prefix before a persons name.
     example: "Mr, Mrs"
     maxLength: 100
@@ -15,21 +16,25 @@ properties:
   surname:
     type: string
     description: The persons family name.
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     example: "Smith"
     maxLength: 100
 
   firstForename:
     type: string
     description: The persons first name.
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     example: "John"
     maxLength: 100
 
   secondForename:
     type: string
     description: The persons optional second name.
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     maxLength: 100
 
   thirdForename:
     type: string
     description: The persons optional third name.
+    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     maxLength: 100
