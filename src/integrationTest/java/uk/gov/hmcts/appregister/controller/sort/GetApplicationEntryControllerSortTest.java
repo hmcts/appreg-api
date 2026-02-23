@@ -38,7 +38,7 @@ public class GetApplicationEntryControllerSortTest extends AbstractApplicationEn
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // execute the functionality
         int pageSize = 5;
