@@ -14,6 +14,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
@@ -93,8 +94,9 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             ale.uuid AS uuid,
             ale.sequenceNumber AS sequenceNumber,
             ale.accountNumber AS accountNumber,
-            COALESCE(ana.name, sa.name) AS applicant,
-            rna.name AS respondent,
+            ana AS applicant,
+            sa AS standardApplicant,
+            rna AS respondent,
             rna.postcode AS postCode,
             ac.title AS applicationTitle,
             CASE WHEN ac.feeDue = "Y" THEN true ELSE false END AS feeRequired,
@@ -186,27 +188,29 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                               FROM AppListEntryResolution sub
                               WHERE sub.applicationList = ale)
             WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
-                    AND (:otherLocationDescription IS NULL OR al.otherLocation
-                            LIKE CONCAT('%', cast(:otherLocationDescription AS string), '%'))
-                    AND (:courtCode IS NULL OR al.courtCode = :courtCode)
-                    AND (:cjaCode IS NULL OR cja.code=:cjaCode)
-                    AND (:applicantOrganisation IS NULL OR ana.name
-                            LIKE CONCAT('%',cast(:applicantOrganisation AS string), '%')
-                            AND ana.code='AP')
-                    AND (:applicantSurname IS NULL OR ana.surname
-                             LIKE CONCAT('%', cast(:applicantSurname AS string) , '%')
-                            AND ana.code='AP')
-                    AND (:standardApplicantCode IS NULL OR sa.applicantCode
-                            LIKE CONCAT('%', cast(:standardApplicantCode AS string), '%'))
+                    AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
+                            LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
+                    AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
+                    AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
+                    AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
+                            LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
+                            AND ana.code='NA')
+                    AND (:applicantSurname IS NULL OR LOWER(ana.surname)
+                             LIKE CONCAT('%', LOWER(cast(:applicantSurname AS string)) , '%')  ESCAPE '\\'
+                            AND ana.code='NA')
+                    AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
+                            LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
-                    AND (:respondentOrganisation IS NULL OR rna.name LIKE CONCAT('%',
-                            cast(:respondentOrganisation AS string), '%') AND rna.code='RE')
-                    AND (:respondentSurname IS NULL OR rna.surname LIKE CONCAT('%',
-                            cast(:respondentSurname AS string), '%') AND rna.code='RE')
-                    AND (:respondentPostcode IS NULL OR rna.postcode=
-                            cast(:respondentPostcode AS string) AND rna.code='RE')
-                    AND (:accountReference IS NULL OR  ale.accountNumber
-                            LIKE CONCAT('%', cast(:accountReference AS string), '%'))
+                    AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
+                            LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:respondentSurname IS NULL OR LOWER(rna.surname) LIKE CONCAT('%',
+                            LOWER(cast(:respondentSurname AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:accountReference IS NULL OR  LOWER(ale.accountNumber)
+                            LIKE CONCAT('%', LOWER(cast(:accountReference AS string)), '%')
+                                         ESCAPE '\\')
+                    AND (:respondentPostcode IS NULL OR LOWER(rna.postcode) LIKE
+                              CONCAT('%', LOWER(cast(:respondentPostcode AS string)), '%')
+                                          ESCAPE '\\' AND rna.code='RE')
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
@@ -214,16 +218,16 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             boolean hasHearingDate,
             @Param("hearingDate") LocalDate hearingDate,
             @Param("courtCode") String courtCode,
-            @Param("otherLocationDescription") String otherLocationDescription,
+            @LikeParam @Param("otherLocationDescription") String otherLocationDescription,
             @Param("cjaCode") String cjaCode,
-            @Param("applicantOrganisation") String applicantOrganisation,
-            @Param("applicantSurname") String applicantSurname,
-            @Param("standardApplicantCode") String standardApplicantCode,
+            @LikeParam @Param("applicantOrganisation") String applicantOrganisation,
+            @LikeParam @Param("applicantSurname") String applicantSurname,
+            @LikeParam @Param("standardApplicantCode") String standardApplicantCode,
             @Param("status") Status status,
-            @Param("respondentOrganisation") String respondentOrganisation,
-            @Param("respondentSurname") String respondentSurname,
-            @Param("respondentPostcode") String respondentPostcode,
-            @Param("accountReference") String accountReference,
+            @LikeParam @Param("respondentOrganisation") String respondentOrganisation,
+            @LikeParam @Param("respondentSurname") String respondentSurname,
+            @LikeParam @Param("respondentPostcode") String respondentPostcode,
+            @LikeParam @Param("accountReference") String accountReference,
             Pageable pageable);
 
     /**

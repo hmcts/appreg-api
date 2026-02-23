@@ -191,13 +191,13 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
-        filterDto.setApplicantSurname("Turner");
+        filterDto.setApplicantSurname("rne");
         filterDto.setAccountReference("29345");
         filterDto.setStatus(ApplicationListStatus.OPEN);
         filterDto.setCjaCode("CJ");
         filterDto.setCourtCode("RCJ001");
-        filterDto.setOtherLocationDescription("other");
-        filterDto.setRespondentOrganisation("Sarah Johnson");
+        filterDto.setOtherLocationDescription("oth");
+        filterDto.setRespondentOrganisation("Sarah");
         filterDto.setRespondentPostcode("XY9 8ZZ");
         filterDto.setStandardApplicantCode("APP002");
 

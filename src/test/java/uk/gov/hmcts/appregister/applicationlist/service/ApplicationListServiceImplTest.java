@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_1;
 import static uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData.WORDING_2;
 import static uk.gov.hmcts.appregister.util.ApplicationListEntryPrintProjectionUtil.applicationListEntryPrintProjection;
-import static uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionUtil.applicationListEntrySummaryProjection;
 import static uk.gov.hmcts.appregister.util.TestConstants.MR;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_FORENAME1;
 import static uk.gov.hmcts.appregister.util.TestConstants.PERSON4_SURNAME;
@@ -71,8 +70,11 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -99,6 +101,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 import uk.gov.hmcts.appregister.util.ApplicationListSummaryProjectionImpl;
 
 @ExtendWith(MockitoExtension.class)
@@ -115,6 +118,10 @@ public class ApplicationListServiceImplTest {
     @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
     @Mock private ApplicationListOfficialMapper officalMapper;
+    @Mock private AppListEntryResolutionRepository appListEntryResolutionRepository;
+    @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
+    @Mock private ApplicationListEntryRepository applicationListEntryRepository;
+    @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
@@ -124,7 +131,13 @@ public class ApplicationListServiceImplTest {
     @Spy
     private DummyApplicationUpdateListLocationValidator updateValidator =
             new DummyApplicationUpdateListLocationValidator(
-                    repository, courtHouseRepository, cjaRepository);
+                    repository,
+                    courtHouseRepository,
+                    cjaRepository,
+                    appListEntryResolutionRepository,
+                    appListEntryOfficialRepository,
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
 
     @Spy
     private DummyApplicationListGetValidator getValidator =
@@ -936,16 +949,23 @@ public class ApplicationListServiceImplTest {
 
     private void mockFindSummariesById(UUID id, Pageable pageable) {
         var uuid = UUID.randomUUID();
-        var sequenceNumber = 1;
+        short sequenceNumber = 1;
         var accountNumber = "1234567890";
-        var applicant = "Mustafa's Org";
-        var respondent = "Ahmed, Mustafa, His Majesty";
+
+        NameAddress applicant = new NameAddress();
+        applicant.setName("Mustafa's Org");
+
+        NameAddress respondent = new NameAddress();
+        applicant.setSurname("Ahmed");
+        applicant.setForename1("Mustafa");
+        applicant.setTitle("His Majesty");
+
         var postCode = "SW1A 1AA";
         var applicationTitle = "Request for Certificate of Refusal to State a Case (Civil)";
         var feeRequired = true;
         var result = "APPC";
         var projection =
-                applicationListEntrySummaryProjection()
+                ApplicationListEntrySummaryProjectionBuilder.builder()
                         .uuid(uuid)
                         .sequenceNumber(sequenceNumber)
                         .accountNumber(accountNumber)
@@ -1034,10 +1054,21 @@ public class ApplicationListServiceImplTest {
         private ListUpdateValidationSuccess success;
 
         public DummyApplicationUpdateListLocationValidator(
-                ApplicationListRepository repository,
+                ApplicationListRepository applicationListRepository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository criminalJusticeAreaRepository,
+                AppListEntryResolutionRepository appListEntryResolutionRepository,
+                AppListEntryOfficialRepository appListEntryOfficialRepository,
+                ApplicationListEntryRepository applicationListEntryRepository,
+                AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
+            super(
+                    applicationListRepository,
+                    courtHouseRepository,
+                    criminalJusticeAreaRepository,
+                    appListEntryResolutionRepository,
+                    appListEntryOfficialRepository,
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
         }
 
         @Override

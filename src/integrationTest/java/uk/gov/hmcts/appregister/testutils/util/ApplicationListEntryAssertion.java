@@ -12,10 +12,10 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
@@ -130,7 +130,8 @@ public class ApplicationListEntryAssertion {
                         || entryCreateUpdateDto.getApplicant().getOrganisation() != null)) {
             // validate the application code
             Assertions.assertEquals(
-                    NameAddress.APPLICANT_CODE, applicationListEntry.getAnamedaddress().getCode());
+                    NameAddressCodeType.APPLICANT,
+                    applicationListEntry.getAnamedaddress().getCode());
         } else {
             Assertions.assertNull(applicationListEntry.getAnamedaddress());
             Assertions.assertEquals(
@@ -143,7 +144,8 @@ public class ApplicationListEntryAssertion {
                         || entryCreateUpdateDto.getRespondent().getOrganisation() != null)) {
             // validate the application code
             Assertions.assertEquals(
-                    NameAddress.RESPONDENT_CODE, applicationListEntry.getRnameaddress().getCode());
+                    NameAddressCodeType.RESPONDENT,
+                    applicationListEntry.getRnameaddress().getCode());
         }
 
         // if number or respondents is set make sure it was saved

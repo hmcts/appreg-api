@@ -12,6 +12,7 @@ import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
@@ -26,12 +27,31 @@ public class CreateEntryDtoUtil {
      * @return The created payload
      */
     public EntryCreateDto getCorrectCreateEntryDto() {
+        return getCorrectCreateEntryDto(false);
+    }
+
+    /**
+     * gets the correct payload to make a successful create entry.
+     *
+     * @param satisfyForClose Satisfy condition for app list closure
+     * @return The created payload
+     */
+    public EntryCreateDto getCorrectCreateEntryDto(boolean satisfyForClose) {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         List<Official> officials = Instancio.ofList(Official.class).size(4).create();
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
+
+        if (satisfyForClose) {
+            FeeStatus feeStatus = new FeeStatus();
+
+            // if we want to satisfy for close set to paid
+            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+            feeStatus.setStatusDate(LocalDate.now());
+            entryCreateDto.setFeeStatuses(List.of(feeStatus));
+        }
 
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");

@@ -196,7 +196,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         List.of(),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new ResultCodeFilter(Optional.of("ap"), Optional.empty()),
+                        new ResultCodeFilter(Optional.of("AP"), Optional.empty()),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
