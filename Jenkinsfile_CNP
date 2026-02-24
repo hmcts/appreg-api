@@ -131,6 +131,14 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
 }
 
 withPipeline(type, product, component) {
+    env.SKIP_TESTS = params.SKIP_TESTS
+    env.SKIP_SONAR = params.SKIP_SONAR
+    env.FAIL_FAST = params.FAIL_FAST
+
+    echo "SKIP_TESTS: ${env.SKIP_TESTS}"
+    echo "SKIP_SONAR: ${env.SKIP_SONAR}"
+    echo "FAIL_FAST: ${env.FAIL_FAST}"
+
     loadVaultSecrets(secrets)
     enableSlackNotifications('#appreg-builds')
 
