@@ -33,3 +33,72 @@ withPipeline(type, product, component) {
 
     syncBranchesWithMaster(branchesToSync)
 }
+
+/**
+ * determines the development environment deployment based on the PR labels. If the label
+ * "enable_portal" is present then the portal will be deployed in the PR environment.
+ * If the label "enable_portal:pr-<image_suffix>" is present then the portal will
+ * be deployed with the specified image suffix in the PR environment.
+ */
+def determineDevEnvironmentDeployment() {
+  env.DEV_ENABLE_DARTS_PORTAL = false
+  env.DEV_PORTAL_IMAGE_SUFFIX = "latest"
+
+  echo "1 - env.DEV_ENABLE_DARTS_PORTAL: ${env.DEV_ENABLE_DARTS_PORTAL}"
+
+  def githubApi = new GithubAPI(this)
+    for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal_")) {
+
+      // If the portal label exists then load the portal
+      if (label ==~ /enable_portal_.*/) {
+        env.DEV_ENABLE_PORTAL = true
+
+        if (label ==~ /enable_portal:pr-.*/) {
+          env.DEV_PORTAL_IMAGE = label.replace("enable_portal:", "")
+          echo "DARTS portal image suffix: ${env.DEV_PORTAL_IMAGE}"
+        }
+        echo "Deploying portal (${env.DEV_PORTAL_IMAGE}) instance in PR environment"
+      }
+    }
+
+  echo "2 - env.DEV_ENABLE_DARTS_PORTAL: ${env.DEV_ENABLE_DARTS_PORTAL}"
+}
+
+  afterFailure('test') {
+    junit testResults: '**/test-results/integration/*.xml'
+  }
+
+  afterAlways('akschartsinstall') {
+    if(params.SKIP_TESTS || params.SKIP_SONAR) {
+      stage('SKIP_TESTS OR SKIP_SONAR IS TRUE') {
+        error("Build can not fully complete when SKIP_TESTS or SKIP_SONAR is set to true")
+      }
+    }
+  }
+
+  before('dbmigrate:demo') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
+
+  before('dbmigrate:test') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
+
+  before('dbmigrate:ithc') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
+
+  before('akschartsinstall') {
+    onPR {
+      determineDevEnvironmentDeployment()
+    }
+  }
+
+  afterSuccess('akschartsinstall') {
+    onPR {
+      // restore the PR DB from staging
+      sh("./bin/ci/db-stg-to-pr.sh")
+      // run flyway migrate on PR DB
+      sh("./bin/ci/run-flyway-pr-db.sh")
+    }
+  }

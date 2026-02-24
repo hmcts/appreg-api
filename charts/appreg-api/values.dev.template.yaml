@@ -4,16 +4,39 @@ java:
   ingressHost: ${SERVICE_FQDN}
   devmemoryLimits: "3Gi"
   environment:
-    env_name: 'DEV'
-    POSTGRES_USER: "hmcts"
+    POSTGRES_USER: ${POSTGRES-USER}
     POSTGRES_HOST: "appreg-dev.postgres.database.azure.com"
-    POSTGRES_PORT: 5432
-    POSTGRES_DATABASE: postgres
-    azure-tenant-id: "temp_tenant_id"
-    azure-audience-id: "temp_aud"
-    JAVA_TOOL_OPTIONS: '-XX:InitialRAMPercentage=50 -XX:MaxRAMPercentage=75 -Xlog:gc* -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/tmp/heap.hprof'
-  secrets:
-    POSTGRES_PASS:
-      secretRef: "postgres"
-      key: PASSWORD
-      disabled: false
+    POSTGRES_PORT: ${POSTGRES-PORT}
+    SPRING_DATASOURCE_URL: ${POSTGRES_HOST}
+    SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+    SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASS}
+    SPRING_PROFILES_ACTIVE: functional
+    AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+    AZURE_AUDIENCE_ID: ${AZURE_AUDIENCE_ID}
+    AZURE_ISSUER: ${AZURE_ISSUER}
+    POSTGRES_DATABASE: "pr-${CHANGE_ID}-appreg"
+
+# Launch the database that this PR will be working against
+postgresql:
+  flexibleserver: "appreg-dev"
+  setup:
+    databases:
+      - name: "pr-${CHANGE_ID}-appreg"
+
+# This is needed if want to launch the portal along side this pr
+appreg-frontend:
+  enabled: ${DEV_ENABLE_PORTAL}
+  nodejs:
+    releaseNameOverride: '{{ .Release.Name }}-portal'
+    applicationPort: 3000
+    # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
+    image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE_SUFFIX}'
+    ingressHost: "appreg-api-pr-${CHANGE_ID}.dev.platform.hmcts.net"
+    aadIdentityName: darts
+    keyVaults:
+      darts:
+        secrets:
+          - redis-connection-string
+          - darts-portal-session-secret
+    environment:
+      APPREG_API_BASE_URL: "https://appreg-api.pr-${CHANGE_ID}.dev.platform.hmcts.net"
