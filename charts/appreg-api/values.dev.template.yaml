@@ -18,6 +18,7 @@ java:
 
 # Launch the database that this PR will be working against
 postgresql:
+  enabled: true
   flexibleserver: "appreg-dev"
   setup:
     databases:
