@@ -7,12 +7,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
-
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -69,29 +67,29 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected UUID getOpenApplicationListId() {
         return unitOfWork.inTransaction(
-            () -> {
-                ApplicationList applicationList =
-                    applicationListRepository
-                        .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                        .getFirst();
-                return applicationList.getUuid();
-            });
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    return applicationList.getUuid();
+                });
     }
 
     protected UUID getClosedApplicationListId() {
         return unitOfWork.inTransaction(
-            () -> {
-                ApplicationList applicationList =
-                    applicationListRepository
-                        .findAll(Sort.by(Sort.Direction.ASC, "id"))
-                        .get(2);
-                return applicationList.getUuid();
-            });
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .get(2);
+                    return applicationList.getUuid();
+                });
     }
 
     protected UUID getDeletedIdApplicationListId() {
         return unitOfWork.inTransaction(
-            () -> applicationListRepository.findById(DELETED_LIST_PK).get().getUuid());
+                () -> applicationListRepository.findById(DELETED_LIST_PK).get().getUuid());
     }
 
     /**
@@ -102,33 +100,33 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
      */
     protected UUID[] getValidEntryForList(Long entryId) {
         return unitOfWork.inTransaction(
-            () -> {
-                Optional<ApplicationListEntry> applicationListEntry =
-                    applicationListEntryRepository.findById(entryId);
+                () -> {
+                    Optional<ApplicationListEntry> applicationListEntry =
+                            applicationListEntryRepository.findById(entryId);
 
-                Assertions.assertTrue(applicationListEntry.isPresent());
+                    Assertions.assertTrue(applicationListEntry.isPresent());
 
-                return new UUID[] {
-                    applicationListEntry.get().getApplicationList().getUuid(),
-                    applicationListEntry.get().getUuid()
-                };
-            });
+                    return new UUID[] {
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid()
+                    };
+                });
     }
 
     protected record ApplicationEntryFilter(
-        Optional<LocalDate> date,
-        Optional<String> courtCode,
-        Optional<String> otherLocationDescription,
-        Optional<String> cjaCode,
-        Optional<String> applicantOrganisation,
-        Optional<String> applicantSurname,
-        Optional<String> status,
-        Optional<String> respondentOrganisation,
-        Optional<String> respondentSurname,
-        Optional<String> respondentPostcode,
-        Optional<String> accountReference,
-        Optional<String> standardApplicantCode)
-        implements UnaryOperator<RequestSpecification> {
+            Optional<LocalDate> date,
+            Optional<String> courtCode,
+            Optional<String> otherLocationDescription,
+            Optional<String> cjaCode,
+            Optional<String> applicantOrganisation,
+            Optional<String> applicantSurname,
+            Optional<String> status,
+            Optional<String> respondentOrganisation,
+            Optional<String> respondentSurname,
+            Optional<String> respondentPostcode,
+            Optional<String> accountReference,
+            Optional<String> standardApplicantCode)
+            implements UnaryOperator<RequestSpecification> {
 
         @Override
         public RequestSpecification apply(RequestSpecification rs) {
@@ -179,69 +177,69 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
      * creation status (201) and returns parsed EntryGetDetailDto + Response.
      */
     protected SuccessCreateEntryResponse createEntryWithUniqueSurname(
-        TokenGenerator tokenGenerator, EntryCreateDto entryCreateDto, String uniqueSurname)
-        throws Exception {
+            TokenGenerator tokenGenerator, EntryCreateDto entryCreateDto, String uniqueSurname)
+            throws Exception {
 
         entryCreateDto.getApplicant().getPerson().getName().setSurname(uniqueSurname);
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(201);
         Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
 
         return new SuccessCreateEntryResponse(
-            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+                responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
     }
 
     /** Finds entries by surname using the application entry filter and returns EntryPage. */
     protected EntryPage findEntriesBySurname(
-        TokenGenerator tokenGenerator, String surname, int size, int page) throws Exception {
+            TokenGenerator tokenGenerator, String surname, int size, int page) throws Exception {
 
         Response responseFindEntrySpec =
-            restAssuredClient.executeGetRequestWithPaging(
-                Optional.of(size),
-                Optional.of(page),
-                List.of(),
-                getLocalUrl(WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                new ApplicationEntryFilter(
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(surname),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty()),
-                new OpenApiPageMetaData());
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(size),
+                        Optional.of(page),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationEntryFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(surname),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
 
         responseFindEntrySpec.then().statusCode(200);
         return responseFindEntrySpec.as(EntryPage.class);
     }
 
     /** Calls the GET paging endpoint without filters and returns EntryPage. */
-    protected EntryPage findAllEntriesWithLargePage(TokenGenerator tokenGenerator, int size, int page)
-        throws Exception {
+    protected EntryPage findAllEntriesWithLargePage(
+            TokenGenerator tokenGenerator, int size, int page) throws Exception {
 
         Response responseSpec =
-            restAssuredClient.executeGetRequestWithPaging(
-                Optional.of(size),
-                Optional.of(page),
-                List.of(),
-                getLocalUrl(WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(size),
+                        Optional.of(page),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
         return responseSpec.as(EntryPage.class);
@@ -250,9 +248,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     // ---- Validation helpers ----
 
     protected void validateEntryCreationResponse(
-        EntryCreateDto entryCreateDto,
-        EntryGetDetailDto response,
-        List<String> expectedWordingFields) {
+            EntryCreateDto entryCreateDto,
+            EntryGetDetailDto response,
+            List<String> expectedWordingFields) {
 
         if (entryCreateDto.getApplicant() != null) {
             Assertions.assertEquals(entryCreateDto.getApplicant(), response.getApplicant());
@@ -270,43 +268,44 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
         Assertions.assertNotNull(response.getListId());
         Assertions.assertNotNull(response.getId());
-        Assertions.assertEquals(entryCreateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
+        Assertions.assertEquals(
+                entryCreateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
         Assertions.assertEquals(entryCreateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryCreateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
         for (int i = 0; i < response.getFeeStatuses().size(); i++) {
             Assertions.assertEquals(
-                entryCreateDto.getFeeStatuses().get(i).getPaymentReference(),
-                response.getFeeStatuses().get(i).getPaymentReference());
+                    entryCreateDto.getFeeStatuses().get(i).getPaymentReference(),
+                    response.getFeeStatuses().get(i).getPaymentReference());
             Assertions.assertEquals(
-                entryCreateDto.getFeeStatuses().get(i).getStatusDate(),
-                response.getFeeStatuses().get(i).getStatusDate());
+                    entryCreateDto.getFeeStatuses().get(i).getStatusDate(),
+                    response.getFeeStatuses().get(i).getStatusDate());
             Assertions.assertEquals(
-                entryCreateDto.getFeeStatuses().get(i).getPaymentStatus(),
-                response.getFeeStatuses().get(i).getPaymentStatus());
+                    entryCreateDto.getFeeStatuses().get(i).getPaymentStatus(),
+                    response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
         for (int i = 0; i < response.getOfficials().size(); i++) {
             Assertions.assertEquals(
-                entryCreateDto.getOfficials().get(i).getType(),
-                response.getOfficials().get(i).getType());
+                    entryCreateDto.getOfficials().get(i).getType(),
+                    response.getOfficials().get(i).getType());
             Assertions.assertEquals(
-                entryCreateDto.getOfficials().get(i).getSurname(),
-                response.getOfficials().get(i).getSurname());
+                    entryCreateDto.getOfficials().get(i).getSurname(),
+                    response.getOfficials().get(i).getSurname());
             Assertions.assertEquals(
-                entryCreateDto.getOfficials().get(i).getTitle(),
-                response.getOfficials().get(i).getTitle());
+                    entryCreateDto.getOfficials().get(i).getTitle(),
+                    response.getOfficials().get(i).getTitle());
             Assertions.assertEquals(
-                entryCreateDto.getOfficials().get(i).getForename(),
-                response.getOfficials().get(i).getForename());
+                    entryCreateDto.getOfficials().get(i).getForename(),
+                    response.getOfficials().get(i).getForename());
         }
     }
 
     protected void validateEntryUpdateResponse(
-        EntryUpdateDto entryUpdateDto,
-        EntryGetDetailDto response,
-        List<String> expectedWordingFields,
-        List<FeeStatus> existingFees) {
+            EntryUpdateDto entryUpdateDto,
+            EntryGetDetailDto response,
+            List<String> expectedWordingFields,
+            List<FeeStatus> existingFees) {
 
         if (entryUpdateDto.getApplicant() != null) {
             Assertions.assertEquals(entryUpdateDto.getApplicant(), response.getApplicant());
@@ -324,39 +323,51 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
         Assertions.assertNotNull(response.getListId());
         Assertions.assertNotNull(response.getId());
-        Assertions.assertEquals(entryUpdateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
+        Assertions.assertEquals(
+                entryUpdateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
         Assertions.assertEquals(entryUpdateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryUpdateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
         for (int i = 0; i < existingFees.size(); i++) {
             Assertions.assertEquals(
-                existingFees.get(i).getPaymentReference(),
-                response.getFeeStatuses().get(i).getPaymentReference());
+                    existingFees.get(i).getPaymentReference(),
+                    response.getFeeStatuses().get(i).getPaymentReference());
             Assertions.assertEquals(
-                existingFees.get(i).getStatusDate(),
-                response.getFeeStatuses().get(i).getStatusDate());
+                    existingFees.get(i).getStatusDate(),
+                    response.getFeeStatuses().get(i).getStatusDate());
             Assertions.assertEquals(
-                existingFees.get(i).getPaymentStatus(),
-                response.getFeeStatuses().get(i).getPaymentStatus());
+                    existingFees.get(i).getPaymentStatus(),
+                    response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
         for (int i = existingFees.size(); i < response.getFeeStatuses().size(); i++) {
             Assertions.assertEquals(
-                entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getPaymentReference(),
-                response.getFeeStatuses().get(i).getPaymentReference());
+                    entryUpdateDto
+                            .getFeeStatuses()
+                            .get(i - existingFees.size())
+                            .getPaymentReference(),
+                    response.getFeeStatuses().get(i).getPaymentReference());
             Assertions.assertEquals(
-                entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getStatusDate(),
-                response.getFeeStatuses().get(i).getStatusDate());
+                    entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getStatusDate(),
+                    response.getFeeStatuses().get(i).getStatusDate());
             Assertions.assertEquals(
-                entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getPaymentStatus(),
-                response.getFeeStatuses().get(i).getPaymentStatus());
+                    entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getPaymentStatus(),
+                    response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
         for (int i = 0; i < response.getOfficials().size(); i++) {
-            Assertions.assertEquals(entryUpdateDto.getOfficials().get(i).getType(), response.getOfficials().get(i).getType());
-            Assertions.assertEquals(entryUpdateDto.getOfficials().get(i).getSurname(), response.getOfficials().get(i).getSurname());
-            Assertions.assertEquals(entryUpdateDto.getOfficials().get(i).getTitle(), response.getOfficials().get(i).getTitle());
-            Assertions.assertEquals(entryUpdateDto.getOfficials().get(i).getForename(), response.getOfficials().get(i).getForename());
+            Assertions.assertEquals(
+                    entryUpdateDto.getOfficials().get(i).getType(),
+                    response.getOfficials().get(i).getType());
+            Assertions.assertEquals(
+                    entryUpdateDto.getOfficials().get(i).getSurname(),
+                    response.getOfficials().get(i).getSurname());
+            Assertions.assertEquals(
+                    entryUpdateDto.getOfficials().get(i).getTitle(),
+                    response.getOfficials().get(i).getTitle());
+            Assertions.assertEquals(
+                    entryUpdateDto.getOfficials().get(i).getForename(),
+                    response.getOfficials().get(i).getForename());
         }
     }
 
@@ -369,43 +380,43 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(201);
 
         EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
         validateEntryCreationResponse(
-            entryCreateDto, createdDto, List.of("Premises Address", "Premises Date"));
+                entryCreateDto, createdDto, List.of("Premises Address", "Premises Date"));
 
         Response responseFindEntrySpec =
-            restAssuredClient.executeGetRequestWithPaging(
-                Optional.of(10),
-                Optional.of(0),
-                List.of(),
-                getLocalUrl(WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                new ApplicationEntryFilter(
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(surnameToLookup),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty()),
-                new OpenApiPageMetaData());
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationEntryFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(surnameToLookup),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
 
         responseFindEntrySpec.then().statusCode(200);
 
@@ -416,31 +427,31 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPICATION_LIST,
-                "id",
-                "",
-                null,
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        "",
+                        null,
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_id",
-                null,
-                "1",
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        null,
+                        "1",
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LISTS_ENTRY,
-                "ale_id",
-                "",
-                null,
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
-                AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        "",
+                        null,
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
         return responseSpecCreate;
     }

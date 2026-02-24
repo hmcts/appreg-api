@@ -16,44 +16,49 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
         return Stream.of(
-            RestEndpointDescription.builder()
-                .url(getLocalUrl(WEB_CONTEXT))
-                .method(HttpMethod.GET)
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-            RestEndpointDescription.builder()
-                .url(getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"))
-                .method(HttpMethod.POST)
-                .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-            RestEndpointDescription.builder()
-                .url(
-                    getLocalUrl(
-                        CREATE_ENTRY_CONTEXT
-                            + "/"
-                            + UUID.randomUUID()
-                            + "/entries/"
-                            + UUID.randomUUID()))
-                .method(HttpMethod.PUT)
-                .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build(),
-            RestEndpointDescription.builder()
-                .url(
-                    getLocalUrl(
-                        CREATE_ENTRY_CONTEXT
-                            + "/"
-                            + UUID.randomUUID()
-                            + "/entries/"
-                            + UUID.randomUUID()))
-                .method(HttpMethod.GET)
-                .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
-                .successRole(RoleEnum.USER)
-                .successRole(RoleEnum.ADMIN)
-                .build());
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries"))
+                        .method(HttpMethod.POST)
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries/"
+                                                + UUID.randomUUID()))
+                        .method(HttpMethod.PUT)
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries/"
+                                                + UUID.randomUUID()))
+                        .method(HttpMethod.GET)
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
     }
 }

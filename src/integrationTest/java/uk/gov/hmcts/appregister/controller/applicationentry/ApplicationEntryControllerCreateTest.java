@@ -47,65 +47,68 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         var tokenGenerator = createAdminToken();
 
         SuccessCreateEntryResponse createdDto =
-            createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
         validateEntryCreationResponse(
-            entryCreateDto, createdDto.getDetailDto(), List.of("Premises Address", "Premises Date"));
+                entryCreateDto,
+                createdDto.getDetailDto(),
+                List.of("Premises Address", "Premises Date"));
 
         EntryPage page = findEntriesBySurname(tokenGenerator, surnameToLookup, 10, 0);
 
         PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
-        Assertions.assertEquals(createdDto.getDetailDto().getId(), page.getContent().getFirst().getId());
+        Assertions.assertEquals(
+                createdDto.getDetailDto().getId(), page.getContent().getFirst().getId());
 
         differenceLogAsserter.assertNoErrors();
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPICATION_LIST,
-                "id",
-                "",
-                null,
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getType()
-                    .name(),
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        "",
+                        null,
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_id",
-                "",
-                "1",
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getType()
-                    .name(),
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        "",
+                        "1",
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LISTS_ENTRY,
-                "ale_id",
-                "",
-                null,
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getType()
-                    .name(),
-                uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
-                    .CREATE_APP_ENTRY_LIST
-                    .getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        "",
+                        null,
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
     }
 
     @Test
     public void givenValidRequest_whenCreateListEntryWithoutFeeAndRespondent_thenReturn201()
-        throws Exception {
+            throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of());
@@ -116,7 +119,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         var tokenGenerator = createAdminToken();
 
         SuccessCreateEntryResponse createdDto =
-            createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, UUID.randomUUID().toString());
+                createEntryWithUniqueSurname(
+                        tokenGenerator, entryCreateDto, UUID.randomUUID().toString());
 
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
@@ -124,26 +128,39 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenCreateEntryWithApplicantApplicantMutualExclusiveInvalid_400IsReturned()
-        throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenCreateEntryWithApplicantApplicantMutualExclusiveInvalid_400IsReturned()
+                    throws Exception {
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         List<Official> officials = Instancio.ofList(Official.class).size(4).create();
         EntryCreateDto entryCreateDto =
-            Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
 
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setEmail("APPLICANT@TEST.COM");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setEmail("APPLICANT@TEST.COM");
 
         entryCreateDto.getApplicant().setOrganisation(Instancio.create(Organisation.class));
-        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setEmail("APPLICANT@TEST.COM");
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail("APPLICANT@TEST.COM");
         entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setEmail("RESPONDENT@TEST.COM");
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail("RESPONDENT@TEST.COM");
 
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode("APP001");
@@ -152,75 +169,85 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         entryCreateDto.setWordingFields(
-            List.of(
-                new TemplateSubstitution("Premises Address", "test wording"),
-                new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
+                List.of(
+                        new TemplateSubstitution("Premises Address", "test wording"),
+                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
 
         var tokenGenerator = createAdminToken();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON
+                        .getCode()
+                        .getType()
+                        .get(),
+                problemDetail.getType());
     }
 
     @Test
     public void givenAnInvalidCreateEntryRequest_whenApplicationListDoesNotexist_404IsReturned()
-        throws Exception {
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectState_400IsReturned()
-        throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenApplicationListIsNotInCorrectState_400IsReturned()
+                    throws Exception {
 
         var tokenGenerator = createAdminToken();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getClosedApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getClosedApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(409);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
     public void givenAnInvalidCreateEntryRequest_whenApplicationCodeDoesNotExist_404IsReturned()
-        throws Exception {
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -228,18 +255,21 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.setApplicationCode("INVALID");
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(404);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -250,23 +280,25 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.getFeeStatuses().clear();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.FEE_REQUIRED.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.FEE_REQUIRED.getCode().getType().get(), problemDetail.getType());
     }
 
     @Test
     public void givenAnInvalidCreateEntryRequest_whenRespondentNotExist_404IsReturned()
-        throws Exception {
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -274,52 +306,60 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.setRespondent(null);
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.RESPONDENT_REQUIRED.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.RESPONDENT_REQUIRED.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenWordingTemplateFieldsNotSufficient_400IsReturned()
-        throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenWordingTemplateFieldsNotSufficient_400IsReturned()
+                    throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         entryCreateDto.setWordingFields(
-            List.of(
-                new TemplateSubstitution("Premises Address", "value"),
-                new TemplateSubstitution("Premises Date", "extra field not a date"),
-                new TemplateSubstitution("too many", "val")));
+                List.of(
+                        new TemplateSubstitution("Premises Address", "value"),
+                        new TemplateSubstitution("Premises Date", "extra field not a date"),
+                        new TemplateSubstitution("too many", "val")));
 
         var tokenGenerator = createAdminToken();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode().getType().get(),
-            problemDetail.getType());
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenFeeStatusIsDueAndPaymentReferenceProvided_then400IsReturned()
-        throws Exception {
+    public void
+            givenAnInvalidCreateEntryRequest_whenFeeStatusIsDueAndPaymentReferenceProvided_then400IsReturned()
+                    throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
@@ -333,26 +373,29 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         var tokenGenerator = createAdminToken();
 
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + getOpenApplicationListId() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(400);
 
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
-            AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
-                .getCode()
-                .getType()
-                .get(),
-            problemDetail.getType());
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getType()
+                        .get(),
+                problemDetail.getType());
     }
 
     @StabilityTest
     public void givenCreatedEntrySoftDeletedViaRepository_whenSearchingEntries_thenEntryIsExcluded()
-        throws Exception {
+            throws Exception {
 
         var tokenGenerator = createAdminToken();
 
@@ -360,22 +403,22 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         String uniqueSurname = "DELTEST-" + UUID.randomUUID();
 
         SuccessCreateEntryResponse createdDto =
-            createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, uniqueSurname);
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, uniqueSurname);
 
         UUID createdUuid = createdDto.getDetailDto().getId();
 
         int rowsUpdated =
-            unitOfWork.inTransaction(
-                () -> applicationListEntryRepository.softDeleteByUuid(createdUuid));
+                unitOfWork.inTransaction(
+                        () -> applicationListEntryRepository.softDeleteByUuid(createdUuid));
         Assertions.assertEquals(1, rowsUpdated);
 
         int pageSize = Math.max(defaultPageSize, 100);
         var page = findAllEntriesWithLargePage(tokenGenerator, pageSize, 0);
 
         boolean foundDeleted =
-            page.getContent() != null
-                && page.getContent().stream()
-                .anyMatch(s -> s.getId() != null && s.getId().equals(createdUuid));
+                page.getContent() != null
+                        && page.getContent().stream()
+                                .anyMatch(s -> s.getId() != null && s.getId().equals(createdUuid));
 
         Assertions.assertFalse(foundDeleted);
     }

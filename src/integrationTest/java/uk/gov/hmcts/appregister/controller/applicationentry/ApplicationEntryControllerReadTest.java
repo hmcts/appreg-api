@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import java.util.UUID;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
@@ -19,9 +18,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids[1]),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids[1]),
+                        tokenGenerator.fetchTokenForRole());
 
         EntryGetDetailDto entryGetDetailDto = responseSpec.as(EntryGetDetailDto.class);
         Assertions.assertEquals(200, responseSpec.getStatusCode());
@@ -41,17 +40,21 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries/" + uuids[1]),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries/"
+                                        + uuids[1]),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -59,21 +62,21 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         var tokenGenerator = createAdminToken();
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getClosedApplicationListId()
-                        + "/entries/"
-                        + UUID.randomUUID()),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getClosedApplicationListId()
+                                        + "/entries/"
+                                        + UUID.randomUUID()),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -81,21 +84,21 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         var tokenGenerator = createAdminToken();
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getDeletedIdApplicationListId()
-                        + "/entries/"
-                        + UUID.randomUUID()),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getDeletedIdApplicationListId()
+                                        + "/entries/"
+                                        + UUID.randomUUID()),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -106,16 +109,17 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         UUID[] uuids2 = getValidEntryForList(VALID_ENTRY2_PK);
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids2[1]),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries/" + uuids2[1]),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     @Test
@@ -125,20 +129,20 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
 
         var responseSpec =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + uuids[0]
-                        + "/entries/"
-                        + UUID.randomUUID()),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + uuids[0]
+                                        + "/entries/"
+                                        + UUID.randomUUID()),
+                        tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(409);
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
-            problemDetail.getType());
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
+                problemDetail.getType());
     }
 }
