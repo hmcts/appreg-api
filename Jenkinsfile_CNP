@@ -6,6 +6,9 @@ def type = "java"
 def product = "appreg"
 def component = "api"
 
+import uk.gov.hmcts.contino.GradleBuilder
+import uk.gov.hmcts.contino.GithubAPI
+
 def branchesToSync = ['demo', 'ithc']
 
 def secrets = [
@@ -17,6 +20,106 @@ def secrets = [
                 secret('POSTGRES-DATABASE', 'DB_NAME'),
         ]
 ]
+
+
+afterAlways('test') {
+
+  builder.gradle('jacocoTestReport')
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/checkstyle",
+    reportFiles          : "main.html",
+    reportName           : "Checkstyle Main Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/checkstyle",
+    reportFiles          : "test.html",
+    reportName           : "Checkstyle Test Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/checkstyle",
+    reportFiles          : "functionalTest.html",
+    reportName           : "Checkstyle Functional Test Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/checkstyle",
+    reportFiles          : "integrationTest.html",
+    reportName           : "Checkstyle Integration Test Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/tests/test",
+    reportFiles          : "index.html",
+    reportName           : "Unit Tests Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/tests/integration",
+    reportFiles          : "index.html",
+    reportName           : "Integration Tests Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/pmd",
+    reportFiles          : "main.html",
+    reportName           : "PMD Main Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/pmd",
+    reportFiles          : "test.html",
+    reportName           : "PMD Test Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/pmd",
+    reportFiles          : "functionalTest.html",
+    reportName           : "PMD Functional Test Report"
+  ]
+
+  publishHTML target: [
+    allowMissing         : true,
+    alwaysLinkToLastBuild: true,
+    keepAll              : true,
+    reportDir            : "build/reports/pmd",
+    reportFiles          : "integrationTest.html",
+    reportName           : "PMD Integration Test Report"
+  ]
+}
+
+afterFailure('test') {
+  junit testResults: '**/test-results/integration/*.xml'
+}
 
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
     [$class     : 'AzureKeyVaultSecret',
