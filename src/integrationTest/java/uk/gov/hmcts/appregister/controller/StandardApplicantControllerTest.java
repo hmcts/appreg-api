@@ -104,23 +104,23 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                 "123 High Street",
                 returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2().get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3().get());
         Assertions.assertEquals(
                 "Townsville",
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4().get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5().get());
         Assertions.assertEquals(
                 "john.smith@example.com",
-                returnedSa.getApplicant().getPerson().getContactDetails().getEmail());
+                returnedSa.getApplicant().getPerson().getContactDetails().getEmail().get());
         Assertions.assertEquals(
                 "07123456789",
-                returnedSa.getApplicant().getPerson().getContactDetails().getMobile());
+                returnedSa.getApplicant().getPerson().getContactDetails().getMobile().get());
         Assertions.assertEquals(
                 "01234567890",
-                returnedSa.getApplicant().getPerson().getContactDetails().getPhone());
+                returnedSa.getApplicant().getPerson().getContactDetails().getPhone().get());
         Assertions.assertEquals(
                 "TS1 1AB", returnedSa.getApplicant().getPerson().getContactDetails().getPostcode());
     }
@@ -156,23 +156,43 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                 "123 High Street",
                 returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine2());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine3());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3()
+                        .get());
         Assertions.assertEquals(
                 "Townsville",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine4());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine5());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5()
+                        .get());
         Assertions.assertEquals(
                 "john.smith@example.com",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail().get());
         Assertions.assertEquals(
                 "07123456789",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile().get());
         Assertions.assertEquals(
                 "01234567890",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone().get());
         Assertions.assertEquals(
                 "TS1 1AB",
                 returnedSa.getApplicant().getOrganisation().getContactDetails().getPostcode());
@@ -344,10 +364,10 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                 org.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         assertEquals(
                 "Apt 5",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2());
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2().get());
         assertEquals(
                 "Cityville",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4());
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4().get());
         assertNotNull(secondEntry.getStartDate());
         assertFalse(secondEntry.getEndDate().isPresent());
     }

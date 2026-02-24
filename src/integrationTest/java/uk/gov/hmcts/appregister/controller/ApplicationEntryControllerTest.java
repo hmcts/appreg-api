@@ -17,6 +17,7 @@ import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
@@ -82,6 +83,11 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     private static final long VALID_ENTRY_PK = 2;
     private static final long VALID_ENTRY2_PK = 5;
 
+    private static final JsonNullable<String> APPLICANT_EMAIL =
+            JsonNullable.of("APPLICANT@TEST.COM");
+    private static final JsonNullable<String> RESPONDENT_EMAIL =
+            JsonNullable.of("RESPONDENT@TEST.COM");
+
     @Autowired private TransactionalUnitOfWork unitOfWork;
 
     @Autowired private ApplicationListRepository applicationListRepository;
@@ -126,7 +132,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("s.johnson@example.com");
         assertThat(
                         entryGetSummaryDto
@@ -160,7 +167,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("info@legalaid.example.com");
         assertThat(
                         entryGetSummaryDto
@@ -247,11 +255,23 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getContactDetails()
                                 .getAddressLine1())
                 .isEqualTo("1 Market Street");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getEmail())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getEmail()
+                                .get())
                 .isEqualTo("john.smith@example.com");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPostcode())
                 .isEqualTo("AB11 2CD");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPhone())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getPhone()
+                                .get())
                 .isEqualTo("01234567890");
 
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -269,7 +289,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("s.johnson@example.com");
         assertThat(
                         entryGetSummaryDto
@@ -354,11 +375,23 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getContactDetails()
                                 .getAddressLine1())
                 .isEqualTo("1 Market Street");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getEmail())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getEmail()
+                                .get())
                 .isEqualTo("john.smith@example.com");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPostcode())
                 .isEqualTo("AB11 2CD");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPhone())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getPhone()
+                                .get())
                 .isEqualTo("01234567890");
 
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -376,7 +409,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("s.johnson@example.com");
         assertThat(
                         entryGetSummaryDto
@@ -476,7 +510,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("info@legalaid.example.com");
         assertThat(
                         entryGetSummaryDto
@@ -508,11 +543,23 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getContactDetails()
                                 .getAddressLine1())
                 .isEqualTo("1 Market Street");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getEmail())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getEmail()
+                                .get())
                 .isEqualTo("john.smith@example.com");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPostcode())
                 .isEqualTo("AB11 2CD");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getContactDetails().getPhone())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getContactDetails()
+                                .getPhone()
+                                .get())
                 .isEqualTo("01234567890");
 
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
@@ -530,7 +577,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
-                                .getEmail())
+                                .getEmail()
+                                .get())
                 .isEqualTo("s.johnson@example.com");
         assertThat(
                         entryGetSummaryDto
@@ -790,28 +838,50 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setEmail(APPLICANT_EMAIL);
 
         entryCreateDto.getApplicant().setOrganisation(Instancio.create(Organisation.class));
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(APPLICANT_EMAIL);
         entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("01234567890"));
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
 
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setEmail(RESPONDENT_EMAIL);
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
 
         entryCreateDto.setNumberOfRespondents(10);
         entryCreateDto.setNumberOfRespondents(null);
@@ -871,15 +941,31 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setEmail(APPLICANT_EMAIL);
 
         entryCreateDto.getApplicant().setOrganisation(Instancio.create(Organisation.class));
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(APPLICANT_EMAIL);
         entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
 
         // test the functionality
         Response responseSpecCreate =
@@ -908,12 +994,39 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setEmail(APPLICANT_EMAIL);
         entryCreateDto.getApplicant().setOrganisation(null);
 
         entryCreateDto.getRespondent().setOrganisation(Instancio.create(Organisation.class));
@@ -921,14 +1034,42 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .getRespondent()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
-        entryCreateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+                .setEmail(APPLICANT_EMAIL);
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
+                .setAddressLine2(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+        entryCreateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setEmail(RESPONDENT_EMAIL);
 
         entryCreateDto.setNumberOfRespondents(10);
         entryCreateDto.setNumberOfRespondents(null);
@@ -1359,11 +1500,92 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
 
         updateDto.getApplicant().setPerson(null);
-        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 12B");
-        updateDto.getApplicant().getOrganisation().getContactDetails().setEmail("test@org.com");
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
+        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AB");
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@org.com"));
 
+        updateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        updateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
+
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        updateDto.getRespondent().getPerson().getContactDetails().setEmail("test@test.com");
+        updateDto.getRespondent().getPerson().getContactDetails().setPhone(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getContactDetails().setMobile(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@test.com"));
         updateDto.getRespondent().setOrganisation(null);
 
         updateDto.setStandardApplicantCode(null);
@@ -1691,7 +1913,17 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .getApplicant()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(APPLICANT_EMAIL);
+        entryUpdateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryUpdateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
 
         // test the functionality
@@ -1724,14 +1956,40 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .getRespondent()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(APPLICANT_EMAIL);
         entryUpdateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
-        entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryUpdateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
         entryUpdateDto
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
+                .setAddressLine2(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryUpdateDto.getRespondent().getPerson().getContactDetails().setEmail(RESPONDENT_EMAIL);
 
         entryUpdateDto.setNumberOfRespondents(10);
         entryUpdateDto.setNumberOfRespondents(null);

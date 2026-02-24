@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
+import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
@@ -92,13 +93,13 @@ public abstract class ApplicantMapper {
         ContactDetails contactDetails = new ContactDetails();
         if (applicant != null) {
             contactDetails.setAddressLine1(applicant.getAddress1());
-            contactDetails.setAddressLine2(applicant.getAddress2());
-            contactDetails.setAddressLine3(applicant.getAddress3());
-            contactDetails.setAddressLine4(applicant.getAddress4());
-            contactDetails.setAddressLine5(applicant.getAddress5());
-            contactDetails.setEmail(applicant.getEmailAddress());
-            contactDetails.setMobile(applicant.getMobileNumber());
-            contactDetails.setPhone(applicant.getTelephoneNumber());
+            contactDetails.setAddressLine2(map(applicant.getAddress2()));
+            contactDetails.setAddressLine3(map(applicant.getAddress3()));
+            contactDetails.setAddressLine4(map(applicant.getAddress4()));
+            contactDetails.setAddressLine5(map(applicant.getAddress5()));
+            contactDetails.setEmail(map(applicant.getEmailAddress()));
+            contactDetails.setMobile(map(applicant.getMobileNumber()));
+            contactDetails.setPhone(map(applicant.getTelephoneNumber()));
             contactDetails.setPostcode(applicant.getPostcode());
         }
         return contactDetails;
@@ -279,5 +280,13 @@ public abstract class ApplicantMapper {
             name = nameAddress.getName();
         }
         return name;
+    }
+
+    public String map(JsonNullable<String> str) {
+        return str.isPresent() ? str.get() : null;
+    }
+
+    public JsonNullable<String> map(String string) {
+        return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
     }
 }

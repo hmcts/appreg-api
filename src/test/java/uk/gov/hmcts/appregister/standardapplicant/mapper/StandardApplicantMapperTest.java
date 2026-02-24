@@ -72,49 +72,56 @@ public class StandardApplicantMapperTest {
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine2());
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine3(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine3());
+                        .getAddressLine3()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine5(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine5());
+                        .getAddressLine5()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine4(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine4());
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getEmailAddress(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getEmail());
+                        .getEmail()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getMobileNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getMobile());
+                        .getMobile()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getTelephoneNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getPhone());
+                        .getPhone()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getPostcode(),
                 standardApplicantGetDetailDto
@@ -160,49 +167,56 @@ public class StandardApplicantMapperTest {
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine2());
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine3(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine3());
+                        .getAddressLine3()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine5(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine5());
+                        .getAddressLine5()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine4(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine4());
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getEmailAddress(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getEmail());
+                        .getEmail()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getMobileNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getMobile());
+                        .getMobile()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getTelephoneNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getPhone());
+                        .getPhone()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getPostcode(),
                 standardApplicantGetDetailDto
