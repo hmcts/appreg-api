@@ -73,10 +73,6 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
     @StabilityTest
     public void testGetApplicationEntriesSearchWithPartialAllDetails() throws Exception {
-
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(ADMIN)).build();
-
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setDate(LocalDate.parse("2024-04-21"));
         filterDto.setApplicantSurname("rn");
@@ -89,6 +85,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         filterDto.setRespondentPostcode("XY9 8ZZ");
         filterDto.setStandardApplicantCode("APP0");
 
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(ADMIN)).build();
         assertSingleTurnerSearchResult(tokenGenerator, filterDto);
     }
 

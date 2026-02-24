@@ -70,9 +70,6 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     @Test
     public void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
-        Response responseSpecCreate = createListEntryWithAllData();
-
-        var tokenGenerator = createAdminToken();
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -80,6 +77,9 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         differenceLogAsserter.clearLogs();
         differenceLogAsserter.assertNoErrors();
 
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        var tokenGenerator = createAdminToken();
         Response responseSpecUpdate =
                 restAssuredClient.executePutRequest(
                         HeaderUtil.getLocation(responseSpecCreate),
