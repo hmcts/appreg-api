@@ -29,109 +29,6 @@ def secrets = [
         ]
 ]
 
-/**
-afterAlways('test') {
-
-  builder.gradle('jacocoTestReport')
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/checkstyle",
-    reportFiles          : "main.html",
-    reportName           : "Checkstyle Main Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/checkstyle",
-    reportFiles          : "test.html",
-    reportName           : "Checkstyle Test Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/checkstyle",
-    reportFiles          : "functionalTest.html",
-    reportName           : "Checkstyle Functional Test Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/checkstyle",
-    reportFiles          : "integrationTest.html",
-    reportName           : "Checkstyle Integration Test Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/tests/test",
-    reportFiles          : "index.html",
-    reportName           : "Unit Tests Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/tests/integration",
-    reportFiles          : "index.html",
-    reportName           : "Integration Tests Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/pmd",
-    reportFiles          : "main.html",
-    reportName           : "PMD Main Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/pmd",
-    reportFiles          : "test.html",
-    reportName           : "PMD Test Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/pmd",
-    reportFiles          : "functionalTest.html",
-    reportName           : "PMD Functional Test Report"
-  ]
-
-  publishHTML target: [
-    allowMissing         : true,
-    alwaysLinkToLastBuild: true,
-    keepAll              : true,
-    reportDir            : "build/reports/pmd",
-    reportFiles          : "integrationTest.html",
-    reportName           : "PMD Integration Test Report"
-  ]
-}
-*/
-
-/*
-afterFailure('test') {
-  junit testResults: '**/test-results/integration/*.xml'
-}
-*/
-
 static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
     [$class     : 'AzureKeyVaultSecret',
      secretType : 'Secret',
@@ -186,20 +83,6 @@ def determineDevEnvironmentDeployment() {
   echo "2 - env.DEV_ENABLE_DARTS_PORTAL: ${env.DEV_ENABLE_DARTS_PORTAL}"
 }
 
-
-/**
-
- afterFailure('test') {
- junit testResults: '**/test-results/integration/*.xml'
-  }
-  afterAlways('akschartsinstall') {
-    if(params.SKIP_TESTS || params.SKIP_SONAR) {
-      stage('SKIP_TESTS OR SKIP_SONAR IS TRUE') {
-        error("Build can not fully complete when SKIP_TESTS or SKIP_SONAR is set to true")
-      }
-    }
-  }
-*/
   before('dbmigrate:demo') {
     sh("./gradlew --no-daemon --init-script init.gradle assemble")
   }
