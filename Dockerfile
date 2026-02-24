@@ -3,7 +3,7 @@ ARG APP_INSIGHTS_AGENT_VERSION=3.7.7
 
 FROM busybox:1.37.0-musl AS bb
 
-FROM hmctspublic.azurecr.io/base/java:21-distroless
+FROM hmctspublic.azurecr.io/base/java:21-distroless-debug
 
 
 #DEBUG - Remove everything between here

@@ -60,10 +60,10 @@ withPipeline(type, product, component) {
  * be deployed with the specified image suffix in the PR environment.
  */
 def determineDevEnvironmentDeployment() {
-  env.DEV_ENABLE_DARTS_PORTAL = false
+  env.DEV_ENABLE_PORTAL = false
   env.DEV_PORTAL_IMAGE_SUFFIX = "latest"
 
-  echo "1 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_DARTS_PORTAL}"
+  echo "1 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 
   def githubApi = new GithubAPI(this)
     for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal_")) {
@@ -74,13 +74,13 @@ def determineDevEnvironmentDeployment() {
 
         if (label ==~ /enable_portal:pr-.*/) {
           env.DEV_PORTAL_IMAGE = label.replace("enable_portal:", "")
-          echo "DARTS portal image suffix: ${env.DEV_PORTAL_IMAGE}"
+          echo "Portal image suffix: ${env.DEV_PORTAL_IMAGE}"
         }
         echo "Deploying portal (${env.DEV_PORTAL_IMAGE}) instance in PR environment"
       }
     }
 
-  echo "2 - env.DEV_ENABLE_DARTS_PORTAL: ${env.DEV_ENABLE_DARTS_PORTAL}"
+  echo "2 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 }
 
   before('dbmigrate:demo') {

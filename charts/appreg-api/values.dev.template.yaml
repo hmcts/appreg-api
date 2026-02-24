@@ -7,7 +7,6 @@ java:
     POSTGRES_USER: "hmcts"
     POSTGRES_HOST: "appreg-dev.postgres.database.azure.com"
     POSTGRES_PORT: ${POSTGRES-PORT}
-    SPRING_DATASOURCE_URL: ${POSTGRES_HOST}
     SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
     SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASS}
     # The profile that dictates what data is inserted
@@ -31,7 +30,7 @@ appreg-frontend:
     releaseNameOverride: '{{ .Release.Name }}-portal'
     applicationPort: 3000
     # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
-    image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE_SUFFIX}'
+    image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
     ingressHost: "appreg-frontend-pr-${CHANGE_ID}.dev.platform.hmcts.net"
     aadIdentityName: darts
     keyVaults:
