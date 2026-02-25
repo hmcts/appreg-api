@@ -53,6 +53,18 @@ withPipeline(type, product, component) {
     syncBranchesWithMaster(branchesToSync)
 }
 
+before('dbmigrate:demo') {
+  sh("./gradlew --no-daemon --init-script init.gradle assemble")
+}
+
+before('dbmigrate:test') {
+  sh("./gradlew --no-daemon --init-script init.gradle assemble")
+}
+
+before('dbmigrate:ithc') {
+  sh("./gradlew --no-daemon --init-script init.gradle assemble")
+}
+
 /**
  * determines the development environment deployment based on the PR labels. If the label
  * "enable_portal" is present then the portal will be deployed in the PR environment.
