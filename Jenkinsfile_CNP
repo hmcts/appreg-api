@@ -73,7 +73,7 @@ before('dbmigrate:ithc') {
  */
 def determineDevEnvironmentDeployment() {
   env.DEV_ENABLE_PORTAL = false
-  env.DEV_PORTAL_IMAGE_SUFFIX = "latest"
+  env.DEV_PORTAL_IMAGE = "latest"
 
   echo "1 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 
