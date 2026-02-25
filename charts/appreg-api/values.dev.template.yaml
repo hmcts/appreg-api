@@ -17,3 +17,49 @@ java:
       secretRef: "postgres"
       key: PASSWORD
       disabled: false
+java:
+  # Don't modify below here
+  image: ${IMAGE_NAME}
+  ingressHost: ${SERVICE_FQDN}
+  devmemoryLimits: "3Gi"
+  environment:
+    POSTGRES_USER: "hmcts"
+    POSTGRES_HOST: "appreg-dev.postgres.database.azure.com"
+    POSTGRES_PORT: ${POSTGRES-PORT}
+    # The profile that dictates what data is inserted
+    SPRING_PROFILES_ACTIVE: functional
+    AZURE_TENANT_ID: ${AZURE_TENANT_ID}
+    AZURE_AUDIENCE_ID: ${AZURE_AUDIENCE_ID}
+    AZURE_ISSUER: ${AZURE_ISSUER}
+    POSTGRES_DATABASE: "pr-${CHANGE_ID}-appreg"
+  secrets:
+    POSTGRES_PASS:
+      secretRef: "postgres"
+      key: PASSWORD
+      disabled: false
+
+# Launch the database that this PR will be working against
+postgresql:
+  enabled: true
+  flexibleserver: "appreg-dev"
+  setup:
+    databases:
+      - name: "pr-${CHANGE_ID}-appreg"
+
+# This is needed if want to launch the portal along side this pr
+appreg-frontend:
+  enabled: ${DEV_ENABLE_PORTAL}
+  nodejs:
+    releaseNameOverride: '{{ .Release.Name }}-portal'
+    applicationPort: 3000
+    # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
+    image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
+    ingressHost: "appreg-frontend-pr-${CHANGE_ID}.dev.platform.hmcts.net"
+    aadIdentityName: darts
+    keyVaults:
+      darts:
+        secrets:
+          - redis-connection-string
+          - darts-portal-session-secret
+    environment:
+      APPREG_API_BASE_URL: "https://appreg-api.pr-${CHANGE_ID}.dev.platform.hmcts.net"
