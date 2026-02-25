@@ -759,7 +759,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         substitution1.setValue(LocalDate.now().toString());
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
 
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
@@ -822,7 +822,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         entryCreateDto.setWordingFields(List.of());
         entryCreateDto.setApplicationCode("AD99004");
         entryCreateDto.setRespondent(null);
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
 
         // arrange - token + create entry
         TokenGenerator tokenGenerator = createAdminToken();
@@ -899,7 +899,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode("APP001");
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -1087,7 +1087,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -1472,7 +1472,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the entry with a unique surname
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        String uniqueSurname = "DELTEST-" + UUID.randomUUID();
+        String uniqueSurname = Instancio.gen().string().get();
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, uniqueSurname);
 
@@ -2312,6 +2312,43 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 problemDetail.getType());
     }
 
+    @Test
+    public void givenAFailureCreate_whenEntryCreateDTORespondentHasInvalidFirstName_400Returned()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().getPerson().getName().setFirstForename("inv@lid");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+
+        // test the functionality
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(400);
+    }
+
     /** Build a token generator with ADMIN role. */
     private TokenGenerator createAdminToken() {
         return getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -2891,12 +2928,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        String surnameToLookup = UUID.randomUUID().toString();
-        entryCreateDto
-                .getApplicant()
-                .getPerson()
-                .getName()
-                .setSecondForename(JsonNullable.of(null));
+        String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto
                 .getApplicant()
                 .getPerson()

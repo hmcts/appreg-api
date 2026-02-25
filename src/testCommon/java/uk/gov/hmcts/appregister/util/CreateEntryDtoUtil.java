@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.util;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import lombok.experimental.UtilityClass;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -145,8 +144,6 @@ public class CreateEntryDtoUtil {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
-        String surnameToLookup = UUID.randomUUID().toString();
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
