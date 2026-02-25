@@ -81,6 +81,18 @@ public class CreateEntryDtoUtil {
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
 
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
+
         entryCreateDto
                 .getRespondent()
                 .getPerson()

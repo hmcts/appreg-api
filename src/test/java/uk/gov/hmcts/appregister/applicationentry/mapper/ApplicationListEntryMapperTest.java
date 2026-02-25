@@ -604,13 +604,13 @@ class ApplicationListEntryMapperTest {
                 "rsurname", mappedResult.getRespondent().getPerson().getName().getSurname());
         Assertions.assertEquals(
                 "rforename3",
-                mappedResult.getRespondent().getPerson().getName().getThirdForename());
+                mappedResult.getRespondent().getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(
                 "rforename1",
                 mappedResult.getRespondent().getPerson().getName().getFirstForename());
         Assertions.assertEquals(
                 "rforename2",
-                mappedResult.getRespondent().getPerson().getName().getSecondForename());
+                mappedResult.getRespondent().getPerson().getName().getSecondForename().get());
         Assertions.assertTrue(mappedResult.getIsResulted());
         Assertions.assertFalse(mappedResult.getIsFeeRequired());
         Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
@@ -691,10 +691,10 @@ class ApplicationListEntryMapperTest {
                 entryGetDetailDto.getApplicant().getPerson().getName().getFirstForename());
         Assertions.assertEquals(
                 applicant.getForename2(),
-                entryGetDetailDto.getApplicant().getPerson().getName().getSecondForename());
+                entryGetDetailDto.getApplicant().getPerson().getName().getSecondForename().get());
         Assertions.assertEquals(
                 applicant.getForename3(),
-                entryGetDetailDto.getApplicant().getPerson().getName().getThirdForename());
+                entryGetDetailDto.getApplicant().getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(
                 applicant.getTitle(),
                 entryGetDetailDto.getApplicant().getPerson().getName().getTitle());
@@ -1188,9 +1188,9 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(
                 entity.getForename1(), applicant.getPerson().getName().getFirstForename());
         Assertions.assertEquals(
-                entity.getForename2(), applicant.getPerson().getName().getSecondForename());
+                entity.getForename2(), applicant.getPerson().getName().getSecondForename().get());
         Assertions.assertEquals(
-                entity.getForename3(), applicant.getPerson().getName().getThirdForename());
+                entity.getForename3(), applicant.getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(entity.getTitle(), applicant.getPerson().getName().getTitle());
         Assertions.assertEquals(
                 entity.getMobileNumber(),
@@ -1292,9 +1292,9 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(
                 entity.getForename1(), respondent.getPerson().getName().getFirstForename());
         Assertions.assertEquals(
-                entity.getForename2(), respondent.getPerson().getName().getSecondForename());
+                entity.getForename2(), respondent.getPerson().getName().getSecondForename().get());
         Assertions.assertEquals(
-                entity.getForename3(), respondent.getPerson().getName().getThirdForename());
+                entity.getForename3(), respondent.getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(entity.getTitle(), respondent.getPerson().getName().getTitle());
         Assertions.assertEquals(
                 entity.getMobileNumber(),

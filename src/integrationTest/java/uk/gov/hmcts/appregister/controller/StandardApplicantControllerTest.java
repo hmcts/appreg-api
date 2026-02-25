@@ -95,11 +95,12 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
         Assertions.assertEquals(
                 "John", returnedSa.getApplicant().getPerson().getName().getFirstForename());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getSecondForename());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getSecondForename().get());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(
                 "Smith", returnedSa.getApplicant().getPerson().getName().getSurname());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
         Assertions.assertEquals(
                 "123 High Street",
                 returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());

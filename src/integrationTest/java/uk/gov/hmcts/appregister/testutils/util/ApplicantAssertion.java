@@ -17,9 +17,11 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getName().getSurname(), standardApplicant.getApplicantSurname());
         Assertions.assertEquals(
-                applicant.getName().getThirdForename(), standardApplicant.getApplicantForename3());
+                applicant.getName().getThirdForename().get(),
+                standardApplicant.getApplicantForename3());
         Assertions.assertEquals(
-                applicant.getName().getSecondForename(), standardApplicant.getApplicantForename2());
+                applicant.getName().getSecondForename().get(),
+                standardApplicant.getApplicantForename2());
         Assertions.assertEquals(
                 applicant.getName().getFirstForename(), standardApplicant.getApplicantForename1());
         Assertions.assertEquals(
@@ -57,11 +59,11 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getName().getSurname(), applicationListEntry.getSurname());
         Assertions.assertEquals(
-                applicant.getName().getThirdForename(), applicationListEntry.getForename3());
+                applicant.getName().getThirdForename().get(), applicationListEntry.getForename3());
         Assertions.assertEquals(
                 applicant.getName().getFirstForename(), applicationListEntry.getForename1());
         Assertions.assertEquals(
-                applicant.getName().getSecondForename(), applicationListEntry.getForename2());
+                applicant.getName().getSecondForename().get(), applicationListEntry.getForename2());
         Assertions.assertEquals(
                 applicant.getContactDetails().getPostcode(), applicationListEntry.getPostcode());
         Assertions.assertEquals(

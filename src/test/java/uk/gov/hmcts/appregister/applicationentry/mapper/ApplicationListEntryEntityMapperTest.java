@@ -138,9 +138,11 @@ class ApplicationListEntryEntityMapperTest {
         Assertions.assertEquals(
                 applicant.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
-                applicant.getPerson().getName().getSecondForename(), nameAddress.getForename2());
+                applicant.getPerson().getName().getSecondForename().orElse(null),
+                nameAddress.getForename2());
         Assertions.assertEquals(
-                applicant.getPerson().getName().getThirdForename(), nameAddress.getForename3());
+                applicant.getPerson().getName().getThirdForename().orElse(null),
+                nameAddress.getForename3());
         Assertions.assertEquals(
                 applicant.getPerson().getName().getSurname(), nameAddress.getSurname());
         Assertions.assertEquals(
@@ -216,9 +218,11 @@ class ApplicationListEntryEntityMapperTest {
         Assertions.assertEquals(
                 respondent.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
-                respondent.getPerson().getName().getSecondForename(), nameAddress.getForename2());
+                respondent.getPerson().getName().getSecondForename().orElse(null),
+                nameAddress.getForename2());
         Assertions.assertEquals(
-                respondent.getPerson().getName().getThirdForename(), nameAddress.getForename3());
+                respondent.getPerson().getName().getThirdForename().orElse(null),
+                nameAddress.getForename3());
         Assertions.assertEquals(
                 respondent.getPerson().getName().getSurname(), nameAddress.getSurname());
         Assertions.assertEquals(

@@ -243,9 +243,15 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .isEqualTo("John");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
                 .isEqualTo("Turner");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSecondForename())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getName()
+                                .getSecondForename()
+                                .get())
                 .isEqualTo("Francis");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
                 .isEqualTo("Michael");
 
         assertThat(
@@ -363,9 +369,15 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .isEqualTo("John");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSurname())
                 .isEqualTo("Turner");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getSecondForename())
+        assertThat(
+                        entryGetSummaryDto
+                                .getApplicant()
+                                .getPerson()
+                                .getName()
+                                .getSecondForename()
+                                .get())
                 .isEqualTo("Francis");
-        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename())
+        assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
                 .isEqualTo("Michael");
 
         assertThat(
@@ -1558,6 +1570,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
                 .getContactDetails()
                 .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
 
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto
                 .getRespondent()
                 .getPerson()
@@ -2642,6 +2656,12 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
             throws Exception {
 
         // ensure DTO has the unique surname
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setSurname(uniqueSurname);
 
         Response responseSpecCreate =
@@ -2872,6 +2892,17 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         String surnameToLookup = UUID.randomUUID().toString();
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         // test the functionality

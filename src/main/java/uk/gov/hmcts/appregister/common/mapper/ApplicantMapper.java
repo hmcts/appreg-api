@@ -77,8 +77,8 @@ public abstract class ApplicantMapper {
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getTitle());
         fullName.setFirstForename(applicant.getForename1());
-        fullName.setSecondForename(applicant.getForename2());
-        fullName.setThirdForename(applicant.getForename3());
+        fullName.setSecondForename(JsonNullable.of(applicant.getForename2()));
+        fullName.setThirdForename(JsonNullable.of(applicant.getForename3()));
         fullName.setSurname(applicant.getSurname());
         return fullName;
     }

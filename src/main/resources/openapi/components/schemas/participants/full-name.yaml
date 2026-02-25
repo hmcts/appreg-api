@@ -30,11 +30,13 @@ properties:
   secondForename:
     type: string
     description: The persons optional second name.
+    nullable: true
     pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     maxLength: 100
 
   thirdForename:
     type: string
     description: The persons optional third name.
+    nullable: true
     pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
     maxLength: 100
