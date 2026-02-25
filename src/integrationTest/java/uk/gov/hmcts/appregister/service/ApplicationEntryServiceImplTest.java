@@ -526,8 +526,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryUpdateDto updateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         updateDto.getApplicant().setOrganisation(null);
+        updateDto.getApplicant().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         updateDto.setNumberOfRespondents(null);
