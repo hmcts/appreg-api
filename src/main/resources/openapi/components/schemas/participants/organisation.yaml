@@ -9,7 +9,9 @@ properties:
   name:
     type: string
     description: The name of the organisation.
-    pattern: "[a-zA-Z0-9\\-\\+\\.,�@\\?\\'\\(\\)/%_ &!:]*" # Name regex from legacy.
+    # disallows control characters, allows most other characters.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "ACME Industries LTD"
     maxLength: 100
 
