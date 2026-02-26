@@ -1,0 +1,82 @@
+name: PR Tasks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  add-redirect-uris:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check required secrets are present
+        run: |
+          test -n "${{ secrets.AZURE_CLIENT_ID }}" || (echo "Missing AZURE_CLIENT_ID" && exit 1)
+          test -n "${{ secrets.AZURE_CLIENT_SECRET }}" || (echo "Missing AZURE_CLIENT_SECRET" && exit 1)
+          test -n "${{ secrets.AZURE_TENANT_ID }}" || (echo "Missing AZURE_TENANT_ID" && exit 1)
+          test -n "${{ secrets.APPREG_OBJECT_ID }}" || (echo "Missing APPREG_OBJECT_ID" && exit 1)
+
+      - name: Azure Login
+        run: |
+          az login --service-principal \
+            --username "${{ secrets.AZURE_CLIENT_ID }}" \
+            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
+            --tenant "${{ secrets.AZURE_TENANT_ID }}" \
+            --allow-no-subscriptions
+
+      - name: Add redirect URIs for PR environment
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          OBJECT_ID: ${{ secrets.APPREG_OBJECT_ID }}
+        run: |
+          set -euo pipefail
+
+          BASE_URL="https://appreg-frontend-pr-${PR_NUMBER}.dev.platform.hmcts.net"
+          BASE_URL="${BASE_URL%/}"
+
+          LOGIN_CB="${BASE_URL}/sso/login-callback"
+          LOGOUT_CB="${BASE_URL}/sso/logout-callback"
+
+          CURRENT="$(az rest \
+            --method GET \
+            --url "https://graph.microsoft.com/v1.0/applications/${OBJECT_ID}" \
+            --query "web.redirectUris" -o json --only-show-errors)"
+
+          if [ "$CURRENT" = "null" ] || [ -z "$CURRENT" ]; then
+            CURRENT="[]"
+          fi
+
+          if ! echo "$CURRENT" | jq -e . >/dev/null 2>&1; then
+            echo "$CURRENT" | head -c 1000 >&2 || true
+            exit 3
+          fi
+
+          UPDATED="$CURRENT"
+
+          if ! echo "$UPDATED" | jq -e --arg url "$LOGIN_CB" 'any(. == $url)' >/dev/null; then
+            UPDATED=$(echo "$UPDATED" | jq --arg url "$LOGIN_CB" '. + [$url]')
+          fi
+
+          if ! echo "$UPDATED" | jq -e --arg url "$LOGOUT_CB" 'any(. == $url)' >/dev/null; then
+            UPDATED=$(echo "$UPDATED" | jq --arg url "$LOGOUT_CB" '. + [$url]')
+          fi
+
+          if [ "$UPDATED" = "$CURRENT" ]; then
+            echo "NO_CHANGES"
+            exit 0
+          fi
+
+          BODY=$(jq -cn --argjson uris "$UPDATED" '{web:{redirectUris:$uris}}')
+
+          az rest \
+            --method PATCH \
+            --url "https://graph.microsoft.com/v1.0/applications/${OBJECT_ID}" \
+            --headers "Content-Type=application/json" \
+            --body "$BODY" \
+            -o none --only-show-errors
+
+          echo "CHANGED"
