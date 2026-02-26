@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.util;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.time.LocalDate;
 import java.util.List;
 import lombok.experimental.UtilityClass;
@@ -155,6 +157,22 @@ public class CreateEntryDtoUtil {
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+
+        // Ensure rule compliance
+        sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
         return entryCreateDto;
+    }
+
+    public static void sanitiseFeeStatusesForDueRule(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null) {
+            return;
+        }
+
+        for (FeeStatus fs : feeStatuses) {
+            if (fs != null && fs.getPaymentStatus() == DUE) {
+                fs.setPaymentReference(null);
+            }
+        }
     }
 }
