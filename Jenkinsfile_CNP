@@ -38,33 +38,6 @@ static LinkedHashMap<String, Object> secret(String secretName, String envVar) {
     ]
 }
 
-withPipeline(type, product, component) {
-    env.SKIP_TESTS = params.SKIP_TESTS
-    env.SKIP_SONAR = params.SKIP_SONAR
-    env.FAIL_FAST = params.FAIL_FAST
-
-    echo "SKIP_TESTS: ${env.SKIP_TESTS}"
-    echo "SKIP_SONAR: ${env.SKIP_SONAR}"
-    echo "FAIL_FAST: ${env.FAIL_FAST}"
-
-    loadVaultSecrets(secrets)
-    enableSlackNotifications('#appreg-builds')
-
-    syncBranchesWithMaster(branchesToSync)
-}
-
-before('dbmigrate:demo') {
-  sh("./gradlew --no-daemon --init-script init.gradle assemble")
-}
-
-before('dbmigrate:test') {
-  sh("./gradlew --no-daemon --init-script init.gradle assemble")
-}
-
-before('dbmigrate:ithc') {
-  sh("./gradlew --no-daemon --init-script init.gradle assemble")
-}
-
 /**
  * determines the development environment deployment based on the PR labels. If the label
  * "enable_portal" is present then the portal will be deployed in the PR environment.
@@ -78,22 +51,49 @@ def determineDevEnvironmentDeployment() {
   echo "1 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 
   def githubApi = new GithubAPI(this)
-    for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal_")) {
+  for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal_")) {
 
-      // If the portal label exists then load the portal
-      if (label ==~ /enable_portal_.*/) {
-        env.DEV_ENABLE_PORTAL = true
+    // If the portal label exists then load the portal
+    if (label ==~ /enable_portal_.*/) {
+      env.DEV_ENABLE_PORTAL = true
 
-        if (label ==~ /enable_portal:pr-.*/) {
-          env.DEV_PORTAL_IMAGE = label.replace("enable_portal:", "")
-          echo "Portal image suffix: ${env.DEV_PORTAL_IMAGE}"
-        }
-        echo "Deploying portal (${env.DEV_PORTAL_IMAGE}) instance in PR environment"
+      if (label ==~ /enable_portal:pr-.*/) {
+        env.DEV_PORTAL_IMAGE = label.replace("enable_portal:", "")
+        echo "Portal image suffix: ${env.DEV_PORTAL_IMAGE}"
       }
+      echo "Deploying portal (${env.DEV_PORTAL_IMAGE}) instance in PR environment"
     }
+  }
 
   echo "2 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 }
+
+withPipeline(type, product, component) {
+  env.SKIP_TESTS = params.SKIP_TESTS
+  env.SKIP_SONAR = params.SKIP_SONAR
+  env.FAIL_FAST = params.FAIL_FAST
+
+  echo "SKIP_TESTS: ${env.SKIP_TESTS}"
+  echo "SKIP_SONAR: ${env.SKIP_SONAR}"
+  echo "FAIL_FAST: ${env.FAIL_FAST}"
+
+  loadVaultSecrets(secrets)
+  enableSlackNotifications('#appreg-builds')
+
+  syncBranchesWithMaster(branchesToSync)
+
+
+  before('dbmigrate:demo') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
+
+  before('dbmigrate:test') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
+
+  before('dbmigrate:ithc') {
+    sh("./gradlew --no-daemon --init-script init.gradle assemble")
+  }
 
   before('dbmigrate:demo') {
     sh("./gradlew --no-daemon --init-script init.gradle assemble")
@@ -112,3 +112,4 @@ def determineDevEnvironmentDeployment() {
       determineDevEnvironmentDeployment()
     }
   }
+}
