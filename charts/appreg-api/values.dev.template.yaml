@@ -8,9 +8,6 @@ java:
     POSTGRES_HOST: "appreg-dev.postgres.database.azure.com"
     # The profile that dictates what data is inserted
     SPRING_PROFILES_ACTIVE: functional
-    AZURE_TENANT_ID: ${AZURE_TENANT_ID}
-    AZURE_AUDIENCE_ID: ${AZURE_AUDIENCE_ID}
-    AZURE_ISSUER: ${AZURE_ISSUER}
     POSTGRES_DATABASE: "pr-${CHANGE_ID}-appreg"
   secrets:
     POSTGRES_PASS:
