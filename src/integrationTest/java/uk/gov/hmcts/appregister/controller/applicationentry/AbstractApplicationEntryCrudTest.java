@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -376,7 +377,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         TokenGenerator tokenGenerator = createAdminToken();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         Response responseSpecCreate =

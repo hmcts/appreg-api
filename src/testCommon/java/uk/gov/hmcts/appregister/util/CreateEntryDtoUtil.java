@@ -131,6 +131,13 @@ public class CreateEntryDtoUtil {
                 .getPerson()
                 .getContactDetails()
                 .setPhone(JsonNullable.of(null));
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto
                 .getApplicant()
                 .getPerson()
