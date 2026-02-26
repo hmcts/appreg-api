@@ -30,8 +30,8 @@ appreg-frontend:
     releaseNameOverride: '{{ .Release.Name }}-portal'
     applicationPort: 3000
     # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
-    image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
-    ingressHost: "appreg-frontend-api-pr-${CHANGE_ID}.dev.platform.hmcts.net"
+    image: 'sdshmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
+    ingressHost: "appreg-pr-${CHANGE_ID}.dev.platform.hmcts.net"
     aadIdentityName: appreg
     keyVaults:
       appreg:
