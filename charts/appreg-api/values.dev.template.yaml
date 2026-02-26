@@ -31,7 +31,7 @@ appreg-frontend:
     applicationPort: 4000
     # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
     image: 'sdshmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
-    ingressHost: "appreg-pr-${CHANGE_ID}.dev.platform.hmcts.net"
+    ingressHost: "appreg-frontend-pr-${CHANGE_ID}.dev.platform.hmcts.net"
     aadIdentityName: appreg
     environment:
       ALLOW_CONFIG_MUTATIONS: true
