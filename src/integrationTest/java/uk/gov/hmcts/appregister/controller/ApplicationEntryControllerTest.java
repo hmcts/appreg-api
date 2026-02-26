@@ -2320,28 +2320,26 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
         entryUpdateDto
-            .getRespondent()
-            .getPerson()
-            .getContactDetails()
-            .setAddressLine2(JsonNullable.of("1 test road"));
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("1 test road"));
 
         // test the functionality
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-            .then()
-            .statusCode(200);
+        responseSpecUpdate.then().statusCode(200);
     }
 
     /* REGEX Validation Tests */
@@ -2351,38 +2349,32 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.getRespondent().getPerson().getName().setSurname("test");
+        entryUpdateDto.getRespondent().getPerson().getName().setFirstForename("François");
         entryUpdateDto
-            .getRespondent()
-            .getPerson()
-            .getName().setSurname("test");
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("Joséphine"));
         entryUpdateDto
-            .getRespondent()
-            .getPerson()
-            .getName().setFirstForename("François");
-        entryUpdateDto
-            .getRespondent()
-            .getPerson()
-            .getName().setSecondForename(JsonNullable.of("Joséphine"));
-        entryUpdateDto
-            .getRespondent()
-            .getPerson()
-            .getName().setThirdForename(JsonNullable.of("Sørina"));
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of("Sørina"));
         // test the functionality
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-            .then()
-            .statusCode(200);
+        responseSpecUpdate.then().statusCode(200);
     }
 
     /* REGEX Validation Tests */
@@ -2392,24 +2384,26 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
-        entryUpdateDto.getRespondent().getPerson().getContactDetails().setEmail(JsonNullable.of("test@test.com"));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@test.com"));
 
         // test the functionality
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-            .then()
-            .statusCode(200);
+        responseSpecUpdate.then().statusCode(200);
     }
 
     /* REGEX Validation Tests */
@@ -2419,24 +2413,26 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
-        entryUpdateDto.getRespondent().getPerson().getContactDetails().setPhone(JsonNullable.of("01234 56789"));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("01234 56789"));
 
         // test the functionality
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-            .then()
-            .statusCode(200);
+        responseSpecUpdate.then().statusCode(200);
     }
 
     /* REGEX Validation Tests */
@@ -2446,24 +2442,26 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // setup the payload
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
-        entryUpdateDto.getRespondent().getPerson().getContactDetails().setMobile(JsonNullable.of("+447123456789"));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("+447123456789"));
 
         // test the functionality
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-            .then()
-            .statusCode(200);
+        responseSpecUpdate.then().statusCode(200);
     }
 
     @Test
