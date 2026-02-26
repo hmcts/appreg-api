@@ -2315,7 +2315,8 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
 
     /* REGEX Validation Tests */
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned() throws Exception {
+    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned()
+            throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.getApplicant().getPerson().getName().setFirstForename("vålid");
@@ -2350,105 +2351,141 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidAddress_201Returned() throws Exception {
+    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidAddress_201Returned()
+            throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setAddressLine1("1 valid address");
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setAddressLine2(JsonNullable.of("2 valid address"));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setAddressLine3(JsonNullable.of("3 valid address"));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setAddressLine4(JsonNullable.of("4 valid address"));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setAddressLine5(JsonNullable.of("5 valid address"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine1("1 valid address");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("2 valid address"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of("3 valid address"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of("4 valid address"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of("5 valid address"));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPhoneNumber_201Returned() throws Exception {
+    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidPhoneNumber_201Returned()
+            throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPhone(JsonNullable.of("01234 56789"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("01234 56789"));
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidMobileNumber_201Returned() throws Exception {
+    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidMobileNumber_201Returned()
+            throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setMobile(JsonNullable.of("+447123456890"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("+447123456890"));
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
     }
 
     @Test
-    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidEmail_201Returned() throws Exception {
+    public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidEmail_201Returned()
+            throws Exception {
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setEmail(JsonNullable.of("test@valid.com"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@valid.com"));
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate.then().statusCode(201);
