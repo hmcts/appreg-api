@@ -17,4 +17,4 @@ dependencies:
   - name: appreg-frontend
     version: 0.0.11
     repository: 'oci://sdshmctspublic.azurecr.io/helm'
-    condition: appreg-portal.enabled
+    condition: appreg-frontend.enabled

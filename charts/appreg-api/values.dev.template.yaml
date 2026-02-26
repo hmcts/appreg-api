@@ -35,12 +35,38 @@ appreg-frontend:
     applicationPort: 3000
     # This is needed if want to launch a specific version of the portal along side this pr, otherwise it will use the latest image
     image: 'hmctspublic.azurecr.io/appreg/frontend:${DEV_PORTAL_IMAGE}'
-    ingressHost: "appreg-frontend-pr-${CHANGE_ID}.dev.platform.hmcts.net"
+    ingressHost: "appreg-pr-${CHANGE_ID}.dev.platform.hmcts.net"
     aadIdentityName: darts
     keyVaults:
-      darts:
+      appreg:
         secrets:
-          - redis-connection-string
-          - darts-portal-session-secret
-    environment:
-      APPREG_API_BASE_URL: "https://appreg-api.pr-${CHANGE_ID}.dev.platform.hmcts.net"
+          - name: app-insights-connection-string
+            alias: app-insights-connection-string-fe
+          - name: azure-tenant-id
+            alias: azure-tenant-id-fe
+          - name: azure-client-secret
+            alias: azure-client-secret-fe
+          - name: azure-app-id
+            alias: azure-app-id-fe
+          - name: redis-access-key
+            alias: redis-access-key
+          - name: test-user1-email
+            alias: TEST-USER1-EMAIL
+          - name: test-user2-email
+            alias: TEST-USER2-EMAIL
+          - name: test-user3-email
+            alias: TEST-USER3-EMAIL
+          - name: test-admin1-email
+            alias: TEST-ADMIN1-EMAIL
+          - name: test-admin2-email
+            alias: TEST-ADMIN2-EMAIL
+          - name: test-admin3-email
+            alias: TEST-ADMIN3-EMAIL
+          - name: test-users-password
+            alias: TEST-USERS-PASSWORD
+      environment:
+        ALLOW_CONFIG_MUTATIONS: true
+        NODE_ENV: 'production'
+        TESTVAR: 'testvalue'
+        LOG_LEVEL: 'DEBUG'
+        APPREG_API_BASE_URL: "https://appreg-api-pr-${CHANGE_ID}.dev.platform.hmcts.net"
