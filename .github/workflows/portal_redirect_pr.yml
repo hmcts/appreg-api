@@ -35,7 +35,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          BASE_URL="https://appreg-frontend-pr-${PR_NUMBER}.dev.platform.hmcts.net"
+          BASE_URL="https://appreg-frontend-with-api-pr-${PR_NUMBER}.dev.platform.hmcts.net"
           BASE_URL="${BASE_URL%/}"
 
           LOGIN_CB="${BASE_URL}/sso/login-callback"
