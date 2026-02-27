@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
@@ -79,6 +82,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final AppListEntryOfficialRepository appListEntryOfficialRepository;
     private final AppListEntryFeeRepository appListEntryFeeRepository;
     private final StandardApplicantRepository standardApplicantRepository;
+    private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
     private final ApplicationListEntryMapper applicationListEntryMapStructMapper;
     private final ApplicantMapper applicantMapper;
@@ -173,6 +177,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 respondentToSave,
                                                                 success.getApplicationCode(),
                                                                 success.getApplicationList());
+
+                                        Long alId = success.getApplicationList().getId();
+
+                                        Integer nextSeq = appListEntrySequenceMappingRepository.allocateNextSequence(alId);
+                                        listEntryEntity.setSequenceNumber(nextSeq.shortValue());
 
                                         listEntryEntity =
                                                 refreshEntity(
