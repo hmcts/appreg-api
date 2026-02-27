@@ -35,13 +35,13 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
     @Autowired protected AppListEntryResolutionRepository appListEntryResolutionRepository;
     @Autowired protected ResolutionCodeRepository resolutionCodeRepository;
 
-    protected static final String WEB_CONTEXT = "application-lists";
+    public static final String WEB_CONTEXT = "application-lists";
 
-    protected static final String APPC_CODE = "APPC";
-    protected static final String APPC_WORDING_KEY = "Name of Crown Court";
+    public static final String APPC_CODE = "APPC";
+    public static final String APPC_WORDING_KEY = "Name of Crown Court";
 
-    protected static final String FRO_CODE = "FRO";
-    protected static final String FRO_WORDING_KEY = "Reason text";
+    public static final String FRO_CODE = "FRO";
+    public static final String FRO_WORDING_KEY = "Reason text";
 
     @BeforeEach
     void setupUser() {
@@ -112,7 +112,7 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
     }
 
     // ---- data helpers ----
-    protected ApplicationList createAndSaveList(Status status) {
+    public ApplicationList createAndSaveList(Status status) {
         var list = new AppListTestData().someMinimal().status(status).build();
         persistance.save(list);
         return list;
@@ -134,12 +134,12 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
         return persistance.save(resolution);
     }
 
-    protected ResultCreateDto buildCreatePayload(
+    public static ResultCreateDto buildCreatePayload(
             String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultCreateDto(resultCode, wordingFields);
     }
 
-    protected ResultUpdateDto buildUpdatePayload(
+    public static ResultUpdateDto buildUpdatePayload(
             String resultCode, List<TemplateSubstitution> wordingFields) {
         return new ResultUpdateDto(resultCode, wordingFields);
     }
