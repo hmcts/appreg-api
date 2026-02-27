@@ -832,6 +832,141 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
     }
 
+    @StabilityTest
+    public void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(Optional.of("P0"), Optional.empty()),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(7, page.getContent().size());
+            Assertions.assertEquals("APP001", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP002", page.getContent().get(1).getCode());
+
+            // we have a duplicate record
+            Assertions.assertEquals("APP003", page.getContent().get(2).getCode());
+            Assertions.assertEquals("APP003", page.getContent().get(3).getCode());
+
+            Assertions.assertEquals("APP004", page.getContent().get(4).getCode());
+            Assertions.assertEquals("APP005", page.getContent().get(5).getCode());
+        }
+
+        Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialName_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(), Optional.of("anisation 1")),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getContent().size());
+            Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
+        }
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialForename_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(), Optional.of("Owe")),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(2, page.getContent().size());
+            Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP006", page.getContent().get(1).getCode());
+        }
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialSurname_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(), Optional.of("Jones")),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(2, page.getContent().size());
+            Assertions.assertEquals("APP004", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP005", page.getContent().get(1).getCode());
+        }
+    }
+
     @RequiredArgsConstructor
     static class StandardApplicantRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> code;

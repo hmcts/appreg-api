@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.util;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -8,7 +10,9 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
@@ -23,12 +27,31 @@ public class CreateEntryDtoUtil {
      * @return The created payload
      */
     public EntryCreateDto getCorrectCreateEntryDto() {
+        return getCorrectCreateEntryDto(false);
+    }
+
+    /**
+     * gets the correct payload to make a successful create entry.
+     *
+     * @param satisfyForClose Satisfy condition for app list closure
+     * @return The created payload
+     */
+    public EntryCreateDto getCorrectCreateEntryDto(boolean satisfyForClose) {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         List<Official> officials = Instancio.ofList(Official.class).size(4).create();
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
+
+        if (satisfyForClose) {
+            FeeStatus feeStatus = new FeeStatus();
+
+            // if we want to satisfy for close set to paid
+            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+            feeStatus.setStatusDate(LocalDate.now());
+            entryCreateDto.setFeeStatuses(List.of(feeStatus));
+        }
 
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
@@ -63,6 +86,22 @@ public class CreateEntryDtoUtil {
 
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
+
+        // Ensure rule compliance
+        sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
         return entryCreateDto;
+    }
+
+    public static void sanitiseFeeStatusesForDueRule(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null) {
+            return;
+        }
+
+        for (FeeStatus fs : feeStatuses) {
+            if (fs != null && fs.getPaymentStatus() == DUE) {
+                fs.setPaymentReference(null);
+            }
+        }
     }
 }

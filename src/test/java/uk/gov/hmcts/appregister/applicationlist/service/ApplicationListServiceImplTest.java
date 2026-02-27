@@ -73,6 +73,8 @@ import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -116,6 +118,10 @@ public class ApplicationListServiceImplTest {
     @Mock private CriminalJusticeAreaRepository cjaRepository;
     @Mock private ApplicationListMapper mapper;
     @Mock private ApplicationListOfficialMapper officalMapper;
+    @Mock private AppListEntryResolutionRepository appListEntryResolutionRepository;
+    @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
+    @Mock private ApplicationListEntryRepository applicationListEntryRepository;
+    @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
@@ -125,7 +131,13 @@ public class ApplicationListServiceImplTest {
     @Spy
     private DummyApplicationUpdateListLocationValidator updateValidator =
             new DummyApplicationUpdateListLocationValidator(
-                    repository, courtHouseRepository, cjaRepository);
+                    repository,
+                    courtHouseRepository,
+                    cjaRepository,
+                    appListEntryResolutionRepository,
+                    appListEntryOfficialRepository,
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
 
     @Spy
     private DummyApplicationListGetValidator getValidator =
@@ -1042,10 +1054,21 @@ public class ApplicationListServiceImplTest {
         private ListUpdateValidationSuccess success;
 
         public DummyApplicationUpdateListLocationValidator(
-                ApplicationListRepository repository,
+                ApplicationListRepository applicationListRepository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository criminalJusticeAreaRepository,
+                AppListEntryResolutionRepository appListEntryResolutionRepository,
+                AppListEntryOfficialRepository appListEntryOfficialRepository,
+                ApplicationListEntryRepository applicationListEntryRepository,
+                AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
+            super(
+                    applicationListRepository,
+                    courtHouseRepository,
+                    criminalJusticeAreaRepository,
+                    appListEntryResolutionRepository,
+                    appListEntryOfficialRepository,
+                    applicationListEntryRepository,
+                    appListEntryFeeStatusRepository);
         }
 
         @Override

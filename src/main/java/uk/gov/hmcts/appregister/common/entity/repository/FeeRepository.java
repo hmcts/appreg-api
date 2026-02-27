@@ -29,7 +29,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
             """
         SELECT f
         FROM Fee f
-        WHERE (f.reference = :reference) AND
+        WHERE (LOWER(f.reference) = LOWER(:reference)) AND
           ((f.endDate IS NULL OR  f.endDate >= :dateTime)
                   AND f.startDate <= :dateTime)
         """)
@@ -45,7 +45,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
             """
         SELECT f
         FROM Fee f
-        WHERE (f.reference = :reference) AND
+        WHERE (LOWER(f.reference) = LOWER(:reference)) AND
         ((f.endDate IS NULL OR  f.endDate >= :dateTime)
         AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
         """)

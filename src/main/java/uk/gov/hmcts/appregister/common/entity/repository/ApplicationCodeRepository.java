@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 
 /**
  * Repository interface for managing ApplicationCode entities.
@@ -26,11 +27,12 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             """
             SELECT c
             FROM ApplicationCode c
-            WHERE c.code = :applicationCode
+            WHERE LOWER(c.code) LIKE CONCAT('%', LOWER(CAST(:applicationCode  AS string)),  '%') ESCAPE '\\'
               AND c.startDate <= :dateTime
               AND (c.endDate IS NULL OR c.endDate >= :dateTime)
+
             """)
-    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
+    List<ApplicationCode> findByCodeAndDate(@LikeParam String applicationCode, LocalDate dateTime);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
@@ -56,8 +58,8 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             """
         SELECT c
         FROM ApplicationCode c
-        WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%'))
-          AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%'))
+        WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%')  ESCAPE '\\')
+          AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%')  ESCAPE '\\')
           AND c.startDate < :date
           AND (c.endDate IS NULL OR c.endDate >= :date)
         """)
