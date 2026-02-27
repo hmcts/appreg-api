@@ -21,6 +21,7 @@ import org.springframework.boot.actuate.endpoint.OperationResponseBody;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -87,7 +88,7 @@ public class RestImplementedStatusHealthIndicator {
         List<ApiMethod> unImplementedEndpoints = new ArrayList<>();
 
         // scan all active spring components
-        scanner.findCandidateComponents(BASE_PACKAGE + ".*").stream()
+        scanner.findCandidateComponents(BASE_PACKAGE).stream()
                 .forEach(
                         bd -> {
                             try {
@@ -96,35 +97,42 @@ public class RestImplementedStatusHealthIndicator {
                                 // gets the interface for all components
                                 Class[] interfaces = component.getInterfaces();
 
-                                // ensure we have an interface for the component
-                                if (interfaces.length > 0) {
+                                // look through and match on all interfaces
+                                for (Class<?> interf : interfaces) {
+                                    // ensure we have an interface for the component
+                                    if (interfaces.length > 0) {
 
-                                    // check the component matches the api names
-                                    if (interfaceForApi.contains(
-                                            interfaces[0].getCanonicalName())) {
+                                        // check the component matches the api names
+                                        if (interfaceForApi.contains(interf.getCanonicalName())) {
 
-                                        // store the processed api to determine the unimplemented
-                                        // apis at the end
-                                        processedApiClasses.add(interfaces[0].getCanonicalName());
+                                            // store the processed api to determine the
+                                            // unimplemented
+                                            // apis at the end
+                                            processedApiClasses.add(interf.getCanonicalName());
 
-                                        // gets the api methods of the component
-                                        List<ApiMethod> controllerMethodsForComponent =
-                                                getControllerMethod(component);
-                                        // loop through the API component methods and check if the
-                                        // component has an
-                                        // implementation for it.
-                                        for (ApiMethod methodName : controllerMethodsForComponent) {
-                                            // check if the component is in the list of generated
-                                            // API interfaces
-                                            if (interfaceControllerMethods.contains(methodName)) {
-                                                implementedEndpoints.add(methodName);
+                                            // gets the api methods of the component
+                                            List<ApiMethod> controllerMethodsForComponent =
+                                                    getControllerMethod(component);
+                                            // loop through the API component methods and check if
+                                            // the
+                                            // component has an
+                                            // implementation for it.
+                                            for (ApiMethod methodName :
+                                                    controllerMethodsForComponent) {
+                                                // check if the component is in the list of
+                                                // generated
+                                                // API interfaces
+                                                if (interfaceControllerMethods.contains(
+                                                        methodName)) {
+                                                    implementedEndpoints.add(methodName);
 
-                                                // make the api as being implemented
-                                                interfaceControllerMethods.stream()
-                                                        .filter(e -> e.equals(methodName))
-                                                        .toList()
-                                                        .getFirst()
-                                                        .setMarkAsImplemented(true);
+                                                    // make the api as being implemented
+                                                    interfaceControllerMethods.stream()
+                                                            .filter(e -> e.equals(methodName))
+                                                            .toList()
+                                                            .getFirst()
+                                                            .setMarkAsImplemented(true);
+                                                }
                                             }
                                         }
                                     }
@@ -359,28 +367,36 @@ public class RestImplementedStatusHealthIndicator {
          * @return The request mapping annotation if it exists, null otherwise
          */
         public static RequestMapping getRequestMapping(Method method) {
-            RequestMapping[] requestMapping = method.getAnnotationsByType(RequestMapping.class);
-            if (requestMapping.length == 0) {
+            RequestMapping requestMapping =
+                    AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
+
+            if (requestMapping == null) {
                 // if the method is an implemented method look to the interface
                 Class[] declaringClass = method.getDeclaringClass().getInterfaces();
                 if (declaringClass.length > 0) {
 
-                    try {
-                        Method interfaceMethod =
-                                declaringClass[0].getMethod(
-                                        method.getName(), method.getParameterTypes());
-                        requestMapping = interfaceMethod.getAnnotationsByType(RequestMapping.class);
-                    } catch (NoSuchMethodException e) {
-                        log.error("Method could not be found", e);
+                    // try all interfaces for the method and return the annotation
+                    // if we find it on any of the interfaces
+                    for (Class interf : declaringClass) {
+                        try {
+                            Method interfaceMethod =
+                                    interf.getMethod(method.getName(), method.getParameterTypes());
+
+                            // if we have found the interface method then return the annotation
+                            if (interfaceMethod != null) {
+                                requestMapping =
+                                        AnnotatedElementUtils.findMergedAnnotation(
+                                                interfaceMethod, RequestMapping.class);
+                                return requestMapping;
+                            }
+                        } catch (NoSuchMethodException e) {
+                            log.error("Method could not be found", e);
+                        }
                     }
                 }
             }
 
-            if (requestMapping.length > 0) {
-                return requestMapping[0];
-            }
-
-            return null;
+            return requestMapping;
         }
 
         /**
@@ -413,7 +429,7 @@ public class RestImplementedStatusHealthIndicator {
         public String getApiString() {
             RequestMapping requestMapping = getRequestMapping(method);
 
-            if (requestMapping != null) {
+            if (requestMapping != null && requestMapping.method().length > 0) {
                 String method = requestMapping.method()[0].toString();
                 String url = requestMapping.value()[0].toString();
 
