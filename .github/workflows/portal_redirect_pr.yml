@@ -12,26 +12,33 @@ jobs:
   add-redirect-uris:
     runs-on: ubuntu-latest
 
+    env:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      APPREG_OBJECT_ID: ${{ secrets.APPREG_OBJECT_ID }}
+
     steps:
+
       - name: Check required secrets are present
         run: |
-          test -n "${{ secrets.AZURE_CLIENT_ID }}" || (echo "Missing AZURE_CLIENT_ID" && exit 1)
-          test -n "${{ secrets.AZURE_CLIENT_SECRET }}" || (echo "Missing AZURE_CLIENT_SECRET" && exit 1)
-          test -n "${{ secrets.AZURE_TENANT_ID }}" || (echo "Missing AZURE_TENANT_ID" && exit 1)
-          test -n "${{ secrets.APPREG_OBJECT_ID }}" || (echo "Missing APPREG_OBJECT_ID" && exit 1)
+          test -n "${AZURE_CLIENT_ID}" || (echo "Missing AZURE_CLIENT_ID" && exit 1)
+          test -n "${AZURE_CLIENT_SECRET}" || (echo "Missing AZURE_CLIENT_SECRET" && exit 1)
+          test -n "${AZURE_TENANT_ID}" || (echo "Missing AZURE_TENANT_ID" && exit 1)
+          test -n "${APPREG_OBJECT_ID}" || (echo "Missing APPREG_OBJECT_ID" && exit 1)
 
       - name: Azure Login
         run: |
           az login --service-principal \
-            --username "${{ secrets.AZURE_CLIENT_ID }}" \
-            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --tenant "${{ secrets.AZURE_TENANT_ID }}" \
+            --username "${AZURE_CLIENT_ID}" \
+            --password "${AZURE_CLIENT_SECRET}" \
+            --tenant "${AZURE_TENANT_ID}" \
             --allow-no-subscriptions
 
       - name: Add redirect URIs for PR environment
         env:
           PR_NUMBER: ${{ github.event.number }}
-          OBJECT_ID: ${{ secrets.APPREG_OBJECT_ID }}
+          OBJECT_ID: ${{ env.APPREG_OBJECT_ID }}
         run: |
           set -euo pipefail
 
