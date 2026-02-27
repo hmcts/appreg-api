@@ -115,7 +115,11 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     @Override
     public ResponseEntity<EntryPage> getApplicationListEntries(
-            UUID listId, Integer pageNumber, Integer pageSize, List<String> sort) {
+            UUID listId,
+            EntryGetFilterDto filter,
+            Integer pageNumber,
+            Integer pageSize,
+            List<String> sort) {
         PayloadGetEntryInList payloadForGet =
                 PayloadGetEntryInList.builder().listId(listId).build();
 
@@ -129,7 +133,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         ApplicationEntrySortFieldEnum::getEntityValue);
 
         EntryPage entryResponse =
-                applicationEntryService.getApplicationListEntries(payloadForGet, pageInfo);
+                applicationEntryService.getApplicationListEntries(payloadForGet, pageInfo, filter);
 
         log.info("Get Application List Entries for listId: {}", listId);
 

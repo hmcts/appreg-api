@@ -11,6 +11,14 @@ get:
   description: Returns a paginated list of Application List Entries linked to a specific Application List.
   parameters:
     - in: query
+      name: filter
+      description: Filter criteria for Application List Entries.
+      required: false
+      style: form
+      explode: true
+      schema:
+        $ref: "../../components/schemas/application-list-entries/entry-get-filter-dto.yaml"
+    - in: query
       name: pageNumber
       schema: { type: integer, minimum: 0, default: 0 }
     - in: query

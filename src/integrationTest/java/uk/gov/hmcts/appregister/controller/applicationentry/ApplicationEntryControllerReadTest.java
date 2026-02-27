@@ -1,10 +1,15 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -15,8 +20,10 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
+import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
@@ -40,7 +47,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals("AD99002", entryGetDetailDto.getApplicationCode());
         Assertions.assertEquals("Rescheduled due to missing docs", entryGetDetailDto.getNotes());
         Assertions.assertEquals("CASE123457", entryGetDetailDto.getCaseReference());
-        Assertions.assertFalse(entryGetDetailDto.getHasOffsiteFee());
+        assertFalse(entryGetDetailDto.getHasOffsiteFee());
         Assertions.assertEquals(uuids[1], entryGetDetailDto.getId());
         Assertions.assertEquals(uuids[0], entryGetDetailDto.getListId());
     }
@@ -165,20 +172,55 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         UUID applicationListId = getOpenApplicationListId();
+        EntryGetFilterDto filterDto = new EntryGetFilterDto();
+        filterDto.setDate(LocalDate.parse("2024-04-21"));
+        filterDto.setRespondentOrganisation("Sarah Johnson");
 
-        // test the functionality
+        UnaryOperator<RequestSpecification> filterOperator =
+                new ApplicationEntryFilter(
+                        Optional.ofNullable(filterDto.getDate()),
+                        Optional.ofNullable(filterDto.getCourtCode()),
+                        Optional.ofNullable(filterDto.getOtherLocationDescription()),
+                        Optional.ofNullable(filterDto.getCjaCode()),
+                        Optional.ofNullable(filterDto.getApplicantOrganisation()),
+                        Optional.ofNullable(filterDto.getApplicantSurname()),
+                        Optional.ofNullable(
+                                filterDto.getStatus() == null
+                                        ? null
+                                        : filterDto.getStatus().toString()),
+                        Optional.ofNullable(filterDto.getRespondentOrganisation()),
+                        Optional.ofNullable(filterDto.getRespondentSurname()),
+                        Optional.ofNullable(filterDto.getRespondentPostcode()),
+                        Optional.ofNullable(filterDto.getAccountReference()),
+                        Optional.ofNullable(filterDto.getStandardApplicantCode()));
+
         Response responseSpec =
-                restAssuredClient.executeGetRequest(
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(20),
+                        Optional.of(0),
+                        List.of(),
                         getLocalUrl(
                                 CREATE_ENTRY_CONTEXT
                                         + "/"
                                         + applicationListId.toString()
                                         + "/entries"),
-                        tokenGenerator.fetchTokenForRole());
-        EntryPage page = responseSpec.as(EntryPage.class);
+                        tokenGenerator.fetchTokenForRole(),
+                        filterOperator,
+                        new OpenApiPageMetaData());
+
         Assertions.assertEquals(200, responseSpec.getStatusCode());
-        Assertions.assertTrue(page.getTotalPages() > 0);
-        Assertions.assertFalse(page.getContent().isEmpty());
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        assertEquals(1, (int) page.getTotalPages());
+        assertEquals(1, page.getTotalElements());
+        assertFalse(page.getContent().isEmpty());
+
+        var firstEntry = page.getContent().getFirst();
+        assertEquals(applicationListId, firstEntry.getListId());
+        assertEquals("Copy documents (electronic)", firstEntry.getApplicationTitle());
+        assertEquals(LocalDate.parse("2024-04-21"), firstEntry.getDate());
+        assertEquals(ApplicationListStatus.OPEN, firstEntry.getStatus());
+        assertEquals(true, firstEntry.getIsFeeRequired());
     }
 
     @Test

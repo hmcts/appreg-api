@@ -1,9 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -292,6 +290,7 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
                 .thenReturn(Status.OPEN);
         when(applicationListEntryRepository.searchForGetSummary(
+                        eq(null),
                         eq(true),
                         eq(entryGetFilterDto.getDate()),
                         eq(entryGetFilterDto.getCourtCode()),
@@ -600,27 +599,71 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListRepository.findByUuid(applicationList.getUuid()))
                 .thenReturn(Optional.of(applicationList));
 
-        Pageable mockPage = mock(Pageable.class);
-        when(mockPage.getPageNumber()).thenReturn(1);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
-
         ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
                 mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
+                .thenReturn("org1");
+        when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
+        when(applicationListEntryGetSummaryProjection.getAnameAddress())
+                .thenReturn(new NameAddress());
+        when(applicationListEntryGetSummaryProjection.getRnameAddress())
+                .thenReturn(new NameAddress());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+
+        when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
+        when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
+        when(applicationListEntryGetSummaryProjection.getCourtCode()).thenReturn("courtcode");
+        when(applicationListEntryGetSummaryProjection.getLegislation()).thenReturn("leg");
+        when(applicationListEntryGetSummaryProjection.getTitle()).thenReturn("title");
+
+        when(applicationListEntryGetSummaryProjection.getRespondentSurname())
+                .thenReturn("ressurname");
+        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn(null);
+        when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
+        when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.OPEN);
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        EntryGetFilterDto entryGetFilterDto =
+                Instancio.of(EntryGetFilterDto.class).withSettings(settings).create();
+        entryGetFilterDto.setStatus(ApplicationListStatus.OPEN);
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(1);
 
         Page<ApplicationListEntryGetSummaryProjection> dbPage =
                 new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
 
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
-
-        when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
-                        any(), eq(mockPage)))
+        when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
+                .thenReturn(Status.OPEN);
+        when(applicationListEntryRepository.searchForGetSummary(
+                        eq(applicationList.getUuid()),
+                        eq(true),
+                        eq(entryGetFilterDto.getDate()),
+                        eq(entryGetFilterDto.getCourtCode()),
+                        eq(entryGetFilterDto.getOtherLocationDescription()),
+                        eq(entryGetFilterDto.getCjaCode()),
+                        eq(entryGetFilterDto.getApplicantOrganisation()),
+                        eq(entryGetFilterDto.getApplicantSurname()),
+                        eq(entryGetFilterDto.getStandardApplicantCode()),
+                        eq(Status.fromValue(entryGetFilterDto.getStatus().getValue())),
+                        eq(entryGetFilterDto.getRespondentOrganisation()),
+                        eq(entryGetFilterDto.getRespondentSurname()),
+                        eq(entryGetFilterDto.getRespondentPostcode()),
+                        eq(entryGetFilterDto.getAccountReference()),
+                        eq(mockPage)))
                 .thenReturn(dbPage);
 
         PayloadGetEntryInList payloadGetEntryInList =
                 PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
 
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
         // test
-        EntryPage response = service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+        EntryPage response =
+                service.getApplicationListEntries(
+                        payloadGetEntryInList, wrapper, entryGetFilterDto);
 
         // assert
         Assertions.assertNotNull(response);
@@ -631,6 +674,13 @@ public class ApplicationEntryServiceImplTest {
     void testGetApplicationListEntries_emptyEntries_success() {
         ApplicationList applicationList = new AppListTestData().someComplete();
 
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        EntryGetFilterDto entryGetFilterDto =
+                Instancio.of(EntryGetFilterDto.class).withSettings(settings).create();
+
+        entryGetFilterDto.setStatus(ApplicationListStatus.OPEN);
+
         when(applicationListRepository.findByUuid(applicationList.getUuid()))
                 .thenReturn(Optional.of(applicationList));
 
@@ -639,19 +689,35 @@ public class ApplicationEntryServiceImplTest {
         PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
 
         Page<ApplicationListEntryGetSummaryProjection> dbPage =
-                new PageImpl<>(List.of(), mockPage, 1);
+                new PageImpl<>(List.of(), mockPage, 0);
 
-        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
-
-        when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
-                        any(), eq(mockPage)))
+        when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
+                .thenReturn(Status.OPEN);
+        when(applicationListEntryRepository.searchForGetSummary(
+                        eq(applicationList.getUuid()),
+                        eq(true),
+                        eq(entryGetFilterDto.getDate()),
+                        eq(entryGetFilterDto.getCourtCode()),
+                        eq(entryGetFilterDto.getOtherLocationDescription()),
+                        eq(entryGetFilterDto.getCjaCode()),
+                        eq(entryGetFilterDto.getApplicantOrganisation()),
+                        eq(entryGetFilterDto.getApplicantSurname()),
+                        eq(entryGetFilterDto.getStandardApplicantCode()),
+                        eq(Status.fromValue(entryGetFilterDto.getStatus().getValue())),
+                        eq(entryGetFilterDto.getRespondentOrganisation()),
+                        eq(entryGetFilterDto.getRespondentSurname()),
+                        eq(entryGetFilterDto.getRespondentPostcode()),
+                        eq(entryGetFilterDto.getAccountReference()),
+                        eq(mockPage)))
                 .thenReturn(dbPage);
 
         PayloadGetEntryInList payloadGetEntryInList =
                 PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
 
         // test
-        EntryPage response = service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+        EntryPage response =
+                service.getApplicationListEntries(
+                        payloadGetEntryInList, wrapper, entryGetFilterDto);
 
         // assert
         Assertions.assertNotNull(response);

@@ -106,6 +106,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         Page<ApplicationListEntryGetSummaryProjection> resultPage =
                 applicationListEntryRepository.searchForGetSummary(
+                        null,
                         filterDto.getDate() != null,
                         filterDto.getDate(),
                         filterDto.getCourtCode(),
@@ -814,19 +815,36 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     public EntryPage getApplicationListEntries(
-            PayloadGetEntryInList payloadForGet, PagingWrapper pageable) {
+            PayloadGetEntryInList payloadForGet,
+            PagingWrapper pageable,
+            EntryGetFilterDto filterDto) {
         log.debug(
                 "Started: Getting application list entries for list: {}",
                 payloadForGet.getListId());
+
+        Status status = applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
 
         return getApplicationListEntriesValidator.validate(
                 payloadForGet,
                 (req, success) -> {
                     // get the entries for the list
                     Page<ApplicationListEntryGetSummaryProjection> entries =
-                            applicationListEntryRepository
-                                    .findApplicationListEntriesByApplicationListId(
-                                            success.getUuid(), pageable.getPageable());
+                            applicationListEntryRepository.searchForGetSummary(
+                                    payloadForGet.getListId(),
+                                    filterDto.getDate() != null,
+                                    filterDto.getDate(),
+                                    filterDto.getCourtCode(),
+                                    filterDto.getOtherLocationDescription(),
+                                    filterDto.getCjaCode(),
+                                    filterDto.getApplicantOrganisation(),
+                                    filterDto.getApplicantSurname(),
+                                    filterDto.getStandardApplicantCode(),
+                                    status,
+                                    filterDto.getRespondentOrganisation(),
+                                    filterDto.getRespondentSurname(),
+                                    filterDto.getRespondentPostcode(),
+                                    filterDto.getAccountReference(),
+                                    pageable.getPageable());
 
                     EntryPage entryPage = new EntryPage();
                     pageMapper.toPage(entries, entryPage, pageable.getSortStrings());

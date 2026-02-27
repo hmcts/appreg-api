@@ -131,6 +131,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     /**
      * Retrieves the paginated summary results.
      *
+     * @param applicationListId The application list id to filter by (optional)
      * @param hasHearingDate Whether to filter by hearing date
      * @param hearingDate The hearing date to use for filtering if hasHearingDate is true
      * @param courtCode The court code to filter by.
@@ -188,6 +189,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                               FROM AppListEntryResolution sub
                               WHERE sub.applicationList = ale)
             WHERE  (:hasHearingDate = false OR al.date = :hearingDate)
+                    AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
                     AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
                             LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
                     AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
@@ -215,6 +217,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
     Page<ApplicationListEntryGetSummaryProjection> searchForGetSummary(
+            @Param("applicationListId") UUID applicationListId,
             boolean hasHearingDate,
             @Param("hearingDate") LocalDate hearingDate,
             @Param("courtCode") String courtCode,
@@ -319,48 +322,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                 AND (ale.deleted IS NULL OR ale.deleted <> '1')
         """)
     Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
-
-    @Query(
-            """
-        SELECT al.date  AS date,
-                    ale.uuid AS uuid,
-                    ale.id AS id,
-                    al.courtCode  AS courtCode,
-                    ac.legislation as legislation,
-                    ac.feeDue feeRequired,
-                    aler.id as result,
-                    cja.code AS cjaCode,
-                    al.otherLocation AS otherLocationDescription,
-                    ana as anameAddress,
-                    sa.applicantCode AS standardApplicantCode,
-                    rna as rnameAddress,
-                    ac.title as title,
-                    al.status AS status,
-                    al.date as dateOfAl,
-                    ana.name as applicationorganisation,
-                    ana.surname as applicantSurname,
-                    rna.name as respondentOrganisation,
-                    rna.surname as respondentSurname,
-                    rna.postcode as respondentPostcode,
-                    ale.caseReference as  accountReference,
-                    sa as standardApplicant,
-                    al.uuid as listId
-        FROM ApplicationListEntry ale
-        LEFT JOIN ale.applicationList al
-        LEFT JOIN ale.anamedaddress ana
-        LEFT JOIN ale.standardApplicant sa
-        LEFT JOIN ale.rnameaddress rna
-        LEFT JOIN ale.applicationCode ac
-        LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-        LEFT JOIN AppListEntryResolution aler ON aler.applicationList
-                    = ale AND aler.id = (SELECT MAX(sub.id)
-                      FROM AppListEntryResolution sub
-                      WHERE sub.applicationList = ale)
-        WHERE ale.applicationList.uuid = :listId
-        AND (ale.deleted IS NULL OR ale.deleted <> '1')
-        """)
-    Page<ApplicationListEntryGetSummaryProjection> findApplicationListEntriesByApplicationListId(
-            UUID listId, Pageable pageable);
 
     /**
      * Bulk-move entries to a new application list using a single JPQL UPDATE. Returns number of
