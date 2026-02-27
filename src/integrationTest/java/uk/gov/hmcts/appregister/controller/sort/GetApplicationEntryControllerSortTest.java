@@ -20,7 +20,7 @@ public class GetApplicationEntryControllerSortTest extends AbstractApplicationEn
     private static final String WEB_CONTEXT = "application-list-entries";
 
     @StabilityTest
-    public void givenValidRequest_whenSortAccountNumber_thenReturn400() throws Exception {
+    public void givenValidRequest_whenSortAccountNumber_thenReturn200() throws Exception {
         // set up the data
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
