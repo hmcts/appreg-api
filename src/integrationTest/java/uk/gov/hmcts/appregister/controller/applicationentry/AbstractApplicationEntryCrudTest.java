@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,6 +60,10 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Autowired protected TransactionalUnitOfWork unitOfWork;
     @Autowired protected ApplicationListRepository applicationListRepository;
     @Autowired protected ApplicationListEntryRepository applicationListEntryRepository;
+
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
+    protected static final String VALID_COURT_CODE = "CCC003";
 
     /** Build a token generator with ADMIN role. */
     protected TokenGenerator createAdminToken() {

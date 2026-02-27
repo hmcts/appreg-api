@@ -88,7 +88,6 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
-import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -99,7 +98,6 @@ import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -200,7 +198,7 @@ public class ApplicationEntryServiceImplTest {
 
     @Spy
     private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
-        new DummyGetApplicationListEntriesValidator(applicationListRepository);
+            new DummyGetApplicationListEntriesValidator(applicationListRepository);
 
     @BeforeEach
     void setUp() {
@@ -607,25 +605,22 @@ public class ApplicationEntryServiceImplTest {
         PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
 
         ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
-            mock(ApplicationListEntryGetSummaryProjection.class);
+                mock(ApplicationListEntryGetSummaryProjection.class);
 
-        Page<ApplicationListEntryGetSummaryProjection> dbPage
-            = new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
+        Page<ApplicationListEntryGetSummaryProjection> dbPage =
+                new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
 
-        doAnswer(inv -> null)
-            .when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
+        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
 
         when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
                         any(), eq(mockPage)))
                 .thenReturn(dbPage);
 
-        PayloadGetEntryInList payloadGetEntryInList =  PayloadGetEntryInList.builder()
-                .listId(applicationList.getUuid())
-                .build();
+        PayloadGetEntryInList payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
 
         // test
-        EntryPage response =
-                service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+        EntryPage response = service.getApplicationListEntries(payloadGetEntryInList, wrapper);
 
         // assert
         Assertions.assertNotNull(response);
@@ -637,29 +632,26 @@ public class ApplicationEntryServiceImplTest {
         ApplicationList applicationList = new AppListTestData().someComplete();
 
         when(applicationListRepository.findByUuid(applicationList.getUuid()))
-            .thenReturn(Optional.of(applicationList));
+                .thenReturn(Optional.of(applicationList));
 
         Pageable mockPage = mock(Pageable.class);
         when(mockPage.getPageNumber()).thenReturn(1);
         PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
 
-        Page<ApplicationListEntryGetSummaryProjection> dbPage
-            = new PageImpl<>(List.of(), mockPage, 1);
+        Page<ApplicationListEntryGetSummaryProjection> dbPage =
+                new PageImpl<>(List.of(), mockPage, 1);
 
-        doAnswer(inv -> null)
-            .when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
+        doAnswer(inv -> null).when(pageMapper).toPage(eq(dbPage), any(EntryPage.class), any());
 
         when(applicationListEntryRepository.findApplicationListEntriesByApplicationListId(
-            any(), eq(mockPage)))
-            .thenReturn(dbPage);
+                        any(), eq(mockPage)))
+                .thenReturn(dbPage);
 
-        PayloadGetEntryInList payloadGetEntryInList =  PayloadGetEntryInList.builder()
-            .listId(applicationList.getUuid())
-            .build();
+        PayloadGetEntryInList payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
 
         // test
-        EntryPage response =
-            service.getApplicationListEntries(payloadGetEntryInList, wrapper);
+        EntryPage response = service.getApplicationListEntries(payloadGetEntryInList, wrapper);
 
         // assert
         Assertions.assertNotNull(response);
@@ -782,7 +774,8 @@ public class ApplicationEntryServiceImplTest {
     }
 
     class DummyGetApplicationListEntriesValidator extends GetApplicationListEntriesValidator {
-        public DummyGetApplicationListEntriesValidator(ApplicationListRepository applicationListRepository) {
+        public DummyGetApplicationListEntriesValidator(
+                ApplicationListRepository applicationListRepository) {
             super(applicationListRepository);
         }
 

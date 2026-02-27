@@ -1,12 +1,24 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import io.restassured.response.Response;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
+import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTest {
 
@@ -144,5 +156,96 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(
                 AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
                 problemDetail.getType());
+    }
+
+    @Test
+    public void testGetApplicationEntriesListSuccess() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        UUID applicationListId = getOpenApplicationListId();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationListId.toString()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(200, responseSpec.getStatusCode());
+        Assertions.assertTrue(page.getTotalPages() > 0);
+        Assertions.assertFalse(page.getContent().isEmpty());
+    }
+
+    @Test
+    public void testGetApplicationEntriesListSuccess_emptyContent() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
+
+        // creating application list to ensure it has no entries
+        UUID applicationListId =
+                createApplicationList(
+                        tokenGenerator.fetchTokenForRole(), uniquePrefix("empty_app_list_entries"));
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationListId.toString()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(200, responseSpec.getStatusCode());
+        assertEquals(0, (int) page.getTotalPages());
+        Assertions.assertTrue(page.getContent().isEmpty());
+    }
+
+    @Test
+    public void testGetApplicationEntriesListFailure_applicationListNotFound() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.USER)).build();
+
+        // creating application list to ensure it has no entries
+        UUID applicationListId = UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff");
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + applicationListId + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+        Assertions.assertEquals(404, responseSpec.getStatusCode());
+    }
+
+    private UUID createApplicationList(TokenAndJwksKey token, String prefix) throws Exception {
+        var createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description(prefix + " - list")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response createListResp =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl("application-lists"), token, createListReq);
+        createListResp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto createdList =
+                createListResp.as(ApplicationListGetDetailDto.class);
+        return createdList.getId();
+    }
+
+    private static String uniquePrefix(String base) {
+        return base + " :: " + UUID.randomUUID();
     }
 }

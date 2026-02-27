@@ -837,7 +837,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                         applicationListEntryMapStructMapper.toEntrySummary(entry));
                             });
 
-                    if(entryPage.getContent() == null) {
+                    if (entryPage.getContent() == null) {
                         entryPage.setContent(List.of());
                     }
 
