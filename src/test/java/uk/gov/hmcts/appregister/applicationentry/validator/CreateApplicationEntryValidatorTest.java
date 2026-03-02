@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -42,6 +43,7 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -121,6 +123,8 @@ public class CreateApplicationEntryValidatorTest {
 
         // set the respondent to null for the organisation so we use the person
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -407,6 +411,39 @@ public class CreateApplicationEntryValidatorTest {
                         () -> createApplicationEntryValidator.validate(payload));
         Assertions.assertEquals(
                 AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST.getCode().getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testPaymentReferenceNotAllowedWhenPaymentDue() {
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        // Ensure we have a fee status and set it to DUE with a payment reference (invalid)
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(DUE);
+        feeStatus.setPaymentReference("PAYREF-123");
+        feeStatus.setStatusDate(LocalDate.now(clock));
+
+        entryCreateDto.setFeeStatuses(List.of(feeStatus));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // Act + Assert
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+
+        Assertions.assertEquals(
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
     }
 }

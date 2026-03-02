@@ -92,8 +92,8 @@ spotless {
 
 rewrite {
   activeRecipes = [
-      'org.openrewrite.staticanalysis.NeedBraces',
-      'org.openrewrite.java.OrderImports'
+    'org.openrewrite.staticanalysis.NeedBraces',
+    'org.openrewrite.java.OrderImports'
   ]
 }
 
@@ -244,18 +244,18 @@ def commonJacocoExclusionsIntegration = [
 ]
 
 def commonJacocoExclusionsUnit = [
-        "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
-        "**/uk/gov/hmcts/appregister/generated/**/*.class",
-        "**/uk/gov/hmcts/appregister/**/api/*.class",
-        "**/uk/gov/hmcts/appregister/**/audit/*.class",
+  "**/uk/gov/hmcts/appregister/**/dto/**/*.class",
+  "**/uk/gov/hmcts/appregister/generated/**/*.class",
+  "**/uk/gov/hmcts/appregister/**/api/*.class",
+  "**/uk/gov/hmcts/appregister/**/audit/*.class",
 
-        // These are packages in which I do not envisage tests. These would be tested more appropriately in
-        // integration tests or other types of tests
-        "**/uk/gov/hmcts/appregister/**/controller/*.class",
-        "**/uk/gov/hmcts/appregister/**/dao/*.class",
-        "**/uk/gov/hmcts/appregister/**/config/*.class",
-        "**/uk/gov/hmcts/appregister/**/entity/*.class",
-        "**/uk/gov/hmcts/appregister/**/entity/repository/*.class",
+  // These are packages in which I do not envisage tests. These would be tested more appropriately in
+  // integration tests or other types of tests
+  "**/uk/gov/hmcts/appregister/**/controller/*.class",
+  "**/uk/gov/hmcts/appregister/**/dao/*.class",
+  "**/uk/gov/hmcts/appregister/**/config/*.class",
+  "**/uk/gov/hmcts/appregister/**/entity/*.class",
+  "**/uk/gov/hmcts/appregister/**/entity/repository/*.class",
 ]
 
 tasks.register('jacocoUnitReport', JacocoReport) {
@@ -265,9 +265,9 @@ tasks.register('jacocoUnitReport', JacocoReport) {
   sourceDirectories.from sourceSets.main.allSource.srcDirs
 
   classDirectories.setFrom(
-          files(sourceSets.main.output).asFileTree.matching {
-            exclude(commonJacocoExclusionsUnit)
-          }
+    files(sourceSets.main.output).asFileTree.matching {
+      exclude(commonJacocoExclusionsUnit)
+    }
   )
 }
 
@@ -287,10 +287,10 @@ tasks.register('jacocoUnitCoverageVerification', JacocoCoverageVerification) {
   }
 
   classDirectories.setFrom(
-          files(sourceSets.main.output).asFileTree.matching {
-            exclude(
-                    commonJacocoExclusionsUnit)
-          }
+    files(sourceSets.main.output).asFileTree.matching {
+      exclude(
+        commonJacocoExclusionsUnit)
+    }
   )
 }
 
@@ -300,10 +300,10 @@ tasks.register('jacocoIntegrationReport', JacocoReport) {
   executionData file("$buildDir/jacoco/integration.exec")
   sourceDirectories.from sourceSets.main.allSource.srcDirs
   classDirectories.setFrom(
-          files(sourceSets.main.output).asFileTree.matching {
-            exclude(
-                    commonJacocoExclusionsIntegration)
-          }
+    files(sourceSets.main.output).asFileTree.matching {
+      exclude(
+        commonJacocoExclusionsIntegration)
+    }
   )
 }
 
@@ -322,10 +322,10 @@ tasks.register('jacocoIntegrationCoverageVerification', JacocoCoverageVerificati
   }
 
   classDirectories.setFrom(
-          files(sourceSets.main.output).asFileTree.matching {
-            exclude(
-                    commonJacocoExclusionsIntegration)
-          }
+    files(sourceSets.main.output).asFileTree.matching {
+      exclude(
+        commonJacocoExclusionsIntegration)
+    }
   )
 }
 
@@ -336,8 +336,8 @@ tasks['check'].finalizedBy integration
 
 
 def xmls = [
-        layout.buildDirectory.file("reports/jacoco/jacocoUnitReport/jacocoUnitReport.xml").get().asFile,
-        layout.buildDirectory.file("reports/jacoco/jacocoIntegrationReport/jacocoIntegrationReport.xml").get().asFile
+  layout.buildDirectory.file("reports/jacoco/jacocoUnitReport/jacocoUnitReport.xml").get().asFile,
+  layout.buildDirectory.file("reports/jacoco/jacocoIntegrationReport/jacocoIntegrationReport.xml").get().asFile
 ]
 
 """ A useful function to run a local SonarQube analysis against a local SonarQube server instance."
@@ -357,7 +357,7 @@ sonarqube {
     property "sonar.projectName", "AppReg :: appreg-api"
     property "sonar.projectKey", "uk.gov.hmcts.appreg:appreg-api"
     property "sonar.coverage.exclusions", [
-            "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
+      "src/main/java/uk/gov/hmcts/appregister/generated/**/*",
     ]
     if (gradle.startParameter.taskNames.contains("localSonarqube")) {
       property 'sonar.host.url', 'http://localhost:9000'
@@ -365,8 +365,8 @@ sonarqube {
     }
 
     property(
-            "sonar.coverage.jacoco.xmlReportPaths",
-            xmls.collect { it.absolutePath }.join(',')
+      "sonar.coverage.jacoco.xmlReportPaths",
+      xmls.collect { it.absolutePath }.join(',')
     )
   }
 }
@@ -395,13 +395,13 @@ dependencyCheck {
     assemblyEnabled = false
   }
   skipConfigurations = [
-      "compileOnly",
-      "pmd",
-      "integrationTest",
-      "functionalTest",
-      "smokeTest",
-      "contractTestRuntimeClasspath",
-      "contractTestCompileClasspath"
+    "compileOnly",
+    "pmd",
+    "integrationTest",
+    "functionalTest",
+    "smokeTest",
+    "contractTestRuntimeClasspath",
+    "contractTestCompileClasspath"
   ]
 }
 
@@ -555,31 +555,31 @@ checkstyle {
 
 // Generate spring annotated methods inside a generated java package for ease of identification
 openApiGenerate {
-    generatorName = "spring"
-    inputSpec = "$rootDir/src/main/resources/openapi/openapi.yaml"
-    outputDir = layout.buildDirectory.dir("generated/openapi").get().asFile.toString()
-    apiPackage = "uk.gov.hmcts.appregister.generated.api"
-    modelPackage = "uk.gov.hmcts.appregister.generated.model"
-    skipOperationExample = true
-    openapiNormalizer = [
-            REF_AS_PARENT_IN_ALLOF: "true"
-    ]
-    configOptions = [
-            dateLibrary                         : "java8",
-            interfaceOnly                       : "true",
-            useTags                             : "true",
-            useSpringBoot3                      : "true",
-            containerDefaultToNull              : "true",
-            generatedConstructorWithRequiredArgs: "false",
-            additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
-            openApiNullable                     : "true"
-    ]
-    typeMappings = [
-      time: "LocalTime"    // Map custom `format: time` → LocalTime
-    ]
-    importMappings = [
-      LocalTime: "java.time.LocalTime"
-    ]
+  generatorName = "spring"
+  inputSpec = "$rootDir/src/main/resources/openapi/openapi.yaml"
+  outputDir = layout.buildDirectory.dir("generated/openapi").get().asFile.toString()
+  apiPackage = "uk.gov.hmcts.appregister.generated.api"
+  modelPackage = "uk.gov.hmcts.appregister.generated.model"
+  skipOperationExample = true
+  openapiNormalizer = [
+    REF_AS_PARENT_IN_ALLOF: "true"
+  ]
+  configOptions = [
+    dateLibrary                         : "java8",
+    interfaceOnly                       : "true",
+    useTags                             : "true",
+    useSpringBoot3                      : "true",
+    containerDefaultToNull              : "true",
+    generatedConstructorWithRequiredArgs: "false",
+    additionalModelTypeAnnotations      : "@lombok.AllArgsConstructor;@lombok.NoArgsConstructor",
+    openApiNullable                     : "true"
+  ]
+  typeMappings = [
+    time: "LocalTime"    // Map custom `format: time` → LocalTime
+  ]
+  importMappings = [
+    LocalTime: "java.time.LocalTime"
+  ]
 }
 
 // Add a new jar that will be published to maven with the classifier -openapi
