@@ -15,8 +15,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
- * Mapping table that holds the last allocated sequence number for each application list
- * (al_id).
+ * Mapping table that holds the last allocated sequence number for each application list (al_id).
  */
 @Entity
 @Table(name = TableNames.APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING)

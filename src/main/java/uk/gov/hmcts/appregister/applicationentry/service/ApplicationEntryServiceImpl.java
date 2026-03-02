@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
-
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -872,14 +871,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private short allocateNextSequence(Long alId) {
-        AppListEntrySequenceMapping mapping = appListEntrySequenceMappingRepository.findById(alId)
-            .orElse(null);
+        AppListEntrySequenceMapping mapping =
+                appListEntrySequenceMappingRepository.findById(alId).orElse(null);
 
         if (mapping == null) {
-            mapping = AppListEntrySequenceMapping.builder()
-                .alId(alId)
-                .aleLastSequence(1)
-                .build();
+            mapping = AppListEntrySequenceMapping.builder().alId(alId).aleLastSequence(1).build();
             appListEntrySequenceMappingRepository.save(mapping);
             return (short) 1;
         }

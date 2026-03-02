@@ -6,6 +6,4 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 
 @Repository
 public interface AppListEntrySequenceMappingRepository
-    extends JpaRepository<AppListEntrySequenceMapping, Long> {
-
-}
+        extends JpaRepository<AppListEntrySequenceMapping, Long> {}
