@@ -569,7 +569,7 @@ public abstract class ApplicationListEntryMapper {
     /**
      * This is used to create an audit entry using the GET request params for logging.
      *
-     * @param PayloadGetEntryInList Entity containing the GET request params for logging.
+     * @param payload Entity containing the GET request params for logging.
      * @return ApplicationListEntry Entity containing the mapped values from the GET params.
      */
     @Mapping(target = "uuid", source = "payload.entryId")
@@ -599,6 +599,13 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "caseReference", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(PayloadGetEntryInList payload);
 
+
+    /**
+     * This is used to create an audit entry using the GET dto for logging.
+     *
+     * @param filterDto Entity containing the GET dto for logging.
+     * @return ApplicationListEntry Entity containing the mapped values from the GET params.
+     */
     @Mapping(target = "caseReference", source = "filterDto.accountReference")
     @Mapping(target = "standardApplicant.applicantCode", source = "filterDto.standardApplicantCode")
     @Mapping(target = "anamedaddress.name", source = "filterDto.applicantOrganisation")
