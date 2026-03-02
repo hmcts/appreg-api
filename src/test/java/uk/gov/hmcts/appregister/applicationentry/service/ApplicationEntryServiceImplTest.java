@@ -583,12 +583,6 @@ public class ApplicationEntryServiceImplTest {
                         eq(appList)))
                 .thenReturn(applicationListEntry);
 
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(UUID.randomUUID())
-                        .data(entryCreateDto)
-                        .build();
-
         when(applicantMapper.toApplicant(entryCreateDto.getApplicant())).thenReturn(applicant);
         when(applicantMapper.toRespondent(entryCreateDto.getRespondent())).thenReturn(respondent);
         when(nameAddressRepository.save(respondent)).thenReturn(respondent);
@@ -619,6 +613,12 @@ public class ApplicationEntryServiceImplTest {
                 ArgumentCaptor.forClass(AppListEntrySequenceMapping.class);
         when(appListEntrySequenceMappingRepository.save(mappingCaptor.capture()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(UUID.randomUUID())
+                        .data(entryCreateDto)
+                        .build();
 
         // run
         MatchResponse<EntryGetDetailDto> response = service.createEntry(payload);
@@ -706,12 +706,6 @@ public class ApplicationEntryServiceImplTest {
                         eq(appList)))
                 .thenReturn(applicationListEntry);
 
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(UUID.randomUUID())
-                        .data(entryCreateDto)
-                        .build();
-
         when(applicantMapper.toApplicant(entryCreateDto.getApplicant())).thenReturn(applicant);
         when(applicantMapper.toRespondent(entryCreateDto.getRespondent())).thenReturn(respondent);
         when(nameAddressRepository.save(respondent)).thenReturn(respondent);
@@ -752,6 +746,12 @@ public class ApplicationEntryServiceImplTest {
                 ArgumentCaptor.forClass(AppListEntrySequenceMapping.class);
         when(appListEntrySequenceMappingRepository.save(mappingCaptor.capture()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(UUID.randomUUID())
+                        .data(entryCreateDto)
+                        .build();
 
         // run
         MatchResponse<EntryGetDetailDto> response = service.createEntry(payload);

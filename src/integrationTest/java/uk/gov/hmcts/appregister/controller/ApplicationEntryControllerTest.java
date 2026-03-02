@@ -1397,8 +1397,6 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
     @Test
     public void givenDifferentLists_whenCreateEntries_thenSequencesAreIndependent()
             throws Exception {
-        TokenGenerator tokenGenerator = createAdminToken();
-
         List<ApplicationList> lists =
                 unitOfWork.inTransaction(
                         () -> applicationListRepository.findAll(Sort.by(Sort.Direction.ASC, "id")));
@@ -1414,6 +1412,7 @@ public class ApplicationEntryControllerTest extends AbstractSecurityControllerTe
         // Create entry in list 1
         EntryCreateDto dto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         dto1.getApplicant().getPerson().getName().setSurname("SEQ-L1-" + UUID.randomUUID());
+        TokenGenerator tokenGenerator = createAdminToken();
         Response r1 =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list1.getUuid() + "/entries"),
