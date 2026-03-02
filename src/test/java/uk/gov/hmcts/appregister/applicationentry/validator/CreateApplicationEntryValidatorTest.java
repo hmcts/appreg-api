@@ -121,6 +121,10 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
 
+        // set application code to match the application code in the repository
+        entryCreateDto.setApplicationCode("EF12121");
+        entryCreateDto.setAccountNumber("test");
+
         // set the respondent to null for the organisation so we use the person
         entryCreateDto.getRespondent().setOrganisation(null);
 
@@ -445,5 +449,40 @@ public class CreateApplicationEntryValidatorTest {
                         .getCode()
                         .getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testValidateFailureForEnforcementApplicationCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
+        // set the EF application code so that we require the account number
+        entryCreateDto.setApplicationCode("EF12121");
+
+        // set the respondent to null for the organisation so we use the person
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                appRegistryException.getCode());
     }
 }
