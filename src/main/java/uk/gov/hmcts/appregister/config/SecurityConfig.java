@@ -4,6 +4,7 @@ import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRE
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.REST_IMPLEMENTATION_HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
@@ -35,7 +36,11 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(SWAGGER_UI, OPENAPI, HEALTH)
+                                auth.requestMatchers(
+                                                SWAGGER_UI,
+                                                OPENAPI,
+                                                HEALTH,
+                                                REST_IMPLEMENTATION_HEALTH)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())
