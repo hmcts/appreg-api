@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
+import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -179,9 +179,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 success.getApplicationList());
 
                                         Long alId = success.getApplicationList().getId();
-
-                                        Integer nextSeq = appListEntrySequenceMappingRepository.allocateNextSequence(alId);
-                                        listEntryEntity.setSequenceNumber(nextSeq.shortValue());
+                                        short seq = allocateNextSequence(alId);
+                                        listEntryEntity.setSequenceNumber(seq);
 
                                         listEntryEntity =
                                                 refreshEntity(
@@ -870,5 +869,24 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         keyables.addAll(appListStatus);
         keyables.addAll(feesForEntry);
         return keyables;
+    }
+
+    private short allocateNextSequence(Long alId) {
+        AppListEntrySequenceMapping mapping = appListEntrySequenceMappingRepository.findById(alId)
+            .orElse(null);
+
+        if (mapping == null) {
+            mapping = AppListEntrySequenceMapping.builder()
+                .alId(alId)
+                .aleLastSequence(1)
+                .build();
+            appListEntrySequenceMappingRepository.save(mapping);
+            return (short) 1;
+        }
+
+        int next = mapping.getAleLastSequence() + 1;
+        mapping.setAleLastSequence(next);
+        appListEntrySequenceMappingRepository.save(mapping);
+        return (short) next;
     }
 }
