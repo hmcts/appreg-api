@@ -1088,6 +1088,8 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
 
+        req.setDurationMinutes(1);
+
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -1122,6 +1124,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(1);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1164,6 +1167,8 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+
+        req.setDurationMinutes(1);
 
         var token =
                 getATokenWithValidCredentials()

@@ -94,7 +94,7 @@ public class ApplicationUpdateListLocationValidator
 
         // if the list is being closed check if we can close
         if (dto.getData().getStatus() == ApplicationListStatus.CLOSED) {
-            validateForClosure(applicationListList.get());
+            validateForClosure(dto.getData(), applicationListList.get());
         }
 
         // validate the location fields
@@ -112,14 +112,18 @@ public class ApplicationUpdateListLocationValidator
     /**
      * validate for the closure of the Application list.
      *
-     * @param list The list to validate for closure
+     * @param listPayloadData The list payload data to validate for closure
+     * @param listBeingUpdated The current list data being updated with the closure status
      */
-    private void validateForClosure(ApplicationList list) {
-        log.debug("Validating application list with id {} for closure", list.getId());
+    private void validateForClosure(
+            ApplicationListUpdateDto listPayloadData, ApplicationList listBeingUpdated) {
+        log.debug("Validating application list with id {} for closure", listBeingUpdated.getId());
 
         // check the duration hours and minutes are not set as they should not be set when closing
         // the list
-        if (list.getDurationHours() == 0 && list.getDurationMinutes() == 0) {
+        if ((listPayloadData.getDurationHours() == null || listPayloadData.getDurationHours() == 0)
+                && (listPayloadData.getDurationMinutes() == null
+                        || listPayloadData.getDurationMinutes() == 0)) {
             throw new AppRegistryException(
                     ApplicationListError.INVALID_FOR_CLOSE_DURATION,
                     "List cannot be closed. Please add duration hours and/or duration minutes.");
@@ -129,7 +133,7 @@ public class ApplicationUpdateListLocationValidator
 
         // gets the application list entries
         List<ApplicationListEntry> listEntries =
-                applicationListEntryRepository.findByApplicationListId(list.getId());
+                applicationListEntryRepository.findByApplicationListId(listBeingUpdated.getId());
 
         for (ApplicationListEntry listEntry : listEntries) {
 
@@ -158,7 +162,7 @@ public class ApplicationUpdateListLocationValidator
             validStatusIsPaid(listEntry);
         }
 
-        log.debug("Validated application list with id {} for closure", list.getId());
+        log.debug("Validated application list with id {} for closure", listBeingUpdated.getId());
     }
 
     /**

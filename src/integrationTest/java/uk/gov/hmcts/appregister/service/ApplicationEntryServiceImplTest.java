@@ -48,6 +48,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryAssertion;
 import uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryWrapperDto;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @Slf4j
 public class ApplicationEntryServiceImplTest extends BaseIntegration {
@@ -101,6 +102,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setWordingFields(null);
         entryCreateDto.setHasOffsiteFee(true);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         MatchResponse<EntryGetDetailDto> response;
 
@@ -250,6 +253,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setWordingFields(null);
         entryUpdateDto.setHasOffsiteFee(true);
 
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
+
         UUID uuid = createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest();
 
         Optional<ApplicationListEntry> applicationListEntry =
@@ -389,6 +394,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
+
         // execute the test
         PayloadForUpdateEntry payloadForCreate =
                 new PayloadForUpdateEntry(
@@ -511,6 +518,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         // fill the template with the two parameters
         updateDto.setWordingFields(List.of(substitution, substitution1));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
 
         // execute the test
         PayloadForUpdateEntry payloadForCreate =
@@ -721,6 +730,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // fill the template with the two parameters
         entryCreateDto.setWordingFields(List.of(substitution, substitution1));
 
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
         MatchResponse<EntryGetDetailDto> response;
 
         response =
@@ -784,6 +795,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setWordingFields(null);
         entryCreateDto.setHasOffsiteFee(true);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         MatchResponse<EntryGetDetailDto> response;
 

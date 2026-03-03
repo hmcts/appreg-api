@@ -1040,7 +1040,7 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
     @Test
     public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation =
-                createAppListUsingRestApi((dto) -> dto.durationHours(null).durationMinutes(null));
+                createAppListUsingRestApi((dto) -> dto.durationHours(0).durationMinutes(0));
 
         // create an entry
         EntryGetDetailDto entryGetSummaryDto =
@@ -1087,6 +1087,7 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(20);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1122,6 +1123,7 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1164,6 +1166,7 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
