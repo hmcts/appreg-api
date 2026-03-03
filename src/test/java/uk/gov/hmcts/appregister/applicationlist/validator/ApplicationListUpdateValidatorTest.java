@@ -426,13 +426,13 @@ public class ApplicationListUpdateValidatorTest {
         listEntry.setUuid(entryUuid);
 
         when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
-            .thenReturn(List.of(listEntry));
+                .thenReturn(List.of(listEntry));
 
         // resolution and official exist for the entry
         when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
-            .thenReturn(List.of(new AppListEntryResolution()));
+                .thenReturn(List.of(new AppListEntryResolution()));
         when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
-            .thenReturn(List.of(new AppListEntryOfficial()));
+                .thenReturn(List.of(new AppListEntryOfficial()));
 
         AppListEntryFeeStatus appListEntryFeeStatus = new AppListEntryFeeStatus();
 
@@ -440,7 +440,7 @@ public class ApplicationListUpdateValidatorTest {
         appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.REMITTED);
 
         when(appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId()))
-            .thenReturn(List.of(appListEntryFeeStatus));
+                .thenReturn(List.of(appListEntryFeeStatus));
 
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 

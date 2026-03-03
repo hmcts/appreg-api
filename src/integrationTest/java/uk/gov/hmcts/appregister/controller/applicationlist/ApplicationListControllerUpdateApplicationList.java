@@ -1187,38 +1187,38 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
 
         // create an entry with a REMITTED fee status
         EntryGetDetailDto entryGetSummaryDto =
-            createEntry(
-                UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
-                (dto) -> {
-                    FeeStatus feeStatus = new FeeStatus();
-                    feeStatus.setStatusDate(LocalDate.now());
-                    // set to REMITTED so the list can be closed
-                    feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
-                    dto.setFeeStatuses(List.of(feeStatus));
-                });
+                createEntry(
+                        UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
+                        (dto) -> {
+                            FeeStatus feeStatus = new FeeStatus();
+                            feeStatus.setStatusDate(LocalDate.now());
+                            // set to REMITTED so the list can be closed
+                            feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        });
 
         // create the result for the entry (resulting entries are required to close)
         createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
 
         // attempt to close the app list
         var req =
-            new ApplicationListUpdateDto()
-                .date(TEST_DATE2)
-                .time(TEST_TIME2)
-                .description("Morning list (court) update - remitted fee")
-                .status(ApplicationListStatus.CLOSED)
-                .courtLocationCode(VALID_COURT_CODE2);
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update - remitted fee")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
         req.setDurationMinutes(2);
 
         var token =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.ADMIN))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
 
         Response resp =
-            restAssuredClient.executePutRequest(
-                URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
 
         resp.then().statusCode(HttpStatus.OK.value());
     }
