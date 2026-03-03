@@ -4,7 +4,7 @@ package uk.gov.hmcts.appregister.common.enumeration;
  * A programmatic means to determine the type of operation that is being performed.
  */
 public enum CrudEnum {
-    CREATE('C'),
+    CREATE('I'),
     READ('R'),
     UPDATE('S'),
     DELETE('D');
@@ -16,19 +16,19 @@ public enum CrudEnum {
     }
 
     public boolean isDelete() {
-        return this.val == 'D';
+        return this == DELETE;
     }
 
     public boolean isCreate() {
-        return this.val == 'C';
+        return this == CREATE;
     }
 
     public boolean isUpdate() {
-        return this.val == 'S';
+        return this == UPDATE;
     }
 
     public boolean isRead() {
-        return this.val == 'R';
+        return this == READ;
     }
 
     public char getValue() {
