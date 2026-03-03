@@ -1178,7 +1178,49 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
                 restAssuredClient.executePutRequest(
                         URI.create(createdLocation[0]).toURL(), token, req);
         ProblemAssertUtil.assertEquals(
-                ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID.getCode(), resp);
+                ApplicationListError.INVALID_FOR_CLOSE_NOT_SETTLED.getCode(), resp);
+    }
+
+    @Test
+    public void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
+        String[] createdLocation = createAppListUsingRestApi();
+
+        // create an entry with a REMITTED fee status
+        EntryGetDetailDto entryGetSummaryDto =
+            createEntry(
+                UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
+                (dto) -> {
+                    FeeStatus feeStatus = new FeeStatus();
+                    feeStatus.setStatusDate(LocalDate.now());
+                    // set to REMITTED so the list can be closed
+                    feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
+                    dto.setFeeStatuses(List.of(feeStatus));
+                });
+
+        // create the result for the entry (resulting entries are required to close)
+        createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
+
+        // attempt to close the app list
+        var req =
+            new ApplicationListUpdateDto()
+                .date(TEST_DATE2)
+                .time(TEST_TIME2)
+                .description("Morning list (court) update - remitted fee")
+                .status(ApplicationListStatus.CLOSED)
+                .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
+
+        var token =
+            getATokenWithValidCredentials()
+                .roles(List.of(RoleEnum.ADMIN))
+                .build()
+                .fetchTokenForRole();
+
+        Response resp =
+            restAssuredClient.executePutRequest(
+                URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+
+        resp.then().statusCode(HttpStatus.OK.value());
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
