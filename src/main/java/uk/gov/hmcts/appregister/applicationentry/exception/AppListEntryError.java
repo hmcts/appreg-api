@@ -101,7 +101,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     "ALE-19")),
     APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "Application code requires application number", "ALE-19"));
+                    HttpStatus.CONFLICT, "Application code requires application number", "ALE-20"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

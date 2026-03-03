@@ -335,7 +335,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         getApplicationCode(validatable))) {
             // if the account number is empty for non enforcement fines code then
             // error as we require it for all other codes
-            if (getAccountNumber(validatable).isEmpty()) {
+            if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
                 throw new AppRegistryException(
                         AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                         "Application number required for application code %s"

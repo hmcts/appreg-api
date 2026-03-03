@@ -121,12 +121,38 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
 
+        // set the respondent to null for the organisation so we use the person
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testValidateSuccessForEnforcementCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
         // set application code to match the application code in the repository
         entryCreateDto.setApplicationCode("EF12121");
         entryCreateDto.setAccountNumber("test");
 
         // set the respondent to null for the organisation so we use the person
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -460,6 +486,7 @@ public class CreateApplicationEntryValidatorTest {
 
         // set the EF application code so that we require the account number
         entryCreateDto.setApplicationCode("EF12121");
+        entryCreateDto.setAccountNumber(null);
 
         // set the respondent to null for the organisation so we use the person
         entryCreateDto.getRespondent().setOrganisation(null);

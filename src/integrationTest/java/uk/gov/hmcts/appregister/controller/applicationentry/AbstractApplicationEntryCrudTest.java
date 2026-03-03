@@ -6,7 +6,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import org.instancio.Instancio;
+import org.instancio.settings.Keys;
+import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +27,8 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -371,11 +377,21 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         }
     }
 
-    // Convenience: create a full entry
     public Response createListEntryWithAllData() throws Exception {
+        return createListEntryWithAllData(null);
+    }
+
+    // Convenience: create a full entry
+    public Response createListEntryWithAllData(Consumer<EntryCreateDto> consumeBeforeCommit)
+            throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        if (consumeBeforeCommit != null) {
+            consumeBeforeCommit.accept(entryCreateDto);
+        }
+
         String surnameToLookup = UUID.randomUUID().toString();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
@@ -457,4 +473,37 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public record SuccessCreateEntryResponse(EntryGetDetailDto getDetailDto, Response response) {}
+
+    EntryUpdateDto getCorrectUpdateDataDto() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        final EntryUpdateDto updateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+
+        final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
+
+        updateDto.getApplicant().setPerson(null);
+        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 12B");
+        updateDto.getApplicant().getOrganisation().getContactDetails().setEmail("test@org.com");
+
+        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        updateDto.getRespondent().getPerson().getContactDetails().setEmail("test@test.com");
+        updateDto.getRespondent().setOrganisation(null);
+
+        updateDto.setStandardApplicantCode(null);
+        updateDto.setOfficials(officials);
+
+        updateDto.setApplicationCode("ZS99007");
+        updateDto.setHasOffsiteFee(true);
+
+        updateDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Premises Address", "test wording"),
+                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
+
+        // Ensure rule compliance
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
+
+        return updateDto;
+    }
 }
