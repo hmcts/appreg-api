@@ -15,4 +15,14 @@ public interface CriminalJusticeMapper {
     @Mapping(target = "code", source = "code")
     @Mapping(target = "description", source = "description")
     CriminalJusticeAreaGetDto toDto(CriminalJusticeArea criminalJusticeArea);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "description", source = "description")
+    CriminalJusticeArea toEntity(String code, String description);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "description", ignore = true)
+    CriminalJusticeArea toEntity(String code);
 }

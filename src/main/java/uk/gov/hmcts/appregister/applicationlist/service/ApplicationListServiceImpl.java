@@ -187,14 +187,10 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 null,
                 AppListAuditOperation.GET_APP_LIST,
                 (req) -> {
-                    var auditApplicationList = new ApplicationList();
-                    auditApplicationList.setUuid(id);
-                    auditApplicationList.setId(0L);
-
                     AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
                             new AuditableResult<>(
                                     getListDetailDto(id, pageable.getPageable()),
-                                    auditApplicationList);
+                                    mapper.toEntity(id));
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -456,18 +452,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                                 dto.getDescription(),
                                                 dto.getOtherLocationDescription(),
                                                 pageable.getPageable());
-                                var auditApplicationList = new ApplicationList();
-                                auditApplicationList.setStatus(
-                                        entryMapper.toStatus(dto.getStatus()));
-                                auditApplicationList.setCourtCode(dto.getCourtLocationCode());
-                                auditApplicationList.setDate(dto.getDate());
-                                auditApplicationList.setDescription(dto.getDescription());
-                                auditApplicationList.setCja(success.getCriminalJusticeArea());
 
                                 AuditableResult<ApplicationListPage, ApplicationList> result =
                                         new AuditableResult<>(
                                                 assembleResponsePage(dbPage, pageable),
-                                                auditApplicationList);
+                                                mapper.toEntity(dto));
                                 return Optional.of(result);
                             },
                             true);
@@ -553,7 +542,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
                     var printDto = buildGetPrintDto(list, dtos);
                     AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                            new AuditableResult<>(printDto, list);
+                            new AuditableResult<>(printDto, mapper.toEntity(id));
 
                     return Optional.of(result);
                 },

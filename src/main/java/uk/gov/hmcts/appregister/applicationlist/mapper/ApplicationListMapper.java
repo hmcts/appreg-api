@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationlist.mapper;
 
 import java.util.List;
+import java.util.UUID;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -12,6 +13,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjecti
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
@@ -137,4 +139,40 @@ public interface ApplicationListMapper {
             CriminalJusticeArea cja,
             NationalCourtHouse court,
             @MappingTarget ApplicationList entity);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "uuid", source = "id")
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "courtCode", ignore = true)
+    @Mapping(target = "courtName", ignore = true)
+    @Mapping(target = "otherLocation", ignore = true)
+    @Mapping(target = "description", ignore = true)
+    @Mapping(target = "date", ignore = true)
+    @Mapping(target = "time", ignore = true)
+    @Mapping(target = "entries", ignore = true)
+    @Mapping(target = "cja", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "durationHours", ignore = true)
+    @Mapping(target = "durationMinutes", ignore = true)
+    ApplicationList toEntity(UUID id);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "uuid", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "courtCode", source = "applicationListGetFilterDto.courtLocationCode")
+    @Mapping(target = "description", source = "applicationListGetFilterDto.description")
+    @Mapping(target = "date", source = "applicationListGetFilterDto.date")
+    @Mapping(target = "time", source = "applicationListGetFilterDto.time")
+    @Mapping(
+            target = "otherLocation",
+            source = "applicationListGetFilterDto.otherLocationDescription")
+    @Mapping(target = "status", source = "applicationListGetFilterDto.status.value")
+    @Mapping(target = "cja.code", source = "applicationListGetFilterDto.cjaCode")
+    @Mapping(target = "courtName", ignore = true)
+    @Mapping(target = "entries", ignore = true)
+    @Mapping(target = "durationHours", ignore = true)
+    @Mapping(target = "durationMinutes", ignore = true)
+    ApplicationList toEntity(ApplicationListGetFilterDto applicationListGetFilterDto);
 }

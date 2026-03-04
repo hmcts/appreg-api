@@ -52,6 +52,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
+                null,
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
                     log.debug(
@@ -84,12 +85,16 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             appTitle,
                             pageable);
 
-                    var auditApplicationCode = new ApplicationCode();
-                    auditApplicationCode.setCode(appCode);
-                    auditApplicationCode.setTitle(appTitle);
-
-                    AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, auditApplicationCode);
+                    AuditableResult<ApplicationCodePage, ApplicationCode> result;
+                    if (appCode == null && appTitle == null) {
+                        result =
+                                new AuditableResult<>(
+                                        newPage, applicationCodeMapper.toEntity("", ""));
+                    } else {
+                        result =
+                                new AuditableResult<>(
+                                        newPage, applicationCodeMapper.toEntity(appCode, appTitle));
+                    }
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -99,6 +104,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     @Transactional
     public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
+                null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     log.debug(
@@ -127,7 +133,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                                 ? feePair
                                                                                         .offsiteFee()
                                                                                 : null),
-                                                        success.getApplicationCode());
+                                                        applicationCodeMapper.toEntity(
+                                                                payloadForGet));
 
                                 log.debug(
                                         "Finish: Find Application for app code: {} date: {}",

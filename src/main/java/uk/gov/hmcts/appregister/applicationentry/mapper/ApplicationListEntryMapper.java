@@ -574,7 +574,7 @@ public abstract class ApplicationListEntryMapper {
      */
     @Mapping(target = "uuid", source = "payload.entryId")
     @Mapping(target = "applicationList.uuid", source = "payload.listId")
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicationCode", ignore = true)
     @Mapping(target = "numberOfBulkRespondents", ignore = true)
     @Mapping(target = "applicationListEntryWording", ignore = true)
@@ -599,7 +599,6 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "caseReference", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(PayloadGetEntryInList payload);
 
-
     /**
      * This is used to create an audit entry using the GET dto for logging.
      *
@@ -622,7 +621,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(
             target = "applicationList.status",
             expression = "java(toStatus(entryGetFilterDto.getStatus()))")
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicationCode", ignore = true)
     @Mapping(target = "numberOfBulkRespondents", ignore = true)
     @Mapping(target = "applicationListEntryWording", ignore = true)

@@ -32,12 +32,16 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     @Override
     public CriminalJusticeAreaGetDto findByCode(String code) {
         return auditService.processAudit(
+                null,
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
                 req -> {
                     var cja = locationLookupService.getCjaOrThrow(code);
+                    var auditCJA = criminalJusticeMapper.toEntity(code);
 
                     AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
-                            new AuditableResult<>(criminalJusticeMapper.toDto(cja), cja);
+                            new AuditableResult<>(
+                                    criminalJusticeMapper.toDto(cja),
+                                    criminalJusticeMapper.toEntity(code));
 
                     return Optional.of(result);
                 },
@@ -48,6 +52,7 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
     public CriminalJusticeAreaPage findAll(
             String code, String description, PagingWrapper pageable) {
         return auditService.processAudit(
+                null,
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
                 (req) -> {
                     org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
@@ -65,14 +70,18 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             criminalJusticeAreaPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    // Creating an audit result with the provided parameters to capture them in the
-                    // audit event, even though they might not be used in the result.
-                    var auditCJA = new CriminalJusticeArea();
-                    auditCJA.setCode(code);
-                    auditCJA.setDescription(description);
-
-                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                            new AuditableResult<>(criminalJusticeAreaPage, auditCJA);
+                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result;
+                    if (code == null && description == null) {
+                        result =
+                                new AuditableResult<>(
+                                        criminalJusticeAreaPage,
+                                        criminalJusticeMapper.toEntity("", ""));
+                    } else {
+                        result =
+                                new AuditableResult<>(
+                                        criminalJusticeAreaPage,
+                                        criminalJusticeMapper.toEntity(code, description));
+                    }
 
                     return Optional.of(result);
                 },

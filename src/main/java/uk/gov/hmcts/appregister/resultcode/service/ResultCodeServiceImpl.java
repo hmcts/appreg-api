@@ -97,13 +97,10 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);
 
-                    var auditResultCode = new ResolutionCode();
-                    auditResultCode.setResultCode(code);
-                    auditResultCode.setStartDate(date);
-
                     return Optional.of(
                             new AuditableResult<ResultCodeGetDetailDto, Keyable>(
-                                    mapper.toDetailDto(rows.getFirst()), auditResultCode));
+                                    mapper.toDetailDto(rows.getFirst()),
+                                    mapper.toEntity(code, date)));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
@@ -152,14 +149,15 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                             "Finish: Find active Result Codes filtered by code: {} and title: {}",
                             codeFilter,
                             titleFilter);
-
-                    var auditResultCode = new ResolutionCode();
-                    auditResultCode.setResultCode(codeFilter);
-                    auditResultCode.setTitle(titleFilter);
-
-                    return Optional.of(
-                            new AuditableResult<ResultCodePage, Keyable>(
-                                    responsePage, auditResultCode));
+                    AuditableResult<ResultCodePage, Keyable> result;
+                    if (codeFilter == null && titleFilter == null) {
+                        result = new AuditableResult<>(responsePage, mapper.toEntity("", ""));
+                    } else {
+                        result =
+                                new AuditableResult<>(
+                                        responsePage, mapper.toEntity(codeFilter, titleFilter));
+                    }
+                    return Optional.of(result);
                 },
                 // Spring injects all AuditOperationLifecycleListener beans as a List;
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

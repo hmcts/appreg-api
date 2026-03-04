@@ -73,12 +73,13 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             name,
                             pageable);
 
-                    var auditStandardApplicant = new StandardApplicant();
-                    auditStandardApplicant.setApplicantCode(code);
-                    auditStandardApplicant.setName(name);
+                    AuditableResult<StandardApplicantPage, StandardApplicant> result;
+                    if (code == null && name == null) {
+                        result = new AuditableResult<>(newPage, mapper.toEntity("", ""));
+                    } else {
+                        result = new AuditableResult<>(newPage, mapper.toEntity(code, name));
+                    }
 
-                    AuditableResult<StandardApplicantPage, StandardApplicant> result =
-                            new AuditableResult<>(newPage, auditStandardApplicant);
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -95,24 +96,11 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             code,
                             date);
 
-                    var auditStandardApplicant = new StandardApplicant();
-                    auditStandardApplicant.setApplicantCode(code);
-                    auditStandardApplicant.setId(-1L);
-
                     StandardApplicantGetDetailDto payloadForGet =
                             validator.validate(
                                     PayloadForGet.builder().date(date).code(code).build(),
                                     (id, standardApplicant) ->
                                             mapper.toReadGetDto(standardApplicant));
-
-                    auditStandardApplicant.setName(
-                            payloadForGet.getApplicant().getOrganisation() != null
-                                    ? payloadForGet.getApplicant().getOrganisation().getName()
-                                    : payloadForGet
-                                            .getApplicant()
-                                            .getPerson()
-                                            .getName()
-                                            .toString());
 
                     log.debug(
                             "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
@@ -120,7 +108,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             date);
 
                     AuditableResult<StandardApplicantGetDetailDto, StandardApplicant> result =
-                            new AuditableResult<>(payloadForGet, auditStandardApplicant);
+                            new AuditableResult<>(payloadForGet, mapper.toEntity(code, date));
 
                     return Optional.of(result);
                 },

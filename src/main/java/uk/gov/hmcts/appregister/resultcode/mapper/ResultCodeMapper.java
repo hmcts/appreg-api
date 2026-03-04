@@ -42,6 +42,16 @@ public interface ResultCodeMapper {
     @Mapping(target = "title", source = "title")
     ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
 
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "resultCode", source = "code")
+    @Mapping(target = "startDate", source = "date")
+    ResolutionCode toEntity(String code, LocalDate date);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "resultCode", source = "code")
+    @Mapping(target = "title", source = "title")
+    ResolutionCode toEntity(String code, String title);
+
     default JsonNullable<LocalDate> map(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.undefined();
     }
