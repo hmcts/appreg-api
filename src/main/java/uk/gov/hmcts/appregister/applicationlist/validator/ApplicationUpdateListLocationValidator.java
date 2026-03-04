@@ -94,7 +94,7 @@ public class ApplicationUpdateListLocationValidator
 
         // if the list is being closed check if we can close
         if (dto.getData().getStatus() == ApplicationListStatus.CLOSED) {
-            validateForClosure(applicationListList.get());
+            validateForClosure(dto.getData(), applicationListList.get());
         }
 
         // validate the location fields
@@ -112,14 +112,18 @@ public class ApplicationUpdateListLocationValidator
     /**
      * validate for the closure of the Application list.
      *
-     * @param list The list to validate for closure
+     * @param listPayloadData The list payload data to validate for closure
+     * @param listBeingUpdated The current list data being updated with the closure status
      */
-    private void validateForClosure(ApplicationList list) {
-        log.debug("Validating application list with id {} for closure", list.getId());
+    private void validateForClosure(
+            ApplicationListUpdateDto listPayloadData, ApplicationList listBeingUpdated) {
+        log.debug("Validating application list with id {} for closure", listBeingUpdated.getId());
 
         // check the duration hours and minutes are not set as they should not be set when closing
         // the list
-        if (list.getDurationHours() == 0 && list.getDurationMinutes() == 0) {
+        if ((listPayloadData.getDurationHours() == null || listPayloadData.getDurationHours() == 0)
+                && (listPayloadData.getDurationMinutes() == null
+                        || listPayloadData.getDurationMinutes() == 0)) {
             throw new AppRegistryException(
                     ApplicationListError.INVALID_FOR_CLOSE_DURATION,
                     "List cannot be closed. Please add duration hours and/or duration minutes.");
@@ -129,7 +133,7 @@ public class ApplicationUpdateListLocationValidator
 
         // gets the application list entries
         List<ApplicationListEntry> listEntries =
-                applicationListEntryRepository.findByApplicationListId(list.getId());
+                applicationListEntryRepository.findByApplicationListId(listBeingUpdated.getId());
 
         for (ApplicationListEntry listEntry : listEntries) {
 
@@ -158,7 +162,7 @@ public class ApplicationUpdateListLocationValidator
             validStatusIsPaid(listEntry);
         }
 
-        log.debug("Validated application list with id {} for closure", list.getId());
+        log.debug("Validated application list with id {} for closure", listBeingUpdated.getId());
     }
 
     /**
@@ -167,28 +171,32 @@ public class ApplicationUpdateListLocationValidator
      * @param listEntry The list entry to validate if it has been paid.
      */
     private void validStatusIsPaid(ApplicationListEntry listEntry) {
-        // make sure the fee status has been paid
+        // make sure the fee status has been paid or REMITTED
         YesOrNo yesOrNo = listEntry.getApplicationCode().getFeeDue();
         if (yesOrNo.isYes()) {
             List<AppListEntryFeeStatus> listStatuses =
                     appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId());
 
             // determine if one of the fee statuses has been paid
-            boolean paid = false;
+            boolean acceptable = false;
             for (AppListEntryFeeStatus status : listStatuses) {
-                if (status.getAlefsFeeStatus() == FeeStatusType.PAID) {
-                    paid = true;
+                FeeStatusType fs = status.getAlefsFeeStatus();
+                if (fs == FeeStatusType.PAID || fs == FeeStatusType.REMITTED) {
+                    acceptable = true;
+                    break;
                 }
             }
 
-            // if the entry is not paid then we can not close the list
-            if (!paid) {
+            // if the entry is not paid nor remitted, then we cannot close the list
+            if (!acceptable) {
                 throw new AppRegistryException(
-                        ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID,
+                        ApplicationListError.INVALID_FOR_CLOSE_NOT_SETTLED,
                         "List cannot be closed. All entries do not have a Paid status.");
             }
 
-            log.debug("Validated application entry fee status with entry id {}", listEntry.getId());
+            log.debug(
+                    "Validated application entry fee status (paid/remitted) with entry id {}",
+                    listEntry.getId());
         }
     }
 

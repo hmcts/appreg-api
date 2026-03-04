@@ -7,8 +7,6 @@ import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
@@ -58,11 +56,6 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
         differenceLogAsserter = new AuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();
-    }
-
-    @DynamicPropertySource
-    static void registerPgProperties(DynamicPropertyRegistry registry) {
-        postgresCommand.start(registry);
     }
 
     /**
