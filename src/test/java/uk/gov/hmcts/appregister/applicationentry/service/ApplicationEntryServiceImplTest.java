@@ -739,7 +739,7 @@ public class ApplicationEntryServiceImplTest {
         Long alId = appList.getId();
         AppListEntrySequenceMapping existing =
                 AppListEntrySequenceMapping.builder().alId(alId).aleLastSequence(5).build();
-        when(appListEntrySequenceMappingRepository.findById(alId))
+        when(appListEntrySequenceMappingRepository.findByAlIdForUpdate(alId))
                 .thenReturn(Optional.of(existing));
 
         ArgumentCaptor<AppListEntrySequenceMapping> mappingCaptor =
@@ -765,11 +765,7 @@ public class ApplicationEntryServiceImplTest {
                 ArgumentCaptor.forClass(ApplicationListEntry.class);
         verify(applicationListEntryRepository, times(1)).save(appListEntryCaptor.capture());
         Assertions.assertEquals((short) 6, appListEntryCaptor.getValue().getSequenceNumber());
-
-        // mapping saved with aleLastSequence == 6 and alId == alId
-        AppListEntrySequenceMapping savedMapping = mappingCaptor.getValue();
-        Assertions.assertEquals(alId, savedMapping.getAlId());
-        Assertions.assertEquals(6, savedMapping.getAleLastSequence());
+        Assertions.assertEquals(6, existing.getAleLastSequence());
     }
 
     @Test

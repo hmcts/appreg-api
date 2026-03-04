@@ -465,8 +465,11 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         Assertions.assertNotNull(seq1);
         Assertions.assertNotNull(seq2);
-        Assertions.assertTrue(
-                seq2 > seq1, "Expected second sequence to be greater: " + seq1 + " -> " + seq2);
+
+        Assertions.assertEquals(
+                (short) (seq1 + 1),
+                seq2,
+                "Expected second sequence to be exactly seq1 + 1: " + seq1 + " -> " + seq2);
     }
 
     @Test

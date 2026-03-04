@@ -871,18 +871,20 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private short allocateNextSequence(Long alId) {
+
         AppListEntrySequenceMapping mapping =
-                appListEntrySequenceMappingRepository.findById(alId).orElse(null);
+                appListEntrySequenceMappingRepository.findByAlIdForUpdate(alId).orElse(null);
 
         if (mapping == null) {
             mapping = AppListEntrySequenceMapping.builder().alId(alId).aleLastSequence(1).build();
+
             appListEntrySequenceMappingRepository.save(mapping);
             return (short) 1;
         }
 
         int next = mapping.getAleLastSequence() + 1;
         mapping.setAleLastSequence(next);
-        appListEntrySequenceMappingRepository.save(mapping);
+
         return (short) next;
     }
 }
