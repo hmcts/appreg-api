@@ -422,4 +422,32 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         Assertions.assertFalse(foundDeleted);
     }
+
+    @Test
+    public void givenApplicationCodeDoesNotRequireRespondent_whenCreateEntryWithRespondentProvided_thenReturn201()
+        throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        // Use an app code which does NOT require a respondent
+        entryCreateDto.setApplicationCode("AD99004");
+
+        Assertions.assertNotNull(entryCreateDto.getRespondent(), "Test requires respondent to be present in payload");
+
+        entryCreateDto.setWordingFields(List.of());
+        entryCreateDto.setFeeStatuses(List.of());
+
+        var tokenGenerator = createAdminToken();
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        // Act
+        SuccessCreateEntryResponse createdDto =
+            createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
 }
