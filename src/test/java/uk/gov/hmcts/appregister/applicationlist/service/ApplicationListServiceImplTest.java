@@ -475,6 +475,9 @@ public class ApplicationListServiceImplTest {
         assertThat(result.getContent().size()).isEqualTo(1);
 
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
+
+        // Audit assertion
+        //        assertThat()
     }
 
     @Test
