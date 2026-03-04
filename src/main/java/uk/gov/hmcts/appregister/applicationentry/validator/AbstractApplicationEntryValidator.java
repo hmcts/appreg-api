@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -344,6 +346,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * validate the code and the fees details provided in the payload. If the code requires a fee
      * then one must be provided else an exception is thrown
      *
+     * <p>In addition: - For each fee status, if paymentStatus = DUE then paymentReference must NOT
+     * be provided.
+     *
      * @param validatable The validatable payload
      */
     private Fee validateFee(ApplicationCode applicationCode, T validatable) {
@@ -352,6 +357,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
+
+        validatePaymentReferenceNotAllowedWhenDue(feeStatuses, validatable);
 
         // check that the fee status payload make sense according to the application code
         YesOrNo yesOrNo = applicationCode.getFeeDue();
@@ -387,6 +394,34 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         return feeToReturn;
+    }
+
+    /** Validates that when payment status is DUE, no payment reference is provided. */
+    private void validatePaymentReferenceNotAllowedWhenDue(
+            List<FeeStatus> feeStatuses, T validatable) {
+
+        if (feeStatuses == null || feeStatuses.isEmpty()) {
+            return;
+        }
+
+        for (FeeStatus feeStatus : feeStatuses) {
+            if (feeStatus == null) {
+                continue;
+            }
+
+            boolean isDue = feeStatus.getPaymentStatus() == DUE;
+
+            String paymentReference = feeStatus.getPaymentReference();
+            boolean paymentReferencePassed =
+                    paymentReference != null && !paymentReference.trim().isEmpty();
+
+            if (isDue && paymentReferencePassed) {
+                throw new AppRegistryException(
+                        AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
+                        "Payment reference must not be provided when fee status is DUE for code %s"
+                                .formatted(getApplicationCode(validatable)));
+            }
+        }
     }
 
     /**
