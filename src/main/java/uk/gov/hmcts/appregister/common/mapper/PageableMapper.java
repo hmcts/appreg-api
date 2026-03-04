@@ -47,6 +47,10 @@ public class PageableMapper {
             Sort.Direction defaultDirection,
             Function<String, T> findSortFieldEnum) {
 
+        // TODO: This is the one line that needs removing
+        // if we want to support multiple sort values
+        validateAgainstMultipleSortSupported(sort);
+
         if (size != null && size > maxPageSize) {
             size = maxPageSize;
         }
@@ -94,6 +98,20 @@ public class PageableMapper {
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
+    }
+
+    /**
+     * validates against multiple sort values. An exception is thrown if not.
+     *
+     * @param sort The sort values
+     */
+    private void validateAgainstMultipleSortSupported(List<String> sort) {
+        // add a restriction based on application configuration
+        if (sort != null && sort.size() > 1) {
+            throw new AppRegistryException(
+                    CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED,
+                    "Multiple sort values are not allowed");
+        }
     }
 
     /**
