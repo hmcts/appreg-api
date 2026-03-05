@@ -1,5 +1,5 @@
 type: object
-description: The status of the fee linked to the application.
+description: The status of the fee linked to the application. Blank fields will be rejected, nulls should be used instead.
 required:
   - paymentStatus
   - statusDate

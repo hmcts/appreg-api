@@ -3,6 +3,7 @@ description: >
   Filter criteria for POST /reports/activity-audit/jobs.
   Both dateFrom and dateTo are required and are treated as inclusive bounds.
   The username must match exactly.
+  Blank fields will be rejected, nulls should be used instead.
 additionalProperties: false
 required:
   - dateFrom

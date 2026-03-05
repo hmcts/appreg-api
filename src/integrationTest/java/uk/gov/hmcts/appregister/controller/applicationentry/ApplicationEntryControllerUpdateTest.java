@@ -329,7 +329,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // ensure we fail based on the account number
         entryUpdateDto.setApplicationCode("EF1213");
-        entryUpdateDto.setAccountNumber("");
+        entryUpdateDto.setAccountNumber(null);
 
         var tokenGenerator = createAdminToken();
         Response responseSpecUpdate =

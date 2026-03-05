@@ -43,6 +43,6 @@ public class SubstitutionDtoTest {
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "value", "size must be between 1 and 2147483647");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint, "value", "size must be between 1 and 2147483647");
+                listConstraint, "key", "size must be between 1 and 2147483647");
     }
 }

@@ -1,5 +1,6 @@
 type: object
 description: The template details
+required: [template]
 properties:
     template:
       type: string

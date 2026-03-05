@@ -1,5 +1,5 @@
 type: object
-description: The Official hearing the application.
+description: The Official hearing the application. Blank fields will be rejected, nulls should be used instead.
 properties:
 
   title:

@@ -1,5 +1,5 @@
 type: object
-description: The template field with the associated value to substitute
+description: The template field with the associated value to substitute. Blank fields will be rejected, nulls should be used instead.
 required: [name, value]
 properties:
   key:

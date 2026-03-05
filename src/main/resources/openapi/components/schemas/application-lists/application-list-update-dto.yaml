@@ -1,5 +1,5 @@
 type: object
-description: Request payload to fully replace an existing Application List.
+description: Request payload to fully replace an existing Application List. Blank fields will be rejected, nulls should be used instead.
 required:
   - date
   - time

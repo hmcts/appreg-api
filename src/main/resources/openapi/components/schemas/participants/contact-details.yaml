@@ -1,5 +1,5 @@
 type: object
-description: A participant's contact details.
+description: A participant's contact details. Blank fields will be rejected, nulls should be used instead.
 required:
   - addressLine1
 properties:

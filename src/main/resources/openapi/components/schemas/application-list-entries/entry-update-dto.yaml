@@ -1,7 +1,7 @@
 type: object
 description: >
   Request payload to update an Application List Entry. Note, this is a PUT operation so the whole object is replaced.
-  If you leave a field blank it will be over-written as empty.
+  Blank fields will be rejected, nulls should be used instead.
 required:
   - applicationCode
   - lodgementDate

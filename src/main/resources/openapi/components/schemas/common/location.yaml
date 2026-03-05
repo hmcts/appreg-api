@@ -1,5 +1,5 @@
 type: object
-description: The locations where an application may be heard.
+description: The locations where an application may be heard. Blank fields will be rejected, nulls should be used instead.
 
 properties:
 

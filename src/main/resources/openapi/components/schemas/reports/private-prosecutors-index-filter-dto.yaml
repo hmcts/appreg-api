@@ -2,7 +2,8 @@
 type: object
 description: >
   Filter criteria for POST /reports/private-prosecutors-index/jobs.
-  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds. Blank fields will be rejected,
+  nulls should be used instead.
 additionalProperties: false
 required:
   - dateFrom

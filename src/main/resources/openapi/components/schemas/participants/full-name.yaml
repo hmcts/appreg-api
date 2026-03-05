@@ -1,5 +1,5 @@
 type: object
-description: A persons full name.
+description: A persons full name. Blank fields will be rejected, nulls should be used instead.
 required:
   - surname
   - firstForename
