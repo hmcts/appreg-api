@@ -62,7 +62,10 @@ public class LogMdcFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } finally {
-            MDC.clear();
+            // remove the method, path and user
+            MDC.remove(METHOD);
+            MDC.remove(PATH);
+            MDC.remove(USER);
         }
     }
 }

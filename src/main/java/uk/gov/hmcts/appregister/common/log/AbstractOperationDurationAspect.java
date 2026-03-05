@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.log;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.TriConsumer;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Pageable;
@@ -124,5 +123,12 @@ public class AbstractOperationDurationAspect {
      */
     protected String getLogStringForOutputObject(Object object) {
         return ObfuscationUtil.getObfuscatedString(object);
+    }
+
+    /**
+     *  A consumer that takes three arguments.
+     */
+    public interface TriConsumer<K, V, S> {
+        void accept(K k, V v, S s);
     }
 }

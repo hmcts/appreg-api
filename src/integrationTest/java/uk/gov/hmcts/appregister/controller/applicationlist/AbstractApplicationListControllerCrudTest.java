@@ -27,7 +27,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
-public abstract class AbstractApplicationListTest extends BaseIntegration {
+public abstract class AbstractApplicationListControllerCrudTest extends BaseIntegration {
 
     protected static final String WEB_CONTEXT = "application-lists";
     protected static final String GET_ENTRIES_CONTEXT = "application-list-entries";
@@ -261,6 +261,17 @@ public abstract class AbstractApplicationListTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT + "/" + listId + "/print"), token);
         resp.then().statusCode(HttpStatus.OK.value()).contentType(VND_JSON_V1);
         return resp.as(ApplicationListGetPrintDto.class);
+    }
+
+    protected UUID createApplicationListWithCourtCode(
+            TokenAndJwksKey token, ApplicationListCreateDto createDetail) throws Exception {
+        Response createListResp =
+                restAssuredClient.executePostRequest(getLocalUrl(WEB_CONTEXT), token, createDetail);
+        createListResp.then().statusCode(HttpStatus.CREATED.value());
+
+        ApplicationListGetDetailDto createdList =
+                createListResp.as(ApplicationListGetDetailDto.class);
+        return createdList.getId();
     }
 
     // --- GET_ALL ---------------------------------------------------------------------
