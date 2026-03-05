@@ -209,7 +209,7 @@ public class ApplicationUpdateListLocationValidator
         // fail any update on an already closed list
         if (currentList.getStatus() == Status.CLOSED) {
             throw new AppRegistryException(
-                    ApplicationListError.INVALID_LIST_STATUS,
+                    ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST,
                     "A closed application list is not allowed to be updated");
         }
     }
