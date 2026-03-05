@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateApplicationList extends AbstractApplicationListTest {
+public class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
