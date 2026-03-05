@@ -57,7 +57,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "entryFeeStatuses", ignore = true)
     @Mapping(target = "officials", ignore = true)
     @Mapping(target = "entryRescheduled", constant = "N")
-    @Mapping(target = "sequenceNumber", constant = "1")
+    @Mapping(target = "sequenceNumber", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(
             EntryCreateDto entryCreateDto,

@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateApplicationList extends AbstractApplicationListTest {
+public class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
@@ -1502,7 +1502,7 @@ public class ApplicationListControllerUpdateApplicationList extends AbstractAppl
         // Assert failure is due to invalid list status for update
         ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
+                ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 }
