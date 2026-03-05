@@ -475,7 +475,7 @@ public class ApplicationListControllerTest extends AbstractApplicationListTest {
 
         differenceLogAsserter.assertDataAuditChange(
                 AuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPICATION_LIST,
+                        TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
                         VALID_CJA_CODE,
