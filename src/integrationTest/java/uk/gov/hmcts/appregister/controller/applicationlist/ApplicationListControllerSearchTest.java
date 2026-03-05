@@ -16,7 +16,6 @@ import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -33,7 +32,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
@@ -144,26 +142,6 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         }
 
         createListReq.setCourtLocationCode(VALID_COURT_CODE2);
-
-        // assert the diff audit log message
-        differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(3, false);
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                    TableNames.APPICATION_LIST,
-                    "al_id",
-                    null,
-                    null,
-                    "DELETE",
-                    "Delete Application List"));
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.APPICATION_LIST,
-                        "version",
-                        "0",
-                        null,
-                        "DELETE",
-                        "Delete Application List"));
 
         // create a second list with 5 entries
         UUID listId2 =

@@ -125,9 +125,7 @@ public class AbstractOperationDurationAspect {
         return ObfuscationUtil.getObfuscatedString(object);
     }
 
-    /**
-     *  A consumer that takes three arguments.
-     */
+    /** A consumer that takes three arguments. */
     public interface TriConsumer<K, V, S> {
         void accept(K k, V v, S s);
     }

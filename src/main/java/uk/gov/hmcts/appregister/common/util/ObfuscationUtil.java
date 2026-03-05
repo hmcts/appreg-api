@@ -25,7 +25,7 @@ public class ObfuscationUtil {
     static final ObjectMapper mapper = new ObjectMapper();
 
     // register all of the serializers to the object mapper
-    static  {
+    static {
         SimpleModule maskingModule = new SimpleModule();
 
         maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
@@ -36,6 +36,7 @@ public class ObfuscationUtil {
         mapper.registerModule(new JsonNullableModule());
         mapper.registerModule(new JavaTimeModule());
     }
+
     /**
      * Uses jackson to anonymise PII data by targeting the {@link
      * uk.gov.hmcts.appregister.generated.model.Person} class or {@link

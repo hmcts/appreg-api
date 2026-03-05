@@ -32,9 +32,9 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
+import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
-import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -693,28 +693,26 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // create the token
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         // test the functionality
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto
-            );
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
         responseSpecCreate.then().statusCode(400);
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
 
         Assertions.assertEquals(
-            CommonAppError.WORDING_DATA_TYPE_FAILURE.getCode().getType().get(),
-            problemDetail.getType()
-        );
+                CommonAppError.WORDING_DATA_TYPE_FAILURE.getCode().getType().get(),
+                problemDetail.getType());
         Assertions.assertEquals(
-            "Premises Date=extra field not a date", problemDetail.getDetail().trim());
+                "Premises Date=extra field not a date", problemDetail.getDetail().trim());
     }
 
     @Test
