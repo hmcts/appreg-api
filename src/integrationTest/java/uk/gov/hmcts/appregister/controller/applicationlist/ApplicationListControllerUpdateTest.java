@@ -1502,7 +1502,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         // Assert failure is due to invalid list status for update
         ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
+                ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 }
