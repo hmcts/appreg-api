@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.standardapplicant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,7 +7,6 @@ import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -15,16 +14,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -36,30 +31,11 @@ import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCod
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.client.request.DateGetRequest;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
-public class StandardApplicantControllerTest extends AbstractSecurityControllerTest {
-    private static final String WEB_CONTEXT = "standard-applicants";
-
-    @Value("${spring.data.web.pageable.default-page-size}")
-    private Integer defaultPageSize;
-
-    @Value("${spring.data.web.pageable.max-page-size}")
-    private Integer maxPageSize;
-
-    @MockitoBean private Clock clock; // replaces Clock bean in Spring context
-
-    // The total standard applicant inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_STANDARD_APPLICANT_COUNT = 7;
-
-    private static final String APPCODE_CODE = "APP001";
-    private static final String APPCODE_CODE_ORGANISATION = "APP005";
-
-    private static final String DUPLICATE_APPCODE_CODE = "APP003";
-
+public class StandardApplicantControllerSearchTest
+        extends AbstractStandardApplicantControllerCrudTest {
     @BeforeEach
     public void before() {
         when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
@@ -988,6 +964,32 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
         }
     }
 
+    @Test
+    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of(
+                                StandardApplicantSortFieldEnum.CODE.getApiValue(),
+                                StandardApplicantSortFieldEnum.NAME.getApiValue()),
+                        getLocalUrl(WEB_CONTEXT),
+                        token);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
     @RequiredArgsConstructor
     static class StandardApplicantRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> code;
@@ -1005,28 +1007,5 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             return rs;
         }
-    }
-
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(
-                                getLocalUrl(
-                                        WEB_CONTEXT
-                                                + "/"
-                                                + APPCODE_CODE
-                                                + "?date="
-                                                + LocalDate.now()))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
     }
 }
