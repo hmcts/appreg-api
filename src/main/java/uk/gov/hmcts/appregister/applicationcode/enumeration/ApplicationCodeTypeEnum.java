@@ -4,14 +4,12 @@ package uk.gov.hmcts.appregister.applicationcode.enumeration;
  * An enumeration that adds specific data to specific application code records.
  */
 public enum ApplicationCodeTypeEnum {
-    ENFORCEMENT_FINES("Enforcement Fines", "EF");
+    ENFORCEMENT_FINES("EF");
 
-    private final String description;
     private final String codePrefix;
 
-    ApplicationCodeTypeEnum(String codePrefix, String description) {
+    ApplicationCodeTypeEnum(String codePrefix) {
         this.codePrefix = codePrefix;
-        this.description = description;
     }
 
     /**
@@ -23,6 +21,6 @@ public enum ApplicationCodeTypeEnum {
      */
     public static boolean isMatching(
             ApplicationCodeTypeEnum applicationCodeEnum, String codeToCheck) {
-        return applicationCodeEnum.codePrefix.startsWith(codeToCheck);
+        return codeToCheck.startsWith(applicationCodeEnum.codePrefix);
     }
 }

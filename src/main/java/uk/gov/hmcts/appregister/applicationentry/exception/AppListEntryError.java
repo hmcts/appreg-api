@@ -38,7 +38,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     FEE_NOT_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The code does not require a fee", "ALE-7")),
+                    HttpStatus.BAD_REQUEST, "The code does not require a fee", "ALE-7")),
 
     BULK_RESPONDENT_NOT_EXPECTED(
             DefaultErrorDetail.create(

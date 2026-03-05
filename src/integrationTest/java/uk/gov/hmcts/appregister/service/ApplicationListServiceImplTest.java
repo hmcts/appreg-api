@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
-import uk.gov.hmcts.appregister.controller.applicationlist.AbstractApplicationListTest;
+import uk.gov.hmcts.appregister.controller.applicationlist.AbstractApplicationListControllerCrudTest;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -24,7 +24,7 @@ import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 
-public class ApplicationListServiceImplTest extends AbstractApplicationListTest {
+public class ApplicationListServiceImplTest extends AbstractApplicationListControllerCrudTest {
     @Autowired private ApplicationListService applicationListService;
 
     @Autowired private TransactionalUnitOfWork unitOfWork;

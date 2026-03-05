@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.mockito.Mockito.when;
+
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
@@ -12,16 +14,22 @@ import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
+import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
@@ -62,9 +70,18 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Value("${spring.data.web.pageable.max-page-size}")
     protected Integer maxPageSize;
 
+    @MockitoBean protected UserProvider provider;
+
     @Autowired protected TransactionalUnitOfWork unitOfWork;
     @Autowired protected ApplicationListRepository applicationListRepository;
     @Autowired protected ApplicationListEntryRepository applicationListEntryRepository;
+
+    @BeforeEach
+    void setupUser() {
+        when(provider.getUserId()).thenReturn("user");
+        when(provider.getEmail()).thenReturn("email");
+        when(provider.getRoles()).thenReturn(new String[] {"role"});
+    }
 
     /** Build a token generator with ADMIN role. */
     protected TokenGenerator createAdminToken() {
@@ -472,9 +489,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         return responseSpecCreate;
     }
 
-    public record SuccessCreateEntryResponse(EntryGetDetailDto getDetailDto, Response response) {}
-
-    EntryUpdateDto getCorrectUpdateDataDto() {
+    protected EntryUpdateDto getCorrectUpdateDataDto() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         final EntryUpdateDto updateDto =
@@ -505,5 +520,18 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
 
         return updateDto;
+    }
+
+    public record SuccessCreateEntryResponse(EntryGetDetailDto getDetailDto, Response response) {}
+
+    protected ApplicationListEntry createEntry(ApplicationList list) {
+        return new AppListEntryTestData().someMinimal().applicationList(list).build();
+    }
+
+    // ---- data helpers ----
+    public ApplicationList createAndSaveList(Status status) {
+        var list = new AppListTestData().someMinimal().status(status).build();
+        persistance.save(list);
+        return list;
     }
 }

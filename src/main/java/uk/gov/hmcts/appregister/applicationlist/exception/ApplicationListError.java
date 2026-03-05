@@ -77,10 +77,10 @@ public enum ApplicationListError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "List cannot be closed. No Official is recorded against any of the applications in the list.",
                     "AL-18")),
-    INVALID_FOR_CLOSE_NOT_PAID(
+    INVALID_FOR_CLOSE_NOT_SETTLED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
-                    "List cannot be closed. All applications do not have a Paid or Remitted Fee status.",
+                    "List cannot be closed. At least one application does not have a Paid or Remitted fee status.",
                     "AL-19"));
 
     private final DefaultErrorDetail defaultErrorCode;

@@ -329,12 +329,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *     failure
      */
     private ApplicationCode validateApplicationCode(T validatable) {
-        if (getApplicationCode(validatable) == null
-                || !ApplicationCodeTypeEnum.isMatching(
+        if (getApplicationCode(validatable) != null
+                && ApplicationCodeTypeEnum.isMatching(
                         ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
                         getApplicationCode(validatable))) {
-            // if the account number is empty for non enforcement fines code then
-            // error as we require it for all other codes
+            // if the account number is null or empty then throw an error as we require
+            // an account number for enforcement fines codes
             if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
                 throw new AppRegistryException(
                         AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
