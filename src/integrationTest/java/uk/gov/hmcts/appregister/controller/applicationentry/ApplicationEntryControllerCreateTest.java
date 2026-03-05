@@ -34,8 +34,8 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
-import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
@@ -1398,15 +1398,15 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         dto2.getApplicant().getPerson().getName().setSurname("SEQ-" + UUID.randomUUID());
 
         SuccessCreateEntryResponse created1 =
-            createEntryWithUniqueSurname(
-                tokenGenerator,
-                dto1,
-                dto1.getApplicant().getPerson().getName().getSurname());
+                createEntryWithUniqueSurname(
+                        tokenGenerator,
+                        dto1,
+                        dto1.getApplicant().getPerson().getName().getSurname());
         SuccessCreateEntryResponse created2 =
-            createEntryWithUniqueSurname(
-                tokenGenerator,
-                dto2,
-                dto2.getApplicant().getPerson().getName().getSurname());
+                createEntryWithUniqueSurname(
+                        tokenGenerator,
+                        dto2,
+                        dto2.getApplicant().getPerson().getName().getSurname());
 
         UUID entryUuid1 = created1.getDetailDto().getId();
         UUID entryUuid2 = created2.getDetailDto().getId();
@@ -1419,20 +1419,20 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         Assertions.assertNotNull(seq2);
 
         Assertions.assertEquals(
-            (short) (seq1 + 1),
-            seq2,
-            "Expected second sequence to be exactly seq1 + 1: " + seq1 + " -> " + seq2);
+                (short) (seq1 + 1),
+                seq2,
+                "Expected second sequence to be exactly seq1 + 1: " + seq1 + " -> " + seq2);
     }
 
     @Test
     public void givenDifferentLists_whenCreateEntries_thenSequencesAreIndependent()
-        throws Exception {
+            throws Exception {
         List<ApplicationList> lists =
-            unitOfWork.inTransaction(
-                () -> applicationListRepository.findAll(Sort.by(Sort.Direction.ASC, "id")));
+                unitOfWork.inTransaction(
+                        () -> applicationListRepository.findAll(Sort.by(Sort.Direction.ASC, "id")));
 
         Assertions.assertTrue(
-            lists.size() >= 2, "Need at least two application lists for this test");
+                lists.size() >= 2, "Need at least two application lists for this test");
 
         ApplicationList list1 = lists.get(0);
         ApplicationList list2 = lists.get(1);
@@ -1444,10 +1444,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         dto1.getApplicant().getPerson().getName().setSurname("SEQ-L1-" + UUID.randomUUID());
         TokenGenerator tokenGenerator = createAdminToken();
         Response r1 =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list1.getUuid() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                dto1);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list1.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        dto1);
         r1.then().statusCode(201);
         EntryGetDetailDto created1 = r1.as(EntryGetDetailDto.class);
 
@@ -1455,10 +1455,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         EntryCreateDto dto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         dto2.getApplicant().getPerson().getName().setSurname("SEQ-L2-" + UUID.randomUUID());
         Response r2 =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list2.getUuid() + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                dto2);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list2.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        dto2);
         r2.then().statusCode(201);
         EntryGetDetailDto created2 = r2.as(EntryGetDetailDto.class);
 
@@ -1475,23 +1475,23 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         TokenAndJwksKey tokenAndJwks = tokenGenerator.fetchTokenForRole();
 
         var createListReq =
-            new ApplicationListCreateDto()
-                .date(LocalDate.now().plusDays(1))
-                .time(LocalTime.of(10, 0))
-                .description("SEQ TEST LIST " + UUID.randomUUID())
-                .status(ApplicationListStatus.OPEN)
-                .courtLocationCode("CCC003")
-                .durationHours(1)
-                .durationMinutes(0);
+                new ApplicationListCreateDto()
+                        .date(LocalDate.now().plusDays(1))
+                        .time(LocalTime.of(10, 0))
+                        .description("SEQ TEST LIST " + UUID.randomUUID())
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode("CCC003")
+                        .durationHours(1)
+                        .durationMinutes(0);
 
         Response createListResp =
-            restAssuredClient.executePostRequest(
-                getLocalUrl("application-lists"), tokenAndJwks, createListReq);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl("application-lists"), tokenAndJwks, createListReq);
 
         createListResp.then().statusCode(HttpStatus.CREATED.value());
 
         ApplicationListGetDetailDto createdList =
-            createListResp.as(ApplicationListGetDetailDto.class);
+                createListResp.as(ApplicationListGetDetailDto.class);
 
         UUID listUuid = createdList.getId();
 
@@ -1499,10 +1499,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryReq.getApplicant().getPerson().getName().setSurname("SEQ-FIRST-" + UUID.randomUUID());
 
         Response createEntryResp =
-            restAssuredClient.executePostRequest(
-                getLocalUrl("application-lists/" + listUuid + "/entries"),
-                tokenAndJwks,
-                entryReq);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl("application-lists/" + listUuid + "/entries"),
+                        tokenAndJwks,
+                        entryReq);
 
         createEntryResp.then().statusCode(HttpStatus.CREATED.value());
 
@@ -1512,22 +1512,22 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         Assertions.assertNotNull(seq, "Created entry must have a sequence number");
         Assertions.assertEquals(
-            Short.valueOf((short) 1),
-            seq,
-            "First allocated sequence should be 1 for a new list");
+                Short.valueOf((short) 1),
+                seq,
+                "First allocated sequence should be 1 for a new list");
     }
 
     private Short getSequenceNumberFromDb(UUID entryUuid) {
         return unitOfWork.inTransaction(
-            () -> {
-                ApplicationListEntry entry =
-                    applicationListEntryRepository
-                        .findByUuid(entryUuid)
-                        .orElseThrow(
-                            () ->
-                                new AssertionError(
-                                    "Entry not found: " + entryUuid));
-                return entry.getSequenceNumber();
-            });
+                () -> {
+                    ApplicationListEntry entry =
+                            applicationListEntryRepository
+                                    .findByUuid(entryUuid)
+                                    .orElseThrow(
+                                            () ->
+                                                    new AssertionError(
+                                                            "Entry not found: " + entryUuid));
+                    return entry.getSequenceNumber();
+                });
     }
 }

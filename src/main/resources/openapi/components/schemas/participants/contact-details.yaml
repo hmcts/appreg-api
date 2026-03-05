@@ -82,7 +82,6 @@ properties:
 
   email:
     type: string
-    format: email
     description: The participant's email address.
     pattern: "^((([^<>()\\[\\]\\\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$" #Email regex from legacy
     example: "john-doe@gmail.com"
