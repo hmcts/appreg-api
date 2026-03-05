@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.enumeration;
 
 /**
- * An enumeration that adds specific data to specific application code records.
+ * An enumeration that represents the application code type.
  */
 public enum ApplicationCodeTypeEnum {
     ENFORCEMENT_FINES("EF");
@@ -13,7 +13,7 @@ public enum ApplicationCodeTypeEnum {
     }
 
     /**
-     * is a code belong to an application code type.
+     * does a code belong to an application code type.
      *
      * @param applicationCodeEnum The application code enum that will force the basis of the match.
      * @param codeToCheck The code to check a match.
