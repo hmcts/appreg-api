@@ -187,7 +187,8 @@ public class ApplicationListUpdateValidatorTest {
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(payload));
-        Assertions.assertEquals(ApplicationListError.INVALID_LIST_STATUS, exception.getCode());
+        Assertions.assertEquals(
+                ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST, exception.getCode());
     }
 
     @Test

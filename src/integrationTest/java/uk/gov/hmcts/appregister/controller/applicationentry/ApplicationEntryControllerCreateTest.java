@@ -118,6 +118,77 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
+    public void givenValidRequest_whenCreateListEntryWithEnforcementFineCode_thenReturn201()
+            throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        entryCreateDto.setWordingFields(null);
+
+        var tokenGenerator = createAdminToken();
+
+        // set the enforcement fine code
+        entryCreateDto.setApplicationCode("EF1213");
+        entryCreateDto.setAccountNumber("1234567890");
+
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+
+        validateEntryCreationResponse(entryCreateDto, createdDto.getDetailDto(), List.of());
+
+        EntryPage page = findEntriesBySurname(tokenGenerator, surnameToLookup, 10, 0);
+
+        PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
+        Assertions.assertEquals(
+                createdDto.getDetailDto().getId(), page.getContent().getFirst().getId());
+
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        "",
+                        null,
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        "",
+                        "1",
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        "",
+                        null,
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getType()
+                                .name(),
+                        uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
+                                .CREATE_APP_ENTRY_LIST
+                                .getEventName()));
+    }
+
+    @Test
     public void givenValidRequest_whenCreateListEntryWithoutFeeAndRespondent_thenReturn201()
             throws Exception {
 
@@ -432,6 +503,41 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                                 .anyMatch(s -> s.getId() != null && s.getId().equals(createdUuid));
 
         Assertions.assertFalse(foundDeleted);
+    }
+
+    @Test
+    public void
+            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_409IsReturned()
+                    throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setWordingFields(List.of());
+
+        var tokenGenerator = createAdminToken();
+
+        // set the enforcement fine code for a failure
+        entryCreateDto.setApplicationCode("EF1213");
+        entryCreateDto.setAccountNumber(null);
+
+        // run the test
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the error
+        Assertions.assertEquals(409, responseSpecCreate.statusCode());
+        ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                        .getCode()
+                        .getType()
+                        .get(),
+                problemDetail.getType());
     }
 
     @Test
