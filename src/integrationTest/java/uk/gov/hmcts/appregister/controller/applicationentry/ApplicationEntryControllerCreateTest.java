@@ -580,15 +580,18 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenApplicationCodeDoesNotRequireRespondent_whenCreateEntryWithRespondentProvided_thenReturn201()
-        throws Exception {
+    public void
+            givenApplicationCodeDoesNotRequireRespondent_whenCreateEntryWithRespondentProvided_thenReturn201()
+                    throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
         // Use an app code which does NOT require a respondent
         entryCreateDto.setApplicationCode("AD99004");
 
-        Assertions.assertNotNull(entryCreateDto.getRespondent(), "Test requires respondent to be present in payload");
+        Assertions.assertNotNull(
+                entryCreateDto.getRespondent(),
+                "Test requires respondent to be present in payload");
 
         entryCreateDto.setWordingFields(List.of());
         entryCreateDto.setFeeStatuses(List.of());
@@ -598,7 +601,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Act
         SuccessCreateEntryResponse createdDto =
-            createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
         // Assert
         Assertions.assertNotNull(createdDto);

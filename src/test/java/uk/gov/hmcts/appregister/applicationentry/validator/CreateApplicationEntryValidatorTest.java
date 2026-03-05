@@ -457,16 +457,19 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setStandardApplicantCode(null);
 
         // Ensure respondent exists (payload includes respondent)
-        Assertions.assertNotNull(entryCreateDto.getRespondent(), "Test requires respondent to be present");
-        entryCreateDto.getRespondent().setOrganisation(null); // use person respondent to avoid mutual-exclusive failure
+        Assertions.assertNotNull(
+                entryCreateDto.getRespondent(), "Test requires respondent to be present");
+        entryCreateDto
+                .getRespondent()
+                .setOrganisation(null); // use person respondent to avoid mutual-exclusive failure
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         PayloadForCreate<EntryCreateDto> payload =
-            PayloadForCreate.<EntryCreateDto>builder()
-                .id(appListUuid)
-                .data(entryCreateDto)
-                .build();
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
 
         Assertions.assertDoesNotThrow(() -> createApplicationEntryValidator.validate(payload));
     }
