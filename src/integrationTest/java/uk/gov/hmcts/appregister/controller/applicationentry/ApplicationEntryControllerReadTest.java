@@ -4,10 +4,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
-
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
-import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
@@ -38,22 +36,22 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(uuids[0], entryGetDetailDto.getListId());
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LISTS_ENTRY,
-                "id",
-                null,
-                uuids[1].toString(),
-                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
-                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "id",
+                        null,
+                        uuids[1].toString(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.APPLICATION_LISTS,
-                "id",
-                null,
-                uuids[0].toString(),
-                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
-                AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "id",
+                        null,
+                        uuids[0].toString(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
     }
 
     @Test

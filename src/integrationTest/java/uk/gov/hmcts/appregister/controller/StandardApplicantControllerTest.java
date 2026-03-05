@@ -25,7 +25,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -33,7 +32,6 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
 import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
@@ -131,22 +129,28 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                APPCODE_CODE,
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                LocalDate.now().toString(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
     }
 
     @Test
@@ -203,22 +207,28 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                APPCODE_CODE_ORGANISATION,
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE_ORGANISATION,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                LocalDate.now().toString(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
     }
 
     @Test
@@ -330,22 +340,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -415,22 +425,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -482,22 +492,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -530,22 +540,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "not exist",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "does not exist",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "does not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -583,22 +593,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_start_date",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -632,22 +642,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "APP00",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP00",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -690,22 +700,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "ORG",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "ORG",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -772,22 +782,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "D",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "D",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -843,22 +853,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "Dunn",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Dunn",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -894,22 +904,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "APP001",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "Smith",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Smith",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -943,22 +953,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
         // audit assertion
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "standard_applicant_code",
-                null,
-                "APP001",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.STANDARD_APPLICANTS,
-                "name",
-                null,
-                "John",
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "John",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -994,22 +1004,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "standard_applicant_code",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "name",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -1141,22 +1151,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "standard_applicant_code",
-                    null,
-                    "P0",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "P0",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "name",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -1193,22 +1203,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "standard_applicant_code",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "name",
-                    null,
-                    "anisation 1",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "anisation 1",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 
@@ -1244,22 +1254,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "standard_applicant_code",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "name",
-                    null,
-                    "Owe",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Owe",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 
@@ -1295,22 +1305,22 @@ public class StandardApplicantControllerTest extends AbstractSecurityControllerT
 
             // audit assertion
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "standard_applicant_code",
-                    null,
-                    "",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.STANDARD_APPLICANTS,
-                    "name",
-                    null,
-                    "Jones",
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                    StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Jones",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 

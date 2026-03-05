@@ -11,11 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
-
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
@@ -90,22 +88,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                EXPECTED_CODE,
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        EXPECTED_CODE,
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -174,22 +178,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -237,22 +247,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -296,22 +312,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -381,22 +403,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                EXPECTED_CODE.toLowerCase(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        EXPECTED_CODE.toLowerCase(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -442,22 +470,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                EXPECTED_DESCRIPTION.toLowerCase(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        EXPECTED_DESCRIPTION.toLowerCase(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Test
@@ -505,22 +539,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                EXPECTED_CODE.toLowerCase(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        EXPECTED_CODE.toLowerCase(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                EXPECTED_DESCRIPTION.toLowerCase(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        EXPECTED_DESCRIPTION.toLowerCase(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @StabilityTest
@@ -555,22 +595,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                     page.getSort().getOrders().get(0).getProperty());
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.CRIMINAL_JUSTICE_AREA,
-                    "cja_code",
-                    null,
-                    "",
-                    CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                    CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.CRIMINAL_JUSTICE_AREA,
+                            "cja_code",
+                            null,
+                            "",
+                            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                    .getType()
+                                    .name(),
+                            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
-                    TableNames.CRIMINAL_JUSTICE_AREA,
-                    "cja_description",
-                    null,
-                    "",
-                    CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                    CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                    AuditLogAsserter.getDataAuditAssertion(
+                            TableNames.CRIMINAL_JUSTICE_AREA,
+                            "cja_description",
+                            null,
+                            "",
+                            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                    .getType()
+                                    .name(),
+                            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                    .getEventName()));
         }
 
         Assertions.assertTrue(CriminalJusticeSortFieldEnum.values().length > 0);
@@ -609,22 +655,28 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         Assertions.assertEquals("CE", page.getContent().get(1).getCode());
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_code",
-                null,
-                "",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-            AuditLogAsserter.getDataAuditAssertion(
-                TableNames.CRIMINAL_JUSTICE_AREA,
-                "cja_description",
-                null,
-                "_c",
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getType().name(),
-                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName()));
+                AuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "_c",
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getType()
+                                .name(),
+                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT
+                                .getEventName()));
     }
 
     @Override
