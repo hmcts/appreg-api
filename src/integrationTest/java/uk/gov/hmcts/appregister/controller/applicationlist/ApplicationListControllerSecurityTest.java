@@ -36,21 +36,22 @@ public class ApplicationListControllerSecurityTest extends AbstractSecurityContr
 
         var validPayload =
                 new ApplicationListCreateDto()
-                        .date(AbstractApplicationListTest.TEST_DATE)
-                        .time(AbstractApplicationListTest.TEST_TIME)
+                        .date(AbstractApplicationListControllerCrudTest.TEST_DATE)
+                        .time(AbstractApplicationListControllerCrudTest.TEST_TIME)
                         .description("sec-matrix")
                         .status(ApplicationListStatus.OPEN)
-                        .courtLocationCode(AbstractApplicationListTest.VALID_COURT_CODE);
+                        .courtLocationCode(
+                                AbstractApplicationListControllerCrudTest.VALID_COURT_CODE);
 
         return Stream.of(
                 RestEndpointDescription.builder()
-                        .url(getLocalUrl(AbstractApplicationListTest.WEB_CONTEXT))
+                        .url(getLocalUrl(AbstractApplicationListControllerCrudTest.WEB_CONTEXT))
                         .method(HttpMethod.POST)
                         .payload(validPayload)
                         .successRole(RoleEnum.USER)
                         .build(),
                 RestEndpointDescription.builder()
-                        .url(getLocalUrl(AbstractApplicationListTest.WEB_CONTEXT))
+                        .url(getLocalUrl(AbstractApplicationListControllerCrudTest.WEB_CONTEXT))
                         .method(HttpMethod.POST)
                         .payload(validPayload)
                         .successRole(RoleEnum.ADMIN)
@@ -58,7 +59,7 @@ public class ApplicationListControllerSecurityTest extends AbstractSecurityContr
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrl(
-                                        AbstractApplicationListTest.WEB_CONTEXT
+                                        AbstractApplicationListControllerCrudTest.WEB_CONTEXT
                                                 + "/"
                                                 + UUID.randomUUID()))
                         .method(HttpMethod.PUT)
@@ -68,7 +69,7 @@ public class ApplicationListControllerSecurityTest extends AbstractSecurityContr
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrl(
-                                        AbstractApplicationListTest.WEB_CONTEXT
+                                        AbstractApplicationListControllerCrudTest.WEB_CONTEXT
                                                 + "/"
                                                 + UUID.randomUUID()))
                         .method(HttpMethod.PUT)
