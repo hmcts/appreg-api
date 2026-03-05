@@ -1,56 +1,29 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.criminaljustice;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
-import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CriminalJusticeAreaControllerTest extends AbstractSecurityControllerTest {
-    private static final String WEB_CONTEXT = "criminal-justice-areas";
-    // expectations based on the flyway test data
-    private static final String EXPECTED_CODE = "CD";
-    private static final String EXPECTED_DESCRIPTION = "CJA_CD_DESCRIPTION";
-
-    private static final String EXPECTED_CODE1 = "CE";
-    private static final String EXPECTED_DESCRIPTION1 = "CJA_CE_DESCRIPTION";
-
-    private static final String EXPECTED_CODE2 = "CJ";
-    private static final String EXPECTED_DESCRIPTION2 = "CJA_DESCRIPTION";
-
-    // audit expectations
-    private static final String EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION =
-            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT.getEventName();
-    private static final String EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION =
-            CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT.getEventName();
-
-    private static final Integer DEFAULT_PAGE_SIZE = 10;
-
-    // The total criminal justice area inserted by flyway scripts. See V6__InitialTestData.sql
-    private static final int TOTAL_CJA_COUNT = 4;
-
+public class CriminalJusticeControllerSearchTest extends AbstractCriminalJusticeControllerCrudTest {
     @Test
     @StabilityTest
     public void givenValidRequest_whenGetCriminalJusticeAreaWithValidCode_thenReturn200()
@@ -209,7 +182,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("code,desc", "description,asc"),
+                        List.of("code,desc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new CriminalJusticeAreaFilter(Optional.empty(), Optional.empty()),
@@ -461,25 +434,6 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         Assertions.assertEquals("CE", page.getContent().get(1).getCode());
     }
 
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(
-                                getLocalUrlWithDate(
-                                        WEB_CONTEXT + "/" + EXPECTED_CODE, OffsetDateTime.now()))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrlWithDate(WEB_CONTEXT, OffsetDateTime.now()))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
-    }
-
     /**
      * A request specification that knows what query filters can be applied to get criminal justice
      * areas.
@@ -499,6 +453,44 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 rs = rs.queryParam("description", description.get());
             }
 
+            return rs;
+        }
+    }
+
+    @Test
+    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+        var token = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of(
+                                CriminalJusticeSortFieldEnum.CODE.getApiValue(),
+                                CriminalJusticeSortFieldEnum.DESCRIPTION.getApiValue()),
+                        getLocalUrl(WEB_CONTEXT),
+                        token.fetchTokenForRole());
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    // --- Helper to apply optional query params -------------------------------------------------
+
+    record CourtLocationFilter(Optional<String> name, Optional<String> code)
+            implements UnaryOperator<RequestSpecification> {
+        @Override
+        public RequestSpecification apply(RequestSpecification rs) {
+            if (name.isPresent()) {
+                rs = rs.queryParam("name", name.get());
+            }
+            if (code.isPresent()) {
+                rs = rs.queryParam("code", code.get());
+            }
             return rs;
         }
     }

@@ -121,4 +121,24 @@ public class SortableField {
     public boolean isDirectionDescending() {
         return DESC.equalsIgnoreCase(this.direction);
     }
+
+    /**
+     * gets the sort string for ascending order.
+     *
+     * @param sortKey The sort key to get the sort string for
+     * @return The sort string to use.
+     */
+    public static String getSortStringForAsc(SortableOperationEnum sortKey) {
+        return sortKey.getApiValue() + SORT_DELIMITER + ASC;
+    }
+
+    /**
+     * gets the sort string for descending order.
+     *
+     * @param sortKey The sort key to get the sort string for
+     * @return The sort string to use.
+     */
+    public static String getSortStringForDesc(SortableOperationEnum sortKey) {
+        return sortKey.getApiValue() + SORT_DELIMITER + DESC;
+    }
 }
