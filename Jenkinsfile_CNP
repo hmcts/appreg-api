@@ -51,10 +51,10 @@ def determineDevEnvironmentDeployment() {
   echo "1 - env.DEV_ENABLE_PORTAL: ${env.DEV_ENABLE_PORTAL}"
 
   def githubApi = new GithubAPI(this)
-  for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal:")) {
+  for (label in githubApi.getLabelsbyPattern(env.BRANCH_NAME, "enable_portal")) {
 
     // If the portal label exists then load the portal
-    if (label ==~ /enable_portal:.*/) {
+    if (label ==~ /enable_portal.*/) {
       env.DEV_ENABLE_PORTAL = true
 
       if (label ==~ /enable_portal:pr-.*/) {
