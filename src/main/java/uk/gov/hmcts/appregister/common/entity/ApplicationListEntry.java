@@ -140,5 +140,6 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @Column(name = "id")
     @Generated(event = EventType.INSERT)
+    @Audit(action = {CrudEnum.READ})
     private UUID uuid;
 }

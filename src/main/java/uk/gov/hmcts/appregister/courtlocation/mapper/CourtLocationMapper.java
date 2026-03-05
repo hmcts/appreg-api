@@ -62,6 +62,16 @@ public interface CourtLocationMapper {
     @Mapping(target = "locationCode", source = "courtLocationCode")
     CourtLocationGetSummaryDto toSummaryDto(NationalCourtHouse entity);
 
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "courtLocationCode", source = "code")
+    @Mapping(target = "startDate", source = "date")
+    NationalCourtHouse toEntity(String code, LocalDate date);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "courtLocationCode", source = "code")
+    @Mapping(target = "name", source = "name")
+    NationalCourtHouse toEntity(String code, String name);
+
     /**
      * Utility mapping method to wrap a {@link LocalDate} in a {@link JsonNullable}.
      *

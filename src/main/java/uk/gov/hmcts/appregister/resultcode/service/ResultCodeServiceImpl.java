@@ -36,7 +36,7 @@ import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
+@Transactional
 public class ResultCodeServiceImpl implements ResultCodeService {
 
     private static final int SINGLE_RECORD = 1;

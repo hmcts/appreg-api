@@ -80,6 +80,7 @@ public class NationalCourtHouse extends BaseUnmanagedChangeableEntity
 
     // Date when this record became effective. Always required.
     @Column(name = "start_date", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private LocalDate startDate;
 
     // Date when this record ended, or {@code null} if still active.

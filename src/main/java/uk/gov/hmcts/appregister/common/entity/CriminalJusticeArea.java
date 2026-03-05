@@ -45,5 +45,6 @@ public class CriminalJusticeArea implements Identifiable, Keyable {
     private String code;
 
     @Column(name = "cja_description", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private String description;
 }

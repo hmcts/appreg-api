@@ -36,7 +36,6 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                 CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
                 req -> {
                     var cja = locationLookupService.getCjaOrThrow(code);
-                    var auditCJA = criminalJusticeMapper.toEntity(code);
 
                     AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
                             new AuditableResult<>(

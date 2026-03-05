@@ -733,18 +733,18 @@ public class ApplicationCodeControllerTest extends AbstractSecurityControllerTes
                 TableNames.APPLICATION_CODES,
                 "application_code",
                 null,
-                "AD99004",
-                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
-                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
+                "AP99004",
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
             AuditLogAsserter.getDataAuditAssertion(
                 TableNames.APPLICATION_CODES,
                 "application_code_title",
                 null,
-                "Certificate of Satisfaction",
-                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
-                AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
+                "Request for Certificate of Refusal to State a Case \\(Civil\\)",
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test

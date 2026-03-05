@@ -13,6 +13,9 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
@@ -27,6 +30,7 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
+import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -74,6 +78,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                CARDIFF_CODE,
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "start_date",
+                null,
+                LocalDate.now().toString(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -99,6 +121,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                BRISTOL_CODE,
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "start_date",
+                null,
+                LocalDate.now().toString(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -180,6 +220,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "start_date",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -211,6 +269,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "cc",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "courthouse_name",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -242,6 +318,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "courthouse_name",
+                null,
+                "crown",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -271,6 +365,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "cc",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "courthouse_name",
+                null,
+                "bristol",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -306,6 +418,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "courthouse_name",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @StabilityTest
@@ -338,6 +468,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
             Assertions.assertEquals(
                     courtLocationSortFieldMapper.getApiValue(),
                     page.getSort().getOrders().get(0).getProperty());
+
+            differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                    TableNames.NATIONAL_COURT_HOUSES,
+                    "court_location_code",
+                    null,
+                    "",
+                    CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                    CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                AuditLogAsserter.getDataAuditAssertion(
+                    TableNames.NATIONAL_COURT_HOUSES,
+                    "courthouse_name",
+                    null,
+                    "",
+                    CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                    CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
         }
 
         Assertions.assertTrue(CourtLocationSortFieldMapper.values().length > 0);
@@ -391,6 +539,24 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "court_location_code",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+            AuditLogAsserter.getDataAuditAssertion(
+                TableNames.NATIONAL_COURT_HOUSES,
+                "courthouse_name",
+                null,
+                "",
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getType().name(),
+                CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName()));
     }
 
     @Override
