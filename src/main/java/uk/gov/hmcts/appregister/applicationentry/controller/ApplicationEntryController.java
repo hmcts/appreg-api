@@ -52,11 +52,12 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
 
-        log.info("Retrieved Application Entry Lists");
+        EntryPage entryPage = applicationEntryService.search(filter, pageInfo);
+
         return ResponseEntity.ok()
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
-                .body(applicationEntryService.search(filter, pageInfo));
+                .body(entryPage);
     }
 
     @Override
@@ -69,9 +70,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                 .id(listId)
                                 .data(entryCreateDto)
                                 .build());
-        log.info(
-                "Successfully created Application List Entry with id:{}",
-                entryGetDetailDto.getPayload().getId());
 
         return ResponseEntity.created(locationOf(entryGetDetailDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)
@@ -89,7 +87,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         // update the entry
         MatchResponse<EntryGetDetailDto> entryGetDetailDto =
                 applicationEntryService.updateEntry(payloadForUpdateEntry);
-        log.info("Update Application List Entry");
         return ResponseEntity.ok()
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
@@ -105,7 +102,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
         MatchResponse<EntryGetDetailDto> matchResponse =
                 applicationEntryService.getApplicationListEntryDetail(payloadForGet);
-        log.info("Get Application List Entry");
         return ResponseEntity.ok()
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
