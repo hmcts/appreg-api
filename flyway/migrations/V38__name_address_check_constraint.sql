@@ -13,7 +13,7 @@ ALTER TABLE IF EXISTS name_address
     DROP CONSTRAINT IF EXISTS name_address_name_or_person_chk;
 
 
-ALTER TABLE appreg.name_address
+ALTER TABLE name_address
 ADD CONSTRAINT name_address_name_or_person_chk
 CHECK (
     (
@@ -33,13 +33,13 @@ CHECK (
         AND NULLIF(BTRIM(forename_1), '') IS NOT NULL
         AND NULLIF(BTRIM(surname), '')    IS NOT NULL
     )
-    
+
     -- Global dependency: forename_2 allowed only if forename_1 populated
     AND (
         NULLIF(BTRIM(forename_2), '') IS NULL
         OR NULLIF(BTRIM(forename_1), '') IS NOT NULL
     )
-    
+
     -- Global dependency: forename_3 allowed only if forename_1 populated
     AND (
         NULLIF(BTRIM(forename_3), '') IS NULL
