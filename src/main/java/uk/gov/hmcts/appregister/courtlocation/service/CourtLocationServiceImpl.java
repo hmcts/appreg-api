@@ -67,8 +67,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
-                    log.debug(
-                            "Start: Find active Court Location for code: {} date: {}", code, date);
                     final List<NationalCourtHouse> rows =
                             repository.findActiveCourtsWithDate(code, date);
 
@@ -109,11 +107,6 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
-                    log.debug(
-                            "Start: Find Application List for: name: {} app code: {} with paging: {}",
-                            nameFilter,
-                            codeFilter,
-                            pageable);
                     final Page<NationalCourtHouse> dbPage =
                             repository.findAllActiveCourts(
                                     codeFilter, nameFilter, pageable.getPageable());
@@ -131,6 +124,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
 
                     AuditableResult<CourtLocationPage, NationalCourtHouse> result =
                             new AuditableResult<>(responsePage, null);
+
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

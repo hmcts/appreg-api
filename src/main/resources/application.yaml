@@ -77,12 +77,6 @@ spring:
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:
     static-path-pattern: /specs/**
-logging:
-  level:
-    org.springframework.*: DEBUG
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
-    correlation: "[%X{traceId}/%X{spanId}]"
 
 app:
   timezone: "Europe/London"

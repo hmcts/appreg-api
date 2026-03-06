@@ -57,7 +57,6 @@ public class CourtLocationController implements CourtLocationsApi {
     public ResponseEntity<CourtLocationGetDetailDto> getCourtLocationByCodeAndDate(
             String code, LocalDate date) {
         var courtLocationGetDetailDto = service.findByCodeAndDate(code, date);
-        log.info("getCourtLocationByCodeAndDate: code: {}, date: {}", code, date);
         return ResponseEntity.ok().body(courtLocationGetDetailDto);
     }
 
@@ -95,12 +94,6 @@ public class CourtLocationController implements CourtLocationsApi {
                         Sort.Direction.ASC,
                         CourtLocationSortFieldMapper::getEntityValue);
 
-        log.info(
-                "getCourtLocations: code: {}, name: {}, page: {}, size: {}",
-                code,
-                name,
-                page,
-                size);
         return ResponseEntity.ok().body(service.getPage(name, code, pageable));
     }
 }

@@ -28,7 +28,7 @@ public class AbstractApplicationCodeEntryCrudTest extends BaseIntegration {
     @MockitoBean protected Clock clock; // replaces Clock bean in Spring context
 
     // The total app codes inserted by flyway scripts. See V6__InitialTestData.sql
-    protected static final int TOTAL_APP_CODES_COUNT = 44;
+    protected static final int TOTAL_APP_CODES_COUNT = 45;
 
     protected static final String FEE_DESCRIPTION = "JP perform function away from court";
     protected static final String OFFSITE_FEE_DESCRIPTION =

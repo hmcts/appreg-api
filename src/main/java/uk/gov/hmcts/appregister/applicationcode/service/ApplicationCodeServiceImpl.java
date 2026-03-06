@@ -54,12 +54,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
-                    log.debug(
-                            "Start: Find Application List for: app code: {} app title: {} with paging: {}",
-                            appCode,
-                            appTitle,
-                            pageable);
-
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(appCode, appTitle, todayUk, pageable.getPageable());
 
@@ -78,12 +72,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                 feePair != null ? feePair.offsiteFee() : null));
                             });
 
-                    log.debug(
-                            "Finished: Find Application List for: app code: {} app title: {} with paging: {}",
-                            appCode,
-                            appTitle,
-                            pageable);
-
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
                             new AuditableResult<>(newPage, null);
                     return Optional.of(result);
@@ -97,11 +85,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
-                    log.debug(
-                            "Start: Find active Application Code using code: {} date: {}",
-                            payloadForGet.getCode(),
-                            payloadForGet.getDate());
-
                     return getApplicationCodeValidator.validate(
                             payloadForGet,
                             (payload, success) -> {
@@ -125,10 +108,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                                 : null),
                                                         null);
 
-                                log.debug(
-                                        "Finish: Find Application for app code: {} date: {}",
-                                        payload.getCode(),
-                                        payload.getDate());
                                 return Optional.of(result);
                             });
                 },

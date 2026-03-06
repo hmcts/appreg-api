@@ -33,7 +33,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 public class AuditOperationServiceImpl implements AuditOperationService {
 
     /** The trace id name that is inserted by micrometer. */
-    private static final String TRACE_ID = "traceId";
+    public static final String TRACE_ID = "traceId";
 
     private final ObjectMapper mapper;
 
@@ -81,7 +81,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         // before execution hook
         fireAuditEvent(event, listener);
 
-        log.debug("Processed start of auditable operation: {}", event);
+        log.debug("Processed start of auditable operation: {}", auditType.getEventName());
         Optional<AuditableResult<T, E>> responsePayload;
         try {
             responsePayload = execution.apply(event);
@@ -94,7 +94,9 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                 fireAuditEvent(
                         new CompleteEvent(
                                 event,
-                                getBodyAsString(responsePayload.get().getResultingValue()),
+                                responsePayload.get().getResultingValue() != null
+                                        ? getBodyAsString(responsePayload.get().getResultingValue())
+                                        : null,
                                 responsePayload.get().getNewEntity()),
                         listener);
             } else {
@@ -102,12 +104,12 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                 fireAuditEvent(new CompleteEvent(event, null, null), listener);
             }
 
-            log.debug("Processed success auditable operation: {}", event);
+            log.debug("Processed success auditable operation: {}", auditType.getEventName());
         } catch (Exception e) {
             // fire after the failure of an operation
             fireAuditEvent(new FailEvent(event), listener);
 
-            log.debug("Processed failure auditable operation: {}", event);
+            log.debug("Processed failure auditable operation: {}", auditType.getEventName());
             throw e;
         }
 
@@ -125,13 +127,13 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     private <T, E extends Keyable> void checkIfAuditOperationIsSuitableForResult(
             AuditOperation eventEnum, E oldValue, Optional<AuditableResult<T, E>> result) {
         if (eventEnum.getType().isCreate()
-                && ((result.isPresent() && oldValue != null)
+                && ((oldValue != null)
                         || (result.isPresent() && result.get().getNewEntity() == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
-                && result.isPresent()
-                && (result.get().getNewEntity() == null || oldValue == null)) {
+                && (!result.isPresent()
+                        || (result.get().getNewEntity() == null || oldValue == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
         } else if (eventEnum.getType().isDelete() && oldValue == null) {
@@ -172,7 +174,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      *
      * @return The trace id or a default message if not found
      */
-    protected String getTraceId() {
+    public static String getTraceId() {
         try {
             String traceId = MDC.get(TRACE_ID);
             if (traceId != null) {

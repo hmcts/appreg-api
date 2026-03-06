@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -290,6 +291,14 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected abstract Integer getNumberOfRespondents(T validatable);
 
     /**
+     * get account number.
+     *
+     * @param validatable The validatable payload
+     * @return The account number
+     */
+    protected abstract String getAccountNumber(T validatable);
+
+    /**
      * validate the respondent of the payload and ensures mutual exclusivity between the
      * organisation and person.
      *
@@ -320,6 +329,20 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *     failure
      */
     private ApplicationCode validateApplicationCode(T validatable) {
+        if (getApplicationCode(validatable) != null
+                && ApplicationCodeTypeEnum.isMatching(
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
+                        getApplicationCode(validatable))) {
+            // if the account number is null or empty then throw an error as we require
+            // an account number for enforcement fines codes
+            if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
+                throw new AppRegistryException(
+                        AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                        "Application number required for application code %s"
+                                .formatted(getApplicationCode(validatable)));
+            }
+        }
+
         // validate that the application code exists and is valid for today
         List<ApplicationCode> code =
                 applicationCodeRepository.findByCodeAndDate(
