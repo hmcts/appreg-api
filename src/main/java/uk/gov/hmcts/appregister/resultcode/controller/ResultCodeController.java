@@ -57,7 +57,6 @@ public class ResultCodeController implements ResultCodesApi {
     public ResponseEntity<ResultCodeGetDetailDto> getResultCodeByCodeAndDate(
             String code, LocalDate date) {
         var dto = resultCodeService.findByCode(code, date);
-        log.info("getResultCodes: code: {}, date: {}", code, date);
         return ResponseEntity.ok(dto);
     }
 
@@ -96,8 +95,6 @@ public class ResultCodeController implements ResultCodesApi {
 
         var resultCodePage = resultCodeService.findAll(code, title, pageable);
 
-        log.info(
-                "getResultCodes: code: {}, title: {}, page: {}, size: {}", code, title, page, size);
         return ResponseEntity.ok().body(resultCodePage);
     }
 }

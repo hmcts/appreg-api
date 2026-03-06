@@ -13,7 +13,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AuditLogAsserter {
+public class DataAuditLogAsserter {
     protected final LogCaptor dataAuditLogger =
             LogCaptor.forClass(uk.gov.hmcts.appregister.audit.listener.DataAuditLogger.class);
 

@@ -46,13 +46,9 @@ public class ApplicationCodeController implements ApplicationCodesApi {
                         Sort.Direction.ASC,
                         ApplicationCodeSortFieldEnum::getEntityValue);
 
-        log.info(
-                "getApplicationCodes: code: {}, title: {}, page: {}, size: {}",
-                code,
-                title,
-                page,
-                size);
-        return ResponseEntity.ok().body(service.findAll(code, title, pageable));
+        ApplicationCodePage codePage = service.findAll(code, title, pageable);
+
+        return ResponseEntity.ok().body(codePage);
     }
 
     @Override
@@ -62,7 +58,6 @@ public class ApplicationCodeController implements ApplicationCodesApi {
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(date).build();
         ResponseEntity<ApplicationCodeGetDetailDto> response =
                 ResponseEntity.ok(service.findByCode(payloadForGet));
-        log.info("getApplicationCodes: code: {}, date: {}", code, date);
         return response;
     }
 }
