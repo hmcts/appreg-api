@@ -99,4 +99,9 @@ public class CreateApplicationEntryValidator
     protected Integer getNumberOfRespondents(PayloadForCreate<EntryCreateDto> validatable) {
         return validatable.getData().getNumberOfRespondents();
     }
+
+    @Override
+    protected String getAccountNumber(PayloadForCreate<EntryCreateDto> validatable) {
+        return validatable.getData().getAccountNumber();
+    }
 }

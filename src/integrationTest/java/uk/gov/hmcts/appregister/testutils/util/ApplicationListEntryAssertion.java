@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.testutils.util;
 
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -355,7 +356,7 @@ public class ApplicationListEntryAssertion {
     private AppListEntryFeeStatus getFeeForReference(
             List<AppListEntryFeeStatus> statusLst, String ref) {
         for (AppListEntryFeeStatus appListEntryFeeStatus : statusLst) {
-            if (appListEntryFeeStatus.getAlefsPaymentReference().equals(ref)) {
+            if (Objects.equals(appListEntryFeeStatus.getAlefsPaymentReference(), ref)) {
                 return appListEntryFeeStatus;
             }
         }

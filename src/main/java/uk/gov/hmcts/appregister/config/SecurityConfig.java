@@ -8,6 +8,8 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+import static uk.gov.hmcts.appregister.config.AppConfig.REST_IMPLEMENTATION_HEALTH;
+
 /**
  * Configuration for securing the API using Spring Security and JWTs.
  */
@@ -42,7 +44,11 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(SWAGGER_UI, OPENAPI, HEALTH)
+                                auth.requestMatchers(
+                                                SWAGGER_UI,
+                                                OPENAPI,
+                                                HEALTH,
+                                                REST_IMPLEMENTATION_HEALTH)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())

@@ -43,7 +43,9 @@ public class FeatureRules extends BaseRules {
                     .definedBy(BASE_PACKAGE + ".(*).service..")
                     .layer("validator")
                     .definedBy(BASE_PACKAGE + ".(*).validator..")
-                    .layer("common")
+                    .layer("enumeration")
+                    .definedBy(BASE_PACKAGE + ".(*).enumeration..")
+                .layer("common")
                     .definedBy(BASE_PACKAGE + ".common..")
                     .layer("exception")
                     .definedBy(BASE_PACKAGE + ".(*).exception..")
@@ -63,7 +65,7 @@ public class FeatureRules extends BaseRules {
                             "validator",
                             "exception")
                     .whereLayer("validator")
-                    .mayOnlyAccessLayers("common", "generated", "exception", "model")
+                    .mayOnlyAccessLayers("enumeration", "common", "generated", "exception", "model")
 
                     // ignore the third parties when assessing dependencies
                     .ignoreDependency(

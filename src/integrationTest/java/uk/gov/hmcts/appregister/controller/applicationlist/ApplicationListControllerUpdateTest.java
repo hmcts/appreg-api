@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ApplicationListControllerUpdateTest extends AbstractApplicationListTest {
+public class ApplicationListControllerUpdateTest extends AbstractApplicationListControllerCrudTest {
 
     @Test
     void givenValidRequest_whenCreateWithCourt_then201AndBodyAndLocationHeader() throws Exception {
@@ -1040,7 +1040,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
     @Test
     public void givenInvalidRequestNoDuration_whenUpdateForClose_then400() throws Exception {
         String[] createdLocation =
-                createAppListUsingRestApi((dto) -> dto.durationHours(null).durationMinutes(null));
+                createAppListUsingRestApi((dto) -> dto.durationHours(0).durationMinutes(0));
 
         // create an entry
         EntryGetDetailDto entryGetSummaryDto =
@@ -1087,6 +1087,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(20);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1122,6 +1123,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1164,6 +1166,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                         .description("Morning list (court) update")
                         .status(ApplicationListStatus.CLOSED)
                         .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
 
         var token =
                 getATokenWithValidCredentials()
@@ -1175,7 +1178,49 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
                 restAssuredClient.executePutRequest(
                         URI.create(createdLocation[0]).toURL(), token, req);
         ProblemAssertUtil.assertEquals(
-                ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID.getCode(), resp);
+                ApplicationListError.INVALID_FOR_CLOSE_NOT_SETTLED.getCode(), resp);
+    }
+
+    @Test
+    public void givenRemittedFee_whenUpdateForClose_then200() throws Exception {
+        String[] createdLocation = createAppListUsingRestApi();
+
+        // create an entry with a REMITTED fee status
+        EntryGetDetailDto entryGetSummaryDto =
+                createEntry(
+                        UUID.fromString(HeaderUtil.getTrailingIdFromLocation(createdLocation[0])),
+                        (dto) -> {
+                            FeeStatus feeStatus = new FeeStatus();
+                            feeStatus.setStatusDate(LocalDate.now());
+                            // set to REMITTED so the list can be closed
+                            feeStatus.setPaymentStatus(PaymentStatus.REMITTED);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        });
+
+        // create the result for the entry (resulting entries are required to close)
+        createResultSuccess(entryGetSummaryDto.getListId(), entryGetSummaryDto.getId());
+
+        // attempt to close the app list
+        var req =
+                new ApplicationListUpdateDto()
+                        .date(TEST_DATE2)
+                        .time(TEST_TIME2)
+                        .description("Morning list (court) update - remitted fee")
+                        .status(ApplicationListStatus.CLOSED)
+                        .courtLocationCode(VALID_COURT_CODE2);
+        req.setDurationMinutes(2);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executePutRequest(
+                        URI.create(createdLocation[0]).toURL(), token, req, createdLocation[1]);
+
+        resp.then().statusCode(HttpStatus.OK.value());
     }
 
     // --- Happy path: create with CJA + otherLocation ------------------------------------------
@@ -1457,7 +1502,7 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         // Assert failure is due to invalid list status for update
         ProblemDetail problemDetail = reopenResp.as(ProblemDetail.class);
         Assertions.assertEquals(
-                ApplicationListError.INVALID_LIST_STATUS.getCode().getAppCode(),
+                ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST.getCode().getAppCode(),
                 problemDetail.getType().toString());
     }
 }

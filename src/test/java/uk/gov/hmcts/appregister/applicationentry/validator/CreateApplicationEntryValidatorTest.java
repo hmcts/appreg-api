@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -42,6 +43,7 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -121,6 +123,38 @@ public class CreateApplicationEntryValidatorTest {
 
         // set the respondent to null for the organisation so we use the person
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testValidateSuccessForEnforcementCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
+        // set application code to match the application code in the repository
+        entryCreateDto.setApplicationCode("EF12121");
+        entryCreateDto.setAccountNumber("test");
+
+        // set the respondent to null for the organisation so we use the person
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -408,5 +442,74 @@ public class CreateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testPaymentReferenceNotAllowedWhenPaymentDue() {
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        // Ensure we have a fee status and set it to DUE with a payment reference (invalid)
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(DUE);
+        feeStatus.setPaymentReference("PAYREF-123");
+        feeStatus.setStatusDate(LocalDate.now(clock));
+
+        entryCreateDto.setFeeStatuses(List.of(feeStatus));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // Act + Assert
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+
+        Assertions.assertEquals(
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testValidateFailureForEnforcementApplicationCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
+        // set the EF application code so that we require the account number
+        entryCreateDto.setApplicationCode("EF12121");
+        entryCreateDto.setAccountNumber(null);
+
+        // set the respondent to null for the organisation so we use the person
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                appRegistryException.getCode());
     }
 }

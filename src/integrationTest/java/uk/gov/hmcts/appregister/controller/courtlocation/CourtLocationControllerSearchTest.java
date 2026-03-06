@@ -1,54 +1,31 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.courtlocation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldEnum;
-import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CourtLocationControllerTest extends AbstractSecurityControllerTest {
-
-    private static final String WEB_CONTEXT = "court-locations";
-
-    private static final String CARDIFF_CODE = "CCC003";
-    private static final String CARDIFF_NAME = "Cardiff Crown Court";
-    private static final LocalDate CARDIFF_START = LocalDate.of(1904, 1, 1);
-
-    private static final String BRISTOL_CODE = "BCC006";
-    private static final String BRISTOL_NAME = "Bristol Crown Court";
-    private static final LocalDate BRISTOL_START = LocalDate.of(1993, 6, 1);
-
-    // Audit event names
-    private static final String AUDIT_GET_ONE =
-            CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName();
-    private static final String AUDIT_GET_PAGE =
-            CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT.getEventName();
-
-    private static final int DEFAULT_PAGE_SIZE = 10;
+public class CourtLocationControllerSearchTest extends AbstractCourtLocationControllerCrudTest {
 
     // --- /court-locations/{code}?date=... -----------------------------------------------------
     @Test
@@ -287,7 +264,7 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("name,asc", "code,desc"),
+                        List.of("name,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         new CourtLocationFilter(Optional.empty(), Optional.empty()),
@@ -393,26 +370,31 @@ public class CourtLocationControllerTest extends AbstractSecurityControllerTest 
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(
-                                getLocalUrlWithDate(
-                                        WEB_CONTEXT + "/" + CARDIFF_CODE, OffsetDateTime.now()))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
-    }
+    @Test
+    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
 
-    // --- Helper to apply optional query params -------------------------------------------------
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of(
+                                CourtLocationSortFieldEnum.CODE.getApiValue(),
+                                CourtLocationSortFieldEnum.TITLE.getApiValue()),
+                        getLocalUrl(WEB_CONTEXT),
+                        token);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
+                problemDetail.getType());
+    }
 
     record CourtLocationFilter(Optional<String> name, Optional<String> code)
             implements UnaryOperator<RequestSpecification> {

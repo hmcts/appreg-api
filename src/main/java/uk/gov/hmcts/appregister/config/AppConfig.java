@@ -25,6 +25,8 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 @EnableAspectJAutoProxy
 public class AppConfig implements WebMvcConfigurer {
 
+    public static final String REST_IMPLEMENTATION_HEALTH = "/rest-implementation-status/**";
+
     @Value("${app.timezone:Europe/London}")
     private String timezone;
 

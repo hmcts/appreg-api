@@ -1,16 +1,15 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.resultcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
-import java.time.LocalDate;
+import io.restassured.specification.RequestSpecification;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
@@ -22,36 +21,11 @@ import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeAuditOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
-
-    private static final String WEB_CONTEXT = "result-codes";
-
-    // Known seeds (from your resolution_codes seed data)
-    private static final String APPC_CODE = "APPC";
-    private static final String APPC_TITLE = "Appeal to Crown Court";
-    private static final String AUTH_CODE = "AUTH";
-    private static final String AUTH_TITLE = "Authorised";
-    private static final String CASE_CODE = "CASE";
-
-    private static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
-    private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
-
-    // Audit event names
-    private static final String AUDIT_GET_ONE =
-            ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
-    private static final String AUDIT_GET_PAGE =
-            ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
-
-    private static final int DEFAULT_PAGE_SIZE = 10;
-
-    // --- /result-codes/{code}?date=YYYY-MM-DD -----------------------------------------------
-
+public class ResultCodeControllerSearchTest extends AbstractResultCodeControllerCrudTest {
     @Test
     @StabilityTest
     void givenValidRequest_whenGetResultCodeByCodeAndDate_APPC_then200() throws Exception {
@@ -280,7 +254,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("title,asc", "code,desc"),
+                        List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         new ResultCodeFilter(Optional.empty(), Optional.empty()),
@@ -379,27 +353,36 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + APPC_CODE + "?date=" + ACTIVE_DAY))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build(),
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT))
-                        .method(HttpMethod.GET)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
+    @Test
+    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of(
+                                ResultCodeSortFieldEnum.CODE.getApiValue(),
+                                ResultCodeSortFieldEnum.TITLE.getApiValue()),
+                        getLocalUrl(WEB_CONTEXT),
+                        token);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
+                problemDetail.getType());
     }
 
     // --- Filter helper (for query params) ------------------------------------------------------
 
     record ResultCodeFilter(Optional<String> code, Optional<String> title)
-            implements UnaryOperator<io.restassured.specification.RequestSpecification> {
+            implements UnaryOperator<RequestSpecification> {
         @Override
         public io.restassured.specification.RequestSpecification apply(
                 io.restassured.specification.RequestSpecification rs) {

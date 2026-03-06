@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -133,6 +134,35 @@ public class UpdateApplicationEntryValidatorTest {
 
         // set the respondent to null for the organisation so we use the person
         entryUpdateDto.getRespondent().setOrganisation(null);
+
+        sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testValidateSuccessForEnforcementCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+
+        // set the respondent to null for the organisation so we use the person
+        entryUpdateDto.getRespondent().setOrganisation(null);
+
+        // set the successful enforcement code
+        entryUpdateDto.setApplicationCode("EF123");
+        entryUpdateDto.setAccountNumber("2323");
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
 
         PayloadForUpdateEntry payload =
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
@@ -437,5 +467,80 @@ public class UpdateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testPaymentReferenceNotAllowedWhenPaymentDue() {
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getRespondent().setOrganisation(null);
+
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(DUE);
+        feeStatus.setPaymentReference("PAYREF-123");
+        feeStatus.setStatusDate(LocalDate.now(clock));
+
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // Act + Assert
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+
+        Assertions.assertEquals(
+                AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
+                        .getCode()
+                        .getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testValidateFailureForEnforcementApplicationCode() {
+        // set the applicant to null for the organisation and standard applicant so we use the
+        // person
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+
+        // set the EF application code so that we require the account number
+        entryUpdateDto.setApplicationCode("EF12121");
+        entryUpdateDto.setAccountNumber(null);
+
+        // set the respondent to null for the organisation so we use the person
+        entryUpdateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                appRegistryException.getCode());
+    }
+
+    private static void sanitiseFeeStatuses(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null) {
+            return;
+        }
+        for (FeeStatus fs : feeStatuses) {
+            if (fs == null) {
+                continue;
+            }
+            if (fs.getPaymentStatus() == DUE) {
+                fs.setPaymentReference(null); // must NOT be passed when DUE
+            }
+        }
     }
 }

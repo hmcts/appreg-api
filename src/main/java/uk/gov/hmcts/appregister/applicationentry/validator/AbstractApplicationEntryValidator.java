@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -8,6 +10,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -288,6 +291,14 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected abstract Integer getNumberOfRespondents(T validatable);
 
     /**
+     * get account number.
+     *
+     * @param validatable The validatable payload
+     * @return The account number
+     */
+    protected abstract String getAccountNumber(T validatable);
+
+    /**
      * validate the respondent of the payload and ensures mutual exclusivity between the
      * organisation and person.
      *
@@ -318,6 +329,20 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *     failure
      */
     private ApplicationCode validateApplicationCode(T validatable) {
+        if (getApplicationCode(validatable) != null
+                && ApplicationCodeTypeEnum.isMatching(
+                        ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
+                        getApplicationCode(validatable))) {
+            // if the account number is null or empty then throw an error as we require
+            // an account number for enforcement fines codes
+            if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
+                throw new AppRegistryException(
+                        AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                        "Application number required for application code %s"
+                                .formatted(getApplicationCode(validatable)));
+            }
+        }
+
         // validate that the application code exists and is valid for today
         List<ApplicationCode> code =
                 applicationCodeRepository.findByCodeAndDate(
@@ -344,6 +369,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * validate the code and the fees details provided in the payload. If the code requires a fee
      * then one must be provided else an exception is thrown
      *
+     * <p>In addition: - For each fee status, if paymentStatus = DUE then paymentReference must NOT
+     * be provided.
+     *
      * @param validatable The validatable payload
      */
     private Fee validateFee(ApplicationCode applicationCode, T validatable) {
@@ -352,6 +380,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
+
+        validatePaymentReferenceNotAllowedWhenDue(feeStatuses, validatable);
 
         // check that the fee status payload make sense according to the application code
         YesOrNo yesOrNo = applicationCode.getFeeDue();
@@ -387,6 +417,34 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         return feeToReturn;
+    }
+
+    /** Validates that when payment status is DUE, no payment reference is provided. */
+    private void validatePaymentReferenceNotAllowedWhenDue(
+            List<FeeStatus> feeStatuses, T validatable) {
+
+        if (feeStatuses == null || feeStatuses.isEmpty()) {
+            return;
+        }
+
+        for (FeeStatus feeStatus : feeStatuses) {
+            if (feeStatus == null) {
+                continue;
+            }
+
+            boolean isDue = feeStatus.getPaymentStatus() == DUE;
+
+            String paymentReference = feeStatus.getPaymentReference();
+            boolean paymentReferencePassed =
+                    paymentReference != null && !paymentReference.trim().isEmpty();
+
+            if (isDue && paymentReferencePassed) {
+                throw new AppRegistryException(
+                        AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
+                        "Payment reference must not be provided when fee status is DUE for code %s"
+                                .formatted(getApplicationCode(validatable)));
+            }
+        }
     }
 
     /**
