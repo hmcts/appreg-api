@@ -176,7 +176,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // (All your audit assertions can remain here unchanged)
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         "",
