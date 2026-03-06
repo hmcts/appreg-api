@@ -151,4 +151,9 @@ public class UpdateApplicationEntryValidator
     protected Integer getNumberOfRespondents(PayloadForUpdateEntry validatable) {
         return validatable.getData().getNumberOfRespondents();
     }
+
+    @Override
+    protected String getAccountNumber(PayloadForUpdateEntry validatable) {
+        return validatable.getData().getAccountNumber();
+    }
 }

@@ -424,7 +424,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // make the assertions
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 22, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 23, TOTAL_APP_CODES_COUNT);
 
         // assert the first auth code record
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().getFirst();
@@ -484,7 +484,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // assert the response
         PagingAssertionUtil.assertPageDetails(
-                response, pageSize, pageNumber, 22, TOTAL_APP_CODES_COUNT);
+                response, pageSize, pageNumber, 23, TOTAL_APP_CODES_COUNT);
 
         // assert records are sorted based on the title of the auth codes
         ApplicationCodeGetSummaryDto firstEntry = response.getContent().get(0);
