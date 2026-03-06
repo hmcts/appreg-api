@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
+import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -35,6 +36,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
@@ -79,6 +81,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final AppListEntryOfficialRepository appListEntryOfficialRepository;
     private final AppListEntryFeeRepository appListEntryFeeRepository;
     private final StandardApplicantRepository standardApplicantRepository;
+    private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
     private final ApplicationListEntryMapper applicationListEntryMapStructMapper;
     private final ApplicantMapper applicantMapper;
@@ -164,6 +167,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 respondentToSave,
                                                                 success.getApplicationCode(),
                                                                 success.getApplicationList());
+
+                                        Long alId = success.getApplicationList().getId();
+                                        short seq = allocateNextSequence(alId);
+                                        listEntryEntity.setSequenceNumber(seq);
 
                                         listEntryEntity =
                                                 refreshEntity(
@@ -842,5 +849,23 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         keyables.addAll(appListStatus);
         keyables.addAll(feesForEntry);
         return keyables;
+    }
+
+    private short allocateNextSequence(Long alId) {
+
+        AppListEntrySequenceMapping mapping =
+                appListEntrySequenceMappingRepository.findByAlIdForUpdate(alId).orElse(null);
+
+        if (mapping == null) {
+            mapping = AppListEntrySequenceMapping.builder().alId(alId).aleLastSequence(1).build();
+
+            appListEntrySequenceMappingRepository.save(mapping);
+            return (short) 1;
+        }
+
+        int next = mapping.getAleLastSequence() + 1;
+        mapping.setAleLastSequence(next);
+
+        return (short) next;
     }
 }

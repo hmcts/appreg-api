@@ -187,7 +187,8 @@ public class ApplicationListUpdateValidatorTest {
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(payload));
-        Assertions.assertEquals(ApplicationListError.INVALID_LIST_STATUS, exception.getCode());
+        Assertions.assertEquals(
+                ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST, exception.getCode());
     }
 
     @Test
@@ -344,7 +345,7 @@ public class ApplicationListUpdateValidatorTest {
     }
 
     @Test
-    void updateClosedListThrowsNotPaid() {
+    void updateClosedListThrowsNotSettled() {
         ApplicationListUpdateDto dto = new ApplicationListUpdateDto();
         dto.setDurationHours(0);
         dto.setDurationMinutes(21);
@@ -392,7 +393,59 @@ public class ApplicationListUpdateValidatorTest {
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(payload));
         Assertions.assertEquals(
-                ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID, exception.getCode());
+                ApplicationListError.INVALID_FOR_CLOSE_NOT_SETTLED, exception.getCode());
+    }
+
+    @Test
+    void updateClosedListWithRemittedFee_succeeds() {
+        ApplicationListUpdateDto dto = new ApplicationListUpdateDto();
+        dto.setDurationHours(0);
+        dto.setDurationMinutes(21);
+        dto.setStatus(ApplicationListStatus.CLOSED);
+
+        // set the court code
+        String courtCode = "court-code";
+        dto.setCourtLocationCode(courtCode);
+
+        UUID uuid = UUID.randomUUID();
+        ApplicationList appList = new ApplicationList();
+        appList.setStatus(Status.OPEN);
+
+        when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
+
+        NationalCourtHouse court = mock(NationalCourtHouse.class);
+        when(courtHouseRepository.findActiveCourts(courtCode)).thenReturn(List.of(court));
+
+        ApplicationListEntry listEntry = new ApplicationListEntry();
+
+        // The entry has a fee due, which should trigger the settled validation branch
+        ApplicationCode applicationCode = new ApplicationCode();
+        applicationCode.setFeeDue(YesOrNo.YES);
+
+        listEntry.setApplicationCode(applicationCode);
+        UUID entryUuid = UUID.randomUUID();
+        listEntry.setUuid(entryUuid);
+
+        when(applicationListEntryRepository.findByApplicationListId(appList.getId()))
+                .thenReturn(List.of(listEntry));
+
+        // resolution and official exist for the entry
+        when(appListEntryResolutionRepository.findByApplicationListUuid(listEntry.getUuid()))
+                .thenReturn(List.of(new AppListEntryResolution()));
+        when(appListEntryOfficialRepository.getOfficialByEntryUuid(listEntry.getUuid()))
+                .thenReturn(List.of(new AppListEntryOfficial()));
+
+        AppListEntryFeeStatus appListEntryFeeStatus = new AppListEntryFeeStatus();
+
+        // Set the fee status to REMITTED which should be accepted for closing
+        appListEntryFeeStatus.setAlefsFeeStatus(FeeStatusType.REMITTED);
+
+        when(appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId()))
+                .thenReturn(List.of(appListEntryFeeStatus));
+
+        PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
+
+        assertDoesNotThrow(() -> validator.validate(payload));
     }
 
     // ---- TESTS ----

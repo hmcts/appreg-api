@@ -171,28 +171,32 @@ public class ApplicationUpdateListLocationValidator
      * @param listEntry The list entry to validate if it has been paid.
      */
     private void validStatusIsPaid(ApplicationListEntry listEntry) {
-        // make sure the fee status has been paid
+        // make sure the fee status has been paid or REMITTED
         YesOrNo yesOrNo = listEntry.getApplicationCode().getFeeDue();
         if (yesOrNo.isYes()) {
             List<AppListEntryFeeStatus> listStatuses =
                     appListEntryFeeStatusRepository.findByAppListEntryId(listEntry.getId());
 
             // determine if one of the fee statuses has been paid
-            boolean paid = false;
+            boolean acceptable = false;
             for (AppListEntryFeeStatus status : listStatuses) {
-                if (status.getAlefsFeeStatus() == FeeStatusType.PAID) {
-                    paid = true;
+                FeeStatusType fs = status.getAlefsFeeStatus();
+                if (fs == FeeStatusType.PAID || fs == FeeStatusType.REMITTED) {
+                    acceptable = true;
+                    break;
                 }
             }
 
-            // if the entry is not paid then we can not close the list
-            if (!paid) {
+            // if the entry is not paid nor remitted, then we cannot close the list
+            if (!acceptable) {
                 throw new AppRegistryException(
-                        ApplicationListError.INVALID_FOR_CLOSE_NOT_PAID,
+                        ApplicationListError.INVALID_FOR_CLOSE_NOT_SETTLED,
                         "List cannot be closed. All entries do not have a Paid status.");
             }
 
-            log.debug("Validated application entry fee status with entry id {}", listEntry.getId());
+            log.debug(
+                    "Validated application entry fee status (paid/remitted) with entry id {}",
+                    listEntry.getId());
         }
     }
 
@@ -205,7 +209,7 @@ public class ApplicationUpdateListLocationValidator
         // fail any update on an already closed list
         if (currentList.getStatus() == Status.CLOSED) {
             throw new AppRegistryException(
-                    ApplicationListError.INVALID_LIST_STATUS,
+                    ApplicationListError.UPDATE_NOT_ALLOWED_ON_CLOSED_LIST,
                     "A closed application list is not allowed to be updated");
         }
     }

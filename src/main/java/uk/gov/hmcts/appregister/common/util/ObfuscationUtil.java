@@ -22,6 +22,21 @@ import uk.gov.hmcts.appregister.generated.model.Person;
 public class ObfuscationUtil {
     private static final String REDACTED = "[REDACTED]";
 
+    static final ObjectMapper mapper = new ObjectMapper();
+
+    // register all of the serializers to the object mapper
+    static {
+        SimpleModule maskingModule = new SimpleModule();
+
+        maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
+        maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
+        maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
+
+        mapper.registerModule(maskingModule);
+        mapper.registerModule(new JsonNullableModule());
+        mapper.registerModule(new JavaTimeModule());
+    }
+
     /**
      * Uses jackson to anonymise PII data by targeting the {@link
      * uk.gov.hmcts.appregister.generated.model.Person} class or {@link

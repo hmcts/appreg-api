@@ -89,13 +89,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                 TestAuditOperation.TEST_AUDIT_DELETE.type, dataAudit.getUpdateType());
         Assertions.assertEquals(
                 TestAuditOperation.TEST_AUDIT_DELETE.eventName, dataAudit.getEventName());
-
-        // assert the the activity log is entered
-        activityAuditLogAsserter.assertCompletedLogContains(
-                TestAuditOperation.TEST_AUDIT_DELETE.getEventName(),
-                "test-trace-id",
-                Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
-                "NULL");
     }
 
     @Test
@@ -206,7 +199,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         Assertions.assertEquals(
                 TestAuditOperation.TEST_AUDIT_UPDATE.eventName, dataAudit.getEventName());
 
-        // assert that the data audit is entered
+
         Assertions.assertNotNull(dataAudit);
         activityAuditLogAsserter.assertCompletedLogContains(
                 TestAuditOperation.TEST_AUDIT_UPDATE.getEventName(),

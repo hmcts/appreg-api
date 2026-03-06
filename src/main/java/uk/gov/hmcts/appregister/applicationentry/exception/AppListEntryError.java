@@ -38,7 +38,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     FEE_NOT_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.NOT_FOUND, "The code does not require a fee", "ALE-7")),
+                    HttpStatus.BAD_REQUEST, "The code does not require a fee", "ALE-7")),
 
     BULK_RESPONDENT_NOT_EXPECTED(
             DefaultErrorDetail.create(
@@ -98,7 +98,10 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Payment reference must not be provided when payment status is DUE",
-                    "ALE-19"));
+                    "ALE-19")),
+    APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT, "Application code requires application number", "ALE-20"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
