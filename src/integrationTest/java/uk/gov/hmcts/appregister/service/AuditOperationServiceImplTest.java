@@ -199,7 +199,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
         Assertions.assertEquals(
                 TestAuditOperation.TEST_AUDIT_UPDATE.eventName, dataAudit.getEventName());
 
-
         Assertions.assertNotNull(dataAudit);
         activityAuditLogAsserter.assertCompletedLogContains(
                 TestAuditOperation.TEST_AUDIT_UPDATE.getEventName(),
