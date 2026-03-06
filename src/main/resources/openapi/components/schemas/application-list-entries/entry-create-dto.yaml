@@ -30,7 +30,6 @@ properties:
     description: Number of respondents required by the Application.
     format: int16
     example: 0
-    minLength: 1
 
   wordingFields:
     type: array
