@@ -20,8 +20,8 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
-import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -168,32 +168,26 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     public void testGetApplicationEntriesListSuccess() throws Exception {
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        UUID applicationListId = getOpenApplicationListId();
-        EntryGetFilterDto filterDto = new EntryGetFilterDto();
-        filterDto.setDate(LocalDate.parse("2024-04-21"));
+        EntryApplicationListGetFilterDto filterDto = new EntryApplicationListGetFilterDto();
         filterDto.setRespondentOrganisation("Sarah Johnson");
 
+        UUID applicationListId = getOpenApplicationListId();
         UnaryOperator<RequestSpecification> filterOperator =
-                new ApplicationEntryFilter(
-                        Optional.ofNullable(filterDto.getDate()),
-                        Optional.ofNullable(filterDto.getCourtCode()),
-                        Optional.ofNullable(filterDto.getOtherLocationDescription()),
-                        Optional.ofNullable(filterDto.getCjaCode()),
+                new ApplicationEntryFilterByApplicationId(
+                        applicationListId,
                         Optional.ofNullable(filterDto.getApplicantOrganisation()),
                         Optional.ofNullable(filterDto.getApplicantSurname()),
-                        Optional.ofNullable(
-                                filterDto.getStatus() == null
-                                        ? null
-                                        : filterDto.getStatus().toString()),
                         Optional.ofNullable(filterDto.getRespondentOrganisation()),
                         Optional.ofNullable(filterDto.getRespondentSurname()),
                         Optional.ofNullable(filterDto.getRespondentPostcode()),
                         Optional.ofNullable(filterDto.getAccountReference()),
-                        Optional.ofNullable(filterDto.getStandardApplicantCode()));
+                        Optional.ofNullable(filterDto.getApplicationTitle()),
+                        Optional.ofNullable(filterDto.getFeeRequired()),
+                        Optional.ofNullable(filterDto.getSequenceNumber()));
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         Response responseSpec =
                 restAssuredClient.executeGetRequestWithPaging(

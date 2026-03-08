@@ -12,7 +12,7 @@ properties:
     type: string
     description: The title of the application. This can be Partial.
     example: "Smith vs Jones"
-    maxLength: 200
+    maxLength: 500
 
   applicantOrganisation:
     type: string
@@ -47,7 +47,7 @@ properties:
   accountReference:
     type: string
     description: Reference code identifying the applicant’s account. This can be Partial.
-    maxLength: 15
+    maxLength: 20
 
   feeRequired:
     type: boolean
