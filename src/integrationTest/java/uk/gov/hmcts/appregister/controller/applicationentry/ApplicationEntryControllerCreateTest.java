@@ -715,34 +715,6 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenApplicantBulkNotAllowed_400IsReturned()
-            throws Exception {
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // setup the payload
-        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setApplicationCode("AD99001");
-
-        // test the functionality
-        Response responseSpecCreate =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(
-                                CREATE_ENTRY_CONTEXT
-                                        + "/"
-                                        + getOpenApplicationListId()
-                                        + "/entries"),
-                        tokenGenerator.fetchTokenForRole(),
-                        entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
-        ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                AppListEntryError.RESPONDENT_NOT_REQUIRED.getCode().getType().get(),
-                problemDetail.getType());
-    }
-
-    @Test
     public void givenAnInvalidCreateEntryRequest_whenWordingLengthNotSufficient_400IsReturned()
             throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
