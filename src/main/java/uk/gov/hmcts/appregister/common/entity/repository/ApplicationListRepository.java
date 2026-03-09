@@ -154,39 +154,4 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             @LikeParam @Param("description") String description,
             @LikeParam @Param("otherDesc") String otherDesc,
             Pageable pageable);
-
-
-    @Query(
-        """
-    SELECT
-      count(al.id) as size
-    FROM ApplicationList al
-    LEFT JOIN al.cja cja
-    WHERE (:status IS NULL OR al.status = :status)
-      AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS STRING)))
-      AND (:cja IS NULL OR al.cja = :cja)
-      AND (al.date = COALESCE(:onDate, al.date))
-      AND (
-           COALESCE(:start, NULL) IS NULL
-            OR (
-                 (:wrapsMidnight = TRUE  AND al.time >= :start)
-              OR (:wrapsMidnight = FALSE AND al.time >= :start AND al.time < :end)
-            )
-          )
-      AND (:description IS NULL OR lower(al.description)
-              LIKE concat('%', lower(cast(:description AS string)), '%') ESCAPE '\\')
-      AND (:otherDesc IS NULL OR lower(al.otherLocation)
-              LIKE concat('%', lower(cast(:otherDesc AS string)), '%') ESCAPE '\\')
-      AND (al.deleted IS NULL OR al.deleted <> 'Y')
-    """)
-    int countByFilter(
-        @Param("status") Status status,
-        @Param("courtCode") String courtCode,
-        @Param("cja") CriminalJusticeArea cja,
-        @Param("onDate") LocalDate onDate,
-        @Param("start") LocalTime start,
-        @Param("end") LocalTime end,
-        @Param("wrapsMidnight") boolean wrapsMidnight,
-        @LikeParam @Param("description") String description,
-        @LikeParam @Param("otherDesc") String otherDesc);
 }

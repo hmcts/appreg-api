@@ -46,6 +46,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.mapper.ApplicationListMapper;
@@ -191,6 +192,8 @@ public class ApplicationListServiceImplTest {
                         entityManager,
                         auditOperationService,
                         List.of(auditOperationLifecycleListener));
+
+        ReflectionTestUtils.setField(service, "appListMaxSearchableEntities", 100);
     }
 
     @Test
