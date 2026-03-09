@@ -293,9 +293,8 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void
-            givenApplicationListSuccessfulSort_whenSortByLocationDesc_thenLexicallyEarlierCjaDescriptionPrecedesCourtName()
-                    throws Exception {
+    public void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
+            throws Exception {
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -312,7 +311,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                         .durationHours(1)
                         .durationMinutes(0);
 
-        UUID listId =
+        final UUID listId =
                 createApplicationListWithCourtCode(
                         tokenGenerator.fetchTokenForRole(), createListReq);
 
