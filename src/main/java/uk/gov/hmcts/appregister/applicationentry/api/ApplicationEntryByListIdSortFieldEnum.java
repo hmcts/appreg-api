@@ -11,6 +11,7 @@ public enum ApplicationEntryByListIdSortFieldEnum implements SortableOperationEn
     APPLICATION_TITLE("applicationTitle", "id", "applicationTitle"),
     APPLICANT("applicant", "id", "applicant"),
     RESPONDENT("respondent", "id", "respondent"),
+    RESPONDENT_POSTCODE("respondentPostcode", "id", "respondentPostcode"),
     ACCOUNT_REFERENCE("accountReference", "id", "accountReference"),
     FEE_REQUIRED("feeRequired", "id", "feeRequired"),
     RESULTED("resulted", "id", "resulted");
