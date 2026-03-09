@@ -474,14 +474,6 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                             getApplicationCode(validatable)));
         }
 
-        // if we do not require a respondent, check that none exists in the payload
-        if (applicationCode.getRequiresRespondent() == YesOrNo.NO
-                && getRespondent(validatable) != null) {
-            throw new AppRegistryException(
-                    AppListEntryError.RESPONDENT_NOT_REQUIRED,
-                    "Respondent is not required".formatted(getApplicationCode(validatable)));
-        }
-
         // if we are setting multiple respondents, check that the application code allows it
         if (applicationCode.getBulkRespondentAllowed() == YesOrNo.NO
                 && getRespondent(validatable) != null

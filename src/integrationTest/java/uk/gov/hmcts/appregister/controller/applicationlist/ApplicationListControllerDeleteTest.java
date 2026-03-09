@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationListControllerDeleteTest extends AbstractApplicationListControllerCrudTest {
@@ -61,9 +61,9 @@ public class ApplicationListControllerDeleteTest extends AbstractApplicationList
 
         // assert the diff audit log message
         differenceLogAsserter.assertNoErrors();
-        differenceLogAsserter.assertDiffCount(2, false);
+        differenceLogAsserter.assertDiffCount(3, false);
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "al_id",
                         null,
@@ -71,7 +71,7 @@ public class ApplicationListControllerDeleteTest extends AbstractApplicationList
                         "DELETE",
                         "Delete Application List"));
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "version",
                         "0",

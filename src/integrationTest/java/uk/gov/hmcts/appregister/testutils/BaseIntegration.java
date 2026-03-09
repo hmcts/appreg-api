@@ -1,10 +1,13 @@
 package uk.gov.hmcts.appregister.testutils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.JOSEException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.BeforeEach;
+import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
@@ -14,7 +17,8 @@ import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.ActivityAuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
 @Slf4j
 public class BaseIntegration extends BasePostgresIntegrationTest {
@@ -36,10 +40,17 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
 
     protected LogCaptor logCaptor;
 
-    protected AuditLogAsserter differenceLogAsserter;
+    /** A data audit log asserter. */
+    @Autowired protected DataAuditLogAsserter differenceLogAsserter;
+
+    /** An activity log asserter. */
+    protected ActivityAuditLogAsserter activityAuditLogAsserter;
 
     @Value("${wiremock.server.port}")
     protected String token;
+
+    /** A mapper that can be used to convert objects to json strings. */
+    protected ObjectMapper mapper;
 
     @BeforeEach
     void setup() {
@@ -53,9 +64,12 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
         }
 
         logCaptor = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
-        differenceLogAsserter = new AuditLogAsserter();
+        activityAuditLogAsserter = new ActivityAuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.registerModule(new JsonNullableModule());
     }
 
     /**

@@ -1,5 +1,5 @@
 type: object
-description: Request payload to create an Application List Entry.
+description: Request payload to create an Application List Entry. Blank fields will be rejected, nulls should be used instead.
 required:
   - applicationCode
 
@@ -10,12 +10,14 @@ properties:
     description: Code that identifies the Standard Applicant.
     example: "APP001"
     maxLength: 10
+    minLength: 1
 
   applicationCode:
     type: string
     description: Code that identifies the Application Code.
     example: "APP001"
     maxLength: 10
+    minLength: 1
 
   applicant:
     $ref: '../participants/applicant.yaml'
@@ -52,18 +54,21 @@ properties:
     maxLength: 15
     description: A reference code to identify a related case (maximum 15 characters).
     example: "CASE-001"
+    minLength: 1
 
   accountNumber:
     type: string
     maxLength: 20
     description: The Applicants account number (maximum 20 characters).
     example: "APP-001"
+    minLength: 1
 
   notes:
     type: string
     maxLength: 4000
     description: Notes about the application or the hearing (maximum 4000 characters).
     example: "Time is 10:31, we have convened to talk about Application..."
+    minLength: 1
 
   lodgementDate:
     type: string

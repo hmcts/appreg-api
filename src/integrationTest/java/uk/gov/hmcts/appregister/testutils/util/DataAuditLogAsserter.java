@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
 
 /**
@@ -13,7 +15,8 @@ import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class AuditLogAsserter {
+@Component
+public class DataAuditLogAsserter {
     protected final LogCaptor dataAuditLogger =
             LogCaptor.forClass(uk.gov.hmcts.appregister.audit.listener.DataAuditLogger.class);
 
@@ -24,6 +27,10 @@ public class AuditLogAsserter {
     private static final String DIFF_OLD_PREFIX = "Saving data audit old:";
 
     private static final String DATA_RECORD = "Saved data audit entity:";
+
+    /** The audit schema from the Spring configuration. */
+    @Value("${spring.jpa.properties.hibernate.default_schema}")
+    private String auditSchema;
 
     /**
      * gets the data audit assertion strings.
@@ -59,7 +66,7 @@ public class AuditLogAsserter {
                 String.format(
                         DATA_RECORD
                                 + " DataAudit\\(id=.*,"
-                                + " schemaName=appreg,"
+                                + " schemaName=${SCHEMA},"
                                 + " tableName=%s,.*"
                                 + " columnName=%s,.*"
                                 + " oldValue=%s,.*"
@@ -89,6 +96,10 @@ public class AuditLogAsserter {
     private static final String DIFF_OLD_LOG_PATTERN =
             DIFF_OLD_PREFIX + " AuditableData\\(tableName=%s, fieldName=%s, value=%s\\)";
 
+    private String replaceSchema(String auditSchema) {
+        return auditSchema.replace("${SCHEMA}", this.auditSchema);
+    }
+
     /**
      * The string assertion. Failure on absence of the string.
      *
@@ -105,7 +116,7 @@ public class AuditLogAsserter {
         // find new audit log exists
         if (assertion.newAuditRegex() != null) {
             for (String log : dataAuditLogger.getDebugLogs()) {
-                if (Pattern.matches(assertion.newAuditRegex(), log)) {
+                if (Pattern.matches(replaceSchema(assertion.newAuditRegex()), log)) {
                     newLogFound = true;
                 }
             }
@@ -114,7 +125,7 @@ public class AuditLogAsserter {
         // check if old audit log exists
         if (assertion.oldAuditRegex() != null) {
             for (String log : dataAuditLogger.getDebugLogs()) {
-                if (!Pattern.matches(assertion.oldAuditRegex(), log)) {
+                if (!Pattern.matches(replaceSchema(assertion.oldAuditRegex()), log)) {
                     oldLogFound = true;
                 }
             }
@@ -124,7 +135,7 @@ public class AuditLogAsserter {
 
         // check the data audit record log exists
         for (String log : dataAuditLogger.getDebugLogs()) {
-            if (Pattern.matches(assertion.dataAuditRegex(), log)) {
+            if (Pattern.matches(replaceSchema(assertion.dataAuditRegex()), log)) {
                 auditLogFound = true;
                 matchCount = matchCount + 1;
             }
