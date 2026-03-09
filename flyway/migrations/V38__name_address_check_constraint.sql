@@ -13,7 +13,7 @@ ALTER TABLE IF EXISTS name_address
     DROP CONSTRAINT IF EXISTS name_address_name_or_person_chk;
 
 
-ALTER TABLE appreg.name_address
+ALTER TABLE name_address
 ADD CONSTRAINT name_address_name_or_person_chk
 CHECK (
     (
