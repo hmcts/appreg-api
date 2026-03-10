@@ -65,4 +65,13 @@ public class CourtLocationMapperTest {
 
         Assertions.assertFalse(dto.getEndDate().isPresent(), "endDate should be marked present");
     }
+
+    @Test
+    void testNoEntity() {
+        CodeAndName record = new CodeAndName(null, null);
+
+        var mapper = new CourtLocationMapperImpl();
+        Assertions.assertNotNull(mapper.toEntity(record));
+    }
 }
+

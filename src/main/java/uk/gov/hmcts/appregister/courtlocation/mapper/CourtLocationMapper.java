@@ -4,8 +4,6 @@ import java.time.LocalDate;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.NullValueCheckStrategy;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
@@ -33,11 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationGetSummaryDto;
  *       nullValuePropertyMappingStrategy=IGNORE}).
  * </ul>
  */
-@Mapper(
-        componentModel = "spring",
-        injectionStrategy = InjectionStrategy.CONSTRUCTOR,
-        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Mapper(componentModel = "spring", injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface CourtLocationMapper {
 
     /**
@@ -68,9 +62,9 @@ public interface CourtLocationMapper {
     NationalCourtHouse toEntity(String code, LocalDate date);
 
     @Mapping(target = "id", constant = "0L")
-    @Mapping(target = "courtLocationCode", source = "code")
-    @Mapping(target = "name", source = "name")
-    NationalCourtHouse toEntity(String code, String name);
+    @Mapping(target = "courtLocationCode", source = "code", defaultValue = "")
+    @Mapping(target = "name", source = "name", defaultValue = "")
+    NationalCourtHouse toEntity(CodeAndName code);
 
     /**
      * Utility mapping method to wrap a {@link LocalDate} in a {@link JsonNullable}.
