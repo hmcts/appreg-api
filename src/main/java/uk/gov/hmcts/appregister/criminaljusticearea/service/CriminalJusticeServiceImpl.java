@@ -69,18 +69,12 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             criminalJusticeAreaPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result;
-                    if (code == null && description == null) {
-                        result =
-                                new AuditableResult<>(
-                                        criminalJusticeAreaPage,
-                                        criminalJusticeMapper.toEntity("", ""));
-                    } else {
-                        result =
-                                new AuditableResult<>(
-                                        criminalJusticeAreaPage,
-                                        criminalJusticeMapper.toEntity(code, description));
-                    }
+                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
+                            new AuditableResult<>(
+                                    criminalJusticeAreaPage,
+                                    criminalJusticeMapper.toEntity(
+                                            code != null ? code : "",
+                                            description != null ? description : ""));
 
                     return Optional.of(result);
                 },

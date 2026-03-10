@@ -73,12 +73,11 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             name,
                             pageable);
 
-                    AuditableResult<StandardApplicantPage, StandardApplicant> result;
-                    if (code == null && name == null) {
-                        result = new AuditableResult<>(newPage, mapper.toEntity("", ""));
-                    } else {
-                        result = new AuditableResult<>(newPage, mapper.toEntity(code, name));
-                    }
+                    AuditableResult<StandardApplicantPage, StandardApplicant> result =
+                            new AuditableResult<>(
+                                    newPage,
+                                    mapper.toEntity(
+                                            code != null ? code : "", name != null ? name : ""));
 
                     return Optional.of(result);
                 },

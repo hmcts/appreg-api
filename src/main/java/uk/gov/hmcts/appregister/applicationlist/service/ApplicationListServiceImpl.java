@@ -432,35 +432,30 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,
-                (req) -> {
-                    log.debug(
-                            "Start: Finding Application Lists using the following details: {}",
-                            dto);
+                (req) ->
+                        applicationListGetValidator.validateCja(
+                                dto,
+                                (getDto, success) -> {
+                                    final Page<ApplicationListSummaryProjection> dbPage =
+                                            repository.findAllByFilter(
+                                                    entryMapper.toStatus(dto.getStatus()),
+                                                    dto.getCourtLocationCode(),
+                                                    success.getCriminalJusticeArea(),
+                                                    dto.getDate(),
+                                                    timeWindow.start,
+                                                    timeWindow.end,
+                                                    timeWindow.wrapsMidnight,
+                                                    dto.getDescription(),
+                                                    dto.getOtherLocationDescription(),
+                                                    pageable.getPageable());
 
-                    return applicationListGetValidator.validateCja(
-                            dto,
-                            (getDto, success) -> {
-                                final Page<ApplicationListSummaryProjection> dbPage =
-                                        repository.findAllByFilter(
-                                                entryMapper.toStatus(dto.getStatus()),
-                                                dto.getCourtLocationCode(),
-                                                success.getCriminalJusticeArea(),
-                                                dto.getDate(),
-                                                timeWindow.start,
-                                                timeWindow.end,
-                                                timeWindow.wrapsMidnight,
-                                                dto.getDescription(),
-                                                dto.getOtherLocationDescription(),
-                                                pageable.getPageable());
-
-                                AuditableResult<ApplicationListPage, ApplicationList> result =
-                                        new AuditableResult<>(
-                                                assembleResponsePage(dbPage, pageable),
-                                                mapper.toEntity(dto));
-                                return Optional.of(result);
-                            },
-                            true);
-                },
+                                    AuditableResult<ApplicationListPage, ApplicationList> result =
+                                            new AuditableResult<>(
+                                                    assembleResponsePage(dbPage, pageable),
+                                                    mapper.toEntity(dto));
+                                    return Optional.of(result);
+                                },
+                                true),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
@@ -471,9 +466,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 null,
                 AppListAuditOperation.PRINT_APP_LIST,
                 (req) -> {
-                    log.debug(
-                            "Start: Finding Application List for printing using the following id: {}",
-                            id);
                     ApplicationList list =
                             repository
                                     .findByUuid(id)

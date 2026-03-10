@@ -55,11 +55,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                 null,
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
-                    log.debug(
-                            "Start: Find Application List for: app code: {} app title: {} with paging: {}",
-                            appCode,
-                            appTitle,
-                            pageable);
 
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(appCode, appTitle, todayUk, pageable.getPageable());
@@ -107,10 +102,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                 null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
-                    log.debug(
-                            "Start: Find active Application Code using code: {} date: {}",
-                            payloadForGet.getCode(),
-                            payloadForGet.getDate());
+
 
                     return getApplicationCodeValidator.validate(
                             payloadForGet,

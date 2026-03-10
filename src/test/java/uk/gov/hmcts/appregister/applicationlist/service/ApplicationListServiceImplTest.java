@@ -476,8 +476,6 @@ public class ApplicationListServiceImplTest {
 
         verify(mapper).toGetSummaryDto(eq(row), eq(0L), anyString());
 
-        // Audit assertion
-        //        assertThat()
     }
 
     @Test

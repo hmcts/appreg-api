@@ -44,33 +44,28 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
     @Override
     protected void finished(CompleteEvent event) {
-        try {
-            // make sure if we are comparing old or new then the types match
-            if (event.getOldValue() != null
-                    && event.getNewValue() != null
-                    && ((!event.getOldValue()
-                                    .getClass()
-                                    .getCanonicalName()
-                                    .equals(event.getNewValue().getClass().getCanonicalName()))
-                            || !event.getOldValue().getId().equals(event.getNewValue().getId()))) {
-                log.debug(
-                        "New and old audit values are not the same type and or id{} {}",
-                        event.getOldValue().getClass().getCanonicalName(),
-                        event.getNewValue().getClass().getCanonicalName());
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "New and old audit values are not the same type");
-            } else if (event.getOldValue() == null && event.getNewValue() == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Cannot audit when both old and new values are null");
-            }
-
-            auditDataBasedOnCompleteEventState(event);
-        } catch (NullPointerException e) {
-            log.warn("Error processing data audit for event: {}", event, e);
-            log.warn("will continue without auditing for event: {}", event);
+        // make sure if we are comparing old or new then the types match
+        if (event.getOldValue() != null
+                && event.getNewValue() != null
+                && ((!event.getOldValue()
+                                .getClass()
+                                .getCanonicalName()
+                                .equals(event.getNewValue().getClass().getCanonicalName()))
+                        || !event.getOldValue().getId().equals(event.getNewValue().getId()))) {
+            log.debug(
+                    "New and old audit values are not the same type and or id{} {}",
+                    event.getOldValue().getClass().getCanonicalName(),
+                    event.getNewValue().getClass().getCanonicalName());
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "New and old audit values are not the same type");
+        } else if (event.getOldValue() == null && event.getNewValue() == null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "Cannot audit when both old and new values are null");
         }
+
+        auditDataBasedOnCompleteEventState(event);
     }
 
     /**

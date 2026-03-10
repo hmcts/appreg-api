@@ -72,10 +72,12 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "a_na_id")
+    @Audit(action = {CrudEnum.READ})
     private NameAddress anamedaddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "r_na_id")
+    @Audit(action = {CrudEnum.READ})
     private NameAddress rnameaddress;
 
     @Column(name = "number_of_bulk_respondents")
