@@ -15,4 +15,6 @@ spring:
 logging:
   level:
     org.springframework.security: TRACE
+app:
+  app-list-max-searchable-entries: 20
 

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -780,6 +781,89 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(problemDetail.getDetail())
                 .contains("Problem with value 232322 for parameter listId");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("GET Application List - Max results - 200")
+    void givenValidRequest_whenGetApplicationList_maxResults_200() throws Exception {
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t1030 = LocalTime.of(10, 30);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        // test config is set to max 20 results, so create 21 records with the same
+        // date/time/description prefix to trigger the error
+        for (int i = 0; i < 20; i++) {
+            createApplicationList(token, prefix + " - " + i);
+        }
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        GetApplicationListFilterSpecification.builder()
+                                .description(Optional.of(prefix))
+                                .dateValue(Optional.of(day.toString())) // yyyy-MM-dd
+                                .localTime(
+                                        Optional.of(
+                                                t1030.format(DateTimeFormatter.ofPattern("HH:mm"))))
+                                .build(),
+                        null);
+
+        // assertions
+        resp.then().statusCode(HttpStatus.OK.value());
+        ApplicationListPage page = resp.as(ApplicationListPage.class);
+        assertThat(page.getTotalElements()).isEqualTo(20);
+    }
+
+    @Test
+    @DisplayName("GET Application List - 400 too many results")
+    void givenValidRequest_whenGetApplicationList_then400TooManyResults() throws Exception {
+        String prefix = uniquePrefix("get-date-time");
+        LocalDate day = LocalDate.of(2025, 10, 15);
+        LocalTime t1030 = LocalTime.of(10, 30);
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        // test config is set to max 20 results, so create 21 records with the same
+        // date/time/description prefix to trigger the error
+        for (int i = 0; i < 21; i++) {
+            createApplicationList(token, prefix + " - " + i);
+        }
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        GetApplicationListFilterSpecification.builder()
+                                .description(Optional.of(prefix))
+                                .dateValue(Optional.of(day.toString())) // yyyy-MM-dd
+                                .localTime(
+                                        Optional.of(
+                                                t1030.format(DateTimeFormatter.ofPattern("HH:mm"))))
+                                .build(),
+                        null);
+
+        // assertions
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(ApplicationListError.TOO_MANY_RESULTS.getCode().getAppCode());
     }
 
     @Test
