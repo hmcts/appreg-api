@@ -69,12 +69,6 @@ public class SortableField {
      */
     public <T extends SortableOperationEnum> List<String> toSortStringUsingSortableOperation(
             Function<String, T> lookup) {
-        // Special-case location: sort by the alias selected in the query
-        if ("location".equalsIgnoreCase(this.field)) {
-            String dir = (direction == null) ? ASC : direction;
-            return List.of("effectiveLocation" + SORT_DELIMITER + dir);
-        }
-
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField == null) {
             throw new AppRegistryException(
