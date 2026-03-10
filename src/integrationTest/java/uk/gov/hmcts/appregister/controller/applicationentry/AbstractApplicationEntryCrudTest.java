@@ -200,10 +200,8 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected record ApplicationEntryFilterByApplicationId(
             UUID applicationId,
-            Optional<String> applicantOrganisationName,
-            Optional<String> applicantSurname,
-            Optional<String> respondentOrganisationName,
-            Optional<String> respondentSurname,
+            Optional<String> applicantName,
+            Optional<String> respondentName,
             Optional<String> respondentPostcode,
             Optional<String> accountReference,
             Optional<String> applicationTitle,
@@ -214,17 +212,11 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         @Override
         public RequestSpecification apply(RequestSpecification rs) {
             rs = rs.queryParam("applicationId", applicationId.toString());
-            if (applicantOrganisationName.isPresent()) {
-                rs = rs.queryParam("applicantOrganisation", applicantOrganisationName.get());
+            if (applicantName.isPresent()) {
+                rs = rs.queryParam("applicantName", applicantName.get());
             }
-            if (applicantSurname.isPresent()) {
-                rs = rs.queryParam("applicantSurname", applicantSurname.get());
-            }
-            if (respondentOrganisationName.isPresent()) {
-                rs = rs.queryParam("respondentOrganisation", respondentOrganisationName.get());
-            }
-            if (respondentSurname.isPresent()) {
-                rs = rs.queryParam("respondentSurname", respondentSurname.get());
+            if (respondentName.isPresent()) {
+                rs = rs.queryParam("respondentName", respondentName.get());
             }
             if (respondentPostcode.isPresent()) {
                 rs = rs.queryParam("respondentPostcode", respondentPostcode.get());

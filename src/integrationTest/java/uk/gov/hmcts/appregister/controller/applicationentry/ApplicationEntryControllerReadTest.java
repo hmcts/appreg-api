@@ -169,16 +169,14 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     @Test
     public void testGetApplicationEntriesListSuccess() throws Exception {
         EntryApplicationListGetFilterDto filterDto = new EntryApplicationListGetFilterDto();
-        filterDto.setRespondentOrganisation("Sarah Johnson");
+        filterDto.setRespondentName("Sarah Johnson");
 
         UUID applicationListId = getOpenApplicationListId();
         UnaryOperator<RequestSpecification> filterOperator =
                 new ApplicationEntryFilterByApplicationId(
                         applicationListId,
-                        Optional.ofNullable(filterDto.getApplicantOrganisation()),
-                        Optional.ofNullable(filterDto.getApplicantSurname()),
-                        Optional.ofNullable(filterDto.getRespondentOrganisation()),
-                        Optional.ofNullable(filterDto.getRespondentSurname()),
+                        Optional.ofNullable(filterDto.getApplicantName()),
+                        Optional.ofNullable(filterDto.getRespondentName()),
                         Optional.ofNullable(filterDto.getRespondentPostcode()),
                         Optional.ofNullable(filterDto.getAccountReference()),
                         Optional.ofNullable(filterDto.getApplicationTitle()),

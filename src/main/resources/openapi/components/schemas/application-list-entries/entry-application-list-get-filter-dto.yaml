@@ -14,28 +14,16 @@ properties:
     example: "Smith vs Jones"
     maxLength: 500
 
-  applicantOrganisation:
+  applicantName:
     type: string
     description: The name of the organisation submitting the application. This can be Partial.
     example: "Smith Legal Services Ltd"
     maxLength: 100
 
-  applicantSurname:
-    type: string
-    description: The surname of the applicant if the applicant is an individual. This can be Partial.
-    example: "Smith"
-    maxLength: 100
-
-  respondentOrganisation:
+  respondentName:
     type: string
     description: The name of the organisation responding to the application.
     example: "Jones Consulting Group"
-    maxLength: 100
-
-  respondentSurname:
-    type: string
-    description: The surname of the respondent if the respondent is an individual.
-    example: "Jones"
     maxLength: 100
 
   respondentPostcode:

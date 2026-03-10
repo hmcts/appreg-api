@@ -433,7 +433,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         null, false, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, page);
+                        null, null, null, null, null, null, null, page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(11);
@@ -462,7 +462,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, page);
+                        null, null, null, null, null, null, null, page);
 
         ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(4);
 
@@ -470,6 +470,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page1 =
                 applicationListEntryRepository.searchForGetSummary(
                         UUID.fromString(projection0.getListId()),
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -517,10 +519,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "CJ",
                         null,
                         "Turner",
+                        null,
                         "APP002",
                         Status.OPEN,
                         "Sarah Johnson",
                         "Johnson",
+                        null,
                         "XY9 8ZZ",
                         "29345",
                         null,
@@ -575,10 +579,12 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "CJ",
                         null,
                         null,
+                        null,
                         "PP001",
                         Status.OPEN,
                         "Jac",
                         "Turn",
+                        null,
                         "AB11 2CD",
                         null,
                         null,
@@ -641,6 +647,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         true,
                         hearingDate,
                         "UNQ001",
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -871,6 +879,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         savedEntry.getAnamedaddress().getSurname(),
+                        null,
+                        null,
                         null,
                         null,
                         null,
