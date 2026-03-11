@@ -15,6 +15,7 @@ import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
@@ -408,7 +409,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         if (consumeBeforeCommit != null) {
             consumeBeforeCommit.accept(entryCreateDto);
         }
-        
+
         String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
@@ -498,13 +499,77 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
 
         updateDto.getApplicant().setPerson(null);
-        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 12B");
-        updateDto.getApplicant().getOrganisation().getContactDetails().setEmail("test@org.com");
+        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1BB");
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@org.com"));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
 
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        updateDto.getRespondent().getPerson().getContactDetails().setEmail("test@test.com");
-        updateDto.getRespondent().setOrganisation(null);
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@test.com"));
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
 
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+
+        updateDto.getRespondent().getPerson().getContactDetails().setPhone(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getContactDetails().setMobile(JsonNullable.of(null));
+
+        updateDto.getRespondent().setOrganisation(null);
         updateDto.setStandardApplicantCode(null);
         updateDto.setOfficials(officials);
 

@@ -9,9 +9,6 @@ import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.Matchers;
-import org.instancio.Instancio;
-import org.instancio.settings.Keys;
-import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
@@ -35,103 +32,6 @@ import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEntryCrudTest {
-
-    private EntryUpdateDto getCorrectUpdateDataDto() {
-        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-
-        final EntryUpdateDto updateDto =
-                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
-
-        final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
-
-        updateDto.getApplicant().setPerson(null);
-        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1BB");
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setEmail(JsonNullable.of("test@org.com"));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setAddressLine2(JsonNullable.of(null));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setAddressLine3(JsonNullable.of(null));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setAddressLine4(JsonNullable.of(null));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setAddressLine5(JsonNullable.of(null));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setPhone(JsonNullable.of(null));
-        updateDto
-                .getApplicant()
-                .getOrganisation()
-                .getContactDetails()
-                .setMobile(JsonNullable.of(null));
-
-        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        updateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setEmail(JsonNullable.of("test@test.com"));
-        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
-        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
-
-        updateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setAddressLine2(JsonNullable.of(null));
-        updateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setAddressLine3(JsonNullable.of(null));
-        updateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setAddressLine4(JsonNullable.of(null));
-        updateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setAddressLine5(JsonNullable.of(null));
-
-        updateDto.getRespondent().getPerson().getContactDetails().setPhone(JsonNullable.of(null));
-        updateDto.getRespondent().getPerson().getContactDetails().setMobile(JsonNullable.of(null));
-
-        updateDto.getRespondent().setOrganisation(null);
-        updateDto.setStandardApplicantCode(null);
-        updateDto.setOfficials(officials);
-
-        updateDto.setApplicationCode("ZS99007");
-        updateDto.setHasOffsiteFee(true);
-
-        updateDto.setWordingFields(
-                List.of(
-                        new TemplateSubstitution("Premises Address", "test wording"),
-                        new TemplateSubstitution("Premises Date", LocalDate.now().toString())));
-
-        // Ensure rule compliance
-        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
-
-        return updateDto;
-    }
 
     @Test
     public void givenASuccessfulUpdate_whenAllValueAreToBeUpdate_200Returned() throws Exception {
