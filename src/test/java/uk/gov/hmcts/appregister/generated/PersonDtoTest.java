@@ -147,4 +147,68 @@ public class PersonDtoTest {
                 "contactDetails.postcode",
                 "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
     }
+
+    @Test
+    void testPersonContactDetailsRegex() throws Exception {
+        ContactDetails contactDetails = new ContactDetails();
+        contactDetails.setAddressLine1("Test Address Line 1\t");
+        contactDetails.setAddressLine2(JsonNullable.of("Test Address Line 2\n"));
+        contactDetails.setAddressLine3(JsonNullable.of("Test Address Line 3\r"));
+        contactDetails.setAddressLine4(JsonNullable.of("Test Address Line 4\0"));
+        contactDetails.setAddressLine5(JsonNullable.of("Test Address Line 5\r\n"));
+        contactDetails.setPostcode("AA1 1AA\t");
+
+        contactDetails.setPhone(JsonNullable.of("+01234567890"));
+        contactDetails.setMobile(JsonNullable.of("@4472567890"));
+
+        contactDetails.setEmail(JsonNullable.of("test.com"));
+
+        // validate the dto using Bean Validation
+        Set<ConstraintViolation<Object>> constraintValidator =
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) contactDetails);
+
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        // assert
+        Assertions.assertEquals(9, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "addressLine1",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "addressLine2",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "addressLine3",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "addressLine4",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "addressLine5",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "postcode",
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "phone", "must match \"[0-9 \\-]*\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "mobile", "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "email",
+                "must match \"^((([^<>()\\[\\]\\\\.,;:\\s@\"]"
+                        + "+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))"
+                        + "@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|"
+                        + "(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$\"");
+    }
 }
