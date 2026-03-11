@@ -30,7 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -59,7 +59,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(uuids[0], entryGetDetailDto.getListId());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "id",
                         null,
@@ -68,7 +68,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "id",
                         null,

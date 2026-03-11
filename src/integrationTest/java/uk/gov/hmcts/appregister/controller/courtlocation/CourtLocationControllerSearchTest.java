@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
+import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
@@ -23,7 +25,7 @@ import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -55,7 +57,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -64,7 +66,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
@@ -98,7 +100,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -107,7 +109,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
@@ -197,7 +199,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -209,7 +211,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
@@ -252,7 +254,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -264,7 +266,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "courthouse_name",
                         null,
@@ -307,7 +309,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -319,7 +321,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "courthouse_name",
                         null,
@@ -360,7 +362,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -372,7 +374,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "courthouse_name",
                         null,
@@ -419,7 +421,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -431,7 +433,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "courthouse_name",
                         null,
@@ -475,7 +477,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                     page.getSort().getOrders().get(0).getProperty());
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.NATIONAL_COURT_HOUSES,
                             "court_location_code",
                             null,
@@ -487,7 +489,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                     .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.NATIONAL_COURT_HOUSES,
                             "courthouse_name",
                             null,
@@ -552,7 +554,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "court_location_code",
                         null,
@@ -564,7 +566,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "courthouse_name",
                         null,

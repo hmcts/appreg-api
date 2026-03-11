@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -35,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
 public class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
 
@@ -508,7 +510,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         // this check is to make sure that a default value is provided for the log when the
         // parameter is not needed.
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "id",
                         null,
@@ -518,7 +520,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         // this is to check that the description has been logged as it was included as a param.
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
@@ -578,7 +580,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(only.getEntriesCount()).isEqualTo(3);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
@@ -587,7 +589,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                         AppListAuditOperation.GET_APP_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         null,
@@ -596,7 +598,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                         AppListAuditOperation.GET_APP_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_date",
                         null,
@@ -639,7 +641,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(only.getTime()).isEqualTo(t2359);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "application_list_time",
                         null,
@@ -685,7 +687,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(only.getLocation()).isEqualTo(VALID_COURT_NAME);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "courthouse_code",
                         null,
@@ -730,7 +732,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -777,7 +779,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(page.getContent()).hasSize(0);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "list_description",
                         null,
@@ -829,7 +831,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(dto.getEntriesSummary()).isNotNull();
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPICATION_LIST,
                         "id",
                         null,
@@ -880,7 +882,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThatThrownBy(
                         () ->
                                 differenceLogAsserter.assertDataAuditChange(
-                                        AuditLogAsserter.getDataAuditAssertion(
+                                        DataAuditLogAsserter.getDataAuditAssertion(
                                                 TableNames.APPICATION_LIST,
                                                 "id",
                                                 null,

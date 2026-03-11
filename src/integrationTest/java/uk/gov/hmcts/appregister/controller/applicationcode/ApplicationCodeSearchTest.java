@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -85,7 +85,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // Checking for audit log - no filter provided
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -134,7 +134,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // Checking for audit log - no filter provided
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -193,7 +193,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // Checking for audit log - no filter provided
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -246,7 +246,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         // Checking for audit log - filter provided
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -255,7 +255,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code_start_date",
                         null,
@@ -575,7 +575,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -615,7 +615,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("CT99002", firstEntry.getApplicationCode());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -655,7 +655,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("AD99004", firstEntry.getApplicationCode());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code_title",
                         null,
@@ -696,7 +696,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("AP99004", firstEntry.getApplicationCode());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code",
                         null,
@@ -705,7 +705,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_CODES,
                         "application_code_title",
                         null,

@@ -28,10 +28,10 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
+public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
     private static final String WEB_CONTEXT = "result-codes";
 
@@ -80,7 +80,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -89,7 +89,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -98,7 +98,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -132,7 +132,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -141,7 +141,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -150,7 +150,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -237,7 +237,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -246,7 +246,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -255,7 +255,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -292,7 +292,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -301,7 +301,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -310,7 +310,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -347,7 +347,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -356,7 +356,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -365,7 +365,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -404,7 +404,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -413,7 +413,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -422,7 +422,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -460,7 +460,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code",
                         null,
@@ -469,7 +469,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
@@ -478,7 +478,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                         ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
@@ -518,7 +518,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                     page.getSort().getOrders().get(0).getProperty());
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.RESOLUTION_CODES,
                             "resolution_code",
                             null,
@@ -527,7 +527,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                             ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.RESOLUTION_CODES,
                             "resolution_code_start_date",
                             null,
@@ -536,7 +536,7 @@ public class ResultCodeControllerTest extends AbstractSecurityControllerTest {
                             ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.RESOLUTION_CODES,
                             "resolution_code_title",
                             null,

@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -68,7 +68,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertSingleTurnerSearchResult(tokenGenerator, filterDto);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         null,
@@ -77,7 +77,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "account_number",
                         null,
@@ -86,7 +86,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "id",
                         null,
@@ -95,7 +95,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "id",
                         null,
@@ -104,7 +104,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_status",
                         null,
@@ -113,7 +113,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "list_description",
                         null,
@@ -122,7 +122,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "courthouse_code",
                         null,
@@ -131,7 +131,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "other_courthouse",
                         null,
@@ -140,7 +140,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_date",
                         null,
@@ -149,7 +149,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_time",
                         null,
@@ -158,7 +158,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -167,7 +167,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -176,7 +176,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "name",
                         null,
@@ -185,7 +185,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "title",
                         null,
@@ -194,7 +194,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "surname",
                         null,
@@ -203,7 +203,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "postcode",
                         null,
@@ -212,7 +212,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "name",
                         null,
@@ -221,7 +221,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "title",
                         null,
@@ -230,7 +230,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "surname",
                         null,
@@ -239,7 +239,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "postcode",
                         null,
@@ -282,7 +282,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertSingleTurnerSearchResult(tokenGenerator, filterDto);
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         null,
@@ -291,7 +291,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "account_number",
                         null,
@@ -300,7 +300,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "id",
                         null,
@@ -309,7 +309,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "id",
                         null,
@@ -318,7 +318,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_status",
                         null,
@@ -327,7 +327,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "list_description",
                         null,
@@ -336,7 +336,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "courthouse_code",
                         null,
@@ -345,7 +345,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "other_courthouse",
                         null,
@@ -354,7 +354,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_date",
                         null,
@@ -363,7 +363,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_time",
                         null,
@@ -372,7 +372,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -381,7 +381,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -390,7 +390,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "name",
                         null,
@@ -399,7 +399,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "title",
                         null,
@@ -408,7 +408,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "surname",
                         null,
@@ -417,7 +417,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "postcode",
                         null,
@@ -426,7 +426,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "name",
                         null,
@@ -435,7 +435,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "title",
                         null,
@@ -444,7 +444,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "surname",
                         null,
@@ -453,7 +453,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "postcode",
                         null,
@@ -739,7 +739,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
     private void dataAuditAssertionsForNoFilter() {
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "ale_id",
                         null,
@@ -748,7 +748,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "account_number",
                         null,
@@ -757,7 +757,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS_ENTRY,
                         "id",
                         null,
@@ -766,7 +766,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "id",
                         null,
@@ -775,7 +775,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_status",
                         null,
@@ -784,7 +784,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "list_description",
                         null,
@@ -793,7 +793,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "courthouse_code",
                         null,
@@ -802,7 +802,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "other_courthouse",
                         null,
@@ -811,7 +811,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_date",
                         null,
@@ -820,7 +820,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LISTS,
                         "application_list_time",
                         null,
@@ -829,7 +829,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -838,7 +838,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -847,7 +847,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "name",
                         null,
@@ -856,7 +856,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "title",
                         null,
@@ -865,7 +865,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "surname",
                         null,
@@ -874,7 +874,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NAME_ADDRESS,
                         "postcode",
                         null,

@@ -27,11 +27,11 @@ import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerT
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class CriminalJusticeAreaControllerTest extends AbstractSecurityControllerTest {
+public class CriminalJusticeControllerSearchTest extends AbstractSecurityControllerTest {
     private static final String WEB_CONTEXT = "criminal-justice-areas";
     // expectations based on the flyway test data
     private static final String EXPECTED_CODE = "CD";
@@ -89,7 +89,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREA_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -101,7 +101,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -179,7 +179,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -191,7 +191,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -248,7 +248,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -260,7 +260,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -313,7 +313,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -325,7 +325,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -404,7 +404,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -416,7 +416,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -471,7 +471,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -483,7 +483,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -540,7 +540,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                 EXPECTED_GET_CRIMINAL_JUSTICE_AREAS_AUDIT_ACTION, logCaptor.getInfoLogs().get(1));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -552,7 +552,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
@@ -596,7 +596,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                     page.getSort().getOrders().get(0).getProperty());
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.CRIMINAL_JUSTICE_AREA,
                             "cja_code",
                             null,
@@ -608,7 +608,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                     .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
-                    AuditLogAsserter.getDataAuditAssertion(
+                    DataAuditLogAsserter.getDataAuditAssertion(
                             TableNames.CRIMINAL_JUSTICE_AREA,
                             "cja_description",
                             null,
@@ -656,7 +656,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
         Assertions.assertEquals("CE", page.getContent().get(1).getCode());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_code",
                         null,
@@ -668,7 +668,7 @@ public class CriminalJusticeAreaControllerTest extends AbstractSecurityControlle
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_description",
                         null,
