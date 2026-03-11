@@ -715,34 +715,6 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenAnInvalidCreateEntryRequest_whenApplicantBulkNotAllowed_400IsReturned()
-            throws Exception {
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // setup the payload
-        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setApplicationCode("AD99001");
-
-        // test the functionality
-        Response responseSpecCreate =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(
-                                CREATE_ENTRY_CONTEXT
-                                        + "/"
-                                        + getOpenApplicationListId()
-                                        + "/entries"),
-                        tokenGenerator.fetchTokenForRole(),
-                        entryCreateDto);
-        responseSpecCreate.then().statusCode(400);
-        ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                AppListEntryError.RESPONDENT_NOT_REQUIRED.getCode().getType().get(),
-                problemDetail.getType());
-    }
-
-    @Test
     public void givenAnInvalidCreateEntryRequest_whenWordingLengthNotSufficient_400IsReturned()
             throws Exception {
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -964,5 +936,36 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                                                             "Entry not found: " + entryUuid));
                     return entry.getSequenceNumber();
                 });
+    }
+
+    @Test
+    public void
+            givenApplicationCodeDoesNotRequireRespondent_whenCreateEntryWithRespondentProvided_thenReturn201()
+                    throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        // Use an app code which does NOT require a respondent
+        entryCreateDto.setApplicationCode("AD99004");
+
+        Assertions.assertNotNull(
+                entryCreateDto.getRespondent(),
+                "Test requires respondent to be present in payload");
+
+        entryCreateDto.setWordingFields(List.of());
+        entryCreateDto.setFeeStatuses(List.of());
+
+        var tokenGenerator = createAdminToken();
+        String surnameToLookup = UUID.randomUUID().toString();
+
+        // Act
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
     }
 }
