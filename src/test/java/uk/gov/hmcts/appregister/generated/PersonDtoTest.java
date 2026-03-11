@@ -229,32 +229,33 @@ public class PersonDtoTest {
 
         // validate the dto using Bean Validation
         Set<ConstraintViolation<Object>> constraintValidator =
-            Validation.byDefaultProvider()
-                .configure()
-                .buildValidatorFactory()
-                .getValidator()
-                .validate((Object) contactDetails);
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) contactDetails);
 
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         Assertions.assertEquals(4, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-            listConstraint, "addressLine1",
-            "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint,
+                "addressLine1",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
-            listConstraint, "addressLine5",
-            "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint,
+                "addressLine5",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
-            listConstraint, "postcode",
-            "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+                listConstraint,
+                "postcode",
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
         ConstraintAssertion.assertPropertyValue(
-            listConstraint, "mobile",
-            "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\""
-        );
+                listConstraint, "mobile", "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\"");
         ConstraintAssertion.assertPropertyValue(
-            listConstraint,
-            "postcode",
-            "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+                listConstraint,
+                "postcode",
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
     }
 
     @Test
@@ -291,13 +292,9 @@ public class PersonDtoTest {
                 "thirdForename",
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "surname",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "surname", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "title",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "title", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
 
     @Test
@@ -322,9 +319,7 @@ public class PersonDtoTest {
         // assert
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "surname",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "surname", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
 
     @Test
@@ -353,8 +348,6 @@ public class PersonDtoTest {
         // assert
         Assertions.assertEquals(1, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
-                listConstraint,
-                "name",
-                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+                listConstraint, "name", "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
 }
