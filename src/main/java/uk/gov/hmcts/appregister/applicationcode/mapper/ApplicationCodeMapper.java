@@ -152,7 +152,7 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "code")
     @Mapping(target = "title", source = "title")
-    public abstract ApplicationCode toEntity(String code, String title);
+    public abstract ApplicationCode toEntity(CodeAndTitle record);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "payloadForGet.code")

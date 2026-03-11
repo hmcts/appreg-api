@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
+import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -84,16 +85,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             appTitle,
                             pageable);
 
-                    AuditableResult<ApplicationCodePage, ApplicationCode> result;
-                    if (appCode == null && appTitle == null) {
-                        result =
-                                new AuditableResult<>(
-                                        newPage, applicationCodeMapper.toEntity("", ""));
-                    } else {
-                        result =
-                                new AuditableResult<>(
-                                        newPage, applicationCodeMapper.toEntity(appCode, appTitle));
-                    }
+                    CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
+                    AuditableResult<ApplicationCodePage, ApplicationCode> result =
+                            new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
+
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
