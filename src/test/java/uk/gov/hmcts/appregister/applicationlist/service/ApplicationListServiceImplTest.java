@@ -176,6 +176,7 @@ public class ApplicationListServiceImplTest {
     void setUp() {
         service =
                 new ApplicationListServiceImpl(
+                        20,
                         repository,
                         aleRepository,
                         alerRepository,

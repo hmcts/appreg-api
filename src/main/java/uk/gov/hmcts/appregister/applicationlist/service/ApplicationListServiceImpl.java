@@ -10,7 +10,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -78,8 +77,7 @@ import uk.gov.hmcts.appregister.generated.model.Official;
 public class ApplicationListServiceImpl implements ApplicationListService {
     private static final long ZERO_ENTITIES = 0L;
 
-    @Value("${app.app-list-max-searchable-entries}")
-    private int appListMaxSearchableEntities;
+    private final int appListMaxSearchableEntities;
 
     // Repositories
     private final ApplicationListRepository repository;
@@ -437,6 +435,11 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                     pageable.getPageable());
 
                     if (dbPage.getTotalElements() > appListMaxSearchableEntities) {
+                        log.warn(
+                                "Search for application lists with filter {} returned {} results, exceeding the configured maximum of {}.",
+                                getDto,
+                                dbPage.getTotalElements(),
+                                appListMaxSearchableEntities);
                         throw new AppRegistryException(
                                 ApplicationListError.TOO_MANY_RESULTS,
                                 "Too many results to return: %d/%d. Please narrow your search criteria."

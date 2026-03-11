@@ -27,6 +27,9 @@ public class AppConfig implements WebMvcConfigurer {
     @Value("${app.timezone:Europe/London}")
     private String timezone;
 
+    @Value("${app.app-list-max-searchable-entries:1000}")
+    private int appListMaxSearchableEntities;
+
     /**
      * Allows the clock to be modified so that we can test time sensitive code.
      *
@@ -45,6 +48,11 @@ public class AppConfig implements WebMvcConfigurer {
     @Bean
     public ZoneId ukZone() {
         return ZoneId.of(timezone);
+    }
+
+    @Bean
+    public int getAppListMaxSearchableEntities() {
+        return Math.max(1, appListMaxSearchableEntities);
     }
 
     @Value("${appreg.audit.diff.enable-complex-diff}")
