@@ -82,6 +82,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
 import uk.gov.hmcts.appregister.data.AppListEntryOfficialTestData;
@@ -98,6 +99,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
 class ApplicationListEntryMapperTest {
@@ -578,9 +580,15 @@ class ApplicationListEntryMapperTest {
 
         ApplicationCode code = applicationCodeTestData.someComplete();
         code.setWording(
-                "Test template {TEXT|Applicant officer1|10} and second template "
-                        + "{TEXT|Applicant officer2|10} and third template {TEXT|Applicant officer3|10}");
+                "Test template {TEXT|Applicant officer1|11} and second template "
+                        + "{TEXT|Applicant officer2|11} and third template {TEXT|Applicant officer3|11}");
 
+        appListEntry.setApplicationListEntryWording(
+                "Test template {officerVal1} and second template "
+                        + "{officerVal2} and third\" +\n"
+                        + "                            \"template {officerVal3}");
+
+        appListEntry.setApplicationCode(code);
         AppListEntryFeeStatusTestData statusTestData = new AppListEntryFeeStatusTestData();
 
         appListEntry.setApplicationCode(code);
@@ -605,6 +613,8 @@ class ApplicationListEntryMapperTest {
 
         // execute the mapping
         mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
         EntryGetDetailDto entryGetDetailDto =
                 mapper.toEntryGetDetailDto(
                         appListEntry,
@@ -730,10 +740,74 @@ class ApplicationListEntryMapperTest {
                         .getContactDetails()
                         .getAddressLine5());
 
-        Assertions.assertEquals(3, entryGetDetailDto.getWordingFields().size());
-        Assertions.assertEquals("Applicant officer1", entryGetDetailDto.getWordingFields().get(0));
-        Assertions.assertEquals("Applicant officer2", entryGetDetailDto.getWordingFields().get(1));
-        Assertions.assertEquals("Applicant officer3", entryGetDetailDto.getWordingFields().get(2));
+        Assertions.assertEquals(
+                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Applicant officer1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "Applicant officer2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                "Applicant officer3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
+        Assertions.assertEquals(
+                "officerVal1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+        Assertions.assertEquals(
+                "officerVal2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
+        Assertions.assertEquals(
+                "officerVal3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
+        Assertions.assertEquals(
+                11,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                11,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                11,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getType());
 
         Assertions.assertEquals(2, entryGetDetailDto.getOfficials().size());
         Assertions.assertEquals(
@@ -800,10 +874,17 @@ class ApplicationListEntryMapperTest {
                         + "{TEXT|Applicant officer2|10} and third\" +\n"
                         + "                            \"template {TEXT|Applicant officer3|10}");
 
+        appListEntry.setApplicationListEntryWording(
+                "Test template {officer1} and second template "
+                        + "{officer2} and third\" +\n"
+                        + "                            \"template {officer3}");
+
         appListEntry.setApplicationCode(code);
 
         // execute the mapping
         mapper.setApplicantMapper(new ApplicantMapperImpl());
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
         EntryGetDetailDto entryGetDetailDto = mapper.toEntryGetDetailDto(appListEntry, false);
 
         // assert on the main application list entry data
@@ -825,10 +906,74 @@ class ApplicationListEntryMapperTest {
                 appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
         // validate the wording
-        Assertions.assertEquals(3, entryGetDetailDto.getWordingFields().size());
-        Assertions.assertEquals("Applicant officer1", entryGetDetailDto.getWordingFields().get(0));
-        Assertions.assertEquals("Applicant officer2", entryGetDetailDto.getWordingFields().get(1));
-        Assertions.assertEquals("Applicant officer3", entryGetDetailDto.getWordingFields().get(2));
+        Assertions.assertEquals(
+                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Applicant officer1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "Applicant officer2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                "Applicant officer3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
+        Assertions.assertEquals(
+                "officer1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+        Assertions.assertEquals(
+                "officer2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
+        Assertions.assertEquals(
+                "officer3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getType());
 
         // validate the officials
         Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
@@ -878,12 +1023,17 @@ class ApplicationListEntryMapperTest {
         ApplicationCode code = applicationCodeTestData.someComplete();
         code.setWording(
                 "Test template {TEXT|Applicant officer1|10} and second template "
-                        + "{TEXT|Applicant officer2|10} and third\" +\n"
-                        + "                            \"template {TEXT|Applicant officer3|10}");
+                        + "{TEXT|Applicant officer2|20} and third\" +\n"
+                        + "                            \"template {TEXT|Applicant officer3|30}");
 
+        appListEntry.setApplicationListEntryWording(
+                "Test template {officeVal1} and second template "
+                        + "{officeVal2} and third\" +\n"
+                        + "                            \"template {officeVal3}");
         appListEntry.setApplicationCode(code);
 
         // execute the mapping
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         EntryGetDetailDto entryGetDetailDto = mapper.toEntryGetDetailDto(appListEntry, false);
 
@@ -906,10 +1056,74 @@ class ApplicationListEntryMapperTest {
         validateRespondentPerson(appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
         // validate the wording
-        Assertions.assertEquals(3, entryGetDetailDto.getWordingFields().size());
-        Assertions.assertEquals("Applicant officer1", entryGetDetailDto.getWordingFields().get(0));
-        Assertions.assertEquals("Applicant officer2", entryGetDetailDto.getWordingFields().get(1));
-        Assertions.assertEquals("Applicant officer3", entryGetDetailDto.getWordingFields().get(2));
+        Assertions.assertEquals(
+                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Applicant officer1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "Applicant officer2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                "Applicant officer3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
+        Assertions.assertEquals(
+                "officeVal1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+        Assertions.assertEquals(
+                "officeVal2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
+        Assertions.assertEquals(
+                "officeVal3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                20,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                30,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getType());
 
         // validate the officials
         Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());
@@ -964,6 +1178,13 @@ class ApplicationListEntryMapperTest {
 
         appListEntry.setApplicationCode(code);
 
+        appListEntry.setApplicationListEntryWording(
+                "Test template {officeVal1} and second template "
+                        + "{officeVal2} and third\" +\n"
+                        + "                            \"template {officeVal3}");
+
+        mapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
         // execute the mapping
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         EntryGetDetailDto entryGetDetailDto = mapper.toEntryGetDetailDto(appListEntry, false);
@@ -987,10 +1208,74 @@ class ApplicationListEntryMapperTest {
         validateRespondentPerson(appListEntry.getRnameaddress(), entryGetDetailDto.getRespondent());
 
         // validate the wording
-        Assertions.assertEquals(3, entryGetDetailDto.getWordingFields().size());
-        Assertions.assertEquals("Applicant officer1", entryGetDetailDto.getWordingFields().get(0));
-        Assertions.assertEquals("Applicant officer2", entryGetDetailDto.getWordingFields().get(1));
-        Assertions.assertEquals("Applicant officer3", entryGetDetailDto.getWordingFields().get(2));
+        Assertions.assertEquals(
+                3, entryGetDetailDto.getWording().getSubstitutionKeyConstraints().size());
+        Assertions.assertEquals(
+                "Applicant officer1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                "Applicant officer2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getKey());
+        Assertions.assertEquals(
+                "Applicant officer3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getKey());
+        Assertions.assertEquals(
+                "officeVal1",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(0).getValue());
+        Assertions.assertEquals(
+                "officeVal2",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(1).getValue());
+        Assertions.assertEquals(
+                "officeVal3",
+                entryGetDetailDto.getWording().getSubstitutionKeyConstraints().get(2).getValue());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                10,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(1)
+                        .getConstraint()
+                        .getType());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                entryGetDetailDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(2)
+                        .getConstraint()
+                        .getType());
 
         // validate the officials
         Assertions.assertFalse(entryGetDetailDto.getOfficials().isEmpty());

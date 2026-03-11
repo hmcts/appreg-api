@@ -42,6 +42,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
@@ -53,6 +54,7 @@ public class ApplicationCodeServiceImplTest {
 
     @Mock private ApplicationCodeRepository repository;
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
+
     @Mock private ApplicationFeeService feeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -104,6 +106,8 @@ public class ApplicationCodeServiceImplTest {
                         .build();
         dummyGetApplicationCodeValidator.setSuccess(success);
 
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
                 applicationCodeService.findByCode(payloadForGet);
@@ -132,6 +136,8 @@ public class ApplicationCodeServiceImplTest {
         String code = "code";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
         when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -175,6 +181,8 @@ public class ApplicationCodeServiceImplTest {
         String title = "title";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
         when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
@@ -220,6 +228,8 @@ public class ApplicationCodeServiceImplTest {
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
         when(repository.search(code, title, todayUk, criteria)).thenReturn(results);
 
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
                 applicationCodeService.findAll(
@@ -260,6 +270,8 @@ public class ApplicationCodeServiceImplTest {
                         4);
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
         when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =

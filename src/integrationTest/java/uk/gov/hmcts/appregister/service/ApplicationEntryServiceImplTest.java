@@ -152,6 +152,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListEntry,
                             response.getPayload(),
                             "Request to copy documents",
+                            "Request to copy documents",
                             List.of());
                 });
     }
@@ -219,11 +220,13 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
-                            "Attends to swear a complaint for the issue of "
-                                    + "a summons for the debtor to answer an application for a "
-                                    + "liability order in relation to unpaid council tax (reference"
-                                    + " {test wording})",
-                            List.of("Reference"));
+                            "Attends to swear a complaint for the issue of a summons for "
+                                    + "the debtor to answer an application for a liability order in relation to unpaid "
+                                    + "council tax (reference {test wording})",
+                            "Attends to swear a complaint for the issue of a summons"
+                                    + " for the debtor to answer an application for a liability order in"
+                                    + " relation to unpaid council tax (reference {{Reference}})",
+                            List.of(substitution));
                 });
     }
 
@@ -337,6 +340,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
                 applicationListEntry.get(),
                 update.getPayload(),
+                "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
                 feeStatusBeforeUpdate);
@@ -463,7 +467,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at {value} for date {"
                         + LocalDate.now()
                         + "}",
-                List.of("Premises Address", "Premises Date"),
+                "Application for a warrant to enter premises at {{Premises Address}} "
+                        + "for date {{Premises Date}}",
+                entryUpdateDto.getWordingFields(),
                 feeStatusBeforeUpdate);
     }
 
@@ -578,7 +584,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " premises at {value} for date {"
                         + LocalDate.now()
                         + "}",
-                List.of("Premises Address", "Premises Date"),
+                "Application for a warrant to enter premises at "
+                        + "{{Premises Address}} for date {{Premises Date}}",
+                List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
                 feeStatusBeforeUpdate);
     }
 
@@ -692,7 +700,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Attends to swear a complaint for the issue of a summons for the "
                         + "debtor to answer an application for a liability order in relation "
                         + "to unpaid council tax (reference {test wording})",
-                List.of("Reference"),
+                "Attends to swear a complaint for the issue of a summons for the debtor"
+                        + " to answer an application for a liability order in relation to unpaid council tax "
+                        + "(reference {{Reference}})",
+                updateDto.getWordingFields(),
                 feeStatusBeforeUpdate);
     }
 
@@ -773,7 +784,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                                     + "r premises at {test wording} for date {"
                                     + LocalDate.now()
                                     + "}",
-                            List.of("Premises Address", "Premises Date"));
+                            "Application for a warrant to enter premises at "
+                                    + "{{Premises Address}} for date {{Premises Date}}",
+                            entryCreateDto.getWordingFields());
                 });
 
         return response.getPayload().getId();
@@ -836,6 +849,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
+                            "Request to copy documents",
                             "Request to copy documents",
                             List.of());
                 });

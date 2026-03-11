@@ -20,6 +20,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
  * A useful assertion class for the create/update application entry functionality. This class aims
@@ -55,12 +56,14 @@ public class ApplicationListEntryAssertion {
             ApplicationListEntryWrapperDto entryCreateDto,
             ApplicationListEntry applicationListEntry,
             EntryGetDetailDto response,
+            String assertWordingApplied,
             String assertWording,
-            List<String> expectedWordingFields) {
+            List<TemplateSubstitution> expectedWordingFields) {
         validateEntityAndResponseForEntryUpdate(
                 entryCreateDto,
                 applicationListEntry,
                 response,
+                assertWordingApplied,
                 assertWording,
                 expectedWordingFields,
                 List.of());
@@ -85,8 +88,9 @@ public class ApplicationListEntryAssertion {
             ApplicationListEntryWrapperDto entryCreateUpdateDto,
             ApplicationListEntry applicationListEntry,
             EntryGetDetailDto response,
+            String assertWordingApplied,
             String assertWording,
-            List<String> expectedWordingFields,
+            List<TemplateSubstitution> expectedWordingFields,
             List<Long> existingFeeStatuses) {
 
         // validate applicant with the dto
@@ -166,7 +170,7 @@ public class ApplicationListEntryAssertion {
 
         // assert that the wording template in the code has been processed correctly
         Assertions.assertEquals(
-                assertWording, applicationListEntry.getApplicationListEntryWording());
+                assertWordingApplied, applicationListEntry.getApplicationListEntryWording());
 
         // validate the fees are created in the database and they are aligned with offsite
         List<AppListEntryFeeStatus> fees =
@@ -292,7 +296,8 @@ public class ApplicationListEntryAssertion {
                 entryCreateUpdateDto.getAccountNumber(), response.getAccountNumber());
 
         // lets assert that the response should contain the wording template fields
-        Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
+        TemplateAssertion.assertTemplateWithValues(
+                assertWording, expectedWordingFields, response.getWording());
 
         Assertions.assertEquals(
                 applicationListEntry.getApplicationList().getUuid(), response.getListId());

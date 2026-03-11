@@ -5,8 +5,11 @@ import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +24,8 @@ import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -29,6 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -42,6 +48,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
@@ -53,6 +60,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 
 @Component
@@ -69,6 +77,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
+
+    private final MoveEntriesValidator moveEntriesValidator;
 
     // Services
     private final MatchService matchService;
@@ -795,6 +805,32 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     return MatchResponse.of(
                             dto, getKeyablesForCreateUpdateEtag(success.getApplicationListEntry()));
                 });
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
+        ApplicationList targetList =
+                moveEntriesValidator
+                        .withSourceList(sourceListId)
+                        .validate(moveEntriesDto, (req, success) -> success.getTargetList());
+
+        Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
+
+        int rowsUpdated =
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        requestedIds, targetList, sourceListId);
+
+        if (rowsUpdated != requestedIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                    "One or more entries were not found in the source list");
+        }
+
+        log.info(
+                "Completed bulk move for {} entries from list {}",
+                requestedIds.size(),
+                sourceListId);
     }
 
     /**

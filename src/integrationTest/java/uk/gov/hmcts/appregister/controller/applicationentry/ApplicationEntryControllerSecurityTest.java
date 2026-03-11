@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -57,6 +59,21 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                                                 + UUID.randomUUID()))
                         .method(HttpMethod.GET)
                         .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries/move"))
+                        .method(HttpMethod.POST)
+                        .payload(
+                                new MoveEntriesDto()
+                                        .targetListId(UUID.randomUUID())
+                                        .entryIds(Set.of(UUID.randomUUID())))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());

@@ -1,5 +1,5 @@
 type: object
-description: The template details
+description: The wording details
 required: [template]
 properties:
     template:

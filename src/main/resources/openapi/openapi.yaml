@@ -10,10 +10,6 @@ info:
   # entries elsewhere in the file and will break the build.
   version: "@version@"
 tags:
-  - name: actions
-    description:
-      Task-based operations that perform domain-specific actions across one or more resources, such as rescheduling,
-      moving, bulk uploads, or bulk result submissions.
   - name: application-codes
     description:
       Application Codes are reference data, not managed in App Reg. They are required to provide a set repeatable data
@@ -54,10 +50,9 @@ tags:
       time they create applications.
 
 paths:
-  # ACTIONS
-  /application-lists/{listId}/entries/results:                      { $ref: './paths/actions/entries-bulk-result.yaml' }
-  /application-lists/{listId}/entries/bulk-upload:                  { $ref: './paths/actions/entries-bulk-upload.yaml' }
-  /application-lists/{listId}/entries/move:                         { $ref: './paths/actions/entries-move.yaml' }
+  # ADMINISTRATIVE JOBS
+  /admin/jobs/{jobId}:                                              { $ref: './paths/admin/jobs/jobs-by-id.yaml' }
+  /admin/jobs/{jobType}:                                            { $ref: './paths/admin/jobs/run-background-job.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }
   /application-codes/{code}:                                        { $ref: './paths/application-codes/application-codes-by-code.yaml' }
@@ -69,7 +64,10 @@ paths:
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
   /application-lists/{listId}/entries/{entryId}:                    { $ref: './paths/application-list-entries/application-list-entries-by-id.yaml' }
+  /application-lists/{listId}/entries/bulk-import:                  { $ref: './paths/application-list-entries/entries-bulk-import.yaml' }
+  /application-lists/{listId}/entries/move:                         { $ref: './paths/application-list-entries/entries-move.yaml' }
   # APPLICATION LIST ENTRY RESULTS
+  /application-lists/{listId}/entries/results:                      { $ref: './paths/application-list-entry-results/entries-bulk-result.yaml' }
   /application-lists/{listId}/entries/{entryId}/results:            { $ref: './paths/application-list-entry-results/application-list-entry-results.yaml' }
   /application-lists/{listId}/entries/{entryId}/results/{resultId}: { $ref: './paths/application-list-entry-results/application-list-entry-results-by-id.yaml' }
   # COURT LOCATIONS

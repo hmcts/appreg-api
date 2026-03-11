@@ -11,6 +11,10 @@ properties:
     type: string
     description: Code that identifies the Standard Applicant.
 
+  name:
+    type: string
+    description: Name of the Standard Applicant.
+
   applicant:
     $ref: '../participants/applicant.yaml'
 

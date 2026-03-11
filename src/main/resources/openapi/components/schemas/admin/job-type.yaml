@@ -1,0 +1,6 @@
+type: string
+description: The type of the administrative background job
+enum:
+  - CLEAR_EXPIRED_DATA
+  - RESYNC_REFERENCE_DATA
+example: CLEAR_EXPIRED_DATA

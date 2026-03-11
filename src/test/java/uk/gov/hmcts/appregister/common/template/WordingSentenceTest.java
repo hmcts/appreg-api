@@ -31,14 +31,16 @@ public class WordingSentenceTest {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
+        Assertions.assertNotNull(templateSentence.getKeysToBeSubstituted());
         Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
-
+        templateSentence.getKeysToBeSubstituted();
         Assertions.assertEquals(
                 "Application by {{Applicant officer}} for a "
                         + "production ord covering {{No.of accounts}} accounts(s) requiring the respondent to "
                         + "either produce or allow access to material that is in their possession or control for the "
                         + "purpose of a relevant investigation",
                 templateSentence.getDetail().getTemplate());
+
         Assertions.assertEquals(
                 "Applicant officer",
                 templateSentence.getDetail().getSubstitutionKeyConstraints().get(0).getKey());

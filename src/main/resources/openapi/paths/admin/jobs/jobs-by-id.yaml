@@ -1,0 +1,27 @@
+get:
+  operationId: getJobStatus
+  tags: [ admin-jobs ]
+  summary: Get the status of a background job being processed in an administative context.
+  description: Returns the current status and details of a background job.
+  parameters:
+    - name: jobId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+      description: The unique identifier of the job.
+  responses:
+    "200":
+      description: Job status retrieved successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string }
+          example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            $ref: "../../../components/schemas/admin/job-acknowledgement.yaml"
+    "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../..//components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../../components/responses/internal-server-error.yaml" }

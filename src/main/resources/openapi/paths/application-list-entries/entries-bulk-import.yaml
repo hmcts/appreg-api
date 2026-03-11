@@ -7,7 +7,7 @@ parameters:
 
 post:
   operationId: bulkUploadApplicationListEntries
-  tags: [ actions ]
+  tags: [ application-list-entries ]
   summary: Start an asynchronous bulk upload of entries via CSV.
   description: >
     Enqueues a background job that validates the CSV and, if valid, atomically inserts

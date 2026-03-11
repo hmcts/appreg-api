@@ -66,7 +66,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         validateEntryCreationResponse(
                 entryCreateDto,
                 createdDto.getDetailDto(),
-                List.of("Premises Address", "Premises Date"));
+                "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
 
         EntryPage page = findEntriesBySurname(tokenGenerator, surnameToLookup, 10, 0);
 
@@ -137,7 +137,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
-        validateEntryCreationResponse(entryCreateDto, createdDto.getDetailDto(), List.of());
+        validateEntryCreationResponse(
+                entryCreateDto,
+                createdDto.getDetailDto(),
+                "This is a test enforcement fine with no wording template substitution required");
 
         EntryPage page = findEntriesBySurname(tokenGenerator, surnameToLookup, 10, 0);
 
@@ -207,7 +210,11 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
-        validateEntryCreationResponse(entryCreateDto, createdDto.getDetailDto(), List.of());
+        validateEntryCreationResponse(
+                entryCreateDto,
+                createdDto.getDetailDto(),
+                "Request for a certificate of satisfaction of "
+                        + "debt registered in the register of judgements, orders and fines");
     }
 
     @Test

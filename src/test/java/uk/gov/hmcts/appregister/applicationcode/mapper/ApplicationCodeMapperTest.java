@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
@@ -38,10 +39,31 @@ public class ApplicationCodeMapperTest {
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
         // assert
+        Assertions.assertEquals(
+                "Specify Document Lost",
+                summaryDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                100,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+
         Assertions.assertEquals(
                 "namely {{Specify Document Lost}}", summaryDto.getWording().getTemplate());
         Assertions.assertEquals(
@@ -89,6 +111,9 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, null, null);
 
@@ -123,6 +148,9 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, fee, offsetfee);
 
@@ -152,6 +180,9 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, null, null);
 
@@ -188,6 +219,9 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("x");
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
 
         var dtoMin = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, min, null);
         var dtoMax = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, max, null);

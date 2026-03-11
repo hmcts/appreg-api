@@ -7,7 +7,7 @@ parameters:
 
 post:
   operationId: bulkResultApplicationListEntries
-  tags: [ actions ]
+  tags: [ application-list-entry-results ]
   summary: Create the same Result for multiple entries in an Application List.
   description: >
     Atomically creates a **separate Result** for each specified entry in the **source**
@@ -18,7 +18,7 @@ post:
     content:
       application/vnd.hmcts.appreg.v1+json:
         schema:
-          $ref: "../../components/schemas/actions/bulk-result-dto.yaml"
+          $ref: "../../components/schemas/application-list-entry-results/bulk-result-dto.yaml"
   responses:
     "204":
       description: Results created for all entries. No response body.
