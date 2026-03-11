@@ -149,7 +149,7 @@ public class PersonDtoTest {
     }
 
     @Test
-    void testPersonContactDetailsRegex() throws Exception {
+    void testPersonContactDetailsRegexFailure() throws Exception {
         ContactDetails contactDetails = new ContactDetails();
         contactDetails.setAddressLine1("Test Address Line 1\t");
         contactDetails.setAddressLine2(JsonNullable.of("Test Address Line 2\n"));
@@ -210,5 +210,151 @@ public class PersonDtoTest {
                         + "+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))"
                         + "@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|"
                         + "(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$\"");
+    }
+
+    @Test
+    void testPersonContactDetailsPartialFailure() throws Exception {
+        ContactDetails contactDetails = new ContactDetails();
+        contactDetails.setAddressLine1("Test Address Line 1\t");
+        contactDetails.setAddressLine2(JsonNullable.of("Test Address Line 2"));
+        contactDetails.setAddressLine3(JsonNullable.of("Test Address Line 3"));
+        contactDetails.setAddressLine4(JsonNullable.of("Test Address Line 4"));
+        contactDetails.setAddressLine5(JsonNullable.of("Test Address Line 5\r\n"));
+        contactDetails.setPostcode("AA1 1AA\t");
+
+        contactDetails.setPhone(JsonNullable.of("01234567890"));
+        contactDetails.setMobile(JsonNullable.of("@4472567890"));
+
+        contactDetails.setEmail(JsonNullable.of("test@test.com"));
+
+        // validate the dto using Bean Validation
+        Set<ConstraintViolation<Object>> constraintValidator =
+            Validation.byDefaultProvider()
+                .configure()
+                .buildValidatorFactory()
+                .getValidator()
+                .validate((Object) contactDetails);
+
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        Assertions.assertEquals(4, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+            listConstraint, "addressLine1",
+            "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+            listConstraint, "addressLine5",
+            "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+            listConstraint, "postcode",
+            "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+        ConstraintAssertion.assertPropertyValue(
+            listConstraint, "mobile",
+            "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\""
+        );
+        ConstraintAssertion.assertPropertyValue(
+            listConstraint,
+            "postcode",
+            "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+    }
+
+    @Test
+    void testPersonFullNameRegexFailure() throws Exception {
+        FullName fullName = new FullName();
+        fullName.setFirstForename("Test First Forename\t");
+        fullName.setSecondForename(JsonNullable.of("Test Second Forename\n"));
+        fullName.setThirdForename(JsonNullable.of("Test Third Forename\r"));
+        fullName.setSurname("Test Surname\0");
+        fullName.setTitle("Test Title\r\n");
+
+        // validate the dto using Bean Validation
+        Set<ConstraintViolation<Object>> constraintValidator =
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) fullName);
+
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        // assert
+        Assertions.assertEquals(5, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "firstForename",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "secondForename",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "thirdForename",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "surname",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "title",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+    }
+
+    @Test
+    void testPersonFullNamePartialRegexFailure() throws Exception {
+        FullName fullName = new FullName();
+        fullName.setFirstForename("Test First Forename");
+        fullName.setSecondForename(JsonNullable.of("Test Second Forename"));
+        fullName.setThirdForename(JsonNullable.of("Test Third Forename"));
+        fullName.setSurname("Test Surname\0");
+        fullName.setTitle("Test Title");
+
+        // validate the dto using Bean Validation
+        Set<ConstraintViolation<Object>> constraintValidator =
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) fullName);
+
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        // assert
+        Assertions.assertEquals(1, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "surname",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+    }
+
+    @Test
+    void testOrganisationNameRegexFailure() throws Exception {
+        Organisation organisation = new Organisation();
+        organisation.setContactDetails(new ContactDetails());
+
+        organisation.getContactDetails().setAddressLine1("Test Address Line 1");
+        organisation.getContactDetails().setPostcode("AB12 3AA");
+        organisation.getContactDetails().setPhone(JsonNullable.of("01234456789"));
+        organisation.getContactDetails().setMobile(JsonNullable.of("07123456789"));
+        organisation.getContactDetails().setEmail(JsonNullable.of("contact@test.com"));
+
+        organisation.setName("Test Organisation Name\t");
+
+        // validate the dto using Bean Validation
+        Set<ConstraintViolation<Object>> constraintValidator =
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) organisation);
+
+        List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
+
+        // assert
+        Assertions.assertEquals(1, constraintValidator.size());
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "name",
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
     }
 }
