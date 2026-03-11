@@ -9,6 +9,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
@@ -27,24 +28,25 @@ public class PersonDtoTest {
 
     @Test
     void testPersonEmptyStrings() throws Exception {
+        JsonNullable<String> emptyNullable = JsonNullable.of("");
         FullName fullName = new FullName();
         fullName.setSurname("");
         fullName.setFirstForename("");
         fullName.setTitle("");
-        fullName.setThirdForename("");
-        fullName.setSecondForename("");
+        fullName.setThirdForename(emptyNullable);
+        fullName.setSecondForename(emptyNullable);
 
         Person person = new Person();
         person.setName(fullName);
 
         ContactDetails contactDetails = new ContactDetails();
-        contactDetails.setEmail("");
+        contactDetails.setEmail(emptyNullable);
         contactDetails.setPostcode("");
         contactDetails.setAddressLine1("");
-        contactDetails.setAddressLine2("");
-        contactDetails.setAddressLine3("");
-        contactDetails.setAddressLine4("");
-        contactDetails.setAddressLine5("");
+        contactDetails.setAddressLine2(emptyNullable);
+        contactDetails.setAddressLine3(emptyNullable);
+        contactDetails.setAddressLine4(emptyNullable);
+        contactDetails.setAddressLine5(emptyNullable);
 
         person.setContactDetails(contactDetails);
 
@@ -59,7 +61,7 @@ public class PersonDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(12, constraintValidator.size());
+        Assertions.assertEquals(13, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "name.surname", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
@@ -87,21 +89,28 @@ public class PersonDtoTest {
                 listConstraint, "contactDetails.addressLine5", "size must be between 1 and 35");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.addressLine3", "size must be between 1 and 35");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "contactDetails.postcode", "size must be between 1 and 8");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "contactDetails.postcode",
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
     }
 
     @Test
     void testOrganisationEmptyStrings() throws Exception {
+        JsonNullable<String> emptyNullable = JsonNullable.of("");
         Organisation organisation = new Organisation();
         organisation.setName("");
 
         ContactDetails contactDetails = new ContactDetails();
-        contactDetails.setEmail("");
+        contactDetails.setEmail(emptyNullable);
         contactDetails.setPostcode("");
         contactDetails.setAddressLine1("");
-        contactDetails.setAddressLine2("");
-        contactDetails.setAddressLine3("");
-        contactDetails.setAddressLine4("");
-        contactDetails.setAddressLine5("");
+        contactDetails.setAddressLine2(emptyNullable);
+        contactDetails.setAddressLine3(emptyNullable);
+        contactDetails.setAddressLine4(emptyNullable);
+        contactDetails.setAddressLine5(emptyNullable);
 
         organisation.setContactDetails(contactDetails);
 
@@ -116,13 +125,11 @@ public class PersonDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(8, constraintValidator.size());
+        Assertions.assertEquals(9, constraintValidator.size());
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "name", "size must be between 1 and 100");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.addressLine4", "size must be between 1 and 35");
-        ConstraintAssertion.assertPropertyValue(
-                listConstraint, "contactDetails.postcode", "size must be between 1 and 8");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.email", "size must be between 1 and 253");
         ConstraintAssertion.assertPropertyValue(
@@ -133,5 +140,11 @@ public class PersonDtoTest {
                 listConstraint, "contactDetails.addressLine5", "size must be between 1 and 35");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "contactDetails.addressLine3", "size must be between 1 and 35");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint, "contactDetails.postcode", "size must be between 1 and 8");
+        ConstraintAssertion.assertPropertyValue(
+                listConstraint,
+                "contactDetails.postcode",
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
     }
 }

@@ -54,6 +54,8 @@ public class CreateEntryDtoUtil {
         }
 
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.getRespondent().setOrganisation(null);
+
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -81,7 +83,7 @@ public class CreateEntryDtoUtil {
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
 
-        entryCreateDto.getRespondent().setOrganisation(null);
+        ;
 
         entryCreateDto
                 .getRespondent()

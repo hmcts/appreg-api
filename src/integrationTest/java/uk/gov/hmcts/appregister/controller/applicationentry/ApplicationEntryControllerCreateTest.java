@@ -595,15 +595,25 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
 
         entryCreateDto.getApplicant().setOrganisation(Instancio.create(Organisation.class));
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
         entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
 
         // test the functionality
         Response responseSpecCreate =
@@ -637,7 +647,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
         entryCreateDto.getApplicant().setOrganisation(null);
 
         entryCreateDto.getRespondent().setOrganisation(Instancio.create(Organisation.class));
@@ -645,14 +655,34 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getRespondent()
                 .getOrganisation()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
         entryCreateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
+                .setEmail(JsonNullable.of("RESPONDENT@TEST.COM"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
 
         entryCreateDto.setNumberOfRespondents(10);
         entryCreateDto.setNumberOfRespondents(null);
