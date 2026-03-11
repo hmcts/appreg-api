@@ -126,16 +126,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getAccountReference(),
                                     pageable.getPageable());
 
-        // breaks name into individual and/or organisation parts
-        EntryPage newPage = new EntryPage();
-        pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
+                    // breaks name into individual and/or organisation parts
+                    EntryPage newPage = new EntryPage();
+                    pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
 
-        // Map each entity to a summary DTO and add to the page content
-        resultPage.forEach(
-                entry -> {
-                    newPage.addContentItem(
-                            applicationListEntryMapStructMapper.toEntrySummary(entry));
-                });
+                    // Map each entity to a summary DTO and add to the page content
+                    resultPage.forEach(
+                            entry -> {
+                                newPage.addContentItem(
+                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
+                            });
 
                     log.debug(
                             "Finished: Find Application Entry for criteria: {} with paging: {}",
