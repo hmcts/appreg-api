@@ -814,18 +814,33 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return getEntryValidator.validate(
                 entry,
                 (req, success) -> {
-                    getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
-                    EntryGetDetailDto dto =
-                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                                    success.getApplicationListEntry(),
-                                    hasOffsite(success.getApplicationListEntry()));
-                    log.debug(
-                            "Finished: Getting application list entry detail: {} for list: {}",
-                            entry.getEntryId(),
-                            entry.getListId());
-
-                    return MatchResponse.of(
-                            dto, getKeyablesForCreateUpdateEtag(success.getApplicationListEntry()));
+                    return auditService.processAudit(
+                            null,
+                            AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
+                            (r) -> {
+                                getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
+                                EntryGetDetailDto dto =
+                                        applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                                                success.getApplicationListEntry(),
+                                                hasOffsite(success.getApplicationListEntry()));
+                                log.debug(
+                                        "Finished: Getting application list entry detail: {} for list: {}",
+                                        entry.getEntryId(),
+                                        entry.getListId());
+                                AuditableResult<
+                                                MatchResponse<EntryGetDetailDto>,
+                                                ApplicationListEntry>
+                                        result =
+                                                new AuditableResult<>(
+                                                        MatchResponse.of(
+                                                                dto,
+                                                                getKeyablesForCreateUpdateEtag(
+                                                                        success
+                                                                                .getApplicationListEntry())),
+                                                        applicationListEntryMapStructMapper
+                                                                .toApplicationListEntry(entry));
+                                return Optional.of(result);
+                            });
                 });
     }
 

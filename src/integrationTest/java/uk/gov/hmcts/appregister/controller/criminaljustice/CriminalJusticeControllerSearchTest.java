@@ -284,7 +284,7 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("code,desc", "description,asc"),
+                        List.of("code,desc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new CriminalJusticeAreaFilter(Optional.empty(), Optional.empty()),

@@ -445,7 +445,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.empty(),
                         Optional.empty(),
-                        List.of("title,asc", "code,desc"),
+                        List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
                         new ResultCodeFilter(Optional.empty(), Optional.empty()),

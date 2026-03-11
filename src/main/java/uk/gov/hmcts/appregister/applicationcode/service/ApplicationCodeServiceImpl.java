@@ -45,7 +45,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
