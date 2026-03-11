@@ -436,7 +436,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
                     if (dbPage.getTotalElements() > appListMaxSearchableEntities) {
                         log.warn(
-                                "Search for application lists with filter {} returned {} results, exceeding the configured maximum of {}.",
+                                "Search for application lists with filter {} returned {} results, "
+                                        + "exceeding the configured maximum of {}.",
                                 getDto,
                                 dbPage.getTotalElements(),
                                 appListMaxSearchableEntities);
