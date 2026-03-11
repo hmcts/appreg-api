@@ -1,5 +1,5 @@
 type: object
-description: The organisation making, or responding to, the application.
+description: The organisation making, or responding to, the application. Blank fields will be rejected, nulls should be used instead.
 required:
   - name
   - contactDetails
@@ -14,6 +14,7 @@ properties:
       ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "ACME Industries LTD"
     maxLength: 100
+    minLength: 1
 
   contactDetails:
     $ref: './contact-details.yaml'

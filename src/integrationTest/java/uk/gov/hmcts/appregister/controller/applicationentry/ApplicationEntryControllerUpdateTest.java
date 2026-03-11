@@ -25,11 +25,10 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
-import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
@@ -201,7 +200,85 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // (All your audit assertions can remain here unchanged)
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_id",
+                        "",
+                        "1",
+                        AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName()));
+    }
+
+    @Test
+    public void givenASuccessfulUpdate_whenAllValueAreToBeUpdatedWithEnforcementFines_200Returned()
+            throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setWordingFields(null);
+
+        differenceLogAsserter.clearLogs();
+        differenceLogAsserter.assertNoErrors();
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        entryUpdateDto.setApplicationCode("EF1213");
+        entryUpdateDto.setAccountNumber("1234567890");
+
+        var tokenGenerator = createAdminToken();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+
+        EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        EntryGetDetailDto createDDto = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        validateEntryUpdateResponse(
+                entryUpdateDto, updatedDto, List.of(), createDDto.getFeeStatuses());
+
+        Response responseFindEntrySpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationEntryFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(
+                                        updatedDto
+                                                .getRespondent()
+                                                .getPerson()
+                                                .getName()
+                                                .getSurname()),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseFindEntrySpec.then().statusCode(200);
+
+        EntryPage page = responseFindEntrySpec.as(EntryPage.class);
+        PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
+        Assertions.assertEquals(updatedDto.getId(), page.getContent().getFirst().getId());
+
+        differenceLogAsserter.assertNoErrors();
+
+        // (All your audit assertions can remain here unchanged)
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.CRIMINAL_JUSTICE_AREA,
                         "cja_id",
                         "",
@@ -336,6 +413,42 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         assert problemDetail.getDetail() != null;
         Assertions.assertEquals(
                 "Premises Address=" + stringExceedLength, problemDetail.getDetail().trim());
+    }
+
+    @Test
+    public void
+            givenAnInvalidUpdateEntryRequest_whenEnforcementFineACAndNoAccountNumber_409IsReturned()
+                    throws Exception {
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setWordingFields(null);
+
+        differenceLogAsserter.clearLogs();
+        differenceLogAsserter.assertNoErrors();
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // ensure we fail based on the account number
+        entryUpdateDto.setApplicationCode("EF1213");
+        entryUpdateDto.setAccountNumber(null);
+
+        var tokenGenerator = createAdminToken();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the error
+        Assertions.assertEquals(409, responseSpecUpdate.statusCode());
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                        .getCode()
+                        .getType()
+                        .get(),
+                problemDetail.getType());
     }
 
     @Test

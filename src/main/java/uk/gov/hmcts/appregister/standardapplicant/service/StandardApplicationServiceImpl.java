@@ -11,6 +11,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
@@ -34,6 +35,12 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     @Override
     public StandardApplicantPage findAll(String code, String name, PagingWrapper pageable) {
+
+        log.debug(
+                "Start: Find Standard Applicant for: code: {} name: {} with paging: {}",
+                code,
+                name,
+                pageable);
         // Use today's date to ensure we only return Result Codes that are currently active.
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
@@ -51,10 +58,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                 });
 
         log.debug(
-                "Finished: Find Standard Applicant for: code: {} name: {} with paging: {}",
-                code,
-                name,
-                pageable);
+                "Finished: Find Standard Applicant for {}",
+                ObfuscationUtil.getObfuscatedString(newPage));
         return newPage;
     }
 
@@ -67,7 +72,9 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                         PayloadForGet.builder().date(date).code(code).build(),
                         (id, standardApplicant) -> mapper.toReadGetDto(standardApplicant));
 
-        log.debug("Finish: Find Standard Applicant By Code for: app code: {} date: {}", code, date);
+        log.debug(
+                "Finish: Find Standard Applicant {}",
+                ObfuscationUtil.getObfuscatedString(payloadForGet));
 
         return payloadForGet;
     }

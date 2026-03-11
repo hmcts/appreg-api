@@ -2,7 +2,8 @@
 type: object
 description: >
   Filter criteria for POST /reports/private-prosecutors-index/jobs.
-  Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  Both dateFrom and dateTo are required and are treated as inclusive bounds. Blank fields will be rejected,
+  nulls should be used instead.
 additionalProperties: false
 required:
   - dateFrom
@@ -30,39 +31,46 @@ properties:
     description: Applicant surname (case-insensitive contains match).
     example: "Smith"
     maxLength: 100
+    minLength: 1
 
   applicantFirstName:
     type: string
     description: Applicant first name (case-insensitive contains match).
     example: "John"
     maxLength: 100
+    minLength: 1
 
   applicantOrganisationName:
     type: string
     description: Applicant organisation name (case-insensitive contains match).
     example: "Acme Corp"
     maxLength: 100
+    minLength: 1
 
   standardApplicantName:
     type: string
     description: Standard applicant name (case-insensitive contains match).
     example: "Crown Prosecution Service"
     maxLength: 100
+    minLength: 1
 
   respondentSurname:
     type: string
     description: Respondent surname (case-insensitive contains match).
     example: "Doe"
     maxLength: 100
+    minLength: 1
 
   respondentFirstName:
     type: string
     description: Respondent first name (case-insensitive contains match).
     example: "Jane"
     maxLength: 100
+    minLength: 1
 
   respondentOrganisationName:
     type: string
     description: Respondent organisation name (case-insensitive contains match).
     example: "XYZ Ltd"
     maxLength: 100
+    minLength: 1

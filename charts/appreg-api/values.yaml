@@ -1,6 +1,6 @@
 java:
   applicationPort: 4550
-  image: 'sdshmctspublic.azurecr.io/appreg/api:latest'
+  image: "sdshmctspublic.azurecr.io/appreg/api:latest"
   ingressHost: appreg-api.{{ .Values.global.environment }}.platform.hmcts.net
   aadIdentityName: appreg
   keyVaults:
@@ -26,6 +26,5 @@ java:
           alias: azure-client-secret
         - name: azure-app-id
           alias: AZURE_AUDIENCE_ID
-
-  environment:
-    APPREG_PORTAL_URL: 'https://appreg-frontend-{{ .Values.global.environment }}.platform.hmcts.net'
+appreg-frontend:
+  enabled: false

@@ -1,5 +1,5 @@
 type: object
-description: A participant's contact details.
+description: A participant's contact details. Blank fields will be rejected, nulls should be used instead.
 required:
   - addressLine1
 properties:
@@ -13,6 +13,7 @@ properties:
     nullable: false
     example: "10 Downing Street"
     maxLength: 35
+    minLength: 1
 
   addressLine2:
     type: string
@@ -23,6 +24,7 @@ properties:
     example: "Westminster"
     nullable: true
     maxLength: 35
+    minLength: 1
 
   addressLine3:
     type: string
@@ -33,6 +35,7 @@ properties:
     example: "London"
     nullable: true
     maxLength: 35
+    minLength: 1
 
   addressLine4:
     type: string
@@ -43,6 +46,7 @@ properties:
     example: "Greater London"
     nullable: true
     maxLength: 35
+    minLength: 1
 
   addressLine5:
     type: string
@@ -53,6 +57,7 @@ properties:
     example: "United Kingdom"
     nullable: true
     maxLength: 35
+    minLength: 1
 
   postcode:
     type: string
@@ -61,6 +66,7 @@ properties:
     example: "SW1A 2AA"
     nullable: false
     maxLength: 8
+    minLength: 1
 
   phone:
     type: string
@@ -69,6 +75,7 @@ properties:
     example: "01225 123456"
     nullable: true
     maxLength: 20
+    minLength: 1
 
   mobile:
     type: string
@@ -79,6 +86,7 @@ properties:
     example: "07123456789"
     nullable: true
     maxLength: 20
+    minLength: 1
 
   email:
     type: string
@@ -87,3 +95,4 @@ properties:
     example: "john-doe@gmail.com"
     nullable: true
     maxLength: 253
+    minLength: 1

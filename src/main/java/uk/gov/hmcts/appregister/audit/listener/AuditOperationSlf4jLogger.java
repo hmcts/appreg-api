@@ -48,26 +48,74 @@ public class AuditOperationSlf4jLogger extends AuditOperationLifecycleListenerAd
         log.info("%s {}".formatted(FAILED_CFOMPLETION_AUDIT_LOG), getLog(request));
     }
 
+    /**
+     * The event log.
+     *
+     * @param event The event
+     * @return The log string
+     */
     public static String getLog(BaseAuditEvent event) {
+        return getLog(
+                event.getRequestAction().getEventName(),
+                event.getMessageUuid(),
+                Integer.valueOf(event.getMessageStatus().getStatus()).toString(),
+                event.getMessageContent());
+    }
+
+    /**
+     * gets a log based on the parameters.
+     *
+     * @param eventName The event name
+     * @param messageUuid The message uuid
+     * @param status The status
+     * @param messageContent The message content
+     */
+    public static String getLog(
+            String eventName, String messageUuid, String status, String messageContent) {
         return System.lineSeparator()
                 + "-"
                 + ACTION
                 + "="
-                + event.getRequestAction().getEventName()
+                + eventName
                 + System.lineSeparator()
                 + "-"
                 + MESSAGE_UUID
                 + "="
-                + event.getMessageUuid()
+                + messageUuid
                 + System.lineSeparator()
                 + "-"
                 + STATUS
                 + "="
-                + event.getMessageStatus().getStatus()
+                + status
                 + System.lineSeparator()
                 + "-"
                 + CONTENT
                 + "="
-                + event.getMessageContent();
+                + messageContent;
+    }
+
+    /**
+     * gets a completed log.
+     *
+     * @param eventName The event name
+     * @param messageUuid The message id to log
+     * @param status The status
+     * @param messageContent The message content
+     */
+    public static String getCompletedLog(
+            String eventName, String messageUuid, String status, String messageContent) {
+        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, messageUuid, status, messageContent);
+    }
+
+    /**
+     * gets a returned unknown message id log regex.
+     *
+     * @param eventName The event name
+     * @param status The status
+     * @param messageContent The message content
+     */
+    public static String getCompletedLogWithUnknownMessageIdRegEx(
+            String eventName, String status, String messageContent) {
+        return COMPLETION_AUDIT_LOG + " " + getLog(eventName, ".*", status, messageContent);
     }
 }

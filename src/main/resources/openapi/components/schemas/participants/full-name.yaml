@@ -1,5 +1,5 @@
 type: object
-description: A persons full name.
+description: A persons full name. Blank fields will be rejected, nulls should be used instead.
 required:
   - surname
   - firstForename
@@ -14,6 +14,7 @@ properties:
     description: Prefix before a persons name.
     example: "Mr, Mrs"
     maxLength: 100
+    minLength: 1
 
   surname:
     type: string
@@ -23,6 +24,7 @@ properties:
       ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "Smith"
     maxLength: 100
+    minLength: 1
 
   firstForename:
     type: string
@@ -32,6 +34,7 @@ properties:
       ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "John"
     maxLength: 100
+    minLength: 1
 
   secondForename:
     type: string
@@ -41,6 +44,7 @@ properties:
     pattern: |-
       ^[^\u0000-\u001F\u007F-\u009F]*$
     maxLength: 100
+    minLength: 1
 
   thirdForename:
     type: string
@@ -50,3 +54,4 @@ properties:
     pattern: |-
       ^[^\u0000-\u001F\u007F-\u009F]*$
     maxLength: 100
+    minLength: 1
