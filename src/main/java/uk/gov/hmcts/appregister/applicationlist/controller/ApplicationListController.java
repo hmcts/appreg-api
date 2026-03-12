@@ -95,8 +95,6 @@ public class ApplicationListController implements ApplicationListsApi {
                         .eTag(created.getEtag())
                         .body(created.getPayload());
 
-        log.info(
-                "Create successful for Application List with id: {}", created.getPayload().getId());
         return response;
     }
 
@@ -176,7 +174,6 @@ public class ApplicationListController implements ApplicationListsApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> deleteApplicationList(UUID id) {
         service.delete(id);
-        log.info("Deleted Application List with id: {}", id);
         return ResponseEntity.noContent().build();
     }
 
@@ -239,8 +236,6 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListGetPrintDto> printApplicationList(UUID id) {
 
         ApplicationListGetPrintDto retrieved = service.print(id);
-
-        log.info("Successfully retrieved ApplicationList with id: {}", id);
 
         return ResponseEntity.status(OK).varyBy("Accept").contentType(VND_JSON_V1).body(retrieved);
     }

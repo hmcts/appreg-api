@@ -19,7 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
 public class ApplicationEntryResultControllerUpdateTest
         extends AbstractApplicationEntryResultCrudTest {
@@ -77,7 +77,7 @@ public class ApplicationEntryResultControllerUpdateTest
         differenceLogAsserter.assertNoErrors();
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "al_entry_resolution_wording",
                         null,
@@ -89,7 +89,7 @@ public class ApplicationEntryResultControllerUpdateTest
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "al_entry_resolution_officer",
                         null,
@@ -101,7 +101,7 @@ public class ApplicationEntryResultControllerUpdateTest
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "version",
                         null,

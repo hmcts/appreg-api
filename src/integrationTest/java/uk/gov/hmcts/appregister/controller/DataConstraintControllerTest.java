@@ -82,7 +82,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 "status":400,"detail":"Validation failed for fields:",
                 "instance":"/application-lists",
                 "errors":{"courtLocationCode":
-                "size must be between 0 and 10",
+                "size must be between 1 and 10",
                 "description":"must not be null"}}
             """;
 

@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
-import uk.gov.hmcts.appregister.testutils.util.AuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
 public class ApplicationEntryResultControllerDeleteTest
         extends AbstractApplicationEntryResultCrudTest {
@@ -47,7 +47,7 @@ public class ApplicationEntryResultControllerDeleteTest
         resp.then().statusCode(HttpStatus.NO_CONTENT.value());
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "version",
                         null,
@@ -59,7 +59,7 @@ public class ApplicationEntryResultControllerDeleteTest
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
-                AuditLogAsserter.getDataAuditAssertion(
+                DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
                         "aler_id",
                         null,
