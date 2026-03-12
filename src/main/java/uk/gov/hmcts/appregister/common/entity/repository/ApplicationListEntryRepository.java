@@ -171,10 +171,16 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.date as dateOfAl,
                     ana.name as applicationorganisation,
                     ana.surname as applicantSurname,
-                    CONCAT(COALESCE(ana.surname, ''), ',', COALESCE(ana.name, ''), ',',
-                                COALESCE(ana.title, '')) as applicantName,
-                    CONCAT(COALESCE(rna.surname, ''), ',', COALESCE(rna.name, ''), ',',
-                                COALESCE(rna.title, '')) as respondentName,
+                    CASE WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NOT NULL THEN
+                        CONCAT(ana.surname, ',', ana.forename1, ',', ana.title)
+                    WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NULL THEN
+                        CONCAT(ana.surname, ',', ana.forename1)
+                    END as applicantName,
+                    CASE WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NOT NULL THEN
+                        CONCAT(rna.surname, ',', rna.forename1, ',', rna.title)
+                    WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NULL THEN
+                        CONCAT(rna.surname, ',', rna.forename1)
+                    END as respondentName,
                     rna.name as respondentOrganisation,
                     rna.surname as respondentSurname,
                     rna.postcode as respondentPostcode,
