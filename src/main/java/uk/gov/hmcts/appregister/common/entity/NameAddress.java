@@ -39,7 +39,7 @@ import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
 @ValidNameAddress
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
 
@@ -57,9 +57,11 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private NameAddressCodeType code;
 
     @Column(name = "name")
+    @Audit(action = {CrudEnum.READ})
     private String name;
 
     @Column(name = "title")
+    @Audit(action = {CrudEnum.READ})
     private String title;
 
     @Column(name = "forename_1")
@@ -75,6 +77,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private String forename3;
 
     @Column(name = "surname")
+    @Audit(action = {CrudEnum.READ})
     private String surname;
 
     @Column(name = "address_l1")
@@ -99,6 +102,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
 
     @Column(name = "postcode")
     @Size(max = 8)
+    @Audit(action = {CrudEnum.READ})
     private String postcode;
 
     @Column(name = "email_address")

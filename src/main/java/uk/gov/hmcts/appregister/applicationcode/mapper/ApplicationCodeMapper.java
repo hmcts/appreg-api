@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
@@ -143,4 +144,14 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "title", source = "title")
+    public abstract ApplicationCode toEntity(CodeAndTitle record);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "payloadForGet.code")
+    @Mapping(target = "startDate", source = "payloadForGet.date")
+    public abstract ApplicationCode toEntity(PayloadForGet payloadForGet);
 }

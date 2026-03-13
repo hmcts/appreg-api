@@ -46,6 +46,7 @@ public class ApplicationListEntryAssertion {
      * @param entryCreateDto The entry create dto
      * @param applicationListEntry The application list database entity that was created
      * @param response The response from the service
+     * @param assertWordingApplied The wording with applied values
      * @param assertWording The wording we expect to result from the associated code wording
      *     template
      * @param expectedWordingFields The fields associated with the wording template that we expect

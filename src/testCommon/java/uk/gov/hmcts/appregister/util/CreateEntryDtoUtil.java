@@ -4,11 +4,11 @@ import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 import lombok.experimental.UtilityClass;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
+import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
@@ -54,27 +54,107 @@ public class CreateEntryDtoUtil {
         }
 
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("APPLICANT@TEST.COM");
+                .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
 
-        entryCreateDto.getRespondent().setOrganisation(null);
+        ;
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
                 .getContactDetails()
-                .setEmail("RESPONDENT@TEST.COM");
+                .setEmail(JsonNullable.of("RESPONDENT@TEST.COM"));
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("09876543210"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("01234567890"));
 
         entryCreateDto.setNumberOfRespondents(10);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
-        String surnameToLookup = UUID.randomUUID().toString();
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");

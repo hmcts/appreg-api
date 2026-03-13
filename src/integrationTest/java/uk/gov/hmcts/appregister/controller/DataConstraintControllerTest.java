@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.restassured.response.Response;
@@ -9,14 +10,20 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -34,6 +41,10 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
     private static final String VALID_COURT_CODE = "CCC003";
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+
+    @Autowired protected TransactionalUnitOfWork unitOfWork;
+
+    @Autowired protected ApplicationListRepository applicationListRepository;
 
     @Test
     public void testSizeFailure() throws Exception {
@@ -390,5 +401,266 @@ public class DataConstraintControllerTest extends BaseIntegration {
                         + "/entries\",\"errors\""
                         + ":{\"applicant.person.name.title\":\"size must be between 1 and 100\"}}";
         Assertions.assertEquals(expectedJson, responseSpecCreate.asString());
+    }
+
+    @Test
+    public void testRegexFailureApplicant() throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("TEST\tSURNAME");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("TEST\rSURNAME"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of("TEST\nThird Forename"));
+        entryCreateDto.getApplicant().getPerson().getName().setSurname("TEST SURNAME \0");
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine1("TEST ADDRESS LINE 1");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("TEST ADDRESS LINE 2 \u0000"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of("Testshire \u0001"));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA-A 1AA");
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("-4444A444444"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("TESTPHONE"));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("testemail.com"));
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                APP_LIST_WEB_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(400);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode errorNode = mapper.readTree(responseSpecCreate.getBody().print());
+        Assertions.assertNotNull(errorNode);
+
+        // Name validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.name.surname").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.name.firstForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.name.secondForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.name.thirdForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+
+        // Address validation assertions
+        Assertions.assertEquals(
+                errorNode
+                        .get("errors")
+                        .get("applicant.person.contactDetails.addressLine2")
+                        .asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode
+                        .get("errors")
+                        .get("applicant.person.contactDetails.addressLine5")
+                        .asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.contactDetails.postcode").asText(),
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+
+        // Phone number validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.contactDetails.mobile").asText(),
+                "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.contactDetails.phone").asText(),
+                "must match \"[0-9 \\-]*\"");
+
+        // email validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("applicant.person.contactDetails.email").asText(),
+                "must match \"^((([^<>()\\[\\]\\\\.,;:\\s@\"]+"
+                        + "(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@"
+                        + "((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])"
+                        + "|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$\"");
+    }
+
+    @Test
+    public void testRegexFailureRespondent() throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().getPerson().getName().setFirstForename("TEST\tSURNAME");
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("TEST\rSURNAME"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of("TEST\nThird Forename"));
+        entryCreateDto.getRespondent().getPerson().getName().setSurname("TEST SURNAME \0");
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine1("TEST ADDRESS LINE 1");
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("TEST ADDRESS LINE 2 \u0000"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of("Testshire \u0001"));
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA- 1AA");
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("-4444A444444"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("TESTPHONE"));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("testemail.com"));
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                APP_LIST_WEB_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(400);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode errorNode = mapper.readTree(responseSpecCreate.getBody().print());
+        Assertions.assertNotNull(errorNode);
+
+        // Name validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.name.surname").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.name.firstForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.name.secondForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.name.thirdForename").asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+
+        // Address validation assertions
+        Assertions.assertEquals(
+                errorNode
+                        .get("errors")
+                        .get("respondent.person.contactDetails.addressLine2")
+                        .asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode
+                        .get("errors")
+                        .get("respondent.person.contactDetails.addressLine5")
+                        .asText(),
+                "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.contactDetails.postcode").asText(),
+                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+
+        // Phone number validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.contactDetails.mobile").asText(),
+                "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\"");
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.contactDetails.phone").asText(),
+                "must match \"[0-9 \\-]*\"");
+
+        // email validation assertions
+        Assertions.assertEquals(
+                errorNode.get("errors").get("respondent.person.contactDetails.email").asText(),
+                "must match \"^((([^<>()\\[\\]\\\\.,;:\\s@\"]+"
+                        + "(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@"
+                        + "((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])"
+                        + "|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$\"");
+    }
+
+    protected UUID getOpenApplicationListId() {
+        return unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    return applicationList.getUuid();
+                });
     }
 }

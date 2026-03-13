@@ -49,6 +49,16 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "title", source = "title")
     public abstract ResultCodeGetSummaryDto toSummaryDto(ResolutionCode entity);
 
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "resultCode", source = "code")
+    @Mapping(target = "startDate", source = "date")
+    public abstract ResolutionCode toEntity(String code, LocalDate date);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "resultCode", source = "code")
+    @Mapping(target = "title", source = "title")
+    public abstract ResolutionCode toEntity(CodeAndTitle record);
+
     JsonNullable<LocalDate> map(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.undefined();
     }

@@ -17,12 +17,7 @@ public enum ApplicationListSortFieldEnum implements SortableOperationEnum {
     DATE("date", ApplicationList_.ID, ApplicationList_.DATE),
     TIME("time", ApplicationList_.ID, ApplicationList_.TIME),
     STATUS("status", ApplicationList_.ID, ApplicationList_.STATUS),
-    LOCATION(
-            "location",
-            ApplicationList_.ID,
-            ApplicationList_.COURT_NAME,
-            "cjaDescription",
-            ApplicationList_.OTHER_LOCATION),
+    LOCATION("location", ApplicationList_.ID, "effectiveLocation"),
     ENTRY_COUNT("entriesCount", "id", "entryCount"),
     DESCRIPTION("description", ApplicationList_.ID, ApplicationList_.DESCRIPTION),
     OTHER_LOCATION(

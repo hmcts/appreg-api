@@ -139,6 +139,9 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         } else if (eventEnum.getType().isDelete() && oldValue == null) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old");
+        } else if (eventEnum.getType().isRead() && oldValue != null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Read audit cannot have old entity");
         }
     }
 
