@@ -1,20 +1,28 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
+import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
-import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
+import uk.gov.hmcts.appregister.standardapplicant.mapper.CodeAndName;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExistsValidator;
 
@@ -24,6 +32,7 @@ import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExi
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class StandardApplicationServiceImpl implements StandardApplicantService {
     private final StandardApplicantRepository repository;
     private final StandardApplicantMapper mapper;
@@ -33,49 +42,74 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
     private final StandardApplicantExistsValidator validator;
 
+    private final AuditOperationService auditService;
+    private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+    private final ApplicantMapper applicantMapper;
+
     @Override
     public StandardApplicantPage findAll(String code, String name, PagingWrapper pageable) {
 
-        log.debug(
-                "Start: Find Standard Applicant for: code: {} name: {} with paging: {}",
-                code,
-                name,
-                pageable);
-        // Use today's date to ensure we only return Result Codes that are currently active.
-        var todayUk = LocalDate.now(clock.withZone(ukZone));
+        return auditService.processAudit(
+                null,
+                StandardApplicantOperation.GET_STANDARD_APPLICANTS,
+                (req) -> {
+                    // Use today's date to ensure we only return Result Codes that are currently
+                    // active.
+                    var todayUk = LocalDate.now(clock.withZone(ukZone));
 
-        // breaks name into individual and/or organisation parts
-        final Page<StandardApplicant> standardApplicantsList =
-                repository.search(code, name, todayUk, pageable.getPageable());
+                    // breaks name into individual and/or organisation parts
+                    final Page<StandardApplicant> standardApplicantsList =
+                            repository.search(code, name, todayUk, pageable.getPageable());
 
-        StandardApplicantPage newPage = new StandardApplicantPage();
-        pageMapper.toPage(standardApplicantsList, newPage, pageable.getSortStrings());
+                    StandardApplicantPage newPage = new StandardApplicantPage();
+                    pageMapper.toPage(standardApplicantsList, newPage, pageable.getSortStrings());
 
-        // Map each entity to a summary DTO and add to the page content
-        standardApplicantsList.map(
-                sa -> {
-                    return newPage.addContentItem(mapper.toReadGetSummaryDto(sa));
-                });
+                    // Map each entity to a summary DTO and add to the page content
+                    standardApplicantsList.map(
+                            sa -> newPage.addContentItem(mapper.toReadGetSummaryDto(sa)));
 
-        log.debug(
-                "Finished: Find Standard Applicant for {}",
-                ObfuscationUtil.getObfuscatedString(newPage));
-        return newPage;
+                    log.debug(
+                            "Finished: Find Standard Applicant for: code: {} name: {} with paging: {}",
+                            code,
+                            name,
+                            pageable);
+
+                    CodeAndName record = new CodeAndName(code, name);
+                    AuditableResult<StandardApplicantPage, StandardApplicant> result =
+                            new AuditableResult<>(newPage, mapper.toEntity(record));
+
+                    return Optional.of(result);
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     @Override
     public StandardApplicantGetDetailDto findByCode(String code, LocalDate date) {
-        log.debug("Start: Find Standard Applicant By Code for: app code: {} date: {}", code, date);
+        return auditService.processAudit(
+                null,
+                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE,
+                (req) -> {
+                    log.debug(
+                            "Start: Find Standard Applicant By Code for: app code: {} date: {}",
+                            code,
+                            date);
 
-        StandardApplicantGetDetailDto payloadForGet =
-                validator.validate(
-                        PayloadForGet.builder().date(date).code(code).build(),
-                        (id, standardApplicant) -> mapper.toReadGetDto(standardApplicant));
+                    StandardApplicantGetDetailDto payloadForGet =
+                            validator.validate(
+                                    PayloadForGet.builder().date(date).code(code).build(),
+                                    (id, standardApplicant) ->
+                                            mapper.toReadGetDto(standardApplicant));
 
-        log.debug(
-                "Finish: Find Standard Applicant {}",
-                ObfuscationUtil.getObfuscatedString(payloadForGet));
+                    log.debug(
+                            "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
+                            code,
+                            date);
 
-        return payloadForGet;
+                    AuditableResult<StandardApplicantGetDetailDto, StandardApplicant> result =
+                            new AuditableResult<>(payloadForGet, mapper.toEntity(code, date));
+
+                    return Optional.of(result);
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }

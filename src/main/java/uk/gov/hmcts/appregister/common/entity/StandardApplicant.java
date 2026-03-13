@@ -16,10 +16,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents a StandardApplicant entity mapped to the "standard_applicants" table in the database.
@@ -32,6 +35,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.READ})
 public class StandardApplicant extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -42,6 +46,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private Long id;
 
     @Column(name = "standard_applicant_code", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     @Pattern(
             regexp = "[a-zA-Z0-9\\-\\+\\._ ]*",
             message =
@@ -50,6 +55,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String applicantCode;
 
     @Column(name = "standard_applicant_start_date", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private LocalDate applicantStartDate;
 
     @Column(name = "standard_applicant_end_date")
@@ -63,6 +69,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String createdUser;
 
     @Column(name = "name", length = 100)
+    @Audit(action = {CrudEnum.READ})
     private String name;
 
     @Column(name = "title", length = 100)

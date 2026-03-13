@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
+import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CodeAndDescription;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
@@ -31,48 +32,47 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
 
     @Override
     public CriminalJusticeAreaGetDto findByCode(String code) {
-        CriminalJusticeAreaGetDto criminalJusticeAreaGetDto =
-                auditService.processAudit(
-                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
-                        req -> {
-                            var cja = locationLookupService.getCjaOrThrow(code);
+        return auditService.processAudit(
+                null,
+                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT,
+                req -> {
+                    var cja = locationLookupService.getCjaOrThrow(code);
 
-                            AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
-                                    new AuditableResult<>(criminalJusticeMapper.toDto(cja), null);
+                    AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
+                            new AuditableResult<>(
+                                    criminalJusticeMapper.toDto(cja),
+                                    criminalJusticeMapper.toEntity(code));
 
-                            return Optional.of(result);
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-        return criminalJusticeAreaGetDto;
+                    return Optional.of(result);
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     @Override
     public CriminalJusticeAreaPage findAll(
             String code, String description, PagingWrapper pageable) {
-        CriminalJusticeAreaPage criminalJusticeAreaPage =
-                auditService.processAudit(
-                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
-                        (req) -> {
-                            org.springframework.data.domain.Page<CriminalJusticeArea>
-                                    criminalJusticeList =
-                                            criminalJusticeAreaRepository.search(
-                                                    code, description, pageable.getPageable());
+        return auditService.processAudit(
+                null,
+                CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDITS_EVENT,
+                (req) -> {
+                    org.springframework.data.domain.Page<CriminalJusticeArea> criminalJusticeList =
+                            criminalJusticeAreaRepository.search(
+                                    code, description, pageable.getPageable());
 
-                            CriminalJusticeAreaPage craPage = new CriminalJusticeAreaPage();
-                            pageMapper.toPage(
-                                    criminalJusticeList, craPage, pageable.getSortStrings());
-                            criminalJusticeList.stream()
-                                    .forEach(
-                                            (entry) ->
-                                                    craPage.addContentItem(
-                                                            criminalJusticeMapper.toDto(entry)));
+                    CriminalJusticeAreaPage craPage = new CriminalJusticeAreaPage();
+                    pageMapper.toPage(criminalJusticeList, craPage, pageable.getSortStrings());
+                    criminalJusticeList.stream()
+                            .forEach(
+                                    (entry) ->
+                                            craPage.addContentItem(
+                                                    criminalJusticeMapper.toDto(entry)));
 
-                            AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
-                                    new AuditableResult<>(craPage, null);
+                    CodeAndDescription record = new CodeAndDescription(code, description);
+                    AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
+                            new AuditableResult<>(craPage, criminalJusticeMapper.toEntity(record));
 
-                            return Optional.of(result);
-                        },
-                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
-        return criminalJusticeAreaPage;
+                    return Optional.of(result);
+                },
+                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }

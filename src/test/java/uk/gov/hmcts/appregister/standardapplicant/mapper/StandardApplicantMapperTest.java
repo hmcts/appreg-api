@@ -227,4 +227,12 @@ public class StandardApplicantMapperTest {
                         .getContactDetails()
                         .getPostcode());
     }
+
+    @Test
+    void testNoEntity() {
+        CodeAndName record = new CodeAndName(null, null);
+
+        var mapper = new StandardApplicantMapperImpl();
+        Assertions.assertNotNull(mapper.toEntity(record));
+    }
 }

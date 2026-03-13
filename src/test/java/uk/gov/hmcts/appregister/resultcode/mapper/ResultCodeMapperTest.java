@@ -96,4 +96,12 @@ public class ResultCodeMapperTest {
         Assertions.assertNull(dto.getStartDate(), "startDate should be null when source is null");
         Assertions.assertEquals(endDate, dto.getEndDate().get());
     }
+
+    @Test
+    void testNoEntity() {
+        CodeAndTitle record = new CodeAndTitle(null, null);
+
+        var mapper = new ResultCodeMapperImpl();
+        Assertions.assertNotNull(mapper.toEntity(record));
+    }
 }

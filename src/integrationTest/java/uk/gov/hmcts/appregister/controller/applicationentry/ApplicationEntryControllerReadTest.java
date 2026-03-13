@@ -14,8 +14,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
@@ -28,6 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -54,6 +57,24 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertFalse(entryGetDetailDto.getHasOffsiteFee());
         Assertions.assertEquals(uuids[1], entryGetDetailDto.getId());
         Assertions.assertEquals(uuids[0], entryGetDetailDto.getListId());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "id",
+                        null,
+                        uuids[1].toString(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "id",
+                        null,
+                        uuids[0].toString(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getType().name(),
+                        AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL.getEventName()));
     }
 
     @Test
