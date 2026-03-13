@@ -2,7 +2,7 @@ openapi: 3.0.4
 info:
   title: Applications Register API
   description:
-    REST API for managing Applications Lists, Application List Entries and getting important,
+    REST API for managing Administrative Tasks, Applications Lists, Application List Entries and getting important,
     reference data including Application Codes, Result Codes, Fees, Court Locations, Criminal Justice Areas
     and Standard Applicants.
   # We use @version@ here so Gradle can inject the project version at build time.
@@ -12,7 +12,7 @@ info:
 tags:
   - name: admin
     description:
-      Administrative operations such as jobs.
+      Administrative operations such as jobs can be run from this set of endpoints.
   - name: application-codes
     description:
       Application Codes are reference data, not managed in App Reg. They are required to provide a set repeatable data

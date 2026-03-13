@@ -1,7 +1,7 @@
 get:
   operationId: getJobStatus
   tags: [ admin ]
-  summary: Get the status of a background job being processed in an administative context.
+  summary: Get the status of a background job being processed in an administrative context.
   description: Returns the current status and details of a background job.
   parameters:
     - name: jobId
