@@ -444,6 +444,65 @@ class ApplicationListRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    @DisplayName(
+            "findAllByFilter: effectiveLocation uses courtName then cja.description then otherLocation")
+    void findAllByFilter_effectiveLocation_coalescePriority_andFormatting() {
+        // Given
+        var cja = saveCja("52", "CJA 52");
+
+        // 1) courtName present -> should win (even if cja/otherLocation exist)
+        save("OPEN", "CCC003", cja, DEFAULT_DATE, DEFAULT_TIME, "row1", "OTHER PLACE");
+
+        // 2) courtName null -> should use cja.description
+        save(
+                "OPEN",
+                null,
+                cja,
+                DEFAULT_DATE,
+                DEFAULT_TIME.plusMinutes(1),
+                "row2",
+                "  OTHER PLACE  ");
+
+        // 3) courtName null and cja null -> should use otherLocation
+        save(
+                "OPEN",
+                null,
+                null,
+                DEFAULT_DATE,
+                DEFAULT_TIME.plusMinutes(2),
+                "row3",
+                "  Some OTHER Location");
+
+        Pageable page =
+                PageRequest.of(0, 10, org.springframework.data.domain.Sort.by("time").ascending());
+
+        // When
+        Page<ApplicationListSummaryProjection> result =
+                repository.findAllByFilter(
+                        null, // status
+                        null, // courtCode
+                        null, // cja
+                        DEFAULT_DATE, // onDate
+                        null, // start
+                        null, // end
+                        false, // wrapsMidnight
+                        null, // description
+                        null, // otherDesc
+                        page);
+
+        // Then
+        assertThat(result.getTotalElements()).isEqualTo(3);
+
+        var r1 = result.getContent().get(0);
+        var r2 = result.getContent().get(1);
+        var r3 = result.getContent().get(2);
+
+        assertThat(r1.getEffectiveLocation()).isEqualTo("court ccc003");
+        assertThat(r2.getEffectiveLocation()).isEqualTo("cja 52");
+        assertThat(r3.getEffectiveLocation()).isEqualTo("some other location");
+    }
+
+    @Test
     @DisplayName("findByUuid: returns entity when not soft-deleted")
     void findByUuid_returnsEntityWhenNotSoftDeleted() {
         // Given
