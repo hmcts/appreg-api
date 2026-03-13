@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
+import uk.gov.hmcts.appregister.courtlocation.mapper.CodeAndName;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
@@ -67,6 +68,8 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT,
                 unused -> {
+                    log.debug(
+                            "Start: Find active Court Location for code: {} date: {}", code, date);
                     final List<NationalCourtHouse> rows =
                             repository.findActiveCourtsWithDate(code, date);
 
@@ -82,7 +85,9 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     }
 
                     AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
-                            new AuditableResult<>(mapper.toDetailDto(rows.getFirst()), null);
+                            new AuditableResult<>(
+                                    mapper.toDetailDto(rows.getFirst()),
+                                    mapper.toEntity(code, date));
 
                     // Map the single matching entity to a detail DTO
                     return Optional.of(result);
@@ -107,6 +112,11 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
+                    log.debug(
+                            "Start: Find Application List for: name: {} app code: {} with paging: {}",
+                            nameFilter,
+                            codeFilter,
+                            pageable);
                     final Page<NationalCourtHouse> dbPage =
                             repository.findAllActiveCourts(
                                     codeFilter, nameFilter, pageable.getPageable());
@@ -122,9 +132,9 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     dbPage.forEach(
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
+                    CodeAndName record = new CodeAndName(codeFilter, nameFilter);
                     AuditableResult<CourtLocationPage, NationalCourtHouse> result =
-                            new AuditableResult<>(responsePage, null);
-
+                            new AuditableResult<>(responsePage, mapper.toEntity(record));
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

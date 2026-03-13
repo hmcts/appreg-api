@@ -135,9 +135,9 @@ public class DataAuditLoggerTest {
     }
 
     @Test
-    public void testSuccessOperationForGetWithoutDataAuditSaveTest() {
+    public void testSuccessOperationForGetWithDataAuditSaveTest() {
         ApplicationCodeTestData testData = new ApplicationCodeTestData();
-        ApplicationCode oldCode = testData.someComplete();
+        ApplicationCode oldCode = null;
         ApplicationCode newCode = testData.someComplete();
 
         StartEvent startEvent =

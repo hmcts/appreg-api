@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
 public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -54,12 +54,12 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
     @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -72,10 +72,12 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "a_na_id")
+    @Audit(action = {CrudEnum.READ})
     private NameAddress anamedaddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "r_na_id")
+    @Audit(action = {CrudEnum.READ})
     private NameAddress rnameaddress;
 
     @Column(name = "number_of_bulk_respondents")
@@ -90,6 +92,7 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @Column(name = "account_number")
     @Size(max = 20)
+    @Audit(action = {CrudEnum.READ})
     private String accountNumber;
 
     @Column(name = "entry_rescheduled", nullable = false)
@@ -139,5 +142,6 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @Column(name = "id")
     @Generated(event = EventType.INSERT)
+    @Audit(action = {CrudEnum.READ})
     private UUID uuid;
 }

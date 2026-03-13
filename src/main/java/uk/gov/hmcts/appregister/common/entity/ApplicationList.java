@@ -47,7 +47,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.DELETE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.DELETE, CrudEnum.READ})
 public class ApplicationList extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -60,17 +60,17 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.UPDATE, CrudEnum.READ})
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
     @Enumerated(EnumType.STRING)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private Status status;
 
     @Column(name = "list_description", nullable = false)
     @Size(max = 200)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private String description;
 
     @Column(name = "courthouse_name")
@@ -80,25 +80,25 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Column(name = "courthouse_code")
     @Size(max = 10)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private String courtCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cja_cja_id")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private CriminalJusticeArea cja;
 
     @Column(name = "other_courthouse")
     @Size(max = 200)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private String otherLocation;
 
     @Column(name = "application_list_date", nullable = false)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private LocalDate date;
 
     @Column(name = "application_list_time", nullable = false)
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private LocalTime time;
 
     @Column(name = "duration_hour")

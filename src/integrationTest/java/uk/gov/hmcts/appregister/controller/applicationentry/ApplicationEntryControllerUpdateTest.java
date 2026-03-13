@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
@@ -347,5 +349,353 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         .getType()
                         .get(),
                 problemDetail.getType());
+    }
+
+    @Test
+    public void givenASuccessUpdate_whenApplicantAddressIsValid_200Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("1 test road"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+    }
+
+    /* REGEX Validation Tests */
+    @Test
+    public void givenASuccessUpdate_whenApplicantNameIsValid_200Returned() throws Exception {
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.getRespondent().getPerson().getName().setSurname("test");
+        entryUpdateDto.getRespondent().getPerson().getName().setFirstForename("François");
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("Joséphine"));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of("Sørina"));
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+    }
+
+    /* REGEX Validation Tests */
+    @Test
+    public void givenASuccessUpdate_whenApplicantEmailIsValid_200Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@test.com"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+    }
+
+    /* REGEX Validation Tests */
+    @Test
+    public void givenASuccessUpdate_whenApplicantPhoneIsValid_200Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("01234 56789"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+    }
+
+    /* REGEX Validation Tests */
+    @Test
+    public void givenASuccessUpdate_whenApplicantMobileIsValid_200Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("+447123456789"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate.then().statusCode(200);
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenApplicantAddressInvalid_400Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of("1\ttest\0road"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenApplicantInvalidName_400Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.getRespondent().getPerson().getName().setTitle("m\r");
+        entryUpdateDto.getRespondent().getPerson().getName().setFirstForename("invalid\0name");
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("invalid\0 secondname"));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of("invalid\0 thirdname"));
+        entryUpdateDto.getRespondent().getPerson().getName().setSurname("invalid\0surname");
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenApplicantPhoneNumberInvalid_400Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("\0 1234 56789"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenApplicantMobileInvalid_400Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("invalid-mobile"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenApplicantEmailInvalid_400Returned() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test-email@"));
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
     }
 }

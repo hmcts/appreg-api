@@ -5,7 +5,7 @@ package uk.gov.hmcts.appregister.common.enumeration;
  */
 public enum CrudEnum {
     CREATE('C'),
-    READ('R'),
+    READ('G'),
     UPDATE('S'),
     DELETE('D');
 
@@ -28,7 +28,7 @@ public enum CrudEnum {
     }
 
     public boolean isRead() {
-        return this.val == 'R';
+        return this.val == 'G';
     }
 
     public char getValue() {
