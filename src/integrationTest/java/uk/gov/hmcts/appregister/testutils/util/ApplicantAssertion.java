@@ -17,9 +17,11 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getName().getSurname(), standardApplicant.getApplicantSurname());
         Assertions.assertEquals(
-                applicant.getName().getThirdForename(), standardApplicant.getApplicantForename3());
+                applicant.getName().getThirdForename().get(),
+                standardApplicant.getApplicantForename3());
         Assertions.assertEquals(
-                applicant.getName().getSecondForename(), standardApplicant.getApplicantForename2());
+                applicant.getName().getSecondForename().get(),
+                standardApplicant.getApplicantForename2());
         Assertions.assertEquals(
                 applicant.getName().getFirstForename(), standardApplicant.getApplicantForename1());
         Assertions.assertEquals(
@@ -28,23 +30,26 @@ public class ApplicantAssertion {
                 applicant.getContactDetails().getAddressLine1(),
                 standardApplicant.getAddressLine1());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine2(),
+                applicant.getContactDetails().getAddressLine2().orElse(null),
                 standardApplicant.getAddressLine2());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine3(),
+                applicant.getContactDetails().getAddressLine3().orElse(null),
                 standardApplicant.getAddressLine3());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine4(),
+                applicant.getContactDetails().getAddressLine4().orElse(null),
                 standardApplicant.getAddressLine4());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine5(),
+                applicant.getContactDetails().getAddressLine5().orElse(null),
                 standardApplicant.getAddressLine5());
         Assertions.assertEquals(
-                applicant.getContactDetails().getPhone(), standardApplicant.getTelephoneNumber());
+                applicant.getContactDetails().getPhone().orElse(null),
+                standardApplicant.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getMobile(), standardApplicant.getMobileNumber());
+                applicant.getContactDetails().getMobile().orElse(null),
+                standardApplicant.getMobileNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getEmail(), standardApplicant.getEmailAddress());
+                applicant.getContactDetails().getEmail().orElse(null),
+                standardApplicant.getEmailAddress());
     }
 
     public static void validatePerson(Person applicant, NameAddress applicationListEntry) {
@@ -54,35 +59,37 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getName().getSurname(), applicationListEntry.getSurname());
         Assertions.assertEquals(
-                applicant.getName().getThirdForename(), applicationListEntry.getForename3());
+                applicant.getName().getThirdForename().get(), applicationListEntry.getForename3());
         Assertions.assertEquals(
                 applicant.getName().getFirstForename(), applicationListEntry.getForename1());
         Assertions.assertEquals(
-                applicant.getName().getSecondForename(), applicationListEntry.getForename2());
+                applicant.getName().getSecondForename().get(), applicationListEntry.getForename2());
         Assertions.assertEquals(
                 applicant.getContactDetails().getPostcode(), applicationListEntry.getPostcode());
         Assertions.assertEquals(
                 applicant.getContactDetails().getAddressLine1(),
                 applicationListEntry.getAddress1());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine2(),
+                applicant.getContactDetails().getAddressLine2().orElse(null),
                 applicationListEntry.getAddress2());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine3(),
+                applicant.getContactDetails().getAddressLine3().orElse(null),
                 applicationListEntry.getAddress3());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine4(),
+                applicant.getContactDetails().getAddressLine4().orElse(null),
                 applicationListEntry.getAddress4());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine5(),
+                applicant.getContactDetails().getAddressLine5().orElse(null),
                 applicationListEntry.getAddress5());
         Assertions.assertEquals(
-                applicant.getContactDetails().getPhone(),
+                applicant.getContactDetails().getPhone().orElse(null),
                 applicationListEntry.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getMobile(), applicationListEntry.getMobileNumber());
+                applicant.getContactDetails().getMobile().orElse(null),
+                applicationListEntry.getMobileNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getEmail(), applicationListEntry.getEmailAddress());
+                applicant.getContactDetails().getEmail().orElse(null),
+                applicationListEntry.getEmailAddress());
     }
 
     public static void validateOrganisation(
@@ -97,23 +104,26 @@ public class ApplicantAssertion {
                 applicant.getContactDetails().getAddressLine1(),
                 standardApplicant.getAddressLine1());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine2(),
+                applicant.getContactDetails().getAddressLine2().orElse(null),
                 standardApplicant.getAddressLine2());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine3(),
+                applicant.getContactDetails().getAddressLine3().orElse(null),
                 standardApplicant.getAddressLine3());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine4(),
+                applicant.getContactDetails().getAddressLine4().orElse(null),
                 standardApplicant.getAddressLine4());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine5(),
+                applicant.getContactDetails().getAddressLine5().orElse(null),
                 standardApplicant.getAddressLine5());
         Assertions.assertEquals(
-                applicant.getContactDetails().getPhone(), standardApplicant.getTelephoneNumber());
+                applicant.getContactDetails().getPhone().orElse(null),
+                standardApplicant.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getMobile(), standardApplicant.getMobileNumber());
+                applicant.getContactDetails().getMobile().orElse(null),
+                standardApplicant.getMobileNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getEmail(), standardApplicant.getEmailAddress());
+                applicant.getContactDetails().getEmail().orElse(null),
+                standardApplicant.getEmailAddress());
     }
 
     public static void validateOrganisation(
@@ -128,23 +138,25 @@ public class ApplicantAssertion {
                 applicant.getContactDetails().getAddressLine1(),
                 applicationListEntry.getAddress1());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine2(),
+                applicant.getContactDetails().getAddressLine2().orElse(null),
                 applicationListEntry.getAddress2());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine3(),
+                applicant.getContactDetails().getAddressLine3().orElse(null),
                 applicationListEntry.getAddress3());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine4(),
+                applicant.getContactDetails().getAddressLine4().orElse(null),
                 applicationListEntry.getAddress4());
         Assertions.assertEquals(
-                applicant.getContactDetails().getAddressLine5(),
+                applicant.getContactDetails().getAddressLine5().orElse(null),
                 applicationListEntry.getAddress5());
         Assertions.assertEquals(
-                applicant.getContactDetails().getPhone(),
+                applicant.getContactDetails().getPhone().orElse(null),
                 applicationListEntry.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getMobile(), applicationListEntry.getMobileNumber());
+                applicant.getContactDetails().getMobile().orElse(null),
+                applicationListEntry.getMobileNumber());
         Assertions.assertEquals(
-                applicant.getContactDetails().getEmail(), applicationListEntry.getEmailAddress());
+                applicant.getContactDetails().getEmail().orElse(null),
+                applicationListEntry.getEmailAddress());
     }
 }

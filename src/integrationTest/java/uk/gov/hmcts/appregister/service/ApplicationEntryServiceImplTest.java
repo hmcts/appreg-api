@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
@@ -92,6 +93,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -171,6 +178,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setNumberOfRespondents(0);
         entryCreateDto.setWordingFields(List.of(substitution));
@@ -242,6 +259,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         EntryUpdateDto entryUpdateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -392,6 +415,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
         entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
@@ -500,8 +533,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryUpdateDto updateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         updateDto.getApplicant().setOrganisation(null);
+        updateDto.getApplicant().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         updateDto.setNumberOfRespondents(null);
@@ -619,6 +656,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getApplicant().setPerson(null);
         updateDto.setFeeStatuses(null);
         updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.setNumberOfRespondents(0);
 
@@ -710,9 +749,87 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
 
         entryCreateDto.setNumberOfRespondents(10);
 
@@ -785,6 +902,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
