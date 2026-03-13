@@ -177,14 +177,14 @@ public abstract class ApplicationListEntryMapper {
         }
 
         details.setAddressLine1(address1);
-        details.setAddressLine2(address2);
-        details.setAddressLine3(address3);
-        details.setAddressLine4(address4);
-        details.setAddressLine5(address5);
+        details.setAddressLine2(map(address2));
+        details.setAddressLine3(map(address3));
+        details.setAddressLine4(map(address4));
+        details.setAddressLine5(map(address5));
         details.setPostcode(postcode);
-        details.setPhone(phone);
-        details.setMobile(mobile);
-        details.setEmail(email);
+        details.setPhone(map(phone));
+        details.setMobile(map(mobile));
+        details.setEmail(map(email));
 
         return details;
     }

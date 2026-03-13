@@ -2,6 +2,7 @@ type: object
 description: >
   Filter criteria for POST /reports/list-maintenance/jobs.
   Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  Blank fields will be rejected, nulls should be used instead.
 additionalProperties: false
 required:
   - dateFrom
@@ -26,6 +27,7 @@ properties:
     description: Case-insensitive contains match on the Application List description.
     example: "morning session"
     maxLength: 200
+    minLength: 1
 
   location:
     $ref: '../common/location.yaml'

@@ -14,6 +14,7 @@ get:
       schema:
         type: string
         maxLength: 10
+
     - in: query
       name: name
       description: Filter by name (contains, case-insensitive).

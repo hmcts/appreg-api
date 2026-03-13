@@ -23,4 +23,6 @@ public interface ApplicationListSummaryProjection {
     LocalTime getTime();
 
     Status getStatus();
+
+    String getEffectiveLocation();
 }

@@ -232,7 +232,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCjaCode_thenSuccessResponse()
+    public void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -288,8 +288,58 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         // assert order
         ApplicationListPage page = createListResp.as(ApplicationListPage.class);
         Assertions.assertEquals(listId, page.getContent().get(0).getId());
-        Assertions.assertEquals(listId3, page.getContent().get(1).getId());
-        Assertions.assertEquals(listId2, page.getContent().get(2).getId());
+        Assertions.assertEquals(listId2, page.getContent().get(1).getId());
+        Assertions.assertEquals(listId3, page.getContent().get(2).getId());
+    }
+
+    @StabilityTest
+    public void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
+            throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // add initial list with court name 'Cardiff Crown Court'
+        var createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("description")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        final UUID listId =
+                createApplicationListWithCourtCode(
+                        tokenGenerator.fetchTokenForRole(), createListReq);
+
+        // add second list with cja description 'CJA_CE_DESCRIPTION'
+        createListReq.setCjaCode(VALID_CJA_CODE2);
+        createListReq.setOtherLocationDescription(VALID_OTHER_LOCATION);
+        createListReq.setCourtLocationCode(null);
+
+        final UUID listId2 =
+                createApplicationListWithCourtCode(
+                        tokenGenerator.fetchTokenForRole(), createListReq);
+
+        Response createListResp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(ApplicationListSortFieldEnum.LOCATION.getApiValue() + "," + "desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        GetApplicationListFilterSpecification.builder()
+                                .dateValue(Optional.of(TEST_DATE.toString()))
+                                .build());
+        createListResp.then().statusCode(HttpStatus.OK.value());
+
+        // assert order
+        ApplicationListPage page = createListResp.as(ApplicationListPage.class);
+        Assertions.assertEquals(listId2, page.getContent().get(0).getId());
+        Assertions.assertEquals(listId, page.getContent().get(1).getId());
     }
 
     @StabilityTest

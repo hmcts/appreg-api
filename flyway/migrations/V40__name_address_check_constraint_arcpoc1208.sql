@@ -1,7 +1,7 @@
--- V38__name_address_check_constraint.sql
+-- V40__name_address_check_constraint_arcpoc1208.sql
 
 -- Version Control
--- V1.0  	Matthew Harman  04/03/2026	Initial Version
+-- V1.0  	Matthew Harman  13/03/2026	Initial Version
 --
 
 SET client_encoding TO 'UTF8';
@@ -13,6 +13,7 @@ ALTER TABLE IF EXISTS name_address
     DROP CONSTRAINT IF EXISTS name_address_name_or_person_chk;
 
 
+-- Remove TITLE from being mandatory on a person record
 ALTER TABLE name_address
 ADD CONSTRAINT name_address_name_or_person_chk
 CHECK (
@@ -29,7 +30,6 @@ CHECK (
     (
         -- Scenario 2: person-style
         NULLIF(BTRIM(name), '') IS NULL
-        AND NULLIF(BTRIM(title), '')      IS NOT NULL
         AND NULLIF(BTRIM(forename_1), '') IS NOT NULL
         AND NULLIF(BTRIM(surname), '')    IS NOT NULL
     )
