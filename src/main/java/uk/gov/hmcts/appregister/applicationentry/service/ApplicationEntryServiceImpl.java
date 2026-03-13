@@ -816,8 +816,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 "Started: Getting application list entries for list: {}",
                 payloadForGet.getListId());
 
-        // TODO update filter to use new provided properties.
-
         return getApplicationListEntriesValidator.validate(
                 payloadForGet,
                 (req, success) -> {

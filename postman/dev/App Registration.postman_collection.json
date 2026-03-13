@@ -1,10 +1,9 @@
 {
   "info": {
-    "_postman_id": "b533d999-921a-413b-98e3-3490243c8ac5",
+    "_postman_id": "dfd01478-3c87-413c-83d5-66d4ef4e4f68",
     "name": "App Registration",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-b533d999-921a-413b-98e3-3490243c8ac5?source=collection_link"
+    "_exporter_id": "26896572"
   },
   "item": [
     {
@@ -346,6 +345,48 @@
               "path": [
                 "application-lists",
                 "{{APP_LIST_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application List Entries For Application List",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}"
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries"
               ]
             }
           },
