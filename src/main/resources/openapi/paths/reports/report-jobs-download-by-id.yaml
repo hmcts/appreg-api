@@ -9,8 +9,9 @@ get:
     - name: jobId
       in: path
       required: true
-      schema: { type: string }
+      schema: { type: string, format: uuid }
       description: The unique identifier of the report job.
+      example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
   responses:
     "200":
       description: The generated CSV report.

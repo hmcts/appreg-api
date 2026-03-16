@@ -14,13 +14,14 @@ get:
       schema:
         type: string
         maxLength: 10
-
+      example: "SA"
     - in: query
       name: name
       description: Filter by name (contains, case-insensitive).
       schema:
         type: string
         maxLength: 100
+        example: "Innovative Solutions Inc"
     - in: query
       name: pageNumber
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

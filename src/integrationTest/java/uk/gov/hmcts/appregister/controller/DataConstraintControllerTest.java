@@ -37,6 +37,8 @@ public class DataConstraintControllerTest extends BaseIntegration {
 
     private static final String CODE_WEB_CONTEXT = "application-codes";
     private static final String APP_LIST_WEB_CONTEXT = "application-lists";
+    private static final String APP_LIST_ENTRIES_WEB_CONTEXT = "application-lists";
+
     private static final String VALID_COURT_CODE = "CCC003";
     private static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
 
@@ -360,6 +362,45 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 "Problem setting value for durationHours please"
                         + " check the correct type is used",
                 problemDetail.getDetail());
+    }
+
+    @Test
+    public void testEmptyNotAllowed() throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        entryCreateDto.setWordingFields(null);
+
+        // set the enforcement fine code
+        entryCreateDto.setApplicationCode("EF1213");
+        entryCreateDto.setAccountNumber("1234567890");
+
+        // This should cause an empty string failure
+        entryCreateDto.getApplicant().getPerson().getName().setTitle("");
+
+        UUID uuid = UUID.randomUUID();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(APP_LIST_ENTRIES_WEB_CONTEXT + "/" + uuid + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // make the assertion
+        responseSpecCreate.then().statusCode(400);
+
+        String expectedJson =
+                "{\"type\":\"COMMON-11\",\"title\":\"Method Error\","
+                        + "\"status\":400,\"detail\":\"Validation failed for fields:\",\"instance\":"
+                        + "\"/application-lists/"
+                        + uuid
+                        + "/entries\",\"errors\""
+                        + ":{\"applicant.person.name.title\":\"size must be between 1 and 100\"}}";
+        Assertions.assertEquals(expectedJson, responseSpecCreate.asString());
     }
 
     @Test

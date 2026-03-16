@@ -4,8 +4,10 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class ResultCodeMapperTest {
     private final ResultCodeMapper mapper = new ResultCodeMapperImpl();
@@ -39,12 +41,28 @@ public class ResultCodeMapperTest {
         entity.setWording(wording);
         entity.setStartDate(startDate);
         entity.setEndDate(endDate);
+        entity.setWording("namely {TEXT|Specify Document Lost|100}");
 
+        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
+
+        // assert
+        Assertions.assertEquals(
+                "Specify Document Lost",
+                dto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                100,
+                dto.getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                dto.getWording().getSubstitutionKeyConstraints().get(0).getConstraint().getType());
 
         Assertions.assertEquals(code, dto.getResultCode());
         Assertions.assertEquals(title, dto.getTitle());
-        Assertions.assertEquals(wording, dto.getWording());
         Assertions.assertEquals(startDate, dto.getStartDate());
         Assertions.assertEquals(endDate, dto.getEndDate().get());
     }
@@ -63,11 +81,11 @@ public class ResultCodeMapperTest {
         entity.setStartDate(startDate);
         entity.setEndDate(null);
 
+        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());
         Assertions.assertEquals(title, dto.getTitle());
-        Assertions.assertEquals(wording, dto.getWording());
         Assertions.assertEquals(startDate, dto.getStartDate());
 
         Assertions.assertFalse(
@@ -88,11 +106,11 @@ public class ResultCodeMapperTest {
         entity.setStartDate(null);
         entity.setEndDate(endDate);
 
+        mapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ResultCodeGetDetailDto dto = mapper.toDetailDto(entity);
 
         Assertions.assertEquals(code, dto.getResultCode());
         Assertions.assertEquals(title, dto.getTitle());
-        Assertions.assertEquals(wording, dto.getWording());
         Assertions.assertNull(dto.getStartDate(), "startDate should be null when source is null");
         Assertions.assertEquals(endDate, dto.getEndDate().get());
     }

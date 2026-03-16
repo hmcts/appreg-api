@@ -86,20 +86,6 @@ public class ApplicationEntryResultControllerDeleteTest
     }
 
     @Test
-    @DisplayName("Delete Application List Entry Result: 409 when list closed")
-    void givenClosedList_whenDelete_then409() throws Exception {
-        var list = createAndSaveList(CLOSED);
-
-        Response resp =
-                deleteResult(list.getUuid(), UUID.randomUUID(), UUID.randomUUID(), getToken());
-
-        resp.then().statusCode(HttpStatus.CONFLICT.value());
-        assertEquals(
-                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
-                resp);
-    }
-
-    @Test
     @DisplayName("Delete Application List Entry Result: 400 when entry not in list")
     void givenEntryNotInList_whenDelete_then400() throws Exception {
         var list = createAndSaveList(OPEN);
@@ -157,5 +143,23 @@ public class ApplicationEntryResultControllerDeleteTest
 
         resp.then().statusCode(HttpStatus.PRECONDITION_FAILED.value());
         assertEquals(CommonAppError.MATCH_ETAG_FAILURE.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName("Delete Application List Entry Result: 400 when list closed")
+    void givenClosedList_whenDelete_then409() throws Exception {
+        var list = createAndSaveList(CLOSED);
+
+        UUID listId = list.getUuid();
+        UUID entryId = UUID.randomUUID();
+        UUID resultId = UUID.randomUUID();
+        var token = getToken();
+
+        Response resp = deleteResult(listId, entryId, resultId, token);
+
+        resp.then().statusCode(HttpStatus.CONFLICT.value());
+        assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                resp);
     }
 }

@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @Controller
@@ -107,6 +108,15 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .contentType(VND_JSON_V1)
                 .eTag(matchResponse.getEtag())
                 .body(matchResponse.getPayload());
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> moveApplicationListEntries(
+            UUID listId, MoveEntriesDto moveEntriesDto) {
+        applicationEntryService.move(listId, moveEntriesDto);
+
+        return ResponseEntity.ok().build();
     }
 
     /**
