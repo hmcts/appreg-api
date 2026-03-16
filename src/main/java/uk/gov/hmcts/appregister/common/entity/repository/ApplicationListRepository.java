@@ -123,7 +123,8 @@ public interface ApplicationListRepository extends JpaRepository<ApplicationList
             from ApplicationListEntry ale2
             where ale2.applicationList = al
               and (ale2.deleted is null or ale2.deleted <> 'Y')
-          ) as entryCount
+          ) as entryCount,
+          LOWER(TRIM(COALESCE(al.courtName, cja.description, al.otherLocation))) AS effectiveLocation
         FROM ApplicationList al
         LEFT JOIN al.cja cja
         WHERE (:status IS NULL OR al.status = :status)

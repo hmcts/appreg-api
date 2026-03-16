@@ -16,10 +16,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * JPA entity representing a row in the {@code resolution_code} table.
@@ -54,6 +57,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.READ})
 public class ResolutionCode extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -67,10 +71,12 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Short alphanumeric resolution code value (max length 10, e.g. "RC123").
     @Column(name = "resolution_code", nullable = false, length = 10)
+    @Audit(action = {CrudEnum.READ})
     private String resultCode;
 
     // Human-readable title for the resolution code (max length 500).
     @Column(name = "resolution_code_title", nullable = false, length = 500)
+    @Audit(action = {CrudEnum.READ})
     private String title;
 
     // Full descriptive wording of the resolution code, displayed in UIs and reports.
@@ -91,6 +97,7 @@ public class ResolutionCode extends BaseUnmanagedChangeableEntity
 
     // Start date (inclusive) from which this resolution code is valid.
     @Column(name = "resolution_code_start_date", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private LocalDate startDate;
 
     // End date (inclusive) until which this resolution code remains valid, or {@code null} if

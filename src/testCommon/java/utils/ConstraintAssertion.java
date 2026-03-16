@@ -27,6 +27,15 @@ public class ConstraintAssertion {
         // assert
         Assertions.assertNotNull(constraintViolation);
         Assertions.assertTrue(constraintViolation.size() > 0);
-        Assertions.assertEquals(propertyValue, constraintViolation.getFirst().getMessage());
+
+        // this handles more than one violation for the same property, it checks that at least one
+        // of the violations has the expected message
+        Assertions.assertEquals(
+                propertyValue,
+                constraintViolation.stream()
+                        .filter(o -> o.getMessage().equals(propertyValue))
+                        .findFirst()
+                        .orElseThrow()
+                        .getMessage());
     }
 }

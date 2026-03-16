@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.controller.applicationlist;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
@@ -15,7 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -33,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 
 public class ApplicationListControllerSearchTest extends AbstractApplicationListControllerCrudTest {
 
@@ -232,7 +236,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
     }
 
     @StabilityTest
-    public void givenApplicationListSuccessfulSort_whenSortByCjaCode_thenSuccessResponse()
+    public void givenApplicationListSuccessfulSort_whenSortByLocation_thenSuccessResponse()
             throws Exception {
 
         // create the token
@@ -288,8 +292,58 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         // assert order
         ApplicationListPage page = createListResp.as(ApplicationListPage.class);
         Assertions.assertEquals(listId, page.getContent().get(0).getId());
-        Assertions.assertEquals(listId3, page.getContent().get(1).getId());
-        Assertions.assertEquals(listId2, page.getContent().get(2).getId());
+        Assertions.assertEquals(listId2, page.getContent().get(1).getId());
+        Assertions.assertEquals(listId3, page.getContent().get(2).getId());
+    }
+
+    @StabilityTest
+    public void givenApplicationList_whenSortByLocationDesc_thenCjaDescriptionPrecedesCourtName()
+            throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // add initial list with court name 'Cardiff Crown Court'
+        var createListReq =
+                new ApplicationListCreateDto()
+                        .date(TEST_DATE)
+                        .time(TEST_TIME)
+                        .description("description")
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        final UUID listId =
+                createApplicationListWithCourtCode(
+                        tokenGenerator.fetchTokenForRole(), createListReq);
+
+        // add second list with cja description 'CJA_CE_DESCRIPTION'
+        createListReq.setCjaCode(VALID_CJA_CODE2);
+        createListReq.setOtherLocationDescription(VALID_OTHER_LOCATION);
+        createListReq.setCourtLocationCode(null);
+
+        final UUID listId2 =
+                createApplicationListWithCourtCode(
+                        tokenGenerator.fetchTokenForRole(), createListReq);
+
+        Response createListResp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(ApplicationListSortFieldEnum.LOCATION.getApiValue() + "," + "desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        GetApplicationListFilterSpecification.builder()
+                                .dateValue(Optional.of(TEST_DATE.toString()))
+                                .build());
+        createListResp.then().statusCode(HttpStatus.OK.value());
+
+        // assert order
+        ApplicationListPage page = createListResp.as(ApplicationListPage.class);
+        Assertions.assertEquals(listId2, page.getContent().get(0).getId());
+        Assertions.assertEquals(listId, page.getContent().get(1).getId());
     }
 
     @StabilityTest
@@ -502,6 +556,27 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(page.getTotalPages()).isEqualTo(2);
         assertThat(page.getElementsOnPage()).isEqualTo(1);
         assertThat(page.getContent()).hasSize(1);
+
+        // this check is to make sure that a default value is provided for the log when the
+        // parameter is not needed.
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        null,
+                        "00000000-0000-0000-0000-000000000000",
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
+
+        // this is to check that the description has been logged as it was included as a param.
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        null,
+                        prefix,
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -553,6 +628,33 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(only.getTime()).isEqualTo(t0930);
         assertThat(only.getDescription()).endsWith("keep");
         assertThat(only.getEntriesCount()).isEqualTo(3);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        null,
+                        prefix,
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        null,
+                        t0930.toString(),
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_date",
+                        null,
+                        day.toString(),
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -587,6 +689,15 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
         assertThat(only.getTime()).isEqualTo(t2359);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "application_list_time",
+                        null,
+                        t2359.toString(),
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -624,6 +735,15 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(page.getContent()).hasSize(1);
         var only = page.getContent().getFirst();
         assertThat(only.getLocation()).isEqualTo(VALID_COURT_NAME);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "courthouse_code",
+                        null,
+                        VALID_COURT_CODE,
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -660,6 +780,15 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
 
         assertThat(page.getContent()).hasSize(1);
         assertThat(page.getContent().getFirst().getDescription()).contains(prefix);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        VALID_CJA_CODE,
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -698,6 +827,15 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         ApplicationListPage page = resp.as(ApplicationListPage.class);
 
         assertThat(page.getContent()).hasSize(0);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "list_description",
+                        null,
+                        prefix,
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -741,6 +879,15 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(dto.getCjaCode()).isEqualToIgnoringCase(VALID_CJA_CODE);
         assertThat(dto.getEntriesCount()).isEqualTo(0);
         assertThat(dto.getEntriesSummary()).isNotNull();
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPICATION_LIST,
+                        "id",
+                        null,
+                        id.toString(),
+                        AppListAuditOperation.GET_APP_LIST.getType().name(),
+                        AppListAuditOperation.GET_APP_LIST.getEventName()));
     }
 
     @Test
@@ -780,6 +927,20 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
         assertThat(problemDetail.getDetail())
                 .contains("Problem with value 232322 for parameter listId");
         assertThat(problemDetail.getStatus()).isEqualTo(400);
+
+        // Making sure there is no audit log for this failed request.
+        assertThatThrownBy(
+                        () ->
+                                differenceLogAsserter.assertDataAuditChange(
+                                        DataAuditLogAsserter.getDataAuditAssertion(
+                                                TableNames.APPICATION_LIST,
+                                                "id",
+                                                null,
+                                                "232322",
+                                                AppListAuditOperation.GET_APP_LIST.getType().name(),
+                                                AppListAuditOperation.GET_APP_LIST.getEventName())))
+                .isInstanceOf(java.lang.AssertionError.class)
+                .hasMessage("We did not found expected logs");
     }
 
     @Test

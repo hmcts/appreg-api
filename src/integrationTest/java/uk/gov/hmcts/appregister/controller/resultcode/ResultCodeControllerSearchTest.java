@@ -1,15 +1,18 @@
-package uk.gov.hmcts.appregister.controller.resultcode;
+package uk.gov.hmcts.appregister.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
@@ -17,14 +20,41 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.resultcode.api.ResultCodeSortFieldEnum;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
+import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
+import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
-public class ResultCodeControllerSearchTest extends AbstractResultCodeControllerCrudTest {
+public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
+
+    private static final String WEB_CONTEXT = "result-codes";
+
+    // Known seeds (from your resolution_codes seed data)
+    private static final String APPC_CODE = "APPC";
+    private static final String APPC_TITLE = "Appeal to Crown Court";
+    private static final String AUTH_CODE = "AUTH";
+    private static final String AUTH_TITLE = "Authorised";
+    private static final String CASE_CODE = "CASE";
+
+    private static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
+    private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
+
+    // Audit event names
+    private static final String AUDIT_GET_ONE =
+            ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
+    private static final String AUDIT_GET_PAGE =
+            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
+
+    private static final int DEFAULT_PAGE_SIZE = 10;
+
+    // --- /result-codes/{code}?date=YYYY-MM-DD -----------------------------------------------
+
     @Test
     @StabilityTest
     void givenValidRequest_whenGetResultCodeByCodeAndDate_APPC_then200() throws Exception {
@@ -48,6 +78,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        APPC_CODE,
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        ACTIVE_DAY.toString(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -73,6 +130,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        AUTH_CODE,
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        ACTIVE_DAY.toString(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -151,6 +235,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -179,6 +290,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        "AP",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -207,6 +345,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "author",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -237,6 +402,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        "ca",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "case",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -266,6 +458,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
 
         AuditAssertUtil.assertStart(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_start_date",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.RESOLUTION_CODES,
+                        "resolution_code_title",
+                        null,
+                        "",
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                        ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @StabilityTest
@@ -297,6 +516,33 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
             Assertions.assertEquals(
                     resultCodeSortFieldEnum.getApiValue(),
                     page.getSort().getOrders().get(0).getProperty());
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.RESOLUTION_CODES,
+                            "resolution_code",
+                            null,
+                            "",
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.RESOLUTION_CODES,
+                            "resolution_code_start_date",
+                            null,
+                            "",
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.RESOLUTION_CODES,
+                            "resolution_code_title",
+                            null,
+                            "",
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getType().name(),
+                            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName()));
         }
 
         Assertions.assertTrue(ResultCodeSortFieldEnum.values().length > 0);
@@ -352,6 +598,23 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
         AuditAssertUtil.assertCompleted(AUDIT_GET_PAGE, logCaptor.getInfoLogs().get(1));
     }
 
+    @Override
+    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        return Stream.of(
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT + "/" + APPC_CODE + "?date=" + ACTIVE_DAY))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
+    }
+
     @Test
     public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
         var token =
@@ -381,7 +644,7 @@ public class ResultCodeControllerSearchTest extends AbstractResultCodeController
     // --- Filter helper (for query params) ------------------------------------------------------
 
     record ResultCodeFilter(Optional<String> code, Optional<String> title)
-            implements UnaryOperator<RequestSpecification> {
+            implements UnaryOperator<io.restassured.specification.RequestSpecification> {
         @Override
         public io.restassured.specification.RequestSpecification apply(
                 io.restassured.specification.RequestSpecification rs) {

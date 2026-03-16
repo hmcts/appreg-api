@@ -21,9 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
@@ -36,6 +38,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -80,6 +83,16 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
 
+        // Checking for audit log - no filter provided
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        null,
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
+
         activityAuditLogAsserter.assertCompletedLogContains(
                 GET_APPCODES_AUDIT_ACTION,
                 "ecaf9ce5d2b348338cd6b7630c837186",
@@ -118,6 +131,16 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 GET_APPCODES_AUDIT_ACTION,
                                 OperationStatus.STARTED),
                         logCaptor.getInfoLogs().get(0)));
+
+        // Checking for audit log - no filter provided
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        null,
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
 
         activityAuditLogAsserter.assertCompletedLogContainsWithUnknownMessageId(
                 GET_APPCODES_AUDIT_ACTION,
@@ -167,6 +190,16 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 GET_APPCODES_AUDIT_ACTION,
                                 OperationStatus.COMPLETED),
                         logCaptor.getInfoLogs().get(1)));
+
+        // Checking for audit log - no filter provided
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        null,
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -210,6 +243,25 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 GET_APPCODE_AUDIT_ACTION,
                                 OperationStatus.COMPLETED),
                         logCaptor.getInfoLogs().get(1)));
+
+        // Checking for audit log - filter provided
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        id,
+                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code_start_date",
+                        null,
+                        "2016-01-01",
+                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -521,6 +573,15 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        null,
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -552,6 +613,15 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("CT99002", firstEntry.getApplicationCode());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        "CT99002",
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -583,6 +653,15 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("AD99004", firstEntry.getApplicationCode());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code_title",
+                        null,
+                        "Certificate of Satisfaction",
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test
@@ -615,6 +694,24 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         ApplicationCodeGetSummaryDto firstEntry = page.getContent().get(0);
         assertEquals("AP99004", firstEntry.getApplicationCode());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code",
+                        null,
+                        "AP99004",
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_CODES,
+                        "application_code_title",
+                        null,
+                        "Request for Certificate of Refusal to State a Case \\(Civil\\)",
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getType().name(),
+                        AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT.getEventName()));
     }
 
     @Test

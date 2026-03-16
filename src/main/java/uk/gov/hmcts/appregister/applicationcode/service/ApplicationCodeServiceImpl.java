@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
+import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
@@ -45,7 +46,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
@@ -54,6 +55,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
+                    log.debug(
+                            "Start: Find Application List for: app code: {} app title: {} with paging: {}",
+                            appCode,
+                            appTitle,
+                            pageable);
+
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(appCode, appTitle, todayUk, pageable.getPageable());
 
@@ -72,17 +79,26 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                 feePair != null ? feePair.offsiteFee() : null));
                             });
 
+                    log.debug(
+                            "Finished: Find Application List for: app code: {} app title: {} with paging: {}",
+                            appCode,
+                            appTitle,
+                            pageable);
+
+                    CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, null);
+                            new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
+
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
+                null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
                     return getApplicationCodeValidator.validate(
@@ -106,8 +122,13 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                                 ? feePair
                                                                                         .offsiteFee()
                                                                                 : null),
-                                                        null);
+                                                        applicationCodeMapper.toEntity(
+                                                                payloadForGet));
 
+                                log.debug(
+                                        "Finish: Find Application for app code: {} date: {}",
+                                        payload.getCode(),
+                                        payload.getDate());
                                 return Optional.of(result);
                             });
                 },
