@@ -4,11 +4,13 @@ get:
   summary: Get the status of a background job being processed in an administrative context.
   description: Returns the current status and details of a background job.
   parameters:
-    - name: jobId
+    - name: jobTypeId
       in: path
       required: true
-      schema: { type: string, format: uuid }
-      description: The unique identifier of the job.
+      schema: {
+        $ref: "../../../components/schemas/admin/job-type.yaml"
+      }
+      description: The type of the job we are determining the status of.
   responses:
     "200":
       description: Job status retrieved successfully.

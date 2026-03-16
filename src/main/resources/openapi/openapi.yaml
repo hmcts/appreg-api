@@ -54,7 +54,7 @@ tags:
 
 paths:
   # ADMINISTRATIVE JOBS
-  /admin/jobs/{jobId}:                                              { $ref: './paths/admin/jobs/jobs-by-id.yaml' }
+  /admin/jobs/{jobId}:                                              { $ref: './paths/admin/jobs/jobs-by-type.yaml' }
   /admin/jobs/{jobType}:                                            { $ref: './paths/admin/jobs/run-background-job.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }
