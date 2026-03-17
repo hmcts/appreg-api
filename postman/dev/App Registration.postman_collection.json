@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "b533d999-921a-413b-98e3-3490243c8ac5",
+    "_postman_id": "1253b2e8-5804-47e6-a369-f752b65153a3",
     "name": "App Registration",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-b533d999-921a-413b-98e3-3490243c8ac5?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-1253b2e8-5804-47e6-a369-f752b65153a3?source=collection_link"
   },
   "item": [
     {
@@ -657,56 +657,6 @@
       ]
     },
     {
-      "name": "actions",
-      "item": [
-        {
-          "name": "Move Application List Entries",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n  \"targetListId\": \"47a8edf1-6167-4fbf-806d-68cd88e6382e\",\r\n  \"entryIds\": [\r\n    \"7913172a-28a4-4fb6-ac3b-16e269856960\",\r\n    \"6490e071-12f6-4356-a1cb-14b7326573b5\"\r\n  ]\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/move",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-lists",
-                "{{APP_LIST_ID}}",
-                "entries",
-                "move"
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "application_list_entries",
       "item": [
         {
@@ -839,6 +789,51 @@
                 "{{APP_LIST_ID}}",
                 "entries",
                 "{{CREATED_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Move Application List Entries",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"targetListId\": \"47a8edf1-6167-4fbf-806d-68cd88e6382e\",\r\n  \"entryIds\": [\r\n    \"7913172a-28a4-4fb6-ac3b-16e269856960\",\r\n    \"6490e071-12f6-4356-a1cb-14b7326573b5\"\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/move",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "move"
               ]
             }
           },
@@ -1007,6 +1002,50 @@
                 "{{CREATED_ENTRY_ID}}",
                 "results",
                 "{{CREATED_ENTRY_RESULT_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Entry Results",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}"
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists//entries/{entryId}/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "",
+                "entries",
+                "{entryId}",
+                "results"
               ]
             }
           },
