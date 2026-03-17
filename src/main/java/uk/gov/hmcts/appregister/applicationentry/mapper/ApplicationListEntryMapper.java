@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
@@ -58,6 +59,8 @@ public abstract class ApplicationListEntryMapper {
     @Autowired ApplicantMapper applicantMapper;
 
     @Autowired OfficialMapper officialMapper;
+
+    @Autowired WordingTemplateMapper wordingTemplateMapper;
 
     @Mapping(
             target = "applicant",
@@ -408,8 +411,11 @@ public abstract class ApplicationListEntryMapper {
             target = "numberOfRespondents",
             source = "applicationListEntry.numberOfBulkRespondents")
     @Mapping(
-            target = "wordingFields",
-            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail("
+                            + "() -> applicationListEntry.getApplicationCode().getWording(),"
+                            + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
     @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.isOffsite())")
     @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
@@ -449,8 +455,11 @@ public abstract class ApplicationListEntryMapper {
             target = "numberOfRespondents",
             source = "applicationListEntry.numberOfBulkRespondents")
     @Mapping(
-            target = "wordingFields",
-            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail("
+                            + "() -> applicationListEntry.getApplicationCode().getWording(),"
+                            + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(
             target = "feeStatuses",
             expression = "java(getFeeStatusList(applicationListEntry.getEntryFeeStatuses()))")

@@ -4,6 +4,7 @@ parameters:
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
+    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
 
 get:
   operationId: printApplicationList

@@ -247,8 +247,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
     @Override
     public List<TemplateSubstitution> getKeysToBeSubstituted() {
         List<TemplateSubstitution> substitutionList = new ArrayList<>();
-        for (TemplateKeyWithConstraint constraint :
-                templateDetail.getSubstitutionKeyConstraints()) {
+        for (TemplateKeyWithConstraint constraint : getDetail().getSubstitutionKeyConstraints()) {
             TemplateSubstitution templateSubstitution = new TemplateSubstitution();
             templateSubstitution.setKey(constraint.getKey());
             substitutionList.add(templateSubstitution);

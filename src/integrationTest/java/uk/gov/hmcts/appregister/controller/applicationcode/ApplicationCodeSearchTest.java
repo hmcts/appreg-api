@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
+import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
 
@@ -66,6 +67,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
         PagingAssertionUtil.assertPageDetails(page, defaultPageSize, 0, 5, TOTAL_APP_CODES_COUNT);
         assertEquals(defaultPageSize, page.getContent().size());
+
+        TemplateAssertion.assertTemplate(
+                "Request to copy documents", page.getContent().get(0).getWording());
 
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
