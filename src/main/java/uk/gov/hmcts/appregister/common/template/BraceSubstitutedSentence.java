@@ -87,10 +87,8 @@ public class BraceSubstitutedSentence implements SubstitutedSentence {
         Pattern p = Pattern.compile(TEMPLATE_REGEX, Pattern.DOTALL);
         Matcher m = p.matcher(substitutedTemplateContent);
 
-        int positionIndex = 0;
         while (m.find()) {
             substitutedSentenceValues.add(m.group(1));
-            positionIndex = positionIndex + 1;
         }
     }
 }

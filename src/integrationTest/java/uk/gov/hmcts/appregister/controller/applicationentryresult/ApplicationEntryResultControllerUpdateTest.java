@@ -18,8 +18,10 @@ import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationList
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.util.EtagUtil;
+import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationEntryResultControllerUpdateTest
         extends AbstractApplicationEntryResultCrudTest {
@@ -72,6 +74,12 @@ public class ApplicationEntryResultControllerUpdateTest
         updateResp.then().body("id", equalTo(resultUuid.toString()));
         updateResp.then().body("entryId", equalTo(existingEntry.entry().getUuid().toString()));
         updateResp.then().body("resultCode", equalTo(FRO_CODE));
+
+        ResultGetDto resultGetDto = updateResp.as(ResultGetDto.class);
+        TemplateAssertion.assertTemplateWithValues(
+                "Fee remitted. Reason: {{Reason text}}.",
+                updatePayload.getWordingFields(),
+                resultGetDto.getWording());
 
         differenceLogAsserter.assertNoErrors();
 

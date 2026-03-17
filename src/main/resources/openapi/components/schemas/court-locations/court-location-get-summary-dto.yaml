@@ -7,6 +7,8 @@ properties:
   name:
     type: string
     description: Human-readable court name.
+    example: "Cardiff Crown Court Set 1"
   locationCode:
     type: string
     description: Code that identifies the Court Location.
+    example: "CCC003"

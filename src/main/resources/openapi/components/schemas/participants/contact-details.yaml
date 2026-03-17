@@ -7,6 +7,10 @@ properties:
   addressLine1:
     type: string
     description: Line one of the participant's address.
+    # Disallows control characters but allows almost anything else.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
+    nullable: false
     example: "10 Downing Street"
     maxLength: 35
     minLength: 1
@@ -14,56 +18,81 @@ properties:
   addressLine2:
     type: string
     description: Line two of the participant's address.
+    # Disallows control characters but allows almost anything else.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "Westminster"
+    nullable: true
     maxLength: 35
     minLength: 1
 
   addressLine3:
     type: string
     description: Line three of the participant's address.
+    # Disallows control characters but allows almost anything else.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "London"
+    nullable: true
     maxLength: 35
     minLength: 1
 
   addressLine4:
     type: string
     description: Line four of the participant's address.
+    # Disallows control characters but allows almost anything else.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "Greater London"
+    nullable: true
     maxLength: 35
     minLength: 1
 
   addressLine5:
     type: string
     description: Line five of the participant's address.
+    # Disallows control characters but allows almost anything else.
+    pattern: |-
+      ^[^\u0000-\u001F\u007F-\u009F]*$
     example: "United Kingdom"
+    nullable: true
     maxLength: 35
     minLength: 1
 
   postcode:
     type: string
     description: The participant's postcode.
+    pattern: '^([A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}|GIR ?0A{2})$'
     example: "SW1A 2AA"
+    nullable: false
     maxLength: 8
     minLength: 1
 
   phone:
     type: string
     description: The participant's home-phone number.
+    pattern: "[0-9 \\-]*" # Phone regex from legacy, allows digits, spaces and hyphens
     example: "01225 123456"
+    nullable: true
     maxLength: 20
     minLength: 1
 
   mobile:
     type: string
     description: The participant's mobile number.
+    # Allows digits, spaces, hyphens and + prefix.
+    pattern: |-
+      ^(?:\+\d{1,4}\s*)?[0-9 \-]*$
     example: "07123456789"
+    nullable: true
     maxLength: 20
     minLength: 1
 
   email:
     type: string
-    format: email
     description: The participant's email address.
+    pattern: "^((([^<>()\\[\\]\\\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,})))*$" #Email regex from legacy
     example: "john-doe@gmail.com"
+    nullable: true
     maxLength: 253
     minLength: 1

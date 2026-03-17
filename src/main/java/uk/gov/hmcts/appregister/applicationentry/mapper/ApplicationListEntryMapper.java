@@ -15,6 +15,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -29,6 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.PartyType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
@@ -37,6 +39,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -56,6 +59,8 @@ public abstract class ApplicationListEntryMapper {
     @Autowired ApplicantMapper applicantMapper;
 
     @Autowired OfficialMapper officialMapper;
+
+    @Autowired WordingTemplateMapper wordingTemplateMapper;
 
     @Mapping(
             target = "applicant",
@@ -177,14 +182,14 @@ public abstract class ApplicationListEntryMapper {
         }
 
         details.setAddressLine1(address1);
-        details.setAddressLine2(address2);
-        details.setAddressLine3(address3);
-        details.setAddressLine4(address4);
-        details.setAddressLine5(address5);
+        details.setAddressLine2(map(address2));
+        details.setAddressLine3(map(address3));
+        details.setAddressLine4(map(address4));
+        details.setAddressLine5(map(address5));
         details.setPostcode(postcode);
-        details.setPhone(phone);
-        details.setMobile(mobile);
-        details.setEmail(email);
+        details.setPhone(map(phone));
+        details.setMobile(map(mobile));
+        details.setEmail(map(email));
 
         return details;
     }
@@ -406,8 +411,11 @@ public abstract class ApplicationListEntryMapper {
             target = "numberOfRespondents",
             source = "applicationListEntry.numberOfBulkRespondents")
     @Mapping(
-            target = "wordingFields",
-            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail("
+                            + "() -> applicationListEntry.getApplicationCode().getWording(),"
+                            + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
     @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.isOffsite())")
     @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
@@ -447,8 +455,11 @@ public abstract class ApplicationListEntryMapper {
             target = "numberOfRespondents",
             source = "applicationListEntry.numberOfBulkRespondents")
     @Mapping(
-            target = "wordingFields",
-            expression = "java(getTemplateKeys(applicationListEntry.getApplicationCode()))")
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail("
+                            + "() -> applicationListEntry.getApplicationCode().getWording(),"
+                            + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(
             target = "feeStatuses",
             expression = "java(getFeeStatusList(applicationListEntry.getEntryFeeStatuses()))")
@@ -563,4 +574,81 @@ public abstract class ApplicationListEntryMapper {
 
         return respondentDto;
     }
+
+    /**
+     * This is used to create an audit entry using the GET request params for logging.
+     *
+     * @param payload Entity containing the GET request params for logging.
+     * @return ApplicationListEntry Entity containing the mapped values from the GET params.
+     */
+    @Mapping(target = "uuid", source = "payload.entryId")
+    @Mapping(target = "applicationList.uuid", source = "payload.listId")
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "applicationCode", ignore = true)
+    @Mapping(target = "numberOfBulkRespondents", ignore = true)
+    @Mapping(target = "applicationListEntryWording", ignore = true)
+    @Mapping(target = "accountNumber", ignore = true)
+    @Mapping(target = "entryRescheduled", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "bulkUpload", ignore = true)
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "sequenceNumber", ignore = true)
+    @Mapping(target = "tcepStatus", ignore = true)
+    @Mapping(target = "messageUuid", ignore = true)
+    @Mapping(target = "retryCount", ignore = true)
+    @Mapping(target = "lodgementDate", ignore = true)
+    @Mapping(target = "resolutions", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    @Mapping(target = "entryFeeStatuses", ignore = true)
+    @Mapping(target = "entryFeeIds", ignore = true)
+    @Mapping(target = "standardApplicant", ignore = true)
+    @Mapping(target = "anamedaddress", ignore = true)
+    @Mapping(target = "rnameaddress", ignore = true)
+    @Mapping(target = "caseReference", ignore = true)
+    public abstract ApplicationListEntry toApplicationListEntry(PayloadGetEntryInList payload);
+
+    /**
+     * This is used to create an audit entry using the GET dto for logging.
+     *
+     * @param filterDto Entity containing the GET dto for logging.
+     * @return ApplicationListEntry Entity containing the mapped values from the GET params.
+     */
+    @Mapping(target = "accountNumber", source = "filterDto.accountReference")
+    @Mapping(target = "standardApplicant.applicantCode", source = "filterDto.standardApplicantCode")
+    @Mapping(target = "anamedaddress.name", source = "filterDto.applicantOrganisation")
+    @Mapping(target = "anamedaddress.surname", source = "filterDto.applicantSurname")
+    @Mapping(target = "rnameaddress.name", source = "filterDto.respondentOrganisation")
+    @Mapping(target = "rnameaddress.surname", source = "filterDto.respondentSurname")
+    @Mapping(target = "rnameaddress.postcode", source = "filterDto.respondentPostcode")
+    @Mapping(target = "applicationList.courtCode", source = "filterDto.courtCode")
+    @Mapping(
+            target = "applicationList.otherLocation",
+            source = "filterDto.otherLocationDescription")
+    @Mapping(target = "applicationList.date", source = "filterDto.date")
+    @Mapping(target = "applicationList.cja.code", source = "filterDto.cjaCode")
+    @Mapping(
+            target = "applicationList.status",
+            expression = "java(toStatus(entryGetFilterDto.getStatus()))")
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "applicationCode", ignore = true)
+    @Mapping(target = "numberOfBulkRespondents", ignore = true)
+    @Mapping(target = "applicationListEntryWording", ignore = true)
+    @Mapping(target = "entryRescheduled", ignore = true)
+    @Mapping(target = "caseReference", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "version", ignore = true)
+    @Mapping(target = "bulkUpload", ignore = true)
+    @Mapping(target = "createdUser", ignore = true)
+    @Mapping(target = "sequenceNumber", ignore = true)
+    @Mapping(target = "tcepStatus", ignore = true)
+    @Mapping(target = "messageUuid", ignore = true)
+    @Mapping(target = "retryCount", ignore = true)
+    @Mapping(target = "lodgementDate", ignore = true)
+    @Mapping(target = "resolutions", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    @Mapping(target = "entryFeeStatuses", ignore = true)
+    @Mapping(target = "entryFeeIds", ignore = true)
+    @Mapping(target = "uuid", ignore = true)
+    public abstract ApplicationListEntry toApplicationListEntry(EntryGetFilterDto filterDto);
 }

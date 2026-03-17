@@ -15,8 +15,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
@@ -30,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
@@ -50,6 +53,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertThat(entry.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entry.getRespondent().getOrganisation().getName()).isEqualTo("Sarah Johnson");
         assertThat(entry.getApplicationTitle()).isEqualTo("Certified genuine copy document");
+
+        dataAuditAssertionsForNoFilter();
     }
 
     @StabilityTest
@@ -61,6 +66,186 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryGetFilterDto filterDto = getEntryGetFilterDto();
 
         assertSingleTurnerSearchResult(tokenGenerator, filterDto);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        null,
+                        "0",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "account_number",
+                        null,
+                        "29345",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_status",
+                        null,
+                        "OPEN",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "list_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "courthouse_code",
+                        null,
+                        "RCJ001",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "other_courthouse",
+                        null,
+                        "other",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_date",
+                        null,
+                        "2024-04-21",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_time",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "CJ",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "name",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "title",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "surname",
+                        null,
+                        "Turner",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "postcode",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "name",
+                        null,
+                        "Sarah Johnson",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "title",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "surname",
+                        null,
+                        "Turner",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "postcode",
+                        null,
+                        "XY9 8ZZ",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
     }
 
     private static @NotNull EntryGetFilterDto getEntryGetFilterDto() {
@@ -95,6 +280,186 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(ADMIN)).build();
         assertSingleTurnerSearchResult(tokenGenerator, filterDto);
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        null,
+                        "0",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "account_number",
+                        null,
+                        "29345",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_status",
+                        null,
+                        "OPEN",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "list_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "courthouse_code",
+                        null,
+                        "RCJ001",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "other_courthouse",
+                        null,
+                        "her",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_date",
+                        null,
+                        "2024-04-21",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_time",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "CJ",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "name",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "title",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "surname",
+                        null,
+                        "rn",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "postcode",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "name",
+                        null,
+                        "ah Johnson",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "title",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "surname",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "postcode",
+                        null,
+                        "XY9 8ZZ",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
     }
 
     @StabilityTest
@@ -123,6 +488,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                     page.getSort().getOrders().getFirst().getDirection());
             assertEquals(
                     sortField.getApiValue(), page.getSort().getOrders().getFirst().getProperty());
+
+            dataAuditAssertionsForNoFilter();
         }
 
         Assertions.assertTrue(ApplicationEntrySortFieldEnum.values().length > 0);
@@ -150,6 +517,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         PagingAssertionUtil.assertPageDetails(
                 page, pageSize, pageNumber, TOTAL_APP_ENTRY_COUNT, TOTAL_APP_ENTRY_COUNT);
         Assertions.assertNull(page.getContent());
+
+        dataAuditAssertionsForNoFilter();
     }
 
     @StabilityTest
@@ -173,7 +542,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
     @StabilityTest
     public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn200()
+            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn400()
                     throws Exception {
 
         var tokenGenerator = createAdminToken();
@@ -191,7 +560,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
     @StabilityTest
     public void
-            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageSizeBeyondDefault_thenReturn200()
+            givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
                     throws Exception {
 
         var tokenGenerator = createAdminToken();
@@ -366,5 +735,151 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertThat(entry.getApplicant().getPerson().getName().getSurname()).isEqualTo("Turner");
         assertThat(entry.getIsFeeRequired()).isTrue();
         assertThat(entry.getIsResulted()).isTrue();
+    }
+
+    private void dataAuditAssertionsForNoFilter() {
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "ale_id",
+                        null,
+                        "0",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "account_number",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_status",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "list_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "courthouse_code",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "other_courthouse",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_date",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS,
+                        "application_list_time",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_code",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.CRIMINAL_JUSTICE_AREA,
+                        "cja_description",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "name",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "title",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "surname",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.NAME_ADDRESS,
+                        "postcode",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
     }
 }

@@ -12,6 +12,7 @@ properties:
   applicationCode:
     type: string
     description: Code that identifies the application.
+    example: "AD99003"
   title:
     type: string
     description: Human-readable title.
@@ -36,6 +37,7 @@ properties:
     type: string
     nullable: true
     description: A short reference code that identifies a Fee.
+    example: "CO5.2"
   feeAmount:
     type: object
     description: >

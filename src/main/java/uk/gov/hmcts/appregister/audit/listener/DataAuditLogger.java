@@ -45,7 +45,6 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
     @Override
     protected void finished(CompleteEvent event) {
-
         // make sure if we are comparing old or new then the types match
         if (event.getOldValue() != null
                 && event.getNewValue() != null

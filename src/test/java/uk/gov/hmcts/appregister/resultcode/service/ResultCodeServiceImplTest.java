@@ -83,6 +83,10 @@ public class ResultCodeServiceImplTest {
 
         var entity = new ResolutionCode();
         var expectedDto = new ResultCodeGetDetailDto();
+
+        String wordingTemplate = "Appeal forwarded to {TEXT|Name of Crown Court|100}.";
+        entity.setWording(wordingTemplate);
+
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(entity));
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);

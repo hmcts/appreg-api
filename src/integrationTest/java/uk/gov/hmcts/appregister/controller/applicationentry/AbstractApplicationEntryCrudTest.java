@@ -15,6 +15,7 @@ import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
@@ -44,6 +45,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
@@ -271,9 +273,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     // ---- Validation helpers ----
 
     protected void validateEntryCreationResponse(
-            EntryCreateDto entryCreateDto,
-            EntryGetDetailDto response,
-            List<String> expectedWordingFields) {
+            EntryCreateDto entryCreateDto, EntryGetDetailDto response, String wordingSpec) {
 
         if (entryCreateDto.getApplicant() != null) {
             Assertions.assertEquals(entryCreateDto.getApplicant(), response.getApplicant());
@@ -288,7 +288,12 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(entryCreateDto.getCaseReference(), response.getCaseReference());
         Assertions.assertEquals(entryCreateDto.getNotes(), response.getNotes());
         Assertions.assertEquals(entryCreateDto.getAccountNumber(), response.getAccountNumber());
-        Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
+        Assertions.assertNotNull(response.getWording());
+
+        // assert the details of the template within the response
+        TemplateAssertion.assertTemplateWithValues(
+                wordingSpec, entryCreateDto.getWordingFields(), response.getWording());
+
         Assertions.assertNotNull(response.getListId());
         Assertions.assertNotNull(response.getId());
         Assertions.assertEquals(
@@ -327,7 +332,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     protected void validateEntryUpdateResponse(
             EntryUpdateDto entryUpdateDto,
             EntryGetDetailDto response,
-            List<String> expectedWordingFields,
+            String wordingSpec,
             List<FeeStatus> existingFees) {
 
         if (entryUpdateDto.getApplicant() != null) {
@@ -343,7 +348,10 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(entryUpdateDto.getCaseReference(), response.getCaseReference());
         Assertions.assertEquals(entryUpdateDto.getNotes(), response.getNotes());
         Assertions.assertEquals(entryUpdateDto.getAccountNumber(), response.getAccountNumber());
-        Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
+
+        TemplateAssertion.assertTemplateWithValues(
+                wordingSpec, entryUpdateDto.getWordingFields(), response.getWording());
+
         Assertions.assertNotNull(response.getListId());
         Assertions.assertNotNull(response.getId());
         Assertions.assertEquals(
@@ -409,7 +417,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             consumeBeforeCommit.accept(entryCreateDto);
         }
 
-        String surnameToLookup = UUID.randomUUID().toString();
+        String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         Response responseSpecCreate =
@@ -427,7 +435,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         EntryGetDetailDto createdDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
         validateEntryCreationResponse(
-                entryCreateDto, createdDto, List.of("Premises Address", "Premises Date"));
+                entryCreateDto,
+                createdDto,
+                "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
 
         Response responseFindEntrySpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -498,13 +508,77 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
 
         updateDto.getApplicant().setPerson(null);
-        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 12B");
-        updateDto.getApplicant().getOrganisation().getContactDetails().setEmail("test@org.com");
+        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1BB");
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@org.com"));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        updateDto
+                .getApplicant()
+                .getOrganisation()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
 
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
-        updateDto.getRespondent().getPerson().getContactDetails().setEmail("test@test.com");
-        updateDto.getRespondent().setOrganisation(null);
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setEmail(JsonNullable.of("test@test.com"));
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
 
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(null));
+        updateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(null));
+
+        updateDto.getRespondent().getPerson().getContactDetails().setPhone(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getContactDetails().setMobile(JsonNullable.of(null));
+
+        updateDto.getRespondent().setOrganisation(null);
         updateDto.setStandardApplicantCode(null);
         updateDto.setOfficials(officials);
 

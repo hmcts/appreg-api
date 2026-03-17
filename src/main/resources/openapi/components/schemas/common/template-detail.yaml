@@ -1,11 +1,11 @@
 type: object
-description: The template details
+description: The wording details
 required: [template]
 properties:
     template:
       type: string
       description: The template name. It contains the field names between curly braces.
-      example: "This is a test {{Applicant officer}} with a date"
+      example: "This is a test {{Applicant number}} with a date"
     substitution-key-constraints:
       type: array
       description: A list of fields and the associated constraints

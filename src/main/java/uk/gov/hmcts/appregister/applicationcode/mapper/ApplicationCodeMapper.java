@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationcode.mapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import lombok.Setter;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -10,15 +11,16 @@ import org.mapstruct.Named;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
-import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
+import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
-import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
 
 /**
  * Mapper for ApplicationCode entity and ApplicationCodeDto.
@@ -29,7 +31,10 @@ import uk.gov.hmcts.appregister.generated.model.TemplateDetail;
         injectionStrategy = InjectionStrategy.CONSTRUCTOR,
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+@Setter
 public abstract class ApplicationCodeMapper {
+
+    @Autowired WordingTemplateMapper wordingTemplateMapper;
 
     /**
      * A fee to dto mapping rule.
@@ -84,7 +89,10 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
-    @Mapping(target = "wording", expression = "java(getTemplateDetail(entity))")
+    @Mapping(
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(
@@ -106,20 +114,6 @@ public abstract class ApplicationCodeMapper {
             ApplicationCode entity, Fee fee, Fee offsiteFee);
 
     /**
-     * gets a template detail from the code.
-     *
-     * @param entity The application code entity
-     * @return The template details
-     */
-    public TemplateDetail getTemplateDetail(ApplicationCode entity) {
-        if (entity.getWording() != null) {
-            WordingTemplateSentence sentence = WordingTemplateSentence.with(entity.getWording());
-            return sentence.getDetail();
-        }
-        return null;
-    }
-
-    /**
      * maps the application code entity to detail dto.
      *
      * @param entity the application code entity
@@ -131,7 +125,10 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "feeAmount", source = "fee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
-    @Mapping(target = "wording", expression = "java(getTemplateDetail(entity))")
+    @Mapping(
+            target = "wording",
+            expression =
+                    "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
     @Mapping(
@@ -147,4 +144,14 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "code")
+    @Mapping(target = "title", source = "title")
+    public abstract ApplicationCode toEntity(CodeAndTitle record);
+
+    @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "code", source = "payloadForGet.code")
+    @Mapping(target = "startDate", source = "payloadForGet.date")
+    public abstract ApplicationCode toEntity(PayloadForGet payloadForGet);
 }

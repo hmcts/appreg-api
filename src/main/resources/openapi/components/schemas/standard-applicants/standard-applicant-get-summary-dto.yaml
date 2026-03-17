@@ -10,14 +10,17 @@ properties:
   code:
     type: string
     description: Code that identifies the Standard Applicant.
+    example: "STANDARD-1"
   applicant:
     $ref: '../participants/applicant.yaml'
   startDate:
     type: string
     format: date
     description: Date the applicant record became active.
+    example: "2025-12-01"
   endDate:
     type: string
     format: date
     nullable: true
     description: Date the applicant record became inactive (if applicable).
+    example: "2025-12-01"

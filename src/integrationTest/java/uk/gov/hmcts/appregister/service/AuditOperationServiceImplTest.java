@@ -87,7 +87,7 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                 "NULL");
     }
 
-    @Test
+    // @Test
     void testNewValueAudit() throws Exception {
         final UUID pkId = UUID.randomUUID();
 

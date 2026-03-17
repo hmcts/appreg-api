@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.controller.standardapplicant;
+package uk.gov.hmcts.appregister.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -14,12 +15,17 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -27,15 +33,36 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.client.request.DateGetRequest;
+import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
+import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 
-public class StandardApplicantControllerSearchTest
-        extends AbstractStandardApplicantControllerCrudTest {
+public class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTest {
+    private static final String WEB_CONTEXT = "standard-applicants";
+
+    @Value("${spring.data.web.pageable.default-page-size}")
+    private Integer defaultPageSize;
+
+    @Value("${spring.data.web.pageable.max-page-size}")
+    private Integer maxPageSize;
+
+    @MockitoBean private Clock clock; // replaces Clock bean in Spring context
+
+    // The total standard applicant inserted by flyway scripts. See V6__InitialTestData.sql
+    private static final int TOTAL_STANDARD_APPLICANT_COUNT = 7;
+
+    private static final String APPCODE_CODE = "APP001";
+    private static final String APPCODE_CODE_ORGANISATION = "APP005";
+
+    private static final String DUPLICATE_APPCODE_CODE = "APP003";
+
     @BeforeEach
     public void before() {
         when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
@@ -71,34 +98,60 @@ public class StandardApplicantControllerSearchTest
         Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
         Assertions.assertEquals(
                 "John", returnedSa.getApplicant().getPerson().getName().getFirstForename());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getSecondForename());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getSecondForename().get());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getThirdForename().get());
         Assertions.assertEquals(
                 "Smith", returnedSa.getApplicant().getPerson().getName().getSurname());
-        Assertions.assertNull(returnedSa.getApplicant().getPerson().getName().getThirdForename());
         Assertions.assertEquals(
                 "123 High Street",
                 returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2().get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3().get());
         Assertions.assertEquals(
                 "Townsville",
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4().get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5());
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5().get());
         Assertions.assertEquals(
                 "john.smith@example.com",
-                returnedSa.getApplicant().getPerson().getContactDetails().getEmail());
+                returnedSa.getApplicant().getPerson().getContactDetails().getEmail().get());
         Assertions.assertEquals(
                 "07123456789",
-                returnedSa.getApplicant().getPerson().getContactDetails().getMobile());
+                returnedSa.getApplicant().getPerson().getContactDetails().getMobile().get());
         Assertions.assertEquals(
                 "01234567890",
-                returnedSa.getApplicant().getPerson().getContactDetails().getPhone());
+                returnedSa.getApplicant().getPerson().getContactDetails().getPhone().get());
         Assertions.assertEquals(
                 "TS1 1AB", returnedSa.getApplicant().getPerson().getContactDetails().getPostcode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
     }
 
     @Test
@@ -132,26 +185,71 @@ public class StandardApplicantControllerSearchTest
                 "123 High Street",
                 returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine2());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine3());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3()
+                        .get());
         Assertions.assertEquals(
                 "Townsville",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine4());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNull(
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine5());
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5()
+                        .get());
         Assertions.assertEquals(
                 "john.smith@example.com",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail().get());
         Assertions.assertEquals(
                 "07123456789",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile().get());
         Assertions.assertEquals(
                 "01234567890",
-                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone());
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone().get());
         Assertions.assertEquals(
                 "TS1 1AB",
                 returnedSa.getApplicant().getOrganisation().getContactDetails().getPostcode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE_ORGANISATION,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
     }
 
     @Test
@@ -260,6 +358,25 @@ public class StandardApplicantControllerSearchTest
         // assert
         StandardApplicantGetSummaryDto returnedSc = responseContent.getContent().get(2);
         Assertions.assertEquals("APP003", returnedSc.getCode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -320,12 +437,31 @@ public class StandardApplicantControllerSearchTest
                 org.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         assertEquals(
                 "Apt 5",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2());
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2().get());
         assertEquals(
                 "Cityville",
-                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4());
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4().get());
         assertNotNull(secondEntry.getStartDate());
         assertFalse(secondEntry.getEndDate().isPresent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -374,6 +510,25 @@ public class StandardApplicantControllerSearchTest
                 secondEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
         assertNotNull(secondEntry.getStartDate());
         assertFalse(secondEntry.getEndDate().isPresent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -403,6 +558,25 @@ public class StandardApplicantControllerSearchTest
         responseSpec.then().statusCode(200);
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "does not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -437,6 +611,25 @@ public class StandardApplicantControllerSearchTest
         responseSpec.then().statusCode(200);
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -467,6 +660,25 @@ public class StandardApplicantControllerSearchTest
         StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(
                 response, pageSize, pageNumber, 4, TOTAL_STANDARD_APPLICANT_COUNT);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP00",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -506,6 +718,25 @@ public class StandardApplicantControllerSearchTest
         Assertions.assertEquals(
                 "Organisation 3",
                 response.getContent().get(2).getApplicant().getOrganisation().getName());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "ORG",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -569,6 +800,25 @@ public class StandardApplicantControllerSearchTest
         Assertions.assertEquals(
                 "Doe",
                 response.getContent().get(2).getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "D",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -621,6 +871,25 @@ public class StandardApplicantControllerSearchTest
         Assertions.assertEquals(
                 "Dunn",
                 response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Dunn",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -653,6 +922,25 @@ public class StandardApplicantControllerSearchTest
         assertEquals("APP001", firstEntry.getCode());
         assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
         assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Smith",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -683,6 +971,25 @@ public class StandardApplicantControllerSearchTest
         StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
         PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
         Assertions.assertNull(page.getContent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "John",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -715,6 +1022,25 @@ public class StandardApplicantControllerSearchTest
             Assertions.assertEquals(
                     standardApplicantSortFieldEnum.getApiValue(),
                     page.getSort().getOrders().get(0).getProperty());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -843,6 +1169,25 @@ public class StandardApplicantControllerSearchTest
 
             Assertions.assertEquals("APP004", page.getContent().get(4).getCode());
             Assertions.assertEquals("APP005", page.getContent().get(5).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "P0",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -876,6 +1221,25 @@ public class StandardApplicantControllerSearchTest
             responseSpec.then().statusCode(200);
             Assertions.assertEquals(1, page.getContent().size());
             Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "anisation 1",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 
@@ -908,6 +1272,25 @@ public class StandardApplicantControllerSearchTest
             Assertions.assertEquals(2, page.getContent().size());
             Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
             Assertions.assertEquals("APP006", page.getContent().get(1).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Owe",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 
@@ -940,6 +1323,25 @@ public class StandardApplicantControllerSearchTest
             Assertions.assertEquals(2, page.getContent().size());
             Assertions.assertEquals("APP004", page.getContent().get(0).getCode());
             Assertions.assertEquals("APP005", page.getContent().get(1).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Jones",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
         }
     }
 
@@ -986,5 +1388,28 @@ public class StandardApplicantControllerSearchTest
 
             return rs;
         }
+    }
+
+    @Override
+    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        return Stream.of(
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + APPCODE_CODE
+                                                + "?date="
+                                                + LocalDate.now()))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
     }
 }

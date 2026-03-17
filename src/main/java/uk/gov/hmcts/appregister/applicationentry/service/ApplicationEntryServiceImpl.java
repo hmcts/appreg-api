@@ -5,8 +5,11 @@ import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -21,6 +24,8 @@ import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -29,6 +34,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -42,6 +48,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
@@ -53,6 +60,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 
 @Component
@@ -69,6 +77,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
+
+    private final MoveEntriesValidator moveEntriesValidator;
 
     // Services
     private final MatchService matchService;
@@ -97,37 +107,59 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
-        Status status = applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
+        log.debug(
+                "Started: Find Application Entry for criteria: {} with paging: {}",
+                filterDto,
+                pageable);
 
-        Page<ApplicationListEntryGetSummaryProjection> resultPage =
-                applicationListEntryRepository.searchForGetSummary(
-                        filterDto.getDate() != null,
-                        filterDto.getDate(),
-                        filterDto.getCourtCode(),
-                        filterDto.getOtherLocationDescription(),
-                        filterDto.getCjaCode(),
-                        filterDto.getApplicantOrganisation(),
-                        filterDto.getApplicantSurname(),
-                        filterDto.getStandardApplicantCode(),
-                        status,
-                        filterDto.getRespondentOrganisation(),
-                        filterDto.getRespondentSurname(),
-                        filterDto.getRespondentPostcode(),
-                        filterDto.getAccountReference(),
-                        pageable.getPageable());
+        return auditService.processAudit(
+                null,
+                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                req -> {
+                    Status status =
+                            applicationListEntryMapStructMapper.toStatus(filterDto.getStatus());
 
-        // breaks name into individual and/or organisation parts
-        EntryPage newPage = new EntryPage();
-        pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
+                    Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                            applicationListEntryRepository.searchForGetSummary(
+                                    filterDto.getDate() != null,
+                                    filterDto.getDate(),
+                                    filterDto.getCourtCode(),
+                                    filterDto.getOtherLocationDescription(),
+                                    filterDto.getCjaCode(),
+                                    filterDto.getApplicantOrganisation(),
+                                    filterDto.getApplicantSurname(),
+                                    filterDto.getStandardApplicantCode(),
+                                    status,
+                                    filterDto.getRespondentOrganisation(),
+                                    filterDto.getRespondentSurname(),
+                                    filterDto.getRespondentPostcode(),
+                                    filterDto.getAccountReference(),
+                                    pageable.getPageable());
 
-        // Map each entity to a summary DTO and add to the page content
-        resultPage.forEach(
-                entry -> {
-                    newPage.addContentItem(
-                            applicationListEntryMapStructMapper.toEntrySummary(entry));
+                    // breaks name into individual and/or organisation parts
+                    EntryPage newPage = new EntryPage();
+                    pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
+
+                    // Map each entity to a summary DTO and add to the page content
+                    resultPage.forEach(
+                            entry -> {
+                                newPage.addContentItem(
+                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
+                            });
+
+                    log.debug(
+                            "Finished: Find Application Entry for criteria: {} with paging: {}",
+                            filterDto,
+                            pageable);
+
+                    AuditableResult<EntryPage, ApplicationListEntry> result =
+                            new AuditableResult<>(
+                                    newPage,
+                                    applicationListEntryMapStructMapper.toApplicationListEntry(
+                                            filterDto));
+
+                    return Optional.of(result);
                 });
-
-        return newPage;
     }
 
     @Override
@@ -209,12 +241,20 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     });
                         });
 
+        log.debug("Finish: Create Application Entry: {}", entryCreateDto);
+
         return getDetailDto;
     }
 
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
+        log.debug("Started: Update Application Entry: {}", updateEntry);
+        log.debug(
+                "Updating application entry with id: {} in list {}",
+                updateEntry.getEntryId(),
+                updateEntry.getId());
+
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
                 updateApplicationEntryValidator.validate(
@@ -308,6 +348,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     getKeyablesForCreateUpdateEtag(
                                             success.getApplicationEntryId()));
                         });
+
+        log.debug("Finish: Update Application Entry: {}", updateEntry);
 
         return getDetailDto;
     }
@@ -782,19 +824,60 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return getEntryValidator.validate(
                 entry,
                 (req, success) -> {
-                    getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
-                    EntryGetDetailDto dto =
-                            applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                                    success.getApplicationListEntry(),
-                                    hasOffsite(success.getApplicationListEntry()));
-                    log.debug(
-                            "Finished: Getting application list entry detail: {} for list: {}",
-                            entry.getEntryId(),
-                            entry.getListId());
-
-                    return MatchResponse.of(
-                            dto, getKeyablesForCreateUpdateEtag(success.getApplicationListEntry()));
+                    return auditService.processAudit(
+                            null,
+                            AppListEntryAuditOperation.GET_APP_ENTRY_LIST_DETAIL,
+                            (r) -> {
+                                getKeyablesForCreateUpdateEtag(success.getApplicationListEntry());
+                                EntryGetDetailDto dto =
+                                        applicationListEntryMapStructMapper.toEntryGetDetailDto(
+                                                success.getApplicationListEntry(),
+                                                hasOffsite(success.getApplicationListEntry()));
+                                log.debug(
+                                        "Finished: Getting application list entry detail: {} for list: {}",
+                                        entry.getEntryId(),
+                                        entry.getListId());
+                                AuditableResult<
+                                                MatchResponse<EntryGetDetailDto>,
+                                                ApplicationListEntry>
+                                        result =
+                                                new AuditableResult<>(
+                                                        MatchResponse.of(
+                                                                dto,
+                                                                getKeyablesForCreateUpdateEtag(
+                                                                        success
+                                                                                .getApplicationListEntry())),
+                                                        applicationListEntryMapStructMapper
+                                                                .toApplicationListEntry(entry));
+                                return Optional.of(result);
+                            });
                 });
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void move(UUID sourceListId, MoveEntriesDto moveEntriesDto) {
+        ApplicationList targetList =
+                moveEntriesValidator
+                        .withSourceList(sourceListId)
+                        .validate(moveEntriesDto, (req, success) -> success.getTargetList());
+
+        Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
+
+        int rowsUpdated =
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        requestedIds, targetList, sourceListId);
+
+        if (rowsUpdated != requestedIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                    "One or more entries were not found in the source list");
+        }
+
+        log.info(
+                "Completed bulk move for {} entries from list {}",
+                requestedIds.size(),
+                sourceListId);
     }
 
     /**

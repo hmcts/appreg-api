@@ -14,6 +14,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
@@ -29,6 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.READ})
 public class CriminalJusticeArea implements Identifiable, Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
@@ -39,8 +41,10 @@ public class CriminalJusticeArea implements Identifiable, Keyable {
     private Long id;
 
     @Column(name = "cja_code", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private String code;
 
     @Column(name = "cja_description", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private String description;
 }

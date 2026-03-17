@@ -44,6 +44,7 @@ public class PostgresCommand implements Command {
     /** stops and closes the container. */
     public void stop() {
         container.stop();
+        container.close();
     }
 
     @Override

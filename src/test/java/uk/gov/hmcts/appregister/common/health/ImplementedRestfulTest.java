@@ -16,7 +16,7 @@ public class ImplementedRestfulTest {
     private static List<String> UNIMPLEMENTED_ENDPOINTS =
             List.of(
                     "POST /application-lists/{listId}/entries/results",
-                    "POST /application-lists/{listId}/entries/bulk-upload",
+                    "POST /application-lists/{listId}/entries/bulk-import",
                     "DELETE /application-lists/{listId}/entries/{entryId}",
                     "GET /application-lists/{listId}/entries",
                     "GET /jobs/{jobId}",
@@ -27,7 +27,8 @@ public class ImplementedRestfulTest {
                     "GET /reports/jobs/{jobId}/download",
                     "POST /reports/duration/jobs",
                     "POST /reports/fees/jobs",
-                    "POST /reports/search-warrants/jobs");
+                    "POST /reports/search-warrants/jobs",
+                    "GET /admin/jobs/{jobType}");
 
     @Test
     public void testShouldNotBeImplemented() throws Exception {
@@ -37,6 +38,7 @@ public class ImplementedRestfulTest {
 
         // assert against the unimplemented endpoints.
         for (String endpoint : UNIMPLEMENTED_ENDPOINTS) {
+            System.out.println(endpoint);
             Assertions.assertEquals(
                     RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED,
                     implemented.get(endpoint),

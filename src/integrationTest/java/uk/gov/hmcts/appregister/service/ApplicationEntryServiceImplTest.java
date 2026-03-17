@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
@@ -92,6 +93,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -152,6 +159,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             applicationListEntry,
                             response.getPayload(),
                             "Request to copy documents",
+                            "Request to copy documents",
                             List.of());
                 });
     }
@@ -171,6 +179,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         entryCreateDto.setNumberOfRespondents(0);
         entryCreateDto.setWordingFields(List.of(substitution));
@@ -219,11 +237,13 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
-                            "Attends to swear a complaint for the issue of "
-                                    + "a summons for the debtor to answer an application for a "
-                                    + "liability order in relation to unpaid council tax (reference"
-                                    + " {test wording})",
-                            List.of("Reference"));
+                            "Attends to swear a complaint for the issue of a summons for "
+                                    + "the debtor to answer an application for a liability order in relation to unpaid "
+                                    + "council tax (reference {test wording})",
+                            "Attends to swear a complaint for the issue of a summons"
+                                    + " for the debtor to answer an application for a liability order in"
+                                    + " relation to unpaid council tax (reference {{Reference}})",
+                            List.of(substitution));
                 });
     }
 
@@ -242,6 +262,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         EntryUpdateDto entryUpdateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
@@ -338,6 +364,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 applicationListEntry.get(),
                 update.getPayload(),
                 "Request to copy documents",
+                "Request to copy documents",
                 List.of(),
                 feeStatusBeforeUpdate);
     }
@@ -392,6 +419,16 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setWordingFields(List.of(substitution, substitution1));
         entryUpdateDto.setHasOffsiteFee(true);
         entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
@@ -463,7 +500,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at {value} for date {"
                         + LocalDate.now()
                         + "}",
-                List.of("Premises Address", "Premises Date"),
+                "Application for a warrant to enter premises at {{Premises Address}} "
+                        + "for date {{Premises Date}}",
+                entryUpdateDto.getWordingFields(),
                 feeStatusBeforeUpdate);
     }
 
@@ -500,8 +539,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryUpdateDto updateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         updateDto.getApplicant().setOrganisation(null);
+        updateDto.getApplicant().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         updateDto.setNumberOfRespondents(null);
@@ -578,7 +621,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " premises at {value} for date {"
                         + LocalDate.now()
                         + "}",
-                List.of("Premises Address", "Premises Date"),
+                "Application for a warrant to enter premises at "
+                        + "{{Premises Address}} for date {{Premises Date}}",
+                List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
                 feeStatusBeforeUpdate);
     }
 
@@ -619,6 +664,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getApplicant().setPerson(null);
         updateDto.setFeeStatuses(null);
         updateDto.getRespondent().setOrganisation(null);
+        updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        updateDto.getRespondent().getPerson().getName().setSecondForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
         updateDto.setNumberOfRespondents(0);
 
@@ -692,7 +739,10 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Attends to swear a complaint for the issue of a summons for the "
                         + "debtor to answer an application for a liability order in relation "
                         + "to unpaid council tax (reference {test wording})",
-                List.of("Reference"),
+                "Attends to swear a complaint for the issue of a summons for the debtor"
+                        + " to answer an application for a liability order in relation to unpaid council tax "
+                        + "(reference {{Reference}})",
+                updateDto.getWordingFields(),
                 feeStatusBeforeUpdate);
     }
 
@@ -710,9 +760,87 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
         entryCreateDto.getRespondent().setOrganisation(null);
+
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine2(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine3(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine4(JsonNullable.of(Instancio.gen().string().get()));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of(null));
+        entryCreateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of(null));
 
         entryCreateDto.setNumberOfRespondents(10);
 
@@ -773,7 +901,9 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                                     + "r premises at {test wording} for date {"
                                     + LocalDate.now()
                                     + "}",
-                            List.of("Premises Address", "Premises Date"));
+                            "Application for a warrant to enter premises at "
+                                    + "{{Premises Address}} for date {{Premises Date}}",
+                            entryCreateDto.getWordingFields());
                 });
 
         return response.getPayload().getId();
@@ -785,6 +915,12 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
@@ -836,6 +972,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             new ApplicationListEntryWrapperDto(entryCreateDto),
                             applicationListEntry,
                             response.getPayload(),
+                            "Request to copy documents",
                             "Request to copy documents",
                             List.of());
                 });
