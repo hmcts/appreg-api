@@ -56,13 +56,13 @@ import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -996,7 +996,7 @@ public class ApplicationEntryServiceImplTest {
     void move_returns400_whenEntryIdsNull() {
         doThrow(
                         new AppRegistryException(
-                                ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided"))
+                            ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided"))
                 .when(moveEntriesValidator)
                 .validate(any(MoveEntriesDto.class), any());
 

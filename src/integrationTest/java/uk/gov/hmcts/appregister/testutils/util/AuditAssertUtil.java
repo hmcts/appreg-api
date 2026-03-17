@@ -2,8 +2,8 @@ package uk.gov.hmcts.appregister.testutils.util;
 
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Assertions;
-import uk.gov.hmcts.appregister.audit.event.OperationStatus;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
 
 /**
  * A utility for making assertions around audit logs.

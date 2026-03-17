@@ -12,7 +12,7 @@ import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
@@ -449,7 +449,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     public void givenCourtLocationSuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
             throws Exception {
         for (CourtLocationSortFieldMapper courtLocationSortFieldMapper :
-                CourtLocationSortFieldMapper.values()) {
+            CourtLocationSortFieldMapper.values()) {
 
             // create the token
             TokenGenerator tokenGenerator =

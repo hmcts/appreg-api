@@ -87,12 +87,12 @@ public class CourtLocationController implements CourtLocationsApi {
 
         PagingWrapper pageable =
                 pageableMapper.from(
-                        page,
-                        size,
-                        sort,
-                        CourtLocationSortFieldMapper.CODE,
-                        Sort.Direction.ASC,
-                        CourtLocationSortFieldMapper::getEntityValue);
+                    page,
+                    size,
+                    sort,
+                    CourtLocationSortFieldMapper.CODE,
+                    Sort.Direction.ASC,
+                    CourtLocationSortFieldMapper::getEntityValue);
 
         return ResponseEntity.ok().body(service.getPage(name, code, pageable));
     }

@@ -15,11 +15,11 @@ import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.base.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
@@ -55,12 +55,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT,
                 (req) -> {
-                    log.debug(
-                            "Start: Find Application List for: app code: {} app title: {} with paging: {}",
-                            appCode,
-                            appTitle,
-                            pageable);
-
                     final Page<ApplicationCode> applicationCodeList =
                             repository.search(appCode, appTitle, todayUk, pageable.getPageable());
 
@@ -86,6 +80,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             pageable);
 
                     CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
+
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
                             new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
 
@@ -125,10 +120,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                         applicationCodeMapper.toEntity(
                                                                 payloadForGet));
 
-                                log.debug(
-                                        "Finish: Find Application for app code: {} date: {}",
-                                        payload.getCode(),
-                                        payload.getDate());
                                 return Optional.of(result);
                             });
                 },

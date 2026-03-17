@@ -26,9 +26,9 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetVali
 import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListLocationValidator;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -128,20 +128,22 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> create(ApplicationListCreateDto dto) {
-        log.debug("Start: Request to create application list : {}", dto);
-
-        return auditService.processAudit(
-                AppListAuditOperation.CREATE_APP_LIST,
-                req ->
-                        applicationCreateListLocationValidator.validate(
-                                dto,
-                                (listCreateDto, success) ->
-                                        success.hasCourt()
-                                                ? Optional.of(
-                                                        createWithCourt(listCreateDto, success))
-                                                : Optional.of(
-                                                        createWithCja(listCreateDto, success))),
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+        MatchResponse<ApplicationListGetDetailDto> applicationListGetDetailDto =
+                auditService.processAudit(
+                        AppListAuditOperation.CREATE_APP_LIST,
+                        req ->
+                                applicationCreateListLocationValidator.validate(
+                                        dto,
+                                        (listCreateDto, success) ->
+                                                success.hasCourt()
+                                                        ? Optional.of(
+                                                                createWithCourt(
+                                                                        listCreateDto, success))
+                                                        : Optional.of(
+                                                                createWithCja(
+                                                                        listCreateDto, success))),
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+        return applicationListGetDetailDto;
     }
 
     /**
@@ -156,8 +158,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Transactional
     public MatchResponse<ApplicationListGetDetailDto> update(
             PayloadForUpdate<ApplicationListUpdateDto> dto) {
-        log.debug("Start: Request to update application list : {}", dto);
-
         MatchResponse<ApplicationListGetDetailDto> response =
                 applicationUpdateListLocationValidator.validate(
                         dto,
@@ -175,14 +175,12 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                         auditLifecycleListeners.toArray(
                                                 new AuditOperationLifecycleListener[0])));
 
-        log.debug("Finish: Request to update application list : {}", response.getPayload());
         return response;
     }
 
     @Override
     @Transactional
     public ApplicationListGetDetailDto get(UUID id, PagingWrapper pageable) {
-
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,
@@ -361,8 +359,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     @Override
     @Transactional
     public void delete(UUID idToDelete) {
-        log.debug("Start: Deleting Application List with id: {}", idToDelete);
-
         deletionValidator.validate(
                 idToDelete,
                 (id, success) ->
@@ -377,8 +373,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                                 },
                                 auditLifecycleListeners.toArray(
                                         new AuditOperationLifecycleListener[0])));
-
-        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**
@@ -539,6 +533,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
     }
 
     private Map<UUID, Long> fetchEntryCounts(List<UUID> uuids) {

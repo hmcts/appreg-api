@@ -1,13 +1,6 @@
 package uk.gov.hmcts.appregister.config;
 
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRED;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.REST_IMPLEMENTATION_HEALTH;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
-import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
+import static uk.gov.hmcts.appregister.config.AppConfig.REST_IMPLEMENTATION_HEALTH;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +16,21 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+    // Claim names
+    public static final String ROLE_CLAIM = "roles";
+
+    // Authority prefix
+    public static final String ROLE_PREFIX = "ROLE_";
+
+    // Endpoint patterns
+    public static final String SWAGGER_UI = "/swagger-ui/**";
+    public static final String OPENAPI_DOCS = "/v3/api-docs/**";
+    public static final String OPENAPI = "/specs/**";
+    public static final String HEALTH = "/health/**";
+
+    // Error codes
+    public static final int ERR_AUTH_REQUIRED = 401;
+    public static final int ERR_FORBIDDEN = 403;
 
     /**
      * Defines the main Spring Security filter chain for the API. - Disables CSRF (not needed for

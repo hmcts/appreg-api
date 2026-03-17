@@ -5,20 +5,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
+import uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.ReflectiveAuditor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.ReflectiveAuditor;
 
 /**
  * A class that allows us to assert against audit log data. This class reads the logs from {@link
- * uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
+ * DataAuditLogger}.
  */
 @Slf4j
 @RequiredArgsConstructor
 @Component
 public class DataAuditLogAsserter {
     protected final LogCaptor dataAuditLogger =
-            LogCaptor.forClass(uk.gov.hmcts.appregister.audit.listener.DataAuditLogger.class);
+            LogCaptor.forClass(
+                    uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger.class);
 
     protected final LogCaptor reflectiveDifferentiator =
             LogCaptor.forClass(ReflectiveAuditor.class);
@@ -85,13 +88,15 @@ public class DataAuditLogAsserter {
     }
 
     /**
-     * The log regex pattern of the {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
+     * The log regex pattern of the {@link
+     * uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger}.
      */
     private static final String DIFF_NEW_LOG_PATTERN =
             DIFF_NEW_PREFIX + " AuditableData\\(tableName=%s, fieldName=%s, value=%s\\)";
 
     /**
-     * The log regex pattern of the {@link uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
+     * The log regex pattern of the {@link
+     * uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger}.
      */
     private static final String DIFF_OLD_LOG_PATTERN =
             DIFF_OLD_PREFIX + " AuditableData\\(tableName=%s, fieldName=%s, value=%s\\)";
@@ -215,7 +220,7 @@ public class DataAuditLogAsserter {
 
     /**
      * clears the underlying logs from the {@link
-     * uk.gov.hmcts.appregister.audit.listener.DataAuditLogger}.
+     * uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger}.
      */
     public void clearLogs() {
         dataAuditLogger.clearLogs();

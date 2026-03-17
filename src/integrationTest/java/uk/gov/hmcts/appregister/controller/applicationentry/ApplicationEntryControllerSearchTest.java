@@ -18,10 +18,10 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.mapper.SortableField;
+import uk.gov.hmcts.appregister.common.mapper.SortableFieldMapper;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -627,7 +627,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
                         List.of(
-                                SortableField.getSortStringForDesc(
+                                SortableFieldMapper.getSortStringForDesc(
                                         ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE)),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
@@ -670,7 +670,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         Optional.of(pageSize),
                         Optional.of(pageNumber),
                         List.of(
-                                SortableField.getSortStringForAsc(
+                                SortableFieldMapper.getSortStringForAsc(
                                         ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE)),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());

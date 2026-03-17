@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -13,7 +12,8 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -26,10 +26,10 @@ import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntr
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -63,7 +63,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
@@ -106,11 +106,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final Clock clock;
 
     @Override
+    @Transactional(readOnly = true)
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
-        log.debug(
-                "Started: Find Application Entry for criteria: {} with paging: {}",
-                filterDto,
-                pageable);
 
         return auditService.processAudit(
                 null,
@@ -241,20 +238,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     });
                         });
 
-        log.debug("Finish: Create Application Entry: {}", entryCreateDto);
-
         return getDetailDto;
     }
 
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
-        log.debug("Started: Update Application Entry: {}", updateEntry);
-        log.debug(
-                "Updating application entry with id: {} in list {}",
-                updateEntry.getEntryId(),
-                updateEntry.getId());
-
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
                 updateApplicationEntryValidator.validate(
@@ -348,8 +337,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     getKeyablesForCreateUpdateEtag(
                                             success.getApplicationEntryId()));
                         });
-
-        log.debug("Finish: Update Application Entry: {}", updateEntry);
 
         return getDetailDto;
     }
@@ -781,7 +768,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     req -> {
                         log.debug("Deleting officials");
 
-                        // delete the officials that already exist
+                        // delete the officials
                         appListEntryOfficialRepository.deleteAllForEntryId(
                                 success.getApplicationEntryId().getId());
                         return Optional.empty();
@@ -814,6 +801,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
         log.debug(
@@ -870,8 +858,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         if (rowsUpdated != requestedIds.size()) {
             throw new AppRegistryException(
-                    ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
-                    "One or more entries were not found in the source list");
+                ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
+                "One or more entries were not found in the source list");
         }
 
         log.info(

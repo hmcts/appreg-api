@@ -23,19 +23,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.mapper.SortableField;
+import uk.gov.hmcts.appregister.common.mapper.SortableFieldMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeAuditOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
@@ -96,7 +96,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -117,7 +119,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -141,7 +145,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -162,7 +168,7 @@ public class ResultCodeServiceImplTest {
         when(repository.findActiveOnDate(eq(codeFilter), eq(titleFilter), any(), eq(pageable)))
                 .thenReturn(dbPage);
 
-        PagingWrapper wrapper = PagingWrapper.of(SortableField.of("id,asc"), pageable);
+        PagingWrapper wrapper = PagingWrapper.of(SortableFieldMapper.of("id,asc"), pageable);
         // Simulate page meta copy so assertions have values
         doAnswer(
                         inv -> {
@@ -186,7 +192,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -200,7 +208,7 @@ public class ResultCodeServiceImplTest {
         Page<ResolutionCode> emptyPage = new PageImpl<>(List.of(), pageable, 0);
         when(repository.findActiveOnDate(eq(null), eq(null), any(), eq(pageable)))
                 .thenReturn(emptyPage);
-        PagingWrapper wrapper = PagingWrapper.of(SortableField.of("id,asc"), pageable);
+        PagingWrapper wrapper = PagingWrapper.of(SortableFieldMapper.of("id,asc"), pageable);
         doAnswer(
                         inv -> {
                             ResultCodePage out = inv.getArgument(1);
@@ -223,6 +231,8 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 }

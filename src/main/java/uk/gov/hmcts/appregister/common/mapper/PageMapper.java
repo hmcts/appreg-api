@@ -20,7 +20,7 @@ public class PageMapper {
     public void toPage(
             org.springframework.data.domain.Page<?> from,
             uk.gov.hmcts.appregister.generated.model.Page to,
-            List<SortableField> originalSort) {
+            List<SortableFieldMapper> originalSort) {
         to.setTotalElements(from.getTotalElements());
         to.setElementsOnPage(from.getNumberOfElements());
         to.setTotalPages(from.getTotalPages());
@@ -37,14 +37,14 @@ public class PageMapper {
      * @param sortValues The spring sort object
      * @return The sort object
      */
-    public Sort toSort(List<SortableField> sortValues) {
+    public Sort toSort(List<SortableFieldMapper> sortValues) {
         if (sortValues == null) {
             // Open API Schema allows null for sort.
             return null;
         }
 
         Sort s = new Sort();
-        for (SortableField sortValue : sortValues) {
+        for (SortableFieldMapper sortValue : sortValues) {
             var item = new SortOrdersInner();
             item.setProperty(sortValue.getField());
             item.setDirection(

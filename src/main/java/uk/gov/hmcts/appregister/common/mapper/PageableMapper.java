@@ -56,7 +56,7 @@ public class PageableMapper {
         }
         Sort sortSpec;
 
-        List<SortableField> sortableFields = null;
+        List<SortableFieldMapper> sortableFields = null;
 
         String tieBreaker = null;
         List<String> mappedSorts = new ArrayList<>();
@@ -64,9 +64,10 @@ public class PageableMapper {
         // process the sorts or default the sort
         if (sort != null && !sort.isEmpty()) {
 
-            sortableFields = SortableField.of(sort.toArray(new String[0]));
+            sortableFields = SortableFieldMapper.of(sort.toArray(new String[0]));
+            for (SortableFieldMapper sortableField : sortableFields) {
+                sortableFields = SortableFieldMapper.of(sort.toArray(new String[0]));
 
-            for (SortableField sortableField : sortableFields) {
                 mappedSorts.addAll(
                         sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
 
@@ -74,8 +75,8 @@ public class PageableMapper {
             }
         } else {
             sortableFields = new ArrayList<>();
-            SortableField sortableField =
-                    SortableField.of(
+            SortableFieldMapper sortableField =
+                    SortableFieldMapper.of(
                                     defaultSortProperty.getApiValue()
                                             + ","
                                             + defaultDirection.name())

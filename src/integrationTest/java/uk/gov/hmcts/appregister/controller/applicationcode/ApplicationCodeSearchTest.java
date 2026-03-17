@@ -24,8 +24,8 @@ import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
-import uk.gov.hmcts.appregister.audit.event.OperationStatus;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;

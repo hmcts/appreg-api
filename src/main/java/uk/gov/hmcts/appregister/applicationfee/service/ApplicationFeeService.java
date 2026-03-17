@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
-import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.base.FeePair;
 
 /**
  * Service for resolving application fees.

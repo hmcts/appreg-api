@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.standardapplicant.service;
 
-import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -10,9 +9,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import org.springframework.transaction.annotation.Transactional;
+
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
@@ -47,8 +48,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     private final ApplicantMapper applicantMapper;
 
     @Override
+    @Transactional(readOnly = true)
     public StandardApplicantPage findAll(String code, String name, PagingWrapper pageable) {
-
         return auditService.processAudit(
                 null,
                 StandardApplicantOperation.GET_STANDARD_APPLICANTS,
@@ -68,12 +69,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                     standardApplicantsList.map(
                             sa -> newPage.addContentItem(mapper.toReadGetSummaryDto(sa)));
 
-                    log.debug(
-                            "Finished: Find Standard Applicant for: code: {} name: {} with paging: {}",
-                            code,
-                            name,
-                            pageable);
-
                     CodeAndName record = new CodeAndName(code, name);
                     AuditableResult<StandardApplicantPage, StandardApplicant> result =
                             new AuditableResult<>(newPage, mapper.toEntity(record));
@@ -84,6 +79,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     }
 
     @Override
+    @Transactional(readOnly = true)
     public StandardApplicantGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
                 null,
@@ -99,11 +95,6 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                     PayloadForGet.builder().date(date).code(code).build(),
                                     (id, standardApplicant) ->
                                             mapper.toReadGetDto(standardApplicant));
-
-                    log.debug(
-                            "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
-                            code,
-                            date);
 
                     AuditableResult<StandardApplicantGetDetailDto, StandardApplicant> result =
                             new AuditableResult<>(payloadForGet, mapper.toEntity(code, date));

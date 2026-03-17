@@ -1,10 +1,11 @@
 package uk.gov.hmcts.appregister.audit.listener;
 
 import lombok.extern.slf4j.Slf4j;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.FailEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.FailEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListenerAdapter;
 
 /**
  * Logs the request and response of audit events using SLF4J.

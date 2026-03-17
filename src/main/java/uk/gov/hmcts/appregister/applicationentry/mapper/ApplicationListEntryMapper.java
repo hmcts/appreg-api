@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
-import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyExtractor.getWordingKeys;
+import static uk.gov.hmcts.appregister.common.mapper.WordingSubstitutionKeyMapper.getWordingKeys;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;

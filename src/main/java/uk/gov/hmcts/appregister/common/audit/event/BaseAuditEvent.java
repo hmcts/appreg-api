@@ -1,0 +1,43 @@
+package uk.gov.hmcts.appregister.common.audit.event;
+
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+
+/**
+ * The audit payload base interface.
+ */
+public interface BaseAuditEvent {
+    String NO_VALUE = "NULL";
+
+    /**
+     * gets the request action.
+     *
+     * @return the request action
+     */
+    AuditOperation getRequestAction();
+
+    /**
+     * gets the message uuid.
+     *
+     * @return the message uuid
+     */
+    String getMessageUuid();
+
+    /**
+     * gets the message status.
+     *
+     * @return the message status
+     */
+    OperationStatus getMessageStatus();
+
+    /**
+     * gets the message content.
+     *
+     * @return the message content
+     */
+    String getMessageContent();
+
+    Keyable getNewValue();
+
+    Keyable getOldValue();
+}

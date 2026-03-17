@@ -16,7 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.base.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
 @ExtendWith(MockitoExtension.class)

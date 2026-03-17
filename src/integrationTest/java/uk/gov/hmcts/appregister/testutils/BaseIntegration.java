@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.openapitools.jackson.nullable.JsonNullableModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
 import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
@@ -64,6 +64,8 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
         }
 
         logCaptor = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
+        differenceLogAsserter = new DataAuditLogAsserter();
+
         activityAuditLogAsserter = new ActivityAuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();

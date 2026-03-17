@@ -18,9 +18,9 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.mapper.SortableField;
+import uk.gov.hmcts.appregister.common.mapper.SortableFieldMapper;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
@@ -396,7 +396,7 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                         List.of(
                                 ApplicationListSortFieldEnum.LOCATION.getApiValue()
                                         + ","
-                                        + SortableField.DESC),
+                                        + SortableFieldMapper.DESC),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         GetApplicationListFilterSpecification.builder()

@@ -2,8 +2,8 @@ package uk.gov.hmcts.appregister.courtlocation.audit;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.entity.base.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 @RequiredArgsConstructor

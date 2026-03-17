@@ -24,7 +24,8 @@ public class PageMapperTest {
         PageMapper mapper = new PageMapper();
         Page<?> page = new PageImpl<CriminalJusticeAreaGetDto>(List.of(), pageable, 25);
 
-        PagingWrapper wrapper = PagingWrapper.of(SortableField.of("apiSortField,desc"), pageable);
+        PagingWrapper wrapper =
+                PagingWrapper.of(SortableFieldMapper.of("apiSortField,desc"), pageable);
         CriminalJusticeAreaPage criminalJusticeAreaPage = new CriminalJusticeAreaPage();
         mapper.toPage(page, criminalJusticeAreaPage, wrapper.getSortStrings());
 

@@ -49,6 +49,17 @@ public class ObfuscationUtil {
      */
     public static String getObfuscatedString(Object o) {
         try {
+            SimpleModule maskingModule = new SimpleModule();
+
+            maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
+            maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
+            maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(maskingModule);
+            mapper.registerModule(new JsonNullableModule());
+            mapper.registerModule(new JavaTimeModule());
+
             return mapper.writeValueAsString(o);
         } catch (JsonProcessingException jsonProcessingException) {
             log.error(jsonProcessingException.getMessage(), jsonProcessingException);

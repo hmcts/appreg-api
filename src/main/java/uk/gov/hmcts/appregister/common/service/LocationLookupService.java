@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAre
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Slf4j
 public class LocationLookupService {
 
     private static final int SINGLE_RECORD = 1;
@@ -32,6 +34,7 @@ public class LocationLookupService {
     private final CriminalJusticeAreaRepository cjaRepository;
 
     /** Returns the single active court for the given code, or throws a domain exception. */
+    @Transactional(readOnly = true)
     public NationalCourtHouse getActiveCourtOrThrow(String code) {
         List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(code);
 
@@ -49,6 +52,7 @@ public class LocationLookupService {
     }
 
     /** Returns the single CJA for the given code, or throws a domain exception. */
+    @Transactional(readOnly = true)
     public CriminalJusticeArea getCjaOrThrow(String code) {
         List<CriminalJusticeArea> cjas = cjaRepository.findByCode(code);
 

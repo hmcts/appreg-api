@@ -8,9 +8,10 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeCode;
+import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.applicationfee.exception.ApplicationFeeCodeError;
 import uk.gov.hmcts.appregister.common.entity.Fee;
-import uk.gov.hmcts.appregister.common.entity.FeePair;
+import uk.gov.hmcts.appregister.common.entity.base.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 
 /**
@@ -25,6 +26,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final Clock clock;
 
     @SuppressWarnings("java:S1135")
+    @Transactional(readOnly = true)
     public FeePair resolveFeePair(String feeReference) {
         List<Fee> fee =
                 feeRepository.findByReferenceBetweenDate(feeReference, LocalDate.now(clock));
@@ -38,12 +40,12 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
 
         // if we do not have a main but have an offset then error
         if (main.isEmpty() && !offsite.isEmpty()) {
-            log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
+            log.warn(ApplicationFeeCodeError.NO_MAIN_FEE.getCode().getMessage());
         }
 
         // if we have more than one main or offset then we have an issue
         if (main.size() > 1 || offsite.size() > 1) {
-            log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
+            log.warn(ApplicationFeeCodeError.AMBIGUOUS_FEE.getCode().getMessage());
         }
 
         // Is this good enough when multiple mains and offsite exists?
