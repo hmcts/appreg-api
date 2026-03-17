@@ -8,7 +8,7 @@ get:
       in: path
       required: true
       schema: {
-        $ref: "../../../components/schemas/admin/job-type.yaml"
+        $ref: "../../../components/schemas/admin/admin-job-type.yaml"
       }
       description: The type of the job we are determining the status of.
   responses:
@@ -22,7 +22,8 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/job-acknowledgement.yaml"
+            $ref: "../../../components/schemas/admin/admin-job-acknowledgement.y\
+                  aml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "409": { $ref: "../../..//components/responses/conflict-error.yaml" }
     "403": { $ref: "../../..//components/responses/forbidden-error.yaml" }

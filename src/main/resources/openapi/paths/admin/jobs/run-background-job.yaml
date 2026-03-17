@@ -8,7 +8,7 @@ post:
       in: path
       required: true
       schema: {
-        $ref: "../../../components/schemas/admin/job-type.yaml"
+        $ref: "../../../components/schemas/admin/admin-job-type.yaml"
       }
       description: The unique identifier of the job.
   responses:
@@ -22,7 +22,7 @@ post:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/job-acknowledgement.yaml"
+            $ref: "../../../components/schemas/admin/admin-job-acknowledgement.yaml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../../components/responses/not-found-error.yaml" }
