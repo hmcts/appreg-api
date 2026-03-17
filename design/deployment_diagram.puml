@@ -1,0 +1,25 @@
+@startuml
+
+actor Portal
+
+node "Kubernetes Cluster" {
+  node "App Registration Service" {
+      component "Cleanup Scheduler Job" as cleanup
+      component "Reference Service Sync Job" as sync
+      component "Core Rest API" as api
+  }
+}
+
+Portal -> api
+database Postgres
+
+api -> Postgres
+
+node "Reference Service" {
+}
+
+cleanup -> Postgres : Delete app lists
+sync -> "Reference Service" : Read reference data changes
+sync -> Postgres : Write updates
+
+@enduml

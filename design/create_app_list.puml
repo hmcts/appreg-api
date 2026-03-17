@@ -1,0 +1,28 @@
+@startuml
+
+actor UI
+participant ApplicationListController
+participant ApplicationListServiceImpl
+
+UI->ApplicationListController : Http Post Create App List
+activate  ApplicationListController
+ApplicationListController -> ApplicationListServiceImpl : create(ApplicationListCreateDto dto)
+activate  ApplicationListServiceImpl
+
+activate ApplicationCreateListLocationValidator
+
+ApplicationListServiceImpl -> ApplicationCreateListLocationValidator : validate
+database ApplicationListRepository
+
+activate ApplicationListMapper
+ApplicationListServiceImpl -> ApplicationListMapper : toCreateEntityWithCourt
+
+ApplicationListServiceImpl -> ApplicationListRepository : Create Record
+activate  ApplicationListRepository
+
+ApplicationListServiceImpl -> ApplicationListMapper : toGetDetailDto
+
+ApplicationListServiceImpl -> ApplicationListController
+ApplicationListController -> UI
+
+@enduml
