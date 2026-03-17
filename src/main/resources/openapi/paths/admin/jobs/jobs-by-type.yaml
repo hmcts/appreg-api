@@ -1,10 +1,10 @@
 get:
-  operationId: getJobStatus
+  operationId: getJobStatusAdmin
   tags: [ admin ]
   summary: Get the status of a background job being processed in an administrative context.
   description: Returns the current status and details of a background job.
   parameters:
-    - name: jobTypeId
+    - name: jobType
       in: path
       required: true
       schema: {
@@ -22,8 +22,7 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/admin-job-acknowledgement.y\
-                  aml"
+            $ref: "../../../components/schemas/admin/admin-job-acknowledgement.yaml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "409": { $ref: "../../..//components/responses/conflict-error.yaml" }
     "403": { $ref: "../../..//components/responses/forbidden-error.yaml" }
