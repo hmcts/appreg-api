@@ -1,17 +1,14 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
-
-import uk.gov.hmcts.appregister.Application;
+import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
@@ -23,8 +20,6 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntr
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultDeletionValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
-import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
-import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationListGetValidator;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -40,7 +35,6 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWith
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
-import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
@@ -249,52 +243,57 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
         return getDto;
     }
 
+    @Transactional
     @Override
-    public ResultPage search(PayloadGetEntryResultInList payloadGetEntryResultInList,
-                             PagingWrapper pageWrapper) {
+    public ResultPage search(
+            PayloadGetEntryResultInList payloadGetEntryResultInList, PagingWrapper pageWrapper) {
         ResultPage resultPage = new ResultPage();
 
-        return applicationListGetValidator.validate(payloadGetEntryResultInList, (pay, success)-> auditService.processAudit(
-            null,
-            AppListEntryResultAuditOperation.GET_APP_LIST_ENTRY_RESULT,
-            req -> {
+        return applicationListGetValidator.validate(
+                payloadGetEntryResultInList,
+                (pay, success) ->
+                        auditService.processAudit(
+                                null,
+                                AppListEntryResultAuditOperation.GET_APP_LIST_ENTRY_RESULT,
+                                req -> {
 
-                // get the list entry result
-                ApplicationList applicationList =
-                    success.getApplicationList();
+                                    // get the list entry result
+                                    ApplicationList applicationList = success.getApplicationList();
 
-                ApplicationListEntry applicationListEntry =
-                    success.getApplicationListEntry();
+                                    ApplicationListEntry applicationListEntry =
+                                            success.getApplicationListEntry();
 
-                // get the page data
-                Page<ApplicationListEntryResultWithResultCodeProjection>
-                    pageData = repository
-                    .getResolutionForApplicationListAndResolutionId(
-                        applicationList.getUuid(),
-                        applicationListEntry.getUuid(),
-                        pageWrapper.getPageable()
-                    );
+                                    // get the page data
+                                    Page<ApplicationListEntryResultWithResultCodeProjection>
+                                            pageData =
+                                                    repository
+                                                            .getResolutionDetailsForApplicationListAndEntry(
+                                                                    applicationList.getUuid(),
+                                                                    applicationListEntry.getUuid(),
+                                                                    pageWrapper.getPageable());
 
-                // convert data to response
-                pageData.forEach(result -> {
-                    resultPage.addContentItem(applicationListEntryResultMapper.toResultGetDto(result));
-                });
-                pageMapper
-                    .toPage(pageData, resultPage, pageWrapper.getSortStrings());
+                                    // convert data to response
+                                    pageData.forEach(
+                                            result -> {
+                                                resultPage.addContentItem(
+                                                        applicationListEntryResultMapper
+                                                                .toResultGetDto(result));
+                                            });
+                                    pageMapper.toPage(
+                                            pageData, resultPage, pageWrapper.getSortStrings());
 
-                // generate response for auditing
-                AppListEntryResolution appListEntryResolution = new AppListEntryResolution();
+                                    // generate response for auditing
+                                    AppListEntryResolution appListEntryResolution =
+                                            new AppListEntryResolution();
 
-                applicationListEntryResultEntityMapper.toApplicationListEntryResult(
-                    payloadGetEntryResultInList, appListEntryResolution);
-                return Optional.of(
-                    new AuditableResult<>(
-                        resultPage,
-                        appListEntryResolution
-                    ));
-            }
-        )
-        );
+                                    applicationListEntryResultEntityMapper
+                                            .toApplicationListEntryResult(
+                                                    payloadGetEntryResultInList,
+                                                    appListEntryResolution);
+                                    return Optional.of(
+                                            new AuditableResult<>(
+                                                    resultPage, appListEntryResolution));
+                                }));
     }
 
     /**

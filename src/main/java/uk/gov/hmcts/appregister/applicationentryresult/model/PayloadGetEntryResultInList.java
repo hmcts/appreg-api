@@ -1,9 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentryresult.model;
 
+import java.util.UUID;
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.UUID;
 
 @Getter
 @Builder

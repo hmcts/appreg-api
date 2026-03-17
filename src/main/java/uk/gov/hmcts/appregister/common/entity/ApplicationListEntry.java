@@ -59,7 +59,7 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -139,5 +139,6 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @Column(name = "id")
     @Generated(event = EventType.INSERT)
+    @Audit(action = {CrudEnum.READ})
     private UUID uuid;
 }

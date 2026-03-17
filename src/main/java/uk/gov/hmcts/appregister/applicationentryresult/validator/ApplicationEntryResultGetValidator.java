@@ -1,12 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import lombok.RequiredArgsConstructor;
-
+import java.util.UUID;
+import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Component;
-
-import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -16,26 +13,30 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
-import java.util.UUID;
-import java.util.function.BiFunction;
-
 @Component
 @Slf4j
-public class ApplicationEntryResultGetValidator extends
-    AbstractApplicationEntryResultValidator<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess> {
+public class ApplicationEntryResultGetValidator
+        extends AbstractApplicationEntryResultValidator<
+                PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess> {
 
-    public ApplicationEntryResultGetValidator(ApplicationListRepository applicationListRepository, ApplicationListEntryRepository applicationListEntryRepository, ResolutionCodeRepository resolutionCodeRepository) {
+    public ApplicationEntryResultGetValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationListEntryRepository applicationListEntryRepository,
+            ResolutionCodeRepository resolutionCodeRepository) {
         super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
     }
 
     @Override
-    protected ListEntryResultGetValidationSuccess getResult(ResolutionCode code,
-                                                               WordingTemplateSentence wordingTemplateCollection,
-                                                               ApplicationList applicationList,
-                                                               ApplicationListEntry applicationListEntry,
-                                                               PayloadGetEntryResultInList dto) {
+    protected ListEntryResultGetValidationSuccess getResult(
+            ResolutionCode code,
+            WordingTemplateSentence wordingTemplateCollection,
+            ApplicationList applicationList,
+            ApplicationListEntry applicationListEntry,
+            PayloadGetEntryResultInList dto) {
         return ListEntryResultGetValidationSuccess.builder()
-            .applicationListEntry(applicationListEntry).applicationList(applicationList).build();
+                .applicationListEntry(applicationListEntry)
+                .applicationList(applicationList)
+                .build();
     }
 
     @Override
@@ -45,9 +46,9 @@ public class ApplicationEntryResultGetValidator extends
 
     @Override
     public <R> R validate(
-        PayloadGetEntryResultInList args,
-        BiFunction<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess, R>
-            createSupplier) {
+            PayloadGetEntryResultInList args,
+            BiFunction<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess, R>
+                    createSupplier) {
 
         return super.validate(args, createSupplier);
     }
@@ -67,4 +68,8 @@ public class ApplicationEntryResultGetValidator extends
         return validatable.getEntryId();
     }
 
+    @Override
+    protected void validateParentApplicationListIsOpen(ApplicationList validatable) {
+        // Do not fail if the list is closed
+    }
 }

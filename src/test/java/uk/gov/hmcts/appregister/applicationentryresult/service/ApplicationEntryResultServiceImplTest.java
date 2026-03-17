@@ -25,6 +25,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultEntityMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
@@ -59,10 +61,14 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.mapper.SortableField;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWithResultCodeProjection;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,11 +109,10 @@ public class ApplicationEntryResultServiceImplTest {
 
     @Spy
     private DummyApplicationEntryResultGetValidator getValidator =
-        new DummyApplicationEntryResultGetValidator(
-            applicationListRepository,
-            applicationListEntryRepository,
-            resolutionCodeRepository);
-
+            new DummyApplicationEntryResultGetValidator(
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -231,6 +236,61 @@ public class ApplicationEntryResultServiceImplTest {
 
         verify(deletionValidator).validate(any(ListEntryResultDeleteArgs.class), notNull());
         verify(appListEntryResolutionRepository).delete(any(AppListEntryResolution.class));
+    }
+
+    @Test
+    void search_validArgs_returnEntryResult() {
+        PayloadGetEntryResultInList payloadGetEntryResultInList =
+                PayloadGetEntryResultInList.builder().build();
+
+        ApplicationListEntryResultWithResultCodeProjection
+                applicationListEntryResultWithResultCodeProjection =
+                        Mockito.mock(ApplicationListEntryResultWithResultCodeProjection.class);
+        ApplicationListEntryResultWithResultCodeProjection
+                applicationListEntryResultWithResultCodeProjection1 =
+                        Mockito.mock(ApplicationListEntryResultWithResultCodeProjection.class);
+
+        org.springframework.data.domain.Pageable pageable =
+                Mockito.mock(org.springframework.data.domain.Pageable.class);
+
+        Page<ApplicationListEntryResultWithResultCodeProjection> page =
+                new PageImpl<>(
+                        List.of(
+                                applicationListEntryResultWithResultCodeProjection,
+                                applicationListEntryResultWithResultCodeProjection1),
+                        pageable,
+                        1);
+
+        when(appListEntryResolutionRepository.getResolutionDetailsForApplicationListAndEntry(
+                        payloadGetEntryResultInList.getListId(),
+                        payloadGetEntryResultInList.getEntryId(),
+                        pageable))
+                .thenReturn(page);
+
+        ResultGetDto resultGetDto = Mockito.mock(ResultGetDto.class);
+        ResultGetDto resultGetDto1 = Mockito.mock(ResultGetDto.class);
+
+        getValidator.setSuccess(
+                ListEntryResultGetValidationSuccess.builder()
+                        .applicationListEntry(new ApplicationListEntry())
+                        .applicationList(new ApplicationList())
+                        .build());
+        when(applicationListEntryResultMapper.toResultGetDto(
+                        applicationListEntryResultWithResultCodeProjection))
+                .thenReturn(resultGetDto);
+        when(applicationListEntryResultMapper.toResultGetDto(
+                        applicationListEntryResultWithResultCodeProjection1))
+                .thenReturn(resultGetDto1);
+
+        String testSort = "testSort";
+        PagingWrapper pagingWrapper = new PagingWrapper(SortableField.of(testSort), pageable);
+
+        ResultPage resultPage = service.search(payloadGetEntryResultInList, pagingWrapper);
+
+        // assert
+        Assertions.assertEquals(resultGetDto, resultPage.getContent().get(0));
+        Assertions.assertEquals(resultGetDto1, resultPage.getContent().get(1));
+        Assertions.assertEquals("testSort", resultPage.getSort().getOrders().get(0).getProperty());
     }
 
     @Setter
@@ -362,29 +422,26 @@ public class ApplicationEntryResultServiceImplTest {
 
     @Setter
     static class DummyApplicationEntryResultGetValidator
-        extends ApplicationEntryResultGetValidator {
+            extends ApplicationEntryResultGetValidator {
 
         private ListEntryResultGetValidationSuccess success;
 
         public DummyApplicationEntryResultGetValidator(
-            ApplicationListRepository applicationListRepository,
-            ApplicationListEntryRepository applicationListEntryRepository,
-            ResolutionCodeRepository resolutionCodeRepository) {
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository,
+                ResolutionCodeRepository resolutionCodeRepository) {
 
             super(
-                applicationListRepository,
-                applicationListEntryRepository,
-                resolutionCodeRepository);
+                    applicationListRepository,
+                    applicationListEntryRepository,
+                    resolutionCodeRepository);
         }
 
         @Override
         public <R> R validate(
-            PayloadGetEntryResultInList validatable,
-            BiFunction<
-                PayloadGetEntryResultInList,
-                ListEntryResultGetValidationSuccess,
-                R>
-                validateSuccess) {
+                PayloadGetEntryResultInList validatable,
+                BiFunction<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess, R>
+                        validateSuccess) {
 
             return validateSuccess.apply(validatable, success);
         }

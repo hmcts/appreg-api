@@ -111,7 +111,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
                             .formatted(getApplicationListUuid(validatable)));
         }
 
-        if (!applicationList.get().isOpen() || applicationList.get().isDeleted()) {
+        if (applicationList.get().isDeleted()) {
             throw new AppRegistryException(
                     ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT,
                     "The application list id %s is not in the correct state or the application list is deleted %s"
@@ -120,9 +120,26 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
                                     applicationList.get().getStatus()));
         }
 
+        // validate the list is open
+        validateParentApplicationListIsOpen(applicationList.get());
+
         log.debug("Validated application list with id {}", getApplicationListUuid(validatable));
 
         return applicationList.get();
+    }
+
+    /**
+     * validates the parent application list is open.
+     *
+     * @param validatable The validatable payload
+     */
+    protected void validateParentApplicationListIsOpen(ApplicationList validatable) {
+        if (!validatable.isOpen()) {
+            throw new AppRegistryException(
+                    ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                    "The application list id %s is not in the correct state or the application list is deleted %s"
+                            .formatted(validatable.getUuid(), validatable.getStatus()));
+        }
     }
 
     /**

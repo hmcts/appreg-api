@@ -1,12 +1,9 @@
 package uk.gov.hmcts.appregister.applicationentryresult.service;
 
-import org.springframework.data.domain.Pageable;
-
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
-import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
@@ -42,7 +39,8 @@ public interface ApplicationEntryResultService {
     MatchResponse<ResultGetDto> update(PayloadForUpdateEntryResult updateEntryResult);
 
     /**
-     * Retrieves a paginated collection of Application List Entry Results matching the specified filter criteria.
+     * Retrieves a paginated collection of Application List Entry Results matching the specified
+     * filter criteria.
      *
      * <p>The returned {@link ApplicationListPage} includes pagination metadata (page number, total
      * elements, total pages) and a list of {@link
@@ -51,12 +49,10 @@ public interface ApplicationEntryResultService {
      *
      * @param payloadGetEntryResultInList the filter criteria
      * @param pageable pagination and sorting configuration
-     * @return an {@link ResultPage} containing a paginated set of application list
-     *     summaries
+     * @return an {@link ResultPage} containing a paginated set of application list summaries
      * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if invalid filter
      *     parameters are provided or underlying data retrieval fails
      */
-    ResultPage search(PayloadGetEntryResultInList payloadGetEntryResultInList,
-                      PagingWrapper pageable);
-
+    ResultPage search(
+            PayloadGetEntryResultInList payloadGetEntryResultInList, PagingWrapper pageable);
 }

@@ -42,7 +42,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @EntityListeners(PreCreateUpdateEntityListener.class)
-@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE})
+@AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
 public class AppListEntryResolution extends BaseChangeableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -56,7 +56,7 @@ public class AppListEntryResolution extends BaseChangeableEntity
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ale_ale_id", nullable = false)
-    @Audit(action = {CrudEnum.CREATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.READ})
     private ApplicationListEntry applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)

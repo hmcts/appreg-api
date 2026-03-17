@@ -27,11 +27,11 @@ public class WordingTemplateMapper {
      * @return The template details
      */
     public TemplateDetail getTemplateDetail(
-        Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
+            Supplier<String> wordingTemplateSupplier, Supplier<String> appliedTemplateSupplier) {
         log.debug("Parsing template ", wordingTemplateSupplier.get());
 
         WordingTemplateSentence wordingTemplate =
-            WordingTemplateSentence.with(wordingTemplateSupplier.get());
+                WordingTemplateSentence.with(wordingTemplateSupplier.get());
 
         // ensure we return the values if we have applied the template
         // else just return the parsed template details
@@ -40,11 +40,11 @@ public class WordingTemplateMapper {
 
             // parse out the wording string assuming braces delimet each value
             BraceSubstitutedSentence sentence =
-                BraceSubstitutedSentence.withSubstitutedSentence(appliedTemplateSupplier.get());
+                    BraceSubstitutedSentence.withSubstitutedSentence(appliedTemplateSupplier.get());
 
             // get substitution keys that need to be replaced
             List<TemplateSubstitution> keysForSubstitution =
-                wordingTemplate.getKeysToBeSubstituted();
+                    wordingTemplate.getKeysToBeSubstituted();
 
             // apply the sentence value to substitution keys
             sentence.applyValuesTo(keysForSubstitution);

@@ -5,7 +5,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
-
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -60,6 +59,7 @@ public abstract class ApplicationListEntryResultEntityMapper {
     @Mapping(target = "resolutionWording", ignore = true)
     @Mapping(target = "resolutionCode", ignore = true)
     @Mapping(target = "resolutionOfficer", ignore = true)
-    public abstract AppListEntryResolution toApplicationListEntryResult(PayloadGetEntryResultInList entity,
-                                                                        @MappingTarget AppListEntryResolution entryResolution);
+    public abstract AppListEntryResolution toApplicationListEntryResult(
+            PayloadGetEntryResultInList entity,
+            @MappingTarget AppListEntryResolution entryResolution);
 }

@@ -45,31 +45,29 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
     @Override
     protected void finished(CompleteEvent event) {
 
-        // data audit for all operations. Ignores get operations
-        if (!event.getRequestAction().getType().isRead()) {
-            // make sure if we are comparing old or new then the types match
-            if (event.getOldValue() != null
-                    && event.getNewValue() != null
-                    && ((!event.getOldValue()
-                                    .getClass()
-                                    .getCanonicalName()
-                                    .equals(event.getNewValue().getClass().getCanonicalName()))
-                            || !event.getOldValue().getId().equals(event.getNewValue().getId()))) {
-                log.debug(
-                        "New and old audit values are not the same type and or id{} {}",
-                        event.getOldValue().getClass().getCanonicalName(),
-                        event.getNewValue().getClass().getCanonicalName());
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "New and old audit values are not the same type");
-            } else if (event.getOldValue() == null && event.getNewValue() == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Cannot audit when both old and new values are null");
-            }
-
-            auditDataBasedOnCompleteEventState(event);
+        // make sure if we are comparing old or new then the types match
+        if (event.getOldValue() != null
+                && event.getNewValue() != null
+                && ((!event.getOldValue()
+                                .getClass()
+                                .getCanonicalName()
+                                .equals(event.getNewValue().getClass().getCanonicalName()))
+                        || !defaultLong(event.getOldValue().getId())
+                                .equals(defaultLong(event.getNewValue().getId())))) {
+            log.debug(
+                    "New and old audit values are not the same type and or id{} {}",
+                    event.getOldValue().getClass().getCanonicalName(),
+                    event.getNewValue().getClass().getCanonicalName());
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "New and old audit values are not the same type");
+        } else if (event.getOldValue() == null && event.getNewValue() == null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "Cannot audit when both old and new values are null");
         }
+
+        auditDataBasedOnCompleteEventState(event);
     }
 
     /**
@@ -239,16 +237,19 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             boolean primaryOld) {
         if (primaryOld && secondaryDiff == null) {
             log.debug(SAVING_OLD_AUDIT_MESSAGE, primaryDiff);
-            audit.setRelatedKey(event.getOldValue() != null ? event.getOldValue().getId() : -1L);
+            audit.setRelatedKey(
+                    event.getOldValue() != null ? defaultLong(event.getOldValue().getId()) : -1L);
             audit.setNewValue(EMPTY_VALUE);
             audit.setOldValue(primaryDiff.getValue());
         } else if (!primaryOld && secondaryDiff == null) {
             log.debug(SAVING_NEW_AUDIT_MESSAGE, primaryDiff);
-            audit.setRelatedKey(event.getNewValue() != null ? event.getNewValue().getId() : -1L);
+            audit.setRelatedKey(
+                    event.getNewValue() != null ? defaultLong(event.getNewValue().getId()) : -1L);
             audit.setNewValue(primaryDiff.getValue());
             audit.setOldValue(EMPTY_VALUE);
         } else {
-            audit.setRelatedKey(event.getOldValue() != null ? event.getNewValue().getId() : -1L);
+            audit.setRelatedKey(
+                    event.getOldValue() != null ? defaultLong(event.getNewValue().getId()) : -1L);
 
             if (primaryOld) {
                 audit.setOldValue(primaryDiff.getValue());
@@ -262,6 +263,14 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                 log.debug(SAVING_OLD_AUDIT_MESSAGE, secondaryDiff);
             }
         }
+    }
+
+    private Long defaultLong(Long l) {
+        if (l == null) {
+            return -1L;
+        }
+
+        return l;
     }
 
     @Override

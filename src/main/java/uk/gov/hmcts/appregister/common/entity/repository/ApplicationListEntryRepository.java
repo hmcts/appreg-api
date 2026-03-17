@@ -300,7 +300,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             """
         SELECT ale
         FROM ApplicationListEntry ale
-        WHERE ale.uuid = :entryId AND (ale.deleted IS NULL OR ale.deleted <> '1')
+        WHERE ale.uuid = :entryId AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
 
@@ -316,7 +316,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         SELECT ale
         FROM ApplicationListEntry ale
         WHERE ale.applicationList.uuid = :listId AND ale.uuid = :entryId
-                AND (ale.deleted IS NULL OR ale.deleted <> '1')
+                AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Optional<ApplicationListEntry> findByEntryUuidWithinListUuid(UUID listId, UUID entryId);
 
@@ -380,4 +380,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         WHERE ale.uuid = :entryUuid
         """)
     int softDeleteByUuid(@Param("entryUuid") UUID entryUuid);
+
+    /**
+     * Finds entries for a list, excluding deleted entries.
+     *
+     * @param appLstId The application list
+     * @param pageable The page criteria
+     * @return A page of matching application entries
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :appLstId
+            AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        """)
+    Page<ApplicationListEntry> findForApplicationList(UUID appLstId, Pageable pageable);
 }

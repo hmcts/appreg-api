@@ -1,18 +1,13 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWithResultCodeProjection;
 
@@ -77,20 +72,20 @@ public interface AppListEntryResolutionRepository
 
     /**
      * gets the result with the result code for the page of data.
+     *
      * @param applicationListUuid The application list uuid
      * @param entryUuid The application list entry uuid
      * @param pageable The pageable data
      * @return The page data
      */
     @Query(
-        """
-            SELECT c as resolution, c.resolutionCode as resultCode
+            """
+            SELECT c as resolution, c.resolutionCode as resolutionCode
                 FROM AppListEntryResolution c
                 WHERE c.applicationList.uuid=:entryUuid
                         AND c.applicationList.applicationList.uuid=:applicationListUuid
         """)
     Page<ApplicationListEntryResultWithResultCodeProjection>
-    getResolutionForApplicationListAndResolutionId(UUID applicationListUuid,
-        UUID entryUuid,
-        Pageable pageable);
+            getResolutionDetailsForApplicationListAndEntry(
+                    UUID applicationListUuid, UUID entryUuid, Pageable pageable);
 }

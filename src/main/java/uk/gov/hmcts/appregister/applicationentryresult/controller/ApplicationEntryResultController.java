@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,8 +13,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentryresult.api.ApplicationEntryResultSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
@@ -143,14 +140,23 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
     }
 
     @Override
-    public ResponseEntity<ResultPage> getApplicationListEntryResults(UUID listId, UUID entryId, Integer pageNumber, Integer pageSize) {
-        PagingWrapper pagingWrapper = pageableMapper.from(pageSize, pageNumber, List.of(),
-                                          ApplicationEntryResultSortFieldEnum.CODE,
-                                          Sort.Direction.ASC,
-                                          ApplicationEntryResultSortFieldEnum::getEntityValue);
-        ResultPage resultPage = service.search(PayloadGetEntryResultInList.builder()
-                       .listId(listId).entryId(entryId).build(),
-                       pagingWrapper);
+    public ResponseEntity<ResultPage> getApplicationListEntryResults(
+            UUID listId, UUID entryId, Integer pageNumber, Integer pageSize) {
+        PagingWrapper pagingWrapper =
+                pageableMapper.from(
+                        pageNumber,
+                        pageSize,
+                        List.of(),
+                        ApplicationEntryResultSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        ApplicationEntryResultSortFieldEnum::getEntityValue);
+        ResultPage resultPage =
+                service.search(
+                        PayloadGetEntryResultInList.builder()
+                                .listId(listId)
+                                .entryId(entryId)
+                                .build(),
+                        pagingWrapper);
         return ResponseEntity.ok().body(resultPage);
     }
 

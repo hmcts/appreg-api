@@ -60,7 +60,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
 
     @Generated(event = EventType.INSERT)
     @Column(name = "id", insertable = false, updatable = false, columnDefinition = "uuid")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.UPDATE, CrudEnum.READ})
     private java.util.UUID uuid;
 
     @Column(name = "application_list_status")
