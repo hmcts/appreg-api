@@ -111,7 +111,7 @@ tasks.withType(Test).configureEach {
   enabled = true
   useJUnitPlatform()
   failFast = true
-
+  maxHeapSize = "1024m"
   testLogging {
     exceptionFormat = 'full'
   }
