@@ -3,7 +3,6 @@ description: A persons full name. Blank fields will be rejected, nulls should be
 required:
   - surname
   - firstForename
-
 properties:
 
   title:

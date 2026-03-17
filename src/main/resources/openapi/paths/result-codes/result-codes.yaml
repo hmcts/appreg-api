@@ -14,12 +14,14 @@ get:
       schema:
         type: string
         maxLength: 10
+      example: "CC"
     - in: query
       name: title
       description: Filter by title (contains, case-insensitive).
       schema:
         type: string
         maxLength: 500
+      example: "Fee Remitted (Benefits)"
     - in: query
       name: pageNumber
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

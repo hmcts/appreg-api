@@ -7,6 +7,8 @@ properties:
   resultCode:
     type: string
     description: Code that identifies the result.
+    example: "RC-001"
   title:
     type: string
     description: Human-readable title.
+    example: "Application List Entry Fee Status"

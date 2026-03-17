@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.AuditAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
+import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTest {
 
@@ -78,6 +79,9 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+
+        TemplateAssertion.assertTemplate(
+                "Appeal forwarded to {{Name of Crown Court}}.", dto.getWording());
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(

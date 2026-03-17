@@ -4,10 +4,11 @@ parameters:
     required: true
     schema: { type: string, format: uuid }
     description: ID of the Application List receiving the uploaded entries.
+    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
 
 post:
   operationId: bulkUploadApplicationListEntries
-  tags: [ actions ]
+  tags: [ application-list-entries ]
   summary: Start an asynchronous bulk upload of entries via CSV.
   description: >
     Enqueues a background job that validates the CSV and, if valid, atomically inserts

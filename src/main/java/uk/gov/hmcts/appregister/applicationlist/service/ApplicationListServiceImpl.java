@@ -564,6 +564,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
             String location = deriveLocation(alp);
             responsePage.addContentItem(mapper.toGetSummaryDto(alp, alp.getEntryCount(), location));
         }
+
         return responsePage;
     }
 

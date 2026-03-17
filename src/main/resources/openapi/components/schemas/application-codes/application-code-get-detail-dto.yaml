@@ -14,9 +14,11 @@ properties:
   applicationCode:
     type: string
     description: Code that identifies the application.
+    example: "AD99003"
   title:
     type: string
     description: Human-readable title.
+    example: "Application to Crown Court"
   wording:
     $ref: '../common/template-detail.yaml'
   isFeeDue:
@@ -38,6 +40,7 @@ properties:
     type: string
     nullable: true
     description: A short reference code that identifies a Fee.
+    example: "CO5.2"
   feeAmount:
     type: object
     description: >
@@ -63,6 +66,7 @@ properties:
     type: string
     nullable: true
     description: Descriptive text for the fee.
+    example: "Fee for application to Crown Court"
   offsiteFeeAmount:
     type: object
     description: >
@@ -88,8 +92,10 @@ properties:
     type: string
     format: date
     description: Date the Application Code became active.
+    example: "2025-09-17"
   endDate:
     type: string
     format: date
     description: Date the Application Code became inactive. `null` indicates that this row is still active.
     nullable: true
+    example: "2025-12-01"

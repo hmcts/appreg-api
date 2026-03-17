@@ -14,12 +14,14 @@ get:
       schema:
         type: string
         maxLength: 2
+      example: "A1"
     - in: query
       name: description
       description: Filter by description (contains, case-insensitive).
       schema:
         type: string
         maxLength: 35
+      example: "Liverpool"
     - in: query
       name: pageNumber
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

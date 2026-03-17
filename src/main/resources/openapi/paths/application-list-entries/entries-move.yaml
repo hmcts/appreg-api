@@ -4,9 +4,10 @@ parameters:
     required: true
     schema: { type: string, format: uuid }
     description: ID of the source Application List that currently owns the entries.
+    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
 post:
   operationId: moveApplicationListEntries
-  tags: [ actions ]
+  tags: [ application-list-entries ]
   summary: Move entries from one Application List to another.
   description: Moves the specified entries from the **source** list (path `listId`) to a single **destination** list.
   requestBody:
@@ -14,7 +15,7 @@ post:
     content:
       application/vnd.hmcts.appreg.v1+json:
         schema:
-          $ref: "../../components/schemas/actions/move-entries-dto.yaml"
+          $ref: "../../components/schemas/application-list-entries/move-entries-dto.yaml"
   responses:
     "200":
       description: All entries successfully moved. No response body.

@@ -1,21 +1,21 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.YES;
 
 import io.restassured.response.Response;
 import java.net.MalformedURLException;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,8 +23,8 @@ import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
-import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.controller.applicationcode.AbstractApplicationCodeEntryCrudTest;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
@@ -32,11 +32,9 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
-import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
-import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
-public class ActionControllerTest extends AbstractSecurityControllerTest {
+public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeEntryCrudTest {
     @MockitoBean private UserProvider provider;
     private static final String WEB_CONTEXT = "application-lists";
     private static final String VND_JSON_V1 = "application/vnd.hmcts.appreg.v1+json";
@@ -48,6 +46,11 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
         when(provider.getUserId()).thenReturn("user");
         when(provider.getEmail()).thenReturn("email");
         when(provider.getRoles()).thenReturn(new String[] {"role"});
+
+        // a date that is without range for the main but out of range for the offsite fee
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
     }
 
     @Test
@@ -259,23 +262,6 @@ public class ActionControllerTest extends AbstractSecurityControllerTest {
         Assertions.assertEquals(
                 ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST.getCode().getAppCode(),
                 problemDetail.getType().toString());
-    }
-
-    @Override
-    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
-        Set<UUID> entryIds = new HashSet<>();
-        entryIds.add(UUID.randomUUID());
-
-        var validPayload = new MoveEntriesDto().targetListId(UUID.randomUUID()).entryIds(entryIds);
-
-        return Stream.of(
-                RestEndpointDescription.builder()
-                        .url(getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID() + "/entries/move"))
-                        .method(HttpMethod.POST)
-                        .payload(validPayload)
-                        .successRole(RoleEnum.USER)
-                        .successRole(RoleEnum.ADMIN)
-                        .build());
     }
 
     private ApplicationListPage getApplicationListPage(

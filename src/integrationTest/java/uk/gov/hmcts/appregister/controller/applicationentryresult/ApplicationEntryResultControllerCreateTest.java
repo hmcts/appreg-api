@@ -17,7 +17,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationEntryResultControllerCreateTest
         extends AbstractApplicationEntryResultCrudTest {
@@ -47,7 +49,13 @@ public class ApplicationEntryResultControllerCreateTest
         resp.then().body("id", notNullValue());
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo(APPC_CODE));
-        resp.then().body("wordingFields", equalTo(List.of(APPC_WORDING_KEY)));
+
+        ResultGetDto resultGetDto = resp.as(ResultGetDto.class);
+
+        TemplateAssertion.assertTemplateWithValues(
+                "Appeal forwarded to {{Name of Crown Court}}.",
+                List.of(new TemplateSubstitution(APPC_WORDING_KEY, "The Central Criminal Court")),
+                resultGetDto.getWording());
     }
 
     @Test
@@ -155,7 +163,6 @@ public class ApplicationEntryResultControllerCreateTest
         resp.then().statusCode(HttpStatus.CREATED.value());
         resp.then().body("entryId", equalTo(entry.getUuid().toString()));
         resp.then().body("resultCode", equalTo("DUP1"));
-        resp.then().body("wordingFields", equalTo(List.of()));
 
         UUID resultUuid = UUID.fromString(resp.jsonPath().getString("id"));
 

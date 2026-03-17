@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import java.util.UUID;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -9,6 +10,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 public interface ApplicationEntryService {
     /**
@@ -56,4 +58,18 @@ public interface ApplicationEntryService {
      * @return A MatchResponse containing the entry details
      */
     MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(PayloadGetEntryInList entry);
+
+    /**
+     * Moves the specified entries from a source Application List to a destination Application List.
+     *
+     * <p>This operation transfers one or more entries currently belonging to the source list
+     * identified by {@code listId} to the destination list specified within the provided {@link
+     * MoveEntriesDto}.
+     *
+     * @param listId the identifier of the source Application List that currently owns the entries.
+     * @param moveEntriesDto details of the destination list and the entries to be moved.
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
+     *     or the associated target ApplicationList entity is not found
+     */
+    void move(UUID listId, MoveEntriesDto moveEntriesDto);
 }

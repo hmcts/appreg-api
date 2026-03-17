@@ -4,11 +4,13 @@ parameters:
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List.
+    example: "123e4567-e89b-12d3-a456-426655440000"
   - in: path
     name: entryId
     required: true
     schema: { type: string, format: uuid }
     description: Public identifier of the Application List Entry.
+    example: "123e4567-e89b-12d3-a456-426655440000"
 get:
   operationId: getApplicationListEntry
   tags: [ application-list-entries ]
