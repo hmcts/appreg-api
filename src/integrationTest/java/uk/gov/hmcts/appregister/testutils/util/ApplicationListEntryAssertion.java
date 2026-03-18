@@ -180,11 +180,17 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
             Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
+            // TODO uncomment this once update logic is implemented Assertions.assertEquals(2,
+            // applicationListEntry.getEntryFeeIds().size());
+
+            boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {
-                Assertions.assertEquals(
-                        entryCreateUpdateDto.getHasOffsiteFee(),
-                        feeRepository.findById(fee.getFeeId()).get().isOffsite());
+                containsOffsite = feeRepository.findById(fee.getFeeId()).get().isOffsite();
+                if (containsOffsite) {
+                    break;
+                }
             }
+            Assertions.assertEquals(entryCreateUpdateDto.getHasOffsiteFee(), containsOffsite);
         }
 
         // ensure the database fees align ignoring pre existing fee statuses

@@ -374,6 +374,7 @@ public class ApplicationEntryServiceImplTest {
 
         FeeTestData feeTestData = new FeeTestData();
         Fee fee = feeTestData.someComplete();
+        fee.setOffsite(false);
         fee.setId(-2L);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -563,6 +564,7 @@ public class ApplicationEntryServiceImplTest {
 
         FeeTestData feeTestData = new FeeTestData();
         Fee fee = feeTestData.someComplete();
+        fee.setOffsite(false);
         fee.setId(2L);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -687,6 +689,7 @@ public class ApplicationEntryServiceImplTest {
 
         FeeTestData feeTestData = new FeeTestData();
         Fee fee = feeTestData.someComplete();
+        fee.setOffsite(false);
         fee.setId(2L);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);

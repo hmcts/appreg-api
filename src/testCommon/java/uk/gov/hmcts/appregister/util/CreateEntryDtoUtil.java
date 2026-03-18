@@ -155,6 +155,7 @@ public class CreateEntryDtoUtil {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setHasOffsiteFee(false);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
