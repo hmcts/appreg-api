@@ -1,0 +1,48 @@
+type: object
+description: Filter criteria for retrieving Application List Entries for an Application List.
+
+properties:
+
+  sequenceNumber:
+    type: integer
+    description: The sequence number of the application in the list. This has to be Exact.
+    example: 1
+
+  applicationTitle:
+    type: string
+    description: The title of the application. This can be Partial.
+    example: "Smith vs Jones"
+    maxLength: 500
+
+  applicantName:
+    type: string
+    description: The name of the organisation submitting the application. This can be Partial.
+    example: "Smith Legal Services Ltd"
+    maxLength: 300
+
+  respondentName:
+    type: string
+    description: The name of the organisation responding to the application.
+    example: "Jones Consulting Group"
+    maxLength: 300
+
+  respondentPostcode:
+    type: string
+    description: The postcode associated with the respondent’s address. This has to be Exact.
+    example: "SW1A 1AA"
+    maxLength: 8
+
+  accountReference:
+    type: string
+    description: Reference code identifying the applicant’s account. This can be Partial.
+    maxLength: 20
+
+  feeRequired:
+    type: boolean
+    description: Whether a fee is required for the application. This has to be Exact.
+    example: "Y"
+
+  resulted:
+    type: string
+    description: The application resolution codes.
+    example: "APPC"

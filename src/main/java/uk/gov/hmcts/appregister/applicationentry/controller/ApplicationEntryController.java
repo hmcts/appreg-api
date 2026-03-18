@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
@@ -22,6 +23,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -108,6 +110,36 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .contentType(VND_JSON_V1)
                 .eTag(matchResponse.getEtag())
                 .body(matchResponse.getPayload());
+    }
+
+    @Override
+    public ResponseEntity<EntryPage> getApplicationListEntries(
+            UUID listId,
+            EntryApplicationListGetFilterDto filter,
+            Integer pageNumber,
+            Integer pageSize,
+            List<String> sort) {
+        PayloadGetEntryInList payloadForGet =
+                PayloadGetEntryInList.builder().listId(listId).build();
+
+        PagingWrapper pageInfo =
+                pageableMapper.from(
+                        pageNumber,
+                        pageSize,
+                        sort,
+                        ApplicationEntryByListIdSortFieldEnum.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC,
+                        ApplicationEntryByListIdSortFieldEnum::getEntityValue);
+
+        EntryPage entryResponse =
+                applicationEntryService.getApplicationListEntries(payloadForGet, pageInfo, filter);
+
+        log.info("Get Application List Entries for listId: {}", listId);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(entryResponse);
     }
 
     @Override

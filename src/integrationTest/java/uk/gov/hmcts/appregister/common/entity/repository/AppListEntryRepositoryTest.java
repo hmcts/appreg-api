@@ -432,8 +432,8 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                                 .and(Sort.by(Sort.Direction.ASC, "id")));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
-                        false, null, null, null, null, null, null, null, null, null, null, null,
-                        null, page);
+                        null, false, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(11);
@@ -451,11 +451,67 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testGetListEntriesSearchWithSearchCriteria() {
+        // Searching without filter to get a list id to then filter.
+        Pageable page =
+                PageRequest.of(
+                        0,
+                        20,
+                        Sort.by(Sort.Direction.DESC, "courtCode")
+                                .and(Sort.by(Sort.Direction.ASC, "id")));
+        Page<ApplicationListEntryGetSummaryProjection> page0 =
+                applicationListEntryRepository.searchForGetSummary(
+                        null, null, null, null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, page);
+
+        ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(4);
+
+        // When: page 0 size 1
+        Page<ApplicationListEntryGetSummaryProjection> page1 =
+                applicationListEntryRepository.searchForGetSummary(
+                        UUID.fromString(projection0.getListId()),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        page);
+
+        // Then
+        assertThat(page1.getTotalElements()).isEqualTo(1);
+        assertThat(page1.getTotalPages()).isEqualTo(1);
+        ApplicationListEntryGetSummaryProjection projection1 = page1.getContent().getFirst();
+        assertThat(projection1.getCjaCode()).isEqualTo("CJ");
+        assertThat(projection1.getCourtCode()).isEqualTo("RCJ001");
+        assertThat(projection1.getStatus()).isEqualTo(Status.OPEN);
+        assertNotNull(projection1.getRnameAddress());
+        assertThat(projection1.getTitle()).isEqualTo("Copy documents");
+        assertNotNull(projection1.getAnameAddress());
+        assertNotNull(projection1.getLegislation(), "");
+        assertNotNull(projection1.getStandardApplicantCode(), "APP001");
+        assertThat(projection1.getDateOfAl()).isEqualTo("2024-04-21");
+    }
+
+    @Test
     public void testGetListEntriesSearchForDataWithFullEntry() {
         // When: page 0 size 1
         Pageable page = PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "courtCode"));
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
+                        null,
                         true,
                         LocalDate.parse("2024-04-21"),
                         "RCJ001",
@@ -463,12 +519,17 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "CJ",
                         null,
                         "Turner",
+                        null,
                         "APP002",
                         Status.OPEN,
                         "Sarah Johnson",
                         "Johnson",
+                        null,
                         "XY9 8ZZ",
                         "29345",
+                        null,
+                        null,
+                        null,
                         page);
 
         // Then
@@ -510,6 +571,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Pageable page = PageRequest.of(0, 20);
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
+                        null,
                         true,
                         LocalDate.parse("2025-04-21"),
                         "MCJC002",
@@ -517,11 +579,16 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "CJ",
                         null,
                         null,
+                        null,
                         "PP001",
                         Status.OPEN,
                         "Jac",
                         "Turn",
+                        null,
                         "AB11 2CD",
+                        null,
+                        null,
+                        null,
                         null,
                         page);
 
@@ -576,9 +643,15 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Pageable page = PageRequest.of(0, 10);
         Page<ApplicationListEntryGetSummaryProjection> result =
                 applicationListEntryRepository.searchForGetSummary(
+                        null,
                         true,
                         hearingDate,
                         "UNQ001",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -798,6 +871,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         // When: calling the repository method for the surname of the first applicant
         Page<ApplicationListEntryGetSummaryProjection> applicationListEntryList =
                 applicationListEntryRepository.searchForGetSummary(
+                        null,
                         false,
                         null,
                         null,
@@ -805,6 +879,11 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         savedEntry.getAnamedaddress().getSurname(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
                         null,
                         null,
                         null,

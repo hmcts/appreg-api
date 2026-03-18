@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -55,6 +56,7 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -103,6 +105,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final GetApplicationEntryValidator getEntryValidator;
 
+    private final GetApplicationListEntriesValidator getApplicationListEntriesValidator;
+
     private final Clock clock;
 
     @Override
@@ -121,6 +125,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                     Page<ApplicationListEntryGetSummaryProjection> resultPage =
                             applicationListEntryRepository.searchForGetSummary(
+                                    null,
                                     filterDto.getDate() != null,
                                     filterDto.getDate(),
                                     filterDto.getCourtCode(),
@@ -128,12 +133,17 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getCjaCode(),
                                     filterDto.getApplicantOrganisation(),
                                     filterDto.getApplicantSurname(),
+                                    null,
                                     filterDto.getStandardApplicantCode(),
                                     status,
                                     filterDto.getRespondentOrganisation(),
                                     filterDto.getRespondentSurname(),
+                                    null,
                                     filterDto.getRespondentPostcode(),
                                     filterDto.getAccountReference(),
+                                    null,
+                                    null,
+                                    null,
                                     pageable.getPageable());
 
                     // breaks name into individual and/or organisation parts
@@ -851,6 +861,63 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 .toApplicationListEntry(entry));
                                 return Optional.of(result);
                             });
+                });
+    }
+
+    @Override
+    public EntryPage getApplicationListEntries(
+            PayloadGetEntryInList payloadForGet,
+            PagingWrapper pageable,
+            EntryApplicationListGetFilterDto filterDto) {
+        log.debug(
+                "Started: Getting application list entries for list: {}",
+                payloadForGet.getListId());
+
+        return getApplicationListEntriesValidator.validate(
+                payloadForGet,
+                (req, success) -> {
+                    // get the entries for the list
+                    Page<ApplicationListEntryGetSummaryProjection> entries =
+                            applicationListEntryRepository.searchForGetSummary(
+                                    payloadForGet.getListId(),
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    filterDto.getApplicantName(),
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    filterDto.getRespondentName(),
+                                    filterDto.getRespondentPostcode(),
+                                    filterDto.getAccountReference(),
+                                    filterDto.getApplicationTitle(),
+                                    filterDto.getFeeRequired(),
+                                    filterDto.getSequenceNumber(),
+                                    pageable.getPageable());
+
+                    EntryPage entryPage = new EntryPage();
+                    pageMapper.toPage(entries, entryPage, pageable.getSortStrings());
+
+                    entries.forEach(
+                            entry -> {
+                                entryPage.addContentItem(
+                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
+                            });
+
+                    if (entryPage.getContent() == null) {
+                        entryPage.setContent(List.of());
+                    }
+
+                    log.debug(
+                            "Finished: Getting application list entries for list: {}",
+                            payloadForGet.getListId());
+
+                    return entryPage;
                 });
     }
 

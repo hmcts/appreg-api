@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -77,6 +78,10 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Autowired protected TransactionalUnitOfWork unitOfWork;
     @Autowired protected ApplicationListRepository applicationListRepository;
     @Autowired protected ApplicationListEntryRepository applicationListEntryRepository;
+
+    protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
+    protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
+    protected static final String VALID_COURT_CODE = "CCC003";
 
     @BeforeEach
     void setupUser() {
@@ -190,6 +195,45 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             }
             if (standardApplicantCode.isPresent()) {
                 rs = rs.queryParam("standardApplicantCode", standardApplicantCode.get());
+            }
+            return rs;
+        }
+    }
+
+    protected record ApplicationEntryFilterByApplicationId(
+            UUID applicationId,
+            Optional<String> applicantName,
+            Optional<String> respondentName,
+            Optional<String> respondentPostcode,
+            Optional<String> accountReference,
+            Optional<String> applicationTitle,
+            Optional<Boolean> feeRequired,
+            Optional<Integer> sequenceNumber)
+            implements UnaryOperator<RequestSpecification> {
+
+        @Override
+        public RequestSpecification apply(RequestSpecification rs) {
+            rs = rs.queryParam("applicationId", applicationId.toString());
+            if (applicantName.isPresent()) {
+                rs = rs.queryParam("applicantName", applicantName.get());
+            }
+            if (respondentName.isPresent()) {
+                rs = rs.queryParam("respondentName", respondentName.get());
+            }
+            if (respondentPostcode.isPresent()) {
+                rs = rs.queryParam("respondentPostcode", respondentPostcode.get());
+            }
+            if (accountReference.isPresent()) {
+                rs = rs.queryParam("accountReference", accountReference.get());
+            }
+            if (applicationTitle.isPresent()) {
+                rs = rs.queryParam("applicationTitle", applicationTitle.get());
+            }
+            if (feeRequired.isPresent()) {
+                rs = rs.queryParam("feeRequired", feeRequired.get());
+            }
+            if (sequenceNumber.isPresent()) {
+                rs = rs.queryParam("sequenceNumber", sequenceNumber.get());
             }
             return rs;
         }

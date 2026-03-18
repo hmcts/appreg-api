@@ -56,5 +56,13 @@ properties:
     description: Single date of the Application List.
     example: "2025-10-07"
 
+  sequenceNumber:
+    type: integer
+    description: The sequence number of the application in the list.
+    example: 1
+
+  resulted:
+    $ref: "../result-codes/result-code-get-summary-dto.yaml"
+
   status:
     $ref: '../application-lists/application-list-status.yaml'

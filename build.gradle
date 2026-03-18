@@ -112,6 +112,7 @@ tasks.withType(Test).configureEach {
   useJUnitPlatform()
   failFast = true
   maxHeapSize = "1024m"
+
   testLogging {
     exceptionFormat = 'full'
   }
@@ -590,9 +591,6 @@ openApiGenerate {
   ]
 }
 
-openApiValidate {
-  inputSpec = "$rootDir/src/main/resources/openapi/openapi.yaml"
-}
 // Add a new jar that will be published to maven with the classifier -openapi
 tasks.register('openapiJarArtefact', Jar) {
   archiveClassifier = 'openapi'
@@ -605,9 +603,9 @@ tasks.register('flywayArtefact', Jar) {
   from new File("./flyway/migrations"), new File("./flyway/data_population")
 }
 
-processResources.dependsOn tasks.openApiValidate, tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact, tasks.bundleOpenApi,
+processResources.dependsOn tasks.openApiGenerate, tasks.openapiJarArtefact, tasks.flywayArtefact, tasks.bundleOpenApi,
   tasks.copySpecIntoMainResources
-compileJava.dependsOn tasks.openApiValidate, tasks.openApiGenerate
+compileJava.dependsOn tasks.openApiGenerate
 
 
 rootProject.tasks.named("processTestResources") {

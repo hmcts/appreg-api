@@ -49,6 +49,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
@@ -107,6 +108,7 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -211,6 +213,10 @@ public class ApplicationEntryServiceImplTest {
             new DummyGetApplicationEntryValidator(
                     applicationListRepository, applicationListEntryRepository);
 
+    @Spy
+    private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
+            new DummyGetApplicationListEntriesValidator(applicationListRepository);
+
     @BeforeEach
     void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
@@ -237,6 +243,7 @@ public class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getApplicationListEntriesValidator,
                         clock);
     }
 
@@ -265,6 +272,7 @@ public class ApplicationEntryServiceImplTest {
                         applicationListEntryEntityMapper,
                         entityManager,
                         getEntryValidator,
+                        getApplicationListEntriesValidator,
                         clock);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -305,6 +313,7 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryMapStructMapper.toStatus(entryGetFilterDto.getStatus()))
                 .thenReturn(Status.OPEN);
         when(applicationListEntryRepository.searchForGetSummary(
+                        eq(null),
                         eq(true),
                         eq(entryGetFilterDto.getDate()),
                         eq(entryGetFilterDto.getCourtCode()),
@@ -312,12 +321,17 @@ public class ApplicationEntryServiceImplTest {
                         eq(entryGetFilterDto.getCjaCode()),
                         eq(entryGetFilterDto.getApplicantOrganisation()),
                         eq(entryGetFilterDto.getApplicantSurname()),
+                        eq(null),
                         eq(entryGetFilterDto.getStandardApplicantCode()),
                         eq(Status.fromValue(entryGetFilterDto.getStatus().getValue())),
                         eq(entryGetFilterDto.getRespondentOrganisation()),
                         eq(entryGetFilterDto.getRespondentSurname()),
+                        eq(null),
                         eq(entryGetFilterDto.getRespondentPostcode()),
                         eq(entryGetFilterDto.getAccountReference()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
                         eq(mockPage)))
                 .thenReturn(page);
 
@@ -862,6 +876,145 @@ public class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void testGetApplicationListEntries_success() {
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+
+        when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
+                .thenReturn("org1");
+        when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
+        when(applicationListEntryGetSummaryProjection.getAnameAddress())
+                .thenReturn(new NameAddress());
+        when(applicationListEntryGetSummaryProjection.getRnameAddress())
+                .thenReturn(new NameAddress());
+        when(applicationListEntryGetSummaryProjection.getDateOfAl()).thenReturn(LocalDate.now());
+
+        when(applicationListEntryGetSummaryProjection.getAccountReference()).thenReturn("accref");
+        when(applicationListEntryGetSummaryProjection.getCjaCode()).thenReturn("cjacode");
+        when(applicationListEntryGetSummaryProjection.getCourtCode()).thenReturn("courtcode");
+        when(applicationListEntryGetSummaryProjection.getLegislation()).thenReturn("leg");
+        when(applicationListEntryGetSummaryProjection.getTitle()).thenReturn("title");
+
+        when(applicationListEntryGetSummaryProjection.getRespondentSurname())
+                .thenReturn("ressurname");
+        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn(null);
+        when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
+        when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.OPEN);
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        EntryApplicationListGetFilterDto entryGetFilterDto =
+                Instancio.of(EntryApplicationListGetFilterDto.class)
+                        .withSettings(settings)
+                        .create();
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(1);
+
+        Page<ApplicationListEntryGetSummaryProjection> dbPage =
+                new PageImpl<>(List.of(applicationListEntryGetSummaryProjection), mockPage, 1);
+
+        when(applicationListEntryRepository.searchForGetSummary(
+                        eq(applicationList.getUuid()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(entryGetFilterDto.getApplicantName()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(entryGetFilterDto.getRespondentName()),
+                        eq(entryGetFilterDto.getRespondentPostcode()),
+                        eq(entryGetFilterDto.getAccountReference()),
+                        eq(entryGetFilterDto.getApplicationTitle()),
+                        eq(entryGetFilterDto.getFeeRequired()),
+                        eq(entryGetFilterDto.getSequenceNumber()),
+                        eq(mockPage)))
+                .thenReturn(dbPage);
+
+        PayloadGetEntryInList payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
+
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        // test
+        EntryPage response =
+                service.getApplicationListEntries(
+                        payloadGetEntryInList, wrapper, entryGetFilterDto);
+
+        // assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(1, response.getContent().size());
+    }
+
+    @Test
+    void testGetApplicationListEntries_emptyEntries_success() {
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        EntryApplicationListGetFilterDto entryGetFilterDto =
+                Instancio.of(EntryApplicationListGetFilterDto.class)
+                        .withSettings(settings)
+                        .create();
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(1);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        Page<ApplicationListEntryGetSummaryProjection> dbPage =
+                new PageImpl<>(List.of(), mockPage, 0);
+
+        when(applicationListEntryRepository.searchForGetSummary(
+                        eq(applicationList.getUuid()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(entryGetFilterDto.getApplicantName()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(entryGetFilterDto.getRespondentName()),
+                        eq(entryGetFilterDto.getRespondentPostcode()),
+                        eq(entryGetFilterDto.getAccountReference()),
+                        eq(entryGetFilterDto.getApplicationTitle()),
+                        eq(entryGetFilterDto.getFeeRequired()),
+                        eq(entryGetFilterDto.getSequenceNumber()),
+                        eq(mockPage)))
+                .thenReturn(dbPage);
+
+        PayloadGetEntryInList payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
+
+        // test
+        EntryPage response =
+                service.getApplicationListEntries(
+                        payloadGetEntryInList, wrapper, entryGetFilterDto);
+
+        // assert
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(0, response.getContent().size());
+    }
+
+    @Test
     void move_performsBulkUpdate_whenValidRequest() {
         ApplicationList targetList = new ApplicationList();
         targetList.setUuid(UUID.randomUUID());
@@ -1173,6 +1326,21 @@ public class ApplicationEntryServiceImplTest {
                 PayloadGetEntryInList validatable,
                 BiFunction<PayloadGetEntryInList, GetEntryValidationSuccess, R> validateSuccess) {
             return validateSuccess.apply(validatable, getEntryValidationSuccess);
+        }
+    }
+
+    static class DummyGetApplicationListEntriesValidator
+            extends GetApplicationListEntriesValidator {
+        public DummyGetApplicationListEntriesValidator(
+                ApplicationListRepository applicationListRepository) {
+            super(applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadGetEntryInList validatable,
+                BiFunction<PayloadGetEntryInList, ApplicationList, R> validateSuccess) {
+            return validateSuccess.apply(validatable, new ApplicationList());
         }
     }
 
