@@ -41,6 +41,8 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
 
     @Autowired private AuditOperationService auditOperationService;
 
+    private static final String EMPTY = "";
+
     @BeforeEach
     public void setUp() {
         // setup the trace id in the log MDC
@@ -77,14 +79,18 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                         .findDataAuditForTableAndColumnAndOldValue(
                                 TableNames.APPICATION_LIST, "id", pkId.toString())
                         .get();
-        Assertions.assertNotNull(dataAudit);
 
-        // assert the the activity log is entered
-        activityAuditLogAsserter.assertCompletedLogContains(
-                TestAuditOperation.TEST_AUDIT_DELETE.getEventName(),
-                "test-trace-id",
-                Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
-                "NULL");
+        // assert the data audit table
+        Assertions.assertNotNull(dataAudit);
+        Assertions.assertEquals(pkId.toString(), dataAudit.getOldValue());
+        Assertions.assertEquals("email", dataAudit.getCreatedUser());
+        Assertions.assertEquals(EMPTY, dataAudit.getNewValue());
+        Assertions.assertEquals("id", dataAudit.getColumnName());
+        Assertions.assertEquals("test-trace-id", dataAudit.getLink());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_DELETE.getType(), dataAudit.getUpdateType());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_DELETE.getEventName(), dataAudit.getEventName());
     }
 
     @Test
@@ -121,16 +127,27 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                         .findDataAuditForTableAndColumnAndNewValue(
                                 TableNames.APPICATION_LIST, "id", pkId.toString())
                         .get();
+
+        // assert the data audit table
         Assertions.assertNotNull(dataAudit);
+        Assertions.assertEquals(pkId.toString(), dataAudit.getNewValue());
+        Assertions.assertEquals("email", dataAudit.getCreatedUser());
+        Assertions.assertEquals(EMPTY, dataAudit.getOldValue());
+        Assertions.assertEquals("id", dataAudit.getColumnName());
+        Assertions.assertEquals("test-trace-id", dataAudit.getLink());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_CREATE.getType(), dataAudit.getUpdateType());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_CREATE.getEventName(), dataAudit.getEventName());
 
         activityAuditLogAsserter.assertCompletedLogContainsWithUnknownMessageId(
-                TestAuditOperation.TEST_AUDIT_DELETE.getEventName(),
+                TestAuditOperation.TEST_AUDIT_CREATE.getEventName(),
                 Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
                 mapper.writeValueAsString(applicationListGetSummaryDto));
 
         // assert the the activity log is entered
         activityAuditLogAsserter.assertCompletedLogContains(
-                TestAuditOperation.TEST_AUDIT_DELETE.getEventName(),
+                TestAuditOperation.TEST_AUDIT_CREATE.getEventName(),
                 "test-trace-id",
                 Integer.valueOf(OperationStatus.COMPLETED.getStatus()).toString(),
                 mapper.writeValueAsString(applicationListGetSummaryDto));
@@ -164,9 +181,6 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                         });
 
         // assert that we have logged activity and data audit
-        Assertions.assertEquals(oldPkId, applicationList.getUuid());
-
-        // assert that the data audit is entered
         DataAudit dataAudit =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndOldValueAndNewValue(
@@ -175,6 +189,17 @@ public class AuditOperationServiceImplTest extends BaseIntegration {
                                 oldPkId.toString(),
                                 newPkId.toString())
                         .get();
+
+        // assert that we have logged activity and data audit
+        Assertions.assertEquals(oldPkId, applicationList.getUuid());
+        Assertions.assertEquals(newPkId.toString(), dataAudit.getNewValue());
+        Assertions.assertEquals("email", dataAudit.getCreatedUser());
+        Assertions.assertEquals("id", dataAudit.getColumnName());
+        Assertions.assertEquals("test-trace-id", dataAudit.getLink());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_UPDATE.getType(), dataAudit.getUpdateType());
+        Assertions.assertEquals(
+                TestAuditOperation.TEST_AUDIT_UPDATE.getEventName(), dataAudit.getEventName());
 
         Assertions.assertNotNull(dataAudit);
         activityAuditLogAsserter.assertCompletedLogContains(

@@ -11,6 +11,7 @@ import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -186,6 +187,9 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             audit.setTableName(diff.getTableName());
             audit.setUpdateType(event.getRequestAction().getType());
             audit.setSchemaName(schemaName);
+
+            // gets and set trace id from audit service
+            audit.setLink(AuditOperationServiceImpl.getTraceId());
 
             // store the new and old values based on the state
             setNewAndOldAuditValues(

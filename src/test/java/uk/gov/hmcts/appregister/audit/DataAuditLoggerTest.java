@@ -48,7 +48,7 @@ public class DataAuditLoggerTest {
 
     private ArgumentCaptor<DataAudit> auditCaptor = ArgumentCaptor.forClass(DataAudit.class);
 
-    private ArgumentCaptor<DataAudit> auditCaptor2 = ArgumentCaptor.forClass(DataAudit.class);
+    private static final String EMAIL_FOR_LOGGED_IN_USER = "test@hmcts.com";
 
     @Test
     public void testStartOperationTest() {
@@ -184,6 +184,8 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(DataAuditLogger.EMPTY_VALUE, dataAudit.getOldValue());
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit.getTableName());
         Assertions.assertEquals(CrudEnum.CREATE, dataAudit.getUpdateType());
+        Assertions.assertEquals("No Correlation Id Found", dataAudit.getLink());
+        Assertions.assertNull(dataAudit.getCreatedUser());
 
         DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
@@ -192,6 +194,8 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals("", dataAudit1.getOldValue());
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit1.getTableName());
         Assertions.assertEquals(CrudEnum.CREATE, dataAudit1.getUpdateType());
+        Assertions.assertEquals("No Correlation Id Found", dataAudit.getLink());
+        Assertions.assertNull(dataAudit.getCreatedUser());
     }
 
     @Test
