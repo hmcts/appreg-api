@@ -1328,4 +1328,28 @@ public class ApplicationEntryServiceImplTest {
             return validateSuccess.apply(validatable, getEntryValidationSuccess);
         }
     }
+
+    @Setter
+    static class DummyMoveEntriesValidator extends MoveEntriesValidator {
+
+        private MoveEntriesValidationSuccess success;
+
+        public DummyMoveEntriesValidator(ApplicationListRepository applicationListRepository) {
+            super(applicationListRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                MoveEntriesDto dto,
+                java.util.function.BiFunction<MoveEntriesDto, MoveEntriesValidationSuccess, R>
+                        createSupplier) {
+
+            return createSupplier.apply(dto, success);
+        }
+
+        @Override
+        public DummyMoveEntriesValidator withSourceList(UUID id) {
+            return this;
+        }
+    }
 }
