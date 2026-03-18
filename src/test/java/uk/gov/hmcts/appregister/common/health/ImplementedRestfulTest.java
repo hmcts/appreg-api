@@ -18,7 +18,6 @@ public class ImplementedRestfulTest {
                     "POST /application-lists/{listId}/entries/results",
                     "POST /application-lists/{listId}/entries/bulk-import",
                     "DELETE /application-lists/{listId}/entries/{entryId}",
-                    "GET /application-lists/{listId}/entries",
                     "GET /jobs/{jobId}",
                     "POST /reports/private-prosecutors-index/jobs",
                     "POST /reports/activity-audit/jobs",
