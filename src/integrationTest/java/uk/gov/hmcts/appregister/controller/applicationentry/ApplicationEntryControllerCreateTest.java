@@ -553,7 +553,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
     @Test
     public void
-            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_409IsReturned()
+            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
                     throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of());
@@ -576,10 +576,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         entryCreateDto);
 
         // assert the error
-        Assertions.assertEquals(409, responseSpecCreate.statusCode());
+        Assertions.assertEquals(400, responseSpecCreate.statusCode());
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE
                         .getCode()
                         .getType()
                         .get(),

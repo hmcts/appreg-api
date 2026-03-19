@@ -320,7 +320,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
     @Test
     public void
-            givenAnInvalidUpdateEntryRequest_whenEnforcementFineACAndNoAccountNumber_409IsReturned()
+            givenAnInvalidUpdateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
                     throws Exception {
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
 
@@ -344,10 +344,10 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         entryUpdateDto);
 
         // assert the error
-        Assertions.assertEquals(409, responseSpecUpdate.statusCode());
+        Assertions.assertEquals(400, responseSpecUpdate.statusCode());
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE
                         .getCode()
                         .getType()
                         .get(),

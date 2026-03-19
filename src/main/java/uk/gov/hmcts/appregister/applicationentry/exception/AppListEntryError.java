@@ -99,9 +99,11 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "Payment reference must not be provided when payment status is DUE",
                     "ALE-19")),
-    APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE(
+    ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT, "Application code requires application number", "ALE-20"));
+                    HttpStatus.BAD_REQUEST,
+                    "Account number is required for EF applications",
+                    "ALE-20"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

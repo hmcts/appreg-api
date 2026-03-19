@@ -509,7 +509,7 @@ public class CreateApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> createApplicationEntryValidator.validate(payload));
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                 appRegistryException.getCode());
     }
 
