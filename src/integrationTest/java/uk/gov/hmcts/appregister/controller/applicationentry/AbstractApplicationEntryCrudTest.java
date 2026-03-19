@@ -552,7 +552,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
 
         updateDto.getApplicant().setPerson(null);
-        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1BB");
+        updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA13 1BB");
         updateDto
                 .getApplicant()
                 .getOrganisation()
@@ -589,7 +589,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 .getContactDetails()
                 .setMobile(JsonNullable.of(null));
 
-        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA12 1AA");
         updateDto
                 .getRespondent()
                 .getPerson()

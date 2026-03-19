@@ -76,7 +76,7 @@ public class CreateEntryDtoUtil {
                 .getPerson()
                 .getContactDetails()
                 .setAddressLine5(JsonNullable.of(null));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AS12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -116,7 +116,7 @@ public class CreateEntryDtoUtil {
                 .getPerson()
                 .getContactDetails()
                 .setAddressLine5(JsonNullable.of(Instancio.gen().string().get()));
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AS12 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()

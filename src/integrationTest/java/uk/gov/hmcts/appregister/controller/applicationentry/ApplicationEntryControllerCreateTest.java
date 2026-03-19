@@ -231,7 +231,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -244,7 +244,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
@@ -267,7 +267,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getPerson()
                 .getContactDetails()
                 .setMobile(JsonNullable.of(null));
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
@@ -597,7 +597,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -610,7 +610,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
@@ -649,7 +649,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -663,8 +663,12 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setPostcode("AA12 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
@@ -936,7 +940,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getPerson()
                 .getContactDetails()
                 .setAddressLine5(JsonNullable.of("5 valid address"));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
 
         // create the token
         TokenGenerator tokenGenerator =
