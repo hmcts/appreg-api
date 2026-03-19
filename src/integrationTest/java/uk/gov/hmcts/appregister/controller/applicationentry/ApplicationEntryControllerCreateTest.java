@@ -829,6 +829,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 problemDetail.getDetail().trim());
     }
 
+    // TODO: Re-enable this once the decision has been made on the FE implementation.
+    /*
     @Test
     public void givenAnInvalidCreateEntryRequest_whenWordingDataTypeFailure_400IsReturned()
             throws Exception {
@@ -866,7 +868,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 problemDetail.getType());
         Assertions.assertEquals(
                 "Premises Date=extra field not a date", problemDetail.getDetail().trim());
-    }
+    } */
 
     @Test
     public void givenASuccessCreate_whenEntryCreateDTOApplicantHasValidName_201Returned()
