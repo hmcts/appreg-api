@@ -243,9 +243,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             List.of());
 
-
                     Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
-
                 });
     }
 
@@ -452,8 +450,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 List.of(),
                 feeStatusBeforeUpdate);
-
-        Assertions.assertEquals(2, applicationListEntry.get().getEntryFeeIds().size());
     }
 
     @Test

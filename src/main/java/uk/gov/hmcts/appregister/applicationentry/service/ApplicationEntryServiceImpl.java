@@ -813,7 +813,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     offsiteEntryFeeId.setAppListEntryId(
                                             newAppListEntryFeeId.getAppListEntryId());
                                     appListEntryFeeRepository.save(offsiteEntryFeeId);
-                                } 
+                                }
                             }
 
                             log.debug(
