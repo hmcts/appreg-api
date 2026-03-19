@@ -161,6 +161,91 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             "Request to copy documents",
                             List.of());
+
+                    Assertions.assertEquals(2, applicationListEntry.getEntryFeeIds().size());
+                });
+    }
+
+    @Test
+    public void createEntryNoRespondentWithFee() {
+
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        final EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryCreateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setWordingFields(null);
+        entryCreateDto.setHasOffsiteFee(false);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        MatchResponse<EntryGetDetailDto> response;
+
+        // run the test
+        response =
+                unitOfWork.inTransaction(
+                        () -> {
+                            ApplicationList applicationList =
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
+
+                            // because of the random order of tests, this can fail so need to
+                            // make sure the application list is in a valid state
+                            applicationList.setStatus(Status.OPEN);
+                            applicationList.setDeleted(false);
+                            applicationListRepository.save(applicationList);
+                            applicationListRepository.flush();
+
+                            PayloadForCreate<EntryCreateDto> payloadForCreate =
+                                    PayloadForCreate.<EntryCreateDto>builder()
+                                            .id(applicationList.getUuid())
+                                            .data(entryCreateDto)
+                                            .build();
+                            return applicationEntryService.createEntry(payloadForCreate);
+                        });
+
+        // make the assertions
+        unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    List<ApplicationListEntry> entries =
+                            applicationListEntryRepository.findByApplicationListId(
+                                    applicationList.getId());
+
+                    // gets the last added entry
+                    ApplicationListEntry applicationListEntry = entries.getLast();
+
+                    // validate the database based on the request data and the response
+                    // based on the database contents
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
+                            applicationListEntry,
+                            response.getPayload(),
+                            "Request to copy documents",
+                            "Request to copy documents",
+                            List.of());
+
+
+                    Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
+
                 });
     }
 
@@ -367,6 +452,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 List.of(),
                 feeStatusBeforeUpdate);
+
+        Assertions.assertEquals(2, applicationListEntry.get().getEntryFeeIds().size());
     }
 
     @Test

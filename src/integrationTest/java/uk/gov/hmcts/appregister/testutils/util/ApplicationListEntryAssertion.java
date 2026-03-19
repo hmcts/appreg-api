@@ -180,8 +180,6 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
             Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
-            // TODO uncomment this once update logic is implemented Assertions.assertEquals(2,
-            // applicationListEntry.getEntryFeeIds().size());
 
             boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {

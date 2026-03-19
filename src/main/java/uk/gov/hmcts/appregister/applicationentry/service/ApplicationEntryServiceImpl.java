@@ -782,6 +782,40 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                             newAppListEntryFeeId =
                                     appListEntryFeeRepository.save(newAppListEntryFeeId);
+
+                            if (success.getFee().isOffsite()) {
+                                var offsiteFee =
+                                        feeRepository
+                                                .findByReferenceBetweenDate(
+                                                        success.getApplicationCode()
+                                                                .getFeeReference(),
+                                                        LocalDate.now(clock))
+                                                .stream()
+                                                .filter(f -> f.isOffsite())
+                                                .findFirst();
+
+                                if (!offsiteFee.isPresent()) {
+                                    var newOffsiteFee = new Fee();
+                                    newOffsiteFee.setAmount(success.getFee().getAmount());
+                                    newOffsiteFee.setDescription(success.getFee().getDescription());
+                                    newOffsiteFee.setReference(success.getFee().getReference());
+                                    newOffsiteFee.setVersion(success.getFee().getVersion());
+                                    newOffsiteFee.setEndDate(success.getFee().getEndDate());
+                                    newOffsiteFee.setStartDate(success.getFee().getStartDate());
+                                    newOffsiteFee.setChangedDate(success.getFee().getChangedDate());
+                                    newOffsiteFee.setChangedBy(success.getFee().getChangedBy());
+                                    newOffsiteFee.setOffsite(true);
+
+                                    var savedFee = feeRepository.save(newOffsiteFee);
+
+                                    AppListEntryFeeId offsiteEntryFeeId = new AppListEntryFeeId();
+                                    offsiteEntryFeeId.setFeeId(savedFee.getId());
+                                    offsiteEntryFeeId.setAppListEntryId(
+                                            newAppListEntryFeeId.getAppListEntryId());
+                                    appListEntryFeeRepository.save(offsiteEntryFeeId);
+                                } 
+                            }
+
                             log.debug(
                                     "Created Fee: {} to Entry: {} mapping: {}",
                                     newAppListEntryFeeId.getFeeId(),
