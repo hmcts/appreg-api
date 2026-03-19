@@ -337,7 +337,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             // an account number for enforcement fines codes
             if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
                 throw new AppRegistryException(
-                        AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                        AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                         "Application number required for application code %s"
                                 .formatted(getApplicationCode(validatable)));
             }

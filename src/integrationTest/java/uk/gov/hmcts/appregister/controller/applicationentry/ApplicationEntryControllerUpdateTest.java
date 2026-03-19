@@ -347,7 +347,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         Assertions.assertEquals(409, responseSpecUpdate.statusCode());
         ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE
                         .getCode()
                         .getType()
                         .get(),
