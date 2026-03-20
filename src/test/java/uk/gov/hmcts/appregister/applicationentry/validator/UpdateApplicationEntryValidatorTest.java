@@ -541,6 +541,118 @@ public class UpdateApplicationEntryValidatorTest {
                 appRegistryException.getCode());
     }
 
+    @Test
+    void
+            bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_ValidNameAndAddressRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setNumberOfRespondents(20);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_NoRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        entryUpdateDto.setApplicant(null);
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setNumberOfRespondents(20);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_Failure() {
+
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        entryUpdateDto.setApplicant(null);
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
+                appRegistryException.getCode());
+    }
+
+    @Test
+    void
+            bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_ValidNameAndAddressRespondent_Failure() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryUpdateDto.setNumberOfRespondents(20);
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setApplicant(null);
+        entryUpdateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                appRegistryException.getCode());
+    }
+
     private static void sanitiseFeeStatuses(List<FeeStatus> feeStatuses) {
         if (feeStatuses == null) {
             return;
