@@ -129,6 +129,14 @@ public class UpdateApplicationEntryValidatorTest {
     void testValidateSuccess() {
         // set the applicant to null for the organisation and standard applicant so we use the
         // person
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.setStandardApplicantCode(null);
 
@@ -154,9 +162,12 @@ public class UpdateApplicationEntryValidatorTest {
         // set the respondent to null for the organisation so we use the person
         entryUpdateDto.getRespondent().setOrganisation(null);
 
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+
         // set the successful enforcement code
         entryUpdateDto.setApplicationCode("EF123");
         entryUpdateDto.setAccountNumber("2323");
+        entryUpdateDto.setNumberOfRespondents(null);
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryUpdateDto.getApplicationCode()), notNull()))

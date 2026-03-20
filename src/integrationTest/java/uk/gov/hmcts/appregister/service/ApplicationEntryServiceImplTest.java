@@ -842,7 +842,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 .getContactDetails()
                 .setPhone(JsonNullable.of(null));
 
-        entryCreateDto.setNumberOfRespondents(10);
+        entryCreateDto.setNumberOfRespondents(null);
 
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
