@@ -539,4 +539,97 @@ public class CreateApplicationEntryValidatorTest {
 
         Assertions.assertDoesNotThrow(() -> createApplicationEntryValidator.validate(payload));
     }
+
+    @Test
+    void testBulkRespondentAllowed_NoApplicationCodeRespondent_NoBulkRespondentNumber_ValidNameAndAddressRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setNumberOfRespondents(20);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+            eq(entryCreateDto.getApplicationCode()), notNull()))
+            .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+            PayloadForCreate.<EntryCreateDto>builder()
+                .id(appListUuid)
+                .data(entryCreateDto)
+                .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testBulkRespondentAllowed_NoApplicationCodeRespondent_ValidBulkRespondentNumber_NoRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+            eq(entryCreateDto.getApplicationCode()), notNull()))
+            .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+            PayloadForCreate.<EntryCreateDto>builder()
+                .id(appListUuid)
+                .data(entryCreateDto)
+                .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testBulkRespondentAllowed_NoApplicationCodeRespondent_NoBulkRespondentNumber_Failure() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+            PayloadForCreate.<EntryCreateDto>builder()
+                .id(appListUuid)
+                .data(entryCreateDto)
+                .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testBulkRespondentAllowed_NoApplicationCodeRespondent_ValidBulkRespondentNumber_ValidNameAndAddressRespondent_Failure() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+            eq(entryCreateDto.getApplicationCode()), notNull()))
+            .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+            PayloadForCreate.<EntryCreateDto>builder()
+                .id(appListUuid)
+                .data(entryCreateDto)
+                .build();
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+            Assertions.assertThrows(
+                AppRegistryException.class,
+                () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+            AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
+            appRegistryException.getCode());
+    }
 }
