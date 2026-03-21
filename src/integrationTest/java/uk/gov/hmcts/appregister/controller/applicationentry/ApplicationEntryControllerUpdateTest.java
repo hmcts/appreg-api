@@ -18,7 +18,6 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -704,10 +703,9 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
-        throws Exception {
-
-        Response responseSpecCreate = createListEntryWithAllData();
+    public void
+            givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn200()
+                    throws Exception {
 
         // Arrange
         EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
@@ -723,30 +721,23 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
+        Response responseSpecCreate = createListEntryWithAllData();
+
         // Act
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         responseSpecCreate.then().statusCode(201);
-        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
-
-        var createdDto = new SuccessCreateEntryResponse(
-            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
-
-        // Assert
-        Assertions.assertNotNull(createdDto);
-        Assertions.assertNotNull(createdDto.getDetailDto());
-        Assertions.assertNotNull(createdDto.getDetailDto().getId());
-        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+        responseSpecUpdate.then().statusCode(200);
     }
 
     @Test
     public void
-    givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryNumberOfRespondentsProvided_thenReturn201()
-        throws Exception {
+            givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenNumberOfRespondentsProvided_thenReturn200()
+                    throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // Arrange
@@ -765,27 +756,19 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         responseSpecCreate.then().statusCode(201);
-        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
-
-        var createdDto = new SuccessCreateEntryResponse(
-            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
-
-        // Assert
-        Assertions.assertNotNull(createdDto);
-        Assertions.assertNotNull(createdDto.getDetailDto());
-        Assertions.assertNotNull(createdDto.getDetailDto().getId());
-        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+        responseSpecUpdate.then().statusCode(200);
     }
 
     @Test
-    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
-        throws Exception {
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
+                    throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // Arrange
@@ -804,26 +787,27 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
-        responseSpecCreate
-            .then()
-            .statusCode(400)
-            .body(
-                "type",
-                Matchers.equalTo(
-                    AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                        .getCode()
-                        .getAppCode()));
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
+                                        .getCode()
+                                        .getAppCode()));
     }
 
     @Test
-    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
-        throws Exception {
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
+                    throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 
         // Arrange
@@ -841,20 +825,21 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecUpdate =
-            restAssuredClient.executePutRequest(
-                HeaderUtil.getLocation(responseSpecCreate),
-                tokenGenerator.fetchTokenForRole(),
-                entryUpdateDto);
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
 
         // assert the response
-        responseSpecCreate
-            .then()
-            .statusCode(400)
-            .body(
-                "type",
-                Matchers.equalTo(
-                    AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
-                        .getCode()
-                        .getAppCode()));
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError
+                                        .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
+                                        .getCode()
+                                        .getAppCode()));
     }
 }

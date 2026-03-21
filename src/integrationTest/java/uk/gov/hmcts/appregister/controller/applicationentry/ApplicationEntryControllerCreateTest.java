@@ -18,7 +18,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
-import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -1965,8 +1964,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
-            throws Exception {
+    public void
+            givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
+                    throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.getRespondent().setOrganisation(null);
@@ -1983,20 +1983,21 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         responseSpecCreate.then().statusCode(201);
         Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
 
-        var createdDto = new SuccessCreateEntryResponse(
-            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+        var createdDto =
+                new SuccessCreateEntryResponse(
+                        responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
 
         // Assert
         Assertions.assertNotNull(createdDto);
@@ -2007,8 +2008,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
     @Test
     public void
-    givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryNumberOfRespondentsProvided_thenReturn201()
-            throws Exception {
+            givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenEntryNumberOfRespondentsProvided_thenReturn201()
+                    throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
@@ -2037,8 +2038,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         responseSpecCreate.then().statusCode(201);
         Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
 
-        var createdDto = new SuccessCreateEntryResponse(
-                responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+        var createdDto =
+                new SuccessCreateEntryResponse(
+                        responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
 
         // Assert
         Assertions.assertNotNull(createdDto);
@@ -2048,8 +2050,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
-        throws Exception {
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
+                    throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setRespondent(null);
@@ -2066,30 +2069,31 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate
-            .then()
-            .statusCode(400)
-            .body(
-                "type",
-                Matchers.equalTo(
-                    AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                        .getCode()
-                        .getAppCode()));
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
+                                        .getCode()
+                                        .getAppCode()));
     }
 
     @Test
-    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
-        throws Exception {
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
+                    throws Exception {
         // Arrange
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setStandardApplicantCode(null);
@@ -2105,24 +2109,25 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Act
         Response responseSpecCreate =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(
-                    CREATE_ENTRY_CONTEXT
-                        + "/"
-                        + getOpenApplicationListId()
-                        + "/entries"),
-                tokenGenerator.fetchTokenForRole(),
-                entryCreateDto);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
 
         // assert the response
         responseSpecCreate
-            .then()
-            .statusCode(400)
-            .body(
-                "type",
-                Matchers.equalTo(
-                    AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
-                        .getCode()
-                        .getAppCode()));
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError
+                                        .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
+                                        .getCode()
+                                        .getAppCode()));
     }
 }
