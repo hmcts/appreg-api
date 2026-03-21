@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -700,5 +701,160 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
                                         .getCode()
                                         .getAppCode()));
+    }
+
+    @Test
+    public void givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
+        throws Exception {
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // Arrange
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setFeeStatuses(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryUpdateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryUpdateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecUpdate =
+            restAssuredClient.executePutRequest(
+                HeaderUtil.getLocation(responseSpecCreate),
+                tokenGenerator.fetchTokenForRole(),
+                entryUpdateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
+
+        var createdDto = new SuccessCreateEntryResponse(
+            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void
+    givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryNumberOfRespondentsProvided_thenReturn201()
+        throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // Arrange
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(5);
+        entryUpdateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryUpdateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryUpdateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecUpdate =
+            restAssuredClient.executePutRequest(
+                HeaderUtil.getLocation(responseSpecCreate),
+                tokenGenerator.fetchTokenForRole(),
+                entryUpdateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
+
+        var createdDto = new SuccessCreateEntryResponse(
+            responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
+        throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // Arrange
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryUpdateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryUpdateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecUpdate =
+            restAssuredClient.executePutRequest(
+                HeaderUtil.getLocation(responseSpecCreate),
+                tokenGenerator.fetchTokenForRole(),
+                entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate
+            .then()
+            .statusCode(400)
+            .body(
+                "type",
+                Matchers.equalTo(
+                    AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
+                        .getCode()
+                        .getAppCode()));
+    }
+
+    @Test
+    public void givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
+        throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // Arrange
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(10);
+        entryUpdateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryUpdateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryUpdateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecUpdate =
+            restAssuredClient.executePutRequest(
+                HeaderUtil.getLocation(responseSpecCreate),
+                tokenGenerator.fetchTokenForRole(),
+                entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate
+            .then()
+            .statusCode(400)
+            .body(
+                "type",
+                Matchers.equalTo(
+                    AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
+                        .getCode()
+                        .getAppCode()));
     }
 }
