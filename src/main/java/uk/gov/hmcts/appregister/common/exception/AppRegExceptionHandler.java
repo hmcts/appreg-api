@@ -148,7 +148,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                                 errors.put(
                                         fieldError.getField(),
                                         "Please ensure that any times are in the format HH:mm and dates are in the"
-                                                + "format yyyy-MM-dd");
+                                                + " format yyyy-MM-dd");
                             }
                         });
 
