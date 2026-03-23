@@ -138,16 +138,18 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, Object> errors = new LinkedHashMap<>();
 
         ex.getBindingResult().getFieldErrors().stream()
-            .sorted(Comparator.comparing(FieldError::getField))
-            .forEach(fieldError -> {
-                if (fieldError.getCode() == null || !fieldError.getCode().contains("typeMismatch")) {
-                    errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-                } else {
-                    errors.put(
-                        fieldError.getField(),
-                        "Please ensure that any times are in the format HH:mm and dates are in the format yyyy-MM-dd");
-                }
-            });
+                .sorted(Comparator.comparing(FieldError::getField))
+                .forEach(
+                        fieldError -> {
+                            if (fieldError.getCode() == null
+                                    || !fieldError.getCode().contains("typeMismatch")) {
+                                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                            } else {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure that any times are in the format HH:mm and dates are in the format yyyy-MM-dd");
+                            }
+                        });
 
         problemDetail.setProperty("errors", errors);
 

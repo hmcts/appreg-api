@@ -180,45 +180,44 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void
-    givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
-        throws Exception {
+    void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
+            throws Exception {
 
         BindingResult result = Mockito.mock(BindingResult.class);
 
         List<FieldError> fieldErrors =
-            List.of(
-                new FieldError(
-                    "objectName",
-                    "zField",
-                    "rejectedValue",
-                    false,
-                    null,
-                    null,
-                    "zMessage"),
-                new FieldError(
-                    "objectName",
-                    "aField",
-                    "rejectedValue",
-                    false,
-                    null,
-                    null,
-                    "aMessage"));
+                List.of(
+                        new FieldError(
+                                "objectName",
+                                "zField",
+                                "rejectedValue",
+                                false,
+                                null,
+                                null,
+                                "zMessage"),
+                        new FieldError(
+                                "objectName",
+                                "aField",
+                                "rejectedValue",
+                                false,
+                                null,
+                                null,
+                                "aMessage"));
 
         Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
 
         String customMessage = "Custom message";
 
         MethodArgumentNotValidException exception =
-            new MethodArgumentNotValidException(null, result) {
-                @Override
-                public String getMessage() {
-                    return customMessage;
-                }
-            };
+                new MethodArgumentNotValidException(null, result) {
+                    @Override
+                    public String getMessage() {
+                        return customMessage;
+                    }
+                };
 
         ResponseEntity<Object> problemDetail =
-            exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
 
         Assertions.assertNotNull(problemDetail);
         Assertions.assertNotNull(problemDetail.getBody());
