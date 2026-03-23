@@ -151,7 +151,6 @@ public class CreateEntryDtoUtil {
                 .getContactDetails()
                 .setPhone(JsonNullable.of("01234567890"));
 
-        entryCreateDto.setNumberOfRespondents(10);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);

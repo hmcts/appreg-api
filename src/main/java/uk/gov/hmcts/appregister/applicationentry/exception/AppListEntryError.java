@@ -103,7 +103,17 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Account number is required for EF applications",
-                    "ALE-20"));
+                    "ALE-20")),
+    BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Respondent and Bulk respondent number are mutually exclusive",
+                    "ALE-21")),
+    RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Either respondent details or number of respondents must be provided",
+                    "ALE-22"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
