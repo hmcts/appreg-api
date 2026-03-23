@@ -181,6 +181,60 @@ class AppRegExceptionHandlerTest {
 
     @Test
     void
+    givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
+        throws Exception {
+
+        BindingResult result = Mockito.mock(BindingResult.class);
+
+        List<FieldError> fieldErrors =
+            List.of(
+                new FieldError(
+                    "objectName",
+                    "zField",
+                    "rejectedValue",
+                    false,
+                    null,
+                    null,
+                    "zMessage"),
+                new FieldError(
+                    "objectName",
+                    "aField",
+                    "rejectedValue",
+                    false,
+                    null,
+                    null,
+                    "aMessage"));
+
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
+
+        String customMessage = "Custom message";
+
+        MethodArgumentNotValidException exception =
+            new MethodArgumentNotValidException(null, result) {
+                @Override
+                public String getMessage() {
+                    return customMessage;
+                }
+            };
+
+        ResponseEntity<Object> problemDetail =
+            exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+
+        Assertions.assertNotNull(problemDetail);
+        Assertions.assertNotNull(problemDetail.getBody());
+
+        ProblemDetail body = (ProblemDetail) problemDetail.getBody();
+        Assertions.assertNotNull(body.getProperties());
+
+        Object errorsObj = body.getProperties().get("errors");
+        Assertions.assertInstanceOf(Map.class, errorsObj);
+
+        Map<?, ?> errors = (Map<?, ?>) errorsObj;
+        Assertions.assertEquals(List.of("aField", "zField"), List.copyOf(errors.keySet()));
+    }
+
+    @Test
+    void
             givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
 

@@ -5,7 +5,9 @@ import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.hamcrest.Matchers;
 import org.instancio.Instancio;
@@ -1961,5 +1963,66 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         Assertions.assertNotNull(createdDto.getDetailDto());
         Assertions.assertNotNull(createdDto.getDetailDto().getId());
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void givenAnInvalidCreateEntryRequest_whenMultipleValidationErrors_thenErrorsAreReturnedInSortedOrder()
+        throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getContactDetails()
+            .setAddressLine1("a".repeat(36));
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getContactDetails()
+            .setPostcode("123456789");
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getContactDetails()
+            .setPhone(JsonNullable.of("1".repeat(21)));
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getContactDetails()
+            .setMobile(JsonNullable.of("2".repeat(21)));
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getName()
+            .setFirstForename("a".repeat(101));
+        entryCreateDto
+            .getApplicant()
+            .getPerson()
+            .getName()
+            .setSecondForename(JsonNullable.of("b".repeat(101)));
+
+        var tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpecCreate =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(
+                    CREATE_ENTRY_CONTEXT
+                        + "/"
+                        + getOpenApplicationListId()
+                        + "/entries"),
+                tokenGenerator.fetchTokenForRole(),
+                entryCreateDto);
+
+        Map<String, Object> errors = responseSpecCreate.jsonPath().getMap("errors");
+
+        Assertions.assertEquals(
+            List.of(
+                "applicant.person.contactDetails.addressLine1",
+                "applicant.person.contactDetails.mobile",
+                "applicant.person.contactDetails.phone",
+                "applicant.person.contactDetails.postcode",
+                "applicant.person.name.firstForename",
+                "applicant.person.name.secondForename"),
+            new ArrayList<>(errors.keySet()));
     }
 }
