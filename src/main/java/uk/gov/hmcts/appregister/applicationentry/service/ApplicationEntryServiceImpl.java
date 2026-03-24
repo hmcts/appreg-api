@@ -802,8 +802,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     newOffsiteFee.setVersion(success.getFee().getVersion());
                                     newOffsiteFee.setEndDate(success.getFee().getEndDate());
                                     newOffsiteFee.setStartDate(success.getFee().getStartDate());
-                                    newOffsiteFee.setChangedDate(success.getFee().getChangedDate());
-                                    newOffsiteFee.setChangedBy(success.getFee().getChangedBy());
                                     newOffsiteFee.setOffsite(true);
 
                                     var savedFee = feeRepository.save(newOffsiteFee);
