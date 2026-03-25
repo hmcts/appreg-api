@@ -48,6 +48,9 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # defining a list of protected branches that should not be deleted or have issues created for them
+          protected_branches=("main" "master" "develop" "release" "origin" "staging", "ithc", "demo")
+          
           # Fetch all branches
           git fetch --all
 
@@ -73,7 +76,7 @@ jobs:
             echo "Checking branch: $branch (Last commit: $last_commit_date, Author: $author, Inactive for: $diff_days days)"
 
             # Skip protected branches
-            if [ "$branch" == "main" ] || [ "$branch" == "master" ] || [ "$branch" == "develop" ] || [ "$branch" == "release" ] || [ "$branch" == "origin" ]; then
+            if [ "$branch" == "main" ] || [ "$branch" == "master" ] || [ "$branch" == "develop" ] || [ "$branch" == "release" ] || [ "$branch" == "origin" ] || [ "$branch" == "staging" ]; then
               echo "Skipping protected branch: $branch"
               continue
             fi
@@ -104,6 +107,7 @@ jobs:
                 
                 echo "Deleting branch: $branch"
                 git push origin --delete "$branch"
+                continue
 
               else
                 echo "DRY RUN: Would delete branch: $branch (Author: $author)"
@@ -119,9 +123,17 @@ jobs:
                 if ! gh label list --json name --jq '.[].name' | grep -Fxq "inactive-branch"; then
                   echo "Creating label: inactive-branch"
                   gh label create "inactive-branch" --color FF0000 --description "Branches that have been inactive for a specified number of days"
-                fi  
-                gh issue create --title "Inactive Branch: $branch - $author" --body "The branch '$branch' has been inactive for $diff_days days. The last commit was made on $last_commit_date by $author. Please review the branch and take necessary action." --label "inactive-branch"
-                continue
+                fi
+                # Create an issue for the inactive branch, if an issue for the branch doesn't already exist
+                echo "Checking if an issue already exists for branch: $branch"
+                existing_issue=$(gh issue list --label "inactive-branch" --json number,title,body --jq ".[] | select(.body | contains(\"$branch\")) | .number")
+                if [ -n "$existing_issue" ]; then
+                  echo "An issue already exists for branch: $branch (Issue #$existing_issue)"
+                  continue
+                else  
+                  gh issue create --title "Inactive Branch: $branch - $author" --body "The branch '$branch' has been inactive for $diff_days days. The last commit was made on $last_commit_date by $author. Please review the branch and take necessary action." --label "inactive-branch"
+                  continue
+                fi
               else
                 echo "DRY RUN: Would create an issue for branch: $branch (Author: $author)"
                 continue
