@@ -49,7 +49,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # defining a list of protected branches that should not be deleted or have issues created for them
-          protected_branches=("main" "master" "develop" "release" "origin" "staging", "ithc", "demo")
+          protected_branches=("main" "master" "develop" "release" "origin" "staging" "ithc" "demo")
           
           # Fetch all branches
           git fetch --all
@@ -76,7 +76,7 @@ jobs:
             echo "Checking branch: $branch (Last commit: $last_commit_date, Author: $author, Inactive for: $diff_days days)"
 
             # Skip protected branches
-            if [ "$branch" == "main" ] || [ "$branch" == "master" ] || [ "$branch" == "develop" ] || [ "$branch" == "release" ] || [ "$branch" == "origin" ] || [ "$branch" == "staging" ]; then
+            if printf '%s\0' "${protected_branches[@]}" | grep -Fxqz "$branch"; then
               echo "Skipping protected branch: $branch"
               continue
             fi
