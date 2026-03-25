@@ -401,27 +401,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                             .filter(f -> !f.isOffsite())
                                             .findFirst();
 
-                            long feeId = 0L;
-                            if (!standardFee.isPresent()) {
-
-                                var fee = success.getFee();
-
-                                var newStandardFee = new Fee();
-                                newStandardFee.setAmount(fee.getAmount());
-                                newStandardFee.setDescription(fee.getDescription());
-                                newStandardFee.setReference(fee.getReference());
-                                newStandardFee.setVersion(fee.getVersion());
-                                newStandardFee.setEndDate(fee.getEndDate());
-                                newStandardFee.setStartDate(fee.getStartDate());
-                                newStandardFee.setOffsite(false);
-
-                                var savedFee = feeRepository.save(newStandardFee);
-                                feeId = savedFee.getId();
-                            }
-
                             AppListEntryFeeId standardEntryFeeId = new AppListEntryFeeId();
-                            standardEntryFeeId.setFeeId(
-                                    feeId != 0 ? feeId : standardFee.get().getId());
+                            standardEntryFeeId.setFeeId(standardFee.get().getId());
                             standardEntryFeeId.setAppListEntryId(
                                     appListEntryFeeId.getAppListEntryId());
                             appListEntryFeeRepository.save(standardEntryFeeId);
