@@ -189,6 +189,7 @@ public class ApplicationListEntryAssertion {
                 }
             }
             Assertions.assertEquals(entryCreateUpdateDto.getHasOffsiteFee(), containsOffsite);
+            Assertions.assertEquals(2, applicationListEntry.getEntryFeeIds().size());
         }
 
         // ensure the database fees align ignoring pre existing fee statuses
