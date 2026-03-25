@@ -6,18 +6,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
@@ -26,6 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -35,6 +46,12 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationEntryControllerReadTest extends AbstractApplicationEntryCrudTest {
+
+    @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
+
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     @Test
     @StabilityTest
@@ -244,7 +261,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);
@@ -280,7 +296,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2025-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -406,7 +421,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
-        assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -532,7 +546,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
-        assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -635,7 +648,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);
@@ -702,7 +714,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Regulation 34 Council Tax (Admin and Enforcement) Regulations 1992");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }
@@ -844,6 +855,48 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         responseSpec.then().statusCode(400);
     }
 
+    @Test
+    @StabilityTest
+    public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
+        var tokenGenerator = createAdminToken();
+
+        UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
+
+        ApplicationListEntry entry =
+                applicationListEntryRepository.findByUuid(uuids[1]).orElseThrow();
+
+        saveResolution(entry, "RC1");
+        saveResolution(entry, "RC2");
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(20),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        EntryGetSummaryDto dto =
+                page.getContent().stream()
+                        .filter(item -> uuids[1].equals(item.getId()))
+                        .findFirst()
+                        .orElseThrow();
+
+        assertThat(dto.getIsResulted()).isTrue();
+        assertEquals(2, dto.getResulted().size());
+
+        Set<String> codes =
+                dto.getResulted().stream()
+                        .map(ResultCodeGetSummaryDto::getResultCode)
+                        .collect(Collectors.toSet());
+
+        assertEquals(Set.of("RC1", "RC2"), codes);
+    }
+
     record ApplicationEntryFilter(
             Optional<LocalDate> date,
             Optional<String> courtCode,
@@ -912,5 +965,25 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
             return rs;
         }
+    }
+
+    private void saveResolution(ApplicationListEntry entry, String resultCode) {
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+        code = resolutionCodeRepository.saveAndFlush(code);
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entry);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        appListEntryResolutionRepository.saveAndFlush(entryResolution);
     }
 }

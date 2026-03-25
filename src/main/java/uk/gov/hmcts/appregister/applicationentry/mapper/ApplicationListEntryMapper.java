@@ -22,6 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.EntityType;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
@@ -50,6 +51,7 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -345,13 +347,16 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "isFeeRequired", expression = "java(projection.getFeeRequired().isYes())")
     @Mapping(target = "status", expression = "java(toStatus(projection.getStatus()))")
     @Mapping(target = "legislation", source = "projection.legislation")
-    @Mapping(target = "isResulted", expression = "java(projection.getResult() != null)")
+    @Mapping(target = "isResulted", ignore = true)
     @Mapping(target = "date", expression = "java(projection.getDateOfAl())")
     @Mapping(target = "listId", source = "projection.listId")
     @Mapping(target = "sequenceNumber", source = "projection.sequenceNumber")
-    @Mapping(target = "resulted", source = "resolutionCode")
+    @Mapping(target = "resulted", ignore = true)
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
+
+    public abstract ResultCodeGetSummaryDto toResultCodeGetSummaryDto(
+            ResolutionCode resolutionCode);
 
     /**
      * gets a standard applicant or a named applicant depending on which one exists.
