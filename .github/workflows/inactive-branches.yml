@@ -116,7 +116,6 @@ jobs:
 
             # If the branch is inactive for more than inactive days, create an issue only if it's not a dry run and create_issue is true
             if [ $diff_days -gt ${{ inputs.inactive_days }} ] && [ "${{ inputs.create_issue }}" = "true" ]; then
-              echo "Branch: $branch is inactive for $diff_days days (Last commit: $last_commit_date) Author: $author"
               if [ "${{ inputs.dry_run }}" = "false" ]; then
                 # Check if the inactive branch label already exists, if not create it
                 echo "Checking if label 'inactive-branch' exists"
