@@ -151,16 +151,43 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     pageable.getPageable());
 
+                    List<Long> entryIds =
+                        resultPage.stream()
+                            .map(ApplicationListEntryGetSummaryProjection::getId)
+                            .toList();
+
+                    List<ApplicationListEntryResolutionProjection> resolutionProjections =
+                        entryIds.isEmpty()
+                            ? List.of()
+                            : applicationListEntryRepository.findResolutionCodesByEntryIds(entryIds);
+
+                    Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId =
+                        resolutionProjections.stream()
+                            .collect(
+                                Collectors.groupingBy(
+                                    ApplicationListEntryResolutionProjection::getEntryId,
+                                    Collectors.mapping(
+                                        this::toResultCodeGetSummaryDto,
+                                        Collectors.toList())));
+
                     // breaks name into individual and/or organisation parts
                     EntryPage newPage = new EntryPage();
                     pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
 
                     // Map each entity to a summary DTO and add to the page content
-                    resultPage.forEach(
-                            entry -> {
-                                newPage.addContentItem(
-                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
-                            });
+                    resultPage.getContent()
+                        .forEach(entry -> {
+                            EntryGetSummaryDto entrySummary =
+                                applicationListEntryMapStructMapper.toEntrySummary(entry);
+
+                            List<ResultCodeGetSummaryDto> resultCodes =
+                                codesByEntryId.getOrDefault(entry.getId(), List.of());
+
+                            entrySummary.setResulted(resultCodes);
+                            entrySummary.setIsResulted(!resultCodes.isEmpty());
+
+                            newPage.addContentItem(entrySummary);
+                        });
 
                     log.debug(
                             "Finished: Find Application Entry for criteria: {} with paging: {}",

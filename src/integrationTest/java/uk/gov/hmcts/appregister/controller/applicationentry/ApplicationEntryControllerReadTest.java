@@ -865,7 +865,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationEntriesReturnsAllResultCodes_FreshDataOnly() throws Exception {
+    public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
         ApplicationList list = new ApplicationList();
         list.setDate(LocalDate.now());
         list.setTime(java.time.LocalTime.of(9, 0));
