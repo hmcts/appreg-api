@@ -800,6 +800,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
         assertThat(entry.getApplicant().getPerson().getName().getSurname()).isEqualTo("Turner");
         assertThat(entry.getIsFeeRequired()).isTrue();
+        assertThat(entry.getIsResulted()).isTrue();
     }
 
     private void dataAuditAssertionsForNoFilter() {
