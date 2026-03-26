@@ -22,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -150,6 +152,33 @@ public class CourtLocationServiceImplTest {
                         notNull());
     }
 
+    @Test
+    void findByCodeAndDate_auditsResolvedEntity() {
+        final String code = "ABC123";
+        final LocalDate date = LocalDate.parse("2025-01-01");
+
+        var entity = new NationalCourtHouse();
+        entity.setCourtLocationCode(code);
+        entity.setName("Bath Crown Court");
+        when(repository.findActiveCourtsWithDate(code, date)).thenReturn(List.of(entity));
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        CourtLocationServiceImpl localService =
+                new CourtLocationServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        mapper,
+                        pageMapper,
+                        businessDateProvider);
+
+        CourtLocationGetDetailDto dto = localService.findByCodeAndDate(code, date);
+
+        Assertions.assertEquals("Bath Crown Court", dto.getName());
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
+    }
+
     /**
      * For a non-empty page: repository page is mapped to API page, page metadata is copied, and
      * each entity becomes a summary DTO.
@@ -258,5 +287,20 @@ public class CourtLocationServiceImplTest {
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
                         notNull(),
                         notNull());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }

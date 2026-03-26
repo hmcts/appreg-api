@@ -23,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -140,6 +142,36 @@ public class ResultCodeServiceImplTest {
                         eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
+    @Test
+    void findByCode_auditsResolvedEntity() {
+        final String code = "RC123";
+        final LocalDate date = LocalDate.parse("2025-01-01");
+
+        var entity = new ResolutionCode();
+        entity.setResultCode(code);
+        var expectedDto = new ResultCodeGetDetailDto();
+        when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
+                .thenReturn(List.of(entity));
+        when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        ResultCodeServiceImpl localService =
+                new ResultCodeServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        mapper,
+                        pageMapper,
+                        Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC")),
+                        ZoneId.of("Europe/London"));
+
+        ResultCodeGetDetailDto actual = localService.findByCode(code, date);
+
+        Assertions.assertSame(expectedDto, actual);
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
+    }
+
     /**
      * For a non-empty page: repository page is mapped to API page, page metadata is copied, and
      * each entity becomes a summary DTO (we assert size to avoid relying on field names).
@@ -220,5 +252,20 @@ public class ResultCodeServiceImplTest {
         verify(auditOperationService)
                 .processAudit(
                         eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }

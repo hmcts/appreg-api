@@ -15,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -22,6 +24,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
@@ -46,6 +49,7 @@ class CriminalJusticeAreaServiceImplTest {
     @InjectMocks private CriminalJusticeServiceImpl service;
 
     @Mock private LocationLookupService locationLookupService;
+    @Mock private PageMapper pageMapper;
 
     @Test
     void testSuccess() {
@@ -116,5 +120,43 @@ class CriminalJusticeAreaServiceImplTest {
                         eq(CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT),
                         notNull(),
                         notNull());
+    }
+
+    @Test
+    void testSuccess_auditsResolvedEntity() {
+        String code = "X123";
+        var cja = CriminalJusticeArea.builder().code(code).description("Test Area").build();
+        when(locationLookupService.getCjaOrThrow(code)).thenReturn(cja);
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        CriminalJusticeServiceImpl localService =
+                new CriminalJusticeServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        criminalJusticeMapper,
+                        pageMapper,
+                        locationLookupService);
+
+        CriminalJusticeAreaGetDto dto = localService.findByCode(code);
+
+        Assertions.assertEquals(code, dto.getCode());
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(cja, listener.getCompleteEvent().getNewValue());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }

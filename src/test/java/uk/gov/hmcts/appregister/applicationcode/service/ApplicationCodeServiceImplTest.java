@@ -118,6 +118,27 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
+    void findByCode_auditsResolvedEntity() {
+        String code = "code";
+        LocalDate localDate = LocalDate.of(2025, 1, 1);
+
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        dummyGetApplicationCodeValidator.setSuccess(
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build());
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        ApplicationCodeServiceImpl auditedService = buildServiceWithListeners(List.of(listener));
+
+        auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(applicationCode, listener.getCompleteEvent().getNewValue());
+    }
+
+    @Test
     void findAllByCode() throws Exception {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         ApplicationCode applicationCode2 = new ApplicationCodeTestData().someComplete();
@@ -291,6 +312,35 @@ public class ApplicationCodeServiceImplTest {
         Assertions.assertEquals(
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
                 applicationCode4.getCode());
+    }
+
+    private ApplicationCodeServiceImpl buildServiceWithListeners(
+            List<AuditOperationLifecycleListener> listeners) {
+        return new ApplicationCodeServiceImpl(
+                repository,
+                applicationCodeMapper,
+                feeService,
+                new AuditOperationServiceImpl(objectMapper, listeners),
+                listeners,
+                pageMapper,
+                fixedClock,
+                ukZone,
+                dummyGetApplicationCodeValidator);
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 
     class DummyAuditOperationService implements AuditOperationService {

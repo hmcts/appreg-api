@@ -171,7 +171,8 @@ public class ApplicationListServiceImplTest {
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
     @Spy
-    private final AuditOperationService auditOperationService = new DummyAuditOperationService();
+    private final DummyAuditOperationService auditOperationService =
+            new DummyAuditOperationService();
 
     private ApplicationListServiceImpl service;
 
@@ -273,7 +274,6 @@ public class ApplicationListServiceImplTest {
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
                 .thenReturn(expectedDto);
 
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
         mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
@@ -372,7 +372,6 @@ public class ApplicationListServiceImplTest {
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
                 new PayloadForUpdate<>(dto, saved.getUuid());
 
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
         mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
@@ -835,6 +834,7 @@ public class ApplicationListServiceImplTest {
     void get_returnsDto() {
         ApplicationList saved = new ApplicationList();
         UUID id = UUID.randomUUID();
+        saved.setUuid(id);
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         Pageable pageable = mock(Pageable.class);
@@ -848,6 +848,28 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void get_auditsResolvedApplicationListEntity() {
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        saved.setUuid(id);
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        Pageable pageable = mock(Pageable.class);
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
+        mockFindSummariesById(id, pageable);
+
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+
+        auditOperationService.clearCapturedAudit();
+        ApplicationListGetDetailDto actual = service.get(id, wrapper);
+
+        Assertions.assertEquals(expected, actual);
+        Assertions.assertSame(saved, auditOperationService.getLastNewEntity());
     }
 
     @Test
@@ -869,6 +891,7 @@ public class ApplicationListServiceImplTest {
         // Given
         UUID id = UUID.randomUUID();
         ApplicationList list = new ApplicationList();
+        list.setUuid(id);
 
         when(repository.findByUuid(id)).thenReturn(Optional.of(list));
 
@@ -941,6 +964,25 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
+    void print_auditsResolvedApplicationListEntity() {
+        UUID id = UUID.randomUUID();
+        ApplicationList list = new ApplicationList();
+        list.setUuid(id);
+
+        when(repository.findByUuid(id)).thenReturn(Optional.of(list));
+        when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of());
+
+        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
+        when(mapper.toGetPrintDto(list)).thenReturn(expected);
+
+        auditOperationService.clearCapturedAudit();
+        ApplicationListGetPrintDto actual = service.print(id);
+
+        Assertions.assertEquals(expected, actual);
+        Assertions.assertSame(list, auditOperationService.getLastNewEntity());
+    }
+
+    @Test
     void print_returns404_whenApplicationListRepositoryEmpty() {
         UUID id = UUID.randomUUID();
         when(repository.findByUuid(id)).thenReturn(Optional.empty());
@@ -986,6 +1028,21 @@ public class ApplicationListServiceImplTest {
     }
 
     class DummyAuditOperationService implements AuditOperationService {
+        private Keyable lastNewEntity;
+        private AuditOperation lastAuditType;
+
+        Keyable getLastNewEntity() {
+            return lastNewEntity;
+        }
+
+        AuditOperation getLastAuditType() {
+            return lastAuditType;
+        }
+
+        void clearCapturedAudit() {
+            lastNewEntity = null;
+            lastAuditType = null;
+        }
 
         @Override
         public <T, E extends Keyable> T processAudit(
@@ -1018,6 +1075,7 @@ public class ApplicationListServiceImplTest {
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
 
+            lastAuditType = auditType;
             Optional<AuditableResult<T, E>> optional =
                     execution.apply(
                             new CompleteEvent(
@@ -1027,6 +1085,7 @@ public class ApplicationListServiceImplTest {
                                             null),
                                     "result",
                                     null));
+            lastNewEntity = optional.map(AuditableResult::getNewEntity).orElse(null);
             return optional.map(AuditableResult::getResultingValue).orElse(null);
         }
     }
