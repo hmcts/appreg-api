@@ -204,7 +204,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 feeReference,
                 today.plusDays(30),
                 "Fallback overlapping application code");
-        var preferredCode =
+        final var preferredCode =
                 saveActiveApplicationCode(
                         applicationCodeValue, feeReference, null, "Preferred application code");
 
@@ -214,7 +214,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 BigDecimal.valueOf(222),
                 false,
                 today.plusDays(30));
-        var preferredFee =
+        final var preferredFee =
                 saveActiveFee(feeReference, "Preferred fee", BigDecimal.valueOf(111), false, null);
 
         Response responseSpecCreate = createListEntryWithAllData();
