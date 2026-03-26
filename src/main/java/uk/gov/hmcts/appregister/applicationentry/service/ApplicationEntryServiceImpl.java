@@ -151,31 +151,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     pageable.getPageable());
 
-                    Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId =
-                            getCodesByEntryId(resultPage);
-
                     // breaks name into individual and/or organisation parts
-                    EntryPage newPage = new EntryPage();
-                    pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
-
-                    // Map each entity to a summary DTO and add to the page content
-                    resultPage
-                            .getContent()
-                            .forEach(
-                                    entry -> {
-                                        EntryGetSummaryDto entrySummary =
-                                                applicationListEntryMapStructMapper.toEntrySummary(
-                                                        entry);
-
-                                        List<ResultCodeGetSummaryDto> resultCodes =
-                                                codesByEntryId.getOrDefault(
-                                                        entry.getId(), List.of());
-
-                                        entrySummary.setResulted(resultCodes);
-                                        entrySummary.setIsResulted(!resultCodes.isEmpty());
-
-                                        newPage.addContentItem(entrySummary);
-                                    });
+                    EntryPage newPage = buildEntryPage(resultPage, pageable);
 
                     log.debug(
                             "Finished: Find Application Entry for criteria: {} with paging: {}",
@@ -920,28 +897,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getSequenceNumber(),
                                     pageable.getPageable());
 
-                    Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId =
-                            getCodesByEntryId(entries);
-
-                    EntryPage entryPage = new EntryPage();
-                    pageMapper.toPage(entries, entryPage, pageable.getSortStrings());
-
-                    entries.getContent()
-                            .forEach(
-                                    entry -> {
-                                        EntryGetSummaryDto entryGetSummaryDto =
-                                                applicationListEntryMapStructMapper.toEntrySummary(
-                                                        entry);
-
-                                        List<ResultCodeGetSummaryDto> resultCodes =
-                                                codesByEntryId.getOrDefault(
-                                                        entry.getId(), List.of());
-
-                                        entryGetSummaryDto.setResulted(resultCodes);
-                                        entryGetSummaryDto.setIsResulted(!resultCodes.isEmpty());
-
-                                        entryPage.addContentItem(entryGetSummaryDto);
-                                    });
+                    EntryPage entryPage = buildEntryPage(entries, pageable);
 
                     if (entryPage.getContent() == null) {
                         entryPage.setContent(List.of());
@@ -1080,5 +1036,32 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 ApplicationListEntryResolutionProjection::getEntryId,
                                 Collectors.mapping(
                                         this::toResultCodeGetSummaryDto, Collectors.toList())));
+    }
+
+    private EntryPage buildEntryPage(
+            Page<ApplicationListEntryGetSummaryProjection> resultPage, PagingWrapper pageable) {
+
+        Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId = getCodesByEntryId(resultPage);
+
+        EntryPage entryPage = new EntryPage();
+        pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
+
+        resultPage
+                .getContent()
+                .forEach(
+                        entry -> {
+                            EntryGetSummaryDto entrySummary =
+                                    applicationListEntryMapStructMapper.toEntrySummary(entry);
+
+                            List<ResultCodeGetSummaryDto> resultCodes =
+                                    codesByEntryId.getOrDefault(entry.getId(), List.of());
+
+                            entrySummary.setResulted(resultCodes);
+                            entrySummary.setIsResulted(!resultCodes.isEmpty());
+
+                            entryPage.addContentItem(entrySummary);
+                        });
+
+        return entryPage;
     }
 }
