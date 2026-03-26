@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
+import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -22,14 +24,18 @@ import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperatio
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -52,6 +58,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
 
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
+
+    @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
     @Test
     @StabilityTest
@@ -857,32 +865,42 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
-    public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
-        var tokenGenerator = createAdminToken();
+    public void testGetApplicationEntriesReturnsAllResultCodes_FreshDataOnly() throws Exception {
+        ApplicationList list = new ApplicationList();
+        list.setDate(LocalDate.now());
+        list.setTime(java.time.LocalTime.of(9, 0));
+        list.setStatus(OPEN);
+        list.setDescription("Test list description");
+        list = applicationListRepository.saveAndFlush(list);
 
-        UUID[] uuids = getValidEntryForList(VALID_ENTRY_PK);
+        ApplicationCode applicationCode = buildApplicationCode("APP001");
+        applicationCode = applicationCodeRepository.saveAndFlush(applicationCode);
 
-        ApplicationListEntry entry =
-                applicationListEntryRepository.findByUuid(uuids[1]).orElseThrow();
+        ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
+        entry.setApplicationList(list);
+        entry.setApplicationCode(applicationCode);
+        entry = applicationListEntryRepository.saveAndFlush(entry);
 
         saveResolution(entry, "RC1");
         saveResolution(entry, "RC2");
 
+        var tokenGenerator = createAdminToken();
         Response responseSpec =
                 restAssuredClient.executeGetRequestWithPaging(
                         Optional.of(20),
                         Optional.of(0),
                         List.of(),
-                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + uuids[0] + "/entries"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
 
         EntryPage page = responseSpec.as(EntryPage.class);
 
+        ApplicationListEntry finalEntry = entry;
         EntryGetSummaryDto dto =
                 page.getContent().stream()
-                        .filter(item -> uuids[1].equals(item.getId()))
+                        .filter(item -> finalEntry.getUuid().equals(item.getId()))
                         .findFirst()
                         .orElseThrow();
 
@@ -965,6 +983,22 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
             return rs;
         }
+    }
+
+    private ApplicationCode buildApplicationCode(String code) {
+        ApplicationCode applicationCode = new ApplicationCode();
+        applicationCode.setCode(code); // max 10 chars
+        applicationCode.setTitle("Test title");
+        applicationCode.setWording("Test wording");
+        applicationCode.setLegislation("Test legislation");
+        applicationCode.setFeeDue(NO);
+        applicationCode.setRequiresRespondent(NO);
+        applicationCode.setBulkRespondentAllowed(NO);
+        applicationCode.setStartDate(LocalDate.now());
+        applicationCode.setChangedBy(1L);
+        applicationCode.setChangedDate(OffsetDateTime.now());
+        applicationCode.setCreatedUser("email");
+        return applicationCode;
     }
 
     private void saveResolution(ApplicationListEntry entry, String resultCode) {
