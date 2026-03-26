@@ -873,7 +873,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         list.setDescription("Test list description");
         list = applicationListRepository.saveAndFlush(list);
 
-        ApplicationCode applicationCode = buildApplicationCode("APP001");
+        ApplicationCode applicationCode = buildApplicationCode("APP002");
         applicationCode = applicationCodeRepository.saveAndFlush(applicationCode);
 
         ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
@@ -987,7 +987,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     private ApplicationCode buildApplicationCode(String code) {
         ApplicationCode applicationCode = new ApplicationCode();
-        applicationCode.setCode(code); // max 10 chars
+        applicationCode.setCode(code);
         applicationCode.setTitle("Test title");
         applicationCode.setWording("Test wording");
         applicationCode.setLegislation("Test legislation");

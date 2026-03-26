@@ -2,32 +2,47 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
 import static uk.gov.hmcts.appregister.common.security.RoleEnum.ADMIN;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -37,6 +52,14 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudTest {
+
+    @Autowired private ApplicationListEntryRepository applicationListEntryRepository;
+
+    @Autowired private AppListEntryResolutionRepository appListEntryResolutionRepository;
+
+    @Autowired private ResolutionCodeRepository resolutionCodeRepository;
+
+    @Autowired private ApplicationCodeRepository applicationCodeRepository;
 
     @StabilityTest
     public void testGetApplicationEntriesSearch() throws Exception {
@@ -684,6 +707,49 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         Assertions.assertEquals(applicationListEntry.getUuid(), page.getContent().get(2).getId());
     }
 
+    @Test
+    @StabilityTest
+    public void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
+        ApplicationList list = new ApplicationList();
+        list.setDate(LocalDate.now());
+        list.setTime(LocalTime.of(9, 0));
+        list.setStatus(Status.OPEN);
+        list.setDescription("Test list description");
+        list = applicationListRepository.saveAndFlush(list);
+
+        ApplicationCode applicationCode = buildApplicationCode("APP002");
+        applicationCode = applicationCodeRepository.saveAndFlush(applicationCode);
+
+        ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
+        entry.setApplicationList(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber("RESULT-12345");
+        entry = applicationListEntryRepository.saveAndFlush(entry);
+
+        saveResolution(entry, "RC1");
+        saveResolution(entry, "RC2");
+
+        EntryGetFilterDto filterDto = new EntryGetFilterDto();
+        filterDto.setAccountReference("RESULT-12345");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryPage page = executeSearch(tokenGenerator, filterDto, 20);
+
+        assertThat(page.getContent()).isNotNull();
+        assertEquals(1, page.getContent().size());
+
+        EntryGetSummaryDto dto = page.getContent().getFirst();
+        assertThat(dto.getIsResulted()).isTrue();
+        assertEquals(2, dto.getResulted().size());
+
+        Set<String> codes =
+                dto.getResulted().stream()
+                        .map(ResultCodeGetSummaryDto::getResultCode)
+                        .collect(Collectors.toSet());
+
+        assertEquals(Set.of("RC1", "RC2"), codes);
+    }
+
     /** Executes search with optional filter and returns EntryPage. */
     private EntryPage executeSearch(
             TokenGenerator tokenGenerator, EntryGetFilterDto filterDto, int size) throws Exception {
@@ -880,5 +946,41 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         "",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+    }
+
+    private ApplicationCode buildApplicationCode(String code) {
+        ApplicationCode applicationCode = new ApplicationCode();
+        applicationCode.setCode(code); // max 10 chars
+        applicationCode.setTitle("Test title");
+        applicationCode.setWording("Test wording");
+        applicationCode.setLegislation("Test legislation");
+        applicationCode.setFeeDue(NO);
+        applicationCode.setRequiresRespondent(NO);
+        applicationCode.setBulkRespondentAllowed(NO);
+        applicationCode.setStartDate(LocalDate.now());
+        applicationCode.setChangedBy(1L);
+        applicationCode.setChangedDate(OffsetDateTime.now());
+        applicationCode.setCreatedUser("email");
+        return applicationCode;
+    }
+
+    private void saveResolution(ApplicationListEntry entry, String resultCode) {
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+        code = resolutionCodeRepository.saveAndFlush(code);
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entry);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        appListEntryResolutionRepository.saveAndFlush(entryResolution);
     }
 }
