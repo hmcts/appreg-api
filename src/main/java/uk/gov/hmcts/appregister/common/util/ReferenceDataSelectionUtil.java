@@ -30,7 +30,8 @@ public class ReferenceDataSelectionUtil {
 
             log.warn(
                     "Data quality warning: {} active {} records found for key '{}' on {}. "
-                            + "Selected the first record after deterministic ordering; {} matching rows have endDate=null.",
+                            + "Selected the first record after deterministic ordering; "
+                            + "{} matching rows have endDate=null.",
                     matches.size(),
                     referenceDataType,
                     referenceKey,
