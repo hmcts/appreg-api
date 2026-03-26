@@ -59,7 +59,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @DisplayName("prefers the most recent null-end row when multiple courts share a code")
         void prefersMostRecentNullEndDateRow() {
             LocalDate activeDate = LocalDate.now();
-            String code = "NCH-NULL-FIRST";
+            String code = "NCHNF001";
 
             NationalCourtHouse olderCourt =
                     new NationalCourtHouseData()
@@ -95,7 +95,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns bounded active rows and excludes future-dated open-ended rows")
         void returnsBoundedActiveRowsWithinDateWindow() {
             LocalDate activeDate = LocalDate.now();
-            String code = "NCH-DATE-WINDOW";
+            String code = "NCHDW001";
 
             NationalCourtHouse boundedCourt =
                     new NationalCourtHouseData()
@@ -209,7 +209,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @DisplayName("findActiveCourts(code) excludes future rows and keeps bounded current rows")
         void activeCourtsUsesCurrentDateWindow() {
             LocalDate today = LocalDate.now();
-            String code = "NCH-CURRENT-WINDOW";
+            String code = "NCHCW001";
 
             NationalCourtHouse boundedCourt =
                     new NationalCourtHouseData()
@@ -245,12 +245,12 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
         @DisplayName("findAllActiveCourts only returns rows active today")
         void allActiveCourtsFiltersToCurrentDateWindow() {
             LocalDate today = LocalDate.now();
-            String codePrefix = "NCH-ACTIVE-WINDOW";
+            String codePrefix = "NAW";
 
             NationalCourtHouse boundedCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(codePrefix + "-BOUNDED")
+                            .courtLocationCode(codePrefix + "BND")
                             .name("Bounded Search Court")
                             .startDate(today.minusDays(3))
                             .endDate(today.plusDays(3))
@@ -260,7 +260,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             NationalCourtHouse futureCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(codePrefix + "-FUTURE")
+                            .courtLocationCode(codePrefix + "FUT")
                             .name("Future Search Court")
                             .startDate(today.plusDays(1))
                             .endDate(null)
@@ -270,7 +270,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
             NationalCourtHouse expiredCourt =
                     new NationalCourtHouseData()
                             .someMinimal()
-                            .courtLocationCode(codePrefix + "-EXPIRED")
+                            .courtLocationCode(codePrefix + "EXP")
                             .name("Expired Search Court")
                             .startDate(today.minusDays(10))
                             .endDate(today.minusDays(1))
@@ -286,7 +286,7 @@ public class NationalCourtHouseRepositoryTest extends BaseRepositoryTest {
 
             assertThat(page.getContent())
                     .extracting(NationalCourtHouse::getCourtLocationCode)
-                    .containsExactly(codePrefix + "-BOUNDED");
+                    .containsExactly(codePrefix + "BND");
         }
     }
 }
