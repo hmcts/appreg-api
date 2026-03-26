@@ -445,7 +445,7 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         // Page metadata mapping
         doAnswer(
@@ -493,7 +493,7 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
 
@@ -838,7 +838,7 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         Pageable pageable = mock(Pageable.class);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         mockFindSummariesById(id, pageable);
 
@@ -858,7 +858,7 @@ public class ApplicationListServiceImplTest {
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         Pageable pageable = mock(Pageable.class);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         mockFindSummariesById(id, pageable);
 

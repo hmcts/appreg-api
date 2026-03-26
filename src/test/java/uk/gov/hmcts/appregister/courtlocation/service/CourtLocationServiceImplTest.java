@@ -126,7 +126,7 @@ public class CourtLocationServiceImplTest {
     @Test
     void findByCodeAndDate_duplicate_prefersFirstRow() {
         String code = "DUP";
-        LocalDate date = LocalDate.parse("2025-01-01");
+        final LocalDate date = LocalDate.parse("2025-01-01");
 
         var courtHouse1 = new NationalCourtHouse();
         courtHouse1.setName("Preferred Court");
