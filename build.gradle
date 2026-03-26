@@ -485,7 +485,7 @@ dependencies {
 
   // This causes us problems with testing. We need to use groovy 3 -->
 
-  testImplementation (group: 'io.rest-assured', name: 'rest-assured', version: '5.5.0') {
+  testImplementation (group: 'io.rest-assured', name: 'rest-assured', version: '5.5.7') {
     exclude(group : "org.apache.groovy", module : "groovy")
   }
 
