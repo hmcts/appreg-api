@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -96,7 +98,6 @@ public class ApplicationCodeServiceImplTest {
     void findByCode() throws Exception {
         String code = "code";
         LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
-        LocalDate offsetDateTime = LocalDate.now();
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
@@ -113,6 +114,7 @@ public class ApplicationCodeServiceImplTest {
                 applicationCodeService.findByCode(payloadForGet);
 
         Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        verify(feeService).resolveFeePair(applicationCode.getFeeReference(), localDate);
     }
 
     @Test
@@ -135,14 +137,13 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(code), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        code, null, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(code, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -180,14 +181,13 @@ public class ApplicationCodeServiceImplTest {
 
         String title = "title";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(null), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        null, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(null, title, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -226,14 +226,13 @@ public class ApplicationCodeServiceImplTest {
         String title = "title";
         String code = "code";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(code, title, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(code), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        code, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(code, title, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -269,14 +268,14 @@ public class ApplicationCodeServiceImplTest {
                         Pageable.ofSize(4).withPage(0),
                         4);
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(null), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
                 applicationCodeService.findAll(
-                        null, null, PagingWrapper.of(List.of(), Pageable.ofSize(10).withPage(0)));
+                        null, null, PagingWrapper.of(List.of(), criteria.withPage(0)));
 
         // make assertion
         Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());

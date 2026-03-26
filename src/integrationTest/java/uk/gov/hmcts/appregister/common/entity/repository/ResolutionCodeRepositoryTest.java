@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,7 +22,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
     // Convenience helper: today as a LocalDate based on the injected Clock
     private LocalDate today() {
-        return LocalDate.now(clock);
+        return LocalDate.now(clock.withZone(ZoneId.of("Europe/London")));
     }
 
     @Nested
@@ -89,6 +90,30 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
                     .extracting(ResolutionCode::getResultCode)
                     .containsExactly("CASE");
         }
+
+        @Test
+        @DisplayName("includes rows whose start date is exactly the active date")
+        void includesRowStartingOnActiveDate() {
+            LocalDate activeDate = today();
+            ResolutionCode startsToday = new ResolutionCode();
+            startsToday.setResultCode("BOUNDARY1");
+            startsToday.setTitle("Boundary Start");
+            startsToday.setWording("Boundary wording");
+            startsToday.setStartDate(activeDate);
+            startsToday.setEndDate(null);
+            startsToday.setChangedBy(1L);
+            startsToday.setChangedDate(OffsetDateTime.now(clock));
+
+            repository.saveAndFlush(startsToday);
+
+            var page =
+                    repository.findActiveOnDate(
+                            "BOUNDARY1", null, activeDate, PageRequest.of(0, 10));
+
+            assertThat(page.getContent())
+                    .extracting(ResolutionCode::getResultCode)
+                    .containsExactly("BOUNDARY1");
+        }
     }
 
     @Nested
@@ -98,8 +123,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @Test
         @DisplayName("returns seeded APPC when active (case-insensitive code) and endDate is null")
         void returnsSeededAppc_prefersNullEndDate() {
-            List<ResolutionCode> result =
-                    repository.findPrioritisingNullEndDate("appc", PageRequest.of(0, 1));
+            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("appc", today());
 
             assertThat(result).hasSize(1);
             assertThat(result.getFirst().getResultCode()).isEqualTo("APPC");
@@ -124,8 +148,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
 
             repository.saveAndFlush(additionalActiveWithEndDate);
 
-            List<ResolutionCode> result =
-                    repository.findPrioritisingNullEndDate("APPC", PageRequest.of(0, 1));
+            List<ResolutionCode> result = repository.findPrioritisingNullEndDate("APPC", today());
 
             assertThat(result).hasSize(1);
 
@@ -139,7 +162,7 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
         @DisplayName("returns empty when no active row exists for the given code")
         void returnsEmpty_whenNotFound() {
             List<ResolutionCode> result =
-                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", PageRequest.of(0, 1));
+                    repository.findPrioritisingNullEndDate("DOES_NOT_EXIST", today());
 
             assertThat(result).isEmpty();
         }

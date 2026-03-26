@@ -15,7 +15,9 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CodeAndName;
@@ -35,8 +37,6 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 @Slf4j
 public class CourtLocationServiceImpl implements CourtLocationService {
 
-    private static final int SINGLE_RECORD = 1;
-
     // Service for wrapping operations in an auditable context.
     private final AuditOperationService auditService;
 
@@ -51,17 +51,18 @@ public class CourtLocationServiceImpl implements CourtLocationService {
 
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final PageMapper pageMapper;
+    private final BusinessDateProvider businessDateProvider;
 
     /**
      * Retrieve a Court Location by its code and effective date.
      *
-     * <p>Ensures only one active record exists for the given combination of {@code code} and {@code
-     * date}. Throws a domain-specific exception if no record or multiple records are found.
+     * <p>Selects the deterministically ordered active record for the given combination of {@code
+     * code} and {@code date}. Throws a domain-specific exception only if no record is found.
      *
      * @param code the business identifier for the Court Location (case-insensitive)
      * @param date ISO date on which the Court Location must be valid
      * @return a detailed Court Location DTO
-     * @throws AppRegistryException if no match or multiple matches are found
+     * @throws AppRegistryException if no match is found
      */
     @Override
     public CourtLocationGetDetailDto findByCodeAndDate(String code, LocalDate date) {
@@ -77,17 +78,19 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                         throw new AppRegistryException(
                                 CourtLocationError.COURT_NOT_FOUND,
                                 "No court found for code '%s' on date %s".formatted(code, date));
-                    } else if (rows.size() > SINGLE_RECORD) {
-                        throw new AppRegistryException(
-                                CourtLocationError.DUPLICATE_COURT_FOUND,
-                                "Multiple courts found for code '%s' on date %s"
-                                        .formatted(code, date));
                     }
+
+                    NationalCourtHouse selectedCourt =
+                            ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                                    rows,
+                                    "court location",
+                                    code,
+                                    date,
+                                    NationalCourtHouse::getEndDate);
 
                     AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
                             new AuditableResult<>(
-                                    mapper.toDetailDto(rows.getFirst()),
-                                    mapper.toEntity(code, date));
+                                    mapper.toDetailDto(selectedCourt), mapper.toEntity(code, date));
 
                     // Map the single matching entity to a detail DTO
                     return Optional.of(result);
@@ -112,6 +115,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
         return auditService.processAudit(
                 CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT,
                 unused -> {
+                    LocalDate todayUk = businessDateProvider.currentUkDate();
                     log.debug(
                             "Start: Find Application List for: name: {} app code: {} with paging: {}",
                             nameFilter,
@@ -119,7 +123,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                             pageable);
                     final Page<NationalCourtHouse> dbPage =
                             repository.findAllActiveCourts(
-                                    codeFilter, nameFilter, pageable.getPageable());
+                                    codeFilter, nameFilter, todayUk, pageable.getPageable());
 
                     var responsePage = new CourtLocationPage();
 

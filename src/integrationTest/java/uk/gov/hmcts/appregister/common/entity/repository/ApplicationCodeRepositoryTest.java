@@ -79,4 +79,77 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
                 applicationCodeRepository.findByCodeAndDate("AD99002", LocalDate.now());
         Assertions.assertFalse(applicationCodeToAssertAgainst.isEmpty());
     }
+
+    @Test
+    public void testGetByCodeAndDatePrefersNullEndDate() {
+        LocalDate today = LocalDate.now();
+        String code = "ZZ90011";
+
+        ApplicationCode bounded = new ApplicationCodeTestData().someComplete();
+        bounded.setCode(code);
+        bounded.setTitle("Bounded overlap");
+        bounded.setStartDate(today.minusDays(10));
+        bounded.setEndDate(today.plusDays(10));
+        bounded = persistance.save(bounded);
+
+        ApplicationCode preferred = new ApplicationCodeTestData().someComplete();
+        preferred.setCode(code);
+        preferred.setTitle("Open-ended overlap");
+        preferred.setStartDate(today.minusDays(10));
+        preferred.setEndDate(null);
+        preferred = persistance.save(preferred);
+
+        List<ApplicationCode> results = applicationCodeRepository.findByCodeAndDate(code, today);
+
+        Assertions.assertEquals(2, results.size());
+        Assertions.assertEquals(preferred.getId(), results.getFirst().getId());
+        Assertions.assertNull(results.getFirst().getEndDate());
+        Assertions.assertEquals(bounded.getId(), results.get(1).getId());
+    }
+
+    @Test
+    public void testGetByCodeAndDateUsesExactCodeMatch() {
+        LocalDate today = LocalDate.now();
+        String code = "ZZ90012";
+
+        ApplicationCode exactMatch = new ApplicationCodeTestData().someComplete();
+        exactMatch.setCode(code);
+        exactMatch.setTitle("Exact code");
+        exactMatch.setStartDate(today.minusDays(10));
+        exactMatch.setEndDate(today.plusDays(10));
+        exactMatch = persistance.save(exactMatch);
+
+        ApplicationCode partialMatch = new ApplicationCodeTestData().someComplete();
+        partialMatch.setCode("PRE" + code + "POST");
+        partialMatch.setTitle("Partial code");
+        partialMatch.setStartDate(today.minusDays(10));
+        partialMatch.setEndDate(null);
+        persistance.save(partialMatch);
+
+        List<ApplicationCode> results = applicationCodeRepository.findByCodeAndDate(code, today);
+
+        Assertions.assertEquals(1, results.size());
+        Assertions.assertEquals(exactMatch.getId(), results.getFirst().getId());
+        Assertions.assertEquals(code, results.getFirst().getCode());
+    }
+
+    @Test
+    public void testSearchIncludesCodeStartingOnActiveDate() {
+        LocalDate today = LocalDate.now();
+        String code = "ZZ90013";
+
+        ApplicationCode startsToday = new ApplicationCodeTestData().someComplete();
+        startsToday.setCode(code);
+        startsToday.setTitle("Starts Today");
+        startsToday.setStartDate(today);
+        startsToday.setEndDate(null);
+        startsToday = persistance.save(startsToday);
+
+        var results =
+                applicationCodeRepository.search(
+                        code, null, today, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        Assertions.assertEquals(1, results.getTotalElements());
+        Assertions.assertEquals(startsToday.getId(), results.getContent().getFirst().getId());
+    }
 }

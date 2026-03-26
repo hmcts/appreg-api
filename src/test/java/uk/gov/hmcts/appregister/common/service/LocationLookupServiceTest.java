@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,12 +19,16 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 
 @ExtendWith(MockitoExtension.class)
 class LocationLookupServiceTest {
 
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private LocationLookupService service;
 
@@ -31,35 +37,44 @@ class LocationLookupServiceTest {
     @Test
     void getActiveCourtOrThrow_validCode_returnsSingleCourt() {
         NationalCourtHouse court = new NationalCourtHouse();
-        when(courtHouseRepository.findActiveCourts("ABC123")).thenReturn(List.of(court));
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(courtHouseRepository.findActiveCourts("ABC123", TODAY_UK)).thenReturn(List.of(court));
 
         NationalCourtHouse result = service.getActiveCourtOrThrow("ABC123");
 
         assertSame(court, result);
-        verify(courtHouseRepository).findActiveCourts("ABC123");
+        verify(courtHouseRepository).findActiveCourts("ABC123", TODAY_UK);
     }
 
     @Test
     void getActiveCourtOrThrow_noMatch_throwsAppRegistryException() {
-        when(courtHouseRepository.findActiveCourts("XYZ")).thenReturn(List.of());
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(courtHouseRepository.findActiveCourts("XYZ", TODAY_UK)).thenReturn(List.of());
 
         AppRegistryException ex =
                 assertThrows(
                         AppRegistryException.class, () -> service.getActiveCourtOrThrow("XYZ"));
         assertTrue(ex.getMessage().contains("No court found for code 'XYZ'"));
-        verify(courtHouseRepository).findActiveCourts("XYZ");
+        verify(courtHouseRepository).findActiveCourts("XYZ", TODAY_UK);
     }
 
     @Test
-    void getActiveCourtOrThrow_multipleMatches_throwsAppRegistryException() {
-        when(courtHouseRepository.findActiveCourts("DUPE"))
-                .thenReturn(List.of(new NationalCourtHouse(), new NationalCourtHouse()));
+    void getActiveCourtOrThrow_multipleMatches_returnsFirstCourtAndLogsWarning() {
+        NationalCourtHouse preferred = new NationalCourtHouse();
+        preferred.setCourtLocationCode("DUPE");
+        NationalCourtHouse alternative = new NationalCourtHouse();
+        alternative.setCourtLocationCode("DUPE");
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(courtHouseRepository.findActiveCourts("DUPE", TODAY_UK))
+                .thenReturn(List.of(preferred, alternative));
 
-        AppRegistryException ex =
-                assertThrows(
-                        AppRegistryException.class, () -> service.getActiveCourtOrThrow("DUPE"));
-        assertTrue(ex.getMessage().contains("Multiple courts found for code 'DUPE'"));
-        verify(courtHouseRepository).findActiveCourts("DUPE");
+        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
+
+        NationalCourtHouse result = service.getActiveCourtOrThrow("DUPE");
+
+        assertSame(preferred, result);
+        assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+        verify(courtHouseRepository).findActiveCourts("DUPE", TODAY_UK);
     }
 
     // -------- getCjaOrThrow --------

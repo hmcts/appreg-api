@@ -164,6 +164,56 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     }
 
     @Test
+    void givenDuplicateActiveRows_whenGetResultCodeByCodeAndDate_thenReturnsDeterministicRow()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/DUP1?date=" + ACTIVE_DAY), token);
+
+        resp.then().statusCode(200);
+
+        var dto = resp.as(ResultCodeGetDetailDto.class);
+        assertThat(dto.getResultCode()).isEqualTo("DUP1");
+        assertThat(dto.getTitle()).isEqualTo("Duplicate resolution code 2");
+        assertThat(dto.getEndDate().isPresent()).isFalse();
+    }
+
+    @Test
+    void givenDuplicateActiveRows_whenGetResultCodes_thenCallerSortControlsPageOrder()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("title,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        new ResultCodeFilter(Optional.of("DUP1"), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        resp.then().statusCode(200);
+
+        var page = resp.as(ResultCodePage.class);
+        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUP1");
+        assertThat(page.getContent().getFirst().getTitle())
+                .isEqualTo("Duplicate resolution code 1");
+        assertThat(page.getContent().get(1).getTitle()).isEqualTo("Duplicate resolution code 2");
+    }
+
+    @Test
     void givenInvalidCode_whenGetResultCodeByCodeAndDate_then404() throws Exception {
         var token =
                 getATokenWithValidCredentials()

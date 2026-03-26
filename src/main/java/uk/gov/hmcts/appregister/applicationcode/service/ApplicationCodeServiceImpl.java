@@ -106,7 +106,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             (payload, success) -> {
                                 FeePair feePair =
                                         feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference());
+                                                success.getApplicationCode().getFeeReference(),
+                                                payload.getDate());
 
                                 AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
                                         result =

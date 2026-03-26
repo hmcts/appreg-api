@@ -40,7 +40,6 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
-import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
@@ -266,6 +265,34 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                         "2016-01-01",
                         AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getType().name(),
                         AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT.getEventName()));
+    }
+
+    @Test
+    public void
+            givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("title,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(
+                                Optional.of(DUPLICATE_APPCODE_CODE), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
+        Assertions.assertEquals(
+                DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
+        Assertions.assertEquals(
+                "Copy documents (electronic)", page.getContent().getFirst().getTitle());
+        Assertions.assertEquals("Condemnation of Unfit Food", page.getContent().get(1).getTitle());
     }
 
     @Test
@@ -1012,7 +1039,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     public void
-            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnPreferredActiveRecord()
                     throws Exception {
 
         // a date that is within range for the offset but out of range for the main fee
@@ -1030,9 +1057,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 OffsetDateTime.parse("2016-01-01T00:00:00Z")),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(409);
-        ProblemAssertUtil.assertEquals(
-                ApplicationCodeError.DUPLICATE_CODE_FOUND.getCode(), responseSpec);
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
+        Assertions.assertEquals("MS99006", response.getApplicationCode());
+        Assertions.assertEquals("Condemnation of Unfit Food", response.getTitle());
+        Assertions.assertFalse(response.getEndDate().isPresent());
     }
 
     @Test

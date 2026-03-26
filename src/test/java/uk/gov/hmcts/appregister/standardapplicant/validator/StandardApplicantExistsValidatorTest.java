@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.BiFunction;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 
@@ -105,26 +107,20 @@ public class StandardApplicantExistsValidatorTest {
     }
 
     @Test
-    public void successValidationFailureDuplicate() {
+    public void successValidationFailureDuplicate_prefersFirstRecord() {
         LocalDate localDate = LocalDate.now();
         String code = "test";
         StandardApplicant standardApplicant = new StandardApplicant();
+        StandardApplicant alternativeApplicant = new StandardApplicant();
         PayloadForGet payload = PayloadForGet.builder().date(LocalDate.now()).code(code).build();
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(code, localDate))
-                .thenReturn(List.of(standardApplicant, standardApplicant));
+                .thenReturn(List.of(standardApplicant, alternativeApplicant));
 
-        // call the validator. No assertions needed as no exception means success
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class, () -> validator.validate(payload));
-        Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
-        Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND
-                        .getCode()
-                        .getHttpCode()
-                        .value(),
-                appRegistryException.getCode().getCode().getHttpCode().value());
+        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
+
+        StandardApplicant actual = validator.validate(payload, (request, applicant) -> applicant);
+
+        Assertions.assertSame(standardApplicant, actual);
+        Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
     }
 }

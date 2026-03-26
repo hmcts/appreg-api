@@ -120,24 +120,20 @@ public class ResultCodeServiceImplTest {
                         eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
-    /**
-     * When multiple rows exist for (code,date), the service throws AppRegistryException with
-     * DUPLICATE_RESULT_CODE_FOUND.
-     */
     @Test
-    void findByCode_duplicate_throws() {
+    void findByCode_duplicate_prefersFirstRecord() {
         final String code = "DUP";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
         var r1 = new ResolutionCode();
         var r2 = new ResolutionCode();
+        var expectedDto = new ResultCodeGetDetailDto();
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(r1, r2));
+        when(mapper.toDetailDto(r1)).thenReturn(expectedDto);
 
-        AppRegistryException ex =
-                Assertions.assertThrows(
-                        AppRegistryException.class, () -> service.findByCode(code, date));
-        Assertions.assertEquals(ResultCodeError.DUPLICATE_RESULT_CODE_FOUND, ex.getCode());
+        ResultCodeGetDetailDto actual = service.findByCode(code, date);
+        Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
                 .processAudit(

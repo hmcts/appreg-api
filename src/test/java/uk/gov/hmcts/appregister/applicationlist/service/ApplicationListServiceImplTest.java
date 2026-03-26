@@ -89,6 +89,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -122,11 +123,12 @@ public class ApplicationListServiceImplTest {
     @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
             new DummyApplicationCreateListLocationValidator(
-                    repository, courtHouseRepository, cjaRepository);
+                    repository, courtHouseRepository, cjaRepository, businessDateProvider);
 
     @Spy
     private DummyApplicationUpdateListLocationValidator updateValidator =
@@ -134,6 +136,7 @@ public class ApplicationListServiceImplTest {
                     repository,
                     courtHouseRepository,
                     cjaRepository,
+                    businessDateProvider,
                     appListEntryResolutionRepository,
                     appListEntryOfficialRepository,
                     applicationListEntryRepository,
@@ -141,7 +144,8 @@ public class ApplicationListServiceImplTest {
 
     @Spy
     private DummyApplicationListGetValidator getValidator =
-            new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
+            new DummyApplicationListGetValidator(
+                    repository, courtHouseRepository, cjaRepository, businessDateProvider);
 
     @Spy
     private DummyApplicationDeleteListValidator deletionValidator =
@@ -1035,8 +1039,9 @@ public class ApplicationListServiceImplTest {
         public DummyApplicationCreateListLocationValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository cjaRepository,
+                BusinessDateProvider businessDateProvider) {
+            super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 
         @Override
@@ -1057,6 +1062,7 @@ public class ApplicationListServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 NationalCourtHouseRepository courtHouseRepository,
                 CriminalJusticeAreaRepository criminalJusticeAreaRepository,
+                BusinessDateProvider businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository,
                 AppListEntryOfficialRepository appListEntryOfficialRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
@@ -1065,6 +1071,7 @@ public class ApplicationListServiceImplTest {
                     applicationListRepository,
                     courtHouseRepository,
                     criminalJusticeAreaRepository,
+                    businessDateProvider,
                     appListEntryResolutionRepository,
                     appListEntryOfficialRepository,
                     applicationListEntryRepository,
@@ -1090,8 +1097,9 @@ public class ApplicationListServiceImplTest {
         public DummyApplicationListGetValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository cjaRepository,
+                BusinessDateProvider businessDateProvider) {
+            super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 
         @Override

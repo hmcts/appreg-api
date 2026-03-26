@@ -20,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
 import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
@@ -39,8 +40,6 @@ import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 @Slf4j
 @Transactional
 public class ResultCodeServiceImpl implements ResultCodeService {
-
-    private static final int SINGLE_RECORD = 1;
 
     // Service for wrapping operations in an auditable context.
     private final AuditOperationService auditService;
@@ -88,20 +87,18 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                                 ResultCodeError.RESULT_CODE_NOT_FOUND,
                                 "No result code found for code '%s' on date %s"
                                         .formatted(code, date));
-                    } else if (rows.size() > SINGLE_RECORD) {
-                        throw new AppRegistryException(
-                                ResultCodeError.DUPLICATE_RESULT_CODE_FOUND,
-                                "Multiple result codes found for code '%s' on date %s"
-                                        .formatted(code, date));
                     }
+
+                    ResolutionCode selected =
+                            ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                                    rows, "result code", code, date, ResolutionCode::getEndDate);
 
                     log.debug(
                             "Finish: Find active Result Code for code: {} on date: {}", code, date);
 
                     return Optional.of(
                             new AuditableResult<ResultCodeGetDetailDto, Keyable>(
-                                    mapper.toDetailDto(rows.getFirst()),
-                                    mapper.toEntity(code, date)));
+                                    mapper.toDetailDto(selected), mapper.toEntity(code, date)));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

@@ -25,9 +25,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
@@ -308,8 +310,15 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturn409()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturnPreferredRecord()
+                    throws Exception {
+        String code = "SA-NULL-FIRST";
+        LocalDate queryDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
+
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -317,21 +326,55 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_APPCODE_CODE),
+                        getLocalUrl(WEB_CONTEXT + "/" + code),
                         tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        new DateGetRequest(queryDate));
 
         // assert the response
-        ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
+        responseSpec.then().statusCode(200);
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals(code, returnedSa.getCode());
         Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND.getCode().getAppCode(),
-                returnedSc.getType().toString());
+                "Open-Ended Applicant", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+    }
+
+    @Test
+    public void
+            givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
+                    throws Exception {
+        String code = "SA-NULL-FIRST";
+        LocalDate activeDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(Optional.of(code), Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        Assertions.assertEquals(2, response.getContent().size());
+        Assertions.assertEquals(code, response.getContent().get(0).getCode());
         Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND
-                        .getCode()
-                        .getHttpCode()
-                        .value(),
-                responseSpec.getStatusCode());
+                "Time-Bounded Applicant",
+                response.getContent().get(0).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(code, response.getContent().get(1).getCode());
+        Assertions.assertEquals(
+                "Open-Ended Applicant",
+                response.getContent().get(1).getApplicant().getOrganisation().getName());
     }
 
     @Test
@@ -1388,6 +1431,21 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
             return rs;
         }
+    }
+
+    private void saveStandardApplicant(
+            String code, String name, LocalDate startDate, LocalDate endDate) {
+        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+        standardApplicant.setApplicantCode(code);
+        standardApplicant.setName(name);
+        standardApplicant.setApplicantTitle(null);
+        standardApplicant.setApplicantForename1(null);
+        standardApplicant.setApplicantForename2(null);
+        standardApplicant.setApplicantForename3(null);
+        standardApplicant.setApplicantSurname(null);
+        standardApplicant.setApplicantStartDate(startDate);
+        standardApplicant.setApplicantEndDate(endDate);
+        persistance.save(standardApplicant);
     }
 
     @Override
