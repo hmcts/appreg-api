@@ -120,7 +120,7 @@ public class ApplicationCodeRepositoryTest extends BaseRepositoryTest {
         exactMatch = persistance.save(exactMatch);
 
         ApplicationCode partialMatch = new ApplicationCodeTestData().someComplete();
-        partialMatch.setCode("PRE" + code + "POST");
+        partialMatch.setCode("P" + code + "Q");
         partialMatch.setTitle("Partial code");
         partialMatch.setStartDate(today.minusDays(10));
         partialMatch.setEndDate(null);

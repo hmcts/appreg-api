@@ -55,7 +55,7 @@ public class StandardApplicantExistsValidatorTest {
                 .thenReturn(List.of(standardApplicant));
 
         BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
-                mock(BiFunction.class);
+                mockCallback();
 
         // call the validator. No assertions needed as no exception means success
         validator.validate(payload, biFunction);
@@ -73,7 +73,7 @@ public class StandardApplicantExistsValidatorTest {
                 .thenReturn(List.of());
 
         BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto> biFunction =
-                mock(BiFunction.class);
+                mockCallback();
 
         // call the validator. An exception is thrown but no callback is made to signify success
         AppRegistryException appRegistryException =
@@ -122,5 +122,11 @@ public class StandardApplicantExistsValidatorTest {
 
         Assertions.assertSame(standardApplicant, actual);
         Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static BiFunction<PayloadForGet, StandardApplicant, StandardApplicantGetDetailDto>
+            mockCallback() {
+        return mock(BiFunction.class);
     }
 }

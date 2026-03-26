@@ -194,7 +194,7 @@ public class ApplicationEntryResultServiceImplTest {
                 .thenReturn(entryToSave);
 
         PayloadForCreateEntryResult<ResultCreateDto> payload =
-                new PayloadForCreateEntryResult(
+                new PayloadForCreateEntryResult<>(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
         when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);

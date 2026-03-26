@@ -225,8 +225,7 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
-                ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expected);
 
@@ -267,8 +266,7 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expectedDto = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
-                ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expectedDto);
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
@@ -316,8 +314,7 @@ public class ApplicationListServiceImplTest {
         when(mapper.toCreateEntityWithCja(dto, cja)).thenReturn(saved);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
-        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor =
-                ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
         when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expected);
 
@@ -362,7 +359,7 @@ public class ApplicationListServiceImplTest {
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
 
-        ArgumentCaptor<List> summaryCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor = summaryCaptor();
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), summaryCaptor.capture()))
                 .thenReturn(expected);
         when(mapper.toGetDetailDto(eq(saved), eq(cja), eq(1L), summaryCaptor.capture()))
@@ -1025,6 +1022,12 @@ public class ApplicationListServiceImplTest {
 
         Page<ApplicationListEntrySummaryProjection> dbPage = new PageImpl<>(List.of(projection));
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
+        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
+                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
     }
 
     class DummyAuditOperationService implements AuditOperationService {
