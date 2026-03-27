@@ -7,6 +7,8 @@ import uk.gov.hmcts.appregister.data.filter.value.AbstractSortGenerator;
 import uk.gov.hmcts.appregister.data.sort.SortDataDescriptor;
 import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
 
+import java.util.Random;
+
 public enum ApplicationCodeSortEnum implements SortDescriptorEnum<ApplicationCode> {
 
     CODE(SortDataDescriptor.<ApplicationCode>builder()
@@ -15,7 +17,7 @@ public enum ApplicationCodeSortEnum implements SortDescriptorEnum<ApplicationCod
         .sortGenerator(new AbstractSortGenerator<ApplicationCode>() {
             @Override
             public void apply(ApplicationCode keyable, SortDataDescriptor<ApplicationCode> descriptor, OrderEnum orderEnum) {
-                keyable.setCode(getString(orderEnum));
+                keyable.setCode(getString(orderEnum, 10));
             }
         }).build()),
     TITLE(SortDataDescriptor.<ApplicationCode>builder()
@@ -24,7 +26,7 @@ public enum ApplicationCodeSortEnum implements SortDescriptorEnum<ApplicationCod
               .sortGenerator(new AbstractSortGenerator<ApplicationCode>() {
                   @Override
                   public void apply(ApplicationCode keyable, SortDataDescriptor<ApplicationCode> descriptor, OrderEnum orderEnum) {
-                      keyable.setTitle(getString(orderEnum));
+                      keyable.setTitle(getString(orderEnum, null));
                   }
               }).build());
 

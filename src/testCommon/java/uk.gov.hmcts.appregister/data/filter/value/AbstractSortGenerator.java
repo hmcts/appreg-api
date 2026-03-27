@@ -4,6 +4,7 @@ import uk.gov.hmcts.appregister.data.filter.OrderEnum;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Random;
 import java.util.UUID;
 
 public abstract class AbstractSortGenerator<T> implements GenerateAccordingToSort<T> {
@@ -11,12 +12,21 @@ public abstract class AbstractSortGenerator<T> implements GenerateAccordingToSor
 
     protected static String PREFIX_END = "ZZZZZZ";
 
-    public String getString(OrderEnum orderEnum) {
-        UUID uuid = UUID.randomUUID();
-        if (orderEnum == OrderEnum.START) {
-            return PREFIX_START + uuid;
+    public String getString(OrderEnum orderEnum, Integer max) {
+        String uuid = UUID.randomUUID().toString();
+        Random random = new Random();
+        if (max == null) {
+            if (orderEnum == OrderEnum.START) {
+                return PREFIX_START + uuid;
+            } else {
+                return PREFIX_END + uuid;
+            }
         } else {
-            return PREFIX_END + uuid;
+            if (orderEnum == OrderEnum.START) {
+                return PREFIX_START + (random.nextInt(max - PREFIX_START.length()));
+            } else {
+                return PREFIX_END + (random.nextInt(max - PREFIX_END.length()));
+            }
         }
     }
 

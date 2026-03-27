@@ -69,7 +69,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     }
 
     @ParameterizedTest
-    @MethodSource("getFilterSortableDescriptions")
+    @MethodSource("getFilterDescriptions")
     public void runFilter(RestFilterEndpointDescription<T> filterDescription) throws Exception {
         List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
 
@@ -89,7 +89,27 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     }
 
     @ParameterizedTest
-    @MethodSource("getFilterSortableDescriptions")
+    @MethodSource("getFilterDescriptions")
+    public void runFilterCaseInsensitive(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+        List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
+
+        // save all keyable data that belongs to scenario
+        keyables.stream().forEach(this::saveToDatabase);
+
+        // filter using the start data of the scenario
+        for (FilterFieldData<T> filterFieldData :
+            filterDescription.getFilterableScenario().getStartData()) {
+
+            if (filterFieldData instanceof PartialFilterData == false) {
+                runTest(filterDescription, true);
+            } else {
+                runTestPartial(filterDescription, true);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("getFilterDescriptions")
     public void runPartialFilter(RestFilterEndpointDescription<T> filterDescription) throws Exception {
         List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
 
@@ -109,6 +129,26 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     }
 
     @ParameterizedTest
+    @MethodSource("getFilterDescriptions")
+    public void runPartialFilterGetAll(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+        List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
+
+        // save all keyable data that belongs to scenario
+        keyables.stream().forEach(this::saveToDatabase);
+
+        if (isPartialOnlyConfig(filterDescription)) {
+            Response response = runTest(
+                filterDescription,
+                req ->
+                    applyQueryForStart(filterDescription, req, PartialEnum.ALL_PARTIALS_IN_SCENARIO),
+                100
+            );
+
+            assertAllFilterWithDefaultSort(response, filterDescription);
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("getSortDescriptions")
     public void runEachSortAscending(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
         List<T> keyables = sortEndpointDescription.getExpectedToBeGenerated();
@@ -117,7 +157,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         keyables.stream().forEach(this::saveToDatabase);
 
         Response response = restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription
+            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
+                                                        .getDescriptor().getSortableOperationEnum()
+                                                        .getApiValue()
                                                         + "," + SortableField.ASC),
             sortEndpointDescription.getUrl(),
             getATokenWithValidCredentials().roles(List.of(RoleEnum.USER))
@@ -126,7 +168,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
 
         List<T> keyable = sortEndpointDescription.getExpectedToBeGenerated();
         sortKeyables(keyable, sortEndpointDescription.getSortDescriptors().getDescriptor(), SortableField.ASC);
-        Assertions.assertTrue(assertResponseInOrder(List.of(keyable.getFirst()), response));
+        Assertions.assertTrue(assertResponseInOrder(List.of(keyable.getFirst()), response, true));
     }
 
     @ParameterizedTest
@@ -138,16 +180,16 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         keyables.stream().forEach(this::saveToDatabase);
 
         Response response = restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription
+            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
+                                                        .getDescriptor().getSortableOperationEnum().getApiValue()
                                                         + "," + SortableField.DESC),
             sortEndpointDescription.getUrl(),
             getATokenWithValidCredentials().roles(List.of(RoleEnum.USER))
                 .build().fetchTokenForRole()
         );
 
-        List<T> keyable = sortEndpointDescription.getExpectedToBeGenerated();
-        sortKeyables(keyable, sortEndpointDescription.getSortDescriptors().getDescriptor(),  SortableField.DESC);
-        Assertions.assertTrue(assertResponseInOrder(List.of(keyable.getFirst()), response));
+        sortKeyables(keyables, sortEndpointDescription.getSortDescriptors().getDescriptor(),  SortableField.DESC);
+        Assertions.assertTrue(assertResponseInOrder(List.of(keyables.getFirst()), response, true));
     }
 
     @ParameterizedTest
@@ -176,10 +218,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     @MethodSource("getSortDescriptions")
     public void runSortUnknown(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
         Response response = restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription
-                                                        .getSortDescriptors().getDescriptor()
-                                                        .getSortableOperationEnum().getApiValue()
-                                                        + "," + SortableField.DESC,
+            Optional.of(1), Optional.of(0), List.of(
                                                     "unknownSortField" + "," + SortableField.ASC
             ),
             sortEndpointDescription.getUrl(),
@@ -194,6 +233,11 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     protected abstract void saveToDatabase(T keyable);
 
     private void runTest(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+         runTest(filterDescription, false);
+    }
+
+    private void runTest(RestFilterEndpointDescription<T> filterDescription,
+                         boolean caseInsensitive) throws Exception {
         Response response = runTest(
             filterDescription,
             req ->
@@ -205,11 +249,15 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     }
 
     private void runTestPartial(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+        runTestPartial(filterDescription, false);
+    }
+
+    private void runTestPartial(RestFilterEndpointDescription<T> filterDescription, boolean caseInsensitiveMatch) throws Exception {
 
         Response response = runTest(
             filterDescription,
             req ->
-                applyQueryForStart(filterDescription, req)
+                applyQueryForStart(filterDescription, req, caseInsensitiveMatch)
         );
 
         assertStart(response, filterDescription);
@@ -217,7 +265,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         response = runTest(
             filterDescription,
             req ->
-                applyQueryForStart(filterDescription, req, PartialEnum.START_OF_FILTER)
+                applyQueryForStart(filterDescription, req, PartialEnum.START_OF_FILTER, caseInsensitiveMatch)
         );
 
         assertStart(response, filterDescription);
@@ -225,7 +273,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         response = runTest(
             filterDescription,
             req ->
-                applyQueryForStart(filterDescription, req, PartialEnum.MIDDLE_OF_FILTER)
+                applyQueryForStart(filterDescription, req, PartialEnum.MIDDLE_OF_FILTER, caseInsensitiveMatch)
         );
 
         assertStart(response, filterDescription);
@@ -233,20 +281,23 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         response = runTest(
             filterDescription,
             req ->
-                applyQueryForStart(filterDescription, req, PartialEnum.END_OF_FILTER)
+                applyQueryForStart(filterDescription, req, PartialEnum.END_OF_FILTER, caseInsensitiveMatch)
         );
 
         assertStart(response, filterDescription);
 
-
-        response = runTest(
-            filterDescription,
-            req ->
-                applyQueryForStart(filterDescription, req, PartialEnum.ALL_PARTIALS_IN_SCENARIO)
-        );
-
-        assertAllFilterWithDefaultSort(response, filterDescription);
     }
+
+    private boolean isPartialOnlyConfig(RestFilterEndpointDescription<T> filterDescription) {
+        for (FilterFieldData<T> data : filterDescription
+            .getFilterableScenario().getStartData()) {
+            if (data instanceof PartialFilterData partialFilterData == false) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     private void assertStart(Response response, RestFilterEndpointDescription<T> filterDescription) {
         // assert that we have found the data with the query
@@ -255,7 +306,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
             assertResponseInOrder(
                 List.of(filterDescription.getFilterableScenario()
                             .getStartData().getFirst().getKeyableValues().getKeyable()),
-                response
+                response, true
             ));
     }
 
@@ -276,14 +327,20 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         Assertions.assertTrue(
             assertResponseInOrder(
                 filterDescription.getFilterableScenario().getAllKeyable(),
-                response
+                response, false
             ));
     }
 
     private Response runTest(RestFilterEndpointDescription<T> filterDescription,
                              UnaryOperator<RequestSpecification> requestSpecificationConsumer) throws Exception {
+        return runTest(filterDescription, requestSpecificationConsumer, 1);
+    }
+
+    private Response runTest(RestFilterEndpointDescription<T> filterDescription,
+                             UnaryOperator<RequestSpecification> requestSpecificationConsumer,
+                             int pageSize) throws Exception {
         return restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), new ArrayList<>(),
+            Optional.of(pageSize), Optional.of(0), new ArrayList<>(),
             filterDescription.getUrl(),
             getATokenWithValidCredentials().roles(List.of(RoleEnum.USER))
                 .build().fetchTokenForRole(),
@@ -293,8 +350,21 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
 
     private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
                                                     RequestSpecification requestSpecification) {
-        return applyQueryForStart(filterSortableDescription, requestSpecification, null);
+        return applyQueryForStart(filterSortableDescription, requestSpecification, null, false);
     }
+
+    private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
+                                                    RequestSpecification requestSpecification,
+                                                    boolean caseInsensitiveMatch) {
+        return applyQueryForStart(filterSortableDescription, requestSpecification, null, caseInsensitiveMatch);
+    }
+
+    private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
+                                                    RequestSpecification requestSpecification,
+                                                    PartialEnum partialEnum) {
+        return applyQueryForStart(filterSortableDescription, requestSpecification, partialEnum, false);
+    }
+
 
     /**
      * apply all relevant query params for the start of the scenario.
@@ -303,40 +373,49 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
      */
     private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
                                                     RequestSpecification requestSpecification,
-                                                    PartialEnum partialEnum) {
+                                                    PartialEnum partialEnum, boolean caseInsensitiveMatch) {
         for (FilterFieldData<T> data : filterSortableDescription
             .getFilterableScenario().getStartData()) {
             FilterValue<T> filterValue = data.getKeyableValues();
 
-            if (partialEnum != null) {
-                requestSpecification.queryParam(
-                    data.getDescriptor().getQueryName(),
-                    filterValue.getValue()
-                );
-            } else if (data instanceof PartialFilterData partialFilterData) {
+            if (data instanceof PartialFilterData partialFilterData) {
                 if (partialEnum == PartialEnum.START_OF_FILTER) {
                     requestSpecification.queryParam(
                         data.getDescriptor().getQueryName(),
-                        partialFilterData.getStartsWith()
-                    );
+                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                            ? partialFilterData.getStartsWith().toUpperCase()
+                            : partialFilterData.getStartsWith());
                 } else if (partialEnum == PartialEnum.MIDDLE_OF_FILTER) {
                     requestSpecification.queryParam(
                         data.getDescriptor().getQueryName(),
-                        partialFilterData.getMiddleWith()
-                    );
+                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                            ? partialFilterData.getMiddleWith().toUpperCase() :
+                            partialFilterData.getMiddleWith());
                 } else if (partialEnum == PartialEnum.END_OF_FILTER) {
-                    {
-                        requestSpecification.queryParam(
-                            data.getDescriptor().getQueryName(),
-                            partialFilterData.getEndsWith()
-                        );
-                    }
+                    requestSpecification.queryParam(
+                        data.getDescriptor().getQueryName(),
+                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                            ? partialFilterData.getEndsWith().toUpperCase()
+                            : partialFilterData.getEndsWith());
                 } else if (partialEnum == PartialEnum.ALL_PARTIALS_IN_SCENARIO) {
                     requestSpecification.queryParam(
                         data.getDescriptor().getQueryName(),
-                        partialFilterData.getMatchOnAllPartials()
+                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                            ? partialFilterData.getMatchOnAllPartials().toUpperCase() :
+                            partialFilterData.getMatchOnAllPartials());
+                } else {
+                    requestSpecification.queryParam(
+                        data.getDescriptor().getQueryName(),
+                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                            ? filterValue.getValue().toString().toUpperCase() : filterValue.getValue()
                     );
                 }
+            } else {
+                requestSpecification.queryParam(
+                    data.getDescriptor().getQueryName(),
+                    data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                        ? filterValue.getValue().toString().toUpperCase() : filterValue.getValue()
+                );
             }
         }
         return requestSpecification;
@@ -372,6 +451,6 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         }
     }
 
-    protected abstract boolean assertResponseInOrder(List<T> keyable, Response response);
+    protected abstract boolean assertResponseInOrder(List<T> keyable, Response response, boolean exactMatch);
 
 }

@@ -29,5 +29,6 @@ public class PartialFilterData<T extends Keyable> extends FilterFieldData<T> {
         this.startsWith = filterFieldData.startsWith;
         this.middleWith = filterFieldData.middleWith;
         this.endsWith = filterFieldData.endsWith;
+        this.matchOnAllPartials = filterFieldData.matchOnAllPartials;
     }
 }

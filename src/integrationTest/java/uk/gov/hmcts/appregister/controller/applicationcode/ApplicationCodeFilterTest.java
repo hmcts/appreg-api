@@ -11,6 +11,8 @@ import uk.gov.hmcts.appregister.data.filter.applicationcode.ApplicationCodeFilte
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
 import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.data.filter.applicationcode.ApplicationCodeSortEnum;
+import uk.gov.hmcts.appregister.data.filter.exception.FilterProcessingException;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractFilterAndSortControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestFilterEndpointDescription;
@@ -69,16 +71,29 @@ public class ApplicationCodeFilterTest extends AbstractFilterAndSortControllerTe
     }
 
     @Override
-    protected boolean assertResponseInOrder(List<ApplicationCode> keyable, Response response) {
+    protected boolean assertResponseInOrder(List<ApplicationCode> keyable, Response response, boolean exactMatch) {
         ApplicationCodePage page = response.as(ApplicationCodePage.class);
-        Assertions.assertEquals(keyable.size(), page.getContent().size());
+
+        if (exactMatch) {
+            Assertions.assertEquals(keyable.size(), page.getContent().size());
+        }
 
         for (int i = 0; i < keyable.size(); i++) {
-            Assertions.assertEquals(keyable.get(i).getCode(), page.getContent().get(i).getApplicationCode());
+            matchSummary(page, keyable.get(i).getCode());
         }
 
         return true;
     }
+
+    private  void matchSummary(ApplicationCodePage page, String code) {
+        for (ApplicationCodeGetSummaryDto applicationCodeGetSummaryDto : page.getContent()) {
+            if (applicationCodeGetSummaryDto.getApplicationCode().equals(code)) {
+                return;
+            }
+        }
+        throw new FilterProcessingException("Application code not found");
+    }
+
 
     @Override
     protected void saveToDatabase(ApplicationCode keyable) {

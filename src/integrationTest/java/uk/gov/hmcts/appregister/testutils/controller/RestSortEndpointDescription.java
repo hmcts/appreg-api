@@ -6,6 +6,7 @@ import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.util.CopyUtil;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -23,6 +24,11 @@ public class RestSortEndpointDescription<T extends Keyable> {
 
     /** The url to call. */
     private URL url;
+
+    public void setExpectedToBeGenerated(List<T> expectedToBeGeneratedLst) {
+        expectedToBeGenerated = new ArrayList<>(expectedToBeGeneratedLst.stream()
+            .map(CopyUtil::deepClone).toList());
+    }
 
     public List<SortDescriptorEnum<T>> getAvailableSortDescriptorsExcludingActive() {
         return allAvailableSortDescriptors.stream().filter(des -> des

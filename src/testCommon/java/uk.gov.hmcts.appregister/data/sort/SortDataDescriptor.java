@@ -14,6 +14,7 @@ import java.util.function.Function;
 @Getter
 public class SortDataDescriptor<T> {
     boolean defaultSort = false;
+    @Builder.Default
     String order = SortableField.ASC;
     Function<T, Object> sortableValueFunction;
     SortableOperationEnum sortableOperationEnum;

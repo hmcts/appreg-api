@@ -44,11 +44,13 @@ public class FilterScenarioFactory {
      * @param sortDescriptorEnums The sort to apply
      */
     public static <T extends Keyable> List<T> createSort(T keyable,
-         List<SortDescriptorEnum<T>> sortDescriptorEnums) {
-         List<T> result = new ArrayList<>();
-         applySort(CopyUtil.deepClone(keyable), sortDescriptorEnums, OrderEnum.START);
-         applySort(CopyUtil.deepClone(keyable), sortDescriptorEnums, OrderEnum.END);
-         return result;
+        List<SortDescriptorEnum<T>> sortDescriptorEnums) {
+        List<T> result = new ArrayList<>();
+        result.add(CopyUtil.deepClone(keyable));
+        applySort(result.getLast(), sortDescriptorEnums, OrderEnum.START);
+        result.add(CopyUtil.deepClone(keyable));
+        applySort(result.getLast(), sortDescriptorEnums, OrderEnum.END);
+        return result;
     }
 
     private static <T extends Keyable> void applySort(T keyable, List<SortDescriptorEnum<T>> sortDescriptors, OrderEnum orderEnum) {

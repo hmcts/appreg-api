@@ -7,8 +7,6 @@ import uk.gov.hmcts.appregister.data.filter.FilterValue;
 import uk.gov.hmcts.appregister.data.filter.OrderEnum;
 import uk.gov.hmcts.appregister.data.filter.PartialFilterData;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.UUID;
 
 /**
@@ -39,19 +37,20 @@ public abstract class AbstractFilterGenerator<T extends Keyable> implements Gene
             setValue(partialstr, filterValue, descriptor, orderEnum);
             filterData.setKeyableValues(filterValue);
         } else {
+            FilterFieldData<T> filterFieldData = new FilterFieldData<>();
             FilterValue<T> filterValue = new FilterValue<>(keyable, "val" + uuid);
             setValue("val" + uuid, filterValue, descriptor, orderEnum);
-
-            filterData.setDescriptor(descriptor);
-            filterData.setKeyableValues(filterValue);
+            filterFieldData.setKeyableValues(filterValue);
+            filterFieldData.setDescriptor(descriptor);
+            setValue("val" + uuid, filterValue, descriptor, orderEnum);
         }
 
         return filterData;
     }
 
     protected abstract void setValue(String obj,
-                                        FilterValue value,
-                                        FilterFieldDataDescriptor descriptor, OrderEnum orderEnum);
+                                        FilterValue<T> value,
+                                        FilterFieldDataDescriptor<T> descriptor, OrderEnum orderEnum);
 
 
 }
