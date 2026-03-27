@@ -1,0 +1,143 @@
+name: Remove Inactive Branches
+run-name: Remove Inactive Branches - ${{ github.ref }}
+on:
+  workflow_dispatch:
+    inputs:
+      inactive_days:
+        description: 'Number of days to consider a branch as inactive'
+        required: false
+        default: '60'
+      grace_period_days:
+        description: 'Number of additional days to wait before deleting an inactive branch'
+        required: false
+        default: '7'
+      create_issue:
+        description: 'Enable/Disable issue creation for inactive branches'
+        required: false
+        default: 'true'
+      delete_branch:
+        description: 'Enable/Disable branch deletion for inactive branches'
+        required: false
+        default: 'false'
+      dry_run:
+        description: 'Enable/Disable dry run mode (only logs actions without making changes)'
+        required: false
+        default: 'true'
+    # schedule:
+    #   - cron: '0 0 * * 0' # Runs every Sunday at midnight
+jobs:
+  locate-Inactive-Branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git grep jq
+
+      - name: Find Inactive Branches
+        env:
+          REPO: ${{ github.event.repository.name }}
+          OWNER: ${{ github.repository_owner }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # defining a list of protected branches that should not be deleted or have issues created for them
+          protected_branches=("main" "master" "develop" "release" "origin" "staging" "ithc" "demo")
+          
+          # Fetch all branches
+          git fetch --all
+
+          # Get the list of branches, commit author and their last commit dates
+          branches=$(git for-each-ref --format='%(refname:short)|%(authorname)|%(committerdate:iso8601)' refs/remotes/origin/)
+
+          echo "Total branches found: $(echo "$branches" | wc -l)"
+          echo "Branches: $(echo $branches)"
+
+          # Get the current date
+          current_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Loop through each branch and check if it's inactive
+          while IFS='|' read -r branch author last_commit_date; do
+            # Strip 'origin/' prefix from branch name
+            branch=${branch#origin/}
+            
+            # Calculate the difference in days between the current date and the last commit date
+            last_commit_timestamp=$(date -d "$last_commit_date" +%s)
+            current_timestamp=$(date -d "$current_date" +%s)
+            diff_days=$(( (current_timestamp - last_commit_timestamp) / 86400 ))
+
+            echo "Checking branch: $branch (Last commit: $last_commit_date, Author: $author, Inactive for: $diff_days days)"
+
+            # Skip protected branches
+            if printf '%s\0' "${protected_branches[@]}" | grep -Fxqz "$branch"; then
+              echo "Skipping protected branch: $branch"
+              continue
+            fi
+            
+            # Check if there are any open PRs for the branch
+            echo "Repo name: $REPO, Owner: $OWNER"
+
+            echo "Checking open PRs for branch: $branch"
+            openprs=$(gh pr list --state open --head "$branch" --json number --jq 'length')
+
+            if [ "$openprs" -gt 0 ]; then
+              echo "Skipping branch: $branch (has $openprs open PR(s))"
+              continue
+            fi
+
+            echo "Branch: $branch is inactive for $diff_days days (Last commit: $last_commit_date) Author: $author"
+            inactive_issue_jq='.[] | select(((.body | split("\n") | index("Branch: " + $branch)) != null) or (.body | startswith("The branch \u0027" + $branch + "\u0027 has been inactive for "))) | .number'
+
+            # If the branch is inactive for more than inactive days + grace period, then delete it only if it's not a dry run and delete_branch is true
+            if [ $diff_days -gt $(( ${{ inputs.inactive_days}} + ${{ inputs.grace_period_days }} )) ] && [ "${{ inputs.delete_branch }}" = "true" ]; then
+              echo "Deleting inactive branch: $branch (Last commit: $last_commit_date) Author: $author Dry Run: ${{ inputs.dry_run }}"
+              if [ "${{ inputs.dry_run }}" = "false" ]; then
+                
+                echo "Closing related inactive branches issues for branch: $branch"
+                gh issue list --label "inactive-branch" --json number,title,body | jq -r --arg branch "$branch" "$inactive_issue_jq" | while read -r issue_number; do
+                  echo "Closing issue #$issue_number related to branch: $branch"
+                  gh issue close "$issue_number"
+                done
+                
+                echo "Deleting branch: $branch"
+                git push origin --delete "$branch"
+                continue
+
+              else
+                echo "DRY RUN: Would delete branch: $branch (Author: $author)"
+              fi
+            fi
+
+            # If the branch is inactive for more than inactive days, create an issue only if it's not a dry run and create_issue is true
+            if [ $diff_days -gt ${{ inputs.inactive_days }} ] && [ "${{ inputs.create_issue }}" = "true" ]; then
+              if [ "${{ inputs.dry_run }}" = "false" ]; then
+                echo "Checking if label 'inactive-branch' exists"
+                if ! gh label list --json name --jq '.[].name' | grep -Fxq "inactive-branch"; then
+                  echo "Creating label: inactive-branch"
+                  gh label create "inactive-branch" --color FF0000 --description "Branches that have been inactive for a specified number of days"
+                fi
+                # Create an issue for the inactive branch, if an issue for the branch doesn't already exist
+                echo "Checking if an issue already exists for branch: $branch"
+                existing_issue=$(gh issue list --label "inactive-branch" --json number,title,body | jq -r --arg branch "$branch" "$inactive_issue_jq")
+                if [ -n "$existing_issue" ]; then
+                  echo "An issue already exists for branch: $branch (Issue #$existing_issue)"
+                  continue
+                else  
+                  printf -v issue_body "Branch: %s\nAuthor: %s\nLast commit date: %s\nInactive days: %s\n\nThe branch '%s' has been inactive for %s days. The last commit was made on %s by %s. Please review the branch and take necessary action." "$branch" "$author" "$last_commit_date" "$diff_days" "$branch" "$diff_days" "$last_commit_date" "$author"
+                  gh issue create --title "Inactive Branch: $branch - $author" --body "$issue_body" --label "inactive-branch"
+                  continue
+                fi
+              else
+                echo "DRY RUN: Would create an issue for branch: $branch (Author: $author)"
+                continue
+              fi
+            fi	
+          done <<< "$branches"
+
