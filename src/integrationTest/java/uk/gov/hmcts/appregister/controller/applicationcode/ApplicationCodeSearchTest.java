@@ -228,7 +228,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -316,7 +316,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -340,7 +340,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
             throws Exception {
-        // a date that is within range for the main but out of range for the offsite fee
+        // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
         when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
@@ -351,7 +351,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
+                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse("2014-07-25T00:00Z")),
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
@@ -386,7 +386,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
                     throws Exception {
-        // a date that is within range for the offset but out of range for the main fee
+        // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
@@ -397,7 +397,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
+                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse("2021-07-25T00:00Z")),
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
@@ -407,7 +407,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(70.0));
+                        Optional.empty(), Optional.empty(), Optional.of(40.0));
 
         assertApplicationCode(response, applicationCodeDto);
 
