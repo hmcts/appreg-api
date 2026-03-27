@@ -3,8 +3,6 @@ package uk.gov.hmcts.appregister.data;
 import static org.instancio.Select.field;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -23,8 +21,6 @@ public class NationalCourtHouseData
         data.courtLocationCode(StringUtil.stripToMax(id.toString(), 10))
                 .name(StringUtil.stripToMax("name " + id, 100))
                 .startDate(LocalDate.now())
-                .changedBy(-125L)
-                .changedDate(OffsetDateTime.now(ZoneId.of("UTC")))
                 .courtType("CHOA");
 
         return data;
