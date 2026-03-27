@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -723,11 +725,20 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
         }
     }
 
-    private void createDuplicateActiveRows() {
-        persistance.save(
-                createResolutionCode(
-                        DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE));
-        persistance.save(createResolutionCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null));
+    private void createDuplicateActiveRows() throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            persistance.save(
+                    createResolutionCode(
+                            DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE));
+            persistance.save(
+                    createResolutionCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     private ResolutionCode createResolutionCode(
