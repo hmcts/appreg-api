@@ -174,13 +174,13 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
 
         Response resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/DUP1?date=" + ACTIVE_DAY), token);
+                        getLocalUrl(WEB_CONTEXT + "/DUP99?date=" + ACTIVE_DAY), token);
 
         resp.then().statusCode(200);
 
         var dto = resp.as(ResultCodeGetDetailDto.class);
-        assertThat(dto.getResultCode()).isEqualTo("DUP1");
-        assertThat(dto.getTitle()).isEqualTo("Duplicate resolution code 2");
+        assertThat(dto.getResultCode()).isEqualTo("DUP99");
+        assertThat(dto.getTitle()).isEqualTo("Duplicate Entry 2");
         assertThat(dto.getEndDate().isPresent()).isFalse();
     }
 
@@ -200,17 +200,16 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new ResultCodeFilter(Optional.of("DUP1"), Optional.empty()),
+                        new ResultCodeFilter(Optional.of("DUP99"), Optional.empty()),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
         assertThat(page.getContent()).hasSize(2);
-        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUP1");
-        assertThat(page.getContent().getFirst().getTitle())
-                .isEqualTo("Duplicate resolution code 1");
-        assertThat(page.getContent().get(1).getTitle()).isEqualTo("Duplicate resolution code 2");
+        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUP99");
+        assertThat(page.getContent().getFirst().getTitle()).isEqualTo("Duplicate Entry 1");
+        assertThat(page.getContent().get(1).getTitle()).isEqualTo("Duplicate Entry 2");
     }
 
     @Test
