@@ -715,16 +715,26 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         list.setTime(LocalTime.of(9, 0));
         list.setStatus(Status.OPEN);
         list.setDescription("Test list description");
-        list = applicationListRepository.saveAndFlush(list);
+        list = persistance.save(list);
 
         ApplicationCode applicationCode = buildApplicationCode("APP002");
-        applicationCode = applicationCodeRepository.saveAndFlush(applicationCode);
+        applicationCode = persistance.save(applicationCode);
 
-        ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
+        ApplicationListEntry entry = new ApplicationListEntry();
         entry.setApplicationList(list);
         entry.setApplicationCode(applicationCode);
+        entry.setApplicationListEntryWording("Test entry wording");
+        entry.setEntryRescheduled("N");
+        entry.setSequenceNumber((short) 1);
+        entry.setLodgementDate(LocalDate.now());
+        entry.setCreatedUser("email");
         entry.setAccountNumber("RESULT-12345");
-        entry = applicationListEntryRepository.saveAndFlush(entry);
+        entry.setCaseReference("CASE123");
+        entry.setBulkUpload("N");
+        entry.setRetryCount("0");
+        entry.setNotes("Test notes");
+        entry.setTcepStatus("NW");
+        entry = persistance.save(entry);
 
         saveResolution(entry, "RC1");
         saveResolution(entry, "RC2");
@@ -743,9 +753,9 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertEquals(2, dto.getResulted().size());
 
         Set<String> codes =
-                dto.getResulted().stream()
-                        .map(ResultCodeGetSummaryDto::getResultCode)
-                        .collect(Collectors.toSet());
+            dto.getResulted().stream()
+                .map(ResultCodeGetSummaryDto::getResultCode)
+                .collect(Collectors.toSet());
 
         assertEquals(Set.of("RC1", "RC2"), codes);
     }
@@ -949,9 +959,88 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
     }
 
+    private void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
+        ApplicationListEntry persistedEntry =
+            applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
+
+        ApplicationCode persistedCode =
+            applicationCodeRepository.findById(
+                sourceEntry.getApplicationCode().getId()).orElseThrow();
+
+        ApplicationList persistedList =
+            applicationListRepository.findById(
+                persistedEntry.getApplicationList().getId()).orElseThrow();
+
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+        code = persistance.save(code);
+
+        ApplicationCode applicationCodeCopy = getApplicationCode(persistedCode);
+
+        ApplicationListEntry entryCopy =
+            getApplicationListEntry(persistedEntry, persistedList, applicationCodeCopy);
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entryCopy);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        persistance.save(entryResolution);
+    }
+
+    private static @NotNull ApplicationCode getApplicationCode(ApplicationCode persistedCode) {
+        ApplicationCode applicationCodeCopy = new ApplicationCode();
+        applicationCodeCopy.setId(persistedCode.getId());
+        applicationCodeCopy.setVersion(persistedCode.getVersion());
+        applicationCodeCopy.setCode(persistedCode.getCode());
+        applicationCodeCopy.setTitle(persistedCode.getTitle());
+        applicationCodeCopy.setWording(persistedCode.getWording());
+        applicationCodeCopy.setLegislation(persistedCode.getLegislation());
+        applicationCodeCopy.setFeeDue(persistedCode.getFeeDue());
+        applicationCodeCopy.setRequiresRespondent(persistedCode.getRequiresRespondent());
+        applicationCodeCopy.setBulkRespondentAllowed(persistedCode.getBulkRespondentAllowed());
+        applicationCodeCopy.setStartDate(persistedCode.getStartDate());
+        applicationCodeCopy.setChangedBy(persistedCode.getChangedBy());
+        applicationCodeCopy.setChangedDate(persistedCode.getChangedDate());
+        applicationCodeCopy.setCreatedUser(persistedCode.getCreatedUser());
+        applicationCodeCopy.setApplicationListEntryList(null);
+        return applicationCodeCopy;
+    }
+
+    private static @NotNull ApplicationListEntry getApplicationListEntry(
+        ApplicationListEntry persistedEntry,
+        ApplicationList persistedList,
+        ApplicationCode applicationCodeCopy) {
+        ApplicationListEntry entryCopy = new ApplicationListEntry();
+        entryCopy.setId(persistedEntry.getId());
+        entryCopy.setUuid(persistedEntry.getUuid());
+        entryCopy.setVersion(persistedEntry.getVersion());
+        entryCopy.setApplicationList(persistedList);
+        entryCopy.setApplicationCode(applicationCodeCopy);
+        entryCopy.setApplicationListEntryWording(persistedEntry.getApplicationListEntryWording());
+        entryCopy.setEntryRescheduled(persistedEntry.getEntryRescheduled());
+        entryCopy.setSequenceNumber(persistedEntry.getSequenceNumber());
+        entryCopy.setLodgementDate(persistedEntry.getLodgementDate());
+        entryCopy.setCreatedUser(persistedEntry.getCreatedUser());
+        entryCopy.setAccountNumber(persistedEntry.getAccountNumber());
+        entryCopy.setCaseReference(persistedEntry.getCaseReference());
+        entryCopy.setBulkUpload(persistedEntry.getBulkUpload());
+        entryCopy.setRetryCount(persistedEntry.getRetryCount());
+        entryCopy.setTcepStatus(persistedEntry.getTcepStatus());
+        entryCopy.setNotes(persistedEntry.getNotes());
+        return entryCopy;
+    }
+
     private ApplicationCode buildApplicationCode(String code) {
         ApplicationCode applicationCode = new ApplicationCode();
-        applicationCode.setCode(code); // max 10 chars
+        applicationCode.setCode(code);
         applicationCode.setTitle("Test title");
         applicationCode.setWording("Test wording");
         applicationCode.setLegislation("Test legislation");
@@ -963,25 +1052,5 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         applicationCode.setChangedDate(OffsetDateTime.now());
         applicationCode.setCreatedUser("email");
         return applicationCode;
-    }
-
-    private void saveResolution(ApplicationListEntry entry, String resultCode) {
-        ResolutionCode code = new ResolutionCode();
-        code.setResultCode(resultCode);
-        code.setTitle(resultCode + " title");
-        code.setWording(resultCode + " wording");
-        code.setLegislation("Test legislation");
-        code.setStartDate(LocalDate.now());
-        code.setChangedBy(1L);
-        code.setChangedDate(OffsetDateTime.now());
-        code = resolutionCodeRepository.saveAndFlush(code);
-
-        AppListEntryResolution entryResolution = new AppListEntryResolution();
-        entryResolution.setApplicationList(entry);
-        entryResolution.setResolutionCode(code);
-        entryResolution.setResolutionWording(resultCode + " wording");
-        entryResolution.setResolutionOfficer("Test officer");
-
-        appListEntryResolutionRepository.saveAndFlush(entryResolution);
     }
 }
