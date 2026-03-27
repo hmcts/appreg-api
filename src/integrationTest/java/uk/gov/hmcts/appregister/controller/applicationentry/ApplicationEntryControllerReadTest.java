@@ -2,19 +2,14 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
@@ -34,7 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
-import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -850,68 +844,21 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     @Test
     @StabilityTest
     public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
-        ApplicationList list = new ApplicationList();
-        list.setDate(LocalDate.now());
-        list.setTime(LocalTime.of(9, 0));
-        list.setStatus(OPEN);
-        list.setDescription("Test list description");
-        list = persistance.save(list);
+        ApplicationList list = createOpenApplicationList();
+        ApplicationCode applicationCode = createApplicationCode("APP002", true);
+        ApplicationListEntry entry = createApplicationListEntry(list, applicationCode, "ACC123");
 
-        ApplicationCode applicationCode = buildApplicationCode("APP002");
-        applicationCode.setApplicationListEntryList(null);
-        applicationCode = persistance.save(applicationCode);
+        saveResolutions(entry, "RC1", "RC2");
 
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setApplicationList(list);
-        entry.setApplicationCode(applicationCode);
-        entry.setApplicationListEntryWording("Test entry wording");
-        entry.setEntryRescheduled("N");
-        entry.setSequenceNumber((short) 1);
-        entry.setLodgementDate(LocalDate.now());
-        entry.setCreatedUser("email");
-        entry.setAccountNumber("ACC123");
-        entry.setCaseReference("CASE123");
-        entry.setBulkUpload("N");
-        entry.setRetryCount("0");
-        entry.setNotes("Test notes");
-        entry.setTcepStatus("NW");
-        entry = persistance.save(entry);
-
-        entry = applicationListEntryRepository.findById(entry.getId()).orElseThrow();
-        saveResolution(entry, "RC1");
-
-        entry = applicationListEntryRepository.findById(entry.getId()).orElseThrow();
-        saveResolution(entry, "RC2");
-
-        var tokenGenerator = createAdminToken();
-        Response responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(20),
-                        Optional.of(0),
-                        List.of(),
-                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
-                        tokenGenerator.fetchTokenForRole());
+        Response responseSpec = executeGetEntries(list.getUuid(), 20, 0);
 
         responseSpec.then().statusCode(200);
 
         EntryPage page = responseSpec.as(EntryPage.class);
 
-        ApplicationListEntry finalEntry = entry;
-        EntryGetSummaryDto dto =
-                page.getContent().stream()
-                        .filter(item -> finalEntry.getUuid().equals(item.getId()))
-                        .findFirst()
-                        .orElseThrow();
+        EntryGetSummaryDto dto = findEntry(page, entry.getUuid());
 
-        assertThat(dto.getIsResulted()).isTrue();
-        assertEquals(2, dto.getResulted().size());
-
-        Set<String> codes =
-                dto.getResulted().stream()
-                        .map(ResultCodeGetSummaryDto::getResultCode)
-                        .collect(Collectors.toSet());
-
-        assertEquals(Set.of("RC1", "RC2"), codes);
+        assertResultCodes(dto, "RC1", "RC2");
     }
 
     record ApplicationEntryFilter(

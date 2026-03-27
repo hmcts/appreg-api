@@ -7,12 +7,9 @@ import static uk.gov.hmcts.appregister.common.security.RoleEnum.ADMIN;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,7 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
-import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -692,34 +688,12 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     @Test
     @StabilityTest
     public void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
-        ApplicationList list = new ApplicationList();
-        list.setDate(LocalDate.now());
-        list.setTime(LocalTime.of(9, 0));
-        list.setStatus(Status.OPEN);
-        list.setDescription("Test list description");
-        list = persistance.save(list);
+        ApplicationList list = createOpenApplicationList();
+        ApplicationCode applicationCode = createApplicationCode("APP002", false);
+        ApplicationListEntry entry =
+                createApplicationListEntry(list, applicationCode, "RESULT-12345");
 
-        ApplicationCode applicationCode = buildApplicationCode("APP002");
-        applicationCode = persistance.save(applicationCode);
-
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setApplicationList(list);
-        entry.setApplicationCode(applicationCode);
-        entry.setApplicationListEntryWording("Test entry wording");
-        entry.setEntryRescheduled("N");
-        entry.setSequenceNumber((short) 1);
-        entry.setLodgementDate(LocalDate.now());
-        entry.setCreatedUser("email");
-        entry.setAccountNumber("RESULT-12345");
-        entry.setCaseReference("CASE123");
-        entry.setBulkUpload("N");
-        entry.setRetryCount("0");
-        entry.setNotes("Test notes");
-        entry.setTcepStatus("NW");
-        entry = persistance.save(entry);
-
-        saveResolution(entry, "RC1");
-        saveResolution(entry, "RC2");
+        saveResolutions(entry, "RC1", "RC2");
 
         EntryGetFilterDto filterDto = new EntryGetFilterDto();
         filterDto.setAccountReference("RESULT-12345");
@@ -731,15 +705,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         assertEquals(1, page.getContent().size());
 
         EntryGetSummaryDto dto = page.getContent().getFirst();
-        assertThat(dto.getIsResulted()).isTrue();
-        assertEquals(2, dto.getResulted().size());
 
-        Set<String> codes =
-            dto.getResulted().stream()
-                .map(ResultCodeGetSummaryDto::getResultCode)
-                .collect(Collectors.toSet());
-
-        assertEquals(Set.of("RC1", "RC2"), codes);
+        assertResultCodes(dto, "RC1", "RC2");
     }
 
     /** Executes search with optional filter and returns EntryPage. */

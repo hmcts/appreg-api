@@ -1,18 +1,25 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
 
+import com.nimbusds.jose.JOSEException;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.net.MalformedURLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -41,10 +48,12 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -663,17 +672,17 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
         ApplicationListEntry persistedEntry =
-            applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
+                applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
 
         ApplicationCode persistedCode =
-            applicationCodeRepository
-                .findById(sourceEntry.getApplicationCode().getId())
-                .orElseThrow();
+                applicationCodeRepository
+                        .findById(sourceEntry.getApplicationCode().getId())
+                        .orElseThrow();
 
         ApplicationList persistedList =
-            applicationListRepository
-                .findById(persistedEntry.getApplicationList().getId())
-                .orElseThrow();
+                applicationListRepository
+                        .findById(persistedEntry.getApplicationList().getId())
+                        .orElseThrow();
 
         ResolutionCode code = new ResolutionCode();
         code.setResultCode(resultCode);
@@ -688,7 +697,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         ApplicationCode applicationCodeCopy = getApplicationCode(persistedCode);
 
         ApplicationListEntry entryCopy =
-            getApplicationListEntry(persistedEntry, persistedList, applicationCodeCopy);
+                getApplicationListEntry(persistedEntry, persistedList, applicationCodeCopy);
 
         AppListEntryResolution entryResolution = new AppListEntryResolution();
         entryResolution.setApplicationList(entryCopy);
@@ -719,9 +728,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public static @NotNull ApplicationListEntry getApplicationListEntry(
-        ApplicationListEntry persistedEntry,
-        ApplicationList persistedList,
-        ApplicationCode applicationCodeCopy) {
+            ApplicationListEntry persistedEntry,
+            ApplicationList persistedList,
+            ApplicationCode applicationCodeCopy) {
         ApplicationListEntry entryCopy = new ApplicationListEntry();
         entryCopy.setId(persistedEntry.getId());
         entryCopy.setUuid(persistedEntry.getUuid());
@@ -756,5 +765,80 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationCode.setChangedDate(OffsetDateTime.now());
         applicationCode.setCreatedUser("email");
         return applicationCode;
+    }
+
+    public ApplicationList createOpenApplicationList() {
+        ApplicationList list = new ApplicationList();
+        list.setDate(LocalDate.now());
+        list.setTime(LocalTime.of(9, 0));
+        list.setStatus(OPEN);
+        list.setDescription("Test list description");
+        return persistance.save(list);
+    }
+
+    public ApplicationCode createApplicationCode(String code, boolean clearEntries) {
+        ApplicationCode applicationCode = buildApplicationCode(code);
+        if (clearEntries) {
+            applicationCode.setApplicationListEntryList(null);
+        }
+        return persistance.save(applicationCode);
+    }
+
+    public ApplicationListEntry createApplicationListEntry(
+            ApplicationList list, ApplicationCode applicationCode, String accountNumber) {
+        ApplicationListEntry entry = new ApplicationListEntry();
+        entry.setApplicationList(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setApplicationListEntryWording("Test entry wording");
+        entry.setEntryRescheduled("N");
+        entry.setSequenceNumber((short) 1);
+        entry.setLodgementDate(LocalDate.now());
+        entry.setCreatedUser("email");
+        entry.setAccountNumber(accountNumber);
+        entry.setCaseReference("CASE123");
+        entry.setBulkUpload("N");
+        entry.setRetryCount("0");
+        entry.setNotes("Test notes");
+        entry.setTcepStatus("NW");
+        return persistance.save(entry);
+    }
+
+    public void saveResolutions(ApplicationListEntry entry, String... resultCodes) {
+        ApplicationListEntry currentEntry = entry;
+        for (String resultCode : resultCodes) {
+            currentEntry =
+                    applicationListEntryRepository.findById(currentEntry.getId()).orElseThrow();
+            saveResolution(currentEntry, resultCode);
+        }
+    }
+
+    public Response executeGetEntries(UUID listUuid, int size, int page)
+            throws MalformedURLException, JOSEException {
+        TokenGenerator tokenGenerator = createAdminToken();
+        return restAssuredClient.executeGetRequestWithPaging(
+                Optional.of(size),
+                Optional.of(page),
+                List.of(),
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listUuid + "/entries"),
+                tokenGenerator.fetchTokenForRole());
+    }
+
+    public EntryGetSummaryDto findEntry(EntryPage page, UUID entryUuid) {
+        return page.getContent().stream()
+                .filter(item -> entryUuid.equals(item.getId()))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    public void assertResultCodes(EntryGetSummaryDto dto, String... expectedCodes) {
+        assertThat(dto.getIsResulted()).isTrue();
+        assertEquals(expectedCodes.length, dto.getResulted().size());
+
+        Set<String> codes =
+                dto.getResulted().stream()
+                        .map(ResultCodeGetSummaryDto::getResultCode)
+                        .collect(Collectors.toSet());
+
+        assertEquals(Set.of(expectedCodes), codes);
     }
 }
