@@ -7,9 +7,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -54,16 +56,19 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 
 @Component
 @RequiredArgsConstructor
@@ -147,15 +152,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     pageable.getPageable());
 
                     // breaks name into individual and/or organisation parts
-                    EntryPage newPage = new EntryPage();
-                    pageMapper.toPage(resultPage, newPage, pageable.getSortStrings());
-
-                    // Map each entity to a summary DTO and add to the page content
-                    resultPage.forEach(
-                            entry -> {
-                                newPage.addContentItem(
-                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
-                            });
+                    EntryPage newPage = buildEntryPage(resultPage, pageable);
 
                     log.debug(
                             "Finished: Find Application Entry for criteria: {} with paging: {}",
@@ -900,14 +897,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getSequenceNumber(),
                                     pageable.getPageable());
 
-                    EntryPage entryPage = new EntryPage();
-                    pageMapper.toPage(entries, entryPage, pageable.getSortStrings());
-
-                    entries.forEach(
-                            entry -> {
-                                entryPage.addContentItem(
-                                        applicationListEntryMapStructMapper.toEntrySummary(entry));
-                            });
+                    EntryPage entryPage = buildEntryPage(entries, pageable);
 
                     if (entryPage.getContent() == null) {
                         entryPage.setContent(List.of());
@@ -1017,5 +1007,61 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         mapping.setAleLastSequence(next);
 
         return (short) next;
+    }
+
+    private ResultCodeGetSummaryDto toResultCodeGetSummaryDto(
+            ApplicationListEntryResolutionProjection projection) {
+        return applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(
+                projection.getResolutionCode());
+    }
+
+    private Map<Long, List<ResultCodeGetSummaryDto>> getCodesByEntryId(
+            Page<ApplicationListEntryGetSummaryProjection> resultPage) {
+
+        List<Long> entryIds =
+                resultPage.getContent().stream()
+                        .map(ApplicationListEntryGetSummaryProjection::getId)
+                        .toList();
+
+        if (entryIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<ApplicationListEntryResolutionProjection> resolutionProjections =
+                applicationListEntryRepository.findResolutionCodesByEntryIds(entryIds);
+
+        return resolutionProjections.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                ApplicationListEntryResolutionProjection::getEntryId,
+                                Collectors.mapping(
+                                        this::toResultCodeGetSummaryDto, Collectors.toList())));
+    }
+
+    private EntryPage buildEntryPage(
+            Page<ApplicationListEntryGetSummaryProjection> resultPage, PagingWrapper pageable) {
+
+        Map<Long, List<ResultCodeGetSummaryDto>> codesByEntryId = getCodesByEntryId(resultPage);
+
+        EntryPage entryPage = new EntryPage();
+        pageMapper.toPage(resultPage, entryPage, pageable.getSortStrings());
+
+        resultPage
+                .getContent()
+                .forEach(
+                        entry -> {
+                            EntryGetSummaryDto entrySummary =
+                                    applicationListEntryMapStructMapper.toEntrySummary(entry);
+
+                            List<ResultCodeGetSummaryDto> resultCodes =
+                                    codesByEntryId.getOrDefault(entry.getId(), List.of());
+
+                            entrySummary.setResulted(resultCodes);
+                            entrySummary.setIsResulted(!resultCodes.isEmpty());
+
+                            entryPage.addContentItem(entrySummary);
+                        });
+
+        return entryPage;
     }
 }

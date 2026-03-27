@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -682,6 +683,33 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         Assertions.assertEquals(applicationListEntry2.getUuid(), page.getContent().get(0).getId());
         Assertions.assertEquals(applicationListEntry1.getUuid(), page.getContent().get(1).getId());
         Assertions.assertEquals(applicationListEntry.getUuid(), page.getContent().get(2).getId());
+    }
+
+    @Test
+    @StabilityTest
+    public void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
+        ApplicationList list = createAndSaveList(Status.OPEN);
+        ApplicationCode applicationCode = createApplicationCode("APP002", false);
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber("RESULT-12345");
+        entry = persistance.save(entry);
+
+        saveResolutions(entry, "RC1", "RC2");
+
+        EntryGetFilterDto filterDto = new EntryGetFilterDto();
+        filterDto.setAccountReference("RESULT-12345");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryPage page = executeSearch(tokenGenerator, filterDto, 20);
+
+        assertThat(page.getContent()).isNotNull();
+        assertEquals(1, page.getContent().size());
+
+        EntryGetSummaryDto dto = page.getContent().getFirst();
+
+        assertResultCodes(dto, "RC1", "RC2");
     }
 
     /** Executes search with optional filter and returns EntryPage. */
