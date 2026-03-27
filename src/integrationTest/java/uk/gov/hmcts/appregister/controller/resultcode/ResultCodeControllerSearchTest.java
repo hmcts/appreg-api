@@ -106,7 +106,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
-                        ACTIVE_DAY.toString(),
+                        SEED_START.toString(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
@@ -115,7 +115,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
-                        "",
+                        APPC_TITLE,
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
     }
@@ -158,7 +158,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
-                        ACTIVE_DAY.toString(),
+                        SEED_START.toString(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
 
@@ -167,7 +167,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_title",
                         null,
-                        "",
+                        AUTH_TITLE,
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
     }
