@@ -670,44 +670,45 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     }
 
     public void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
-        ApplicationListEntry persistedEntry =
-                applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
+        ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setResultCode(resultCode);
+        resolutionCode.setTitle(resultCode + " title");
+        resolutionCode.setWording(resultCode + " wording");
+        resolutionCode.setLegislation("Test legislation");
+        resolutionCode.setStartDate(LocalDate.now());
+        resolutionCode.setChangedBy(1L);
+        resolutionCode.setChangedDate(OffsetDateTime.now());
+        resolutionCode = persistance.save(resolutionCode);
 
         ApplicationCode persistedCode =
                 applicationCodeRepository
                         .findById(sourceEntry.getApplicationCode().getId())
                         .orElseThrow();
 
+        ApplicationCode applicationCodeCopy = createApplicationCodeCopy(persistedCode);
+
+        ApplicationListEntry persistedEntry =
+                applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
+
         ApplicationList persistedList =
                 applicationListRepository
                         .findById(persistedEntry.getApplicationList().getId())
                         .orElseThrow();
 
-        ResolutionCode code = new ResolutionCode();
-        code.setResultCode(resultCode);
-        code.setTitle(resultCode + " title");
-        code.setWording(resultCode + " wording");
-        code.setLegislation("Test legislation");
-        code.setStartDate(LocalDate.now());
-        code.setChangedBy(1L);
-        code.setChangedDate(OffsetDateTime.now());
-        code = persistance.save(code);
-
-        ApplicationCode applicationCodeCopy = getApplicationCode(persistedCode);
-
         ApplicationListEntry entryCopy =
-                getApplicationListEntry(persistedEntry, persistedList, applicationCodeCopy);
+                createApplicationListEntryCopy(persistedEntry, persistedList, applicationCodeCopy);
 
         AppListEntryResolution entryResolution = new AppListEntryResolution();
         entryResolution.setApplicationList(entryCopy);
-        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionCode(resolutionCode);
         entryResolution.setResolutionWording(resultCode + " wording");
         entryResolution.setResolutionOfficer("Test officer");
 
         persistance.save(entryResolution);
     }
 
-    public static @NotNull ApplicationCode getApplicationCode(ApplicationCode persistedCode) {
+    public static @NotNull ApplicationCode createApplicationCodeCopy(
+            ApplicationCode persistedCode) {
         ApplicationCode applicationCodeCopy = new ApplicationCode();
         applicationCodeCopy.setId(persistedCode.getId());
         applicationCodeCopy.setVersion(persistedCode.getVersion());
@@ -726,7 +727,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         return applicationCodeCopy;
     }
 
-    public static @NotNull ApplicationListEntry getApplicationListEntry(
+    public static @NotNull ApplicationListEntry createApplicationListEntryCopy(
             ApplicationListEntry persistedEntry,
             ApplicationList persistedList,
             ApplicationCode applicationCodeCopy) {
