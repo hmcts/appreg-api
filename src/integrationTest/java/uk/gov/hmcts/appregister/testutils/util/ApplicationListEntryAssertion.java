@@ -59,7 +59,8 @@ public class ApplicationListEntryAssertion {
             EntryGetDetailDto response,
             String assertWordingApplied,
             String assertWording,
-            List<TemplateSubstitution> expectedWordingFields) {
+            List<TemplateSubstitution> expectedWordingFields,
+            int expectedNumberOfFees) {
         validateEntityAndResponseForEntryUpdate(
                 entryCreateDto,
                 applicationListEntry,
@@ -67,7 +68,8 @@ public class ApplicationListEntryAssertion {
                 assertWordingApplied,
                 assertWording,
                 expectedWordingFields,
-                List.of());
+                List.of(),
+                expectedNumberOfFees);
     }
 
     /**
@@ -92,7 +94,8 @@ public class ApplicationListEntryAssertion {
             String assertWordingApplied,
             String assertWording,
             List<TemplateSubstitution> expectedWordingFields,
-            List<Long> existingFeeStatuses) {
+            List<Long> existingFeeStatuses,
+            int expectedNumberOfFees) {
 
         // validate applicant with the dto
         if (entryCreateUpdateDto.getStandardApplicantCode() != null) {
@@ -189,7 +192,8 @@ public class ApplicationListEntryAssertion {
                 }
             }
             Assertions.assertEquals(entryCreateUpdateDto.getHasOffsiteFee(), containsOffsite);
-            Assertions.assertEquals(2, applicationListEntry.getEntryFeeIds().size());
+            Assertions.assertEquals(
+                    expectedNumberOfFees, applicationListEntry.getEntryFeeIds().size());
         }
 
         // ensure the database fees align ignoring pre existing fee statuses

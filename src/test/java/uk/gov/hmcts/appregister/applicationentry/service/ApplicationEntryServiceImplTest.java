@@ -222,6 +222,12 @@ public class ApplicationEntryServiceImplTest {
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
 
+        Fee fee = new FeeTestData().someComplete();
+        fee.setId(-1L);
+        fee.setOffsite(true);
+        when(feeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), true))
+                .thenReturn(List.of(fee));
+
         service =
                 new ApplicationEntryServiceImpl(
                         applicationListEntryRepository,
@@ -427,6 +433,7 @@ public class ApplicationEntryServiceImplTest {
 
         entryCreateDto.setWordingFields(
                 List.of(templateSubstitution, templateSubstitution2, templateSubstitution3));
+        code.setFeeReference("CO1.1");
         code.setWording(
                 "Test template {TEXT|Applicant officer|10} and second template {TEXT|Applicant officer1|10} and third"
                         + "template {TEXT|Applicant officer2|10}");
@@ -593,6 +600,13 @@ public class ApplicationEntryServiceImplTest {
             when(appListEntryOfficialRepository.save(official)).thenReturn(official);
             officialLst.add(official);
         }
+
+        Fee offsiteFee = feeTestData.someComplete();
+        offsiteFee.setOffsite(true);
+        offsiteFee.setId(3L);
+
+        when(feeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), true))
+                .thenReturn(List.of(offsiteFee));
 
         // wording substitution and application code lookup
         TemplateSubstitution t1 = new TemplateSubstitution();

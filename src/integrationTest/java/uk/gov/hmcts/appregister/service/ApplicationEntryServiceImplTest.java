@@ -160,9 +160,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             response.getPayload(),
                             "Request to copy documents",
                             "Request to copy documents",
-                            List.of());
-
-                    Assertions.assertEquals(2, applicationListEntry.getEntryFeeIds().size());
+                            List.of(),
+                            1);
                 });
     }
 
@@ -241,7 +240,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             response.getPayload(),
                             "Request to copy documents",
                             "Request to copy documents",
-                            List.of());
+                            List.of(),
+                            1);
 
                     Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
                 });
@@ -326,7 +326,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Attends to swear a complaint for the issue of a summons"
                                     + " for the debtor to answer an application for a liability order in"
                                     + " relation to unpaid council tax (reference {{Reference}})",
-                            List.of(substitution));
+                            List.of(substitution),
+                            2);
                 });
     }
 
@@ -449,7 +450,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 "Request to copy documents",
                 List.of(),
-                feeStatusBeforeUpdate);
+                feeStatusBeforeUpdate,
+                1);
     }
 
     @Test
@@ -586,7 +588,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at {{Premises Address}} "
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
-                feeStatusBeforeUpdate);
+                feeStatusBeforeUpdate,
+                1);
     }
 
     @Test
@@ -707,7 +710,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at "
                         + "{{Premises Address}} for date {{Premises Date}}",
                 List.of(updateDto.getWordingFields().toArray(new TemplateSubstitution[0])),
-                feeStatusBeforeUpdate);
+                feeStatusBeforeUpdate,
+                1);
     }
 
     @Test
@@ -756,6 +760,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.setStandardApplicantCode("APP001");
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("CT99002");
+        updateDto.setHasOffsiteFee(true);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -826,7 +831,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " to answer an application for a liability order in relation to unpaid council tax "
                         + "(reference {{Reference}})",
                 updateDto.getWordingFields(),
-                feeStatusBeforeUpdate);
+                feeStatusBeforeUpdate,
+                1);
     }
 
     // useful method to create an entry with respondent, bulk respondent and fee statuses for update
@@ -986,7 +992,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                                     + "}",
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
-                            entryCreateDto.getWordingFields());
+                            entryCreateDto.getWordingFields(),
+                            1);
                 });
 
         return response.getPayload().getId();
@@ -1057,7 +1064,8 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             response.getPayload(),
                             "Request to copy documents",
                             "Request to copy documents",
-                            List.of());
+                            List.of(),
+                            2);
                 });
         return response.getPayload().getId();
     }
