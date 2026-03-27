@@ -617,6 +617,7 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());
         Assertions.assertEquals(listId.toString(), mappedResult.getListId().toString());
         Assertions.assertEquals(LocalDate.now(), mappedResult.getDate());
+        Assertions.assertEquals("accref", mappedResult.getAccountNumber().get());
     }
 
     @Test

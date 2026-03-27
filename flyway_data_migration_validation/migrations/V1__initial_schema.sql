@@ -9,6 +9,8 @@ SET client_encoding TO 'UTF8';
 
 SET check_function_bodies = false;
 
+DROP TABLE IF EXISTS oracle_column_metadata;
+
 CREATE TABLE oracle_column_metadata (
 	owner text,
 	table_name text,
@@ -20,12 +22,16 @@ CREATE TABLE oracle_column_metadata (
     loaded_at timestamptz default now()
 ) ;
 
+DROP TABLE IF EXISTS oracle_rowcounts;
+
 CREATE TABLE oracle_rowcounts (
 	owner text,
 	table_name text,
 	row_count bigint,
 	loaded_at timestamptz default now()
 ) ;
+
+DROP TABLE IF EXISTS oracle_counts_by_date;
 
 CREATE TABLE oracle_counts_by_date (
 	owner text,
@@ -35,6 +41,8 @@ CREATE TABLE oracle_counts_by_date (
 	loaded_at timestamptz default now()
 ) ;
 
+DROP TABLE IF EXISTS oracle_column_analysis;
+
 CREATE TABLE oracle_column_analysis (
 	owner text,
 	table_name text,
@@ -43,6 +51,8 @@ CREATE TABLE oracle_column_analysis (
 	metric_value text,
 	loaded_at timestamptz default now()
 ) ;
+
+DROP TABLE IF EXISTS oracle_table_map;
 
 CREATE TABLE oracle_table_map (
 	oracle_owner text NOT NULL,
@@ -71,12 +81,9 @@ VALUES
 ('APPREGISTER','NAME_ADDRESS','appreg','name_address','na_id','changed_date'),
 ('APPREGISTER','RESOLUTION_CODES','appreg','resolution_codes','rc_id','changed_date'),
 ('APPREGISTER','STANDARD_APPLICANTS','appreg','standard_applicants','sa_id','changed_date'),
-('LIBRA','NATIONAL_COURT_HOUSES','appreg','national_court_houses','nch_id','changed_date'),
-('LIBRA','LINK_ADDRESSES','appreg','link_addresses','la_id','changed_date'),
-('LIBRA','ADDRESSES','appreg','addresses','adr_id','changed_date'),
-('LIBRA','LINK_COMMUNICATION_MEDIA','appreg','link_communication_media','lcm_id','changed_date'),
-('LIBRA','COMMUNICATION_MEDIA','appreg','communication_media','comm_id','changed_date'),
-('LIBRA','PETTY_SESSIONAL_AREAS','appreg','petty_sessional_areas','psa_id','changed_date');
+('LIBRA','NATIONAL_COURT_HOUSES','appreg','national_court_houses','nch_id','changed_date');
+
+DROP VIEW IF EXISTS v_oracle_counts;
 
 CREATE VIEW v_oracle_counts AS
 SELECT 	lower(m.pg_schema)	AS pg_schema,
@@ -89,6 +96,8 @@ ON lower(m.oracle_owner)=lower(c.owner)
 AND lower(m.oracle_table)=lower(c.table_name)
 WHERE m.enabled;
 
+DROP VIEW IF EXISTS v_oracle_buckets;
+
 CREATE VIEW v_oracle_buckets AS
 SELECT lower(m.pg_schema) AS pg_schema,
        lower(m.pg_table) AS pg_table,
@@ -100,6 +109,8 @@ JOIN oracle_table_map m
 ON LOWER(m.oracle_owner) = lower(b.owner)
 AND lower(m.oracle_table) = lower(b.table_name)
 WHERE m.enabled;
+
+DROP VIEW IF EXISTS v_oracle_columns;
 
 CREATE VIEW v_oracle_columns AS
 SELECT lower(m.pg_schema) AS pg_schema,
@@ -114,6 +125,8 @@ ON lower(m.oracle_owner) = lower(cp.owner)
 AND lower(m.oracle_table) = lower(cp.table_name)
 WHERE m.enabled;
 
+DROP TABLE IF EXISTS pg_rowcounts;
+
 CREATE TABLE pg_rowcounts (
 	pg_schema text,
 	pg_table text,
@@ -121,6 +134,8 @@ CREATE TABLE pg_rowcounts (
 	loaded_at timestamptz DEFAULT NOW(),
 	PRIMARY KEY (pg_schema, pg_table)
 );
+
+DROP TABLE IF EXISTS pg_counts_by_date;
 
 CREATE TABLE pg_counts_by_date (
 	pg_schema text,
@@ -130,6 +145,8 @@ CREATE TABLE pg_counts_by_date (
 	loaded_at timestamptz DEFAULT NOW(),
 	PRIMARY KEY (pg_schema, pg_table, bucket_label)
 );
+
+DROP TABLE IF EXISTS pg_column_analysis;
 
 CREATE TABLE pg_column_analysis(
 	pg_schema text,
@@ -244,6 +261,8 @@ BEGIN
 	END LOOP;
 END$$;
 
+DROP VIEW IF EXISTS v_count_diff;
+
 CREATE VIEW v_count_diff AS
 SELECT 
 	o.pg_schema, o.pg_table,
@@ -257,6 +276,8 @@ JOIN pg_rowcounts p
 ON p.pg_schema=o.pg_schema AND p.pg_table=o.pg_table
 ORDER BY abs(p.row_count - o.row_count) DESC, o.pg_schema, o.pg_table;
 
+DROP VIEW IF EXISTS v_bucket_diff;
+
 CREATE VIEW v_bucket_diff AS
 SELECT 
 	o.pg_schema, o.pg_table, o.bucket_label,
@@ -267,6 +288,8 @@ FROM v_oracle_buckets o
 JOIN pg_counts_by_date P
 ON p.pg_schema=o.pg_schema AND p.pg_table=o.pg_table AND p.bucket_label=o.bucket_label
 ORDER BY o.pg_schema, o.pg_table, o.bucket_label;
+
+DROP VIEW IF EXISTS v_minmax_diff;
 
 CREATE VIEW v_minmax_diff AS
 WITH o AS (
@@ -298,6 +321,7 @@ WHERE (o.o_min IS DISTINCT FROM p.p_min)
 OR (o.o_max IS DISTINCT FROM p.p_max)
 ORDER BY pg_schema, pg_table, column_name;
 
+DROP VIEW IF EXISTS v_avglen_diff;
 
 CREATE VIEW v_avglen_diff AS
 SELECT 
@@ -311,6 +335,8 @@ ON p.pg_schema=o.pg_schema AND p.pg_table=o.pg_table
 AND p.column_name=o.column_name
 WHERE o.metric='avg_len' AND p.metric='avg_len'
 ORDER BY abs((p.metric_value::numeric - o.metric_value::numeric)) DESC;
+
+DROP TABLE IF EXISTS summary;
 
 CREATE TABLE summary AS
 SELECT 
@@ -332,6 +358,8 @@ BEGIN
 				WHERE b.pg_schema=c.pg_schema AND b.pg_table=c.pg_table AND b.bucket_diff<>0),0)
 		FROM data_validation.v_count_diff c;
 END$$;
+
+DROP VIEW IF EXISTS v_metadata;
 
 create view v_metadata
 as 

@@ -15,6 +15,10 @@
 # 2.0		25/09/2025	Matthew Harman	Move to an incremental approach
 # 3.0		28/10/2025	Matthew Harman	Added Deletes with incremental
 # 4.0 		20/11/2025	Matthew Harman	Added in Parallelisation
+# 5.0       	18/03/2026  	Matthew Harman  Changes for changed_by field
+#							mapping
+#						Changes to implement retention
+#						Remove unused sequences
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -23,7 +27,18 @@
 #						FULL for big bang
 #				NOTE: CRIMINAL_JUSTICE_AREA will always be big 
 #				bang as this does not have a CHANGED_DATE field
-operation_mode='FULL';
+operation_mode='INCREMENTAL';
+
+# retention_mode		Retention mode, YES to implement retention policy
+#					i.e. we won't migrate data out of retention
+#						NO to no retention policy in use
+#					i.e. we will migrate all data
+retention_mode='YES';
+
+# retention_policy		Retention policy, date before which we will
+#					migrate data.  Only applicable if
+#					retention_mode above is set to YES
+retention_policy='TRUNC(SYSDATE-1825)';
 
 # thread_count			Thread Count, how many streams do we run in
 #				parallel, set to 1 to turn off parallelisation.
@@ -54,6 +69,10 @@ postgres_delete_schema_file="${spool_location}/create_delete_schema.sql";
 # postgres_environment		Postgres environment connection string
 #				NOTE: Don't put passwords here
 postgres_environment='postgresql://pgadmin:<pwd>@appreg-stg.postgres.database.azure.com:5432/appreg-db';
+
+# missing_user_modern_value	Missing User in modern, takes this value for changed_by
+#
+missing_user_modern_value="MISSINGM-MISS-MISS-MISS-MISSINGMISSI:72f988bf-86f1-41af-91ab-2d7cd011db47";
 
 # postgres_commands_file	Location of the file created to have the 
 #				commands to load the .csv's into postgres
@@ -114,6 +133,34 @@ END
 
 echo "scn is ${SCN}";
 
+#
+#USERIDS=$(sqlplus -s "/ as sysdba" <<END
+#set feedback off
+#set head off
+#set pagesize 0
+#select legacy_changed_by||','||modern_changed_by as userids from appregister.appreg_user_mapping;
+#exit;
+#END
+#)
+#
+#echo "$USERIDS";
+#
+#lookup_changed_by() {
+#	local legacy_changed_by="$1"
+#	result=$(awk -F',' -v id="$legacy_changed_by" -v default="$missing_user_modern_value" '
+#		$1 == id { print $2; found=1; exit }
+#		END { if (!found) print default }
+#	' <<< "$USERIDS")
+#
+#	echo "$result"
+#}
+#
+#output=$(lookup_changed_by 322)
+#echo "For 322: $output"
+#
+#output=$(lookup_changed_by 2000)
+#echo "For 2000: $output"
+
 # Define functions
 add_script_parallel() {
 	local run="$1"
@@ -159,8 +206,8 @@ pop_postgres5() {
 #			schema name that we need to migrate
 # Removed APPREGISTER.DATA_AUDIT
 # Keep the correct apply order so that there are no constraint violations
-TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES,APPREGISTER.CRIMINAL_JUSTICE_AREA,APPREGISTER.APPLICATION_LISTS,APPREGISTER.STANDARD_APPLICANTS,APPREGISTER.NAME_ADDRESS,APPREGISTER.APPLICATION_LIST_ENTRIES,APPREGISTER.APPLICATION_REGISTER,APPREGISTER.FEE,APPREGISTER.APP_LIST_ENTRY_FEE_ID,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS,APPREGISTER.APP_LIST_ENTRY_OFFICIAL,APPREGISTER.RESOLUTION_CODES,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS,LIBRA.PETTY_SESSIONAL_AREAS,LIBRA.NATIONAL_COURT_HOUSES,LIBRA.LINK_ADDRESSES,LIBRA.ADDRESSES,LIBRA.COMMUNICATION_MEDIA,LIBRA.LINK_COMMUNICATION_MEDIA';
-SEQUENCES_TO_EXTRACT='APPREGISTER.AC_SEQ,LIBRA.ADR_SEQ,APPREGISTER.ALEFS_SEQ,APPREGISTER.ALEO_SEQ,APPREGISTER.ALER_SEQ,APPREGISTER.AL_SEQ,APPREGISTER.AR_SEQ,APPREGISTER.CJA_SEQ,LIBRA.COMM_SEQ,APPREGISTER.FEE_SEQ,LIBRA.LA_SEQ,LIBRA.LCM_SEQ,APPREGISTER.NA_SEQ,LIBRA.PSA_SEQ,APPREGISTER.RC_SEQ,APPREGISTER.SA_SEQ';
+TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES,APPREGISTER.CRIMINAL_JUSTICE_AREA,APPREGISTER.APPLICATION_LISTS,APPREGISTER.STANDARD_APPLICANTS,APPREGISTER.NAME_ADDRESS,APPREGISTER.APPLICATION_LIST_ENTRIES,APPREGISTER.APPLICATION_REGISTER,APPREGISTER.FEE,APPREGISTER.APP_LIST_ENTRY_FEE_ID,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS,APPREGISTER.APP_LIST_ENTRY_OFFICIAL,APPREGISTER.RESOLUTION_CODES,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS,LIBRA.NATIONAL_COURT_HOUSES';
+SEQUENCES_TO_EXTRACT='APPREGISTER.AC_SEQ,APPREGISTER.ALEFS_SEQ,APPREGISTER.ALEO_SEQ,APPREGISTER.ALER_SEQ,APPREGISTER.AL_SEQ,APPREGISTER.AR_SEQ,APPREGISTER.CJA_SEQ,APPREGISTER.FEE_SEQ,APPREGISTER.NA_SEQ,APPREGISTER.RC_SEQ,APPREGISTER.SA_SEQ';
 
 # Table Fields		Each table has specific fields, detail them here
 #		        NOTE: Add field type, postgres equivalent and whether 
@@ -267,6 +314,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="AC_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -286,6 +335,11 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="AL_ID";
+			changed_by='CHANGED_BY';
+			# No retention clause of APPLICATION_LISTS as we
+			# extract all LISTS, it is the data off the LISTS
+			# that is subject to retention
+			retention_clause='';
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -305,6 +359,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="ALE_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -324,6 +380,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="AR_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -343,6 +401,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint="ALTER TABLE ${postgres_schema}.app_list_entry_fee_id ADD CONSTRAINT ux_app_list_entry_fee_id_row UNIQUE USING INDEX ux_app_list_entry_fee_id_row_idx;";
 			hash_index_drop="alter table ${postgres_schema}.app_list_entry_fee_id drop constraint ux_app_list_entry_fee_id_row;";
 			shard_field="ALE_ALE_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -362,6 +422,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="ALEFS_ID";
+			changed_by='ALEFS_CHANGED_BY';
+			retention_clause="ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -381,6 +443,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="ALEO_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -400,6 +464,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="ALER_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -420,9 +486,12 @@ echo "running case: $tables_to_extract $lower_table_name";
 			drop_constraint="alter table ${postgres_schema}.application_lists drop constraint al_cja_fk;";
 			create_constraint="alter table ${postgres_schema}.application_lists add constraint al_cja_fk foreign key (cja_cja_id) references ${postgres_schema}.criminal_justice_area(cja_id) on delete no action not deferrable initially immediate;";
 			shard_field="CJA_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
+w
 			table_fields=$DATA_AUDIT_FIELDS;
 			split_lob_into_chunks="NO";
 			order_by_field="";
@@ -439,6 +508,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="DATA_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -458,6 +529,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="FEE_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -477,6 +550,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="NA_ID";
+			changed_by='CHANGED_BY';
+			retention_clause="(NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries where AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -496,6 +571,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="RC_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -515,6 +592,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="SA_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -534,101 +613,8 @@ echo "running case: $tables_to_extract $lower_table_name";
 			hash_index_constraint='';
 			hash_index_drop='';
 			shard_field="NCH_ID";
-			;;
-		LIBRA.LINK_ADDRESSES)
-			echo "in LINK_ADDRESSES"
-			table_fields=$LINK_ADDRESSES_FIELDS;
-			split_lob_into_chunks="NO";
-			order_by_field="";
-			incremental_allowed="YES";
-			conflict_field="LA_ID";
-			conflict_constraint="NO";
-			conflict_constraint_name='';
-			lower_table_name='link_addresses';
-			lower_with_schema='libra.link_addresses';
-			changed_date='changed_date';
-			field_count=13;
-			use_hash="NO";
-			hash_index='';
-			hash_index_constraint='';
-			hash_index_drop='';
-			shard_field="LA_ID";
-			;;
-		LIBRA.ADDRESSES)
-			echo "in ADDRESSES"
-			table_fields=$ADDRESSES_FIELDS;
-			split_lob_into_chunks="NO";
-			order_by_field="";
-			incremental_allowed="YES";
-			conflict_field="ADR_ID";
-			conflict_constraint="NO";
-			conflict_constraint_name='';
-			lower_table_name='addresses';
-			lower_with_schema='libra.addresses';
-			changed_date='changed_date';
-			field_count=13;
-			use_hash="NO";
-			hash_index='';
-			hash_index_constraint='';
-			hash_index_drop='';
-			shard_field="ADR_ID";
-			;;
-		LIBRA.LINK_COMMUNICATION_MEDIA)
-			echo "in LINK_COMMUNICATION_MEDIA"
-			table_fields=$LINK_COMMUNICATION_MEDIA_FIELDS;
-			split_lob_into_chunks="NO";
-			order_by_field="";
-			incremental_allowed="YES";
-			conflict_field="LCM_ID";
-			conflict_constraint="NO";
-			conflict_constraint_name='';
-			lower_table_name='link_communication_media';
-			lower_with_schema='libra.link_communication_media';
-			changed_date='changed_date';
-			field_count=11;
-			use_hash="NO";
-			hash_index='';
-			hash_index_constraint='';
-			hash_index_drop='';
-			shard_field="LCM_ID";
-			;;
-		LIBRA.COMMUNICATION_MEDIA)
-			echo "in COMMUNICATION_MEDIA"
-			table_fields=$COMMUNICATION_MEDIA_FIELDS;
-			split_lob_into_chunks="NO";
-			order_by_field="";
-			incremental_allowed="YES";
-			conflict_field="COMM_ID";
-			conflict_constraint="NO";
-			conflict_constraint_name='';
-			lower_table_name='communication_media';
-			lower_with_schema='libra.communication_media';
-			changed_date='changed_date';
-			field_count=7;
-			use_hash="NO";
-			hash_index='';
-			hash_index_constraint='';
-			hash_index_drop='';
-			shard_field="COMM_ID";
-			;;
-		LIBRA.PETTY_SESSIONAL_AREAS)
-			echo "in PETTY_SESSIONAL_AREAS"
-			table_fields=$PETTY_SESSIONAL_AREAS_FIELDS;
-			split_lob_into_chunks="NO";
-			order_by_field="";
-			incremental_allowed="YES";
-			conflict_field="PSA_ID";
-			conflict_constraint="NO";
-			conflict_constraint_name='';
-			lower_table_name='petty_sessional_areas';
-			lower_with_schema='libra.petty_sessional_areas';
-			changed_date='changed_date';
-			field_count=20;
-			use_hash="NO";
-			hash_index='';
-			hash_index_constraint='';
-			hash_index_drop='';
-			shard_field="PSA_ID";
+			changed_by='';
+			retention_clause='';
 			;;
 	esac
 
@@ -696,13 +682,27 @@ echo "sql2: $sql_script"
 			case $field_type in
 				NUMBER)
 					echo "field is a number";
-					if [[ $field_nullable == "Y" ]]
+					if [[ $field_name == $changed_by ]] 
 					then
+						# we need to map this to the new
+						# modern value
+						if [[ $field_nullable == "Y" ]]
+						then
 echo "is nulls"
-						sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name}),''))"
-					else
+							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})),''))"
+						else
 echo "is notnull"
-						sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name}))"
+							sql_script="${sql_script}TO_CLOB(TO_CHAR(appregister.appreg_get_user_mapping(${field_name})))"
+						fi
+					else
+						if [[ $field_nullable == "Y" ]]
+						then
+echo "is nulls"
+							sql_script="${sql_script}TO_CLOB(NVL(TO_CHAR(${field_name}),''))"
+						else
+echo "is notnull"
+							sql_script="${sql_script}TO_CLOB(TO_CHAR(${field_name}))"
+						fi
 					fi
 			
 					if [[ $field_count -eq $counter ]]
@@ -914,7 +914,13 @@ echo "sqlaa: $sql_script";
 			# Write out the postgres create schema file
 			if [[ ${field_type} == "NUMBER" ]]
 			then
-				echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+				# check if we are mapping the field
+				if [[ $field_name == $changed_by ]] 
+				then
+					echo "${lower_field_name} CHARACTER VARYING(73),">>${postgres_schema_file};
+				else
+					echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+				fi
 			else
 				echo "${lower_field_name} TEXT,">>${postgres_schema_file};
 			fi
@@ -987,6 +993,12 @@ echo "AE: ${l_have_where}";
 				sql_script="${sql_script}AND (ORA_HASH(TO_CHAR(${shard_field}), ${adjusted_thread_count-1}) = ${threads})${NEWLINE}";
 			fi
 			l_have_where="YES";
+
+			# Do we need to add in the retention clause?
+			if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+			then
+				sql_script="${sql_script}AND ${retention_clause}${NEWLINE}";
+			fi
 
 			if [[ ${order_by_field} -ne "" ]]
 			then
@@ -1104,14 +1116,31 @@ echo "lower_field_name: ${lower_field_name}"
 				NUMBER)
 					echo "field is a number ${field_name}";
 					sql1_script="${sql1_script}${field_name},${NEWLINE}";
-					if [[ $field_nullable == "Y" ]]
+
+					if [[ $field_name == $changed_by ]]
 					then
+						# we need to map this to the 
+						# modern value
+
+						if [[ $field_nullable == "Y" ]]
+						then
 echo "is nulls"
-						sql2_script2="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name}),''))"
-					else
+							sql2_script2="${sql2_script}TO_CLOB(NVL(TO_CHAR(appregister.appreg_get_user_mapping(b.${field_name})),''))"
+						else
 echo "is notnull"
-						sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name}))"
+							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(appregister.appreg_get_user_mapping(b.${field_name})))"
+						fi
+					else
+						if [[ $field_nullable == "Y" ]]
+						then
+echo "is nulls"
+							sql2_script2="${sql2_script}TO_CLOB(NVL(TO_CHAR(b.${field_name}),''))"
+						else
+echo "is notnull"
+							sql2_script="${sql2_script}TO_CLOB(TO_CHAR(b.${field_name}))"
+						fi
 					fi
+
 					if [[ $field_count -eq $counter ]]
 					then
 						sql_postgres="${sql_postgres}${field_name}";
@@ -1330,7 +1359,13 @@ echo $field_name
 				# Write out the postgres create schema file
 				if [[ ${field_type} == "NUMBER" ]]
 				then
-					echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+					# check if we are mapping the field
+					if [[ $field_name == $changed_by ]] 
+					then
+						echo "${lower_field_name} CHARACTER VARYING(73),">>${postgres_schema_file};
+					else
+						echo "${lower_field_name} NUMERIC,">>${postgres_schema_file};
+					fi
 				else
 					if [[ ${field_type} == "CLOB" ]]
 					then
@@ -1378,6 +1413,12 @@ echo "B3: ${l_have_where}"
 				fi
 				l_have_where="YES";
 echo "B4: ${l_have_where}"
+
+				# Do we need to add in the retention clause?
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script}AND ${retention_clause}${NEWLINE}";
+				fi
 
 				echo 'ADDING $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE"';
 				add_script_parallel $threads "@${tables_to_extract}_part_${threads}.sql${NEWLINE}";
@@ -1582,6 +1623,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='application_codes';
 			lower_with_schema='appregister.application_codes';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.APPLICATION_LISTS)
 			echo "in APPLICATION_LISTS"
@@ -1591,6 +1634,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='application_lists';
 			lower_with_schema='appregister.application_lists';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.APPLICATION_LIST_ENTRIES)
 			echo "in APPLICATION_LIST_ENTRIES"
@@ -1600,6 +1645,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='application_list_entries';
 			lower_with_schema='appregister.application_list_entries';
+			retention_clause_old="WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists AS OF SCN &LAST_SCN where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			retention_clause_new="WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists AS OF SCN &THIS_SCN where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
 			;;
 		APPREGISTER.APPLICATION_REGISTER)
 			echo "in APPLICATION_REGISTER"
@@ -1609,6 +1656,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='application_register';
 			lower_with_schema='appregister.application_register';
+			retention_clause_old="WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists AS OF SCN &LAST_SCN WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
+			retention_clause_new="WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists AS OF SCN &THIS_SCN WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_ID)
 			echo "in APP_LIST_ENTRY_FEE_ID"
@@ -1623,7 +1672,7 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 				(a[1])::text AS ale_ale_id_txt,
 				(a[2])::text AS fee_fee_id_txt,
 				(a[3])::text AS version_txt,
-				(a[4])::text AS changed_by_txt,
+				(appregister.appreg_get_user_mapping(a[4]) AS changed_by_txt,
 				(a[5])::timestamp AS changed_date,
 				a[6] AS user_name_esc
 				FROM (SELECT string_to_array(row_text,'|') AS a
@@ -1652,6 +1701,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 				AND t.changed_by = d.changed_by_txt
 				AND t.changed_date = d.changed_date
 				AND t.user_name = d.user_name;";
+			retention_clause_old="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			retention_clause_new="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_FEE_STATUS)
 			echo "in APP_LIST_ENTRY_FEE_STATUS"
@@ -1661,6 +1712,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='app_list_entry_fee_status';
 			lower_with_schema='appregister.app_list_entry_fee_status';
+			retention_clause_old="WHERE ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' and trunc(changed_date) > ${retention_policy}))))";
+			retention_clause_new="WHERE ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' and trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_OFFICIAL)
 			echo "in APP_LIST_ENTRY_OFFICIAL"
@@ -1670,6 +1723,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='app_list_entry_official';
 			lower_with_schema='appregister.app_list_entry_official';
+			retention_clause_old="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
+			retention_clause_new="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS)
 			echo "in APP_LIST_ENTRY_RESOLUTIONS"
@@ -1679,6 +1734,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='app_list_entry_resolutions';
 			lower_with_schema='appregister.app_list_entry_resolutions';
+			retention_clause_old="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' and trunc(changed_date) > ${retention_policy}))))";
+			retention_clause_new="WHERE ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries as of scn &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' and trunc(changed_date) > ${retention_policy}))))";
 			;;
 		APPREGISTER.CRIMINAL_JUSTICE_AREA)
 			echo "in CRIMINAL_JUSTICE_AREA"
@@ -1688,6 +1745,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='criminal_justice_area';
 			lower_with_schema='appregister.criminal_justice_area';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.DATA_AUDIT)
 			echo "in DATA_AUDIT"
@@ -1697,6 +1756,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='data_audit';
 			lower_with_schema='appregister.data_audit';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.FEE)
 			echo "in FEE"
@@ -1706,6 +1767,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='fee';
 			lower_with_schema='appregister.fee';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.NAME_ADDRESS)
 			echo "in NAME_ADDRESS"
@@ -1715,6 +1778,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='name_address';
 			lower_with_schema='appregister.name_address';
+			retention_clause_old="WHERE (NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries AS OF SCN &LAST_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
+			retention_clause_new="WHERE (NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries AS OF SCN &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries AS OF SCN &THIS_SCN WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
 			;;
 		APPREGISTER.RESOLUTION_CODES)
 			echo "in RESOLUTION_CODES"
@@ -1724,6 +1789,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='resolution_codes';
 			lower_with_schema='appregister.resolution_codes';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		APPREGISTER.STANDARD_APPLICANTS)
 			echo "in STANDARD_APPLICANTS"
@@ -1733,6 +1800,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='standard_applicants';
 			lower_with_schema='appregister.standard_applicants';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 		LIBRA.NATIONAL_COURT_HOUSES)
 			echo "in NATIONAL_COURT_HOUSES"
@@ -1742,51 +1811,8 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			concatenated_string="";
 			lower_table_name='national_court_houses';
 			lower_with_schema='libra.national_court_houses';
-			;;
-		LIBRA.LINK_ADDRESSES)
-			echo "in LINK_ADDRESSES"
-			primary_key="LA_ID";
-			delete_allowed="YES";
-			concatenated_key="NO";
-			concatenated_string="";
-			lower_table_name='link_addresses';
-			lower_with_schema='libra.link_addresses';
-			;;
-		LIBRA.ADDRESSES)
-			echo "in ADDRESSES"
-			primary_key="ADR_ID";
-			delete_allowed="YES";
-			concatenated_key="NO";
-			concatenated_string="";
-			lower_table_name='addresses';
-			lower_with_schema='libra.addresses';
-			;;
-		LIBRA.LINK_COMMUNICATION_MEDIA)
-			echo "in LINK_COMMUNICATION_MEDIA"
-			primary_key="LCM_ID";
-			delete_allowed="YES";
-			concatenated_key="NO";
-			concatenated_string="";
-			lower_table_name='link_communication_media';
-			lower_with_schema='libra.link_communication_media';
-			;;
-		LIBRA.COMMUNICATION_MEDIA)
-			echo "in COMMUNICATION_MEDIA"
-			primary_key="COMM_ID";
-			delete_allowed="YES";
-			concatenated_key="NO";
-			concatenated_string="";
-			lower_table_name='communication_media';
-			lower_with_schema='libra.communication_media';
-			;;
-		LIBRA.PETTY_SESSIONAL_AREAS)
-			echo "in PETTY_SESSIONAL_AREAS"
-			primary_key="PSA_ID";
-			delete_allowed="YES";
-			concatenated_key="NO";
-			concatenated_string="";
-			lower_table_name='petty_sessional_areas';
-			lower_with_schema='libra.petty_sessional_areas';
+			retention_clause_old='';
+			retention_clause_new='';
 			;;
 	esac
 
@@ -1808,12 +1834,20 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 			echo "SPOOL ${spool_location}/${tables_to_extract}.deletes.csv">>deletes.sql
 			echo "WITH">>deletes.sql
 			echo "old_keys AS (">>deletes.sql
-			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &LAST_SCN">>deletes.sql 
+			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &LAST_SCN">>deletes.sql
+			if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause_old}" ]]
+			then
+				echo " ${retention_clause_old}">>deletes.sql
+			fi
 			echo "),">>deletes.sql
 			echo "new_keys AS (">>deletes.sql
-			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &THIS_SCN">>deletes.sql 
+			echo "SELECT ${primary_key} FROM ${tables_to_extract} AS OF SCN &THIS_SCN">>deletes.sql
+			if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause_new}" ]]
+			then
+				echo " ${retention_clause_new}">>deletes.sql
+			fi
 			echo ")">>deletes.sql
-			if [[ "$concatenated_key" == "YES" ]]
+			if [[ "${concatenated_key}" == "YES" ]]
 			then
 				echo "SELECT ${concatenated_string}">>deletes.sql
 				echo "FROM old_keys">>deletes.sql
@@ -1861,4 +1895,5 @@ echo "$TABLES_TO_EXTRACT" | tr ',' '\n' | tac | while read -r tables_to_extract;
 		fi
 	fi
 done
+
 
