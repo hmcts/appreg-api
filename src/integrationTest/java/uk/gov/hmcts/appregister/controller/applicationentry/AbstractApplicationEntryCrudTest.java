@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
-import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
 
 import com.nimbusds.jose.JOSEException;
@@ -765,15 +764,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         applicationCode.setChangedDate(OffsetDateTime.now());
         applicationCode.setCreatedUser("email");
         return applicationCode;
-    }
-
-    public ApplicationList createOpenApplicationList() {
-        ApplicationList list = new ApplicationList();
-        list.setDate(LocalDate.now());
-        list.setTime(LocalTime.of(9, 0));
-        list.setStatus(OPEN);
-        list.setDescription("Test list description");
-        return persistance.save(list);
     }
 
     public ApplicationCode createApplicationCode(String code, boolean clearEntries) {

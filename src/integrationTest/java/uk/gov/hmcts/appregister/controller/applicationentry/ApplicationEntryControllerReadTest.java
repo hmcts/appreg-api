@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -844,7 +845,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     @Test
     @StabilityTest
     public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
-        ApplicationList list = createOpenApplicationList();
+        ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
 
         ApplicationListEntry entry = createEntry(list);
@@ -857,7 +858,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Response responseSpec = executeGetEntries(list.getUuid(), 20, 0);
 
         responseSpec.then().statusCode(200);
-
         EntryPage page = responseSpec.as(EntryPage.class);
 
         EntryGetSummaryDto dto = findEntry(page, entry.getUuid());

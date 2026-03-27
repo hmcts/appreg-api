@@ -688,7 +688,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     @Test
     @StabilityTest
     public void testGetApplicationEntriesSearchReturnsAllResultCodes() throws Exception {
-        ApplicationList list = createOpenApplicationList();
+        ApplicationList list = createAndSaveList(Status.OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", false);
 
         ApplicationListEntry entry = createEntry(list);
