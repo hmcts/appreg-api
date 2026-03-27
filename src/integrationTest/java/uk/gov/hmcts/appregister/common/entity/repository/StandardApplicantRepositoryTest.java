@@ -141,7 +141,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
-                    String code = "SA-NULL-FIRST";
+                    String code = "SANULL001";
 
                     StandardApplicant boundedApplicant =
                             new StandardApplicantTestData().someComplete();
