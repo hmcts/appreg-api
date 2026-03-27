@@ -5,7 +5,8 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import java.util.Comparator;
 
 /**
- * Sorts a list of keyable objects based on the sort descriptor.
+ * Sorts a list of keyable objects based on the sort descriptor column
+ * against a keyable.
  */
 public class KeyableSortComparator implements Comparator<Keyable> {
     private SortDataDescriptor descriptor;
@@ -18,6 +19,11 @@ public class KeyableSortComparator implements Comparator<Keyable> {
 
         Object value = descriptor.sortableValueFunction.apply(o1);
         Object value2 = descriptor.sortableValueFunction.apply(o2);
+
+        // simulate the tie breaker if the values are equal. The ids should never be
+        if (value.equals(value2)) {
+            o1.getId().compareTo(o2.getId());
+        }
 
         return ((Comparable<Object>)value).compareTo(value2);
     }

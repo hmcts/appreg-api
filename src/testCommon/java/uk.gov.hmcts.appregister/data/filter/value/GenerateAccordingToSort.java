@@ -4,8 +4,9 @@ import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.data.filter.FilterFieldDataDescriptor;
 import uk.gov.hmcts.appregister.data.filter.OrderEnum;
+import uk.gov.hmcts.appregister.data.sort.SortDataDescriptor;
 
 @FunctionalInterface
-public interface GenerateAccordingToFilter<T extends Keyable> {
-    FilterFieldData<T> apply(T keyable, FilterFieldDataDescriptor<T> descriptor, OrderEnum orderEnum);
+public interface GenerateAccordingToSort<T> {
+    void apply(T keyable, SortDataDescriptor<T> descriptor, OrderEnum orderEnum);
 }

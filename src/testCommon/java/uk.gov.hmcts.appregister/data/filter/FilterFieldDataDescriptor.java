@@ -1,7 +1,11 @@
 package uk.gov.hmcts.appregister.data.filter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToFilter;
 
@@ -10,7 +14,8 @@ import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToFilter;
  */
 @Builder
 @Getter
-public class FilterFieldDataDescriptor {
+@AllArgsConstructor
+public class FilterFieldDataDescriptor<T extends Keyable> {
     /**
      * The column name that we want to filter on.
      */
@@ -25,14 +30,14 @@ public class FilterFieldDataDescriptor {
     /**
      * Sets the value on the keyable according to the filter.
      */
-    private GenerateAccordingToFilter filterGenerator;
+    private GenerateAccordingToFilter<T> filterGenerator;
+
+    public FilterFieldDataDescriptor() {}
 
     /**
      * Apply the filter to the keyable.
      */
-    public FilterFieldData apply(Keyable keyable, OrderEnum orderEnum) {
-        filterGenerator.apply(keyable, this, orderEnum);
+    public FilterFieldData<T> apply(T keyable, OrderEnum orderEnum) {
+        return filterGenerator.apply(keyable, this, orderEnum);
     }
-
-
 }

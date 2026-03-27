@@ -1,15 +1,33 @@
 package uk.gov.hmcts.appregister.data.filter;
 
 import lombok.Getter;
-import lombok.experimental.SuperBuilder;
+import lombok.Setter;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
-@SuperBuilder
 @Getter
-public class PartialFilterData extends FilterFieldData {
+@Setter
+public class PartialFilterData<T extends Keyable> extends FilterFieldData<T> {
     /** The partial value. */
-    private final String startsWith;
+    private String startsWith;
 
-    private final String middleWith;
+    private String middleWith;
 
-    private final String endsWith;
+    private String endsWith;
+
+    private String matchOnAllPartials;
+
+    public PartialFilterData() {
+    }
+
+    @Override
+    public PartialFilterData<T> deepClone() {
+        return new PartialFilterData<>(this);
+    }
+
+    public PartialFilterData(PartialFilterData<T> filterFieldData) {
+        super(filterFieldData);
+        this.startsWith = filterFieldData.startsWith;
+        this.middleWith = filterFieldData.middleWith;
+        this.endsWith = filterFieldData.endsWith;
+    }
 }

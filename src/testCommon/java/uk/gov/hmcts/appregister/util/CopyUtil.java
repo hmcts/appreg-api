@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.data.filter.FilterFieldData;
+import uk.gov.hmcts.appregister.data.filter.PartialFilterData;
 import uk.gov.hmcts.appregister.data.filter.exception.FilterProcessingException;
 
 /**
@@ -23,9 +25,9 @@ public class CopyUtil {
      * @param keyable The keyable to clone.
      * @return The new deep clone.
      */
-    public static Keyable deepClone(Keyable keyable)  {
+    public static <T> T deepClone(T keyable)  {
         try {
-            return objectMapper.readValue(objectMapper.writeValueAsString(keyable), keyable.getClass());
+            return (T) objectMapper.readValue(objectMapper.writeValueAsString(keyable), keyable.getClass());
         } catch (JsonProcessingException jsonProcessingException) {
             throw new FilterProcessingException(jsonProcessingException);
         }
