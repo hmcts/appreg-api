@@ -146,16 +146,16 @@ class ResolutionCodeRepositoryTest extends BaseRepositoryTest {
             additionalActiveWithEndDate.setChangedBy(1L);
             additionalActiveWithEndDate.setChangedDate(OffsetDateTime.now(clock));
 
-            repository.saveAndFlush(additionalActiveWithEndDate);
+            ResolutionCode savedWithEndDate = repository.saveAndFlush(additionalActiveWithEndDate);
 
             List<ResolutionCode> result = repository.findPrioritisingNullEndDate("APPC", today());
 
-            assertThat(result).hasSize(1);
+            assertThat(result).hasSize(2);
 
-            // Key behavioural assertion: open-ended row should be chosen
             assertThat(result.getFirst().getEndDate()).isNull();
-
             assertThat(result.getFirst().getTitle()).isEqualTo("Appeal to Crown Court");
+            assertThat(result.get(1).getId()).isEqualTo(savedWithEndDate.getId());
+            assertThat(result.get(1).getEndDate()).isEqualTo(t.plusDays(10));
         }
 
         @Test
