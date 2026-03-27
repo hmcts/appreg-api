@@ -8,6 +8,7 @@ import static uk.gov.hmcts.appregister.common.enumeration.YesOrNo.NO;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +37,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -868,20 +869,35 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
         ApplicationList list = new ApplicationList();
         list.setDate(LocalDate.now());
-        list.setTime(java.time.LocalTime.of(9, 0));
+        list.setTime(LocalTime.of(9, 0));
         list.setStatus(OPEN);
         list.setDescription("Test list description");
-        list = applicationListRepository.saveAndFlush(list);
+        list = persistance.save(list);
 
         ApplicationCode applicationCode = buildApplicationCode("APP002");
-        applicationCode = applicationCodeRepository.saveAndFlush(applicationCode);
+        applicationCode.setApplicationListEntryList(null);
+        applicationCode = persistance.save(applicationCode);
 
-        ApplicationListEntry entry = new AppListEntryTestData().someMinimal().build();
+        ApplicationListEntry entry = new ApplicationListEntry();
         entry.setApplicationList(list);
         entry.setApplicationCode(applicationCode);
-        entry = applicationListEntryRepository.saveAndFlush(entry);
+        entry.setApplicationListEntryWording("Test entry wording");
+        entry.setEntryRescheduled("N");
+        entry.setSequenceNumber((short) 1);
+        entry.setLodgementDate(LocalDate.now());
+        entry.setCreatedUser("email");
+        entry.setAccountNumber("ACC123");
+        entry.setCaseReference("CASE123");
+        entry.setBulkUpload("N");
+        entry.setRetryCount("0");
+        entry.setNotes("Test notes");
+        entry.setTcepStatus("NW");
+        entry = persistance.save(entry);
 
+        entry = applicationListEntryRepository.findById(entry.getId()).orElseThrow();
         saveResolution(entry, "RC1");
+
+        entry = applicationListEntryRepository.findById(entry.getId()).orElseThrow();
         saveResolution(entry, "RC2");
 
         var tokenGenerator = createAdminToken();
@@ -985,6 +1001,87 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         }
     }
 
+    private void saveResolution(ApplicationListEntry sourceEntry, String resultCode) {
+        ApplicationListEntry persistedEntry =
+                applicationListEntryRepository.findById(sourceEntry.getId()).orElseThrow();
+
+        ApplicationCode persistedCode =
+                applicationCodeRepository
+                        .findById(sourceEntry.getApplicationCode().getId())
+                        .orElseThrow();
+
+        ApplicationList persistedList =
+                applicationListRepository
+                        .findById(persistedEntry.getApplicationList().getId())
+                        .orElseThrow();
+
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+        code = persistance.save(code);
+
+        ApplicationCode applicationCodeCopy = getApplicationCode(persistedCode);
+
+        ApplicationListEntry entryCopy =
+                getApplicationListEntry(persistedEntry, persistedList, applicationCodeCopy);
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entryCopy);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        persistance.save(entryResolution);
+    }
+
+    private static @NotNull ApplicationCode getApplicationCode(ApplicationCode persistedCode) {
+        ApplicationCode applicationCodeCopy = new ApplicationCode();
+        applicationCodeCopy.setId(persistedCode.getId());
+        applicationCodeCopy.setVersion(persistedCode.getVersion());
+        applicationCodeCopy.setCode(persistedCode.getCode());
+        applicationCodeCopy.setTitle(persistedCode.getTitle());
+        applicationCodeCopy.setWording(persistedCode.getWording());
+        applicationCodeCopy.setLegislation(persistedCode.getLegislation());
+        applicationCodeCopy.setFeeDue(persistedCode.getFeeDue());
+        applicationCodeCopy.setRequiresRespondent(persistedCode.getRequiresRespondent());
+        applicationCodeCopy.setBulkRespondentAllowed(persistedCode.getBulkRespondentAllowed());
+        applicationCodeCopy.setStartDate(persistedCode.getStartDate());
+        applicationCodeCopy.setChangedBy(persistedCode.getChangedBy());
+        applicationCodeCopy.setChangedDate(persistedCode.getChangedDate());
+        applicationCodeCopy.setCreatedUser(persistedCode.getCreatedUser());
+        applicationCodeCopy.setApplicationListEntryList(null);
+        return applicationCodeCopy;
+    }
+
+    private static @NotNull ApplicationListEntry getApplicationListEntry(
+            ApplicationListEntry persistedEntry,
+            ApplicationList persistedList,
+            ApplicationCode applicationCodeCopy) {
+        ApplicationListEntry entryCopy = new ApplicationListEntry();
+        entryCopy.setId(persistedEntry.getId());
+        entryCopy.setUuid(persistedEntry.getUuid());
+        entryCopy.setVersion(persistedEntry.getVersion());
+        entryCopy.setApplicationList(persistedList);
+        entryCopy.setApplicationCode(applicationCodeCopy);
+        entryCopy.setApplicationListEntryWording(persistedEntry.getApplicationListEntryWording());
+        entryCopy.setEntryRescheduled(persistedEntry.getEntryRescheduled());
+        entryCopy.setSequenceNumber(persistedEntry.getSequenceNumber());
+        entryCopy.setLodgementDate(persistedEntry.getLodgementDate());
+        entryCopy.setCreatedUser(persistedEntry.getCreatedUser());
+        entryCopy.setAccountNumber(persistedEntry.getAccountNumber());
+        entryCopy.setCaseReference(persistedEntry.getCaseReference());
+        entryCopy.setBulkUpload(persistedEntry.getBulkUpload());
+        entryCopy.setRetryCount(persistedEntry.getRetryCount());
+        entryCopy.setTcepStatus(persistedEntry.getTcepStatus());
+        entryCopy.setNotes(persistedEntry.getNotes());
+        return entryCopy;
+    }
+
     private ApplicationCode buildApplicationCode(String code) {
         ApplicationCode applicationCode = new ApplicationCode();
         applicationCode.setCode(code);
@@ -999,25 +1096,5 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         applicationCode.setChangedDate(OffsetDateTime.now());
         applicationCode.setCreatedUser("email");
         return applicationCode;
-    }
-
-    private void saveResolution(ApplicationListEntry entry, String resultCode) {
-        ResolutionCode code = new ResolutionCode();
-        code.setResultCode(resultCode);
-        code.setTitle(resultCode + " title");
-        code.setWording(resultCode + " wording");
-        code.setLegislation("Test legislation");
-        code.setStartDate(LocalDate.now());
-        code.setChangedBy(1L);
-        code.setChangedDate(OffsetDateTime.now());
-        code = resolutionCodeRepository.saveAndFlush(code);
-
-        AppListEntryResolution entryResolution = new AppListEntryResolution();
-        entryResolution.setApplicationList(entry);
-        entryResolution.setResolutionCode(code);
-        entryResolution.setResolutionWording(resultCode + " wording");
-        entryResolution.setResolutionOfficer("Test officer");
-
-        appListEntryResolutionRepository.saveAndFlush(entryResolution);
     }
 }
