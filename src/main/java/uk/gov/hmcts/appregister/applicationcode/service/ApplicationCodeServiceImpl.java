@@ -106,7 +106,8 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             (payload, success) -> {
                                 FeePair feePair =
                                         feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference());
+                                                success.getApplicationCode().getFeeReference(),
+                                                payload.getDate());
 
                                 AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
                                         result =
@@ -122,8 +123,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                                 ? feePair
                                                                                         .offsiteFee()
                                                                                 : null),
-                                                        applicationCodeMapper.toEntity(
-                                                                payloadForGet));
+                                                        success.getApplicationCode());
 
                                 log.debug(
                                         "Finish: Find Application for app code: {} date: {}",

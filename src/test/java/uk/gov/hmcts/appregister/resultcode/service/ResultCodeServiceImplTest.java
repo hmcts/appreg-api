@@ -23,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -120,28 +122,54 @@ public class ResultCodeServiceImplTest {
                         eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
     }
 
-    /**
-     * When multiple rows exist for (code,date), the service throws AppRegistryException with
-     * DUPLICATE_RESULT_CODE_FOUND.
-     */
     @Test
-    void findByCode_duplicate_throws() {
+    void findByCode_duplicate_prefersFirstRecord() {
         final String code = "DUP";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
         var r1 = new ResolutionCode();
         var r2 = new ResolutionCode();
+        var expectedDto = new ResultCodeGetDetailDto();
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(r1, r2));
+        when(mapper.toDetailDto(r1)).thenReturn(expectedDto);
 
-        AppRegistryException ex =
-                Assertions.assertThrows(
-                        AppRegistryException.class, () -> service.findByCode(code, date));
-        Assertions.assertEquals(ResultCodeError.DUPLICATE_RESULT_CODE_FOUND, ex.getCode());
+        ResultCodeGetDetailDto actual = service.findByCode(code, date);
+        Assertions.assertSame(expectedDto, actual);
 
         verify(auditOperationService)
                 .processAudit(
                         eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+    }
+
+    @Test
+    void findByCode_auditsResolvedEntity() {
+        final String code = "RC123";
+        final LocalDate date = LocalDate.parse("2025-01-01");
+
+        var entity = new ResolutionCode();
+        entity.setResultCode(code);
+        var expectedDto = new ResultCodeGetDetailDto();
+        when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
+                .thenReturn(List.of(entity));
+        when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        ResultCodeServiceImpl localService =
+                new ResultCodeServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        mapper,
+                        pageMapper,
+                        Clock.fixed(Instant.parse("2024-10-05T10:15:30Z"), ZoneId.of("UTC")),
+                        ZoneId.of("Europe/London"));
+
+        ResultCodeGetDetailDto actual = localService.findByCode(code, date);
+
+        Assertions.assertSame(expectedDto, actual);
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
     }
 
     /**
@@ -224,5 +252,20 @@ public class ResultCodeServiceImplTest {
         verify(auditOperationService)
                 .processAudit(
                         eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }

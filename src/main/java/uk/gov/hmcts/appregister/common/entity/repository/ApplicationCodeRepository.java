@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 
 /**
  * Repository interface for managing ApplicationCode entities.
@@ -27,12 +26,15 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
             """
             SELECT c
             FROM ApplicationCode c
-            WHERE LOWER(c.code) LIKE CONCAT('%', LOWER(CAST(:applicationCode  AS string)),  '%') ESCAPE '\\'
+            WHERE LOWER(c.code) = LOWER(CAST(:applicationCode AS string))
               AND c.startDate <= :dateTime
               AND (c.endDate IS NULL OR c.endDate >= :dateTime)
-
+            ORDER BY CASE WHEN c.endDate IS NULL THEN 0 ELSE 1 END,
+                     c.endDate DESC,
+                     c.startDate DESC,
+                     c.id DESC
             """)
-    List<ApplicationCode> findByCodeAndDate(@LikeParam String applicationCode, LocalDate dateTime);
+    List<ApplicationCode> findByCodeAndDate(String applicationCode, LocalDate dateTime);
 
     /**
      * Finds all ApplicationCode entities with an ID greater than or equal to the specified value.
@@ -46,7 +48,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
     /**
      * Retrieve a page of active Application Codes filtered by code/title (case-insensitive).
      *
-     * <p>Active if: c.startDate < :date AND (c.endDate IS NULL OR c.endDate >= :date)
+     * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
      * @param code optional partial code filter (case-insensitive)
      * @param title optional partial title filter (case-insensitive)
@@ -60,7 +62,7 @@ public interface ApplicationCodeRepository extends JpaRepository<ApplicationCode
         FROM ApplicationCode c
         WHERE (:code IS NULL OR LOWER(c.code)  LIKE CONCAT('%', LOWER( CAST(:code AS string)), '%')  ESCAPE '\\')
           AND (:title IS NULL OR LOWER(c.title) LIKE CONCAT('%', LOWER( CAST(:title AS string)), '%')  ESCAPE '\\')
-          AND c.startDate < :date
+          AND c.startDate <= :date
           AND (c.endDate IS NULL OR c.endDate >= :date)
         """)
     Page<ApplicationCode> search(

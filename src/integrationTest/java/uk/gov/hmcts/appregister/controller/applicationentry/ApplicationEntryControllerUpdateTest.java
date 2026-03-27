@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -188,6 +189,54 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         "1",
                         AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getType().name(),
                         AppListEntryAuditOperation.UPDATE_APP_ENTRY_LIST.getEventName()));
+    }
+
+    @Test
+    public void
+            givenOverlappingActiveApplicationCodesAndFees_whenUpdateListEntry_thenPreferNullEndDateRecords()
+                    throws Exception {
+        LocalDate today = LocalDate.now();
+        String applicationCodeValue = "ZZ90002";
+        String feeReference = "ZZ2.1";
+
+        saveActiveApplicationCode(
+                applicationCodeValue,
+                feeReference,
+                today.plusDays(30),
+                "Fallback overlapping application code");
+        final var preferredCode =
+                saveActiveApplicationCode(
+                        applicationCodeValue, feeReference, null, "Preferred application code");
+
+        saveActiveFee(
+                feeReference,
+                "Fallback overlapping fee",
+                BigDecimal.valueOf(222),
+                false,
+                today.plusDays(30));
+        final var preferredFee =
+                saveActiveFee(feeReference, "Preferred fee", BigDecimal.valueOf(111), false, null);
+
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setApplicationCode(applicationCodeValue);
+        entryUpdateDto.setHasOffsiteFee(false);
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        var tokenGenerator = createAdminToken();
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(200);
+
+        EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        Assertions.assertEquals(
+                preferredCode.getId(), getSelectedApplicationCodeId(updatedDto.getId()));
+        Assertions.assertEquals(
+                preferredFee.getId(), getSelectedFees(updatedDto.getId()).getFirst().getId());
     }
 
     @Test

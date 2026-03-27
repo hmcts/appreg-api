@@ -94,21 +94,19 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             code,
                             date);
 
-                    StandardApplicantGetDetailDto payloadForGet =
+                    return Optional.of(
                             validator.validate(
                                     PayloadForGet.builder().date(date).code(code).build(),
-                                    (id, standardApplicant) ->
-                                            mapper.toReadGetDto(standardApplicant));
+                                    (id, standardApplicant) -> {
+                                        log.debug(
+                                                "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
+                                                code,
+                                                date);
 
-                    log.debug(
-                            "Finish: Find Standard Applicant By Code for: app code: {} date: {}",
-                            code,
-                            date);
-
-                    AuditableResult<StandardApplicantGetDetailDto, StandardApplicant> result =
-                            new AuditableResult<>(payloadForGet, mapper.toEntity(code, date));
-
-                    return Optional.of(result);
+                                        return new AuditableResult<>(
+                                                mapper.toReadGetDto(standardApplicant),
+                                                standardApplicant);
+                                    }));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

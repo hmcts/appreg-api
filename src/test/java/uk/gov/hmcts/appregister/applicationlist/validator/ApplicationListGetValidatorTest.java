@@ -5,14 +5,17 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,16 +29,25 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListGetValidatorTest {
 
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationListGetValidator validator;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+    }
 
     private enum Field {
         COURT,
@@ -63,7 +75,7 @@ public class ApplicationListGetValidatorTest {
         ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn("CODE1");
 
-        when(courtHouseRepository.findActiveCourts("CODE1")).thenReturn(List.of());
+        when(courtHouseRepository.findActiveCourts("CODE1", TODAY_UK)).thenReturn(List.of());
 
         // expect
         assertThatThrownBy(() -> validator.validate(dto))
@@ -72,19 +84,18 @@ public class ApplicationListGetValidatorTest {
     }
 
     @Test
-    void create_multipleCourtsReturnedFromRepository_throwsAppRegException() {
+    void create_multipleCourtsReturnedFromRepository_prefersFirstCourt() {
         // given
         ApplicationListGetFilterDto dto = mock(ApplicationListGetFilterDto.class);
         when(dto.getCourtLocationCode()).thenReturn("DUPE");
 
         NationalCourtHouse c1 = new NationalCourtHouse();
         NationalCourtHouse c2 = new NationalCourtHouse();
-        when(courtHouseRepository.findActiveCourts("DUPE")).thenReturn(List.of(c1, c2));
+        when(courtHouseRepository.findActiveCourts("DUPE", TODAY_UK)).thenReturn(List.of(c1, c2));
 
-        // expect
-        assertThatThrownBy(() -> validator.validate(dto))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Multiple courts found");
+        ListLocationValidationSuccess success = validator.validate(dto, (input, result) -> result);
+
+        Assertions.assertSame(c1, success.getNationalCourtHouse());
     }
 
     @Test
@@ -166,7 +177,7 @@ public class ApplicationListGetValidatorTest {
         @Test
         void valid_whenCourtLocationPresent_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode(), TODAY_UK))
                     .thenReturn(List.of(new NationalCourtHouse()));
             assertDoesNotThrow(() -> validator.validate(appList));
         }
@@ -174,7 +185,7 @@ public class ApplicationListGetValidatorTest {
         @Test
         void valid_whenCourtLocationPresentWithCallback_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode(), TODAY_UK))
                     .thenReturn(List.of(new NationalCourtHouse()));
 
             BiFunction<ApplicationListGetFilterDto, ListLocationValidationSuccess, ?> callback =
