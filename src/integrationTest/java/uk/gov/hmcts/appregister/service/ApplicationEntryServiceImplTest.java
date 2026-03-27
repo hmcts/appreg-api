@@ -1020,7 +1020,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.setApplicationCode("AD99001");
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setWordingFields(null);
-        entryCreateDto.setHasOffsiteFee(true);
+        entryCreateDto.setHasOffsiteFee(false);
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -1065,7 +1065,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             "Request to copy documents",
                             List.of(),
-                            2);
+                            1);
                 });
         return response.getPayload().getId();
     }
