@@ -72,7 +72,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        CARDIFF_START.toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
@@ -115,7 +115,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        BRISTOL_START.toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
