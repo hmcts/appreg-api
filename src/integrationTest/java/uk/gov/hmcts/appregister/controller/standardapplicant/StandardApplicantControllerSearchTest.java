@@ -24,6 +24,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -313,7 +315,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     public void
             givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturnPreferredRecord()
                     throws Exception {
-        String code = "SA-NULL-FIRST";
+        String code = "SANULL001";
         LocalDate queryDate = LocalDate.now();
         saveStandardApplicant(
                 code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
@@ -344,7 +346,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     public void
             givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
                     throws Exception {
-        String code = "SA-NULL-FIRST";
+        String code = "SANULL001";
         LocalDate activeDate = LocalDate.now();
         saveStandardApplicant(
                 code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
@@ -1434,18 +1436,26 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     private void saveStandardApplicant(
-            String code, String name, LocalDate startDate, LocalDate endDate) {
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
-        standardApplicant.setApplicantCode(code);
-        standardApplicant.setName(name);
-        standardApplicant.setApplicantTitle(null);
-        standardApplicant.setApplicantForename1(null);
-        standardApplicant.setApplicantForename2(null);
-        standardApplicant.setApplicantForename3(null);
-        standardApplicant.setApplicantSurname(null);
-        standardApplicant.setApplicantStartDate(startDate);
-        standardApplicant.setApplicantEndDate(endDate);
-        persistance.save(standardApplicant);
+            String code, String name, LocalDate startDate, LocalDate endDate) throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            standardApplicant.setApplicantCode(code);
+            standardApplicant.setName(name);
+            standardApplicant.setApplicantTitle(null);
+            standardApplicant.setApplicantForename1(null);
+            standardApplicant.setApplicantForename2(null);
+            standardApplicant.setApplicantForename3(null);
+            standardApplicant.setApplicantSurname(null);
+            standardApplicant.setApplicantStartDate(startDate);
+            standardApplicant.setApplicantEndDate(endDate);
+            persistance.save(standardApplicant);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Override
