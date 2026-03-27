@@ -350,6 +350,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "listId", source = "projection.listId")
     @Mapping(target = "sequenceNumber", source = "projection.sequenceNumber")
     @Mapping(target = "resulted", source = "resolutionCode")
+    @Mapping(target = "accountNumber", source = "accountReference")
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
