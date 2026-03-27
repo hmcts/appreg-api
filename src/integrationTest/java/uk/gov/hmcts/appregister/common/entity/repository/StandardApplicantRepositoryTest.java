@@ -176,7 +176,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
         transactionalUnitOfWork.inTransaction(
                 () -> {
                     LocalDate activeDate = LocalDate.now();
-                    String code = "SA-BOUNDARY";
+                    String code = "SABOUND001";
 
                     StandardApplicant startsTodayApplicant =
                             new StandardApplicantTestData().someComplete();
