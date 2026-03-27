@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
@@ -64,6 +65,7 @@ public class DatabasePersistance {
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+
 
     public ApplicationCode save(ApplicationCode data) {
 
