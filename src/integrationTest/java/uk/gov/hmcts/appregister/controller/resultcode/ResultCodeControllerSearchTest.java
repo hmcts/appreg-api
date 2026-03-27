@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -42,6 +45,10 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     private static final String AUTH_CODE = "AUTH";
     private static final String AUTH_TITLE = "Authorised";
     private static final String CASE_CODE = "CASE";
+    private static final String DUPLICATE_CODE = "DUPTST01";
+    private static final String DUPLICATE_TITLE_1 = "Duplicate Entry 1";
+    private static final String DUPLICATE_TITLE_2 = "Duplicate Entry 2";
+    private static final LocalDate DUPLICATE_END_DATE = LocalDate.of(2099, 1, 1);
 
     private static final LocalDate SEED_START = LocalDate.of(2016, 1, 1);
     private static final LocalDate ACTIVE_DAY = LocalDate.of(2025, 1, 1);
@@ -166,6 +173,8 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
     @Test
     void givenDuplicateActiveRows_whenGetResultCodeByCodeAndDate_thenReturnsDeterministicRow()
             throws Exception {
+        createDuplicateActiveRows();
+
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -174,19 +183,22 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
 
         Response resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/DUP99?date=" + ACTIVE_DAY), token);
+                        getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_CODE + "?date=" + ACTIVE_DAY),
+                        token);
 
         resp.then().statusCode(200);
 
         var dto = resp.as(ResultCodeGetDetailDto.class);
-        assertThat(dto.getResultCode()).isEqualTo("DUP99");
-        assertThat(dto.getTitle()).isEqualTo("Duplicate Entry 2");
+        assertThat(dto.getResultCode()).isEqualTo(DUPLICATE_CODE);
+        assertThat(dto.getTitle()).isEqualTo(DUPLICATE_TITLE_2);
         assertThat(dto.getEndDate().isPresent()).isFalse();
     }
 
     @Test
     void givenDuplicateActiveRows_whenGetResultCodes_thenCallerSortControlsPageOrder()
             throws Exception {
+        createDuplicateActiveRows();
+
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -200,16 +212,16 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         List.of("title,asc"),
                         getLocalUrl(WEB_CONTEXT),
                         token,
-                        new ResultCodeFilter(Optional.of("DUP99"), Optional.empty()),
+                        new ResultCodeFilter(Optional.of(DUPLICATE_CODE), Optional.empty()),
                         new OpenApiPageMetaData());
 
         resp.then().statusCode(200);
 
         var page = resp.as(ResultCodePage.class);
         assertThat(page.getContent()).hasSize(2);
-        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo("DUP99");
-        assertThat(page.getContent().getFirst().getTitle()).isEqualTo("Duplicate Entry 1");
-        assertThat(page.getContent().get(1).getTitle()).isEqualTo("Duplicate Entry 2");
+        assertThat(page.getContent().getFirst().getResultCode()).isEqualTo(DUPLICATE_CODE);
+        assertThat(page.getContent().getFirst().getTitle()).isEqualTo(DUPLICATE_TITLE_1);
+        assertThat(page.getContent().get(1).getTitle()).isEqualTo(DUPLICATE_TITLE_2);
     }
 
     @Test
@@ -709,5 +721,25 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
             }
             return rs;
         }
+    }
+
+    private void createDuplicateActiveRows() {
+        persistance.save(
+                createResolutionCode(
+                        DUPLICATE_CODE, DUPLICATE_TITLE_1, SEED_START, DUPLICATE_END_DATE));
+        persistance.save(createResolutionCode(DUPLICATE_CODE, DUPLICATE_TITLE_2, SEED_START, null));
+    }
+
+    private ResolutionCode createResolutionCode(
+            String code, String title, LocalDate startDate, LocalDate endDate) {
+        ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setResultCode(code);
+        resolutionCode.setTitle(title);
+        resolutionCode.setWording("Seeded duplicate wording");
+        resolutionCode.setStartDate(startDate);
+        resolutionCode.setEndDate(endDate);
+        resolutionCode.setChangedBy(1L);
+        resolutionCode.setChangedDate(OffsetDateTime.now(ZoneOffset.UTC));
+        return resolutionCode;
     }
 }
