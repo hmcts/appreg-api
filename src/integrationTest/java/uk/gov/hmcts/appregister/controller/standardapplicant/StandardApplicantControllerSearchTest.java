@@ -150,7 +150,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         TableNames.STANDARD_APPLICANTS,
                         "standard_applicant_start_date",
                         null,
-                        LocalDate.now().minusDays(1).toString(),
+                        LocalDate.now().toString(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
