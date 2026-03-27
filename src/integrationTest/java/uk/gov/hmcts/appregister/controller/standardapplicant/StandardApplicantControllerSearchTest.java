@@ -632,7 +632,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         Mockito.reset(clock);
 
-        when(clock.instant()).thenReturn(Instant.now().minus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(Instant.now().minus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
 
