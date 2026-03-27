@@ -784,25 +784,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         return persistance.save(applicationCode);
     }
 
-    public ApplicationListEntry createApplicationListEntry(
-            ApplicationList list, ApplicationCode applicationCode, String accountNumber) {
-        ApplicationListEntry entry = new ApplicationListEntry();
-        entry.setApplicationList(list);
-        entry.setApplicationCode(applicationCode);
-        entry.setApplicationListEntryWording("Test entry wording");
-        entry.setEntryRescheduled("N");
-        entry.setSequenceNumber((short) 1);
-        entry.setLodgementDate(LocalDate.now());
-        entry.setCreatedUser("email");
-        entry.setAccountNumber(accountNumber);
-        entry.setCaseReference("CASE123");
-        entry.setBulkUpload("N");
-        entry.setRetryCount("0");
-        entry.setNotes("Test notes");
-        entry.setTcepStatus("NW");
-        return persistance.save(entry);
-    }
-
     public void saveResolutions(ApplicationListEntry entry, String... resultCodes) {
         ApplicationListEntry currentEntry = entry;
         for (String resultCode : resultCodes) {

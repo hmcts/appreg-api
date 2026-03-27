@@ -846,7 +846,11 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
         ApplicationList list = createOpenApplicationList();
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
-        ApplicationListEntry entry = createApplicationListEntry(list, applicationCode, "ACC123");
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber("ACC123");
+        entry = persistance.save(entry);
 
         saveResolutions(entry, "RC1", "RC2");
 
