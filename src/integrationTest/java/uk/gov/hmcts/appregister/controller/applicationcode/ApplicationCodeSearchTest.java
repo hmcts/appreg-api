@@ -7,9 +7,12 @@ import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,14 +23,21 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
@@ -340,30 +350,37 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     @StabilityTest
     public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
             throws Exception {
-        // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
-        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-        String id = APPCODE_CODE;
+        String id = "ACMOFF001";
+        String feeReference = "TSTMAIN01";
+        LocalDate queryDate = LocalDate.of(2025, 1, 1);
+
+        saveApplicationCodeWithFees(
+                id,
+                feeReference,
+                queryDate.minusDays(10),
+                queryDate.minusDays(20),
+                queryDate.plusDays(10));
+
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse("2014-07-25T00:00Z")),
+                                WEB_CONTEXT + "/" + id,
+                                queryDate.atStartOfDay().atOffset(ZoneOffset.UTC)),
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
 
         ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
 
-        // assert
-        ApplicationCodeGetDetailDto applicationCodeDto =
-                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
-
-        assertApplicationCode(response, applicationCodeDto);
+        assertEquals(id, response.getApplicationCode());
+        assertEquals("Copy documents (electronic)", response.getTitle());
+        assertEquals(FEE_DESCRIPTION, response.getFeeDescription().get());
+        assertEquals(5000L, response.getFeeAmount().get().getValue());
+        Assertions.assertFalse(response.getOffsiteFeeAmount().isPresent());
+        assertEquals(JsonNullable.of(feeReference), response.getFeeReference());
 
         // assert the audit log message
         assertTrue(
@@ -1371,6 +1388,53 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     private String getExpectedLog(String event, String action, OperationStatus operationStatus) {
         return "%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*\\R-p_messagestatus=%s\\R-p_messagecontent=.*"
                 .formatted(event, action, operationStatus.getStatus());
+    }
+
+    private void saveApplicationCodeWithFees(
+            String code,
+            String feeReference,
+            LocalDate applicationCodeStartDate,
+            LocalDate mainFeeStartDate,
+            LocalDate offsiteFeeStartDate)
+            throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            Fee mainFee = new FeeTestData().someComplete();
+            mainFee.setReference(feeReference);
+            mainFee.setDescription(FEE_DESCRIPTION);
+            mainFee.setAmount(BigDecimal.valueOf(50));
+            mainFee.setOffsite(false);
+            mainFee.setStartDate(mainFeeStartDate);
+            mainFee.setEndDate(null);
+            persistance.save(mainFee);
+
+            Fee offsiteFee = new FeeTestData().someComplete();
+            offsiteFee.setReference(feeReference);
+            offsiteFee.setDescription(OFFSITE_FEE_DESCRIPTION);
+            offsiteFee.setAmount(BigDecimal.valueOf(70));
+            offsiteFee.setOffsite(true);
+            offsiteFee.setStartDate(offsiteFeeStartDate);
+            offsiteFee.setEndDate(null);
+            persistance.save(offsiteFee);
+
+            ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+            applicationCode.setCode(code);
+            applicationCode.setTitle("Copy documents (electronic)");
+            applicationCode.setWording(
+                    "Request for copy documents on computer disc or in electronic form");
+            applicationCode.setFeeReference(feeReference);
+            applicationCode.setFeeDue(YesOrNo.YES);
+            applicationCode.setRequiresRespondent(YesOrNo.NO);
+            applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+            applicationCode.setStartDate(applicationCodeStartDate);
+            applicationCode.setEndDate(null);
+            persistance.save(applicationCode);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     /**
