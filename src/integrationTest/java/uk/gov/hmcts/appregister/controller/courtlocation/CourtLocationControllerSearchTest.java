@@ -144,7 +144,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     @Test
     void givenDuplicateCourtLocations_whenGetCourtLocationByCodeAndDate_thenNewestRecordWins()
             throws Exception {
-        String code = "COURT-NULL-FIRST";
+        String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now();
         saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
         saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
@@ -309,7 +309,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     @Test
     void givenDuplicateCourtLocations_whenGetCourtLocations_thenCallerSortControlsPageOrder()
             throws Exception {
-        String code = "COURT-NULL-FIRST";
+        String code = "CRTNUL001";
         LocalDate queryDate = LocalDate.now();
         saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
         saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
