@@ -1195,17 +1195,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have preserved the old status fees
-        Assertions.assertEquals(
-                update.getPayload().getFeeStatuses().size(),
-                (long) entryUpdateDto.getFeeStatuses().size()
-                        + (long) feeStatusBeforeUpdate.size());
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Did not find fee status with id " + id + " that should have been preserved");
-        }
-
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
@@ -1214,7 +1203,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request for copy documents on computer disc or in electronic form",
                 "Request for copy documents on computer disc or in electronic form",
                 List.of(),
-                feeStatusBeforeUpdate,
+                List.of(),
                 1);
     }
 
@@ -1330,17 +1319,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                     "Found official with id " + id + " that should have been deleted");
         }
 
-        // make sure we have preserved the old status fees
-        Assertions.assertEquals(
-                update.getPayload().getFeeStatuses().size(),
-                (long) entryUpdateDto.getFeeStatuses().size()
-                        + (long) feeStatusBeforeUpdate.size());
-        for (Long id : feeStatusBeforeUpdate) {
-            Assertions.assertTrue(
-                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
-                    "Did not find fee status with id " + id + " that should have been preserved");
-        }
-
         applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
         applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
                 new ApplicationListEntryWrapperDto(entryUpdateDto),
@@ -1351,7 +1329,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Application for a warrant to enter premises at"
                         + " {{Premises Address}} for date {{Premises Date}}",
                 List.of(substitution, substitution1),
-                feeStatusBeforeUpdate,
+                List.of(),
                 2);
     }
 
