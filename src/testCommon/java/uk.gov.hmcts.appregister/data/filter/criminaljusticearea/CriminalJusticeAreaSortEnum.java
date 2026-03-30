@@ -2,43 +2,55 @@ package uk.gov.hmcts.appregister.data.filter.criminaljusticearea;
 
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
-import uk.gov.hmcts.appregister.data.filter.PrimitiveDataGenerator;
-import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToSort;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDataDescriptor;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.generator.PrimitiveDataGenerator;
+import uk.gov.hmcts.appregister.data.filter.meta.GenerateAccordingToSort;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDataDescriptor;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDescriptorEnum;
 
-public enum CriminalJusticeAreaSortEnum implements SortDescriptorEnum<CriminalJusticeArea> {
+/**
+ * An enumeration that allows us to setup sort for the criminal justice endpoint.
+ */
+public enum CriminalJusticeAreaSortEnum implements SortMetaDescriptorEnum<CriminalJusticeArea> {
+    CODE(
+            SortMetaDataDescriptor.<CriminalJusticeArea>builder()
+                    .sortableOperationEnum(CriminalJusticeSortFieldEnum.CODE)
+                    .sortableValueFunction(CriminalJusticeArea::getCode)
+                    .defaultSort(true)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<CriminalJusticeArea>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        CriminalJusticeArea keyable,
+                                        SortMetaDataDescriptor<CriminalJusticeArea> descriptor) {
+                                    keyable.setCode(PrimitiveDataGenerator.generate(2));
+                                }
+                            })
+                    .build()),
+    TITLE(
+            SortMetaDataDescriptor.<CriminalJusticeArea>builder()
+                    .sortableOperationEnum(CriminalJusticeSortFieldEnum.DESCRIPTION)
+                    .sortableValueFunction(CriminalJusticeArea::getDescription)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<CriminalJusticeArea>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        CriminalJusticeArea keyable,
+                                        SortMetaDataDescriptor<CriminalJusticeArea> descriptor) {
+                                    keyable.setDescription(PrimitiveDataGenerator.generate(35));
+                                }
+                            })
+                    .build());
 
-    CODE(SortDataDescriptor.<CriminalJusticeArea>builder()
-        .sortableOperationEnum(CriminalJusticeSortFieldEnum.CODE)
-        .sortableValueFunction(CriminalJusticeArea::getCode).defaultSort(true)
-        .sortGenerator(new GenerateAccordingToSort<CriminalJusticeArea>() {
-            @Override
-            public void apply(int count, CriminalJusticeArea keyable, SortDataDescriptor<CriminalJusticeArea> descriptor) {
-                keyable.setCode(PrimitiveDataGenerator.generate(2));
-            }
-        }).build()),
-    TITLE(SortDataDescriptor.<CriminalJusticeArea>builder()
-              .sortableOperationEnum(CriminalJusticeSortFieldEnum.DESCRIPTION)
-              .sortableValueFunction(CriminalJusticeArea::getDescription)
-              .sortGenerator(new GenerateAccordingToSort<CriminalJusticeArea>() {
-                  @Override
-                  public void apply(int count, CriminalJusticeArea keyable, SortDataDescriptor<CriminalJusticeArea> descriptor) {
-                      keyable.setDescription(PrimitiveDataGenerator.generate(35));
-                  }
-              }).build());
+    private SortMetaDataDescriptor<CriminalJusticeArea> sortDataDescriptor;
 
-    private SortDataDescriptor<CriminalJusticeArea> sortDataDescriptor;
-
-    CriminalJusticeAreaSortEnum(SortDataDescriptor<CriminalJusticeArea> sortDataDescriptor) {
+    CriminalJusticeAreaSortEnum(SortMetaDataDescriptor<CriminalJusticeArea> sortDataDescriptor) {
         this.sortDataDescriptor = sortDataDescriptor;
-
     }
 
     @Override
-    public SortDataDescriptor<CriminalJusticeArea> getDescriptor() {
+    public SortMetaDataDescriptor<CriminalJusticeArea> getDescriptor() {
         return sortDataDescriptor;
     }
-
-
 }

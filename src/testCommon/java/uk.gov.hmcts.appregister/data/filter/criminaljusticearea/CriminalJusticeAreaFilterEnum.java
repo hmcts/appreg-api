@@ -1,52 +1,54 @@
 package uk.gov.hmcts.appregister.data.filter.criminaljusticearea;
 
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
-import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
-import uk.gov.hmcts.appregister.data.filter.FilterDescriptionEnum;
 import uk.gov.hmcts.appregister.data.filter.FilterFieldData;
-import uk.gov.hmcts.appregister.data.filter.FilterFieldDataDescriptor;
-import uk.gov.hmcts.appregister.data.filter.FilterUtil;
-
+import uk.gov.hmcts.appregister.data.filter.generator.FilterFieldDataGenerator;
+import uk.gov.hmcts.appregister.data.filter.meta.FilterFieldDataMetaDescriptor;
+import uk.gov.hmcts.appregister.data.filter.meta.FilterMetaDescriptorEnum;
 
 /**
- * An enumeration that allows us to setup filtering for the application code endpoint.
+ * An enumeration that allows us to setup filtering for the criminal justice endpoint.
  */
-public enum CriminalJusticeAreaFilterEnum implements FilterDescriptionEnum<CriminalJusticeArea> {
-
+public enum CriminalJusticeAreaFilterEnum implements FilterMetaDescriptorEnum<CriminalJusticeArea> {
     CODE(
-        FilterFieldDataDescriptor.<CriminalJusticeArea>builder()
-            .queryName("code")
-            .partialSupport(false)
-            .caseInsensitive(true)
-            .filterGenerator((count, keyable, descriptor) -> {
-                FilterFieldData<CriminalJusticeArea> filterFieldData = FilterUtil.getFieldDataWithString(count, descriptor, keyable, 2);
-                keyable.setCode(filterFieldData.getKeyableValues().getValue().toString());
-                return filterFieldData;
-            })
-            .build()
-    ),
+            FilterFieldDataMetaDescriptor.<CriminalJusticeArea>builder()
+                    .queryName("code")
+                    .partialSupport(false)
+                    .caseInsensitive(true)
+                    .filterGenerator(
+                            (count, keyable, descriptor) -> {
+                                FilterFieldData<CriminalJusticeArea> filterFieldData =
+                                        FilterFieldDataGenerator.getFieldDataWithString(
+                                                count, descriptor, keyable, 2);
+                                keyable.setCode(
+                                        filterFieldData.getKeyableValues().getValue().toString());
+                                return filterFieldData;
+                            })
+                    .build()),
     NAME(
-        FilterFieldDataDescriptor.<CriminalJusticeArea>builder()
-            .queryName("description")
-            .partialSupport(true)
-            .caseInsensitive(true)
-            .filterGenerator((count, keyable, descriptor) -> {
-                FilterFieldData<CriminalJusticeArea> filterFieldData = FilterUtil.getFieldDataWithString(count,  descriptor, keyable, 35);
-                keyable.setDescription(filterFieldData.getKeyableValues().getValue().toString());
-                return filterFieldData;
-            })
-            .build()
-    );
+            FilterFieldDataMetaDescriptor.<CriminalJusticeArea>builder()
+                    .queryName("description")
+                    .partialSupport(true)
+                    .caseInsensitive(true)
+                    .filterGenerator(
+                            (count, keyable, descriptor) -> {
+                                FilterFieldData<CriminalJusticeArea> filterFieldData =
+                                        FilterFieldDataGenerator.getFieldDataWithString(
+                                                count, descriptor, keyable, 35);
+                                keyable.setDescription(
+                                        filterFieldData.getKeyableValues().getValue().toString());
+                                return filterFieldData;
+                            })
+                    .build());
 
-    private FilterFieldDataDescriptor filterFieldDataDescriptor;
+    private FilterFieldDataMetaDescriptor filterFieldDataDescriptor;
 
-    CriminalJusticeAreaFilterEnum(FilterFieldDataDescriptor filterFieldDataDescriptor) {
+    CriminalJusticeAreaFilterEnum(FilterFieldDataMetaDescriptor filterFieldDataDescriptor) {
         this.filterFieldDataDescriptor = filterFieldDataDescriptor;
-
     }
 
     @Override
-    public FilterFieldDataDescriptor getDescriptor() {
+    public FilterFieldDataMetaDescriptor getDescriptor() {
         return filterFieldDataDescriptor;
     }
 }

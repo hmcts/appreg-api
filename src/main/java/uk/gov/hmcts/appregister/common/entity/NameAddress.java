@@ -142,7 +142,6 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
         this.userName = user;
     }
 
-
     public boolean isApplicant() {
         return code != null && code == NameAddressCodeType.APPLICANT;
     }

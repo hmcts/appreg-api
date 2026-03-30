@@ -2,13 +2,11 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.time.LocalDate;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-
-import java.time.LocalDate;
 
 public class ResolutionCodeTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<
@@ -22,7 +20,7 @@ public class ResolutionCodeTestData
                 .ignore(field(ResolutionCode::getVersion))
                 .set(field(ResolutionCode::getStartDate), LocalDate.now().minusDays(10))
                 .set(field(ResolutionCode::getEndDate), LocalDate.now().plusDays(10))
-            .withSettings(settings)
+                .withSettings(settings)
                 .create();
     }
 }

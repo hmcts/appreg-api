@@ -9,8 +9,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.assertion.ConstraintAssertion;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
-import utils.ConstraintAssertion;
 
 public class SubstitutionDtoTest {
     private ObjectMapper objectMapper;

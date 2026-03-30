@@ -1,13 +1,9 @@
 package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
 import jakarta.persistence.EntityManager;
-
-import jakarta.persistence.PersistenceContext;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
@@ -72,8 +68,7 @@ public class DatabasePersistance {
 
     @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
-    @Autowired
-    private EntityManager entityManager;
+    @Autowired private EntityManager entityManager;
 
     public ApplicationCode save(ApplicationCode data) {
 

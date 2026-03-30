@@ -2,43 +2,56 @@ package uk.gov.hmcts.appregister.data.filter.courtlocation;
 
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
-import uk.gov.hmcts.appregister.data.filter.PrimitiveDataGenerator;
-import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToSort;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDataDescriptor;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.generator.PrimitiveDataGenerator;
+import uk.gov.hmcts.appregister.data.filter.meta.GenerateAccordingToSort;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDataDescriptor;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDescriptorEnum;
 
-public enum CourtLocationSortEnum implements SortDescriptorEnum<NationalCourtHouse> {
+/**
+ * An enumeration that allows us to setup sort for the court justice endpoint.
+ */
+public enum CourtLocationSortEnum implements SortMetaDescriptorEnum<NationalCourtHouse> {
+    CODE(
+            SortMetaDataDescriptor.<NationalCourtHouse>builder()
+                    .sortableOperationEnum(CourtLocationSortFieldMapper.CODE)
+                    .sortableValueFunction(NationalCourtHouse::getCourtLocationCode)
+                    .defaultSort(true)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<NationalCourtHouse>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        NationalCourtHouse keyable,
+                                        SortMetaDataDescriptor<NationalCourtHouse> descriptor) {
+                                    keyable.setCourtLocationCode(
+                                            PrimitiveDataGenerator.generate(10));
+                                }
+                            })
+                    .build()),
+    TITLE(
+            SortMetaDataDescriptor.<NationalCourtHouse>builder()
+                    .sortableOperationEnum(CourtLocationSortFieldMapper.TITLE)
+                    .sortableValueFunction(NationalCourtHouse::getName)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<NationalCourtHouse>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        NationalCourtHouse keyable,
+                                        SortMetaDataDescriptor<NationalCourtHouse> descriptor) {
+                                    keyable.setName(PrimitiveDataGenerator.generate());
+                                }
+                            })
+                    .build());
 
-    CODE(SortDataDescriptor.<NationalCourtHouse>builder()
-        .sortableOperationEnum(CourtLocationSortFieldMapper.CODE)
-        .sortableValueFunction(NationalCourtHouse::getCourtLocationCode).defaultSort(true)
-        .sortGenerator(new GenerateAccordingToSort<NationalCourtHouse>() {
-            @Override
-            public void apply(int count, NationalCourtHouse keyable, SortDataDescriptor<NationalCourtHouse> descriptor) {
-                keyable.setCourtLocationCode(PrimitiveDataGenerator.generate(10));
-            }
-        }).build()),
-    TITLE(SortDataDescriptor.<NationalCourtHouse>builder()
-              .sortableOperationEnum(CourtLocationSortFieldMapper.TITLE)
-              .sortableValueFunction(NationalCourtHouse::getName)
-              .sortGenerator(new GenerateAccordingToSort<NationalCourtHouse>() {
-                  @Override
-                  public void apply(int count, NationalCourtHouse keyable, SortDataDescriptor<NationalCourtHouse> descriptor) {
-                      keyable.setName(PrimitiveDataGenerator.generate());
-                  }
-              }).build());
+    private SortMetaDataDescriptor<NationalCourtHouse> sortDataDescriptor;
 
-    private SortDataDescriptor<NationalCourtHouse> sortDataDescriptor;
-
-    CourtLocationSortEnum(SortDataDescriptor<NationalCourtHouse> sortDataDescriptor) {
+    CourtLocationSortEnum(SortMetaDataDescriptor<NationalCourtHouse> sortDataDescriptor) {
         this.sortDataDescriptor = sortDataDescriptor;
-
     }
 
     @Override
-    public SortDataDescriptor<NationalCourtHouse> getDescriptor() {
+    public SortMetaDataDescriptor<NationalCourtHouse> getDescriptor() {
         return sortDataDescriptor;
     }
-
-
 }

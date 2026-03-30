@@ -2,43 +2,55 @@ package uk.gov.hmcts.appregister.data.filter.applicationcode;
 
 import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.data.filter.PrimitiveDataGenerator;
-import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToSort;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDataDescriptor;
-import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.generator.PrimitiveDataGenerator;
+import uk.gov.hmcts.appregister.data.filter.meta.GenerateAccordingToSort;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDataDescriptor;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDescriptorEnum;
 
-public enum ApplicationCodeSortEnum implements SortDescriptorEnum<ApplicationCode> {
+/**
+ * An enumeration that allows us to setup sort for the application code endpoint.
+ */
+public enum ApplicationCodeSortEnum implements SortMetaDescriptorEnum<ApplicationCode> {
+    CODE(
+            SortMetaDataDescriptor.<ApplicationCode>builder()
+                    .sortableOperationEnum(ApplicationCodeSortFieldEnum.CODE)
+                    .sortableValueFunction(ApplicationCode::getCode)
+                    .defaultSort(true)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<ApplicationCode>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        ApplicationCode keyable,
+                                        SortMetaDataDescriptor<ApplicationCode> descriptor) {
+                                    keyable.setCode(PrimitiveDataGenerator.generate(10));
+                                }
+                            })
+                    .build()),
+    TITLE(
+            SortMetaDataDescriptor.<ApplicationCode>builder()
+                    .sortableOperationEnum(ApplicationCodeSortFieldEnum.TITLE)
+                    .sortableValueFunction(ApplicationCode::getTitle)
+                    .sortGenerator(
+                            new GenerateAccordingToSort<ApplicationCode>() {
+                                @Override
+                                public void apply(
+                                        int count,
+                                        ApplicationCode keyable,
+                                        SortMetaDataDescriptor<ApplicationCode> descriptor) {
+                                    keyable.setTitle(PrimitiveDataGenerator.generate());
+                                }
+                            })
+                    .build());
 
-    CODE(SortDataDescriptor.<ApplicationCode>builder()
-        .sortableOperationEnum(ApplicationCodeSortFieldEnum.CODE)
-        .sortableValueFunction(ApplicationCode::getCode).defaultSort(true)
-        .sortGenerator(new GenerateAccordingToSort<ApplicationCode>() {
-            @Override
-            public void apply(int count, ApplicationCode keyable, SortDataDescriptor<ApplicationCode> descriptor) {
-                keyable.setCode(PrimitiveDataGenerator.generate(10));
-            }
-        }).build()),
-    TITLE(SortDataDescriptor.<ApplicationCode>builder()
-              .sortableOperationEnum(ApplicationCodeSortFieldEnum.TITLE)
-              .sortableValueFunction(ApplicationCode::getTitle)
-              .sortGenerator(new GenerateAccordingToSort<ApplicationCode>() {
-                  @Override
-                  public void apply(int count, ApplicationCode keyable, SortDataDescriptor<ApplicationCode> descriptor) {
-                      keyable.setTitle(PrimitiveDataGenerator.generate());
-                  }
-              }).build());
+    private SortMetaDataDescriptor<ApplicationCode> sortDataDescriptor;
 
-    private SortDataDescriptor<ApplicationCode> sortDataDescriptor;
-
-    ApplicationCodeSortEnum(SortDataDescriptor<ApplicationCode> sortDataDescriptor) {
+    ApplicationCodeSortEnum(SortMetaDataDescriptor<ApplicationCode> sortDataDescriptor) {
         this.sortDataDescriptor = sortDataDescriptor;
-
     }
 
     @Override
-    public SortDataDescriptor<ApplicationCode> getDescriptor() {
+    public SortMetaDataDescriptor<ApplicationCode> getDescriptor() {
         return sortDataDescriptor;
     }
-
-
 }

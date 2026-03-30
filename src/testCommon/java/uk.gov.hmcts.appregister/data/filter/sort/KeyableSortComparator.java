@@ -1,38 +1,44 @@
 package uk.gov.hmcts.appregister.data.filter.sort;
 
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-
 import java.util.Comparator;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.data.filter.meta.SortMetaDataDescriptor;
 
 /**
- * Sorts a list of keyable objects based on the sort descriptor column
- * against a keyable.
+ * Sorts a list of keyable objects based on the sort descriptor {@link SortMetaDataDescriptor}
+ * column against a keyable.
  */
-public class KeyableSortComparator implements Comparator<Keyable> {
-    private SortDataDescriptor descriptor;
+public class KeyableSortComparator<T extends Keyable> implements Comparator<T> {
+    private SortMetaDataDescriptor<T> sortDesciptor;
 
-    public int compare(Keyable o1, Keyable o2) {
+    public int compare(T o1, T o2) {
         // push nulls to the end of the list
         if (o1 == null || o2 == null) {
             return -1;
         }
 
-        Object value = descriptor.sortableValueFunction.apply(o1);
-        Object value2 = descriptor.sortableValueFunction.apply(o2);
+        Object value = sortDesciptor.getSortableValueFunction().apply(o1);
+        Object value2 = sortDesciptor.getSortableValueFunction().apply(o2);
 
         // simulate the tie breaker if the values are equal. The ids should never be
         if (value.equals(value2)) {
-            o1.getId().compareTo(o2.getId());
+            return o1.getId().compareTo(o2.getId());
         }
 
-        return ((Comparable<Object>)value).compareTo(value2);
+        // if the value implements comparable, use it.
+        if (value instanceof Comparable valCompare) {
+            return valCompare.compareTo(value2);
+        }
+
+        return 0;
     }
 
     /**
-     * Only one sort field is supported.
-     * @param descriptor The descriptor to set the sort field to.
+     * set the comparable to sort according to the descriptor.
+     *
+     * @param descriptor The descriptor to sort .
      */
-    public void setSortField(SortDataDescriptor descriptor) {
-        this.descriptor = descriptor;
+    public void setSortDescriptor(SortMetaDataDescriptor<T> descriptor) {
+        this.sortDesciptor = descriptor;
     }
 }

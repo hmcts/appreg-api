@@ -117,8 +117,8 @@ public class DatabaseReset {
         standardApplicantRepository.deleteAll(
                 standardApplicantRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
 
-        nationalCourtHouseRepository.deleteAll(nationalCourtHouseRepository
-                                                   .findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
+        nationalCourtHouseRepository.deleteAll(
+                nationalCourtHouseRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         dataAuditRepository.deleteAll();
     }
 

@@ -19,7 +19,13 @@ public class StrictLocalTimeSerializer extends JsonSerializer<LocalTime> {
         gen.writeString(timeString);
     }
 
-   public static String getStringForTime(LocalTime localTime) {
-       return localTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
-   }
+    /**
+     * gets a local time object in string format "HH:mm".
+     *
+     * @return The time based string representation.
+     */
+    /**/
+    public static String getStringForTime(LocalTime localTime) {
+        return localTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+    }
 }

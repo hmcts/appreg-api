@@ -2,14 +2,11 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.time.LocalDate;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
-
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-
-import java.time.LocalDate;
 
 public class StandardApplicantTestData
         implements uk.gov.hmcts.appregister.testutils.data.Persistable<

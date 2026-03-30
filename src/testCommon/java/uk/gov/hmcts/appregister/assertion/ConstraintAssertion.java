@@ -1,4 +1,4 @@
-package utils;
+package uk.gov.hmcts.appregister.assertion;
 
 import jakarta.validation.ConstraintViolation;
 import java.util.List;
