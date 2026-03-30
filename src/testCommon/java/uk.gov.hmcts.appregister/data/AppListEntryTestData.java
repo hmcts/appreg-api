@@ -48,10 +48,14 @@ public class AppListEntryTestData
     public ApplicationListEntry someComplete() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
-        return Instancio.of(ApplicationListEntry.class)
-                .ignore(field(AppListEntryFeeStatus::getId))
+        ApplicationListEntry applicationListEntry =  Instancio.of(ApplicationListEntry.class)
+                .ignore(field(ApplicationListEntry::getId))
                 .ignore(field(AppListEntryFeeStatus::getVersion))
                 .withSettings(settings)
                 .create();
+        applicationListEntry.setEntryRescheduled("Y");
+        applicationListEntry.setBulkUpload(("Y"));
+        applicationListEntry.setTcepStatus("");
+        return applicationListEntry;
     }
 }

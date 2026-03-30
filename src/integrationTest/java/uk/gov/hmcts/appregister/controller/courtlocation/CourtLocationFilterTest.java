@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.data.filter.courtlocation.CourtLocationSortEnum;
 import uk.gov.hmcts.appregister.data.filter.exception.FilterProcessingException;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
+import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractFilterAndSortControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestFilterEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.controller.RestSortEndpointDescription;
@@ -28,12 +29,15 @@ public class CourtLocationFilterTest extends AbstractFilterAndSortControllerTest
     protected Stream<RestFilterEndpointDescription<NationalCourtHouse>> getFilterDescriptions() throws Exception {
         // create the application code
         NationalCourtHouse nationalCourtHouse = new NationalCourtHouseData().someComplete();
+        nationalCourtHouse.setEndDate(null);
 
         // process the scenario
         FilterableScenario<NationalCourtHouse> scenario
             = FilterScenarioFactory.createFilterScenario(nationalCourtHouse,
-                                                         Arrays.asList(CourtLocationFilterEnum.values()));
+                                                         Arrays.asList(CourtLocationFilterEnum.values()),
+                                                         Arrays.asList(CourtLocationSortEnum.values()));
         scenario.getAllKeyable().stream().forEach(nc -> nc.setCourtType("CHOA"));
+
 
         // lets set the rest endpoint
         RestFilterEndpointDescription<NationalCourtHouse> restFilterDescription = new RestFilterEndpointDescription<>();
@@ -50,6 +54,7 @@ public class CourtLocationFilterTest extends AbstractFilterAndSortControllerTest
     protected Stream<RestSortEndpointDescription<NationalCourtHouse>> getSortDescriptions() throws Exception {
         // create the application code
         NationalCourtHouse nationalCourtHouse = new NationalCourtHouseData().someComplete();
+        nationalCourtHouse.setEndDate(null);
 
         // process the scenario
         List<NationalCourtHouse> nationalCourtHouses
@@ -62,7 +67,7 @@ public class CourtLocationFilterTest extends AbstractFilterAndSortControllerTest
         for (CourtLocationSortEnum courtLocationSortEnum
             : CourtLocationSortEnum.values()) {
             RestSortEndpointDescription<NationalCourtHouse> restFilterDescription = new RestSortEndpointDescription<>();
-            restFilterDescription.setUrl(getLocalUrl("application-codes"));
+            restFilterDescription.setUrl(getLocalUrl("court-locations"));
             restFilterDescription.setSortDescriptors(courtLocationSortEnum);
             restFilterDescription.setExpectedToBeGenerated(nationalCourtHouses);
             restFilterDescription.setAllAvailableSortDescriptors(Arrays.asList(CourtLocationSortEnum.values()));
@@ -73,18 +78,20 @@ public class CourtLocationFilterTest extends AbstractFilterAndSortControllerTest
     }
 
     @Override
-    protected boolean assertResponseInOrder(List<NationalCourtHouse> keyable, Response response, boolean exactMatch) {
+    protected boolean assertResponseInOrder(List<NationalCourtHouse> keyable, Response response) {
         CourtLocationPage page = response.as(CourtLocationPage.class);
-
-        if (exactMatch) {
-            Assertions.assertEquals(keyable.size(), page.getContent().size());
-        }
 
         for (int i = 0; i < keyable.size(); i++) {
             matchSummary(page, keyable.get(i).getCourtLocationCode());
         }
 
         return true;
+    }
+
+    @Override
+    protected boolean assertPageSize(int size, Response response) {
+        CourtLocationPage page = response.as(CourtLocationPage.class);
+        return size == page.getContent().size();
     }
 
     private  void matchSummary(CourtLocationPage page, String code) {
@@ -98,7 +105,7 @@ public class CourtLocationFilterTest extends AbstractFilterAndSortControllerTest
 
 
     @Override
-    protected void saveToDatabase(NationalCourtHouse keyable) {
-        this.persistance.save(keyable);
+    protected NationalCourtHouse saveToDatabase(NationalCourtHouse keyable) {
+        return this.persistance.save(keyable);
     }
 }

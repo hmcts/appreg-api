@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.data.filter;
 
 import lombok.RequiredArgsConstructor;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
 import uk.gov.hmcts.appregister.util.CopyUtil;
 
 import java.util.ArrayList;
@@ -10,6 +10,10 @@ import java.util.List;
 
 @RequiredArgsConstructor
 public class FilterScenarioFactory {
+
+    /** The n umber of records being generated. */
+    private static final int NUMBER_OF_RECORDS = 4;
+
     /**
      * gets the code using the full set of data descriptors. The scenario will
      * be generated with 2 records, one with the start values and one with the end values. These
@@ -20,20 +24,21 @@ public class FilterScenarioFactory {
      * @return The filterable data that has been genearted for the descriptors.
      */
     public static <T extends Keyable> FilterableScenario<T> createFilterScenario(T keyable,
-                                                                                 List<FilterDescriptionEnum<T>> descriptors) {
+                                                                                 List<FilterDescriptionEnum<T>> descriptors,
+                                                                                 List<SortDescriptorEnum<T>> sortDescriptorEnums) {
         FilterableScenario<T> scenario = new FilterableScenario<T>();
 
-        // setup the start
-        for (FilterDescriptionEnum enumDescriptor : descriptors) {
-            scenario.getStartData().add(enumDescriptor.getDescriptor().apply(keyable, OrderEnum.START));
+        for (int i =0; i < NUMBER_OF_RECORDS; i++) {
+            T copiedKey = (T) CopyUtil.deepClone(keyable);
+
+            List<FilterFieldData<T>> filterFieldDataLst = new ArrayList<>();
+            for (int j = 0; j < descriptors.size(); j++) {
+                filterFieldDataLst.add(descriptors.get(j).getDescriptor().apply(i, copiedKey));
+            }
+            scenario.add(filterFieldDataLst);
         }
 
-        T end = (T) CopyUtil.deepClone(keyable);
-
-        // setup the end
-        for (FilterDescriptionEnum descriptor : descriptors) {
-            scenario.getEndData().add(descriptor.getDescriptor().apply(end, OrderEnum.END));
-        }
+       scenario.setSortDescriptorEnums(sortDescriptorEnums);
 
         return scenario;
     }
@@ -46,16 +51,17 @@ public class FilterScenarioFactory {
     public static <T extends Keyable> List<T> createSort(T keyable,
         List<SortDescriptorEnum<T>> sortDescriptorEnums) {
         List<T> result = new ArrayList<>();
-        result.add(CopyUtil.deepClone(keyable));
-        applySort(result.getLast(), sortDescriptorEnums, OrderEnum.START);
-        result.add(CopyUtil.deepClone(keyable));
-        applySort(result.getLast(), sortDescriptorEnums, OrderEnum.END);
+        for (int i =0; i < NUMBER_OF_RECORDS; i++) {
+            result.add(CopyUtil.deepClone(keyable));
+            applySort(i, result.getLast(), sortDescriptorEnums);
+        }
+
         return result;
     }
 
-    private static <T extends Keyable> void applySort(T keyable, List<SortDescriptorEnum<T>> sortDescriptors, OrderEnum orderEnum) {
+    private static <T extends Keyable> void applySort(int count, T keyable, List<SortDescriptorEnum<T>> sortDescriptors) {
         for (SortDescriptorEnum<T> descriptorEnum : sortDescriptors) {
-            descriptorEnum.getDescriptor().getSortGenerator().apply(keyable, descriptorEnum.getDescriptor(), orderEnum);
+            descriptorEnum.getDescriptor().getSortGenerator().apply(count, keyable, descriptorEnum.getDescriptor());
         }
     }
 

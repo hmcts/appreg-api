@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
-import uk.gov.hmcts.appregister.common.entity.base.Identifiable;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
@@ -31,7 +30,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AuditEnabled(types = {CrudEnum.READ})
-public class CriminalJusticeArea implements Identifiable, Keyable {
+public class CriminalJusticeArea implements Keyable {
     @Id
     @Column(name = "cja_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cja_gen")

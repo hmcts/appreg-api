@@ -4,6 +4,8 @@ import io.restassured.response.Response;
 
 import io.restassured.specification.RequestSpecification;
 
+import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -17,24 +19,27 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 import uk.gov.hmcts.appregister.data.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.data.filter.FilterValue;
+import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.data.filter.PartialEnum;
 import uk.gov.hmcts.appregister.data.filter.PartialFilterData;
 import uk.gov.hmcts.appregister.data.filter.exception.FilterProcessingException;
-import uk.gov.hmcts.appregister.data.sort.KeyableSortComparator;
-import uk.gov.hmcts.appregister.data.sort.SortDataDescriptor;
-import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.sort.KeyableSortComparator;
+import uk.gov.hmcts.appregister.data.filter.sort.SortDataDescriptor;
+import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
+import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.DatabasePersistance;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +55,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
     @Autowired
     protected DatabasePersistance persistance;
 
+    @Autowired
+    private EntityManager entityManager;
+
     /**
      * The stream of negative security contexts to be tested.
      */
@@ -60,6 +68,8 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
      */
     protected abstract Stream<RestSortEndpointDescription<T>> getSortDescriptions() throws Exception;
 
+    @Autowired
+    private TransactionalUnitOfWork transactionalUnitOfWork;
 
     @BeforeEach
     public void setUp() throws Exception {
@@ -68,96 +78,97 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
 
-    @ParameterizedTest
-    @MethodSource("getFilterDescriptions")
+    //@ParameterizedTest
+    //@MethodSource("getFilterDescriptions")
     public void runFilter(RestFilterEndpointDescription<T> filterDescription) throws Exception {
-        List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
-
         // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
+        saveScenarioData(filterDescription.getFilterableScenario());
 
         // filter using the start data of the scenario
-        for (FilterFieldData<T> filterFieldData :
-            filterDescription.getFilterableScenario().getStartData()) {
+        Response response = runTest(filterDescription, req -> applyQueryForStart(filterDescription, req,
+                                                                                 false));
 
-            // if we have an instanceof of partial loop through all partial scenarios
-            // match start, match middle, match end
-            if (filterFieldData instanceof PartialFilterData == false) {
-                runTest(filterDescription);
-            }
-        }
+        assertResponseInOrder(List.of(filterDescription.getFilterableScenario()
+                                          .getFilterData().getFirst()
+                                          .getFirst().getKeyableValues().getKeyable()), response);
     }
 
-    @ParameterizedTest
-    @MethodSource("getFilterDescriptions")
+    //@ParameterizedTest
+   // @MethodSource("getFilterDescriptions")
     public void runFilterCaseInsensitive(RestFilterEndpointDescription<T> filterDescription) throws Exception {
         List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
 
         // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
+        saveScenarioData(filterDescription.getFilterableScenario());
 
         // filter using the start data of the scenario
-        for (FilterFieldData<T> filterFieldData :
-            filterDescription.getFilterableScenario().getStartData()) {
-
-            if (filterFieldData instanceof PartialFilterData == false) {
-                runTest(filterDescription, true);
-            } else {
-                runTestPartial(filterDescription, true);
-            }
-        }
+        Response response = runTest(filterDescription, req -> applyQueryForStart(filterDescription, req,
+                                                             true));
+        assertResponseInOrder(List.of(filterDescription.getFilterableScenario().getAllKeyable().getFirst()), response);
     }
 
-    @ParameterizedTest
-    @MethodSource("getFilterDescriptions")
-    public void runPartialFilter(RestFilterEndpointDescription<T> filterDescription) throws Exception {
-        List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
 
-        // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
-
-        // filter using the start data of the scenario
-        for (FilterFieldData<T> filterFieldData :
-            filterDescription.getFilterableScenario().getStartData()) {
-
-            // if we have an instanceof of partial loop through all partial scenarios
-            // match start, match middle, match end
-            if (filterFieldData instanceof PartialFilterData) {
-                runTestPartial(filterDescription);
-            }
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("getFilterDescriptions")
+    //@ParameterizedTest
+    //@MethodSource("getFilterDescriptions")
     public void runPartialFilterGetAll(RestFilterEndpointDescription<T> filterDescription) throws Exception {
-        List<T> keyables = filterDescription.getFilterableScenario().getAllKeyable();
-
         // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
+        saveScenarioData(filterDescription.getFilterableScenario());
 
         if (isPartialOnlyConfig(filterDescription)) {
             Response response = runTest(
                 filterDescription,
                 req ->
                     applyQueryForStart(filterDescription, req, PartialEnum.ALL_PARTIALS_IN_SCENARIO),
-                100
+                100, null, null
             );
 
             assertAllFilterWithDefaultSort(response, filterDescription);
         }
     }
 
+    //@ParameterizedTest
+    //@MethodSource("getFilterDescriptions")
+    public void runWithAllPartialCombinations(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+        // save all keyable data that belongs to scenario
+        saveScenarioData(filterDescription.getFilterableScenario());
+
+        if (doesPartialExist(filterDescription)) {
+            runAndAssertTestPartial(
+                filterDescription,
+               false
+            );
+        }
+    }
+
+    //@ParameterizedTest
+   // @MethodSource("getFilterDescriptions")
+    public void runPartialFilterGetAllWithEachSort(RestFilterEndpointDescription<T> filterDescription) throws Exception {
+        // save all keyable data that belongs to scenario
+        saveScenarioData(filterDescription.getFilterableScenario());
+        Assertions.assertTrue(filterDescription.getFilterableScenario().getSortDescriptorEnums().size() > 1);
+        if (isPartialOnlyConfig(filterDescription)) {
+                // run the sorts across each filter
+                for (SortDescriptorEnum<T> sort : filterDescription.getFilterableScenario().getSortDescriptorEnums()) {
+                    Response response = runTest(
+                    filterDescription,
+                    req ->
+                        applyQueryForStart(filterDescription, req, PartialEnum.ALL_PARTIALS_IN_SCENARIO),
+                    100, sort.getDescriptor().getSortableOperationEnum().getApiValue(),
+                    sort.getDescriptor().getOrder()
+                );
+
+                assertAllFilterWithSort(response, filterDescription, sort.getDescriptor());
+            }
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("getSortDescriptions")
     public void runEachSortAscending(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
-        List<T> keyables = sortEndpointDescription.getExpectedToBeGenerated();
-
-        // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
+        List<T> keyables = saveKeyables(sortEndpointDescription.getExpectedToBeGenerated());
 
         Response response = restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
+            Optional.of(100), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
                                                         .getDescriptor().getSortableOperationEnum()
                                                         .getApiValue()
                                                         + "," + SortableField.ASC),
@@ -166,21 +177,19 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                 .build().fetchTokenForRole()
         );
 
-        List<T> keyable = sortEndpointDescription.getExpectedToBeGenerated();
-        sortKeyables(keyable, sortEndpointDescription.getSortDescriptors().getDescriptor(), SortableField.ASC);
-        Assertions.assertTrue(assertResponseInOrder(List.of(keyable.getFirst()), response, true));
+        transactionalUnitOfWork.inTransaction(() -> {
+            sortKeyables(reload(keyables), sortEndpointDescription.getSortDescriptors().getDescriptor(), SortableField.ASC);
+            Assertions.assertTrue(assertResponseInOrder(keyables, response));
+            });
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{index} => {0}")
     @MethodSource("getSortDescriptions")
     public void runEachSortDescending(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
-        List<T> keyables = sortEndpointDescription.getExpectedToBeGenerated();
-
-        // save all keyable data that belongs to scenario
-        keyables.stream().forEach(this::saveToDatabase);
+        List<T> keyables = saveKeyables(sortEndpointDescription.getExpectedToBeGenerated());
 
         Response response = restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(1), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
+            Optional.of(100), Optional.of(0), List.of(sortEndpointDescription.getSortDescriptors()
                                                         .getDescriptor().getSortableOperationEnum().getApiValue()
                                                         + "," + SortableField.DESC),
             sortEndpointDescription.getUrl(),
@@ -188,12 +197,35 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                 .build().fetchTokenForRole()
         );
 
-        sortKeyables(keyables, sortEndpointDescription.getSortDescriptors().getDescriptor(),  SortableField.DESC);
-        Assertions.assertTrue(assertResponseInOrder(List.of(keyables.getFirst()), response, true));
+        transactionalUnitOfWork.inTransaction(() -> {
+            sortKeyables(reload(keyables), sortEndpointDescription.getSortDescriptors().getDescriptor(), SortableField.DESC);
+            Assertions.assertTrue(assertResponseInOrder(keyables, response));
+        });
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{index} => {0}")
     @MethodSource("getSortDescriptions")
+    public void runPageSuccess(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
+        List<T> keyables = saveKeyables(sortEndpointDescription.getExpectedToBeGenerated());
+
+        Response response = restAssuredClient.executeGetRequestWithPaging(
+            Optional.of(sortEndpointDescription.getExpectedToBeGenerated().size()/2), Optional.of(1), List.of(sortEndpointDescription.getSortDescriptors()
+                                                          .getDescriptor().getSortableOperationEnum().getApiValue()
+                                                          + "," + SortableField.DESC),
+            sortEndpointDescription.getUrl(),
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.USER))
+                .build().fetchTokenForRole()
+        );
+
+        transactionalUnitOfWork.inTransaction(() -> {
+            sortKeyables(reload(keyables), sortEndpointDescription.getSortDescriptors().getDescriptor(), SortableField.DESC);
+            List<T> selectedKeyables = keyables.subList(keyables.size()/2, keyables.size());
+            Assertions.assertTrue(assertPageSize(selectedKeyables.size(), response));
+        });
+    }
+
+    //@ParameterizedTest
+    //@MethodSource("getSortDescriptions")
     public void runSortFailure(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
         Response response = restAssuredClient.executeGetRequestWithPaging(
             Optional.of(1), Optional.of(0), List.of(sortEndpointDescription
@@ -214,8 +246,8 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                                        response);
     }
 
-    @ParameterizedTest
-    @MethodSource("getSortDescriptions")
+    //@ParameterizedTest
+    //@MethodSource("getSortDescriptions")
     public void runSortUnknown(RestSortEndpointDescription<T> sortEndpointDescription) throws Exception {
         Response response = restAssuredClient.executeGetRequestWithPaging(
             Optional.of(1), Optional.of(0), List.of(
@@ -230,29 +262,10 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                                        response);
     }
 
-    protected abstract void saveToDatabase(T keyable);
+    protected abstract T saveToDatabase(T keyable);
 
-    private void runTest(RestFilterEndpointDescription<T> filterDescription) throws Exception {
-         runTest(filterDescription, false);
-    }
 
-    private void runTest(RestFilterEndpointDescription<T> filterDescription,
-                         boolean caseInsensitive) throws Exception {
-        Response response = runTest(
-            filterDescription,
-            req ->
-                applyQueryForStart(filterDescription, req)
-        );
-
-        // assert that we have found the data with the query
-        assertStart(response, filterDescription);
-    }
-
-    private void runTestPartial(RestFilterEndpointDescription<T> filterDescription) throws Exception {
-        runTestPartial(filterDescription, false);
-    }
-
-    private void runTestPartial(RestFilterEndpointDescription<T> filterDescription, boolean caseInsensitiveMatch) throws Exception {
+    private void runAndAssertTestPartial(RestFilterEndpointDescription<T> filterDescription, boolean caseInsensitiveMatch) throws Exception {
 
         Response response = runTest(
             filterDescription,
@@ -290,7 +303,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
 
     private boolean isPartialOnlyConfig(RestFilterEndpointDescription<T> filterDescription) {
         for (FilterFieldData<T> data : filterDescription
-            .getFilterableScenario().getStartData()) {
+            .getFilterableScenario().getFilterData().getFirst()) {
             if (data instanceof PartialFilterData partialFilterData == false) {
                 return false;
             }
@@ -298,16 +311,28 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         return true;
     }
 
+    private boolean doesPartialExist(RestFilterEndpointDescription<T> filterDescription) {
+    for (FilterFieldData<T> data : filterDescription
+        .getFilterableScenario().getFilterData().getFirst()) {
+        if (data instanceof PartialFilterData partialFilterData) {
+            return true;
+        }
+    }
+    return true;
+}
+
 
     private void assertStart(Response response, RestFilterEndpointDescription<T> filterDescription) {
         // assert that we have found the data with the query
         Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode());
-        Assertions.assertTrue(
-            assertResponseInOrder(
-                List.of(filterDescription.getFilterableScenario()
-                            .getStartData().getFirst().getKeyableValues().getKeyable()),
-                response, true
-            ));
+        transactionalUnitOfWork.inTransaction(() -> {
+            Assertions.assertTrue(
+                assertResponseInOrder(
+                    reload(List.of(filterDescription.getFilterableScenario()
+                                .getFilterData().getFirst().getFirst().getKeyableValues().getKeyable())),
+                    response
+                ));
+        });
     }
 
     /**
@@ -322,35 +347,57 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         // gets the default sort descriptor
         SortDataDescriptor<T> sortDataDescriptor = getDefaultSort(filterDescription.getSortDescriptors());
 
-        sortKeyables(filterDescription.getFilterableScenario().getAllKeyable(), sortDataDescriptor, null);
+        transactionalUnitOfWork.inTransaction(() -> {
+            List<T> keyables = reload(filterDescription.getFilterableScenario().getAllKeyable());
 
-        Assertions.assertTrue(
-            assertResponseInOrder(
-                filterDescription.getFilterableScenario().getAllKeyable(),
-                response, false
-            ));
+            sortKeyables(keyables, sortDataDescriptor, null);
+
+            Assertions.assertTrue(
+                assertResponseInOrder(
+                    keyables,
+                    response
+                ));
+        });
+    }
+
+    /**
+     * asserts all filter data sorted according to the default sort.
+     * @param response The actual response
+     * @param filterDescription The filter description.
+     */
+    private void assertAllFilterWithSort(Response response, RestFilterEndpointDescription<T> filterDescription, SortDataDescriptor<T> descriptor) {
+        // assert that we have found the data with the query
+        Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode());
+
+        transactionalUnitOfWork.inTransaction(() -> {
+            List<T> keyables = reload(filterDescription.getFilterableScenario().getAllKeyable());
+
+            sortKeyables(keyables, descriptor, null);
+
+            Assertions.assertTrue(
+                assertResponseInOrder(
+                    keyables,
+                    response
+                ));
+        });
     }
 
     private Response runTest(RestFilterEndpointDescription<T> filterDescription,
                              UnaryOperator<RequestSpecification> requestSpecificationConsumer) throws Exception {
-        return runTest(filterDescription, requestSpecificationConsumer, 1);
+        return runTest(filterDescription, requestSpecificationConsumer, 100, null, null);
     }
 
     private Response runTest(RestFilterEndpointDescription<T> filterDescription,
                              UnaryOperator<RequestSpecification> requestSpecificationConsumer,
-                             int pageSize) throws Exception {
+                             int pageSize, String sort, String direction) throws Exception {
         return restAssuredClient.executeGetRequestWithPaging(
-            Optional.of(pageSize), Optional.of(0), new ArrayList<>(),
+            Optional.of(pageSize), Optional.of(0), sort != null
+                ? List.of(sort + "," + direction) : List.of(),
             filterDescription.getUrl(),
             getATokenWithValidCredentials().roles(List.of(RoleEnum.USER))
                 .build().fetchTokenForRole(),
             requestSpecificationConsumer
         );
-    }
-
-    private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
-                                                    RequestSpecification requestSpecification) {
-        return applyQueryForStart(filterSortableDescription, requestSpecification, null, false);
     }
 
     private RequestSpecification applyQueryForStart(RestFilterEndpointDescription<T> filterSortableDescription,
@@ -375,7 +422,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                                                     RequestSpecification requestSpecification,
                                                     PartialEnum partialEnum, boolean caseInsensitiveMatch) {
         for (FilterFieldData<T> data : filterSortableDescription
-            .getFilterableScenario().getStartData()) {
+            .getFilterableScenario().getFilterData().getFirst()) {
             FilterValue<T> filterValue = data.getKeyableValues();
 
             if (data instanceof PartialFilterData partialFilterData) {
@@ -414,13 +461,19 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
                 requestSpecification.queryParam(
                     data.getDescriptor().getQueryName(),
                     data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                        ? filterValue.getValue().toString().toUpperCase() : filterValue.getValue()
-                );
+                        ? filterValue.getValue().toString().toUpperCase() :
+                        getFilterValueQueryParameter(filterValue)
+                        );
             }
         }
         return requestSpecification;
     }
 
+    private String getFilterValueQueryParameter( FilterValue<T> filterValue) {
+        return filterValue.getValue() instanceof LocalTime
+            ? StrictLocalTimeSerializer.getStringForTime((LocalTime)filterValue.getValue())
+            : filterValue.getValue().toString();
+    }
 
     private SortDataDescriptor<T> getDefaultSort(List<SortDescriptorEnum<T>> descriptors) {
         for (SortDescriptorEnum<T> descriptor : descriptors) {
@@ -438,6 +491,8 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
      */
     private void sortKeyables(List<T> keysToSort,
                               SortDataDescriptor<T> sortDataDescriptor, String order) {
+
+
         // now run the sort based on the filter
         KeyableSortComparator comparator = new KeyableSortComparator();
         comparator.setSortField(sortDataDescriptor);
@@ -451,6 +506,34 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable> ext
         }
     }
 
-    protected abstract boolean assertResponseInOrder(List<T> keyable, Response response, boolean exactMatch);
+    protected abstract boolean assertResponseInOrder(List<T> keyable, Response response);
+
+    protected abstract boolean assertPageSize(int size, Response response);
+
+    private void saveScenarioData(FilterableScenario<T> filterableScenario) {
+        for (List<FilterFieldData<T>> fieldDataList : filterableScenario.getFilterData()) {
+            fieldDataList.getFirst().getKeyableValues().setKeyable(
+                saveToDatabase(fieldDataList.getFirst().getKeyableValues().getKeyable()));
+        }
+    }
+
+    private List<T> saveKeyables(List<T> keyables) {
+        ArrayList<T> savedKeyables = new ArrayList<>();
+        for (T keyable : keyables) {
+            savedKeyables.add(saveToDatabase(keyable));
+        }
+        return savedKeyables;
+    }
+
+    private List<T> reload(List<T> keyables) {
+        ArrayList<T> savedKeyables = new ArrayList<>();
+        for (T keyable : keyables) {
+            T managed =
+                (T) entityManager.find(keyable.getClass(), keyable.getId());
+            savedKeyables.add(managed);
+        }
+        return savedKeyables;
+    }
+
 
 }

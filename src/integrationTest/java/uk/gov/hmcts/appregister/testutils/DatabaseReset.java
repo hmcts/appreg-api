@@ -21,6 +21,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepo
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
@@ -58,6 +59,8 @@ public class DatabaseReset {
     @Autowired private final ApplicationRegisterRepository applicationRegisterRepository;
 
     @Autowired private final StandardApplicantRepository standardApplicantRepository;
+
+    @Autowired private final NationalCourtHouseRepository nationalCourtHouseRepository;
 
     @Autowired
     private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
@@ -114,6 +117,8 @@ public class DatabaseReset {
         standardApplicantRepository.deleteAll(
                 standardApplicantRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
 
+        nationalCourtHouseRepository.deleteAll(nationalCourtHouseRepository
+                                                   .findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
         dataAuditRepository.deleteAll();
     }
 

@@ -1,11 +1,8 @@
 package uk.gov.hmcts.appregister.data.filter;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.filter.value.GenerateAccordingToFilter;
 
@@ -37,7 +34,7 @@ public class FilterFieldDataDescriptor<T extends Keyable> {
     /**
      * Apply the filter to the keyable.
      */
-    public FilterFieldData<T> apply(T keyable, OrderEnum orderEnum) {
-        return filterGenerator.apply(keyable, this, orderEnum);
+    public FilterFieldData<T> apply(int count, T keyable) {
+        return filterGenerator.apply(count, keyable, this);
     }
 }

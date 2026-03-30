@@ -1,18 +1,13 @@
 package uk.gov.hmcts.appregister.testutils.controller;
 
-import lombok.Builder;
 import lombok.Getter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
-
-import org.springframework.http.HttpMethod;
 
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
-import uk.gov.hmcts.appregister.data.sort.SortDataDescriptor;
-import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -44,9 +39,18 @@ public class RestFilterEndpointDescription<T extends Keyable> {
         for (FilterableScenario<T> filterableScenario : scenario.getAllCombinations()) {
             RestFilterEndpointDescription<T> restFilterCopy = new RestFilterEndpointDescription<T>(this);
             restFilterCopy.filterableScenario = filterableScenario;
-            restFilterDescriptionsLst.add(restFilterCopy);
+
+            if (restFilterCopy.filterableScenario.getFilterData().size() != 0) {
+                restFilterDescriptionsLst.add(restFilterCopy);
+            }
         }
 
         return restFilterDescriptionsLst;
+    }
+
+    @Override
+    public String toString() {
+        return "Filtering using query parameters " + filterableScenario.getFilterData().getFirst().stream().map(
+            filterFieldData -> filterFieldData.getDescriptor().getQueryName()).toList();
     }
 }

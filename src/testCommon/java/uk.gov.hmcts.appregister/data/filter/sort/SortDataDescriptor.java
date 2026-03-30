@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.data.sort;
+package uk.gov.hmcts.appregister.data.filter.sort;
 
 import lombok.Builder;
 import lombok.Getter;

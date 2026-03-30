@@ -5,7 +5,6 @@ import io.restassured.response.Response;
 import org.junit.jupiter.api.Assertions;
 
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.filter.applicationcode.ApplicationCodeFilterEnum;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
@@ -14,11 +13,11 @@ import uk.gov.hmcts.appregister.data.filter.applicationcode.ApplicationCodeSortE
 import uk.gov.hmcts.appregister.data.filter.exception.FilterProcessingException;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
+import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractFilterAndSortControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestFilterEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.controller.RestSortEndpointDescription;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,9 +30,12 @@ public class ApplicationCodeFilterTest extends AbstractFilterAndSortControllerTe
         // create the application code
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
+
         // process the scenario
         FilterableScenario<ApplicationCode> scenario
-            = FilterScenarioFactory.createFilterScenario(applicationCode, Arrays.asList(ApplicationCodeFilterEnum.values()));
+            = FilterScenarioFactory.createFilterScenario(applicationCode,
+                                                         Arrays.asList(ApplicationCodeFilterEnum.values()),
+                                                         Arrays.asList(ApplicationCodeSortEnum.values()));
 
         // lets set the rest endpoint
         RestFilterEndpointDescription<ApplicationCode> restFilterDescription = new RestFilterEndpointDescription<>();
@@ -71,18 +73,20 @@ public class ApplicationCodeFilterTest extends AbstractFilterAndSortControllerTe
     }
 
     @Override
-    protected boolean assertResponseInOrder(List<ApplicationCode> keyable, Response response, boolean exactMatch) {
+    protected boolean assertResponseInOrder(List<ApplicationCode> keyable, Response response) {
         ApplicationCodePage page = response.as(ApplicationCodePage.class);
-
-        if (exactMatch) {
-            Assertions.assertEquals(keyable.size(), page.getContent().size());
-        }
 
         for (int i = 0; i < keyable.size(); i++) {
             matchSummary(page, keyable.get(i).getCode());
         }
 
         return true;
+    }
+
+    @Override
+    protected boolean assertPageSize(int size, Response response) {
+        ApplicationCodePage page = response.as(ApplicationCodePage.class);
+        return size == page.getContent().size();
     }
 
     private  void matchSummary(ApplicationCodePage page, String code) {
@@ -96,7 +100,7 @@ public class ApplicationCodeFilterTest extends AbstractFilterAndSortControllerTe
 
 
     @Override
-    protected void saveToDatabase(ApplicationCode keyable) {
-        this.persistance.save(keyable);
+    protected ApplicationCode saveToDatabase(ApplicationCode keyable) {
+        return this.persistance.save(keyable);
     }
 }

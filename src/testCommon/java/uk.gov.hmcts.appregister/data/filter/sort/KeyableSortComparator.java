@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.data.sort;
+package uk.gov.hmcts.appregister.data.filter.sort;
 
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 

@@ -15,7 +15,11 @@ public class StrictLocalTimeSerializer extends JsonSerializer<LocalTime> {
             com.fasterxml.jackson.databind.SerializerProvider serializers)
             throws java.io.IOException {
         // Serialize LocalTime to string in "HH:mm" format
-        String timeString = value.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+        String timeString = getStringForTime(value);
         gen.writeString(timeString);
     }
+
+   public static String getStringForTime(LocalTime localTime) {
+       return localTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+   }
 }

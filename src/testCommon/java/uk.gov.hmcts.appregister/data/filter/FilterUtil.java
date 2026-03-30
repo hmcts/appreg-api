@@ -7,43 +7,30 @@ import java.util.Random;
 
 public class FilterUtil {
 
-    public static <T extends Keyable> FilterFieldData<T> getFieldData(Integer max,
-                                                                  FilterFieldDataDescriptor<T>
-                                            filterFieldDataDescriptor, T keyable) {
-        Random random = new Random();
-
+    /**
+     * Generates a minimum size of 6.
+     */
+    public static <T extends Keyable> FilterFieldData<T> getFieldDataWithString(int count,
+                                                                                FilterFieldDataDescriptor<T>
+                                            filterFieldDataDescriptor, T keyable, Integer max) {
         if (filterFieldDataDescriptor.isPartialSupport()) {
-            int randomNumber = random.nextInt(max - 3);
-
-            // fail fast if we can not generate a string within the limits
-            if (randomNumber < 0) {
-                throw new FilterProcessingException(randomNumber + " cannot be less than 0");
-            }
-
-            String partialstr = "S" + randomNumber + "M" + randomNumber + "E" + randomNumber;
+            String partialstr = "S" + count + "M" + count + "E" + count;
 
             FilterValue<T> filterValue = new FilterValue<T>(keyable, partialstr);
 
             PartialFilterData<T> filterData = new PartialFilterData<>();
             filterValue.setValue(partialstr);
 
-            filterData.setStartsWith("S" + randomNumber);
-            filterData.setMiddleWith("M" + randomNumber);
-            filterData.setEndsWith("E" + randomNumber);
+            filterData.setStartsWith("S" + count);
+            filterData.setMiddleWith("M" + count);
+            filterData.setEndsWith("E" + count);
             filterData.setDescriptor(filterFieldDataDescriptor);
-            filterData.setMatchOnAllPartials("S");
+            filterData.setMatchOnAllPartials("M");
             filterData.setKeyableValues(filterValue);
 
             return filterData;
         } else {
-            int randomNumber = random.nextInt(max - 1);
-
-            String randomStr = "V" + randomNumber;
-
-            // fail fast if we can not generate a string within the limits
-            if (randomNumber < 0) {
-                throw new FilterProcessingException(randomNumber + " cannot be less than 0");
-            }
+            String randomStr = PrimitiveDataGenerator.generate(max);
 
             FilterValue<T> filterValue = new FilterValue<T>(keyable, randomStr);
             FilterFieldData<T> filterFieldData = new FilterFieldData<>();

@@ -4,8 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
-import uk.gov.hmcts.appregister.data.sort.SortDescriptorEnum;
+import uk.gov.hmcts.appregister.data.filter.sort.SortDescriptorEnum;
 import uk.gov.hmcts.appregister.util.CopyUtil;
 
 import java.net.URL;
@@ -38,5 +37,11 @@ public class RestSortEndpointDescription<T extends Keyable> {
     public RestSortEndpointDescription(RestSortEndpointDescription<T> description) {
         setUrl(description.getUrl());
         sortDescriptors = description.sortDescriptors;
+    }
+
+    @Override
+    public String toString() {
+        return "Sorting for " + sortDescriptors.getDescriptor().getSortableOperationEnum().getApiValue()
+            + " " + sortDescriptors.getDescriptor().getOrder();
     }
 }

@@ -1,7 +1,13 @@
 package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
+import jakarta.persistence.EntityManager;
+
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
@@ -66,6 +72,8 @@ public class DatabasePersistance {
 
     @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
 
+    @Autowired
+    private EntityManager entityManager;
 
     public ApplicationCode save(ApplicationCode data) {
 
@@ -137,12 +145,19 @@ public class DatabasePersistance {
         return applicationListEntryRepository.saveAndFlush(entry);
     }
 
+    @Transactional
     public ApplicationList save(ApplicationList entry) {
         if (entry.getCja() != null) {
             save(entry.getCja());
         }
 
-        return applicationListRepository.saveAndFlush(entry);
+        for (ApplicationListEntry alEntry : entry.getEntries()) {
+            save(alEntry);
+        }
+
+        entry = applicationListRepository.saveAndFlush(entry);
+        refreshEntity(entry);
+        return entry;
     }
 
     public StandardApplicant save(StandardApplicant data) {
@@ -172,5 +187,16 @@ public class DatabasePersistance {
 
     public AppListEntrySequenceMapping save(AppListEntrySequenceMapping data) {
         return appListEntrySequenceMappingRepository.saveAndFlush(data);
+    }
+
+    /**
+     * Reloads the entity so DB-generated fields (e.g. UUID via gen_random_uuid()) are available
+     * immediately after save. Calls: - flush(): force the INSERT - refresh(): reselect the row with
+     * DB defaults/triggers
+     */
+    public <T extends Keyable> T refreshEntity(T entity) {
+        entityManager.flush();
+        entityManager.refresh(entity);
+        return entity;
     }
 }
