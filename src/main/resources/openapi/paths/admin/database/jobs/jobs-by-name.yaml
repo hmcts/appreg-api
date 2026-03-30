@@ -1,0 +1,58 @@
+get:
+  tags: [ admin ]
+  summary: Gets the status of a database job by its name.
+  description: Returns the current status and details of a database job.
+  operationId: getDatabaseJobStatusByName
+  parameters:
+    - name: jobName
+      in: path
+      required: true
+      schema:
+          type: string
+      description: The name of the database job.
+      example: "database-maintenance-job"
+  responses:
+    "200":
+      description: Job status retrieved successfully.
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema: { type: string }
+          example: Accept
+      content:
+        application/vnd.hmcts.appreg.v1+json:
+          schema:
+            "$ref": "../../../../components/schemas/admin/database-job-status.yaml"
+    "401": { $ref: "../../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../../../components/responses/internal-server-error.yaml" }
+put:
+  tags: [ admin ]
+  summary: Enable/Disable a database job by its name.
+  description: Enables or disables a database job by its name.
+  operationId: enableDisableDatabaseJobByName
+  parameters:
+    - name: jobName
+      in: path
+      required: true
+      schema:
+          type: string
+      description: The name of the database job to trigger.
+      example: "database-maintenance-job"
+    - name: enable
+      in: query
+      required: true
+      schema:
+          type: boolean
+      description: Flag to enable (true) or disable (false) the database job.
+      example: true
+  responses:
+    "201":
+      description: Job enabled/disabled successfully.
+    "401": { $ref: "../../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../../../components/responses/internal-server-error.yaml" }

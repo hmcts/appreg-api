@@ -34,7 +34,6 @@ public class ImplementedRestfulTest {
         Map<String, Object> implemented = new RestImplementedStatusHealthIndicator().status();
 
         Assertions.assertTrue(implemented.size() > 0);
-
         // assert against the unimplemented endpoints.
         for (String endpoint : UNIMPLEMENTED_ENDPOINTS) {
             System.out.println(endpoint);
