@@ -121,11 +121,21 @@ public class CreateApplicationEntryValidatorTest {
     void testValidateSuccess() {
         // set the applicant to null for the organisation and standard applicant so we use the
         // person
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
-        // set the respondent to null for the organisation so we use the person
-        entryCreateDto.getRespondent().setOrganisation(null);
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.setFeeStatuses(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
@@ -145,6 +155,7 @@ public class CreateApplicationEntryValidatorTest {
         // person
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         // set application code to match the application code in the repository
         entryCreateDto.setApplicationCode("EF12121");
@@ -221,6 +232,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -241,6 +253,7 @@ public class CreateApplicationEntryValidatorTest {
     @Test
     void testApplicantFeeDueFail() {
         applicationCode.setFeeDue(YesOrNo.YES);
+        entryCreateDto.setNumberOfRespondents(null);
 
         entryCreateDto.setFeeStatuses(List.of());
 
@@ -269,6 +282,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         when(applicationListRepository.findByUuidIncludingDelete(appListUuid))
                 .thenReturn(Optional.empty());
@@ -293,6 +307,7 @@ public class CreateApplicationEntryValidatorTest {
     void testApplicantListNotInCorrectStatus() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.getApplicant().setOrganisation(null);
 
         applicationList.setStatus(Status.CLOSED);
@@ -320,6 +335,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         applicationList.setStatus(Status.OPEN);
         applicationList.setDeleted(YesOrNo.YES);
@@ -348,6 +364,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), LocalDate.now(clock)))
@@ -374,6 +391,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), LocalDate.now(clock)))
@@ -400,6 +418,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -426,6 +445,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -451,6 +471,7 @@ public class CreateApplicationEntryValidatorTest {
     void testPaymentReferenceNotAllowedWhenPaymentDue() {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.getRespondent().setOrganisation(null);
 
         // Ensure we have a fee status and set it to DUE with a payment reference (invalid)
@@ -486,6 +507,7 @@ public class CreateApplicationEntryValidatorTest {
         // person
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         // set the EF application code so that we require the account number
         entryCreateDto.setApplicationCode("EF12121");
@@ -512,7 +534,7 @@ public class CreateApplicationEntryValidatorTest {
                         AppRegistryException.class,
                         () -> createApplicationEntryValidator.validate(payload));
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                 appRegistryException.getCode());
     }
 
@@ -520,10 +542,12 @@ public class CreateApplicationEntryValidatorTest {
     void testRespondentAllowedWhenNotRequired_Success() {
         // Arrange: application code says respondent is NOT required
         applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
 
         // Make the DTO valid in other respects so we only test the respondent rule
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
 
         // Ensure respondent exists (payload includes respondent)
         Assertions.assertNotNull(
@@ -541,5 +565,129 @@ public class CreateApplicationEntryValidatorTest {
                         .build();
 
         Assertions.assertDoesNotThrow(() -> createApplicationEntryValidator.validate(payload));
+    }
+
+    @Test
+    void
+            bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_ValidNameAndAddressRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(20);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_NoRespondent_Success() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(20);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void bulkRespondentAllowed_NoACRespondent_NoBulkRespondentNumber_Failure() {
+
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setFeeDue(YesOrNo.NO);
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
+                appRegistryException.getCode());
+    }
+
+    @Test
+    void
+            bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_ValidNameAndAddressRespondent_Failure() {
+        ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
+        applicationCode = applicationCodeTestData.someComplete();
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.setNumberOfRespondents(20);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.getRespondent().setOrganisation(null);
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                appRegistryException.getCode());
     }
 }

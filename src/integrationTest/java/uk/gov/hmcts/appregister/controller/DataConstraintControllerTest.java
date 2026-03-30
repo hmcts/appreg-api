@@ -509,7 +509,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
                 errorNode.get("errors").get("applicant.person.contactDetails.postcode").asText(),
-                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
 
         // Phone number validation assertions
         Assertions.assertEquals(
@@ -634,7 +634,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 "must match \"^[^\\u0000-\\u001F\\u007F-\\u009F]*$\"");
         Assertions.assertEquals(
                 errorNode.get("errors").get("respondent.person.contactDetails.postcode").asText(),
-                "must match \"^([A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}|GIR ?0A{2})$\"");
+                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
 
         // Phone number validation assertions
         Assertions.assertEquals(

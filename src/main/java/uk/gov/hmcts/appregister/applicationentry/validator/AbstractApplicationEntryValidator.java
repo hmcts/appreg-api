@@ -337,7 +337,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             // an account number for enforcement fines codes
             if (getAccountNumber(validatable) == null || getAccountNumber(validatable).isEmpty()) {
                 throw new AppRegistryException(
-                        AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                        AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
                         "Application number required for application code %s"
                                 .formatted(getApplicationCode(validatable)));
             }
@@ -494,6 +494,28 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                     AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED,
                     "Bulk respondent not required for code %s"
                             .formatted(getApplicationCode(validatable)));
+        }
+
+        if (applicationCode.getBulkRespondentAllowed() == YesOrNo.YES
+                && applicationCode.getRequiresRespondent() == YesOrNo.NO) {
+
+            boolean hasNumberOfRespondents =
+                    getNumberOfRespondents(validatable) != null
+                            && getNumberOfRespondents(validatable) != 0;
+            boolean hasRespondent = getRespondent(validatable) != null;
+            if (!hasNumberOfRespondents && !hasRespondent) {
+                throw new AppRegistryException(
+                        AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
+                        "Either respondent details or number of respondents must be provided");
+            }
+
+            if (hasNumberOfRespondents && hasRespondent) {
+                var dto = getApplicationCode(validatable);
+                throw new AppRegistryException(
+                        AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                        "The number of respondents and respondent details are mutually exclusive for code %s"
+                                .formatted(dto));
+            }
         }
 
         log.debug("Validated the respondent details");

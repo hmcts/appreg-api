@@ -683,7 +683,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * appends to the existing fee status.
+     * Replace the existing fee status.
      *
      * @param updateEntry The update payload
      * @param success The successful validation result
@@ -696,8 +696,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         List<AppListEntryFeeStatus> feeStatuses =
                 appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(updateEntry.getEntryId());
 
-        // add the new fee statuses
-        List<AppListEntryFeeStatus> statusList = new ArrayList<>(feeStatuses);
+        // This ensures we don't keep old rows
+        if (!feeStatuses.isEmpty()) {
+            appListEntryFeeStatusRepository.deleteAll(feeStatuses);
+            appListEntryFeeStatusRepository.flush();
+        }
+
+        List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         if (updateEntry.getData().getFeeStatuses() != null) {
             // create the fee statuses and map to entry

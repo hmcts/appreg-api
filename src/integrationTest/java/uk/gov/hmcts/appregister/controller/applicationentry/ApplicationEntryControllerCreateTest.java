@@ -5,7 +5,9 @@ import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.hamcrest.Matchers;
 import org.instancio.Instancio;
@@ -231,7 +233,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setOfficials(officials);
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -244,7 +246,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
@@ -267,7 +269,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getPerson()
                 .getContactDetails()
                 .setMobile(JsonNullable.of(null));
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
@@ -553,7 +555,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
     @Test
     public void
-            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_409IsReturned()
+            givenAnInvalidCreateEntryRequest_whenEnforcementFineACAndNoAccountNumber_400IsReturned()
                     throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
         entryCreateDto.setWordingFields(List.of());
@@ -576,10 +578,10 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         entryCreateDto);
 
         // assert the error
-        Assertions.assertEquals(409, responseSpecCreate.statusCode());
+        Assertions.assertEquals(400, responseSpecCreate.statusCode());
         ProblemDetail problemDetail = responseSpecCreate.as(ProblemDetail.class);
         Assertions.assertEquals(
-                AppListEntryError.APPLICATION_NUMBER_REQUIRED_FOR_APPLICATION_CODE
+                AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE
                         .getCode()
                         .getType()
                         .get(),
@@ -597,7 +599,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -610,7 +612,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getOrganisation()
@@ -649,7 +651,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // setup the payload
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -663,8 +665,12 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getOrganisation()
                 .getContactDetails()
                 .setEmail(JsonNullable.of("APPLICANT@TEST.COM"));
-        entryCreateDto.getRespondent().getOrganisation().getContactDetails().setPostcode("AA1 1AA");
-        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto
+                .getRespondent()
+                .getOrganisation()
+                .getContactDetails()
+                .setPostcode("AA12 1AA");
+        entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA12 1AA");
         entryCreateDto
                 .getRespondent()
                 .getPerson()
@@ -936,7 +942,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .getPerson()
                 .getContactDetails()
                 .setAddressLine5(JsonNullable.of("5 valid address"));
-        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA12 1AA");
 
         // create the token
         TokenGenerator tokenGenerator =
@@ -1957,5 +1963,227 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         Assertions.assertNotNull(createdDto.getDetailDto());
         Assertions.assertNotNull(createdDto.getDetailDto().getId());
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void
+            givenACDoesNotRequireRespondent_andBulkRespondentAllowed_whenCreateEntryWithRespondent_thenReturn201()
+                    throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setStandardApplicantCode(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryCreateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
+
+        var createdDto =
+                new SuccessCreateEntryResponse(
+                        responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void
+            givenACDoesNotRequireRespondent_BulkRespondentAllowed_whenEntryNumberOfRespondentsProvided_thenReturn201()
+                    throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(5);
+        entryCreateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryCreateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(201);
+        Assertions.assertNotNull(HeaderUtil.getETag(responseSpecCreate));
+
+        var createdDto =
+                new SuccessCreateEntryResponse(
+                        responseSpecCreate.as(EntryGetDetailDto.class), responseSpecCreate);
+
+        // Assert
+        Assertions.assertNotNull(createdDto);
+        Assertions.assertNotNull(createdDto.getDetailDto());
+        Assertions.assertNotNull(createdDto.getDetailDto().getId());
+        Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
+    }
+
+    @Test
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsNotProvided_then400()
+                    throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryCreateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void
+            givenACNotRequireRespondent_BulkRespondentAllowed_RespondentAndNumberOfRespondentsProvided_then400()
+                    throws Exception {
+        // Arrange
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(10);
+        entryCreateDto.setFeeStatuses(null);
+
+        // Use an app code which does NOT require a respondent but allows bulk respondent number
+        entryCreateDto.setApplicationCode("CT99001");
+        TemplateSubstitution templateSubstitution = new TemplateSubstitution("Number", "5");
+        entryCreateDto.setWordingFields(List.of(templateSubstitution));
+
+        var tokenGenerator = createAdminToken();
+
+        // Act
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError
+                                        .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void
+            givenAnInvalidCreateEntryRequest_whenMultipleValidationErrors_thenErrorsAreReturnedInSortedOrder()
+                    throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setAddressLine1("a".repeat(36));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("123456789");
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setPhone(JsonNullable.of("1".repeat(21)));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("2".repeat(21)));
+        entryCreateDto.getApplicant().getPerson().getName().setFirstForename("a".repeat(101));
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of("b".repeat(101)));
+
+        var tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        Map<String, Object> errors = responseSpecCreate.jsonPath().getMap("errors");
+
+        Assertions.assertEquals(
+                List.of(
+                        "applicant.person.contactDetails.addressLine1",
+                        "applicant.person.contactDetails.mobile",
+                        "applicant.person.contactDetails.phone",
+                        "applicant.person.contactDetails.postcode",
+                        "applicant.person.name.firstForename",
+                        "applicant.person.name.secondForename"),
+                new ArrayList<>(errors.keySet()));
     }
 }
