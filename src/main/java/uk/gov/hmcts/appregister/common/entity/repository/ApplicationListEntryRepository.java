@@ -443,6 +443,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         FROM ApplicationListEntry ale
         WHERE ale.applicationList.uuid = :sourceListId
         AND ale.uuid in :requestedIds
+        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Set<UUID> findExistingEntryIdsInSourceList(UUID sourceListId, Set<UUID> requestedIds);
 }
