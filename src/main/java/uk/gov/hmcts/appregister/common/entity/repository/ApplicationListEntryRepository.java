@@ -429,4 +429,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Page<ApplicationListEntry> findForApplicationList(UUID appLstId, Pageable pageable);
+
+    /**
+     * Retrieves the subset of Application List Entry UUIDs that exist in the given source list.
+     *
+     * @param sourceListId the UUID of the source ApplicationList
+     * @param requestedIds the set of Application List Entry UUIDs requested for movement
+     * @return a Set of UUIDs representing entries that exist in the source list
+     */
+    @Query(
+            """
+        SELECT ale.uuid
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :sourceListId
+        AND ale.uuid in :requestedIds
+        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        """)
+    Set<UUID> findExistingEntryIdsInSourceList(UUID sourceListId, Set<UUID> requestedIds);
 }

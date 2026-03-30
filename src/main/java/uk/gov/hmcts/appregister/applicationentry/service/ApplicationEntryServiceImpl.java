@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -999,19 +1000,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
 
-        int rowsUpdated =
-                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
-                        requestedIds, targetList, sourceListId);
+        Set<UUID> existingIds =
+                applicationListEntryRepository.findExistingEntryIdsInSourceList(
+                        sourceListId, requestedIds);
 
-        if (rowsUpdated != requestedIds.size()) {
+        Set<UUID> missingIds = new HashSet<>(requestedIds);
+        missingIds.removeAll(existingIds);
+
+        if (!missingIds.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
-                    "One or more entries were not found in the source list");
+                    "One or more entries were not found in the source list",
+                    Map.of("invalid_entry_ids", missingIds.toString()));
         }
+
+        applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                existingIds, targetList, sourceListId);
 
         log.info(
                 "Completed bulk move for {} entries from list {}",
-                requestedIds.size(),
+                existingIds.size(),
                 sourceListId);
     }
 

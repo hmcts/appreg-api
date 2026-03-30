@@ -1050,6 +1050,11 @@ public class ApplicationEntryServiceImplTest {
 
         // Mock repository to return rowsUpdated == requested size (2)
         UUID sourceListId = UUID.randomUUID();
+
+        when(applicationListEntryRepository.findExistingEntryIdsInSourceList(
+                        eq(sourceListId), anySet()))
+                .thenReturn(Set.of(id1, id2));
+
         when(applicationListEntryRepository.bulkMoveByUuidAndSourceList(
                         anySet(), eq(targetList), eq(sourceListId)))
                 .thenReturn(2);
