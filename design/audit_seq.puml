@@ -28,7 +28,7 @@ AuditOperationServiceImpl -> DataAuditLogger : finished(CompleteEvent event)
 activate  DataAuditLogger
 
 group Manage Audit Extraction
-DataAuditLogger -> ReflectiveAuditor : extractAuditData(auditCrudOp, oldValue, newValue)
+DataAuditLogger -> ReflectiveAuditor : extractAuditData(auditCrudOp, val)
     loop for all differences detected
 
 

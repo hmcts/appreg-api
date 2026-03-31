@@ -1,0 +1,27 @@
+@startuml
+
+actor UI
+actor "Spring Framework" as spring
+
+participant ApplicationListController
+participant ApplicationListServiceImpl
+
+UI->ApplicationListController : Http Post Create App List
+
+activate ApplicationListController
+ApplicationListController -> ApplicationListServiceImpl : create(ApplicationListCreateDto dto)
+
+activate ApplicationListServiceImpl
+ApplicationListServiceImpl -> ApplicationCreateListLocationValidator : validate(dto)
+
+activate ApplicationCreateListLocationValidator
+
+ApplicationCreateListLocationValidator -> AppRegException : <<create>>
+ApplicationCreateListLocationValidator --> ApplicationCreateListLocationValidator : throw AppRegException
+
+activate AppRegExceptionHandler
+spring -> AppRegExceptionHandler
+AppRegExceptionHandler -> AppRegExceptionHandler : Convert to Problem Details RFC 7807
+AppRegExceptionHandler -> ApplicationListController : Return problem response
+ApplicationListController -> UI
+@enduml
