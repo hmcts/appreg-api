@@ -94,7 +94,7 @@ public class PersonDtoTest {
         ConstraintAssertion.assertPropertyValue(
                 listConstraint,
                 "contactDetails.postcode",
-                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
+                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) \\d[A-Z]{2})|(GIR 0A{2})|(M\\d \\d[A-Z]{2}))$\"");
     }
 
     @Test
@@ -145,7 +145,8 @@ public class PersonDtoTest {
         ConstraintAssertion.assertPropertyValue(
                 listConstraint,
                 "contactDetails.postcode",
-                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
+                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) \\d[A-Z]{2})|(GIR 0A{2})|"
+                        + "(M\\d \\d[A-Z]{2}))$\"");
     }
 
     @Test
@@ -198,7 +199,8 @@ public class PersonDtoTest {
         ConstraintAssertion.assertPropertyValue(
                 listConstraint,
                 "postcode",
-                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
+                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d)) \\d[A-Z]{2})|(GIR 0A{2})|(M\\d "
+                        + "\\d[A-Z]{2}))$\"");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "phone", "must match \"[0-9 \\-]*\"");
         ConstraintAssertion.assertPropertyValue(
@@ -249,7 +251,8 @@ public class PersonDtoTest {
         ConstraintAssertion.assertPropertyValue(
                 listConstraint,
                 "postcode",
-                "must match \"^(([A-Z]{1,2}\\d[A-Z\\d] \\d[A-Z]{2})|(GIR 0A{2}))$\"");
+                "must match \"^(([A-Z]{1,2}((\\d[A-Z\\d])|(\\d))"
+                        + " \\d[A-Z]{2})|(GIR 0A{2})|(M\\d \\d[A-Z]{2}))$\"");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "mobile", "must match \"^(?:\\+\\d{1,4}\\s*)?[0-9 \\-]*$\"");
     }
