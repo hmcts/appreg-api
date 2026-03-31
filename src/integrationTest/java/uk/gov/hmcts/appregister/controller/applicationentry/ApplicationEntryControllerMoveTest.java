@@ -264,6 +264,50 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
                 problemDetail.getType().toString());
     }
 
+    @Test
+    @DisplayName(
+            "Move Application List Entries: 400 with invalid_entry_ids when some entries are missing")
+    void givenMixedValidAndInvalidEntries_whenMove_then400WithInvalidIds() throws Exception {
+        var token = getToken();
+
+        ApplicationListPage page = getApplicationListPage(token, ApplicationListStatus.OPEN);
+
+        UUID sourceListId = page.getContent().get(0).getId();
+        UUID targetListId = page.getContent().get(1).getId();
+        UUID otherListId = page.getContent().get(2).getId();
+
+        Response sourceResp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + sourceListId), token);
+
+        ApplicationListGetDetailDto sourceDetail = sourceResp.as(ApplicationListGetDetailDto.class);
+
+        UUID validEntryId = sourceDetail.getEntriesSummary().getFirst().getUuid();
+
+        Response otherResp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + otherListId), token);
+
+        ApplicationListGetDetailDto otherDetail = otherResp.as(ApplicationListGetDetailDto.class);
+
+        UUID invalidEntryId = otherDetail.getEntriesSummary().getFirst().getUuid();
+
+        Set<UUID> entryIds = new HashSet<>();
+        entryIds.add(validEntryId);
+        entryIds.add(invalidEntryId);
+
+        // fire request
+        Response resp =
+                getMoveApplicationListEntriesResponse(sourceListId, targetListId, entryIds, token);
+
+        resp.then().statusCode(HttpStatus.BAD_REQUEST.value());
+
+        ProblemDetail problemDetail = resp.as(ProblemDetail.class);
+
+        Assertions.assertNotNull(problemDetail.getDetail());
+        Assertions.assertTrue(problemDetail.getDetail().contains(invalidEntryId.toString()));
+    }
+
     private ApplicationListPage getApplicationListPage(
             TokenAndJwksKey token, ApplicationListStatus open) throws Exception {
         Response resp =
