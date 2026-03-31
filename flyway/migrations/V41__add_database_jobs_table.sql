@@ -8,5 +8,5 @@ CREATE TABLE database_jobs (
 DROP SEQUENCE IF EXISTS dj_seq;
 CREATE SEQUENCE dj_seq INCREMENT 1 MINVALUE 1 NO MAXVALUE START 1;
 
-INSERT INTO database_jobs (dj_id, job_name, job_enabled, rp_rp_id)
-VALUES (nextval('dj_seq'), 'APPLICATION_LISTS_DATABASE_JOB', 'Y', 1);
+INSERT INTO database_jobs (dj_id, job_name, job_enabled)
+VALUES (nextval('dj_seq'), 'APPLICATION_LISTS_DATABASE_JOB', 'Y');
