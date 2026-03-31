@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -326,7 +327,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                             updateOfficials(updateEntry, success);
 
                                                     // update the fees for the entry
-                                                    updateFees(success);
+                                                    updateFees(success, updateEntry);
 
                                                     // create the fee entry mappings
                                                     EntryGetDetailDto entryGetDetailDto =
@@ -385,15 +386,45 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         AppListEntryFeeId appListEntryFeeId = new AppListEntryFeeId();
                         appListEntryFeeId.setAppListEntryId(listEntryEntity.getId());
                         appListEntryFeeId.setFeeId(success.getFee().getId());
+                        var savedAppListEntryFeeId =
+                                appListEntryFeeRepository.save(appListEntryFeeId);
 
                         log.debug(
                                 "Created Fee: {} to Entry: {} mapping: {}",
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
-                        return Optional.of(
-                                new AuditableResult<>(
-                                        null, appListEntryFeeRepository.save(appListEntryFeeId)));
+                        if (entryCreateDto.getData().getHasOffsiteFee()) {
+                            var offsiteFee =
+                                    feeRepository
+                                            .findByReferenceBetweenDateWithOffsite(
+                                                    "CO1.1", LocalDate.now(clock), true)
+                                            .stream()
+                                            .findFirst();
+
+                            var offsiteFeeEntry =
+                                    appListEntryFeeRepository
+                                            .getEntryFeesForEntry(listEntryEntity.getId())
+                                            .stream()
+                                            .filter(
+                                                    fee ->
+                                                            fee.getFeeId()
+                                                                    .equals(
+                                                                            offsiteFee
+                                                                                    .get()
+                                                                                    .getId()))
+                                            .findAny();
+
+                            if (!offsiteFeeEntry.isPresent()) {
+                                AppListEntryFeeId offsiteEntryFee = new AppListEntryFeeId();
+                                offsiteEntryFee.setFeeId(offsiteFee.get().getId());
+                                offsiteEntryFee.setAppListEntryId(
+                                        appListEntryFeeId.getAppListEntryId());
+                                appListEntryFeeRepository.saveAndFlush(offsiteEntryFee);
+                            }
+                        }
+
+                        return Optional.of(new AuditableResult<>(null, savedAppListEntryFeeId));
                     });
         }
     }
@@ -653,7 +684,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     /**
-     * appends to the existing fee status.
+     * Replace the existing fee status.
      *
      * @param updateEntry The update payload
      * @param success The successful validation result
@@ -666,8 +697,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         List<AppListEntryFeeStatus> feeStatuses =
                 appListEntryFeeStatusRepository.getFeeStatusByEntryUuid(updateEntry.getEntryId());
 
-        // add the new fee statuses
-        List<AppListEntryFeeStatus> statusList = new ArrayList<>(feeStatuses);
+        // This ensures we don't keep old rows
+        if (!feeStatuses.isEmpty()) {
+            appListEntryFeeStatusRepository.deleteAll(feeStatuses);
+            appListEntryFeeStatusRepository.flush();
+        }
+
+        List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         if (updateEntry.getData().getFeeStatuses() != null) {
             // create the fee statuses and map to entry
@@ -699,7 +735,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      *
      * @param success The successful validation result
      */
-    private void updateFees(UpdateApplicationEntryValidationSuccess success) {
+    private void updateFees(
+            UpdateApplicationEntryValidationSuccess success, PayloadForUpdateEntry updateEntry) {
         log.debug("Updating fees");
         // deletes all the fees
         List<AppListEntryFeeId> appListEntryFeeIdList =
@@ -746,6 +783,38 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
                             newAppListEntryFeeId =
                                     appListEntryFeeRepository.save(newAppListEntryFeeId);
+
+                            if (updateEntry.getData().getHasOffsiteFee()) {
+                                var offsiteFee =
+                                        feeRepository
+                                                .findByReferenceBetweenDateWithOffsite(
+                                                        "CO1.1", LocalDate.now(clock), true)
+                                                .stream()
+                                                .findFirst();
+
+                                var offsiteFeeEntry =
+                                        appListEntryFeeRepository
+                                                .getEntryFeesForEntry(
+                                                        success.getApplicationEntryId().getId())
+                                                .stream()
+                                                .filter(
+                                                        fee ->
+                                                                fee.getFeeId()
+                                                                        .equals(
+                                                                                offsiteFee
+                                                                                        .get()
+                                                                                        .getId()))
+                                                .findAny();
+
+                                if (!offsiteFeeEntry.isPresent()) {
+                                    AppListEntryFeeId offsiteEntryFee = new AppListEntryFeeId();
+                                    offsiteEntryFee.setFeeId(offsiteFee.get().getId());
+                                    offsiteEntryFee.setAppListEntryId(
+                                            success.getApplicationEntryId().getId());
+                                    appListEntryFeeRepository.save(offsiteEntryFee);
+                                }
+                            }
+
                             log.debug(
                                     "Created Fee: {} to Entry: {} mapping: {}",
                                     newAppListEntryFeeId.getFeeId(),
@@ -931,19 +1000,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
         Set<UUID> requestedIds = new HashSet<>(moveEntriesDto.getEntryIds());
 
-        int rowsUpdated =
-                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
-                        requestedIds, targetList, sourceListId);
+        Set<UUID> existingIds =
+                applicationListEntryRepository.findExistingEntryIdsInSourceList(
+                        sourceListId, requestedIds);
 
-        if (rowsUpdated != requestedIds.size()) {
+        Set<UUID> missingIds = new HashSet<>(requestedIds);
+        missingIds.removeAll(existingIds);
+
+        if (!missingIds.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST,
-                    "One or more entries were not found in the source list");
+                    "One or more entries were not found in the source list",
+                    Map.of("invalid_entry_ids", missingIds.toString()));
         }
+
+        applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                existingIds, targetList, sourceListId);
 
         log.info(
                 "Completed bulk move for {} entries from list {}",
-                requestedIds.size(),
+                existingIds.size(),
                 sourceListId);
     }
 
