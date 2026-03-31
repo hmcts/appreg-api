@@ -2,8 +2,7 @@ CREATE TABLE database_jobs (
                              dj_id SERIAL PRIMARY KEY,
                              job_name VARCHAR(255) NOT NULL,
                              job_enabled CHAR(1) DEFAULT 'N' CHECK (job_enabled IN ('Y','N')),
-                             job_last_ran TIMESTAMP,
-                             rp_rp_id bigint
+                             job_last_ran TIMESTAMP
 );
 
 DROP SEQUENCE IF EXISTS dj_seq;

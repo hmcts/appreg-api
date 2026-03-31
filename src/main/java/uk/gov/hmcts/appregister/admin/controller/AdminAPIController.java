@@ -10,7 +10,7 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
 import uk.gov.hmcts.appregister.generated.model.DatabaseJobStatus;
 
-@PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+@PreAuthorize(RoleNames.ADMIN_ROLE_RESTRICTION)
 @Slf4j
 @Controller
 @RequiredArgsConstructor

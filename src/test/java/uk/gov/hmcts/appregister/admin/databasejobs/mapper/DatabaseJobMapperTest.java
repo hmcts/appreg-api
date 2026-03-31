@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.admin.database.mapper;
+package uk.gov.hmcts.appregister.admin.databasejobs.mapper;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +10,6 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import java.time.OffsetDateTime;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 
