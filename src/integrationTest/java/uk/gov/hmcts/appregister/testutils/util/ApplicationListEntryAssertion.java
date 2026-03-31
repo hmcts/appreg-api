@@ -59,7 +59,8 @@ public class ApplicationListEntryAssertion {
             EntryGetDetailDto response,
             String assertWordingApplied,
             String assertWording,
-            List<TemplateSubstitution> expectedWordingFields) {
+            List<TemplateSubstitution> expectedWordingFields,
+            int expectedNumberOfFees) {
         validateEntityAndResponseForEntryUpdate(
                 entryCreateDto,
                 applicationListEntry,
@@ -67,7 +68,8 @@ public class ApplicationListEntryAssertion {
                 assertWordingApplied,
                 assertWording,
                 expectedWordingFields,
-                List.of());
+                List.of(),
+                expectedNumberOfFees);
     }
 
     /**
@@ -92,7 +94,8 @@ public class ApplicationListEntryAssertion {
             String assertWordingApplied,
             String assertWording,
             List<TemplateSubstitution> expectedWordingFields,
-            List<Long> existingFeeStatuses) {
+            List<Long> existingFeeStatuses,
+            int expectedNumberOfFees) {
 
         // validate applicant with the dto
         if (entryCreateUpdateDto.getStandardApplicantCode() != null) {
@@ -180,11 +183,17 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
             Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
+
+            boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {
-                Assertions.assertEquals(
-                        entryCreateUpdateDto.getHasOffsiteFee(),
-                        feeRepository.findById(fee.getFeeId()).get().isOffsite());
+                containsOffsite = feeRepository.findById(fee.getFeeId()).get().isOffsite();
+                if (containsOffsite) {
+                    break;
+                }
             }
+            Assertions.assertEquals(entryCreateUpdateDto.getHasOffsiteFee(), containsOffsite);
+            Assertions.assertEquals(
+                    expectedNumberOfFees, applicationListEntry.getEntryFeeIds().size());
         }
 
         // ensure the database fees align ignoring pre existing fee statuses
