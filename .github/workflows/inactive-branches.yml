@@ -32,6 +32,35 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
+      - name: Validate Inputs
+        env:
+          INACTIVE_DAYS: ${{ inputs.inactive_days }}
+          GRACE_PERIOD_DAYS: ${{ inputs.grace_period_days }}
+          CREATE_ISSUE: ${{ inputs.create_issue }}
+          DELETE_BRANCH: ${{ inputs.delete_branch }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if ! [[ "" =~ ^[0-9]+$ ]]; then
+            echo "Error: inactive_days must be a positive integer."
+            exit 1
+          fi
+          if ! [[ "$GRACE_PERIOD_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "Error: grace_period_days must be a positive integer."
+            exit 1
+          fi
+          if ! [[ "$CREATE_ISSUE" =~ ^(true|false)$ ]]; then
+            echo "Error: create_issue must be 'true' or 'false'."
+            exit 1
+          fi
+          if ! [[ "$DELETE_BRANCH" =~ ^(true|false)$ ]]; then
+            echo "Error: delete_branch must be 'true' or 'false'."
+            exit 1
+          fi
+          if ! [[ "$DRY_RUN" =~ ^(true|false)$ ]]; then
+            echo "Error: dry_run must be 'true' or 'false'."
+            exit 1
+          fi
+
       - name: Set up Git
         run: |
           git config --global user.name 'GitHub Actions'
