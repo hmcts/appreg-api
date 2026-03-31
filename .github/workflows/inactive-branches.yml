@@ -40,7 +40,7 @@ jobs:
           DELETE_BRANCH: ${{ inputs.delete_branch }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
-          if ! [[ "" =~ ^[0-9]+$ ]]; then
+          if ! [[ "$INACTIVE_DAYS" =~ ^[0-9]+$ ]]; then
             echo "Error: inactive_days must be a positive integer."
             exit 1
           fi
@@ -76,6 +76,12 @@ jobs:
           REPO: ${{ github.event.repository.name }}
           OWNER: ${{ github.repository_owner }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INACTIVE_DAYS: ${{ inputs.inactive_days }}
+          GRACE_PERIOD_DAYS: ${{ inputs.grace_period_days }}
+          CREATE_ISSUE: ${{ inputs.create_issue }}
+          DELETE_BRANCH: ${{ inputs.delete_branch }}
+          DRY_RUN: ${{ inputs.dry_run }}
+
         run: |
           # defining a list of protected branches that should not be deleted or have issues created for them
           protected_branches=("main" "master" "develop" "release" "origin" "staging" "ithc" "demo")
@@ -125,9 +131,9 @@ jobs:
             inactive_issue_jq='.[] | select(((.body | split("\n") | index("Branch: " + $branch)) != null) or (.body | startswith("The branch \u0027" + $branch + "\u0027 has been inactive for "))) | .number'
 
             # If the branch is inactive for more than inactive days + grace period, then delete it only if it's not a dry run and delete_branch is true
-            if [ $diff_days -gt $(( ${{ inputs.inactive_days}} + ${{ inputs.grace_period_days }} )) ] && [ "${{ inputs.delete_branch }}" = "true" ]; then
-              echo "Deleting inactive branch: $branch (Last commit: $last_commit_date) Author: $author Dry Run: ${{ inputs.dry_run }}"
-              if [ "${{ inputs.dry_run }}" = "false" ]; then
+            if [ $diff_days -gt $(( INACTIVE_DAYS + GRACE_PERIOD_DAYS )) ] && [ "$DELETE_BRANCH" = "true" ]; then
+              echo "Deleting inactive branch: $branch (Last commit: $last_commit_date) Author: $author Dry Run: $DRY_RUN"
+              if [ "$DRY_RUN" = "false" ]; then
                 
                 echo "Closing related inactive branches issues for branch: $branch"
                 gh issue list --label "inactive-branch" --json number,title,body | jq -r --arg branch "$branch" "$inactive_issue_jq" | while read -r issue_number; do
@@ -145,8 +151,8 @@ jobs:
             fi
 
             # If the branch is inactive for more than inactive days, create an issue only if it's not a dry run and create_issue is true
-            if [ $diff_days -gt ${{ inputs.inactive_days }} ] && [ "${{ inputs.create_issue }}" = "true" ]; then
-              if [ "${{ inputs.dry_run }}" = "false" ]; then
+            if [ $diff_days -gt $INACTIVE_DAYS ] && [ "$CREATE_ISSUE" = "true" ]; then
+              if [ "$DRY_RUN" = "false" ]; then
                 echo "Checking if label 'inactive-branch' exists"
                 if ! gh label list --json name --jq '.[].name' | grep -Fxq "inactive-branch"; then
                   echo "Creating label: inactive-branch"
