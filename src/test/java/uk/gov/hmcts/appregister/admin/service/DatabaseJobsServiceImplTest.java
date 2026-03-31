@@ -1,7 +1,14 @@
 package uk.gov.hmcts.appregister.admin.service;
 
-import lombok.extern.slf4j.Slf4j;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.when;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,7 +16,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import uk.gov.hmcts.appregister.admin.exception.DatabaseJobError;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapperImpl;
@@ -17,15 +23,6 @@ import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.when;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -83,7 +80,6 @@ public class DatabaseJobsServiceImplTest {
         var status = service.getDatabaseJobStatusByName("TEST_ENABLE_JOB");
         assertNotNull(status);
         assertEquals(true, status.getEnabled());
-
     }
 
     @Test
@@ -109,23 +105,29 @@ public class DatabaseJobsServiceImplTest {
 
     @Test
     public void testGetDatabaseJobStatusByNameNotFound() {
-        AppRegistryException exception = assertThrows(AppRegistryException.class, () -> {
-            service.getDatabaseJobStatusByName("NON_EXISTENT_JOB");
-        });
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> {
+                            service.getDatabaseJobStatusByName("NON_EXISTENT_JOB");
+                        });
 
         Assertions.assertEquals(
-            DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
-            exception.getCode().getCode().getAppCode());
+                DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
+                exception.getCode().getCode().getAppCode());
     }
 
-     @Test
+    @Test
     public void testEnableDisableDatabaseJobByNameNotFound() {
-         AppRegistryException exception = assertThrows(AppRegistryException.class, () -> {
-             service.enableDisableDatabaseJobByName("NON_EXISTENT_JOB", false);
-         });
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> {
+                            service.enableDisableDatabaseJobByName("NON_EXISTENT_JOB", false);
+                        });
 
-         Assertions.assertEquals(
-             DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
-             exception.getCode().getCode().getAppCode());
+        Assertions.assertEquals(
+                DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
+                exception.getCode().getCode().getAppCode());
     }
 }

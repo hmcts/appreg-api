@@ -1,17 +1,14 @@
 package uk.gov.hmcts.appregister.admin.databasejobs.mapper;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
+import java.time.OffsetDateTime;
+import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapperImpl;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
-
-import java.time.OffsetDateTime;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 
 public class DatabaseJobMapperTest {
     private final DatabaseJobsMapper mapper = new DatabaseJobsMapperImpl();
