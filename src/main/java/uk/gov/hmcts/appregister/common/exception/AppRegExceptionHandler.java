@@ -220,4 +220,15 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         }
         return null;
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpectedException(Exception ex) {
+        log.error("Unexpected error occurred", ex);
+
+        ProblemDetail problemDetail =
+                ProblemDetail.forStatusAndDetail(
+                        HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problemDetail);
+    }
 }

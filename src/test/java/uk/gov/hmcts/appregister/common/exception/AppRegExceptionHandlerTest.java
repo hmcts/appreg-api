@@ -290,4 +290,21 @@ class AppRegExceptionHandlerTest {
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
     }
+
+    @Test
+    void givenUnexpectedException_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
+        // setup
+        RuntimeException exception = new RuntimeException("boom");
+
+        // execute
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleUnexpectedException(exception);
+
+        // assert
+        Assertions.assertEquals(HttpStatusCode.valueOf(500), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(500, problemDetail.getBody().getStatus());
+        Assertions.assertEquals(
+                "An unexpected error occurred", problemDetail.getBody().getDetail());
+    }
 }
