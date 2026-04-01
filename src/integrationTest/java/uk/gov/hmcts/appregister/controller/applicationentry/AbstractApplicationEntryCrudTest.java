@@ -393,7 +393,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             EntryUpdateDto entryUpdateDto,
             EntryGetDetailDto response,
             String wordingSpec,
-            List<FeeStatus> existingFees) {
+            List<FeeStatus> expectedFees) {
 
         if (entryUpdateDto.getApplicant() != null) {
             Assertions.assertEquals(entryUpdateDto.getApplicant(), response.getApplicant());
@@ -419,30 +419,18 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(entryUpdateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryUpdateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
-        for (int i = 0; i < existingFees.size(); i++) {
-            Assertions.assertEquals(
-                    existingFees.get(i).getPaymentReference(),
-                    response.getFeeStatuses().get(i).getPaymentReference());
-            Assertions.assertEquals(
-                    existingFees.get(i).getStatusDate(),
-                    response.getFeeStatuses().get(i).getStatusDate());
-            Assertions.assertEquals(
-                    existingFees.get(i).getPaymentStatus(),
-                    response.getFeeStatuses().get(i).getPaymentStatus());
-        }
+        // Replace semantics: response should match exactly what was sent in the update
+        Assertions.assertEquals(expectedFees.size(), response.getFeeStatuses().size());
 
-        for (int i = existingFees.size(); i < response.getFeeStatuses().size(); i++) {
+        for (int i = 0; i < expectedFees.size(); i++) {
             Assertions.assertEquals(
-                    entryUpdateDto
-                            .getFeeStatuses()
-                            .get(i - existingFees.size())
-                            .getPaymentReference(),
+                    expectedFees.get(i).getPaymentReference(),
                     response.getFeeStatuses().get(i).getPaymentReference());
             Assertions.assertEquals(
-                    entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getStatusDate(),
+                    expectedFees.get(i).getStatusDate(),
                     response.getFeeStatuses().get(i).getStatusDate());
             Assertions.assertEquals(
-                    entryUpdateDto.getFeeStatuses().get(i - existingFees.size()).getPaymentStatus(),
+                    expectedFees.get(i).getPaymentStatus(),
                     response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
