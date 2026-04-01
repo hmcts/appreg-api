@@ -26,7 +26,6 @@ public class ApplicationEntryResultControllerDeleteTest
     void givenValidIds_whenDelete_then204() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
-        persistance.save(entry);
 
         var resolutionCode = new ResolutionCodeTestData().someComplete();
         var entryResult = createAndSaveResolution(entry, resolutionCode);
@@ -128,7 +127,6 @@ public class ApplicationEntryResultControllerDeleteTest
     void givenEtagMismatch_whenDelete_then412() throws Exception {
         var list = createAndSaveList(OPEN);
         var entry = createEntry(list);
-        persistance.save(entry);
 
         var resolutionCode = new ResolutionCodeTestData().someComplete();
         var entryResult = createAndSaveResolution(entry, resolutionCode);

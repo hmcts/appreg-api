@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.data;
 
 import static org.instancio.Select.field;
 
+import java.time.LocalDate;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -18,6 +19,8 @@ public class StandardApplicantTestData
                 .ignore(field(StandardApplicant::getId))
                 .ignore(field(StandardApplicant::getVersion))
                 .generate(field(StandardApplicant::getPostcode), gen -> gen.string().length(1, 8))
+                .set(field(StandardApplicant::getApplicantStartDate), LocalDate.now().minusDays(10))
+                .set(field(StandardApplicant::getApplicantEndDate), LocalDate.now().plusDays(10))
                 .withSettings(settings)
                 .create();
     }

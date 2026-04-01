@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.function.Consumer;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
@@ -16,6 +17,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
  */
 @Builder
 @Getter
+@Setter
 public class RestEndpointDescription {
 
     /** The url to call. */

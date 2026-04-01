@@ -161,10 +161,14 @@ public class ApplicationEntryResultControllerSearchTest
 
         Assertions.assertEquals(201, response.getStatusCode());
 
-        // set the list to closed to prove this does not affect the get
-        ApplicationList applicationList = applicationListRepository.findByUuid(appList).get();
-        applicationList.setStatus(Status.CLOSED);
-        persistance.save(applicationList);
+        unitOfWork.inTransaction(
+                () -> {
+                    // set the list to closed to prove this does not affect the get
+                    ApplicationList applicationList =
+                            applicationListRepository.findByUuid(appList).get();
+                    applicationList.setStatus(Status.CLOSED);
+                    persistance.save(applicationList);
+                });
 
         // navigate to the second page
         response = getEntryResult(token, appList, detailDto.getId(), 10, 0);
@@ -268,10 +272,14 @@ public class ApplicationEntryResultControllerSearchTest
 
         Assertions.assertEquals(201, response.getStatusCode());
 
-        // set the list to deleted
-        ApplicationList applicationList = applicationListRepository.findByUuid(appList).get();
-        applicationList.setDeleted(YesOrNo.YES);
-        persistance.save(applicationList);
+        unitOfWork.inTransaction(
+                () -> {
+                    // set the list to deleted
+                    ApplicationList applicationList =
+                            applicationListRepository.findByUuid(appList).get();
+                    applicationList.setDeleted(YesOrNo.YES);
+                    persistance.save(applicationList);
+                });
 
         // navigate to the second page
         Response actualResponse = getEntryResult(token, appList, detailDto.getId(), 10, 0);

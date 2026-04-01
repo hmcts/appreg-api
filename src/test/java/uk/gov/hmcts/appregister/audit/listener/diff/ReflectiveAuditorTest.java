@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -183,6 +184,7 @@ public class ReflectiveAuditorTest {
     public void testDeleteAppListAuditData() {
         ApplicationList appList = new AppListTestData().someComplete();
         appList.setId(123L);
+        appList.setUuid(UUID.randomUUID());
         ReflectiveAuditor reflectiveAuditDifferentiator = new ReflectiveAuditor(true);
         List<AuditableData> differenceList =
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, appList);

@@ -10,9 +10,9 @@ import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.assertion.ConstraintAssertion;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
-import utils.ConstraintAssertion;
 
 public class ApplicationListDtoTest {
 

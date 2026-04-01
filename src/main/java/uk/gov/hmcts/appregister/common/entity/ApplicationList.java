@@ -17,7 +17,7 @@ import jakarta.persistence.Version;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Set;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -119,7 +119,7 @@ public class ApplicationList extends BaseChangeableAndDeletableEntity
     private Long version;
 
     @OneToMany(mappedBy = "applicationList")
-    private Set<ApplicationListEntry> entries;
+    private List<ApplicationListEntry> entries;
 
     public boolean isOpen() {
         return this.status == Status.OPEN;

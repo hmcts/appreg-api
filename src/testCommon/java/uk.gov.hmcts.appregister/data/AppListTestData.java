@@ -30,8 +30,10 @@ public class AppListTestData
                 Instancio.of(ApplicationList.class)
                         .ignore(field(ApplicationList::getId))
                         .ignore(field(ApplicationList::getCja))
+                        .ignore(field(ApplicationList::getUuid))
                         .withSettings(settings)
                         .create();
+        list.setDeleted(false);
 
         list.setCja(new CriminalJusticeTestData().someMinimal().build());
 

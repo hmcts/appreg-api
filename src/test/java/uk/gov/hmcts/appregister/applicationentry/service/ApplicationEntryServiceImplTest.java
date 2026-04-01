@@ -818,6 +818,8 @@ public class ApplicationEntryServiceImplTest {
     @Test
     void testToEntryGetDetailDto() {
         ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        applicationListEntry.setId(1L);
+
         ApplicationList applicationList = new AppListTestData().someComplete();
 
         getEntryValidationSuccess =
@@ -860,6 +862,7 @@ public class ApplicationEntryServiceImplTest {
     @Test
     void testToEntryGetDetailDtoNoFees() {
         ApplicationListEntry applicationListEntry = new AppListEntryTestData().someComplete();
+        applicationListEntry.setId(1L);
         ApplicationList applicationList = new AppListTestData().someComplete();
 
         getEntryValidationSuccess =

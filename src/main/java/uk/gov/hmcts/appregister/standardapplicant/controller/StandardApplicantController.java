@@ -51,7 +51,6 @@ public class StandardApplicantController implements StandardApplicantsApi {
                         Sort.Direction.ASC,
                         StandardApplicantSortFieldEnum::getEntityValue);
 
-        StandardApplicantPage standardApplicantPage = service.findAll(code, title, pageable);
         return ResponseEntity.ok().body(service.findAll(code, title, pageable));
     }
 

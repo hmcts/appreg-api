@@ -236,18 +236,22 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
     }
 
     protected ExistingEntryResultContext givenExistingEntryResult(Status status) throws Exception {
-        var list = createAndSaveList(status);
-        var entry = createEntry(list);
-        persistance.save(entry);
-
-        var resolutionCode = new ResolutionCodeTestData().someComplete();
-        resolutionCode.setResultCode(APPC_CODE);
-        persistance.save(resolutionCode);
-
-        var entryResult = createAndSaveResolution(entry, resolutionCode);
-
         var token = getToken();
-        return new ExistingEntryResultContext(list, entry, entryResult, token);
+
+        return unitOfWork.inTransaction(
+                () -> {
+                    var list = createAndSaveList(status);
+                    var entry = createEntry(list);
+                    persistance.save(entry);
+
+                    var resolutionCode = new ResolutionCodeTestData().someComplete();
+                    resolutionCode.setResultCode(APPC_CODE);
+                    persistance.save(resolutionCode);
+
+                    var entryResult = createAndSaveResolution(entry, resolutionCode);
+
+                    return new ExistingEntryResultContext(list, entry, entryResult, token);
+                });
     }
 
     /**

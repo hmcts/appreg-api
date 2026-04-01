@@ -340,9 +340,9 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         ApplicationList list = new AppListTestData().someMinimal().build();
         entry.setApplicationList(list);
 
-        persistance.save(entry);
         list.setStatus(Status.OPEN);
-        persistance.save(list);
+
+        persistance.save(entry);
 
         return list;
     }
@@ -352,9 +352,9 @@ public class ApplicationEntryControllerMoveTest extends AbstractApplicationCodeE
         ApplicationListEntry targetEntry = new AppListEntryTestData().someMinimal().build();
         targetEntry.setApplicationList(targetList);
 
-        persistance.save(targetEntry);
         targetList.setStatus(Status.OPEN);
-        persistance.save(targetList);
+
+        persistance.save(targetEntry);
 
         return targetList;
     }
