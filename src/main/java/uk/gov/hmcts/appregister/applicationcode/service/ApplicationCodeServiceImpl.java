@@ -75,7 +75,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                 Fee offsiteFee =
                                         feePair != null && feePair.offsiteFee() != null
                                                 ? feePair.offsiteFee()
-                                                : feeService.getOffsiteFee();
+                                                : feeService.getOffsiteFee(code.getStartDate());
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
@@ -112,6 +112,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                 FeePair feePair =
                                         feeService.resolveFeePair(
                                                 success.getApplicationCode().getFeeReference());
+                                Fee offsiteFee =
+                                        feePair != null && feePair.offsiteFee() != null
+                                                ? feePair.offsiteFee()
+                                                : feeService.getOffsiteFee(
+                                                        success.getApplicationCode()
+                                                                .getStartDate());
 
                                 AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
                                         result =
@@ -123,14 +129,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                         feePair != null
                                                                                 ? feePair.mainFee()
                                                                                 : null,
-                                                                        feePair != null
-                                                                                        && feePair
-                                                                                                        .offsiteFee()
-                                                                                                != null
-                                                                                ? feePair
-                                                                                        .offsiteFee()
-                                                                                : feeService
-                                                                                        .getOffsiteFee()),
+                                                                        offsiteFee),
                                                         applicationCodeMapper.toEntity(
                                                                 payloadForGet));
 
