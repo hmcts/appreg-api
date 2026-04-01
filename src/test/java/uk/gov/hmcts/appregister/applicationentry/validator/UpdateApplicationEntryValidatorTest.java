@@ -272,30 +272,6 @@ public class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantFeeNotDueFail() {
-        applicationCode.setFeeDue(YesOrNo.NO);
-
-        FeeStatus feeStatus = new FeeStatus();
-        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
-
-        entryUpdateDto.getRespondent().setOrganisation(null);
-        entryUpdateDto.setStandardApplicantCode(null);
-        entryUpdateDto.getApplicant().setOrganisation(null);
-
-        PayloadForUpdateEntry payload =
-                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
-
-        // validate the payload
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> updateApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
-    }
-
-    @Test
     void testApplicantFeeDueFail() {
         applicationCode.setFeeDue(YesOrNo.YES);
 

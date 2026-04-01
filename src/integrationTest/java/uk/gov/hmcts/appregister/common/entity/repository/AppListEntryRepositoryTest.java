@@ -10,6 +10,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.s
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,14 +26,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
@@ -979,6 +983,45 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertFalse(result.contains(otherUuid));
     }
 
+    @Test
+    @Transactional
+    public void testFindResolutionCodesByEntryIds_returnsAllResolutionCodesForEachEntry() {
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry entry1 =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+        ApplicationListEntry entry2 =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2);
+
+        saveResolution(entry1, "RC1");
+        saveResolution(entry1, "RC2");
+        saveResolution(entry2, "RC3");
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<ApplicationListEntryResolutionProjection> result =
+                applicationListEntryRepository.findResolutionCodesByEntryIds(
+                        List.of(entry1.getId(), entry2.getId()));
+
+        List<String> entry1Codes =
+                result.stream()
+                        .filter(p -> p.getEntryId().equals(entry1.getId()))
+                        .map(p -> p.getResolutionCode().getResultCode())
+                        .toList();
+
+        List<String> entry2Codes =
+                result.stream()
+                        .filter(p -> p.getEntryId().equals(entry2.getId()))
+                        .map(p -> p.getResolutionCode().getResultCode())
+                        .toList();
+
+        assertTrue(entry1Codes.contains("RC1"));
+        assertTrue(entry1Codes.contains("RC2"));
+        assertTrue(entry2Codes.contains("RC3"));
+    }
+
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {
         ApplicationListEntry moveEntry1 = new AppListEntryTestData().someMinimal().build();
         moveEntry1.setApplicationList(sourceList);
@@ -986,5 +1029,24 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         entityManager.refresh(moveEntry1);
 
         return moveEntry1;
+    }
+
+    private void saveResolution(ApplicationListEntry entry, String resultCode) {
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entry);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        persistance.save(entryResolution);
     }
 }

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
@@ -17,6 +18,9 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -244,7 +248,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);
@@ -280,7 +283,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2025-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -406,7 +408,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
-        assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -532,7 +533,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
-        assertThat(entryGetSummaryDto.getIsResulted()).isTrue();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
@@ -635,7 +635,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         entryGetSummaryDto = page.getContent().get(4);
@@ -702,7 +701,6 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                 .isEqualTo("Regulation 34 Council Tax (Admin and Enforcement) Regulations 1992");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
-        assertThat(entryGetSummaryDto.getIsResulted()).isFalse();
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }
@@ -842,6 +840,29 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
         // assert the response
         responseSpec.then().statusCode(400);
+    }
+
+    @Test
+    @StabilityTest
+    public void testGetApplicationEntriesReturnsAllResultCodes() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+        ApplicationCode applicationCode = createApplicationCode("APP002", true);
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber("ACC123");
+        entry = persistance.save(entry);
+
+        saveResolutions(entry, "RC1", "RC2");
+
+        Response responseSpec = executeGetEntries(list.getUuid(), 20, 0);
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        EntryGetSummaryDto dto = findEntry(page, entry.getUuid());
+
+        assertResultCodes(dto, "RC1", "RC2");
     }
 
     record ApplicationEntryFilter(

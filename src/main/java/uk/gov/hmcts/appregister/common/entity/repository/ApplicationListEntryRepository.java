@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
@@ -160,7 +162,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.courtCode  AS courtCode,
                     ac.legislation as legislation,
                     ac.feeDue feeRequired,
-                    aler.id as result,
                     cja.code AS cjaCode,
                     al.otherLocation AS otherLocationDescription,
                     ana as anameAddress,
@@ -188,8 +189,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     sa as standardApplicant,
                     al.uuid as listId,
                     ac.title AS applicationTitle,
-                    ale.sequenceNumber as sequenceNumber,
-                    rc as resolutionCode
+                    ale.sequenceNumber as sequenceNumber
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
@@ -197,11 +197,6 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                 LEFT JOIN ale.applicationCode ac
                 LEFT JOIN ale.applicationList al
                 LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-                LEFT JOIN AppListEntryResolution aler ON aler.applicationList
-                            = ale AND aler.id = (SELECT MAX(sub.id)
-                              FROM AppListEntryResolution sub
-                              WHERE sub.applicationList = ale)
-                LEFT JOIN aler.resolutionCode rc on rc.id = aler.resolutionCode.id
             WHERE  (:hasHearingDate = false OR :hasHearingDate IS NULL OR al.date = :hearingDate)
                     AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
                     AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
@@ -262,6 +257,24 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             @Param("feeRequired") Boolean feeRequired,
             @Param("sequenceNumber") Integer sequenceNumber,
             Pageable pageable);
+
+    /**
+     * Retrieves all resolution codes associated with the given Application List Entry IDs.
+     *
+     * @param entryIds the collection of Application List Entry IDs to retrieve resolution codes for
+     * @return a list of ApplicationListEntryResolutionProjection containing entry IDs and their
+     *     associated resolution codes
+     */
+    @Query(
+            """
+                SELECT
+                       aler.applicationList.id as entryId,
+                       aler.resolutionCode as resolutionCode
+                FROM AppListEntryResolution aler
+                WHERE aler.applicationList.id in :entryIds
+            """)
+    List<ApplicationListEntryResolutionProjection> findResolutionCodesByEntryIds(
+            @Param("entryIds") Collection<Long> entryIds);
 
     /**
      * Retrieves list of entries for a given application list.
