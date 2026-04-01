@@ -96,16 +96,21 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
                         filterDescription,
                         req -> applyQueryForStart(filterDescription, req, false));
 
-        assertResponseInOrder(
-                List.of(
-                        filterDescription
-                                .getFilterableScenario()
-                                .getFilterData()
-                                .getFirst()
-                                .getFirst()
-                                .getKeyableValues()
-                                .getKeyable()),
-                response);
+        // run the assertions
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    List<T> reloaded =
+                            reload(
+                                    List.of(
+                                            filterDescription
+                                                    .getFilterableScenario()
+                                                    .getFilterData()
+                                                    .getFirst()
+                                                    .getFirst()
+                                                    .getKeyableValues()
+                                                    .getKeyable()));
+                    assertResponseInOrder(reloaded, response);
+                });
     }
 
     @ParameterizedTest

@@ -77,17 +77,22 @@ public enum ApplicationListFilterEnum implements FilterMetaDescriptorEnum<Applic
                     .caseInsensitive(false)
                     .filterGenerator(
                             (count, keyable, descriptor) -> {
-                                FilterFieldData<ApplicationList> filterFieldData =
-                                        FilterFieldDataGenerator.getFieldDataWithString(
-                                                count, descriptor, keyable, 2);
+                                java.lang.String code = PrimitiveDataGenerator.generate(count, 2);
 
                                 CriminalJusticeTestData criminalJusticeTestData =
                                         new CriminalJusticeTestData();
                                 CriminalJusticeArea criminalJusticeArea =
                                         criminalJusticeTestData.someComplete();
-                                criminalJusticeArea.setCode(
-                                        filterFieldData.getKeyableValues().getValue().toString());
+                                criminalJusticeArea.setCode(code);
                                 keyable.setCja(criminalJusticeArea);
+                                FilterFieldValue<ApplicationList> value = new FilterFieldValue<>();
+                                value.setKeyable(keyable);
+                                value.setValue(code);
+
+                                FilterFieldData<ApplicationList> filterFieldData =
+                                        new FilterFieldData<>();
+                                filterFieldData.setDescriptor(descriptor);
+                                filterFieldData.setKeyableValues(value);
                                 return filterFieldData;
                             })
                     .build()),

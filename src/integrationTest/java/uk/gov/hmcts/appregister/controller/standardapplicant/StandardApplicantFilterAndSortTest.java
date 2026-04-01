@@ -3,12 +3,10 @@ package uk.gov.hmcts.appregister.controller.standardapplicant;
 import io.restassured.response.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
 import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
@@ -20,6 +18,7 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractFilterAndSortControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestFilterEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.controller.RestSortEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.util.ApplicantAssertion;
 
 public class StandardApplicantFilterAndSortTest
         extends AbstractFilterAndSortControllerTest<StandardApplicant> {
@@ -86,12 +85,10 @@ public class StandardApplicantFilterAndSortTest
 
         int expectedIndex = 0;
 
-        Map<String, Keyable> matches = new HashMap<>();
         for (StandardApplicantGetSummaryDto item : content) {
             if (expectedIndex < keyable.size()
                     && keyable.get(expectedIndex).getApplicantCode().equals(item.getCode())) {
-                matches.put(
-                        keyable.get(expectedIndex).getApplicantCode(), keyable.get(expectedIndex));
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -107,6 +104,18 @@ public class StandardApplicantFilterAndSortTest
     protected boolean assertPageSize(int size, Response response) {
         StandardApplicantPage page = response.as(StandardApplicantPage.class);
         return size == page.getContent().size();
+    }
+
+    private void assertKeyableForSummary(
+            StandardApplicant keyable, StandardApplicantGetSummaryDto dto) {
+        Assertions.assertEquals(keyable.getApplicantCode(), dto.getCode());
+        Assertions.assertEquals(keyable.getApplicantStartDate(), dto.getStartDate());
+        Assertions.assertEquals(keyable.getApplicantEndDate(), dto.getEndDate().get());
+        if (keyable.getName() == null) {
+            ApplicantAssertion.validatePerson(dto.getApplicant().getPerson(), keyable);
+        } else {
+            ApplicantAssertion.validateOrganisation(dto.getApplicant().getOrganisation(), keyable);
+        }
     }
 
     @Override

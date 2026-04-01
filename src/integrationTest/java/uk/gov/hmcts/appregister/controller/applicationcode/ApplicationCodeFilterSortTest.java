@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
 import uk.gov.hmcts.appregister.data.filter.FilterableScenario;
@@ -97,6 +99,7 @@ public class ApplicationCodeFilterSortTest
         for (ApplicationCodeGetSummaryDto item : content) {
             if (expectedIndex < keyable.size()
                     && keyable.get(expectedIndex).getCode().equals(item.getApplicationCode())) {
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -106,5 +109,20 @@ public class ApplicationCodeFilterSortTest
         }
 
         return true;
+    }
+
+    private void assertKeyableForSummary(
+            ApplicationCode keyable, ApplicationCodeGetSummaryDto dto) {
+        Assertions.assertEquals(keyable.getCode(), dto.getApplicationCode());
+        Assertions.assertEquals(keyable.getTitle(), dto.getTitle());
+        Assertions.assertEquals(
+                keyable.getBulkRespondentAllowed().isYes(), dto.getBulkRespondentAllowed());
+        Assertions.assertEquals(keyable.getFeeDue().isYes(), dto.getIsFeeDue());
+        Assertions.assertEquals(
+                keyable.getRequiresRespondent().isYes(), dto.getRequiresRespondent());
+        Assertions.assertEquals(keyable.getFeeReference(), dto.getFeeReference().get());
+        Assertions.assertEquals(
+                WordingTemplateSentence.with(keyable.getWording()).getDetail().getTemplate(),
+                dto.getWording().getTemplate());
     }
 }

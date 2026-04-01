@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -101,6 +103,7 @@ public class ApplicationListFilterAndSortTest
         for (ApplicationListGetSummaryDto item : content) {
             if (expectedIndex < keyable.size()
                     && keyable.get(expectedIndex).getUuid().equals(item.getId())) {
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -121,5 +124,16 @@ public class ApplicationListFilterAndSortTest
     @Override
     protected ApplicationList saveToDatabase(ApplicationList keyable) {
         return this.persistance.save(keyable);
+    }
+
+    private void assertKeyableForSummary(
+            ApplicationList keyable, ApplicationListGetSummaryDto dto) {
+        Assertions.assertEquals(keyable.getDate(), dto.getDate());
+        Assertions.assertEquals(keyable.getTime(), dto.getTime());
+        Assertions.assertEquals(keyable.getStatus().getValue(), dto.getStatus().getValue());
+        Assertions.assertEquals(keyable.getEntries().size(), dto.getEntriesCount());
+        Assertions.assertEquals(keyable.getDescription(), dto.getDescription());
+        Assertions.assertEquals(keyable.getCourtName() == null ? keyable.getDescription()
+        : keyable.getCourtName(), dto.getLocation());
     }
 }

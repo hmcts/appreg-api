@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
@@ -92,6 +93,7 @@ public class CourtLocationFilterAndSortTest
                     && keyable.get(expectedIndex)
                             .getCourtLocationCode()
                             .equals(item.getLocationCode())) {
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -112,5 +114,11 @@ public class CourtLocationFilterAndSortTest
     @Override
     protected NationalCourtHouse saveToDatabase(NationalCourtHouse keyable) {
         return this.persistance.save(keyable);
+    }
+
+    private void assertKeyableForSummary(
+            NationalCourtHouse keyable, CourtLocationGetSummaryDto dto) {
+        Assertions.assertEquals(keyable.getCourtLocationCode(), dto.getLocationCode());
+        Assertions.assertEquals(keyable.getName(), dto.getName());
     }
 }

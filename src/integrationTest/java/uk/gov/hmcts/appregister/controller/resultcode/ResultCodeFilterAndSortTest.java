@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
@@ -85,6 +86,7 @@ public class ResultCodeFilterAndSortTest
         for (ResultCodeGetSummaryDto item : content) {
             if (expectedIndex < keyable.size()
                     && keyable.get(expectedIndex).getResultCode().equals(item.getResultCode())) {
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -100,6 +102,11 @@ public class ResultCodeFilterAndSortTest
     protected boolean assertPageSize(int size, Response response) {
         ResultCodePage page = response.as(ResultCodePage.class);
         return size == page.getContent().size();
+    }
+
+    private void assertKeyableForSummary(ResolutionCode keyable, ResultCodeGetSummaryDto dto) {
+        Assertions.assertEquals(keyable.getResultCode(), dto.getResultCode());
+        Assertions.assertEquals(keyable.getTitle(), dto.getTitle());
     }
 
     @Override

@@ -35,9 +35,23 @@ public enum StandardApplicantFilterEnum implements FilterMetaDescriptorEnum<Stan
                                 FilterFieldData<StandardApplicant> filterFieldData =
                                         FilterFieldDataGenerator.getFieldDataWithString(
                                                 count, descriptor, keyable, 35);
-                                keyable.setName(
-                                        filterFieldData.getKeyableValues().getValue().toString());
-                                return filterFieldData;
+
+                                if (count % 2 == 0) {
+                                    keyable.setName(
+                                            filterFieldData
+                                                    .getKeyableValues()
+                                                    .getValue()
+                                                    .toString());
+                                    return filterFieldData;
+                                } else {
+                                    keyable.setName(null);
+                                    keyable.setApplicantForename1(
+                                            filterFieldData
+                                                    .getKeyableValues()
+                                                    .getValue()
+                                                    .toString());
+                                    return filterFieldData;
+                                }
                             })
                     .build());
 

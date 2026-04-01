@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.data.filter.FilterScenarioFactory;
@@ -87,6 +88,7 @@ public class CriminalJusticeAreaFilterAndSortTest
         for (CriminalJusticeAreaGetDto item : content) {
             if (expectedIndex < keyable.size()
                     && keyable.get(expectedIndex).getCode().equals(item.getCode())) {
+                assertKeyableForSummary(keyable.get(expectedIndex), item);
                 expectedIndex++;
             }
         }
@@ -102,6 +104,12 @@ public class CriminalJusticeAreaFilterAndSortTest
     protected boolean assertPageSize(int size, Response response) {
         CriminalJusticeAreaPage page = response.as(CriminalJusticeAreaPage.class);
         return size == page.getContent().size();
+    }
+
+    private void assertKeyableForSummary(
+            CriminalJusticeArea keyable, CriminalJusticeAreaGetDto dto) {
+        Assertions.assertEquals(keyable.getCode(), dto.getCode());
+        Assertions.assertEquals(keyable.getDescription(), dto.getDescription());
     }
 
     @Override
