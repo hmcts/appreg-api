@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -537,6 +538,25 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             assertTrue(entry.getOffsiteFeeAmount().isPresent(), "Offsite fee amount should be present for all records");
         }
     }
+
+    @Test
+    public void givenValidRequest_whenGetApplicationCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200() throws Exception {
+        // create the token to send
+        TokenGenerator tokenGenerator =
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        Response responseSpec =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(WEB_CONTEXT + "/" + "AD99004" + "?date=2020-07-25"),
+                tokenGenerator.fetchTokenForRole());
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodeGetDetailDto detailDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
+        assertTrue(detailDto.getOffsiteFeeAmount().isPresent(), "Offsite fee amount should be present for all records");
+
+    }
+
 
     @Test
     @StabilityTest
