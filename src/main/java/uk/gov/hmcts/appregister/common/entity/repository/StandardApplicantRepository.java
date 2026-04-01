@@ -31,6 +31,10 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
         AND sa.applicantStartDate <= :date
         AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
         """)
     List<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
@@ -46,7 +50,7 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     /**
      * Retrieve a page of active Standrd Applicant Codes filtered by code/name (case-insensitive).
      *
-     * <p>Active if: c.startDate < :date AND (c.endDate IS NULL OR c.endDate >= :date)
+     * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
      * <p>Name can represent the name title or the forename_1 or the surname. If name is not null we
      * use name as this is an organisation. The expectations is that the forename and surname will
@@ -66,8 +70,8 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         SELECT c
         FROM StandardApplicant c
         WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
-          AND (c.applicantStartDate < :active)
-          AND (c.applicantEndDate IS NULL OR c.applicantEndDate > :active)
+          AND (c.applicantStartDate <= :active)
+          AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :active)
           AND (:name IS NULL
                   OR (((c.name IS NOT NULL AND LOWER(c.name) LIKE CONCAT('%',
                           LOWER(CAST(:name AS string)), '%')  ESCAPE '\\')

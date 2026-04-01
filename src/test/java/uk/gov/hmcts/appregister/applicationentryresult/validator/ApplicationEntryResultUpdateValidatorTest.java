@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -29,17 +28,21 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultUpdateValidatorTest {
 
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private ApplicationListRepository applicationListRepository;
 
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
 
     @Mock private ResolutionCodeRepository resolutionCodeRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private AppListEntryResolutionRepository appListEntryResolutionRepository;
 
@@ -82,8 +85,9 @@ class ApplicationEntryResultUpdateValidatorTest {
                         eq(applicationListEntryUuid), eq(applicationListUuid)))
                 .thenReturn(Optional.of(applicationListEntry));
 
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), any(Pageable.class)))
+                        eq(dto.getResultCode()), eq(TODAY_UK)))
                 .thenReturn(List.of(resolutionCode));
 
         // ---- additional validation in ApplicationEntryResultUpdateValidator ----
@@ -151,7 +155,7 @@ class ApplicationEntryResultUpdateValidatorTest {
     @Test
     void validateResolutionCodeDoesNotExist() {
         when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        eq(dto.getResultCode()), any(Pageable.class)))
+                        eq(dto.getResultCode()), eq(TODAY_UK)))
                 .thenReturn(List.of());
 
         AppRegistryException ex =

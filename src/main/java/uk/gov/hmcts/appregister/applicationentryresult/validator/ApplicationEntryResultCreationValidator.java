@@ -11,6 +11,7 @@ import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 
@@ -27,8 +28,13 @@ public class ApplicationEntryResultCreationValidator
     public ApplicationEntryResultCreationValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
-            ResolutionCodeRepository resolutionCodeRepository) {
-        super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
+            ResolutionCodeRepository resolutionCodeRepository,
+            BusinessDateProvider businessDateProvider) {
+        super(
+                applicationListRepository,
+                applicationListEntryRepository,
+                resolutionCodeRepository,
+                businessDateProvider);
     }
 
     @Override

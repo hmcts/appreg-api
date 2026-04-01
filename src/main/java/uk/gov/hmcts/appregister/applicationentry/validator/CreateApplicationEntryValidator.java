@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +13,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -33,13 +33,13 @@ public class CreateApplicationEntryValidator
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
             FeeRepository feeRepository,
-            Clock clock,
+            BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
                 feeRepository,
-                clock,
+                businessDateProvider,
                 standardApplicantRepository);
     }
 

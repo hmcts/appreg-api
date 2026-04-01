@@ -4,6 +4,7 @@ import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -22,16 +23,22 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
+import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
+import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
@@ -78,6 +85,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Autowired protected TransactionalUnitOfWork unitOfWork;
     @Autowired protected ApplicationListRepository applicationListRepository;
     @Autowired protected ApplicationListEntryRepository applicationListEntryRepository;
+    @Autowired protected AppListEntryFeeRepository appListEntryFeeRepository;
 
     protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
     protected static final LocalTime TEST_TIME = LocalTime.of(10, 30);
@@ -626,6 +634,58 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(updateDto.getFeeStatuses());
 
         return updateDto;
+    }
+
+    protected ApplicationCode saveActiveApplicationCode(
+            String code, String feeReference, LocalDate endDate, String title) {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setCode(code);
+        applicationCode.setTitle(title);
+        applicationCode.setWording(
+                "Application for a warrant to enter premises at {TEXT|Premises Address|15} for date "
+                        + "{DATE|Premises Date|10}");
+        applicationCode.setFeeReference(feeReference);
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.YES);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
+        applicationCode.setStartDate(LocalDate.now().minusDays(10));
+        applicationCode.setEndDate(endDate);
+        return persistance.save(applicationCode);
+    }
+
+    protected Fee saveActiveFee(
+            String reference,
+            String description,
+            BigDecimal amount,
+            boolean offsite,
+            LocalDate endDate) {
+        Fee fee = new FeeTestData().someComplete();
+        fee.setReference(reference);
+        fee.setDescription(description);
+        fee.setAmount(amount);
+        fee.setOffsite(offsite);
+        fee.setStartDate(LocalDate.now().minusDays(10));
+        fee.setEndDate(endDate);
+        return persistance.save(fee);
+    }
+
+    protected Long getSelectedApplicationCodeId(UUID entryUuid) {
+        return unitOfWork.inTransaction(
+                () ->
+                        applicationListEntryRepository
+                                .findByUuid(entryUuid)
+                                .orElseThrow()
+                                .getApplicationCode()
+                                .getId());
+    }
+
+    protected List<Fee> getSelectedFees(UUID entryUuid) {
+        return unitOfWork.inTransaction(
+                () -> {
+                    ApplicationListEntry entry =
+                            applicationListEntryRepository.findByUuid(entryUuid).orElseThrow();
+                    return appListEntryFeeRepository.getFeeForEntryId(entry.getId());
+                });
     }
 
     public record SuccessCreateEntryResponse(EntryGetDetailDto getDetailDto, Response response) {}

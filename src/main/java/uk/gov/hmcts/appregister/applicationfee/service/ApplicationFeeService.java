@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
+import java.time.LocalDate;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 
 /**
@@ -7,4 +8,6 @@ import uk.gov.hmcts.appregister.common.entity.FeePair;
  */
 public interface ApplicationFeeService {
     FeePair resolveFeePair(String feeReference);
+
+    FeePair resolveFeePair(String feeReference, LocalDate asOfDate);
 }

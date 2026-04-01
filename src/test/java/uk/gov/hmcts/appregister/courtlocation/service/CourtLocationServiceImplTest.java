@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -29,7 +32,9 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
@@ -40,7 +45,10 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 @ExtendWith(MockitoExtension.class)
 public class CourtLocationServiceImplTest {
 
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private NationalCourtHouseRepository repository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @Spy
     private List<AuditOperationLifecycleListener> auditListeners =
@@ -112,23 +120,29 @@ public class CourtLocationServiceImplTest {
     }
 
     /**
-     * When multiple rows exist for (code,date), the service throws AppRegistryException with
-     * DUPLICATE_COURT_FOUND.
+     * When multiple rows exist for (code,date), the service selects the first ordered row and logs
+     * a warning.
      */
     @Test
-    void findByCodeAndDate_duplicate_throws() {
+    void findByCodeAndDate_duplicate_prefersFirstRow() {
         String code = "DUP";
-        LocalDate date = LocalDate.parse("2025-01-01");
+        final LocalDate date = LocalDate.parse("2025-01-01");
 
         var courtHouse1 = new NationalCourtHouse();
+        courtHouse1.setName("Preferred Court");
+        courtHouse1.setCourtLocationCode(code);
         var courtHouse2 = new NationalCourtHouse();
+        courtHouse2.setName("Secondary Court");
+        courtHouse2.setCourtLocationCode(code);
         when(repository.findActiveCourtsWithDate(code, date))
                 .thenReturn(List.of(courtHouse1, courtHouse2));
 
-        AppRegistryException ex =
-                Assertions.assertThrows(
-                        AppRegistryException.class, () -> service.findByCodeAndDate(code, date));
-        Assertions.assertEquals(CourtLocationError.DUPLICATE_COURT_FOUND, ex.getCode());
+        LogCaptor logCaptor = LogCaptor.forClass(ReferenceDataSelectionUtil.class);
+
+        CourtLocationGetDetailDto dto = service.findByCodeAndDate(code, date);
+
+        Assertions.assertEquals("Preferred Court", dto.getName());
+        Assertions.assertTrue(logCaptor.getWarnLogs().getFirst().contains("Data quality warning"));
 
         verify(auditOperationService)
                 .processAudit(
@@ -136,6 +150,33 @@ public class CourtLocationServiceImplTest {
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT),
                         notNull(),
                         notNull());
+    }
+
+    @Test
+    void findByCodeAndDate_auditsResolvedEntity() {
+        final String code = "ABC123";
+        final LocalDate date = LocalDate.parse("2025-01-01");
+
+        var entity = new NationalCourtHouse();
+        entity.setCourtLocationCode(code);
+        entity.setName("Bath Crown Court");
+        when(repository.findActiveCourtsWithDate(code, date)).thenReturn(List.of(entity));
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        CourtLocationServiceImpl localService =
+                new CourtLocationServiceImpl(
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        repository,
+                        mapper,
+                        pageMapper,
+                        businessDateProvider);
+
+        CourtLocationGetDetailDto dto = localService.findByCodeAndDate(code, date);
+
+        Assertions.assertEquals("Bath Crown Court", dto.getName());
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
     }
 
     /**
@@ -156,7 +197,10 @@ public class CourtLocationServiceImplTest {
         e2.setCourtLocationCode("B1");
         Page<NationalCourtHouse> dbPage = new PageImpl<>(List.of(e1, e2), pageable, 5);
 
-        when(repository.findAllActiveCourts(codeFilter, nameFilter, pageable)).thenReturn(dbPage);
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findAllActiveCourts(
+                        eq(codeFilter), eq(nameFilter), eq(TODAY_UK), eq(pageable)))
+                .thenReturn(dbPage);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
@@ -207,8 +251,10 @@ public class CourtLocationServiceImplTest {
     void getPage_empty_ok() {
         var pageable = PageRequest.of(1, 10);
         Page<NationalCourtHouse> emptyPage = new PageImpl<>(List.of(), pageable, 0);
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
-        when(repository.findAllActiveCourts(null, null, pageable)).thenReturn(emptyPage);
+        when(repository.findAllActiveCourts(isNull(), isNull(), eq(TODAY_UK), eq(pageable)))
+                .thenReturn(emptyPage);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
@@ -241,5 +287,20 @@ public class CourtLocationServiceImplTest {
                         eq(CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT),
                         notNull(),
                         notNull());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
     }
 }

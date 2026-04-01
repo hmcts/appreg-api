@@ -97,6 +97,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -176,6 +177,7 @@ public class ApplicationEntryServiceImplTest {
     @Mock private EntityManager entityManager;
 
     @Mock private ApplicantMapper applicantMapper;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     private ApplicationEntryService service;
 
@@ -185,7 +187,7 @@ public class ApplicationEntryServiceImplTest {
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
-                    clock,
+                    businessDateProvider,
                     standardApplicantRepository);
 
     @Spy
@@ -204,7 +206,7 @@ public class ApplicationEntryServiceImplTest {
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
-                    clock,
+                    businessDateProvider,
                     standardApplicantRepository,
                     applicationListEntryRepository);
 
@@ -221,6 +223,7 @@ public class ApplicationEntryServiceImplTest {
     void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
+        when(businessDateProvider.currentUkDate()).thenReturn(LocalDate.of(2025, 10, 7));
 
         Fee fee = new FeeTestData().someComplete();
         fee.setId(-1L);
@@ -250,7 +253,8 @@ public class ApplicationEntryServiceImplTest {
                         entityManager,
                         getEntryValidator,
                         getApplicationListEntriesValidator,
-                        clock);
+                        clock,
+                        businessDateProvider);
     }
 
     @Test
@@ -279,7 +283,8 @@ public class ApplicationEntryServiceImplTest {
                         entityManager,
                         getEntryValidator,
                         getApplicationListEntriesValidator,
-                        clock);
+                        clock,
+                        businessDateProvider);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1243,13 +1248,13 @@ public class ApplicationEntryServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 FeeRepository feeRepository,
-                Clock clock,
+                BusinessDateProvider businessDateProvider,
                 StandardApplicantRepository standardApplicantRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
-                    clock,
+                    businessDateProvider,
                     standardApplicantRepository);
         }
 
@@ -1315,14 +1320,14 @@ public class ApplicationEntryServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 FeeRepository feeRepository,
-                Clock clock,
+                BusinessDateProvider businessDateProvider,
                 StandardApplicantRepository standardApplicantRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeRepository,
-                    clock,
+                    businessDateProvider,
                     standardApplicantRepository,
                     applicationListEntryRepository);
         }

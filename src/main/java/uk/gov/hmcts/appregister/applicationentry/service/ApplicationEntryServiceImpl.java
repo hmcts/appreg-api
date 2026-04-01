@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -55,6 +54,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -109,6 +109,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final GetApplicationListEntriesValidator getApplicationListEntriesValidator;
 
     private final Clock clock;
+    private final BusinessDateProvider businessDateProvider;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -1035,10 +1036,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     entry.getEntryFeeIds().stream().map(AppListEntryFeeId::getFeeId).toList();
 
             if (!feeIds.isEmpty()) {
-                List<Fee> fees = feeRepository.findByIdsBetweenDate(feeIds, LocalDate.now(clock));
+                List<Fee> fees =
+                        feeRepository.findByIdsBetweenDate(
+                                feeIds, businessDateProvider.currentUkDate());
 
-                // take the first fee offsite if it exists
-                return !fees.isEmpty() && fees.getFirst().isOffsite();
+                return fees.stream().anyMatch(Fee::isOffsite);
             }
         }
         return false;

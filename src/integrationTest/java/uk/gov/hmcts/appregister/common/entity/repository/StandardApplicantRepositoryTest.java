@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -132,6 +133,82 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     "APP003", LocalDate.now());
 
                     assertEquals(2, retrievedApplicant.size());
+                });
+    }
+
+    @Test
+    public void testFindByCodeAndDatePrefersNullEndDate() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+                    String code = "SANULL001";
+
+                    StandardApplicant boundedApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    boundedApplicant.setApplicantCode(code);
+                    boundedApplicant.setName("Bounded Applicant");
+                    boundedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    boundedApplicant.setApplicantEndDate(activeDate.plusDays(7));
+
+                    StandardApplicant openEndedApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    openEndedApplicant.setApplicantCode(code);
+                    openEndedApplicant.setName("Open-Ended Applicant");
+                    openEndedApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    openEndedApplicant.setApplicantEndDate(null);
+
+                    StandardApplicant savedBoundedApplicant = persistance.save(boundedApplicant);
+                    StandardApplicant savedOpenEndedApplicant =
+                            persistance.save(openEndedApplicant);
+
+                    List<StandardApplicant> retrievedApplicant =
+                            repository.findStandardApplicantByCodeAndDate(code, activeDate);
+
+                    assertThat(retrievedApplicant)
+                            .extracting(StandardApplicant::getId)
+                            .containsExactly(
+                                    savedOpenEndedApplicant.getId(), savedBoundedApplicant.getId());
+                });
+    }
+
+    @Test
+    public void testSearchIncludesApplicantsStartingOrEndingOnActiveDate() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+                    String code = "SABOUND001";
+
+                    StandardApplicant startsTodayApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    startsTodayApplicant.setApplicantCode(code);
+                    startsTodayApplicant.setName("Starts Today Applicant");
+                    startsTodayApplicant.setApplicantStartDate(activeDate);
+                    startsTodayApplicant.setApplicantEndDate(null);
+
+                    StandardApplicant endsTodayApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    endsTodayApplicant.setApplicantCode(code);
+                    endsTodayApplicant.setName("Ends Today Applicant");
+                    endsTodayApplicant.setApplicantStartDate(activeDate.minusDays(5));
+                    endsTodayApplicant.setApplicantEndDate(activeDate);
+
+                    StandardApplicant savedStartsTodayApplicant =
+                            persistance.save(startsTodayApplicant);
+                    StandardApplicant savedEndsTodayApplicant =
+                            persistance.save(endsTodayApplicant);
+
+                    var page =
+                            repository.search(
+                                    code,
+                                    null,
+                                    activeDate,
+                                    org.springframework.data.domain.PageRequest.of(0, 10));
+
+                    assertThat(page.getContent())
+                            .extracting(StandardApplicant::getId)
+                            .containsExactlyInAnyOrder(
+                                    savedStartsTodayApplicant.getId(),
+                                    savedEndsTodayApplicant.getId());
                 });
     }
 }

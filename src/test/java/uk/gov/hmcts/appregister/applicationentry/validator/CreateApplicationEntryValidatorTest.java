@@ -37,6 +37,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
@@ -48,6 +49,8 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class CreateApplicationEntryValidatorTest {
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private ApplicationListRepository applicationListRepository;
 
     @Mock private ApplicationCodeRepository applicationCodeRepository;
@@ -55,6 +58,7 @@ public class CreateApplicationEntryValidatorTest {
     @Mock private FeeRepository feeRepository;
 
     @Mock private Clock clock;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private StandardApplicantRepository standardApplicantRepository;
 
@@ -73,6 +77,7 @@ public class CreateApplicationEntryValidatorTest {
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
 
         AppListTestData appListTestData = new AppListTestData();
         applicationList = appListTestData.someComplete();
@@ -113,7 +118,7 @@ public class CreateApplicationEntryValidatorTest {
                 .thenReturn(List.of(fee));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
-                        entryCreateDto.getStandardApplicantCode(), LocalDate.now(clock)))
+                        entryCreateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
     }
 
@@ -367,7 +372,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
-                        entryCreateDto.getStandardApplicantCode(), LocalDate.now(clock)))
+                        entryCreateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of());
 
         PayloadForCreate<EntryCreateDto> payload =
@@ -387,15 +392,18 @@ public class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testStandardApplicantMultiple() {
+    void testStandardApplicantMultiple_prefersFirstRecord() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setNumberOfRespondents(null);
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
 
+        StandardApplicant preferredStandardApplicant = new StandardApplicant();
+        StandardApplicant alternativeStandardApplicant = new StandardApplicant();
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
-                        entryCreateDto.getStandardApplicantCode(), LocalDate.now(clock)))
-                .thenReturn(List.of(new StandardApplicant(), new StandardApplicant()));
+                        entryCreateDto.getStandardApplicantCode(), TODAY_UK))
+                .thenReturn(List.of(preferredStandardApplicant, alternativeStandardApplicant));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -403,14 +411,10 @@ public class CreateApplicationEntryValidatorTest {
                         .data(entryCreateDto)
                         .build();
 
-        // validate the payload
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> createApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.MULTIPLE_STANDARD_APPLICANT_EXIST.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
+        CreateApplicationEntryValidationSuccess success =
+                createApplicationEntryValidator.validate(payload, (validatable, result) -> result);
+
+        Assertions.assertSame(preferredStandardApplicant, success.getSa());
     }
 
     @Test
@@ -441,15 +445,19 @@ public class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantCodeMultiple() {
+    void testApplicantCodeMultiple_prefersFirstRecord() {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.getApplicant().setPerson(null);
         entryCreateDto.setNumberOfRespondents(null);
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        ApplicationCode alternativeApplicationCode = new ApplicationCodeTestData().someComplete();
+        alternativeApplicationCode.setEndDate(TODAY_UK.plusDays(1));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
-                .thenReturn(List.of(new ApplicationCode(), new ApplicationCode()));
+                .thenReturn(List.of(applicationCode, alternativeApplicationCode));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -457,14 +465,10 @@ public class CreateApplicationEntryValidatorTest {
                         .data(entryCreateDto)
                         .build();
 
-        // validate the payload
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> createApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
+        CreateApplicationEntryValidationSuccess success =
+                createApplicationEntryValidator.validate(payload, (validatable, result) -> result);
+
+        Assertions.assertSame(applicationCode, success.getApplicationCode());
     }
 
     @Test
@@ -478,7 +482,7 @@ public class CreateApplicationEntryValidatorTest {
         FeeStatus feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(DUE);
         feeStatus.setPaymentReference("PAYREF-123");
-        feeStatus.setStatusDate(LocalDate.now(clock));
+        feeStatus.setStatusDate(TODAY_UK);
 
         entryCreateDto.setFeeStatuses(List.of(feeStatus));
 
