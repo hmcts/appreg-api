@@ -123,9 +123,21 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         // filter using the start data of the scenario
         Response response =
                 runTest(filterDescription, req -> applyQueryForStart(filterDescription, req, true));
-        assertResponseInOrder(
-                List.of(filterDescription.getFilterableScenario().getAllKeyable().getFirst()),
-                response);
+
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    List<T> reloaded =
+                            reload(
+                                    List.of(
+                                            filterDescription
+                                                    .getFilterableScenario()
+                                                    .getFilterData()
+                                                    .getFirst()
+                                                    .getFirst()
+                                                    .getKeyableValues()
+                                                    .getKeyable()));
+                    assertResponseInOrder(reloaded, response);
+                });
     }
 
     @ParameterizedTest
