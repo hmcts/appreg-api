@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -103,5 +104,10 @@ public class CreateApplicationEntryValidator
     @Override
     protected String getAccountNumber(PayloadForCreate<EntryCreateDto> validatable) {
         return validatable.getData().getAccountNumber();
+    }
+
+    @Override
+    protected LocalDate getLodgementDate(PayloadForCreate<EntryCreateDto> validatable) {
+        return validatable.getData().getLodgementDate();
     }
 }
