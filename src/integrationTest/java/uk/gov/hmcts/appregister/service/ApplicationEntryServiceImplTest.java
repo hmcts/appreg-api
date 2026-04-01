@@ -1333,6 +1333,73 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 2);
     }
 
+    @Test
+    @Transactional
+    public void updateEntryWithNullHasOffsiteFeeDoesNotThrow() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        // Create an entry that already exists
+        UUID uuid = createEntryNoRespondentWithOffsiteFeeForTest();
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        Assertions.assertTrue(applicationListEntry.isPresent());
+
+        // Build an update that goes through updateFees() and creates a new fee mapping
+        EntryUpdateDto entryUpdateDto =
+                Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getName()
+                .setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setApplicationCode("AD99002");
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(null);
+
+        entryUpdateDto.setHasOffsiteFee(null);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(
+                        entryUpdateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+
+        MatchResponse<EntryGetDetailDto> update =
+                Assertions.assertDoesNotThrow(() -> applicationEntryService.updateEntry(payload));
+
+        Assertions.assertNotNull(update.getEtag());
+
+        List<Fee> fees =
+                appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.get().getId());
+
+        // Should only have the main fee, and no offsite fee should be attached
+        Assertions.assertEquals(1, fees.size());
+        Assertions.assertFalse(fees.stream().anyMatch(Fee::isOffsite));
+    }
+
     // useful method to create an entry with respondent, bulk respondent and fee statuses for update
     // purposes
 
