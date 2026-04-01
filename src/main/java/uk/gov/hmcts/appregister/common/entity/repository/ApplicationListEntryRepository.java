@@ -171,12 +171,16 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.date as dateOfAl,
                     ana.name as applicationorganisation,
                     ana.surname as applicantSurname,
-                    CASE WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NOT NULL THEN
+                    CASE WHEN ana.name IS NOT NULL THEN
+                         ana.name
+                    WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NOT NULL THEN
                         CONCAT(ana.surname, ',', ana.forename1, ',', ana.title)
                     WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NULL THEN
                         CONCAT(ana.surname, ',', ana.forename1)
                     END as applicantName,
-                    CASE WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NOT NULL THEN
+                    CASE WHEN rna.name IS NOT NULL THEN
+                         rna.name
+                    WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NOT NULL THEN
                         CONCAT(rna.surname, ',', rna.forename1, ',', rna.title)
                     WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NULL THEN
                         CONCAT(rna.surname, ',', rna.forename1)
@@ -208,8 +212,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
                     AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
                     AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
-                    AND (:applicantName IS NULL OR LOWER(CONCAT(COALESCE(ana.surname, ' '),
-                                        COALESCE(ana.name, ' '), COALESCE(ana.title, ' ')))
+                    AND (:applicantName IS NULL OR COALESCE(LOWER(ana.name), LOWER(CONCAT(COALESCE(ana.surname, ' '),
+                                        COALESCE(ana.forename1, ' '), COALESCE(ana.title, ' '))))
                             LIKE CONCAT('%', LOWER(cast(:applicantName AS string)) , '%') ESCAPE '\\'
                             AND ana.code='NA')
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
@@ -221,8 +225,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
-                    AND (:respondentName IS NULL OR LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.name, ' '),
-                            COALESCE(rna.title, ' ')))  LIKE CONCAT('%',
+                    AND (:respondentName IS NULL OR COALESCE(rna.name, LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.name, ' '),
+                            COALESCE(rna.title, ' '))))  LIKE CONCAT('%',
                             LOWER(cast(:respondentName AS string )), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
                             LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
