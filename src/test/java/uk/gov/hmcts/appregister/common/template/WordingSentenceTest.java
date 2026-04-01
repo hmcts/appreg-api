@@ -443,4 +443,17 @@ public class WordingSentenceTest {
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
+
+    @Test
+    public void testSubstituteNullValuesThrows() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> templateSentence.substitute(null));
+
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());
+    }
 }
