@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
@@ -77,6 +79,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
@@ -97,6 +100,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -112,10 +116,12 @@ import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @Slf4j
@@ -305,7 +311,6 @@ public class ApplicationEntryServiceImplTest {
 
         when(applicationListEntryGetSummaryProjection.getRespondentSurname())
                 .thenReturn("ressurname");
-        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn(null);
         when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
         when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.OPEN);
 
@@ -354,6 +359,97 @@ public class ApplicationEntryServiceImplTest {
 
         Assertions.assertNotNull(entryPage.getContent().get(0).getApplicant());
         Assertions.assertNotNull(entryPage.getContent().get(0).getRespondent());
+    }
+
+    @Test
+    void testSearchReturnsAllResultCodes() {
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        EntryGetFilterDto filterDto =
+                Instancio.of(EntryGetFilterDto.class).withSettings(settings).create();
+        filterDto.setStatus(ApplicationListStatus.OPEN);
+
+        ApplicationListEntryGetSummaryProjection projection =
+                mock(ApplicationListEntryGetSummaryProjection.class);
+
+        Long entryId = 1L;
+        when(projection.getId()).thenReturn(entryId);
+        when(projection.getApplicationOrganisation()).thenReturn("org1");
+        when(projection.getApplicantSurname()).thenReturn("surname");
+        when(projection.getAnameAddress()).thenReturn(new NameAddress());
+        when(projection.getRnameAddress()).thenReturn(new NameAddress());
+        when(projection.getDateOfAl()).thenReturn(LocalDate.now());
+        when(projection.getAccountReference()).thenReturn("accref");
+        when(projection.getCjaCode()).thenReturn("cjacode");
+        when(projection.getCourtCode()).thenReturn("courtcode");
+        when(projection.getLegislation()).thenReturn("leg");
+        when(projection.getTitle()).thenReturn("title");
+        when(projection.getRespondentSurname()).thenReturn("ressurname");
+        when(projection.getFeeRequired()).thenReturn(YesOrNo.NO);
+        when(projection.getStatus()).thenReturn(Status.OPEN);
+
+        Pageable mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(0);
+
+        Page<ApplicationListEntryGetSummaryProjection> resultPage =
+                new PageImpl<>(List.of(projection), mockPage, 1);
+
+        when(applicationListEntryMapStructMapper.toStatus(ApplicationListStatus.OPEN))
+                .thenReturn(Status.OPEN);
+
+        when(applicationListEntryRepository.searchForGetSummary(
+                        any(),
+                        anyBoolean(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any(),
+                        any()))
+                .thenReturn(resultPage);
+
+        EntryGetSummaryDto summaryDto = new EntryGetSummaryDto();
+        summaryDto.setResulted(new ArrayList<>());
+        summaryDto.setIsResulted(false);
+        when(applicationListEntryMapStructMapper.toEntrySummary(any())).thenReturn(summaryDto);
+
+        ApplicationListEntryResolutionProjection resolution1 =
+                mock(ApplicationListEntryResolutionProjection.class);
+        ApplicationListEntryResolutionProjection resolution2 =
+                mock(ApplicationListEntryResolutionProjection.class);
+
+        when(resolution1.getEntryId()).thenReturn(entryId);
+        when(resolution2.getEntryId()).thenReturn(entryId);
+
+        when(resolution1.getResolutionCode()).thenReturn(mock(ResolutionCode.class));
+        when(resolution2.getResolutionCode()).thenReturn(mock(ResolutionCode.class));
+
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolution1, resolution2));
+
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(any()))
+                .thenReturn(new ResultCodeGetSummaryDto());
+
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
+        EntryPage response = service.search(filterDto, wrapper);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(1, response.getContent().size());
+        Assertions.assertTrue(response.getContent().getFirst().getIsResulted());
+        Assertions.assertEquals(2, response.getContent().getFirst().getResulted().size());
     }
 
     @Test
@@ -902,6 +998,9 @@ public class ApplicationEntryServiceImplTest {
         ApplicationListEntryGetSummaryProjection applicationListEntryGetSummaryProjection =
                 mock(ApplicationListEntryGetSummaryProjection.class);
 
+        Long entryId = 1L;
+        when(applicationListEntryGetSummaryProjection.getId()).thenReturn(entryId);
+
         when(applicationListEntryGetSummaryProjection.getApplicationOrganisation())
                 .thenReturn("org1");
         when(applicationListEntryGetSummaryProjection.getApplicantSurname()).thenReturn("surname");
@@ -919,7 +1018,6 @@ public class ApplicationEntryServiceImplTest {
 
         when(applicationListEntryGetSummaryProjection.getRespondentSurname())
                 .thenReturn("ressurname");
-        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn(null);
         when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
         when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.OPEN);
 
@@ -959,10 +1057,29 @@ public class ApplicationEntryServiceImplTest {
                         eq(mockPage)))
                 .thenReturn(dbPage);
 
+        EntryGetSummaryDto summaryDto = new EntryGetSummaryDto();
+        summaryDto.setResulted(new ArrayList<>());
+        summaryDto.setIsResulted(false);
+
+        when(applicationListEntryMapStructMapper.toEntrySummary(any())).thenReturn(summaryDto);
+
+        when(applicationListEntryMapStructMapper.toResultCodeGetSummaryDto(any()))
+                .thenReturn(new ResultCodeGetSummaryDto());
+
+        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+
         PayloadGetEntryInList payloadGetEntryInList =
                 PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
 
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), mockPage);
+        ApplicationListEntryResolutionProjection resolutionProjection =
+                mock(ApplicationListEntryResolutionProjection.class);
+
+        when(resolutionProjection.getEntryId()).thenReturn(entryId);
+
+        when(resolutionProjection.getResolutionCode()).thenReturn(mock(ResolutionCode.class));
+
+        when(applicationListEntryRepository.findResolutionCodesByEntryIds(anyList()))
+                .thenReturn(List.of(resolutionProjection));
 
         // test
         EntryPage response =
@@ -972,6 +1089,8 @@ public class ApplicationEntryServiceImplTest {
         // assert
         Assertions.assertNotNull(response);
         Assertions.assertEquals(1, response.getContent().size());
+        Assertions.assertEquals(1, response.getContent().getFirst().getResulted().size());
+        Assertions.assertTrue(response.getContent().getFirst().getIsResulted());
     }
 
     @Test
