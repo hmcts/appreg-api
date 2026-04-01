@@ -501,7 +501,7 @@ dependencies {
   testImplementation 'org.instancio:instancio-junit:5.5.1'
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
-  rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
+  rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.31.0'
 
   // Updated Third-Party Dependencies
   implementation 'org.apache.commons:commons-lang3:3.20.0'
