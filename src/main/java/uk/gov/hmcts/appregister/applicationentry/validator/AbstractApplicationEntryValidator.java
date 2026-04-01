@@ -81,6 +81,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         WordingTemplateSentence wordingTemplateCollection =
                 WordingTemplateSentence.with(code.getWording());
 
+        validateLodgementDate(validatable);
+
         // if fee is due get the fee
         Fee fee = validateFee(code, validatable);
 
@@ -100,6 +102,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
         return null;
     }
+
+
 
     /**
      * gets the result of the validation.
@@ -297,6 +301,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @return The account number
      */
     protected abstract String getAccountNumber(T validatable);
+
+    protected abstract LocalDate getLodgementDate(T validatable);
 
     /**
      * validate the respondent of the payload and ensures mutual exclusivity between the
@@ -522,5 +528,20 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         log.debug("Validated the respondent details");
+    }
+
+    private void validateLodgementDate(T validatable) {
+        LocalDate lodgementDate = getLodgementDate(validatable);
+        if (lodgementDate == null) {
+            throw new AppRegistryException(AppListEntryError.LODGEMENT_DATE_MISSING,
+                                           "Lodgement date is required for the provided application code");
+        }
+        else if (lodgementDate.isAfter(LocalDate.now())) {
+            throw new AppRegistryException(
+                    AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE,
+                    "Lodgement date cannot be after today's date");
+        }
+
+        log.debug("Validated the lodgement date {}", lodgementDate);
     }
 }

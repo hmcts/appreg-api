@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,8 +21,10 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
@@ -155,5 +158,10 @@ public class UpdateApplicationEntryValidator
     @Override
     protected String getAccountNumber(PayloadForUpdateEntry validatable) {
         return validatable.getData().getAccountNumber();
+    }
+
+    @Override
+    protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
+        return validatable.getData().getLodgementDate();
     }
 }
