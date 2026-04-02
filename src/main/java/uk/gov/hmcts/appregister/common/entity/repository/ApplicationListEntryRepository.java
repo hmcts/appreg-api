@@ -243,6 +243,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                 CONCAT('%', LOWER(cast(:applicationTitle AS string)), '%')  ESCAPE '\\')
                     AND (:feeRequired IS NULL OR ac.feeDue = CASE WHEN :feeRequired = true THEN 'Y' ELSE 'N' END)
                     AND (:sequenceNumber IS NULL OR ale.sequenceNumber = :sequenceNumber)
+                    AND (:resulted IS NULL OR rc.resultCode = :resulted)
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
@@ -264,6 +265,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             @LikeParam @Param("respondentPostcode") String respondentPostcode,
             @LikeParam @Param("accountReference") String accountReference,
             @LikeParam @Param("applicationTitle") String applicationTitle,
+            @LikeParam @Param("resulted") String resulted,
             @Param("feeRequired") Boolean feeRequired,
             @Param("sequenceNumber") Integer sequenceNumber,
             Pageable pageable);
