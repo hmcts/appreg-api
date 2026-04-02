@@ -159,7 +159,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     ale.id AS id,
                     al.courtCode  AS courtCode,
                     ac.legislation as legislation,
-                    ac.feeDue feeRequired,
+                    ac.feeDue as feeRequired,
                     aler.id as result,
                     cja.code AS cjaCode,
                     al.otherLocation AS otherLocationDescription,
@@ -193,7 +193,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.uuid as listId,
                     ac.title AS applicationTitle,
                     ale.sequenceNumber as sequenceNumber,
-                    rc as resolutionCode
+                    rc as resulted
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
