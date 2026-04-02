@@ -122,16 +122,16 @@ public class ApplicationCodeServiceImplTest {
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
-            GetApplicationCodeValidationSuccess.builder()
-                .applicationCode(applicationCode)
-                .build();
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build();
         dummyGetApplicationCodeValidator.setSuccess(success);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
-            applicationCodeService.findByCode(payloadForGet);
+                applicationCodeService.findByCode(payloadForGet);
 
         Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
     }
