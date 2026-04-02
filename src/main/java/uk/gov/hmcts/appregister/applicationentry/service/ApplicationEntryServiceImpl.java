@@ -390,7 +390,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 appListEntryFeeId.getFeeId(),
                                 appListEntryFeeId.getAppListEntryId());
 
-                        if (entryCreateDto.getData().getHasOffsiteFee()) {
+                        if (Boolean.TRUE.equals(entryCreateDto.getData().getHasOffsiteFee())) {
                             var offsiteFee =
                                     feeRepository
                                             .findByReferenceBetweenDateWithOffsite(
