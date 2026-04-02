@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "dfd01478-3c87-413c-83d5-66d4ef4e4f68",
+    "_postman_id": "52a2be62-a424-4b6b-8ede-92aab4732082",
     "name": "App Registration",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "26896572"
@@ -1091,6 +1091,85 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "jobs",
+          "item": [
+            {
+              "name": "Enable Application List Expired Job",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=true",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ],
+                  "query": [
+                    {
+                      "key": "enable",
+                      "value": "true"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Application List Expired Job Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Disable Application List Expired Job",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=false",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ],
+                  "query": [
+                    {
+                      "key": "enable",
+                      "value": "false"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
         }
       ]
     },
