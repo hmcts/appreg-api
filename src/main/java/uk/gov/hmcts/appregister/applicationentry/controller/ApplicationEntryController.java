@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
@@ -29,6 +30,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
@@ -162,5 +164,10 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .path("/{entryId}")
                 .buildAndExpand(entry)
                 .toUri();
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(UUID listId, MultipartFile file) {
+        return ApplicationListEntriesApi.super.bulkUploadApplicationListEntries(listId, file);
     }
 }
