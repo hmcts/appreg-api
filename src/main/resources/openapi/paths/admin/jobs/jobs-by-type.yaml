@@ -22,9 +22,37 @@ get:
       content:
         application/vnd.hmcts.appreg.v1+json:
           schema:
-            $ref: "../../../components/schemas/admin/admin-job-acknowledgement.yaml"
+            $ref: "../../../components/schemas/admin/job-status.yaml"
     "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
     "409": { $ref: "../../..//components/responses/conflict-error.yaml" }
     "403": { $ref: "../../..//components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../../components/responses/not-found-error.yaml" }
+    "500": { $ref: "../../../components/responses/internal-server-error.yaml" }
+put:
+  tags: [ admin ]
+  summary: Enable/Disable a database job by its name.
+  description: Enables or disables a database job by its name.
+  operationId: enableDisableDatabaseJobByName
+  parameters:
+    - name: jobName
+      in: path
+      required: true
+      schema: {
+        $ref: "../../../components/schemas/admin/admin-job-type.yaml"
+      }
+      description: The name of the database job to trigger.
+      example: "APPLICATION_LISTS_DATABASE_JOB"
+    - name: enable
+      in: query
+      required: true
+      schema:
+        type: boolean
+      description: Flag to enable (true) or disable (false) the database job.
+      example: true
+  responses:
+    "201":
+      description: Job enabled/disabled successfully.
+    "401": { $ref: "../../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../../components/responses/forbidden-error.yaml" }
     "404": { $ref: "../../../components/responses/not-found-error.yaml" }
     "500": { $ref: "../../../components/responses/internal-server-error.yaml" }

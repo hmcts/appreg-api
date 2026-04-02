@@ -26,8 +26,7 @@ public class ImplementedRestfulTest {
                     "GET /reports/jobs/{jobId}/download",
                     "POST /reports/duration/jobs",
                     "POST /reports/fees/jobs",
-                    "POST /reports/search-warrants/jobs",
-                    "GET /admin/jobs/{jobType}");
+                    "POST /reports/search-warrants/jobs");
 
     @Test
     public void testShouldNotBeImplemented() throws Exception {

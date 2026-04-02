@@ -54,7 +54,6 @@ tags:
 
 paths:
   # ADMINISTRATIVE JOBS
-  /admin/database/jobs/{jobName}:                                     { $ref: './paths/admin/database/jobs/jobs-by-name.yaml' }
   /admin/jobs/{jobType}:                                            { $ref: './paths/admin/jobs/jobs-by-type.yaml' }
   # APPLICATION CODES
   /application-codes:                                               { $ref: './paths/application-codes/application-codes.yaml' }

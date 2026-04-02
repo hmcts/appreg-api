@@ -1,9 +1,10 @@
 package uk.gov.hmcts.appregister.admin.service;
 
-import uk.gov.hmcts.appregister.generated.model.DatabaseJobStatus;
+import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 public interface AdminAPIService {
-    DatabaseJobStatus getDatabaseJobStatusByName(String jobName);
+    JobStatus getDatabaseJobStatusByName(AdminJobType jobName);
 
-    void enableDisableDatabaseJobByName(String jobName, Boolean enable);
+    void enableDisableDatabaseJobByName(AdminJobType jobName, Boolean enable);
 }

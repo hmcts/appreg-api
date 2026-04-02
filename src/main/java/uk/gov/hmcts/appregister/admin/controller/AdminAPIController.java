@@ -8,7 +8,8 @@ import org.springframework.stereotype.Controller;
 import uk.gov.hmcts.appregister.admin.service.AdminAPIService;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.AdminApi;
-import uk.gov.hmcts.appregister.generated.model.DatabaseJobStatus;
+import uk.gov.hmcts.appregister.generated.model.AdminJobType;
+import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 @PreAuthorize(RoleNames.ADMIN_ROLE_RESTRICTION)
 @Slf4j
@@ -19,13 +20,14 @@ public class AdminAPIController implements AdminApi {
     private final AdminAPIService adminAPIService;
 
     @Override
-    public ResponseEntity<DatabaseJobStatus> getDatabaseJobStatusByName(String jobName) {
-        return ResponseEntity.ok(adminAPIService.getDatabaseJobStatusByName(jobName));
+    public ResponseEntity<Void> enableDisableDatabaseJobByName(
+            AdminJobType jobName, Boolean enable) {
+        adminAPIService.enableDisableDatabaseJobByName(jobName, enable);
+        return ResponseEntity.ok().build();
     }
 
     @Override
-    public ResponseEntity<Void> enableDisableDatabaseJobByName(String jobName, Boolean enable) {
-        adminAPIService.enableDisableDatabaseJobByName(jobName, enable);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<JobStatus> getJobStatus(AdminJobType jobType) {
+        return ResponseEntity.ok(adminAPIService.getDatabaseJobStatusByName(jobType));
     }
 }

@@ -1098,41 +1098,20 @@
       "name": "admin",
       "item": [
         {
-          "name": "database_jobs",
+          "name": "jobs",
           "item": [
-            {
-              "name": "Get Application List Expired Job Status",
-              "request": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{APP_REG_HOST}}/admin/database/jobs/APPLICATION_LISTS_DATABASE_JOB",
-                  "host": [
-                    "{{APP_REG_HOST}}"
-                  ],
-                  "path": [
-                    "admin",
-                    "database",
-                    "jobs",
-                    "APPLICATION_LISTS_DATABASE_JOB"
-                  ]
-                }
-              },
-              "response": []
-            },
             {
               "name": "Enable Application List Expired Job",
               "request": {
                 "method": "PUT",
                 "header": [],
                 "url": {
-                  "raw": "{{APP_REG_HOST}}/admin/database/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=true",
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=true",
                   "host": [
                     "{{APP_REG_HOST}}"
                   ],
                   "path": [
                     "admin",
-                    "database",
                     "jobs",
                     "APPLICATION_LISTS_DATABASE_JOB"
                   ],
@@ -1147,18 +1126,36 @@
               "response": []
             },
             {
-              "name": "Disable Application List Expired Job",
+              "name": "Get Application List Expired Job Status",
               "request": {
-                "method": "PUT",
+                "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{APP_REG_HOST}}/admin/database/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=false",
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB",
                   "host": [
                     "{{APP_REG_HOST}}"
                   ],
                   "path": [
                     "admin",
-                    "database",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Disable Application List Expired Job",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=false",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
                     "jobs",
                     "APPLICATION_LISTS_DATABASE_JOB"
                   ],

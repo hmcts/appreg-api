@@ -16,13 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.admin.exception.DatabaseJobError;
+import uk.gov.hmcts.appregister.admin.exception.JobError;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapper;
 import uk.gov.hmcts.appregister.admin.mapper.DatabaseJobsMapperImpl;
 import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 
 @Slf4j
 @ExtendWith(MockitoExtension.class)
@@ -47,15 +48,18 @@ public class DatabaseJobsServiceImplTest {
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
 
         DatabaseJob testJob = new DatabaseJob();
-        testJob.setName("TEST_JOB");
+        testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setLastRan(OffsetDateTime.now(clock));
         testJob.setId(1L);
         testJob.setEnabled(YesOrNo.YES);
 
-        when(databaseJobRepository.findByName("TEST_JOB")).thenReturn(testJob);
+        when(databaseJobRepository.findByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
+                .thenReturn(testJob);
         service = new AdminAPIServiceImpl(databaseJobRepository, mapper);
 
-        var status = service.getDatabaseJobStatusByName("TEST_JOB");
+        var status =
+                service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
 
         assertNotNull(status);
         assertNotNull(status.getLastRan());
@@ -69,15 +73,18 @@ public class DatabaseJobsServiceImplTest {
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
 
         DatabaseJob testJob = new DatabaseJob();
-        testJob.setName("TEST_ENABLE_JOB");
+        testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setLastRan(OffsetDateTime.now(clock));
         testJob.setId(2L);
         testJob.setEnabled(YesOrNo.NO);
 
-        when(databaseJobRepository.findByName("TEST_ENABLE_JOB")).thenReturn(testJob);
-        service.enableDisableDatabaseJobByName("TEST_ENABLE_JOB", true);
+        when(databaseJobRepository.findByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
+                .thenReturn(testJob);
+        service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, true);
 
-        var status = service.getDatabaseJobStatusByName("TEST_ENABLE_JOB");
+        var status =
+                service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
         assertNotNull(status);
         assertEquals(true, status.getEnabled());
     }
@@ -88,46 +95,57 @@ public class DatabaseJobsServiceImplTest {
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
 
         DatabaseJob testJob = new DatabaseJob();
-        testJob.setName("TEST_JOB");
+        testJob.setName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue());
         testJob.setLastRan(OffsetDateTime.now(clock));
         testJob.setId(1L);
         testJob.setEnabled(YesOrNo.YES);
 
-        when(databaseJobRepository.findByName("TEST_JOB")).thenReturn(testJob);
+        when(databaseJobRepository.findByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
+                .thenReturn(testJob);
         service = new AdminAPIServiceImpl(databaseJobRepository, mapper);
 
-        service.enableDisableDatabaseJobByName("TEST_JOB", false);
+        service.enableDisableDatabaseJobByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB, false);
 
-        var status = service.getDatabaseJobStatusByName("TEST_JOB");
+        var status =
+                service.getDatabaseJobStatusByName(AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
         assertNotNull(status);
         assertEquals(false, status.getEnabled());
     }
 
     @Test
     public void testGetDatabaseJobStatusByNameNotFound() {
+        when(databaseJobRepository.findByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
+                .thenReturn(null);
         AppRegistryException exception =
                 assertThrows(
                         AppRegistryException.class,
                         () -> {
-                            service.getDatabaseJobStatusByName("NON_EXISTENT_JOB");
+                            service.getDatabaseJobStatusByName(
+                                    AdminJobType.APPLICATION_LISTS_DATABASE_JOB);
                         });
 
         Assertions.assertEquals(
-                DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
+                JobError.JOB_NOT_FOUND.getCode().getAppCode(),
                 exception.getCode().getCode().getAppCode());
     }
 
     @Test
     public void testEnableDisableDatabaseJobByNameNotFound() {
+        when(databaseJobRepository.findByName(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue()))
+                .thenReturn(null);
         AppRegistryException exception =
                 assertThrows(
                         AppRegistryException.class,
                         () -> {
-                            service.enableDisableDatabaseJobByName("NON_EXISTENT_JOB", false);
+                            service.enableDisableDatabaseJobByName(
+                                    AdminJobType.APPLICATION_LISTS_DATABASE_JOB, false);
                         });
 
         Assertions.assertEquals(
-                DatabaseJobError.JOB_NOT_FOUND.getCode().getAppCode(),
+                JobError.JOB_NOT_FOUND.getCode().getAppCode(),
                 exception.getCode().getCode().getAppCode());
     }
 }
