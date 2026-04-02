@@ -632,6 +632,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
         updateDto.setApplicationCode("ZS99007");
         updateDto.setHasOffsiteFee(true);
+        updateDto.setLodgementDate(LocalDate.now());
 
         updateDto.setWordingFields(
                 List.of(
