@@ -226,7 +226,6 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
     public void givenPaymentReferenceWithFifteenCharacters_whenCreateListEntry_thenReturn201()
             throws Exception {
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        String uniqueSurname = UUID.randomUUID().toString();
 
         Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
         Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
@@ -239,7 +238,8 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         var tokenGenerator = createAdminToken();
 
         SuccessCreateEntryResponse createdDto =
-                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, uniqueSurname);
+                createEntryWithUniqueSurname(
+                        tokenGenerator, entryCreateDto, UUID.randomUUID().toString());
 
         Assertions.assertEquals(
                 "123451234512345",
