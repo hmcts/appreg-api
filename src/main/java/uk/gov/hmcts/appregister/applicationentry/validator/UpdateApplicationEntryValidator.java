@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -155,5 +156,10 @@ public class UpdateApplicationEntryValidator
     @Override
     protected String getAccountNumber(PayloadForUpdateEntry validatable) {
         return validatable.getData().getAccountNumber();
+    }
+
+    @Override
+    protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
+        return validatable.getData().getLodgementDate();
     }
 }

@@ -42,6 +42,7 @@ public class CreateEntryDtoUtil {
         List<Official> officials = Instancio.ofList(Official.class).size(4).create();
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.setOfficials(officials);
 
         if (satisfyForClose) {

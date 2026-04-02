@@ -511,6 +511,82 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
+    public void givenAFailureUpdate_whenLodgementDateIsMissing_400Returned() throws Exception {
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("+447123456789"));
+        entryUpdateDto.setLodgementDate(null);
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
+    public void givenAFailureUpdate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
+        // setup the payload
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto
+                .getRespondent()
+                .getPerson()
+                .getContactDetails()
+                .setMobile(JsonNullable.of("+447123456789"));
+        entryUpdateDto.setLodgementDate(LocalDate.now().plusDays(1));
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        // assert the response
+        responseSpecCreate.then().statusCode(201);
+        responseSpecUpdate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE
+                                        .getCode()
+                                        .getAppCode()));
+    }
+
+    @Test
     public void givenAFailureUpdate_whenApplicantAddressInvalid_400Returned() throws Exception {
         Response responseSpecCreate = createListEntryWithAllData();
 

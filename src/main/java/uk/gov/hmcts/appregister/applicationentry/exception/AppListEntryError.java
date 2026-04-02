@@ -113,7 +113,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Either respondent details or number of respondents must be provided",
-                    "ALE-22"));
+                    "ALE-22")),
+    LODGEMENT_DATE_CANNOT_BE_IN_FUTURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
+    LODGEMENT_DATE_MISSING(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Lodgement date is required", "ALE-24"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
