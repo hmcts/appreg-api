@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 @RestControllerAdvice
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final Pattern PAYMENT_REFERENCE_FIELD_PATTERN =
+            Pattern.compile("^feeStatuses\\[\\d+\\]\\.paymentReference$");
+    private static final String PAYMENT_REFERENCE_VALIDATION_MESSAGE =
+            "Payment Reference must be between 1 and 15 characters";
 
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
@@ -144,7 +149,9 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                         fieldError -> {
                             if (fieldError.getCode() == null
                                     || !fieldError.getCode().contains("typeMismatch")) {
-                                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                                errors.put(
+                                        fieldError.getField(),
+                                        getFieldValidationMessage(fieldError));
                             } else {
                                 errors.put(
                                         fieldError.getField(),
@@ -156,6 +163,16 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setProperty("errors", errors);
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    private String getFieldValidationMessage(FieldError fieldError) {
+        if (fieldError.getDefaultMessage() != null
+                && fieldError.getDefaultMessage().startsWith("size must be between")
+                && PAYMENT_REFERENCE_FIELD_PATTERN.matcher(fieldError.getField()).matches()) {
+            return PAYMENT_REFERENCE_VALIDATION_MESSAGE;
+        }
+
+        return fieldError.getDefaultMessage();
     }
 
     @Override
