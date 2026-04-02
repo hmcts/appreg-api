@@ -543,7 +543,9 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 .body(
                         "type",
                         Matchers.equalTo(
-                                AppListEntryError.LODGEMENT_DATE_MISSING.getCode().getAppCode()));
+                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
+                                        .getCode()
+                                        .getAppCode()));
     }
 
     @Test
