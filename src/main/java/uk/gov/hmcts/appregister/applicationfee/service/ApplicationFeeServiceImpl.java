@@ -52,4 +52,12 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
 
         return new FeePair(mainFee.orElse(null), offsiteFee.orElse(null));
     }
+
+    @Override
+    public Fee getOffsiteFee(LocalDate date) {
+        return feeRepository.findByReferenceBetweenDate("CO1.1", date).stream()
+                .filter(Fee::isOffsite)
+                .max(FEE_ID_COMPARATOR)
+                .orElse(null);
+    }
 }

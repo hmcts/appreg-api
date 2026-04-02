@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -71,12 +72,16 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                     applicationCodeList.map(
                             code -> {
                                 FeePair feePair = feeService.resolveFeePair(code.getFeeReference());
+                                Fee offsiteFee =
+                                        feePair != null && feePair.offsiteFee() != null
+                                                ? feePair.offsiteFee()
+                                                : feeService.getOffsiteFee(code.getStartDate());
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
                                                 code,
                                                 feePair != null ? feePair.mainFee() : null,
-                                                feePair != null ? feePair.offsiteFee() : null));
+                                                offsiteFee));
                             });
 
                     log.debug(
@@ -107,6 +112,12 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                 FeePair feePair =
                                         feeService.resolveFeePair(
                                                 success.getApplicationCode().getFeeReference());
+                                Fee offsiteFee =
+                                        feePair != null && feePair.offsiteFee() != null
+                                                ? feePair.offsiteFee()
+                                                : feeService.getOffsiteFee(
+                                                        success.getApplicationCode()
+                                                                .getStartDate());
 
                                 AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
                                         result =
@@ -118,10 +129,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                         feePair != null
                                                                                 ? feePair.mainFee()
                                                                                 : null,
-                                                                        feePair != null
-                                                                                ? feePair
-                                                                                        .offsiteFee()
-                                                                                : null),
+                                                                        offsiteFee),
                                                         applicationCodeMapper.toEntity(
                                                                 payloadForGet));
 

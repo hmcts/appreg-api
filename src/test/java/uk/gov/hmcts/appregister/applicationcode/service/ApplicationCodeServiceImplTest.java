@@ -96,7 +96,28 @@ public class ApplicationCodeServiceImplTest {
     void findByCode() throws Exception {
         String code = "code";
         LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
-        LocalDate offsetDateTime = LocalDate.now();
+
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+
+        GetApplicationCodeValidationSuccess success =
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build();
+        dummyGetApplicationCodeValidator.setSuccess(success);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                applicationCodeService.findByCode(payloadForGet);
+
+        Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+    }
+
+    @Test
+    void findByCodeNullDate() throws Exception {
+        String code = "code";
+        LocalDate localDate = null;
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
