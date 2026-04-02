@@ -181,6 +181,46 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void
+            givenPaymentReferenceSizeValidationError_whenTheExceptionIsThrown_thenAReadableFieldMessageIsReturned()
+                    throws Exception {
+
+        BindingResult result = Mockito.mock(BindingResult.class);
+
+        List<FieldError> fieldErrors =
+                List.of(
+                        new FieldError(
+                                "objectName",
+                                "feeStatuses[0].paymentReference",
+                                "rejectedValue",
+                                false,
+                                null,
+                                null,
+                                "size must be between 1 and 15"));
+
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
+
+        MethodArgumentNotValidException exception =
+                new MethodArgumentNotValidException(null, result) {
+                    @Override
+                    public String getMessage() {
+                        return "Custom message";
+                    }
+                };
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+        Assertions.assertEquals(
+                "Payment Reference must be between 1 and 15 characters",
+                ((Map) ((ProblemDetail) problemDetail.getBody()).getProperties().get("errors"))
+                        .get("feeStatuses[0].paymentReference"));
+    }
+
+    @Test
     void givenMultipleFieldErrors_whenTheExceptionIsThrown_thenErrorsAreReturnedInSortedOrder()
             throws Exception {
 

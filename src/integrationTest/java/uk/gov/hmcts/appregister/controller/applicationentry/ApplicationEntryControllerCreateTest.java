@@ -34,6 +34,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
@@ -219,6 +220,30 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 createdDto.getDetailDto(),
                 "Request for a certificate of satisfaction of "
                         + "debt registered in the register of judgements, orders and fines");
+    }
+
+    @Test
+    public void givenPaymentReferenceWithFifteenCharacters_whenCreateListEntry_thenReturn201()
+            throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        String uniqueSurname = UUID.randomUUID().toString();
+
+        Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
+        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+
+        FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now());
+        feeStatus.setPaymentReference("123451234512345");
+
+        var tokenGenerator = createAdminToken();
+
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, uniqueSurname);
+
+        Assertions.assertEquals(
+                "123451234512345",
+                createdDto.getDetailDto().getFeeStatuses().getFirst().getPaymentReference());
     }
 
     @Test
@@ -521,6 +546,41 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         .getType()
                         .get(),
                 problemDetail.getType());
+    }
+
+    @Test
+    public void
+            givenAnInvalidCreateEntryRequest_whenPaymentReferenceIsLongerThanFifteenCharacters_then400IsReturned()
+                    throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+
+        Assertions.assertNotNull(entryCreateDto.getFeeStatuses());
+        Assertions.assertFalse(entryCreateDto.getFeeStatuses().isEmpty());
+
+        FeeStatus feeStatus = entryCreateDto.getFeeStatuses().getFirst();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now());
+        feeStatus.setPaymentReference("1234512345123456");
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        responseSpecCreate.then().statusCode(400);
+
+        Map<String, Object> errors = responseSpecCreate.jsonPath().getMap("errors");
+
+        Assertions.assertEquals(
+                "Payment Reference must be between 1 and 15 characters",
+                errors.get("feeStatuses[0].paymentReference"));
     }
 
     @StabilityTest
