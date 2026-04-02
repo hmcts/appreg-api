@@ -226,7 +226,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
                     AND (:respondentName IS NULL OR
-                                COALESCE(rna.name, LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.name, ' '),
+                                COALESCE(rna.name, LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.forename1, ' '),
                             COALESCE(rna.title, ' '))))  LIKE CONCAT('%',
                             LOWER(cast(:respondentName AS string )), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
