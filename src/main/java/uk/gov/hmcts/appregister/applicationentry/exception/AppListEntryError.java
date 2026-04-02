@@ -119,9 +119,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
     LODGEMENT_DATE_MISSING(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
-                    "Lodgement date is required",
-                    "ALE-24"));
+                    HttpStatus.BAD_REQUEST, "Lodgement date is required", "ALE-24"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
