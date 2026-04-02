@@ -8,8 +8,10 @@ import static org.mockito.Mockito.when;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -508,7 +510,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // execute the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + "AD99004" + "?date=2020-07-25"),
+                        getLocalUrl(
+                                WEB_CONTEXT
+                                        + "/"
+                                        + "AD99004"
+                                        + "?date="
+                                        + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)),
                         tokenGenerator.fetchTokenForRole());
         responseSpec.then().statusCode(200);
 
