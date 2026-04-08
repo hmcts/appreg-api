@@ -858,18 +858,15 @@ public class ApplicationListControllerUpdateTest extends AbstractApplicationList
         assertThat(dto.getCourtName()).isEqualTo("Bristol Crown Court");
         assertThat(dto.getCjaCode()).isNull();
         assertThat(dto.getOtherLocationDescription()).isNull();
-        assertThat(dto.getEntriesSummary()).hasSize(5);
+        assertThat(dto.getEntriesSummary()).hasSize(4);
         assertThat(dto.getEntriesSummary().get(0).getApplicationTitle())
                 .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("APPC");
+        assertThat(dto.getEntriesSummary().get(0).getResult().get()).isEqualTo("AUTH");
         assertThat(dto.getEntriesSummary().get(1).getApplicationTitle())
-                .isEqualTo("Copy documents");
-        assertThat(dto.getEntriesSummary().get(1).getResult().get()).isEqualTo("AUTH");
-        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
                 .isEqualTo("Copy documents (electronic)");
-        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
+        assertThat(dto.getEntriesSummary().get(2).getApplicationTitle())
                 .isEqualTo("Extract from the Court Register");
-        assertThat(dto.getEntriesSummary().get(4).getApplicationTitle())
+        assertThat(dto.getEntriesSummary().get(3).getApplicationTitle())
                 .isEqualTo("Certificate of Satisfaction");
     }
 
