@@ -142,14 +142,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param cjaCode The criminal justice area code to filter by.
      * @param applicantOrganisation The applicant organisation to filter by. Partial matches allowed
      * @param applicantSurname The applicant surname to filter by. Partial matches allowed
+     * @param applicantName The applicant name to filter by. Partial matches allowed
      * @param standardApplicantCode The standard applicant code to filter by. Partial matches
      *     allowed
      * @param status The status to filter by
      * @param respondentOrganisation The respondent organisation to filter by. Partial matches
      *     allowed
      * @param respondentSurname The respondent surname to filter by. Partial matches allowed
+     * @param respondentName The respondent name to filter by. Partial matches allowed
      * @param respondentPostcode The respondent postcode to filter by. Partial matches allowed
      * @param accountReference The account reference to filter by. Partial matches allowed
+     * @param applicationTitle The application title to filter by. Partial matches allowed
+     * @param resulted The result code to filter by. Partial matches allowed
+     * @param feeRequired Whether the application fee is required
+     * @param sequenceNumber The sequence number to filter by
      * @param pageable The pagination information
      * @return A page of ApplicationListEntryGetSummaryProjection matching the criteria
      */
@@ -223,9 +229,14 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
                     AND (:respondentName IS NULL OR
-                                COALESCE(rna.name, LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.forename1, ' '),
-                            COALESCE(rna.title, ' '))))  LIKE CONCAT('%',
-                            LOWER(cast(:respondentName AS string )), '%')  ESCAPE '\\' AND rna.code='RE')
+                                COALESCE(
+                                        rna.name,
+                                        LOWER(CONCAT(
+                                                COALESCE(rna.surname, ' '),
+                                                COALESCE(rna.forename1, ' '),
+                                                COALESCE(rna.title, ' '))))
+                                        LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
+                                            ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
                             LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentSurname IS NULL OR LOWER(rna.surname) LIKE CONCAT('%',
