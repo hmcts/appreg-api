@@ -418,7 +418,8 @@ public class ApplicationEntryServiceImplTest {
                         any(),
                         any(),
                         any(),
-                        any()))
+                        any(),
+                        any(Pageable.class)))
                 .thenReturn(resultPage);
 
         EntryGetSummaryDto summaryDto = new EntryGetSummaryDto();
