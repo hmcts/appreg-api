@@ -1400,6 +1400,50 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertFalse(fees.stream().anyMatch(Fee::isOffsite));
     }
 
+    @Test
+    @Transactional
+    public void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        final EntryCreateDto entryCreateDto =
+                Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryCreateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setWordingFields(null);
+        entryCreateDto.setHasOffsiteFee(null);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        // run the test
+        unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    PayloadForCreate<EntryCreateDto> payloadForCreate =
+                            PayloadForCreate.<EntryCreateDto>builder()
+                                    .id(applicationList.getUuid())
+                                    .data(entryCreateDto)
+                                    .build();
+                    return Assertions.assertDoesNotThrow(
+                            () -> applicationEntryService.createEntry(payloadForCreate));
+                });
+    }
+
     // useful method to create an entry with respondent, bulk respondent and fee statuses for update
     // purposes
 
