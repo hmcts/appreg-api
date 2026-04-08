@@ -1127,7 +1127,7 @@ public class ApplicationListServiceImplTest {
 
     @SuppressWarnings("unchecked")
     private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
-        return (ArgumentCaptor<List<ApplicationListEntrySummary>>) (ArgumentCaptor<?>)
-                ArgumentCaptor.forClass(List.class);
+        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
+                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
     }
 }
