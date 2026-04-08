@@ -165,13 +165,13 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
-        Pageable page = PageRequest.of(0, 1);
+        Pageable page = PageRequest.of(0, 1, Sort.by("sequenceNumber").ascending());
         Page<ApplicationListEntrySummaryProjection> page0 =
                 applicationListEntryRepository.findSummariesById(
                         data1.getApplicationList().getUuid(), page);
 
         // And: page 1 size 1
-        page = PageRequest.of(1, 1);
+        page = PageRequest.of(1, 1, Sort.by("sequenceNumber").ascending());
         Page<ApplicationListEntrySummaryProjection> page1 =
                 applicationListEntryRepository.findSummariesById(
                         data1.getApplicationList().getUuid(), page);

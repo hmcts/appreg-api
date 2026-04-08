@@ -109,8 +109,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
-            AND aler.changedDate = (
-                SELECT MAX(sub.changedDate)
+            AND aler.id = (
+                SELECT MAX(sub.id)
                 FROM AppListEntryResolution sub
                 WHERE sub.applicationList = ale
             )
@@ -209,6 +209,13 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                 LEFT JOIN ale.applicationCode ac
                 LEFT JOIN ale.applicationList al
                 LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                    AND aler.id = (
+                        SELECT MAX(sub.id)
+                        FROM AppListEntryResolution sub
+                        WHERE sub.applicationList = ale
+                    )
+                LEFT JOIN aler.resolutionCode rc
             WHERE  (:hasHearingDate = false OR :hasHearingDate IS NULL OR al.date = :hearingDate)
                     AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
                     AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
