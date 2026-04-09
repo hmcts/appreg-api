@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.util.PagingSortMode;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 
 /**
@@ -38,6 +39,8 @@ public class PageableMapper {
      * @param defaultSortProperty The default property to sort on if no sort is specified
      * @param defaultDirection The default direction to sort if no sort is specified
      * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
+     * @param sortMode Explicit sort handling mode. Use DEFAULT to force fallback ordering even if
+     *     a sort was supplied in the request.
      */
     public <T extends SortableOperationEnum> PagingWrapper from(
             Integer page,
@@ -45,12 +48,8 @@ public class PageableMapper {
             List<String> sort,
             T defaultSortProperty,
             Sort.Direction defaultDirection,
-            Function<String, T> findSortFieldEnum) {
-
-        // TODO: This is the one line that needs removing
-        // if we want to support multiple sort values
-        validateAgainstMultipleSortSupported(sort);
-
+            Function<String, T> findSortFieldEnum,
+            PagingSortMode sortMode) {
         if (size != null && size > maxPageSize) {
             size = maxPageSize;
         }
@@ -61,25 +60,30 @@ public class PageableMapper {
         String tieBreaker = null;
         List<String> mappedSorts = new ArrayList<>();
 
+        boolean useDefaultSort =
+            sortMode == PagingSortMode.DEFAULT || sort == null || sort.isEmpty();
+
         // process the sorts or default the sort
-        if (sort != null && !sort.isEmpty()) {
+        if (!useDefaultSort) {
+            validateAgainstMultipleSortSupported(sort);
 
             sortableFields = SortableField.of(sort.toArray(new String[0]));
 
             for (SortableField sortableField : sortableFields) {
                 mappedSorts.addAll(
-                        sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+                    sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
 
                 tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
             }
         } else {
             sortableFields = new ArrayList<>();
+
             SortableField sortableField =
-                    SortableField.of(
-                                    defaultSortProperty.getApiValue()
-                                            + ","
-                                            + defaultDirection.name())
-                            .getFirst();
+                SortableField.of(
+                        defaultSortProperty.getApiValue()
+                            + ","
+                            + defaultDirection.name())
+                    .getFirst();
 
             mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
             sortableFields.add(sortableField);
@@ -97,7 +101,7 @@ public class PageableMapper {
         int p = (page == null || page < 0) ? 0 : page; // Spring pages are 0-based
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
-        return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
+        return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec), sortMode);
     }
 
     /**

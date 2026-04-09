@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationlist.controller;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -20,11 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationlist.config.ApplicationListSortProperties;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.util.PagingSortMode;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -64,6 +67,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
+
+    private final ApplicationListSortProperties sortProperties;
+
+    private final MeterRegistry meterRegistry;
 
     /**
      * Creates a new Application List.
@@ -205,6 +212,24 @@ public class ApplicationListController implements ApplicationListsApi {
     public ResponseEntity<ApplicationListPage> getApplicationLists(
             ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
 
+        boolean useDefaultSort = false;
+        String ignoredKey = null;
+
+        if (sort != null && !sort.isEmpty()) {
+            String raw = sort.getFirst();
+            String key = raw.contains(",") ? raw.split(",")[0].trim() : raw.trim();
+
+            var enumOpt = ApplicationListSortFieldEnum.fromApiValue(key);
+
+            if (enumOpt.isPresent() && sortProperties.getDisabledEnums().contains(enumOpt.get())) {
+                useDefaultSort = true;
+                ignoredKey = key;
+
+                meterRegistry.counter("appreg.sort.ignored", "sortKey", key).increment();
+                log.debug("Ignoring disabled sortKey={}, using DEFAULT ordering", key);
+            }
+        }
+
         PagingWrapper pageInfo =
                 pageableMapper.from(
                         page,
@@ -212,7 +237,8 @@ public class ApplicationListController implements ApplicationListsApi {
                         sort,
                         ApplicationListSortFieldEnum.DESCRIPTION,
                         Sort.Direction.ASC,
-                        ApplicationListSortFieldEnum::getEntityValue);
+                        ApplicationListSortFieldEnum::getEntityValue,
+                        useDefaultSort ? PagingSortMode.DEFAULT : PagingSortMode.REQUESTED);
 
         var applicationListPage = service.getPage(filter, pageInfo);
         log.info("Retrieved Application Lists");

@@ -16,13 +16,14 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 public class PagingWrapper {
     private final List<SortableField> sortStrings;
     private final Pageable pageable;
+    private final PagingSortMode sortMode;
 
     /**
      * The original pageable details.
      *
      * @param sort The sort details
      */
-    public static PagingWrapper of(List<SortableField> sort, Pageable page) {
-        return new PagingWrapper(sort, page);
+    public static PagingWrapper of(List<SortableField> sort, Pageable page, PagingSortMode sortMode) {
+        return new PagingWrapper(sort, page, sortMode);
     }
 }
