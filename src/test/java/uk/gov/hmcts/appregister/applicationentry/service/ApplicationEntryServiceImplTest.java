@@ -343,6 +343,7 @@ public class ApplicationEntryServiceImplTest {
                         eq(null),
                         eq(null),
                         eq(null),
+                        eq(null),
                         eq(mockPage)))
                 .thenReturn(page);
 
@@ -417,7 +418,8 @@ public class ApplicationEntryServiceImplTest {
                         any(),
                         any(),
                         any(),
-                        any()))
+                        any(),
+                        any(Pageable.class)))
                 .thenReturn(resultPage);
 
         EntryGetSummaryDto summaryDto = new EntryGetSummaryDto();
@@ -1052,6 +1054,7 @@ public class ApplicationEntryServiceImplTest {
                         eq(entryGetFilterDto.getRespondentPostcode()),
                         eq(entryGetFilterDto.getAccountReference()),
                         eq(entryGetFilterDto.getApplicationTitle()),
+                        eq(entryGetFilterDto.getResulted()),
                         eq(entryGetFilterDto.getFeeRequired()),
                         eq(entryGetFilterDto.getSequenceNumber()),
                         eq(mockPage)))
@@ -1132,6 +1135,7 @@ public class ApplicationEntryServiceImplTest {
                         eq(entryGetFilterDto.getRespondentPostcode()),
                         eq(entryGetFilterDto.getAccountReference()),
                         eq(entryGetFilterDto.getApplicationTitle()),
+                        eq(entryGetFilterDto.getResulted()),
                         eq(entryGetFilterDto.getFeeRequired()),
                         eq(entryGetFilterDto.getSequenceNumber()),
                         eq(mockPage)))

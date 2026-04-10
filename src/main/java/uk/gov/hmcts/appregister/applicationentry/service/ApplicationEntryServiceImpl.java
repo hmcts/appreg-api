@@ -149,6 +149,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     null,
                                     null,
+                                    null,
                                     pageable.getPageable());
 
                     // breaks name into individual and/or organisation parts
@@ -961,6 +962,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getRespondentPostcode(),
                                     filterDto.getAccountReference(),
                                     filterDto.getApplicationTitle(),
+                                    filterDto.getResulted(),
                                     filterDto.getFeeRequired(),
                                     filterDto.getSequenceNumber(),
                                     pageable.getPageable());

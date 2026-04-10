@@ -23,6 +23,27 @@ get:
         maxLength: 100
         example: "Innovative Solutions Inc"
     - in: query
+      name: addressLine1
+      description: Filter by address line 1 (contains, case-insensitive).
+      schema:
+        type: string
+        maxLength: 255
+      example: "1 High Street"
+    - in: query
+      name: from
+      description: Filter by from date.
+      schema:
+        type: string
+        format: date
+      example: "2026-04-01"
+    - in: query
+      name: to
+      description: Filter by to date.
+      schema:
+        type: string
+        format: date
+      example: "2026-12-31"
+    - in: query
       name: pageNumber
       schema: { type: integer, format: int32, minimum: 0, default: 0 }
       description: Zero-based page index.
@@ -33,14 +54,21 @@ get:
     - in: query
       name: sort
       description: >
-        Repeatable sort parameter. Format per item: `property,(asc|desc)`.
-        Example: `?sort=title,asc&sort=code,desc`.
+        Sort parameter. Format: `property,(asc|desc)`.
+        Example: `?sort=name,asc`.
+
+        Supported properties:
+          - `code`
+          - `name`
+          - `addressLine1`
+          - `from`
+          - `to`
       style: form
       explode: true
       schema:
         type: array
         items: { type: string }
-        example: [ "title,asc", "code,desc" ]
+        example: "name,asc"
   responses:
     "200":
       description: Page of Standard Applicants.
