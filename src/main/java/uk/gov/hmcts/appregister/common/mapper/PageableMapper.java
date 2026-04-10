@@ -39,8 +39,37 @@ public class PageableMapper {
      * @param defaultSortProperty The default property to sort on if no sort is specified
      * @param defaultDirection The default direction to sort if no sort is specified
      * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
-     * @param sortMode Explicit sort handling mode. Use DEFAULT to force fallback ordering even if
-     *     a sort was supplied in the request.
+     */
+    public <T extends SortableOperationEnum> PagingWrapper from(
+            Integer page,
+            Integer size,
+            List<String> sort,
+            T defaultSortProperty,
+            Sort.Direction defaultDirection,
+            Function<String, T> findSortFieldEnum) {
+
+        return from(
+                page,
+                size,
+                sort,
+                defaultSortProperty,
+                defaultDirection,
+                findSortFieldEnum,
+                PagingSortMode.REQUESTED);
+    }
+
+    /**
+     * map from a set of values to a spring pageable.
+     *
+     * @param page The page number (0 based)
+     * @param size The page size
+     * @param sort Each entry will contain a property and optionally a direction separated by a
+     *     comma
+     * @param defaultSortProperty The default property to sort on if no sort is specified
+     * @param defaultDirection The default direction to sort if no sort is specified
+     * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
+     * @param sortMode Explicit sort handling mode. Use DEFAULT to force fallback ordering even if a
+     *     sort was supplied in the request.
      */
     public <T extends SortableOperationEnum> PagingWrapper from(
             Integer page,
@@ -61,7 +90,7 @@ public class PageableMapper {
         List<String> mappedSorts = new ArrayList<>();
 
         boolean useDefaultSort =
-            sortMode == PagingSortMode.DEFAULT || sort == null || sort.isEmpty();
+                sortMode == PagingSortMode.DEFAULT || sort == null || sort.isEmpty();
 
         // process the sorts or default the sort
         if (!useDefaultSort) {
@@ -71,7 +100,7 @@ public class PageableMapper {
 
             for (SortableField sortableField : sortableFields) {
                 mappedSorts.addAll(
-                    sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+                        sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
 
                 tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
             }
@@ -79,11 +108,11 @@ public class PageableMapper {
             sortableFields = new ArrayList<>();
 
             SortableField sortableField =
-                SortableField.of(
-                        defaultSortProperty.getApiValue()
-                            + ","
-                            + defaultDirection.name())
-                    .getFirst();
+                    SortableField.of(
+                                    defaultSortProperty.getApiValue()
+                                            + ","
+                                            + defaultDirection.name())
+                            .getFirst();
 
             mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
             sortableFields.add(sortableField);

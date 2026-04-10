@@ -11,7 +11,6 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 
 @Component
@@ -25,9 +24,9 @@ public class ApplicationListSortProperties {
 
     public Set<ApplicationListSortFieldEnum> getDisabledEnums() {
         return disabledSortKeys.stream()
-            .map(ApplicationListSortFieldEnum::fromApiValue)
-            .flatMap(Optional::stream)
-            .collect(Collectors.toSet());
+                .map(ApplicationListSortFieldEnum::fromApiValue)
+                .flatMap(Optional::stream)
+                .collect(Collectors.toSet());
     }
 
     @PostConstruct
