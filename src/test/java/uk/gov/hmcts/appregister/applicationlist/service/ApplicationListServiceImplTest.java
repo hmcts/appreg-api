@@ -848,7 +848,7 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
-    void get_auditsResolvedApplicationListEntity() {
+    void get_auditsLookupIdSurrogate() {
         ApplicationList saved = new ApplicationList();
         UUID id = UUID.randomUUID();
         saved.setUuid(id);
@@ -860,13 +860,17 @@ public class ApplicationListServiceImplTest {
         mockFindSummariesById(id, pageable);
 
         ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        ApplicationList auditEntity = new ApplicationList();
+        auditEntity.setUuid(id);
         when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+        when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
         ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
-        Assertions.assertSame(saved, auditOperationService.getLastNewEntity());
+        Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
+        Assertions.assertNotSame(saved, auditOperationService.getLastNewEntity());
     }
 
     @Test
@@ -961,7 +965,7 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
-    void print_auditsResolvedApplicationListEntity() {
+    void print_auditsLookupIdSurrogate() {
         UUID id = UUID.randomUUID();
         ApplicationList list = new ApplicationList();
         list.setUuid(id);
@@ -970,13 +974,17 @@ public class ApplicationListServiceImplTest {
         when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of());
 
         ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
+        ApplicationList auditEntity = new ApplicationList();
+        auditEntity.setUuid(id);
         when(mapper.toGetPrintDto(list)).thenReturn(expected);
+        when(mapper.toEntity(id)).thenReturn(auditEntity);
 
         auditOperationService.clearCapturedAudit();
         ApplicationListGetPrintDto actual = service.print(id);
 
         Assertions.assertEquals(expected, actual);
-        Assertions.assertSame(list, auditOperationService.getLastNewEntity());
+        Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
+        Assertions.assertNotSame(list, auditOperationService.getLastNewEntity());
     }
 
     @Test

@@ -39,7 +39,9 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                     var cja = locationLookupService.getCjaOrThrow(code);
 
                     AuditableResult<CriminalJusticeAreaGetDto, CriminalJusticeArea> result =
-                            new AuditableResult<>(criminalJusticeMapper.toDto(cja), cja);
+                            new AuditableResult<>(
+                                    criminalJusticeMapper.toDto(cja),
+                                    criminalJusticeMapper.toEntity(code));
 
                     return Optional.of(result);
                 },

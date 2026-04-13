@@ -89,7 +89,9 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                                     NationalCourtHouse::getEndDate);
 
                     AuditableResult<CourtLocationGetDetailDto, NationalCourtHouse> result =
-                            new AuditableResult<>(mapper.toDetailDto(selectedCourt), selectedCourt);
+                            new AuditableResult<>(
+                                    mapper.toDetailDto(selectedCourt),
+                                    mapper.toEntity(code, date));
 
                     // Map the single matching entity to a detail DTO
                     return Optional.of(result);

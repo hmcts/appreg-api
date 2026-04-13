@@ -123,7 +123,7 @@ class CriminalJusticeAreaServiceImplTest {
     }
 
     @Test
-    void testSuccess_auditsResolvedEntity() {
+    void testSuccess_auditsRequestedLookupCriteria() {
         String code = "X123";
         var cja = CriminalJusticeArea.builder().code(code).description("Test Area").build();
         when(locationLookupService.getCjaOrThrow(code)).thenReturn(cja);
@@ -142,7 +142,10 @@ class CriminalJusticeAreaServiceImplTest {
 
         Assertions.assertEquals(code, dto.getCode());
         Assertions.assertNotNull(listener.getCompleteEvent());
-        Assertions.assertSame(cja, listener.getCompleteEvent().getNewValue());
+        CriminalJusticeArea audited = (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(cja, audited);
+        Assertions.assertEquals(code, audited.getCode());
+        Assertions.assertNull(audited.getDescription());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

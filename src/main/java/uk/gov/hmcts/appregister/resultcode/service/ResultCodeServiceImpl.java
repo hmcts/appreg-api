@@ -98,7 +98,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
 
                     return Optional.of(
                             new AuditableResult<ResultCodeGetDetailDto, Keyable>(
-                                    mapper.toDetailDto(selected), selected));
+                                    mapper.toDetailDto(selected), mapper.toEntity(code, date)));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }

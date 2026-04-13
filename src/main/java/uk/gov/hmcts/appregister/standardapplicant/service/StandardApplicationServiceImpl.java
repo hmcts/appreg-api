@@ -105,7 +105,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
                                         return new AuditableResult<>(
                                                 mapper.toReadGetDto(standardApplicant),
-                                                standardApplicant);
+                                                mapper.toEntity(code, date));
                                     }));
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));

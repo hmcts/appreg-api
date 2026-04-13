@@ -123,7 +123,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                                 ? feePair
                                                                                         .offsiteFee()
                                                                                 : null),
-                                                        success.getApplicationCode());
+                                                        applicationCodeMapper.toEntity(payload));
 
                                 log.debug(
                                         "Finish: Find Application for app code: {} date: {}",

@@ -190,7 +190,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     ApplicationList list = findApplicationListOrThrow(id);
                     AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
                             new AuditableResult<>(
-                                    getListDetailDto(list, pageable.getPageable()), list);
+                                    getListDetailDto(list, pageable.getPageable()),
+                                    mapper.toEntity(id));
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
@@ -486,7 +487,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     if (entryProjections.isEmpty()) {
                         var printDto = buildGetPrintDto(list, List.of());
                         AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                                new AuditableResult<>(printDto, list);
+                                new AuditableResult<>(printDto, mapper.toEntity(id));
 
                         return Optional.of(result);
                     }
@@ -536,7 +537,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
                     var printDto = buildGetPrintDto(list, dtos);
                     AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                            new AuditableResult<>(printDto, list);
+                            new AuditableResult<>(printDto, mapper.toEntity(id));
 
                     return Optional.of(result);
                 },

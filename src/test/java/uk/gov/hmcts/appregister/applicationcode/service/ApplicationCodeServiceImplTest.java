@@ -118,11 +118,12 @@ public class ApplicationCodeServiceImplTest {
     }
 
     @Test
-    void findByCode_auditsResolvedEntity() {
+    void findByCode_auditsRequestedLookupCriteria() {
         String code = "code";
         LocalDate localDate = LocalDate.of(2025, 1, 1);
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setStartDate(LocalDate.of(2020, 1, 1));
         dummyGetApplicationCodeValidator.setSuccess(
                 GetApplicationCodeValidationSuccess.builder()
                         .applicationCode(applicationCode)
@@ -135,7 +136,10 @@ public class ApplicationCodeServiceImplTest {
         auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
 
         Assertions.assertNotNull(listener.getCompleteEvent());
-        Assertions.assertSame(applicationCode, listener.getCompleteEvent().getNewValue());
+        ApplicationCode audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(applicationCode, audited);
+        Assertions.assertEquals(code, audited.getCode());
+        Assertions.assertEquals(localDate, audited.getStartDate());
     }
 
     @Test

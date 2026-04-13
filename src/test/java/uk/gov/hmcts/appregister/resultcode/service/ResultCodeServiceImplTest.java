@@ -143,16 +143,20 @@ public class ResultCodeServiceImplTest {
     }
 
     @Test
-    void findByCode_auditsResolvedEntity() {
+    void findByCode_auditsRequestedLookupCriteria() {
         final String code = "RC123";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
         var entity = new ResolutionCode();
         entity.setResultCode(code);
         var expectedDto = new ResultCodeGetDetailDto();
+        var auditEntity = new ResolutionCode();
+        auditEntity.setResultCode(code);
+        auditEntity.setStartDate(date);
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(entity));
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
+        when(mapper.toEntity(code, date)).thenReturn(auditEntity);
 
         CapturingAuditListener listener = new CapturingAuditListener();
         ResultCodeServiceImpl localService =
@@ -169,7 +173,8 @@ public class ResultCodeServiceImplTest {
 
         Assertions.assertSame(expectedDto, actual);
         Assertions.assertNotNull(listener.getCompleteEvent());
-        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
+        Assertions.assertSame(auditEntity, listener.getCompleteEvent().getNewValue());
+        Assertions.assertNotSame(entity, listener.getCompleteEvent().getNewValue());
     }
 
     /**

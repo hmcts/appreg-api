@@ -171,13 +171,13 @@ public class StandardApplicantServiceTest {
     }
 
     @Test
-    void testGetByCode_auditsResolvedEntity() {
+    void testGetByCode_auditsRequestedLookupCriteria() {
         String code = "APP001";
         LocalDate date = LocalDate.of(2025, 1, 1);
         StandardApplicant standardApplicant = new StandardApplicant();
         standardApplicant.setApplicantCode(code);
         standardApplicant.setName("John Doe");
-        standardApplicant.setApplicantStartDate(date);
+        standardApplicant.setApplicantStartDate(LocalDate.of(2020, 1, 1));
         validator.setSuccess(standardApplicant);
 
         CapturingAuditListener listener = new CapturingAuditListener();
@@ -197,7 +197,10 @@ public class StandardApplicantServiceTest {
 
         Assertions.assertEquals(code, actual.getCode());
         Assertions.assertNotNull(listener.getCompleteEvent());
-        Assertions.assertSame(standardApplicant, listener.getCompleteEvent().getNewValue());
+        StandardApplicant audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(standardApplicant, audited);
+        Assertions.assertEquals(code, audited.getApplicantCode());
+        Assertions.assertEquals(date, audited.getApplicantStartDate());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

@@ -153,13 +153,14 @@ public class CourtLocationServiceImplTest {
     }
 
     @Test
-    void findByCodeAndDate_auditsResolvedEntity() {
+    void findByCodeAndDate_auditsRequestedLookupCriteria() {
         final String code = "ABC123";
         final LocalDate date = LocalDate.parse("2025-01-01");
 
         var entity = new NationalCourtHouse();
         entity.setCourtLocationCode(code);
         entity.setName("Bath Crown Court");
+        entity.setStartDate(LocalDate.parse("2020-01-01"));
         when(repository.findActiveCourtsWithDate(code, date)).thenReturn(List.of(entity));
 
         CapturingAuditListener listener = new CapturingAuditListener();
@@ -176,7 +177,10 @@ public class CourtLocationServiceImplTest {
 
         Assertions.assertEquals("Bath Crown Court", dto.getName());
         Assertions.assertNotNull(listener.getCompleteEvent());
-        Assertions.assertSame(entity, listener.getCompleteEvent().getNewValue());
+        NationalCourtHouse audited = (NationalCourtHouse) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(entity, audited);
+        Assertions.assertEquals(code, audited.getCourtLocationCode());
+        Assertions.assertEquals(date, audited.getStartDate());
     }
 
     /**
