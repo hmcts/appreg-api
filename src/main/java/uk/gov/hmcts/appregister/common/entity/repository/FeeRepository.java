@@ -68,6 +68,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
 
     /**
      * Finds a list of Fee entities offsite.
+     *
      * @param dateTime the date to search for
      * @return fee entities matching the reference and offset status
      */
