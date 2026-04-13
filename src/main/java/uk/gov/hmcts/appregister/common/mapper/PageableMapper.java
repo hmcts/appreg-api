@@ -82,6 +82,11 @@ public class PageableMapper {
         if (size != null && size > maxPageSize) {
             size = maxPageSize;
         }
+
+        if (sort != null) {
+            validateAgainstMultipleSortSupported(sort);
+        }
+
         Sort sortSpec;
 
         List<SortableField> sortableFields = null;
@@ -94,8 +99,6 @@ public class PageableMapper {
 
         // process the sorts or default the sort
         if (!useDefaultSort) {
-            validateAgainstMultipleSortSupported(sort);
-
             sortableFields = SortableField.of(sort.toArray(new String[0]));
 
             for (SortableField sortableField : sortableFields) {
