@@ -124,6 +124,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
@@ -154,6 +155,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // set application code to match the application code in the repository
         entryCreateDto.setApplicationCode("EF12121");
@@ -230,6 +232,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -443,6 +446,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // Ensure we have a fee status and set it to DUE with a payment reference (invalid)
         FeeStatus feeStatus = new FeeStatus();
@@ -518,6 +522,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // Ensure respondent exists (payload includes respondent)
         Assertions.assertNotNull(
@@ -552,6 +557,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(20);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -579,6 +585,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(20);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -607,6 +614,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -640,6 +648,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setApplicant(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))

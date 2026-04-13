@@ -98,11 +98,10 @@ public class ApplicationListEntryWrapperDto {
     }
 
     public LocalDate getLodgementDate() {
-        if (entryCreateDto != null) {
+        if (entryCreateDto != null && entryCreateDto.getLodgementDate() != null) {
             return entryCreateDto.getLodgementDate();
-        } else {
-            return entryUpdateDto.getLodgementDate();
         }
+        return LocalDate.now();
     }
 
     public List<Official> getOfficials() {

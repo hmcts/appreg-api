@@ -84,7 +84,7 @@ public class ApplicationEntryDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertEquals(6, constraintValidator.size());
+        Assertions.assertEquals(5, constraintValidator.size());
 
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "accountNumber", "size must be between 1 and 20");
