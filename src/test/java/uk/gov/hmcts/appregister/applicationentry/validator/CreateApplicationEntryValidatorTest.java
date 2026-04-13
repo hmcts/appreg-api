@@ -21,17 +21,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -55,7 +57,7 @@ public class CreateApplicationEntryValidatorTest {
 
     @Mock private ApplicationCodeRepository applicationCodeRepository;
 
-    @Mock private FeeRepository feeRepository;
+    @Mock private ApplicationFeeService feeService;
 
     @Mock private Clock clock;
     @Mock private BusinessDateProvider businessDateProvider;
@@ -111,11 +113,7 @@ public class CreateApplicationEntryValidatorTest {
         fee.setId(1L);
         fee.setOffsite(true);
 
-        when(feeRepository.findByReferenceBetweenDateWithOffsite(
-                        eq(applicationCode.getFeeReference()),
-                        notNull(),
-                        eq(entryCreateDto.getHasOffsiteFee())))
-                .thenReturn(List.of(fee));
+        when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(null, fee));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
@@ -131,6 +129,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
@@ -161,6 +160,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // set application code to match the application code in the repository
         entryCreateDto.setApplicationCode("EF12121");
@@ -237,6 +237,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getRespondent().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         PayloadForCreate<EntryCreateDto> payload =
                 PayloadForCreate.<EntryCreateDto>builder()
@@ -449,6 +450,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // Ensure we have a fee status and set it to DUE with a payment reference (invalid)
         FeeStatus feeStatus = new FeeStatus();
@@ -524,6 +526,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setStandardApplicantCode(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         // Ensure respondent exists (payload includes respondent)
         Assertions.assertNotNull(
@@ -558,6 +561,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(20);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -585,6 +589,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(20);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -613,6 +618,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setRespondent(null);
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
@@ -646,6 +652,7 @@ public class CreateApplicationEntryValidatorTest {
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setApplicant(null);
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now(clock));
 
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))

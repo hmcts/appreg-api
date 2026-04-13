@@ -22,24 +22,24 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     private final FeeRepository feeRepository;
     private final BusinessDateProvider businessDateProvider;
 
+    @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
-        LocalDate todayUk = businessDateProvider.currentUkDate();
-        return resolveFeePair(feeReference, todayUk);
+        return resolveFeePair(feeReference, businessDateProvider.currentUkDate());
     }
 
+    @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference, LocalDate asOfDate) {
-        List<Fee> feesForRef = feeRepository.findByReferenceBetweenDate(feeReference, asOfDate);
-        List<Fee> main = feesForRef.stream().filter(r -> !r.isOffsite()).toList();
+        LocalDate effectiveDate = asOfDate != null ? asOfDate : businessDateProvider.currentUkDate();
+        List<Fee> feesForRef = feeRepository.findByReferenceBetweenDate(feeReference, effectiveDate);
+        List<Fee> main = feesForRef.stream().filter(fee -> !fee.isOffsite()).toList();
         List<Fee> offsite = feesForRef.stream().filter(Fee::isOffsite).toList();
 
-        // if we do not have a main but have an offset then error
         if (main.isEmpty() && !offsite.isEmpty()) {
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 
-        // if we have more than one main or offset then we have an issue
         if (main.size() > 1 || offsite.size() > 1) {
             log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
         }
@@ -51,7 +51,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
                                 main,
                                 "fee",
                                 feeReference + " (offsite=false)",
-                                asOfDate,
+                                effectiveDate,
                                 Fee::getEndDate);
 
         Fee offsiteFee =
@@ -61,7 +61,7 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
                                 offsite,
                                 "fee",
                                 feeReference + " (offsite=true)",
-                                asOfDate,
+                                effectiveDate,
                                 Fee::getEndDate);
 
         return new FeePair(mainFee, offsiteFee);

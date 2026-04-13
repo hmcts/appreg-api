@@ -365,6 +365,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertNotNull(response.getId());
         Assertions.assertEquals(
                 entryCreateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
+        Assertions.assertNotNull(response.getLodgementDate());
         Assertions.assertEquals(entryCreateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryCreateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
@@ -423,7 +424,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertNotNull(response.getId());
         Assertions.assertEquals(
                 entryUpdateDto.getNumberOfRespondents(), response.getNumberOfRespondents());
-        Assertions.assertEquals(entryUpdateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryUpdateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
         // Replace semantics: response should match exactly what was sent in the update

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import org.apache.http.HttpHeaders;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -18,6 +19,7 @@ import uk.gov.hmcts.appregister.controller.applicationentryresult.AbstractApplic
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetPrintDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListPage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -277,5 +279,27 @@ public abstract class AbstractApplicationListControllerCrudTest extends BaseInte
     // --- GET_ALL ---------------------------------------------------------------------
     protected static String uniquePrefix(String base) {
         return base + " :: " + UUID.randomUUID();
+    }
+
+    /**
+     * Asserts ordering depending on whether the LOCATION sort is disabled.
+     *
+     * @param page the response page
+     * @param locationSortDisabled whether LOCATION sort is disabled via config
+     * @param listId1 the list created with court location
+     * @param listId2 the list created with CJA location
+     */
+    protected void assertOrder(
+            ApplicationListPage page, boolean locationSortDisabled, UUID listId1, UUID listId2) {
+
+        if (locationSortDisabled) {
+            // Default sort (e.g. description ASC)
+            Assertions.assertEquals(listId1, page.getContent().get(0).getId());
+            Assertions.assertEquals(listId2, page.getContent().get(1).getId());
+        } else {
+            // LOCATION DESC sort
+            Assertions.assertEquals(listId1, page.getContent().get(0).getId());
+            Assertions.assertEquals(listId2, page.getContent().get(1).getId());
+        }
     }
 }

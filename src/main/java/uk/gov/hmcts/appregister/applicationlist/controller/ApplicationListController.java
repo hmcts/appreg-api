@@ -3,9 +3,11 @@ package uk.gov.hmcts.appregister.applicationlist.controller;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.OK;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationlist.config.ApplicationListSortProperties;
 import uk.gov.hmcts.appregister.applicationlist.service.ApplicationListService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.util.PagingSortMode;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListsApi;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -64,6 +68,10 @@ public class ApplicationListController implements ApplicationListsApi {
 
     // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
     private final PageableMapper pageableMapper;
+
+    private final ApplicationListSortProperties sortProperties;
+
+    private final MeterRegistry meterRegistry;
 
     /**
      * Creates a new Application List.
@@ -204,6 +212,7 @@ public class ApplicationListController implements ApplicationListsApi {
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ApplicationListPage> getApplicationLists(
             ApplicationListGetFilterDto filter, Integer page, Integer size, List<String> sort) {
+        boolean useDefaultSort = shouldUseDefaultSort(sort);
 
         PagingWrapper pageInfo =
                 pageableMapper.from(
@@ -212,7 +221,8 @@ public class ApplicationListController implements ApplicationListsApi {
                         sort,
                         ApplicationListSortFieldEnum.DESCRIPTION,
                         Sort.Direction.ASC,
-                        ApplicationListSortFieldEnum::getEntityValue);
+                        ApplicationListSortFieldEnum::getEntityValue,
+                        useDefaultSort ? PagingSortMode.DEFAULT : PagingSortMode.REQUESTED);
 
         var applicationListPage = service.getPage(filter, pageInfo);
         log.info("Retrieved Application Lists");
@@ -251,5 +261,51 @@ public class ApplicationListController implements ApplicationListsApi {
                 .path("/{id}")
                 .buildAndExpand(id)
                 .toUri();
+    }
+
+    /**
+     * Determines whether the default sorting should be applied instead of the requested sort.
+     *
+     * @param sort the list of sort parameters (e.g. {@code ["description,asc"]})
+     * @return {@code true} if the requested sort key is disabled and default sorting should be
+     *     used; {@code false} otherwise
+     */
+    private boolean shouldUseDefaultSort(List<String> sort) {
+        return extractSortKey(sort).map(this::isDisabledSortKey).orElse(false);
+    }
+
+    /**
+     * Extracts the primary sort key from the provided sort parameters.
+     *
+     * @param sort the list of sort parameters
+     * @return an {@link Optional} containing the extracted sort key
+     */
+    private Optional<String> extractSortKey(List<String> sort) {
+        if (sort == null || sort.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String raw = sort.getFirst();
+        String key = raw.contains(",") ? raw.split(",")[0].trim() : raw.trim();
+
+        return key.isEmpty() ? Optional.empty() : Optional.of(key);
+    }
+
+    /**
+     * Checks whether the given sort key corresponds to a disabled sort field.
+     *
+     * @param key the sort key to evaluate (e.g. {@code "description"})
+     * @return {@code true} if the sort key is disabled; {@code false} otherwise
+     */
+    private boolean isDisabledSortKey(String key) {
+        var enumOpt = ApplicationListSortFieldEnum.fromApiValue(key);
+
+        if (enumOpt.isPresent() && sortProperties.getDisabledEnums().contains(enumOpt.get())) {
+            meterRegistry.counter("appreg.sort.ignored", "sortKey", key).increment();
+            log.debug("Ignoring disabled sortKey={}, using DEFAULT ordering", key);
+            return true;
+        }
+
+        return false;
     }
 }

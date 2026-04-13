@@ -11,13 +11,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
@@ -35,7 +35,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 public abstract class AbstractApplicationEntryValidator<T, O> implements Validator<T, O> {
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationCodeRepository applicationCodeRepository;
-    private final FeeRepository feeRepository;
+    private final ApplicationFeeService feeService;
     private final BusinessDateProvider businessDateProvider;
     private final StandardApplicantRepository standardApplicantRepository;
 
@@ -82,8 +82,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         WordingTemplateSentence wordingTemplateCollection =
                 WordingTemplateSentence.with(code.getWording());
 
+        validateLodgementDate(validatable);
+
         // if fee is due get the fee
-        Fee fee = validateFee(code, validatable);
+        FeePair fee = validateFee(code, validatable);
 
         // validate the respondent if required
         validateRespondent(code, validatable);
@@ -114,7 +116,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected abstract O getResult(
             ApplicationCode code,
             WordingTemplateSentence wordingTemplateCollection,
-            Fee fee,
+            FeePair fee,
             StandardApplicant saCode,
             ApplicationList applicationList,
             T dto);
@@ -298,6 +300,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      */
     protected abstract String getAccountNumber(T validatable);
 
+    protected abstract LocalDate getLodgementDate(T validatable);
+
     /**
      * validate the respondent of the payload and ensures mutual exclusivity between the
      * organisation and person.
@@ -373,9 +377,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *
      * @param validatable The validatable payload
      */
-    private Fee validateFee(ApplicationCode applicationCode, T validatable) {
-        Fee feeToReturn = null;
-        LocalDate todayUk = currentBusinessDate();
+    private FeePair validateFee(ApplicationCode applicationCode, T validatable) {
+        FeePair feeToReturn = null;
 
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
@@ -401,32 +404,21 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            List<Fee> fees =
-                    feeRepository.findByReferenceBetweenDateWithOffsite(
-                            applicationCode.getFeeReference(),
-                            todayUk,
-                            getHasOffsiteFee(validatable) != null && getHasOffsiteFee(validatable));
+            feeToReturn = feeService.resolveFeePair(applicationCode.getFeeReference());
+            boolean wantsOffsiteFee = Boolean.TRUE.equals(getHasOffsiteFee(validatable));
 
-            if (fees.isEmpty()) {
-                // throw an exception as we have no feeds
+            if ((!wantsOffsiteFee && (feeToReturn == null || feeToReturn.mainFee() == null))
+                    || (wantsOffsiteFee
+                            && (feeToReturn == null || feeToReturn.offsiteFee() == null))) {
                 throw new AppRegistryException(
                         AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
                         "Fee offsite does not exist for code %s"
                                 .formatted(applicationCode.getCode()));
             }
 
-            feeToReturn =
-                    ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                            fees,
-                            "fee",
-                            applicationCode.getFeeReference()
-                                    + " (offsite="
-                                    + (getHasOffsiteFee(validatable) != null
-                                            && getHasOffsiteFee(validatable))
-                                    + ")",
-                            todayUk,
-                            Fee::getEndDate);
-            log.debug("Validated the fee {}", feeToReturn.getId());
+            log.debug(
+                    "Validated the fee {}",
+                    wantsOffsiteFee ? feeToReturn.offsiteFee().getId() : feeToReturn.mainFee().getId());
         }
 
         return feeToReturn;
@@ -536,5 +528,16 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         log.debug("Validated the respondent details");
+    }
+
+    private void validateLodgementDate(T validatable) {
+        LocalDate lodgementDate = getLodgementDate(validatable);
+        if (lodgementDate != null && lodgementDate.isAfter(currentBusinessDate())) {
+            throw new AppRegistryException(
+                    AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE,
+                    "Lodgement date cannot be after today's date");
+        }
+
+        log.debug("Validated the lodgement date {}", lodgementDate);
     }
 }
