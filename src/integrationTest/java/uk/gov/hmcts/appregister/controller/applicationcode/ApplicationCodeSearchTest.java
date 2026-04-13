@@ -8,8 +8,10 @@ import static org.mockito.Mockito.when;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +76,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -123,7 +125,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -229,7 +231,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -289,52 +291,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
-
-        assertApplicationCode(response, applicationCodeDto);
-
-        // assert the audit log message
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODE_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
-    }
-
-    @Test
-    @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
-            throws Exception {
-        // a date that is within range for the main but out of range for the offsite fee
-        when(clock.instant()).thenReturn(Instant.parse("2014-07-25T10:15:30Z"));
-        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
-
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        String id = APPCODE_CODE;
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
-                        tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
-
-        // assert
-        ApplicationCodeGetDetailDto applicationCodeDto =
-                generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.empty());
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -495,7 +452,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("CO1.1", firstEntry.getFeeReference().get());
         assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
         assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(3000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -511,7 +468,60 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Assertions.assertFalse(secondEntry.getFeeReference().isPresent());
         Assertions.assertFalse(secondEntry.getFeeDescription().isPresent());
         Assertions.assertFalse(secondEntry.getFeeAmount().isPresent());
-        Assertions.assertFalse(secondEntry.getOffsiteFeeAmount().isPresent());
+        Assertions.assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetApplicationCodes_ensureOffsiteFeeIsPresentForAll_returns200()
+                    throws Exception {
+        // create the token to send
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 100;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new ApplicationCodeRequestFilter(Optional.of("ZS99007"), Optional.empty()));
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
+        Assertions.assertEquals(
+                3000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+        Assertions.assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200()
+                    throws Exception {
+        // create the token to send
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT
+                                        + "/"
+                                        + "AD99004"
+                                        + "?date="
+                                        + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpec.then().statusCode(200);
+
+        ApplicationCodeGetDetailDto detailDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
+        assertTrue(
+                detailDto.getOffsiteFeeAmount().isPresent(),
+                "Offsite fee amount should be present for all records");
     }
 
     @Test

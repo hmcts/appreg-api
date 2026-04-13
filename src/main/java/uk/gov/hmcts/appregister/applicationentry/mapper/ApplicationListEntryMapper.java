@@ -20,7 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
@@ -425,7 +425,7 @@ public abstract class ApplicationListEntryMapper {
                             + "() -> applicationListEntry.getApplicationCode().getWording(),"
                             + "() -> applicationListEntry.getApplicationListEntryWording()))")
     @Mapping(target = "feeStatuses", expression = "java(getFeeStatusList(statusList))")
-    @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.isOffsite())")
+    @Mapping(target = "hasOffsiteFee", expression = "java(fee != null && fee.offsiteFee() != null)")
     @Mapping(target = "caseReference", source = "applicationListEntry.caseReference")
     @Mapping(target = "accountNumber", source = "applicationListEntry.accountNumber")
     @Mapping(target = "notes", source = "applicationListEntry.notes")
@@ -434,7 +434,7 @@ public abstract class ApplicationListEntryMapper {
     public abstract EntryGetDetailDto toEntryGetDetailDto(
             ApplicationListEntry applicationListEntry,
             List<AppListEntryFeeStatus> statusList,
-            Fee fee,
+            FeePair fee,
             List<AppListEntryOfficial> officials,
             StandardApplicant applicant);
 

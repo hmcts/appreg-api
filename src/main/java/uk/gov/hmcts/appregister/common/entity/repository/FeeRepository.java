@@ -31,26 +31,12 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         FROM Fee f
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
           ((f.endDate IS NULL OR  f.endDate >= :dateTime)
-                  AND f.startDate <= :dateTime)
+                  AND f.startDate <= :dateTime) AND f.isOffsite = false
+        ORDER BY
+           CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+           f.endDate, f.id desc
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
-
-    /**
-     * Finds a list of Fee entities by their reference and offset status.
-     *
-     * @param reference the reference to search for
-     * @return fee entities matching the reference and offset status
-     */
-    @Query(
-            """
-        SELECT f
-        FROM Fee f
-        WHERE (LOWER(f.reference) = LOWER(:reference)) AND
-        ((f.endDate IS NULL OR  f.endDate >= :dateTime)
-        AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
-        """)
-    List<Fee> findByReferenceBetweenDateWithOffsite(
-            String reference, LocalDate dateTime, boolean offsiteStatus);
 
     /**
      * Finds Fee entities with IDs greater than or equal to the specified value.
@@ -74,6 +60,25 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (f.id IN :ids) AND
         ((f.endDate IS NULL OR  f.endDate >= :date)
         AND f.startDate <= :date)
+        ORDER BY
+          CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+           f.endDate, f.id desc
         """)
     List<Fee> findByIdsBetweenDate(List<Long> ids, LocalDate date);
+
+    /**
+     * Finds a list of Fee entities offsite.
+     *
+     * @param dateTime the date to search for
+     * @return fee entities matching the reference and offset status
+     */
+    @Query(
+            """
+        SELECT f
+        FROM Fee f
+        WHERE (f.isOffsite=true AND
+          (f.endDate IS NULL OR  f.endDate >= :dateTime)
+                  AND f.startDate <= :dateTime)
+        """)
+    List<Fee> findOffsite(LocalDate dateTime);
 }

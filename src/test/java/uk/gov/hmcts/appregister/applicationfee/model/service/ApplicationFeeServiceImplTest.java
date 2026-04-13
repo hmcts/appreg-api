@@ -44,7 +44,9 @@ public class ApplicationFeeServiceImplTest {
 
         String ref = "ref";
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeOffsite));
+                .thenReturn(List.of(feeMain));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -85,8 +87,7 @@ public class ApplicationFeeServiceImplTest {
         feeOffsite.setOffsite(true);
 
         String ref = "ref";
-        when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeOffsite));
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -137,7 +138,9 @@ public class ApplicationFeeServiceImplTest {
         String ref = "ref";
 
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeMain2, feeOffsite, feeOffsite2));
+                .thenReturn(List.of(feeMain, feeMain2));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite, feeOffsite2));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);

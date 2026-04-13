@@ -62,6 +62,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
+        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -135,10 +136,13 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // set the enforcement fine code
         entryCreateDto.setApplicationCode("EF1213");
         entryCreateDto.setAccountNumber("1234567890");
+        entryCreateDto.setLodgementDate(null);
 
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
+        // set to current date for assertion to match
+        entryCreateDto.setLodgementDate(LocalDate.now());
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
         validateEntryCreationResponse(
@@ -2211,5 +2215,35 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         "applicant.person.name.firstForename",
                         "applicant.person.name.secondForename"),
                 new ArrayList<>(errors.keySet()));
+    }
+
+    @Test
+    public void givenAFailureCreate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
+        // setup the payload
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setLodgementDate(LocalDate.now().plusDays(1));
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE
+                                        .getCode()
+                                        .getAppCode()));
     }
 }

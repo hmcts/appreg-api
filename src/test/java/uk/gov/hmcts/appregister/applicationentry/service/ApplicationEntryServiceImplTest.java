@@ -55,6 +55,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEnt
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
@@ -78,6 +79,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
@@ -183,6 +185,8 @@ public class ApplicationEntryServiceImplTest {
 
     @Mock private ApplicantMapper applicantMapper;
 
+    @Mock private ApplicationFeeService feeService;
+
     private ApplicationEntryService service;
 
     @Spy
@@ -190,7 +194,7 @@ public class ApplicationEntryServiceImplTest {
             new DummyCreateApplicationEntryValidator(
                     applicationListRepository,
                     applicationCodeRepository,
-                    feeRepository,
+                    feeService,
                     clock,
                     standardApplicantRepository);
 
@@ -209,7 +213,7 @@ public class ApplicationEntryServiceImplTest {
             new DummyUpdateApplicationEntryValidator(
                     applicationListRepository,
                     applicationCodeRepository,
-                    feeRepository,
+                    feeService,
                     clock,
                     standardApplicantRepository,
                     applicationListEntryRepository);
@@ -231,8 +235,6 @@ public class ApplicationEntryServiceImplTest {
         Fee fee = new FeeTestData().someComplete();
         fee.setId(-1L);
         fee.setOffsite(true);
-        when(feeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), true))
-                .thenReturn(List.of(fee));
 
         service =
                 new ApplicationEntryServiceImpl(
@@ -481,10 +483,16 @@ public class ApplicationEntryServiceImplTest {
         fee.setOffsite(false);
         fee.setId(-2L);
 
+        FeeTestData feeTestDataOffsite = new FeeTestData();
+        Fee feeOffsite = feeTestDataOffsite.someComplete();
+        feeOffsite.setOffsite(true);
+        feeOffsite.setId(-3L);
+
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setHasOffsiteFee(true);
 
         AppListEntryFeeStatusTestData appListEntryFeeStatusTestData =
                 new AppListEntryFeeStatusTestData();
@@ -571,17 +579,13 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryRepository.save(applicationListEntry))
                 .thenReturn(applicationListEntry);
 
-        when(feeRepository.findByReferenceBetweenDateWithOffsite(
-                        eq(code.getFeeReference()),
-                        notNull(),
-                        eq(entryCreateDto.getHasOffsiteFee())))
-                .thenReturn(List.of(fee));
+        FeePair pair = new FeePair(fee, feeOffsite);
 
         // setup validation success response containing all validated data
         success =
                 CreateApplicationEntryValidationSuccess.builder()
                         .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(fee)
+                        .fee(pair)
                         .applicationCode(code)
                         .sa(sa)
                         .applicationList(appList)
@@ -589,21 +593,28 @@ public class ApplicationEntryServiceImplTest {
 
         AppListEntryFeeId appListFee = new AppListEntryFeeId();
         appListFee.setAppListEntryId(applicationListEntry.getId());
-        appListFee.setFeeId(fee.getId());
+        appListFee.setFeeId(pair.mainFee().getId());
 
-        ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
-        when(appListEntryFeeRepository.save(captor.capture())).thenReturn(appListFee);
+        AppListEntryFeeId offsiteAppListFee = new AppListEntryFeeId();
+        offsiteAppListFee.setAppListEntryId(applicationListEntry.getId());
+        offsiteAppListFee.setFeeId(pair.offsiteFee().getId());
+
+        when(appListEntryFeeRepository.save(appListFee)).thenReturn(appListFee);
+        when(appListEntryFeeRepository.save(offsiteAppListFee)).thenReturn(appListFee);
 
         // dummy the mapping of the response
 
         EntryGetDetailDto entryGetDetailDto =
                 Instancio.of(EntryGetDetailDto.class).withSettings(settings).create();
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        applicationListEntry, statusLst, fee, officialLst, sa))
+                        applicationListEntry, statusLst, pair, officialLst, sa))
                 .thenReturn(entryGetDetailDto);
 
         // run the test
         MatchResponse<EntryGetDetailDto> response = service.createEntry(payload);
+
+        ArgumentCaptor<AppListEntryFeeId> captor = ArgumentCaptor.forClass(AppListEntryFeeId.class);
+        verify(appListEntryFeeRepository, times(2)).save(captor.capture());
 
         // now assert the response is mapped correctly
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
@@ -633,8 +644,12 @@ public class ApplicationEntryServiceImplTest {
         verify(appListEntryOfficialRepository, times(entryCreateDto.getOfficials().size()))
                 .save(appListOfficialCaptor.capture());
 
-        Assertions.assertEquals(-1, captor.getValue().getAppListEntryId());
-        Assertions.assertEquals(-2, captor.getValue().getFeeId());
+        Assertions.assertEquals(-1, captor.getAllValues().get(0).getAppListEntryId());
+        Assertions.assertEquals(appListFee.getFeeId(), captor.getAllValues().get(0).getFeeId());
+
+        Assertions.assertEquals(-1, captor.getAllValues().get(1).getAppListEntryId());
+        Assertions.assertEquals(
+                offsiteAppListFee.getFeeId(), captor.getAllValues().get(1).getFeeId());
 
         Assertions.assertEquals(applicant, appCaptorName.getAllValues().get(0));
         Assertions.assertEquals(respondent, appCaptorName.getAllValues().get(1));
@@ -703,9 +718,6 @@ public class ApplicationEntryServiceImplTest {
         offsiteFee.setOffsite(true);
         offsiteFee.setId(3L);
 
-        when(feeRepository.findByReferenceBetweenDateWithOffsite("CO1.1", LocalDate.now(), true))
-                .thenReturn(List.of(offsiteFee));
-
         // wording substitution and application code lookup
         TemplateSubstitution t1 = new TemplateSubstitution();
         t1.setKey("Applicant officer");
@@ -733,10 +745,12 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryRepository.save(applicationListEntry))
                 .thenReturn(applicationListEntry);
 
+        FeePair pair = new FeePair(new Fee(), new Fee());
+
         success =
                 CreateApplicationEntryValidationSuccess.builder()
                         .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(fee)
+                        .fee(pair)
                         .applicationCode(code)
                         .sa(sa)
                         .applicationList(appList)
@@ -745,7 +759,7 @@ public class ApplicationEntryServiceImplTest {
         EntryGetDetailDto entryGetDetailDto =
                 Instancio.of(EntryGetDetailDto.class).withSettings(settings).create();
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        applicationListEntry, statusLst, fee, officialLst, sa))
+                        applicationListEntry, statusLst, pair, officialLst, sa))
                 .thenReturn(entryGetDetailDto);
 
         // simulate no existing mapping
@@ -857,10 +871,12 @@ public class ApplicationEntryServiceImplTest {
         when(applicationListEntryRepository.save(applicationListEntry))
                 .thenReturn(applicationListEntry);
 
+        FeePair pair = new FeePair(new Fee(), new Fee());
+
         success =
                 CreateApplicationEntryValidationSuccess.builder()
                         .wordingSentence(WordingTemplateSentence.with(code.getWording()))
-                        .fee(fee)
+                        .fee(pair)
                         .applicationCode(code)
                         .sa(sa)
                         .applicationList(appList)
@@ -877,7 +893,7 @@ public class ApplicationEntryServiceImplTest {
         EntryGetDetailDto entryGetDetailDto =
                 Instancio.of(EntryGetDetailDto.class).withSettings(settings).create();
         when(applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        applicationListEntry, statusLst, fee, officialLst, sa))
+                        applicationListEntry, statusLst, pair, officialLst, sa))
                 .thenReturn(entryGetDetailDto);
 
         // Existing mapping scenario
@@ -1365,13 +1381,13 @@ public class ApplicationEntryServiceImplTest {
         public DummyCreateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
-                FeeRepository feeRepository,
+                ApplicationFeeService feeService,
                 Clock clock,
                 StandardApplicantRepository standardApplicantRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
-                    feeRepository,
+                    feeService,
                     clock,
                     standardApplicantRepository);
         }
@@ -1437,14 +1453,14 @@ public class ApplicationEntryServiceImplTest {
         public DummyUpdateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
-                FeeRepository feeRepository,
+                ApplicationFeeService feeService,
                 Clock clock,
                 StandardApplicantRepository standardApplicantRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
-                    feeRepository,
+                    feeService,
                     clock,
                     standardApplicantRepository,
                     applicationListEntryRepository);
