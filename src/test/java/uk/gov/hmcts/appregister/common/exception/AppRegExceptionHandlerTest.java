@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -289,5 +290,39 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
+    }
+
+    @Test
+    void
+            givenAccessDeniedException_whenTheExceptionIsThrown_thenForbiddenProblemDetailIsReturned() {
+        // setup
+        AccessDeniedException exception = new AccessDeniedException("Forbidden");
+
+        // execute
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleAccessDenied(exception);
+
+        // assert
+        Assertions.assertEquals(HttpStatusCode.valueOf(403), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(403, problemDetail.getBody().getStatus());
+        Assertions.assertEquals("Access denied", problemDetail.getBody().getDetail());
+    }
+
+    @Test
+    void givenUnexpectedException_whenTheExceptionIsThrown_thenAProblemDetailIsReturned() {
+        // setup
+        RuntimeException exception = new RuntimeException("boom");
+
+        // execute
+        ResponseEntity<ProblemDetail> problemDetail =
+                exceptionHandler.handleUnexpectedException(exception);
+
+        // assert
+        Assertions.assertEquals(HttpStatusCode.valueOf(500), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertEquals(500, problemDetail.getBody().getStatus());
+        Assertions.assertEquals(
+                "An unexpected error occurred", problemDetail.getBody().getDetail());
     }
 }

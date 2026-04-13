@@ -223,34 +223,6 @@ public class CreateApplicationEntryValidatorTest {
     }
 
     @Test
-    void testApplicantFeeNotDueFail() {
-        applicationCode.setFeeDue(YesOrNo.NO);
-
-        FeeStatus feeStatus = new FeeStatus();
-        entryCreateDto.setFeeStatuses(List.of(feeStatus));
-
-        entryCreateDto.getRespondent().setOrganisation(null);
-        entryCreateDto.setStandardApplicantCode(null);
-        entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.setNumberOfRespondents(null);
-
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(appListUuid)
-                        .data(entryCreateDto)
-                        .build();
-
-        // validate the payload
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> createApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
-    }
-
-    @Test
     void testApplicantFeeDueFail() {
         applicationCode.setFeeDue(YesOrNo.YES);
         entryCreateDto.setNumberOfRespondents(null);

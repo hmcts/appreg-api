@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,8 +37,8 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
-import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
@@ -85,49 +86,87 @@ public class StandardApplicantServiceTest {
 
         String code = "APP001";
         String name = "John Doe";
+        String addressLine1 = "123 Main Street";
+        LocalDate from = LocalDate.now().minusDays(10);
+        LocalDate to = LocalDate.now().plusDays(10);
         Pageable pageable = PageRequest.of(0, 2);
 
-        StandardApplicantTestData standardApplicantTestData = new StandardApplicantTestData();
+        StandardApplicant standardApplicant1 = mock(StandardApplicant.class);
+        StandardApplicant standardApplicant2 = mock(StandardApplicant.class);
 
-        PageImpl<StandardApplicant> pageImpl =
-                new PageImpl<>(
-                        java.util.List.of(
-                                standardApplicantTestData.someComplete(),
-                                standardApplicantTestData.someComplete()),
-                        pageable,
-                        2);
+        when(standardApplicant1.getApplicantCode()).thenReturn("APP001");
+        when(standardApplicant1.getName()).thenReturn("John Doe");
+        when(standardApplicant1.getApplicantStartDate()).thenReturn(from);
+        when(standardApplicant1.getApplicantEndDate()).thenReturn(to);
 
-        when(repository.search(eq(code), eq(name), isNotNull(), eq(pageable))).thenReturn(pageImpl);
+        when(standardApplicant2.getApplicantCode()).thenReturn("APP002");
+        when(standardApplicant2.getName()).thenReturn("Jane Doe");
+        when(standardApplicant2.getApplicantStartDate()).thenReturn(from.plusDays(1));
+        when(standardApplicant2.getApplicantEndDate()).thenReturn(to.plusDays(1));
+
+        StandardApplicantEnrichedProjection projection1 =
+                mock(StandardApplicantEnrichedProjection.class);
+        StandardApplicantEnrichedProjection projection2 =
+                mock(StandardApplicantEnrichedProjection.class);
+
+        when(projection1.getStandardApplicant()).thenReturn(standardApplicant1);
+        when(projection1.getEffectiveName()).thenReturn("John Doe");
+
+        when(projection2.getStandardApplicant()).thenReturn(standardApplicant2);
+        when(projection2.getEffectiveName()).thenReturn("Jane Doe");
+
+        PageImpl<StandardApplicantEnrichedProjection> pageImpl =
+                new PageImpl<>(java.util.List.of(projection1, projection2), pageable, 2);
+
+        when(repository.search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(pageable)))
+                .thenReturn(pageImpl);
 
         PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         StandardApplicantPage standardApplicantPage =
-                standardApplicantService.findAll(code, name, wrapper);
+                standardApplicantService.findAll(code, name, addressLine1, from, to, wrapper);
+
+        verify(repository)
+                .search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(from),
+                        eq(to),
+                        isNotNull(),
+                        eq(pageable));
 
         Assertions.assertEquals(2, standardApplicantPage.getTotalElements());
         Assertions.assertEquals(
-                pageImpl.getContent().get(0).getApplicantCode(),
-                standardApplicantPage.getContent().get(0).getCode());
+                pageImpl.getContent().getFirst().getStandardApplicant().getApplicantCode(),
+                standardApplicantPage.getContent().getFirst().getCode());
         Assertions.assertEquals(
-                pageImpl.getContent().get(0).getName(),
+                pageImpl.getContent().getFirst().getStandardApplicant().getName(),
                 standardApplicantPage
                         .getContent()
-                        .get(0)
+                        .getFirst()
                         .getApplicant()
                         .getOrganisation()
                         .getName());
         Assertions.assertEquals(
-                pageImpl.getContent().get(0).getApplicantStartDate(),
+                pageImpl.getContent().get(0).getStandardApplicant().getApplicantStartDate(),
                 standardApplicantPage.getContent().get(0).getStartDate());
         Assertions.assertEquals(
-                pageImpl.getContent().get(0).getApplicantEndDate(),
+                pageImpl.getContent().get(0).getStandardApplicant().getApplicantEndDate(),
                 standardApplicantPage.getContent().get(0).getEndDate().get());
 
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getApplicantCode(),
+                pageImpl.getContent().get(1).getStandardApplicant().getApplicantCode(),
                 standardApplicantPage.getContent().get(1).getCode());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getName(),
+                pageImpl.getContent().get(1).getStandardApplicant().getName(),
                 standardApplicantPage
                         .getContent()
                         .get(1)
@@ -135,10 +174,10 @@ public class StandardApplicantServiceTest {
                         .getOrganisation()
                         .getName());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getApplicantStartDate(),
+                pageImpl.getContent().get(1).getStandardApplicant().getApplicantStartDate(),
                 standardApplicantPage.getContent().get(1).getStartDate());
         Assertions.assertEquals(
-                pageImpl.getContent().get(1).getApplicantEndDate(),
+                pageImpl.getContent().get(1).getStandardApplicant().getApplicantEndDate(),
                 standardApplicantPage.getContent().get(1).getEndDate().get());
 
         verify(auditOperationService)
