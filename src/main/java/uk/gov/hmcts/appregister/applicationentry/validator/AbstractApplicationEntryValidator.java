@@ -389,12 +389,15 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
-        } else if (yesOrNo == YesOrNo.NO && !feeStatuses.isEmpty()) {
-            throw new AppRegistryException(
-                    AppListEntryError.FEE_NOT_REQUIRED,
-                    "Fee is provided but not required for code %s"
-                            .formatted(getApplicationCode(validatable)));
         }
+        // ARCPOC - 1264 - this validation will be handled in the front end to persist fee status
+        // data.
+        //        } else if (yesOrNo == YesOrNo.NO && !feeStatuses.isEmpty()) {
+        //            throw new AppRegistryException(
+        //                    AppListEntryError.FEE_NOT_REQUIRED,
+        //                    "Fee is provided but not required for code %s"
+        //                            .formatted(getApplicationCode(validatable)));
+        //        }
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {

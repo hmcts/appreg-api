@@ -14,10 +14,19 @@ public interface StandardApplicantService {
      *
      * @param code The code
      * @param name The name
+     * @param addressLine1 Address line 1
+     * @param from Start date
+     * @param to End date
      * @param pageable The pageable
      * @return The standard applicant page
      */
-    StandardApplicantPage findAll(String code, String name, PagingWrapper pageable);
+    StandardApplicantPage findAll(
+            String code,
+            String name,
+            String addressLine1,
+            LocalDate from,
+            LocalDate to,
+            PagingWrapper pageable);
 
     /**
      * finds a standard applicant by code and date.

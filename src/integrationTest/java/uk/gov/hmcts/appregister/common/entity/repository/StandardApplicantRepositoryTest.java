@@ -10,7 +10,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.testutils.BaseRepositoryTest;
 import uk.gov.hmcts.appregister.testutils.TransactionalUnitOfWork;
@@ -201,14 +204,56 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                             repository.search(
                                     code,
                                     null,
+                                    null,
+                                    null,
+                                    null,
                                     activeDate,
-                                    org.springframework.data.domain.PageRequest.of(0, 10));
+                                    PageRequest.of(0, 10));
 
                     assertThat(page.getContent())
-                            .extracting(StandardApplicant::getId)
+                            .extracting(
+                                    projection -> projection.getStandardApplicant().getId())
                             .containsExactlyInAnyOrder(
                                     savedStartsTodayApplicant.getId(),
                                     savedEndsTodayApplicant.getId());
+                });
+    }
+
+    @Test
+    public void testSearchFiltersByAddressLine1AndDateRange() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    StandardApplicant matching = new StandardApplicantTestData().someComplete();
+                    matching.setApplicantCode("APP900");
+                    matching.setAddressLine1("221B Baker Street");
+                    matching.setApplicantStartDate(LocalDate.of(2025, 1, 1));
+                    matching.setApplicantEndDate(LocalDate.of(2025, 12, 31));
+
+                    repository.save(matching);
+
+                    StandardApplicant nonMatching = new StandardApplicantTestData().someComplete();
+                    nonMatching.setApplicantCode("APP901");
+                    nonMatching.setAddressLine1("10 Downing Street");
+                    nonMatching.setApplicantStartDate(LocalDate.of(2025, 1, 1));
+                    nonMatching.setApplicantEndDate(LocalDate.of(2025, 12, 31));
+
+                    repository.save(nonMatching);
+
+                    Page<StandardApplicantEnrichedProjection> results =
+                            repository.search(
+                                    null,
+                                    null,
+                                    "baker",
+                                    LocalDate.of(2025, 1, 1),
+                                    LocalDate.of(2025, 12, 31),
+                                    LocalDate.of(2025, 6, 1),
+                                    PageRequest.of(0, 10));
+
+                    assertEquals(1, results.getTotalElements());
+
+                    StandardApplicantEnrichedProjection row = results.getContent().getFirst();
+                    assertEquals("APP900", row.getStandardApplicant().getApplicantCode());
+                    assertEquals("221B Baker Street", row.getStandardApplicant().getAddressLine1());
                 });
     }
 }

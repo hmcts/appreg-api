@@ -92,10 +92,7 @@ public class CreateApplicationEntryValidatorTest {
         applicationCode.setBulkRespondentAllowed(YesOrNo.YES);
         applicationCode.setRequiresRespondent(YesOrNo.YES);
 
-        FeeTestData feeTestData = new FeeTestData();
         StandardApplicantTestData standardApplicantTestData = new StandardApplicantTestData();
-
-        fee = feeTestData.someComplete();
         standardApplicant = standardApplicantTestData.someComplete();
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -108,6 +105,12 @@ public class CreateApplicationEntryValidatorTest {
         when(applicationCodeRepository.findByCodeAndDate(
                         eq(entryCreateDto.getApplicationCode()), notNull()))
                 .thenReturn(List.of(applicationCode));
+
+        FeeTestData feeTestData = new FeeTestData();
+        fee = feeTestData.someComplete();
+        fee.setId(1L);
+        fee.setOffsite(true);
+
         when(feeRepository.findByReferenceBetweenDateWithOffsite(
                         eq(applicationCode.getFeeReference()),
                         notNull(),
@@ -221,34 +224,6 @@ public class CreateApplicationEntryValidatorTest {
                 AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON
                         .getCode()
                         .getAppCode(),
-                appRegistryException.getCode().getCode().getAppCode());
-    }
-
-    @Test
-    void testApplicantFeeNotDueFail() {
-        applicationCode.setFeeDue(YesOrNo.NO);
-
-        FeeStatus feeStatus = new FeeStatus();
-        entryCreateDto.setFeeStatuses(List.of(feeStatus));
-
-        entryCreateDto.getRespondent().setOrganisation(null);
-        entryCreateDto.setStandardApplicantCode(null);
-        entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.setNumberOfRespondents(null);
-
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(appListUuid)
-                        .data(entryCreateDto)
-                        .build();
-
-        // validate the payload
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () -> createApplicationEntryValidator.validate(payload));
-        Assertions.assertEquals(
-                AppListEntryError.FEE_NOT_REQUIRED.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
     }
 

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -9,6 +10,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ApplicationListEntryUtil.s
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,14 +26,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
@@ -160,13 +165,13 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                 saveApplicationListEntry(entityManager, persistance, list, sequenceNumber2);
 
         // When: page 0 size 1
-        Pageable page = PageRequest.of(0, 1);
+        Pageable page = PageRequest.of(0, 1, Sort.by("sequenceNumber").ascending());
         Page<ApplicationListEntrySummaryProjection> page0 =
                 applicationListEntryRepository.findSummariesById(
                         data1.getApplicationList().getUuid(), page);
 
         // And: page 1 size 1
-        page = PageRequest.of(1, 1);
+        page = PageRequest.of(1, 1, Sort.by("sequenceNumber").ascending());
         Page<ApplicationListEntrySummaryProjection> page1 =
                 applicationListEntryRepository.findSummariesById(
                         data1.getApplicationList().getUuid(), page);
@@ -433,7 +438,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         null, false, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, page);
+                        null, null, null, null, null, null, null, null, page);
 
         // Then
         assertThat(page0.getTotalElements()).isEqualTo(11);
@@ -462,7 +467,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page0 =
                 applicationListEntryRepository.searchForGetSummary(
                         null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, page);
+                        null, null, null, null, null, null, null, null, page);
 
         ApplicationListEntryGetSummaryProjection projection0 = page0.getContent().get(4);
 
@@ -470,6 +475,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         Page<ApplicationListEntryGetSummaryProjection> page1 =
                 applicationListEntryRepository.searchForGetSummary(
                         UUID.fromString(projection0.getListId()),
+                        null,
                         null,
                         null,
                         null,
@@ -527,6 +533,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         "XY9 8ZZ",
                         "29345",
+                        null,
                         null,
                         null,
                         null,
@@ -590,6 +597,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
                         page);
 
         // Then
@@ -647,6 +655,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         true,
                         hearingDate,
                         "UNQ001",
+                        null,
                         null,
                         null,
                         null,
@@ -890,12 +899,132 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         null,
                         null,
+                        null,
                         Pageable.ofSize(10));
 
         // Then: the entry added is the entry returned
         Assertions.assertThat(applicationListEntryList.getPageable().getPageSize() == 1);
         Assertions.assertThat(savedEntry.getUuid().toString())
                 .isEqualTo(applicationListEntryList.stream().findFirst().get().getUuid());
+    }
+
+    @Test
+    @Transactional
+    public void testBulkMoveByUuidAndSourceList_movesOnlyEntriesInSourceList() {
+        // Given
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        persistance.save(sourceList);
+
+        ApplicationList targetList = new AppListTestData().someMinimal().build();
+        persistance.save(targetList);
+
+        ApplicationList otherList = new AppListTestData().someMinimal().build();
+        persistance.save(otherList);
+
+        ApplicationListEntry sourceEntry1 = saveEntryInSourceList(sourceList);
+        ApplicationListEntry sourceEntry2 = saveEntryInSourceList(sourceList);
+        ApplicationListEntry otherListEntry = saveEntryInSourceList(otherList);
+
+        Set<UUID> entryUuids =
+                Set.of(sourceEntry1.getUuid(), sourceEntry2.getUuid(), otherListEntry.getUuid());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // When
+        int updatedCount =
+                applicationListEntryRepository.bulkMoveByUuidAndSourceList(
+                        entryUuids, targetList, sourceList.getUuid());
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Then
+        assertEquals(2, updatedCount, "Only entries in the source list should be updated");
+
+        ApplicationListEntry moved1 =
+                applicationListEntryRepository.findByUuid(sourceEntry1.getUuid()).orElseThrow();
+
+        ApplicationListEntry moved2 =
+                applicationListEntryRepository.findByUuid(sourceEntry2.getUuid()).orElseThrow();
+
+        ApplicationListEntry untouchedOther =
+                applicationListEntryRepository.findByUuid(otherListEntry.getUuid()).orElseThrow();
+
+        assertEquals(targetList.getUuid(), moved1.getApplicationList().getUuid());
+        assertEquals(targetList.getUuid(), moved2.getApplicationList().getUuid());
+        assertEquals(otherList.getUuid(), untouchedOther.getApplicationList().getUuid());
+    }
+
+    @Test
+    @Transactional
+    public void testFindExistingEntryIdsInSourceList_returnsOnlyMatchingIds() {
+        // Given: source and another list
+        ApplicationList sourceList = new AppListTestData().someMinimal().build();
+        persistance.save(sourceList);
+
+        ApplicationList otherList = new AppListTestData().someMinimal().build();
+        persistance.save(otherList);
+
+        // And: two entries in the source list
+        UUID sourceUuid1 = saveEntryInSourceList(sourceList).getUuid();
+        UUID sourceUuid2 = saveEntryInSourceList(sourceList).getUuid();
+
+        // And: one entry in a different list
+        UUID otherUuid = saveEntryInSourceList(otherList).getUuid();
+
+        // When: asking for existing IDs in the source list
+        Set<UUID> requestedIds = Set.of(sourceUuid1, sourceUuid2, otherUuid);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Set<UUID> result =
+                applicationListEntryRepository.findExistingEntryIdsInSourceList(
+                        sourceList.getUuid(), requestedIds);
+
+        // Then: only the IDs that belong to the source list are returned
+        assertEquals(Set.of(sourceUuid1, sourceUuid2), result);
+        assertFalse(result.contains(otherUuid));
+    }
+
+    @Test
+    @Transactional
+    public void testFindResolutionCodesByEntryIds_returnsAllResolutionCodesForEachEntry() {
+        ApplicationList list = new AppListTestData().someMinimal().build();
+        persistance.save(list);
+
+        ApplicationListEntry entry1 =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 1);
+        ApplicationListEntry entry2 =
+                saveApplicationListEntry(entityManager, persistance, list, (short) 2);
+
+        saveResolution(entry1, "RC1");
+        saveResolution(entry1, "RC2");
+        saveResolution(entry2, "RC3");
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<ApplicationListEntryResolutionProjection> result =
+                applicationListEntryRepository.findResolutionCodesByEntryIds(
+                        List.of(entry1.getId(), entry2.getId()));
+
+        List<String> entry1Codes =
+                result.stream()
+                        .filter(p -> p.getEntryId().equals(entry1.getId()))
+                        .map(p -> p.getResolutionCode().getResultCode())
+                        .toList();
+
+        List<String> entry2Codes =
+                result.stream()
+                        .filter(p -> p.getEntryId().equals(entry2.getId()))
+                        .map(p -> p.getResolutionCode().getResultCode())
+                        .toList();
+
+        assertTrue(entry1Codes.contains("RC1"));
+        assertTrue(entry1Codes.contains("RC2"));
+        assertTrue(entry2Codes.contains("RC3"));
     }
 
     private ApplicationListEntry saveEntryInSourceList(ApplicationList sourceList) {
@@ -905,5 +1034,24 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         entityManager.refresh(moveEntry1);
 
         return moveEntry1;
+    }
+
+    private void saveResolution(ApplicationListEntry entry, String resultCode) {
+        ResolutionCode code = new ResolutionCode();
+        code.setResultCode(resultCode);
+        code.setTitle(resultCode + " title");
+        code.setWording(resultCode + " wording");
+        code.setLegislation("Test legislation");
+        code.setStartDate(LocalDate.now());
+        code.setChangedBy(1L);
+        code.setChangedDate(OffsetDateTime.now());
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(entry);
+        entryResolution.setResolutionCode(code);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        persistance.save(entryResolution);
     }
 }

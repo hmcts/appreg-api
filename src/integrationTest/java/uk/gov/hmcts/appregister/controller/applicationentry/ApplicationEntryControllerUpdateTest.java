@@ -62,7 +62,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 entryUpdateDto,
                 updatedDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
-                createDDto.getFeeStatuses());
+                entryUpdateDto.getFeeStatuses());
 
         Response responseFindEntrySpec =
                 restAssuredClient.executeGetRequestWithPaging(
@@ -143,7 +143,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 entryUpdateDto,
                 updatedDto,
                 "This is a test enforcement fine with no wording template substitution required",
-                createDDto.getFeeStatuses());
+                entryUpdateDto.getFeeStatuses());
 
         Response responseFindEntrySpec =
                 restAssuredClient.executeGetRequestWithPaging(

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity.repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -19,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
+import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 
 public interface ApplicationListEntryRepository extends JpaRepository<ApplicationListEntry, Long> {
@@ -107,8 +109,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         LEFT JOIN ale.rnameaddress rna
         LEFT JOIN ale.applicationCode ac
         LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
-            AND aler.changedDate = (
-                SELECT MAX(sub.changedDate)
+            AND aler.id = (
+                SELECT MAX(sub.id)
                 FROM AppListEntryResolution sub
                 WHERE sub.applicationList = ale
             )
@@ -140,14 +142,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
      * @param cjaCode The criminal justice area code to filter by.
      * @param applicantOrganisation The applicant organisation to filter by. Partial matches allowed
      * @param applicantSurname The applicant surname to filter by. Partial matches allowed
+     * @param applicantName The applicant name to filter by. Partial matches allowed
      * @param standardApplicantCode The standard applicant code to filter by. Partial matches
      *     allowed
      * @param status The status to filter by
      * @param respondentOrganisation The respondent organisation to filter by. Partial matches
      *     allowed
      * @param respondentSurname The respondent surname to filter by. Partial matches allowed
+     * @param respondentName The respondent name to filter by. Partial matches allowed
      * @param respondentPostcode The respondent postcode to filter by. Partial matches allowed
      * @param accountReference The account reference to filter by. Partial matches allowed
+     * @param applicationTitle The application title to filter by. Partial matches allowed
+     * @param resulted The result code to filter by. Partial matches allowed
+     * @param feeRequired Whether the application fee is required
+     * @param sequenceNumber The sequence number to filter by
      * @param pageable The pagination information
      * @return A page of ApplicationListEntryGetSummaryProjection matching the criteria
      */
@@ -159,7 +167,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     ale.id AS id,
                     al.courtCode  AS courtCode,
                     ac.legislation as legislation,
-                    ac.feeDue feeRequired,
+                    ac.feeDue as feeRequired,
                     aler.id as result,
                     cja.code AS cjaCode,
                     al.otherLocation AS otherLocationDescription,
@@ -171,12 +179,16 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.date as dateOfAl,
                     ana.name as applicationorganisation,
                     ana.surname as applicantSurname,
-                    CASE WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NOT NULL THEN
+                    CASE WHEN ana.name IS NOT NULL THEN
+                         ana.name
+                    WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NOT NULL THEN
                         CONCAT(ana.surname, ',', ana.forename1, ',', ana.title)
                     WHEN ana.surname IS NOT NULL AND ana.forename1 IS NOT NULL AND ana.title IS NULL THEN
                         CONCAT(ana.surname, ',', ana.forename1)
                     END as applicantName,
-                    CASE WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NOT NULL THEN
+                    CASE WHEN rna.name IS NOT NULL THEN
+                         rna.name
+                    WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NOT NULL THEN
                         CONCAT(rna.surname, ',', rna.forename1, ',', rna.title)
                     WHEN rna.surname IS NOT NULL AND rna.forename1 IS NOT NULL AND rna.title IS NULL THEN
                         CONCAT(rna.surname, ',', rna.forename1)
@@ -189,7 +201,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.uuid as listId,
                     ac.title AS applicationTitle,
                     ale.sequenceNumber as sequenceNumber,
-                    rc as resolutionCode
+                    rc as resulted
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
@@ -197,19 +209,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                 LEFT JOIN ale.applicationCode ac
                 LEFT JOIN ale.applicationList al
                 LEFT JOIN CriminalJusticeArea cja ON al.cja = cja
-                LEFT JOIN AppListEntryResolution aler ON aler.applicationList
-                            = ale AND aler.id = (SELECT MAX(sub.id)
-                              FROM AppListEntryResolution sub
-                              WHERE sub.applicationList = ale)
-                LEFT JOIN aler.resolutionCode rc on rc.id = aler.resolutionCode.id
+                LEFT JOIN AppListEntryResolution aler ON aler.applicationList = ale
+                    AND aler.id = (
+                        SELECT MAX(sub.id)
+                        FROM AppListEntryResolution sub
+                        WHERE sub.applicationList = ale
+                    )
+                LEFT JOIN aler.resolutionCode rc
             WHERE  (:hasHearingDate = false OR :hasHearingDate IS NULL OR al.date = :hearingDate)
                     AND (:applicationListId IS NULL OR al.uuid = :applicationListId)
                     AND (:otherLocationDescription IS NULL OR LOWER(al.otherLocation)
                             LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
                     AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
                     AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
-                    AND (:applicantName IS NULL OR LOWER(CONCAT(COALESCE(ana.surname, ' '),
-                                        COALESCE(ana.name, ' '), COALESCE(ana.title, ' ')))
+                    AND (:applicantName IS NULL OR COALESCE(LOWER(ana.name), LOWER(CONCAT(COALESCE(ana.surname, ' '),
+                                        COALESCE(ana.forename1, ' '), COALESCE(ana.title, ' '))))
                             LIKE CONCAT('%', LOWER(cast(:applicantName AS string)) , '%') ESCAPE '\\'
                             AND ana.code='NA')
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
@@ -221,9 +235,15 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     AND (:standardApplicantCode IS NULL OR LOWER(sa.applicantCode)
                             LIKE CONCAT('%', LOWER(cast(:standardApplicantCode AS string)), '%')  ESCAPE '\\')
                     AND (:status IS NULL OR :status=ale.applicationList.status)
-                    AND (:respondentName IS NULL OR LOWER( CONCAT(COALESCE(rna.surname, ' '), COALESCE(rna.name, ' '),
-                            COALESCE(rna.title, ' ')))  LIKE CONCAT('%',
-                            LOWER(cast(:respondentName AS string )), '%')  ESCAPE '\\' AND rna.code='RE')
+                    AND (:respondentName IS NULL OR
+                                COALESCE(
+                                        rna.name,
+                                        LOWER(CONCAT(
+                                                COALESCE(rna.surname, ' '),
+                                                COALESCE(rna.forename1, ' '),
+                                                COALESCE(rna.title, ' '))))
+                                        LIKE CONCAT('%', LOWER(cast(:respondentName AS string )), '%')
+                                            ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentOrganisation IS NULL OR LOWER(rna.name) LIKE CONCAT('%',
                             LOWER(cast(:respondentOrganisation AS string)), '%')  ESCAPE '\\' AND rna.code='RE')
                     AND (:respondentSurname IS NULL OR LOWER(rna.surname) LIKE CONCAT('%',
@@ -238,6 +258,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                 CONCAT('%', LOWER(cast(:applicationTitle AS string)), '%')  ESCAPE '\\')
                     AND (:feeRequired IS NULL OR ac.feeDue = CASE WHEN :feeRequired = true THEN 'Y' ELSE 'N' END)
                     AND (:sequenceNumber IS NULL OR ale.sequenceNumber = :sequenceNumber)
+                    AND (:resulted IS NULL OR rc.resultCode = :resulted)
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)
@@ -259,9 +280,28 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             @LikeParam @Param("respondentPostcode") String respondentPostcode,
             @LikeParam @Param("accountReference") String accountReference,
             @LikeParam @Param("applicationTitle") String applicationTitle,
+            @LikeParam @Param("resulted") String resulted,
             @Param("feeRequired") Boolean feeRequired,
             @Param("sequenceNumber") Integer sequenceNumber,
             Pageable pageable);
+
+    /**
+     * Retrieves all resolution codes associated with the given Application List Entry IDs.
+     *
+     * @param entryIds the collection of Application List Entry IDs to retrieve resolution codes for
+     * @return a list of ApplicationListEntryResolutionProjection containing entry IDs and their
+     *     associated resolution codes
+     */
+    @Query(
+            """
+                SELECT
+                       aler.applicationList.id as entryId,
+                       aler.resolutionCode as resolutionCode
+                FROM AppListEntryResolution aler
+                WHERE aler.applicationList.id in :entryIds
+            """)
+    List<ApplicationListEntryResolutionProjection> findResolutionCodesByEntryIds(
+            @Param("entryIds") Collection<Long> entryIds);
 
     /**
      * Retrieves list of entries for a given application list.
@@ -429,4 +469,21 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
             AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Page<ApplicationListEntry> findForApplicationList(UUID appLstId, Pageable pageable);
+
+    /**
+     * Retrieves the subset of Application List Entry UUIDs that exist in the given source list.
+     *
+     * @param sourceListId the UUID of the source ApplicationList
+     * @param requestedIds the set of Application List Entry UUIDs requested for movement
+     * @return a Set of UUIDs representing entries that exist in the source list
+     */
+    @Query(
+            """
+        SELECT ale.uuid
+        FROM ApplicationListEntry ale
+        WHERE ale.applicationList.uuid = :sourceListId
+        AND ale.uuid in :requestedIds
+        AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+        """)
+    Set<UUID> findExistingEntryIdsInSourceList(UUID sourceListId, Set<UUID> requestedIds);
 }

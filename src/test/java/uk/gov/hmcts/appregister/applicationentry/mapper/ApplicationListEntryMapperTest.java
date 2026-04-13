@@ -452,7 +452,6 @@ class ApplicationListEntryMapperTest {
 
         when(applicationListEntryGetSummaryProjection.getRespondentSurname())
                 .thenReturn("ressurname");
-        when(applicationListEntryGetSummaryProjection.getResult()).thenReturn("2");
         when(applicationListEntryGetSummaryProjection.getFeeRequired()).thenReturn(YesOrNo.NO);
         when(applicationListEntryGetSummaryProjection.getStatus()).thenReturn(Status.CLOSED);
 
@@ -613,7 +612,6 @@ class ApplicationListEntryMapperTest {
         Assertions.assertEquals(
                 "rforename2",
                 mappedResult.getRespondent().getPerson().getName().getSecondForename().get());
-        Assertions.assertTrue(mappedResult.getIsResulted());
         Assertions.assertFalse(mappedResult.getIsFeeRequired());
         Assertions.assertEquals(ApplicationListStatus.CLOSED, mappedResult.getStatus());
         Assertions.assertEquals(uuidForProjection.toString(), mappedResult.getId().toString());

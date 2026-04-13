@@ -141,7 +141,25 @@ public class WordingTemplateSentence implements TemplateableSentence {
     public SubstitutedSentence substitute(List<TemplateSubstitution> values) {
         String returnedString = templateWithProcessedPlaceholders;
 
-        if ((values == null || values.isEmpty()) && contents.isEmpty()) {
+        if (values == null) {
+            if (contents.isEmpty()) {
+                // No templates AND no values, safe to return the original template
+                log.debug("No substitution values provided, returning original template");
+                return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
+            }
+
+            // Templates exist but values are null, invalid scenario
+            throw new AppRegistryException(
+                    CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                    "Substitution values cannot be null when template contains placeholders",
+                    Map.of(
+                            "templateSize",
+                            Integer.toString(getTemplatesToBeProcessed()),
+                            "valueSize",
+                            "null"));
+        }
+
+        if ((values.isEmpty()) && contents.isEmpty()) {
             log.debug("No substitution values provided, returning original template");
             return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
         }

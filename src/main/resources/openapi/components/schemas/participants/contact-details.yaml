@@ -62,7 +62,7 @@ properties:
   postcode:
     type: string
     description: The participant's postcode.
-    pattern: '^(([A-Z]{1,2}\d[A-Z\d] \d[A-Z]{2})|(GIR 0A{2}))$'
+    pattern: '^(([A-Z]{1,2}((\d[A-Z\d])|(\d)) \d[A-Z]{2})|(GIR 0A{2}))$'
     example: "SW1A 2AA"
     nullable: false
     maxLength: 8

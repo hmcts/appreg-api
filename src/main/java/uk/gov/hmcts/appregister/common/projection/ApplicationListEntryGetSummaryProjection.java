@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.projection;
 
 import java.time.LocalDate;
+import java.util.List;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
@@ -15,8 +16,6 @@ public interface ApplicationListEntryGetSummaryProjection {
     String getLegislation();
 
     YesOrNo getFeeRequired();
-
-    String getResult();
 
     String getCjaCode();
 
@@ -60,5 +59,5 @@ public interface ApplicationListEntryGetSummaryProjection {
 
     Integer getSequenceNumber();
 
-    ResolutionCode getResolutionCode();
+    List<ResolutionCode> getResolutionCodes();
 }

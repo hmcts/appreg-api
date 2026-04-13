@@ -1206,8 +1206,9 @@ public class ApplicationListServiceImplTest {
         }
     }
 
-    /*@SuppressWarnings("unchecked")
-    private static <T> ArgumentCaptor<T> captorOf() {
-        return (ArgumentCaptor<T>) ArgumentCaptor.forClass((Class) BiFunction.class);
-    }*/
+    @SuppressWarnings("unchecked")
+    private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
+        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
+                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
+    }
 }
