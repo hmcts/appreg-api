@@ -99,7 +99,6 @@ public class UpdateApplicationEntryValidatorTest {
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         entryUpdateDto = Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
-        entryUpdateDto.setLodgementDate(LocalDate.now(clock));
 
         appListUuid = UUID.randomUUID();
         appListEntryUuid = UUID.randomUUID();
@@ -462,7 +461,6 @@ public class UpdateApplicationEntryValidatorTest {
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.getRespondent().setOrganisation(null);
-        entryUpdateDto.setLodgementDate(LocalDate.now(clock));
 
         FeeStatus feeStatus = new FeeStatus();
         feeStatus.setPaymentStatus(DUE);

@@ -530,11 +530,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     private void validateLodgementDate(T validatable) {
         LocalDate lodgementDate = getLodgementDate(validatable);
-        if (lodgementDate == null) {
-            throw new AppRegistryException(
-                    AppListEntryError.LODGEMENT_DATE_MISSING,
-                    "Lodgement date is required for the provided application code");
-        } else if (lodgementDate.isAfter(LocalDate.now(clock))) {
+        if (lodgementDate != null && lodgementDate.isAfter(LocalDate.now(clock))) {
             throw new AppRegistryException(
                     AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE,
                     "Lodgement date cannot be after today's date");

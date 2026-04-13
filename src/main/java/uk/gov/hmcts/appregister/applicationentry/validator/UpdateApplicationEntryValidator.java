@@ -160,6 +160,6 @@ public class UpdateApplicationEntryValidator
 
     @Override
     protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
-        return validatable.getData().getLodgementDate();
+        return null;
     }
 }

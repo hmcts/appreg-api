@@ -616,7 +616,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // build the payload
         EntryUpdateDto entryUpdateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
-        entryUpdateDto.setLodgementDate(LocalDate.now());
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto
                 .getApplicant()
@@ -763,7 +762,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setApplicant(null);
         entryUpdateDto.setStandardApplicantCode("APP001");
         entryUpdateDto.setApplicationCode("ZS99007");
-        entryUpdateDto.setLodgementDate(LocalDate.now());
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Premises Address");
@@ -909,7 +907,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
-        updateDto.setLodgementDate(LocalDate.now());
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("MS99007");
         updateDto.setStandardApplicantCode(null);
@@ -1037,7 +1034,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("CT99002");
         updateDto.setHasOffsiteFee(true);
-        updateDto.setLodgementDate(LocalDate.now());
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -1135,7 +1131,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.setStandardApplicantCode(null);
         entryUpdateDto.setWordingFields(null);
         entryUpdateDto.setHasOffsiteFee(true);
-        entryUpdateDto.setLodgementDate(LocalDate.now());
 
         CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
 
@@ -1245,7 +1240,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryUpdateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryUpdateDto.setNumberOfRespondents(null);
-        entryUpdateDto.setLodgementDate(LocalDate.now());
 
         // no respondent for this code
         entryUpdateDto.setApplicationCode("ZS99007");
@@ -1361,8 +1355,6 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         EntryUpdateDto entryUpdateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
 
-        entryUpdateDto.setLodgementDate(LocalDate.now());
-
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto
                 .getApplicant()
@@ -1430,6 +1422,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(null);
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);

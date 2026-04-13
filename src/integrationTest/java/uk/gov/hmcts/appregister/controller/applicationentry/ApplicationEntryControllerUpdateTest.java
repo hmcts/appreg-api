@@ -43,6 +43,8 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         differenceLogAsserter.assertNoErrors();
 
         Response responseSpecCreate = createListEntryWithAllData();
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+        LocalDate createdDate = createdDetail.getLodgementDate();
 
         var tokenGenerator = createAdminToken();
         Response responseSpecUpdate =
@@ -51,12 +53,13 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                         tokenGenerator.fetchTokenForRole(),
                         entryUpdateDto);
 
-        responseSpecCreate.then().statusCode(201);
         responseSpecUpdate.then().statusCode(200);
 
         EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
-        EntryGetDetailDto createDDto = responseSpecCreate.as(EntryGetDetailDto.class);
 
+        // make sure the update does not change the lodgement date and the
+        // date it was created persists
+        Assertions.assertEquals(createdDate, updatedDto.getLodgementDate());
         validateEntryUpdateResponse(
                 entryUpdateDto,
                 updatedDto,
@@ -508,82 +511,6 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         // assert the response
         responseSpecCreate.then().statusCode(201);
         responseSpecUpdate.then().statusCode(200);
-    }
-
-    @Test
-    public void givenAFailureUpdate_whenLodgementDateIsMissing_400Returned() throws Exception {
-        // setup the payload
-        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
-        entryUpdateDto.setNumberOfRespondents(null);
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setMobile(JsonNullable.of("+447123456789"));
-        entryUpdateDto.setLodgementDate(null);
-
-        Response responseSpecCreate = createListEntryWithAllData();
-
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // test the functionality
-        Response responseSpecUpdate =
-                restAssuredClient.executePutRequest(
-                        HeaderUtil.getLocation(responseSpecCreate),
-                        tokenGenerator.fetchTokenForRole(),
-                        entryUpdateDto);
-
-        // assert the response
-        responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-                .then()
-                .statusCode(400)
-                .body(
-                        "type",
-                        Matchers.equalTo(
-                                CommonAppError.METHOD_ARGUMENT_INVALID_ERROR
-                                        .getCode()
-                                        .getAppCode()));
-    }
-
-    @Test
-    public void givenAFailureUpdate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
-        // setup the payload
-        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
-        entryUpdateDto.setNumberOfRespondents(null);
-        entryUpdateDto
-                .getRespondent()
-                .getPerson()
-                .getContactDetails()
-                .setMobile(JsonNullable.of("+447123456789"));
-        entryUpdateDto.setLodgementDate(LocalDate.now().plusDays(1));
-
-        Response responseSpecCreate = createListEntryWithAllData();
-
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // test the functionality
-        Response responseSpecUpdate =
-                restAssuredClient.executePutRequest(
-                        HeaderUtil.getLocation(responseSpecCreate),
-                        tokenGenerator.fetchTokenForRole(),
-                        entryUpdateDto);
-
-        // assert the response
-        responseSpecCreate.then().statusCode(201);
-        responseSpecUpdate
-                .then()
-                .statusCode(400)
-                .body(
-                        "type",
-                        Matchers.equalTo(
-                                AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE
-                                        .getCode()
-                                        .getAppCode()));
     }
 
     @Test
