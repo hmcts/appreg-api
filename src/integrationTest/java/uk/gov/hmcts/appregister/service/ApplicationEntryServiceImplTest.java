@@ -93,6 +93,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -173,6 +174,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -253,6 +255,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -344,6 +347,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -470,6 +474,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -1417,6 +1422,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(null);
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);
@@ -1458,6 +1464,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         entryCreateDto
                 .getApplicant()
@@ -1623,6 +1630,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);
