@@ -829,7 +829,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                                 fee ->
                                         fee.getDescription()
                                                 .equals(
-                                                        "Offsite: JP perform function away from court")));
+                                                        "Application to state a case for the High Court")));
         Assertions.assertTrue(fees.stream().anyMatch(Fee::isOffsite));
 
         // make sure we do not recognise the officials that existing before

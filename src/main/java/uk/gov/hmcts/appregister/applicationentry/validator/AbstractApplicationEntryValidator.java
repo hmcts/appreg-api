@@ -418,7 +418,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
             log.debug(
                     "Validated the fee {}",
-                    wantsOffsiteFee ? feeToReturn.offsiteFee().getId() : feeToReturn.mainFee().getId());
+                    wantsOffsiteFee
+                            ? feeToReturn.offsiteFee().getId()
+                            : feeToReturn.mainFee().getId());
         }
 
         return feeToReturn;

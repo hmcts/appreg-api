@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import lombok.Setter;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -299,7 +298,6 @@ public class ApplicationEntryResultServiceImplTest {
         Assertions.assertEquals("testSort", resultPage.getSort().getOrders().get(0).getProperty());
     }
 
-    @Setter
     static class DummyApplicationEntryResultDeletionValidator
             extends ApplicationEntryResultDeletionValidator {
         private ListEntryResultDeleteValidationSuccess success;
@@ -326,9 +324,12 @@ public class ApplicationEntryResultServiceImplTest {
 
             return deleteSupplier.apply(args, success);
         }
+
+        void setSuccess(ListEntryResultDeleteValidationSuccess success) {
+            this.success = success;
+        }
     }
 
-    @Setter
     static class DummyApplicationEntryResultCreationValidator
             extends ApplicationEntryResultCreationValidator {
 
@@ -358,9 +359,12 @@ public class ApplicationEntryResultServiceImplTest {
 
             return validateSuccess.apply(validatable, success);
         }
+
+        void setSuccess(ListEntryResultCreateValidationSuccess success) {
+            this.success = success;
+        }
     }
 
-    @Setter
     static class DummyApplicationEntryResultUpdateValidator
             extends ApplicationEntryResultUpdateValidator {
 
@@ -386,6 +390,10 @@ public class ApplicationEntryResultServiceImplTest {
                 BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
                         validateSuccess) {
             return validateSuccess.apply(validatable, success);
+        }
+
+        void setSuccess(ListEntryResultUpdateValidationSuccess success) {
+            this.success = success;
         }
     }
 
@@ -432,7 +440,6 @@ public class ApplicationEntryResultServiceImplTest {
         }
     }
 
-    @Setter
     static class DummyApplicationEntryResultGetValidator
             extends ApplicationEntryResultGetValidator {
 
@@ -458,6 +465,10 @@ public class ApplicationEntryResultServiceImplTest {
                         validateSuccess) {
 
             return validateSuccess.apply(validatable, success);
+        }
+
+        void setSuccess(ListEntryResultGetValidationSuccess success) {
+            this.success = success;
         }
     }
 }

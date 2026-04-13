@@ -149,7 +149,7 @@ public class ResultCodeServiceImplTest {
 
         var entity = new ResolutionCode();
         entity.setResultCode(code);
-        var expectedDto = new ResultCodeGetDetailDto();
+        final var expectedDto = new ResultCodeGetDetailDto();
         var auditEntity = new ResolutionCode();
         auditEntity.setResultCode(code);
         auditEntity.setStartDate(date);

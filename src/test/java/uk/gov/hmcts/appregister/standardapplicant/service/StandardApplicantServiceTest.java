@@ -16,7 +16,6 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.BiFunction;
-import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -211,8 +210,8 @@ public class StandardApplicantServiceTest {
 
     @Test
     void testGetByCode_auditsRequestedLookupCriteria() {
-        String code = "APP001";
-        LocalDate date = LocalDate.of(2025, 1, 1);
+        final String code = "APP001";
+        final LocalDate date = LocalDate.of(2025, 1, 1);
         StandardApplicant standardApplicant = new StandardApplicant();
         standardApplicant.setApplicantCode(code);
         standardApplicant.setName("John Doe");
@@ -257,7 +256,6 @@ public class StandardApplicantServiceTest {
         }
     }
 
-    @Setter
     static class DummyStandardApplicantExistsValidator extends StandardApplicantExistsValidator {
         private StandardApplicant success;
 
@@ -280,6 +278,10 @@ public class StandardApplicantServiceTest {
             standardApplicant.setApplicantStartDate(LocalDate.now());
             standardApplicant.setApplicantEndDate(LocalDate.now().plusDays(1));
             return standardApplicant;
+        }
+
+        void setSuccess(StandardApplicant success) {
+            this.success = success;
         }
     }
 }

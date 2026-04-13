@@ -84,7 +84,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -133,7 +133,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -540,7 +540,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("CO1.1", firstEntry.getFeeReference().get());
         assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
         assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(3000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -556,7 +556,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Assertions.assertFalse(secondEntry.getFeeReference().isPresent());
         Assertions.assertFalse(secondEntry.getFeeDescription().isPresent());
         Assertions.assertFalse(secondEntry.getFeeAmount().isPresent());
-        Assertions.assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
+        Assertions.assertFalse(secondEntry.getOffsiteFeeAmount().isPresent());
     }
 
     @Test
@@ -582,13 +582,13 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
         Assertions.assertEquals(
-                3000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+                15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
         Assertions.assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
     @Test
     public void
-            givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200()
+            givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsAbsentWithNullOffsiteFeeRef_returns200()
                     throws Exception {
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -607,9 +607,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
 
         ApplicationCodeGetDetailDto detailDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
-        assertTrue(
+        Assertions.assertFalse(
                 detailDto.getOffsiteFeeAmount().isPresent(),
-                "Offsite fee amount should be present for all records");
+                "Offsite fee amount should be absent when no offsite fee exists");
     }
 
     @Test

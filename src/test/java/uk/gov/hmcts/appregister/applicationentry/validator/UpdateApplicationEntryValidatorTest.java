@@ -72,7 +72,6 @@ public class UpdateApplicationEntryValidatorTest {
     private EntryUpdateDto entryUpdateDto;
     private ApplicationCode applicationCode;
     private StandardApplicant standardApplicant;
-    private Fee fee;
     private ApplicationList applicationList;
     private UUID appListUuid;
     private UUID appListEntryUuid;
@@ -98,9 +97,16 @@ public class UpdateApplicationEntryValidatorTest {
         applicationCode.setRequiresRespondent(YesOrNo.YES);
 
         FeeTestData feeTestData = new FeeTestData();
-        StandardApplicantTestData standardApplicantTestData = new StandardApplicantTestData();
 
-        fee = feeTestData.someComplete();
+        Fee mainFee = feeTestData.someComplete();
+        mainFee.setId(1L);
+        mainFee.setOffsite(false);
+
+        Fee offsiteFee = feeTestData.someComplete();
+        offsiteFee.setId(2L);
+        offsiteFee.setOffsite(true);
+
+        StandardApplicantTestData standardApplicantTestData = new StandardApplicantTestData();
         standardApplicant = standardApplicantTestData.someComplete();
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -115,7 +121,8 @@ public class UpdateApplicationEntryValidatorTest {
                         eq(entryUpdateDto.getApplicationCode()), notNull()))
                 .thenReturn(List.of(applicationCode));
         when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new uk.gov.hmcts.appregister.common.entity.FeePair(fee, null));
+                .thenReturn(
+                        new uk.gov.hmcts.appregister.common.entity.FeePair(mainFee, offsiteFee));
 
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryUpdateDto.getStandardApplicantCode(), TODAY_UK))

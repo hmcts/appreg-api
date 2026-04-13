@@ -31,8 +31,10 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference, LocalDate asOfDate) {
-        LocalDate effectiveDate = asOfDate != null ? asOfDate : businessDateProvider.currentUkDate();
-        List<Fee> feesForRef = feeRepository.findByReferenceBetweenDate(feeReference, effectiveDate);
+        LocalDate effectiveDate =
+                asOfDate != null ? asOfDate : businessDateProvider.currentUkDate();
+        List<Fee> feesForRef =
+                feeRepository.findByReferenceBetweenDate(feeReference, effectiveDate);
         List<Fee> main = feesForRef.stream().filter(fee -> !fee.isOffsite()).toList();
         List<Fee> offsite = feesForRef.stream().filter(Fee::isOffsite).toList();
 

@@ -23,13 +23,13 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidationSuccess;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
@@ -128,8 +128,8 @@ public class ApplicationCodeServiceImplTest {
 
     @Test
     void findByCode_auditsRequestedLookupCriteria() {
-        String code = "code";
-        LocalDate localDate = LocalDate.of(2025, 1, 1);
+        final String code = "code";
+        final LocalDate localDate = LocalDate.of(2025, 1, 1);
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
         applicationCode.setStartDate(LocalDate.of(2020, 1, 1));
@@ -384,6 +384,7 @@ public class ApplicationCodeServiceImplTest {
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
                 applicationCode4.getCode());
     }
+
     private ApplicationCodeServiceImpl buildServiceWithListeners(
             List<AuditOperationLifecycleListener> listeners) {
         return new ApplicationCodeServiceImpl(
@@ -412,6 +413,7 @@ public class ApplicationCodeServiceImplTest {
             return completeEvent;
         }
     }
+
     class DummyGetApplicationCodeValidator extends GetApplicationCodeValidator {
         private GetApplicationCodeValidationSuccess success;
 
