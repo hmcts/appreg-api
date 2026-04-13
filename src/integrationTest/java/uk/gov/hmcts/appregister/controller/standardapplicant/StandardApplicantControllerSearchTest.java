@@ -362,7 +362,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         List.of("name,desc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new StandardApplicantRequestFilter(Optional.of(code), Optional.empty()),
+                        new StandardApplicantRequestFilter(
+                                Optional.of(code),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         responseSpec.then().statusCode(200);
