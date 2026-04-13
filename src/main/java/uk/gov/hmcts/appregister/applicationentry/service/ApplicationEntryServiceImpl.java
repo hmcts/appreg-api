@@ -736,23 +736,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 appListEntryFeeRepository.getEntryFeesForEntry(
                         success.getApplicationEntryId().getId());
         for (AppListEntryFeeId feeId : appListEntryFeeIdList) {
-            // if the fee is not the one we are updating delete it
-            if (success.getFee() == null
-                    || (success.getFee() != null
-                            && (success.getFee().mainFee() != null
-                                    && feeId.getFeeId().longValue()
-                                            != success.getFee().mainFee().getId())
-                            && (success.getFee().offsiteFee() != null
-                                    && feeId.getFeeId().longValue()
-                                            != success.getFee().offsiteFee().getId()))) {
-                auditService.processAudit(
-                        feeId,
-                        AppListEntryAuditOperation.DELETE_FEE_ENTRY,
-                        req -> {
-                            appListEntryFeeRepository.delete(feeId);
-                            return Optional.empty();
-                        });
-            }
+            auditService.processAudit(
+                    feeId,
+                    AppListEntryAuditOperation.DELETE_FEE_ENTRY,
+                    req -> {
+                        appListEntryFeeRepository.delete(feeId);
+                        return Optional.empty();
+                    });
         }
 
         appListEntryFeeRepository.flush();
@@ -795,42 +785,41 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             return Optional.of(new AuditableResult<>(null, newAppListEntryFeeId));
                         });
             }
+        }
 
-            // update the offsite
-            if (success.getFee() != null
-                    && success.getFee().offsiteFee() != null
-                    && updateEntry.getData() != null
-                    && (updateEntry.getData().getHasOffsiteFee() != null)
-                    && (updateEntry.getData().getHasOffsiteFee())) {
-                Optional<AppListEntryFeeId> appListEntryOffsiteFeeId =
-                        appListEntryFeeRepository.getEntryFeesForFee(
-                                success.getApplicationEntryId().getId(),
-                                success.getFee().offsiteFee().getId());
+        // update the offsite
+        if (success.getFee() != null
+                && success.getFee().offsiteFee() != null
+                && updateEntry.getData() != null
+                && (updateEntry.getData().getHasOffsiteFee() != null)
+                && (updateEntry.getData().getHasOffsiteFee())) {
+            Optional<AppListEntryFeeId> appListEntryOffsiteFeeId =
+                    appListEntryFeeRepository.getEntryFeesForFee(
+                            success.getApplicationEntryId().getId(),
+                            success.getFee().offsiteFee().getId());
 
-                // add the offsite fee
-                if (!appListEntryOffsiteFeeId.isPresent()
-                        && success.getFee().offsiteFee() != null) {
-                    log.debug(
-                            "Adding new offsite fee {} to entry %s {}",
-                            success.getFee().offsiteFee().getId(),
-                            success.getApplicationEntryId().getId());
-                    auditService.processAudit(
-                            AppListEntryAuditOperation.CREATE_FEE_ENTRY,
-                            req -> {
-                                AppListEntryFeeId offsiteEntryFee = new AppListEntryFeeId();
-                                offsiteEntryFee.setFeeId(success.getFee().offsiteFee().getId());
-                                offsiteEntryFee.setAppListEntryId(
-                                        success.getApplicationEntryId().getId());
-                                offsiteEntryFee = appListEntryFeeRepository.save(offsiteEntryFee);
+            // add the offsite fee
+            if (!appListEntryOffsiteFeeId.isPresent() && success.getFee().offsiteFee() != null) {
+                log.debug(
+                        "Adding new offsite fee {} to entry %s {}",
+                        success.getFee().offsiteFee().getId(),
+                        success.getApplicationEntryId().getId());
+                auditService.processAudit(
+                        AppListEntryAuditOperation.CREATE_FEE_ENTRY,
+                        req -> {
+                            AppListEntryFeeId offsiteEntryFee = new AppListEntryFeeId();
+                            offsiteEntryFee.setFeeId(success.getFee().offsiteFee().getId());
+                            offsiteEntryFee.setAppListEntryId(
+                                    success.getApplicationEntryId().getId());
+                            offsiteEntryFee = appListEntryFeeRepository.save(offsiteEntryFee);
 
-                                log.debug(
-                                        "Created Offsite Fee: {} to Entry: {} mapping: {}",
-                                        offsiteEntryFee.getFeeId(),
-                                        offsiteEntryFee.getAppListEntryId());
+                            log.debug(
+                                    "Created Offsite Fee: {} to Entry: {} mapping: {}",
+                                    offsiteEntryFee.getFeeId(),
+                                    offsiteEntryFee.getAppListEntryId());
 
-                                return Optional.of(new AuditableResult<>(null, offsiteEntryFee));
-                            });
-                }
+                            return Optional.of(new AuditableResult<>(null, offsiteEntryFee));
+                        });
             }
         }
     }

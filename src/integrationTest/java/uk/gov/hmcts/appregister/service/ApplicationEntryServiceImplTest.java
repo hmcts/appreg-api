@@ -817,13 +817,14 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // make sure the fee is mapped correctly to the entry
         List<Fee> fees =
                 appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.get().getId());
-        Assertions.assertEquals(2, fees.size());
+        Assertions.assertEquals(1, fees.size());
         Assertions.assertTrue(
                 fees.stream()
                         .anyMatch(
                                 fee ->
                                         fee.getDescription()
-                                                .equals("JP perform function away from court")));
+                                                .equals(
+                                                        "Offsite: JP perform function away from court")));
         Assertions.assertTrue(fees.stream().anyMatch(Fee::isOffsite));
 
         // make sure we do not recognise the officials that existing before
@@ -857,7 +858,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
                 List.of(),
-                2);
+                1);
     }
 
     @Test
@@ -901,6 +902,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
+        updateDto.setHasOffsiteFee(false);
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("MS99007");
         updateDto.setStandardApplicantCode(null);
@@ -1329,7 +1331,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " {{Premises Address}} for date {{Premises Date}}",
                 List.of(substitution, substitution1),
                 List.of(),
-                2);
+                1);
     }
 
     @Test
