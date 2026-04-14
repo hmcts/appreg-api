@@ -9,8 +9,8 @@ import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
 public enum ApplicationEntryByListIdSortFieldEnum implements SortableOperationEnum {
     SEQUENCE_NUMBER("sequenceNumber", "id", "sequenceNumber"),
     APPLICATION_TITLE("applicationTitle", "id", "applicationTitle"),
-    APPLICANT("applicant", "id", "applicantName"),
-    RESPONDENT("respondent", "id", "respondentName"),
+    APPLICANT("applicantName", "id", "applicantName"),
+    RESPONDENT("respondentName", "id", "respondentName"),
     RESPONDENT_POSTCODE("respondentPostcode", "id", "respondentPostcode"),
     ACCOUNT_REFERENCE("accountReference", "id", "accountReference"),
     FEE_REQUIRED("feeRequired", "id", "feeRequired"),

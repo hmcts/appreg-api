@@ -73,6 +73,7 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
@@ -665,6 +666,9 @@ class ApplicationListEntryMapperTest {
                 uk.gov.hmcts.appregister.common.enumeration.OfficialType.MAGISTRATE);
 
         Fee fee = feeTestData.someComplete();
+        Fee offsite = feeTestData.someComplete();
+
+        FeePair feePair = new FeePair(fee, offsite);
 
         // execute the mapping
         mapper.setApplicantMapper(new ApplicantMapperImpl());
@@ -674,7 +678,7 @@ class ApplicationListEntryMapperTest {
                 mapper.toEntryGetDetailDto(
                         appListEntry,
                         List.of(applicationListStatus, applicationListStatus2),
-                        fee,
+                        feePair,
                         List.of(appListEntryOfficial, appListEntryOfficial2),
                         null);
 

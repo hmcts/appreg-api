@@ -1,6 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -9,17 +9,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -38,15 +39,15 @@ public class UpdateApplicationEntryValidator
     public UpdateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
-            FeeRepository feeRepository,
-            Clock clock,
+            ApplicationFeeService feeService,
+            BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository,
             ApplicationListEntryRepository applicationListEntryRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
-                feeRepository,
-                clock,
+                feeService,
+                businessDateProvider,
                 standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
     }
@@ -95,7 +96,7 @@ public class UpdateApplicationEntryValidator
     protected UpdateApplicationEntryValidationSuccess getResult(
             ApplicationCode code,
             WordingTemplateSentence wordingTemplateCollection,
-            Fee fee,
+            FeePair fee,
             StandardApplicant saCode,
             ApplicationList applicationList,
             PayloadForUpdateEntry payload) {
@@ -155,5 +156,10 @@ public class UpdateApplicationEntryValidator
     @Override
     protected String getAccountNumber(PayloadForUpdateEntry validatable) {
         return validatable.getData().getAccountNumber();
+    }
+
+    @Override
+    protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
+        return null;
     }
 }

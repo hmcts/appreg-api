@@ -1,19 +1,20 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -32,14 +33,14 @@ public class CreateApplicationEntryValidator
     public CreateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
-            FeeRepository feeRepository,
-            Clock clock,
+            ApplicationFeeService feeService,
+            BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
-                feeRepository,
-                clock,
+                feeService,
+                businessDateProvider,
                 standardApplicantRepository);
     }
 
@@ -47,7 +48,7 @@ public class CreateApplicationEntryValidator
     protected CreateApplicationEntryValidationSuccess getResult(
             ApplicationCode code,
             WordingTemplateSentence wordingTemplateCollection,
-            Fee fee,
+            FeePair fee,
             StandardApplicant saCode,
             ApplicationList applicationList,
             PayloadForCreate<EntryCreateDto> dto) {
@@ -103,5 +104,10 @@ public class CreateApplicationEntryValidator
     @Override
     protected String getAccountNumber(PayloadForCreate<EntryCreateDto> validatable) {
         return validatable.getData().getAccountNumber();
+    }
+
+    @Override
+    protected LocalDate getLodgementDate(PayloadForCreate<EntryCreateDto> validatable) {
+        return validatable.getData().getLodgementDate();
     }
 }

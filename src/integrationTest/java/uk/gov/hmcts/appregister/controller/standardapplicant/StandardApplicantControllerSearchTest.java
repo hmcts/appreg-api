@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.standardapplicant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -24,10 +24,14 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
@@ -73,6 +77,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     @Test
     public void givenValidRequest_whenGetStandardApplicantByCodeAndDateForIndividual_thenReturn200()
             throws Exception {
+        LocalDate queryDate = LocalDate.now();
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -82,7 +87,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
                         tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        new DateGetRequest(queryDate));
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -146,7 +151,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         TableNames.STANDARD_APPLICANTS,
                         "standard_applicant_start_date",
                         null,
-                        LocalDate.now().toString(),
+                        queryDate.toString(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
@@ -158,6 +163,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     public void
             givenValidRequest_whenGetStandardApplicantByCodeAndDateForOrganisation_thenReturn200()
                     throws Exception {
+        LocalDate queryDate = LocalDate.now();
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -167,7 +173,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 restAssuredClient.executeGetRequest(
                         getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE_ORGANISATION),
                         tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        new DateGetRequest(queryDate));
 
         // assert the response
         responseSpec.then().statusCode(200);
@@ -244,7 +250,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         TableNames.STANDARD_APPLICANTS,
                         "standard_applicant_start_date",
                         null,
-                        LocalDate.now().toString(),
+                        queryDate.toString(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
@@ -308,8 +314,15 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
-    public void givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturn409()
-            throws Exception {
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturnPreferredRecord()
+                    throws Exception {
+        String code = "SANULL001";
+        LocalDate queryDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
+
         // create the token
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -317,21 +330,60 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         // test the functionality
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_APPCODE_CODE),
+                        getLocalUrl(WEB_CONTEXT + "/" + code),
                         tokenGenerator.fetchTokenForRole(),
-                        new DateGetRequest(LocalDate.now()));
+                        new DateGetRequest(queryDate));
 
         // assert the response
-        ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
+        responseSpec.then().statusCode(200);
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals(code, returnedSa.getCode());
         Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND.getCode().getAppCode(),
-                returnedSc.getType().toString());
+                "Open-Ended Applicant", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+    }
+
+    @Test
+    public void
+            givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
+                    throws Exception {
+        String code = "SANULL001";
+        LocalDate activeDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of(code),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        Assertions.assertEquals(2, response.getContent().size());
+        Assertions.assertEquals(code, response.getContent().get(0).getCode());
         Assertions.assertEquals(
-                StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND
-                        .getCode()
-                        .getHttpCode()
-                        .value(),
-                responseSpec.getStatusCode());
+                "Time-Bounded Applicant",
+                response.getContent().get(0).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(code, response.getContent().get(1).getCode());
+        Assertions.assertEquals(
+                "Open-Ended Applicant",
+                response.getContent().get(1).getApplicant().getOrganisation().getName());
     }
 
     @Test
@@ -364,15 +416,6 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.STANDARD_APPLICANTS,
                         "standard_applicant_code",
-                        null,
-                        "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
                         null,
                         "",
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
@@ -453,15 +496,6 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "",
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
-                        null,
-                        "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -520,15 +554,6 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "",
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
-                        null,
-                        "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -551,7 +576,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("not exist"), Optional.of("does not exist")),
+                                Optional.of("not exist"),
+                                Optional.of("does not exist"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response is successful with no content
@@ -587,7 +616,7 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
 
         Mockito.reset(clock);
 
-        when(clock.instant()).thenReturn(Instant.now().minus(1, ChronoUnit.DAYS));
+        when(clock.instant()).thenReturn(Instant.now().minus(2, ChronoUnit.DAYS));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
         when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
 
@@ -621,15 +650,6 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "",
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
                         StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.STANDARD_APPLICANTS,
-                        "standard_applicant_start_date",
-                        null,
-                        "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -652,7 +672,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         List.of("name"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new StandardApplicantRequestFilter(Optional.of("APP00"), Optional.empty()),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP00"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -701,7 +726,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         List.of("name"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new StandardApplicantRequestFilter(Optional.empty(), Optional.of("ORG")),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("ORG"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -759,7 +789,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         List.of("name"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new StandardApplicantRequestFilter(Optional.empty(), Optional.of("D")),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("D"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -841,7 +876,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         List.of("name"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
-                        new StandardApplicantRequestFilter(Optional.empty(), Optional.of("Dunn")),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("Dunn"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -911,7 +951,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("APP001"), Optional.of("Smith")),
+                                Optional.of("APP001"),
+                                Optional.of("Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -963,7 +1007,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("APP001"), Optional.of("John")),
+                                Optional.of("APP001"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         // assert the response
@@ -1064,7 +1112,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("AP99004"), Optional.of("John, Smith")),
+                                Optional.of("AP99004"),
+                                Optional.of("John, Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
         // assert the response
         responseSpec.then().statusCode(400);
@@ -1092,7 +1144,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("AP99004"), Optional.of("John")),
+                                Optional.of("AP99004"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
         // assert the response
         responseSpec.then().statusCode(400);
@@ -1123,7 +1179,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole(),
                         new StandardApplicantRequestFilter(
-                                Optional.of("AP99004"), Optional.of("John")),
+                                Optional.of("AP99004"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
                         new OpenApiPageMetaData());
 
         ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
@@ -1152,7 +1212,12 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             List.of(),
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole(),
-                            new StandardApplicantRequestFilter(Optional.of("P0"), Optional.empty()),
+                            new StandardApplicantRequestFilter(
+                                    Optional.of("P0"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
                             new OpenApiPageMetaData());
 
             StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
@@ -1212,7 +1277,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole(),
                             new StandardApplicantRequestFilter(
-                                    Optional.empty(), Optional.of("anisation 1")),
+                                    Optional.empty(),
+                                    Optional.of("anisation 1"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
                             new OpenApiPageMetaData());
 
             StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
@@ -1262,7 +1331,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole(),
                             new StandardApplicantRequestFilter(
-                                    Optional.empty(), Optional.of("Owe")),
+                                    Optional.empty(),
+                                    Optional.of("Owe"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
                             new OpenApiPageMetaData());
 
             StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
@@ -1313,7 +1386,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             getLocalUrl(WEB_CONTEXT),
                             tokenGenerator.fetchTokenForRole(),
                             new StandardApplicantRequestFilter(
-                                    Optional.empty(), Optional.of("Jones")),
+                                    Optional.empty(),
+                                    Optional.of("Jones"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
                             new OpenApiPageMetaData());
 
             StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
@@ -1371,10 +1448,135 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 problemDetail.getType());
     }
 
+    @Test
+    public void
+            givenValidRequest_whenFilterByAddressLine1AndFromDateAndSortByName_thenReturnSortedResults()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of("123 High Street"),
+                                Optional.of(LocalDate.of(2026, 4, 1)), // matches seeded data
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        // verify sorting by name (ascending)
+        StandardApplicantGetSummaryDto first = page.getContent().get(0);
+        StandardApplicantGetSummaryDto second = page.getContent().get(1);
+
+        String firstName =
+                first.getApplicant().getOrganisation() != null
+                        ? first.getApplicant().getOrganisation().getName()
+                        : first.getApplicant().getPerson().getName().getFirstForename();
+
+        String secondName =
+                second.getApplicant().getOrganisation() != null
+                        ? second.getApplicant().getOrganisation().getName()
+                        : second.getApplicant().getPerson().getName().getFirstForename();
+
+        Assertions.assertEquals("John", firstName);
+        Assertions.assertEquals("Organisation 1", secondName);
+
+        // verify filter applied
+        page.getContent()
+                .forEach(
+                        item -> {
+                            String address =
+                                    item.getApplicant().getOrganisation() != null
+                                            ? item.getApplicant()
+                                                    .getOrganisation()
+                                                    .getContactDetails()
+                                                    .getAddressLine1()
+                                            : item.getApplicant()
+                                                    .getPerson()
+                                                    .getContactDetails()
+                                                    .getAddressLine1();
+
+                            Assertions.assertEquals("123 High Street", address);
+                        });
+    }
+
+    @Test
+    public void givenValidRequest_whenSortByAddressLine1_thenReturnSortedResults()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("addressLine1,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        String firstAddress = extractAddress(page.getContent().get(0));
+        String secondAddress = extractAddress(page.getContent().get(1));
+        String thirdAddress = extractAddress(page.getContent().get(2));
+        String fourthAddress = extractAddress(page.getContent().get(3));
+
+        Assertions.assertEquals("123 High Street", firstAddress);
+        Assertions.assertEquals("123 High Street", secondAddress);
+        Assertions.assertEquals("123 High Street", thirdAddress);
+        Assertions.assertEquals("456 Elm Road", fourthAddress);
+    }
+
+    @Test
+    public void givenValidRequest_whenSortByFrom_thenReturnSortedResults() throws Exception {
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("from,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        List<LocalDate> dates =
+                page.getContent().stream()
+                        .map(StandardApplicantGetSummaryDto::getStartDate)
+                        .toList();
+
+        List<LocalDate> sortedDates = dates.stream().sorted().toList();
+
+        Assertions.assertEquals(sortedDates, dates);
+    }
+
     @RequiredArgsConstructor
     static class StandardApplicantRequestFilter implements UnaryOperator<RequestSpecification> {
         private final Optional<String> code;
         private final Optional<String> name;
+        private final Optional<String> addressLine1;
+        private final Optional<LocalDate> from;
+        private final Optional<LocalDate> to;
 
         @Override
         public RequestSpecification apply(RequestSpecification rs) {
@@ -1386,7 +1588,42 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 rs = rs.queryParam("name", name.get());
             }
 
+            if (addressLine1.isPresent()) {
+                rs = rs.queryParam("addressLine1", addressLine1.get());
+            }
+
+            if (from.isPresent()) {
+                rs = rs.queryParam("from", from.get().toString());
+            }
+
+            if (to.isPresent()) {
+                rs = rs.queryParam("to", to.get().toString());
+            }
+
             return rs;
+        }
+    }
+
+    private void saveStandardApplicant(
+            String code, String name, LocalDate startDate, LocalDate endDate) throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            standardApplicant.setApplicantCode(code);
+            standardApplicant.setName(name);
+            standardApplicant.setApplicantTitle(null);
+            standardApplicant.setApplicantForename1(null);
+            standardApplicant.setApplicantForename2(null);
+            standardApplicant.setApplicantForename3(null);
+            standardApplicant.setApplicantSurname(null);
+            standardApplicant.setApplicantStartDate(startDate);
+            standardApplicant.setApplicantEndDate(endDate);
+            persistance.save(standardApplicant);
+        } finally {
+            SecurityContextHolder.clearContext();
         }
     }
 
@@ -1411,5 +1648,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
+    }
+
+    private String extractAddress(StandardApplicantGetSummaryDto dto) {
+        return dto.getApplicant().getOrganisation() != null
+                ? dto.getApplicant().getOrganisation().getContactDetails().getAddressLine1()
+                : dto.getApplicant().getPerson().getContactDetails().getAddressLine1();
     }
 }

@@ -1,20 +1,20 @@
 apiVersion: v2
-appVersion: "1.0"
+appVersion: "1.1"
 description: A Helm chart for AppReg API
 name: appreg-api
 home: https://github.com/hmcts/appreg-api
-version: 0.0.3
+version: 0.0.4
 maintainers:
   - name: HMCTS AppReg Team
 dependencies:
   - name: java
     version: 5.3.0
-    repository: 'oci://hmctspublic.azurecr.io/helm'
+    repository: 'oci://hmctsprod.azurecr.io/helm'
   - name: postgresql
     version: 1.1.0
-    repository: 'oci://hmctspublic.azurecr.io/helm'
+    repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: postgresql.enabled
   - name: appreg-frontend
     version: 0.0.11
-    repository: 'oci://sdshmctspublic.azurecr.io/helm'
+    repository: 'oci://hmctsprod.azurecr.io/helm'
     condition: appreg-frontend.enabled
