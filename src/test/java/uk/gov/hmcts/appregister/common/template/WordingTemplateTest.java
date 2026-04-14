@@ -17,11 +17,10 @@ public class WordingTemplateTest {
 
     @Test
     void testTemplateAllDataTypeDefaultsToText() {
-        WordingTemplateSentence.WordingTemplate template = WordingTemplateSentence.WordingTemplate.with(
-                                        "{Unknown|Applicant officer|10}");
+        WordingTemplateSentence.WordingTemplate template =
+                WordingTemplateSentence.WordingTemplate.with("{Unknown|Applicant officer|10}");
         Assertions.assertEquals(
-            TemplateConstraint.TypeEnum.TEXT,
-            template.getDetail().getConstraint().getType());
+                TemplateConstraint.TypeEnum.TEXT, template.getDetail().getConstraint().getType());
     }
 
     @Test

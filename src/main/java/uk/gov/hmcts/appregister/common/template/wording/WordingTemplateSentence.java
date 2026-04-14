@@ -437,7 +437,9 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         @Override
         public void canValueBeSubstituted(String value) {
-            DataType type = validateDataType(this.getDetail().getConstraint().getType().getValue()).getType();
+            DataType type =
+                    validateDataType(this.getDetail().getConstraint().getType().getValue())
+                            .getType();
             log.debug("Validating value '{}' for template: {}", value, this);
             if (!type.validateForType(value)) {
                 throw new AppRegistryException(
