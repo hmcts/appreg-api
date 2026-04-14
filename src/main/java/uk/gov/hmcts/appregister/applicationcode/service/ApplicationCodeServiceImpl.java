@@ -100,38 +100,39 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                req -> {
-                    return getApplicationCodeValidator.validate(
-                            payloadForGet,
-                            (payload, success) -> {
-                                FeePair feePair =
-                                        feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference());
+                req ->
+                        getApplicationCodeValidator.validate(
+                                payloadForGet,
+                                (payload, success) -> {
+                                    FeePair feePair =
+                                            feeService.resolveFeePair(
+                                                    success.getApplicationCode().getFeeReference(),
+                                                    payload.getDate());
 
-                                AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
-                                        result =
-                                                new AuditableResult<>(
-                                                        applicationCodeMapper
-                                                                .toApplicationCodeGetDetailDto(
-                                                                        success
-                                                                                .getApplicationCode(),
-                                                                        feePair != null
-                                                                                ? feePair.mainFee()
-                                                                                : null,
-                                                                        feePair != null
-                                                                                ? feePair
-                                                                                        .offsiteFee()
-                                                                                : null),
-                                                        applicationCodeMapper.toEntity(
-                                                                payloadForGet));
+                                    AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
+                                            result =
+                                                    new AuditableResult<>(
+                                                            applicationCodeMapper
+                                                                    .toApplicationCodeGetDetailDto(
+                                                                            success
+                                                                                    .getApplicationCode(),
+                                                                            feePair != null
+                                                                                    ? feePair
+                                                                                            .mainFee()
+                                                                                    : null,
+                                                                            feePair != null
+                                                                                    ? feePair
+                                                                                            .offsiteFee()
+                                                                                    : null),
+                                                            applicationCodeMapper.toEntity(
+                                                                    payload));
 
-                                log.debug(
-                                        "Finish: Find Application for app code: {} date: {}",
-                                        payload.getCode(),
-                                        payload.getDate());
-                                return Optional.of(result);
-                            });
-                },
+                                    log.debug(
+                                            "Finish: Find Application for app code: {} date: {}",
+                                            payload.getCode(),
+                                            payload.getDate());
+                                    return Optional.of(result);
+                                }),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }

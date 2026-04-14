@@ -1,12 +1,8 @@
 package uk.gov.hmcts.appregister.audit;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
-@RequiredArgsConstructor
-@Getter
 public enum TestAuditOperation implements AuditOperation {
     CREATE("Create Application List", CrudEnum.CREATE),
     UPDATE("Update Application List", CrudEnum.UPDATE),
@@ -16,4 +12,19 @@ public enum TestAuditOperation implements AuditOperation {
     private final String eventName;
 
     private final CrudEnum type;
+
+    TestAuditOperation(String eventName, CrudEnum type) {
+        this.eventName = eventName;
+        this.type = type;
+    }
+
+    @Override
+    public String getEventName() {
+        return eventName;
+    }
+
+    @Override
+    public CrudEnum getType() {
+        return type;
+    }
 }

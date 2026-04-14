@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         var tokenGenerator = createAdminToken();
 
+        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
@@ -135,10 +137,13 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         // set the enforcement fine code
         entryCreateDto.setApplicationCode("EF1213");
         entryCreateDto.setAccountNumber("1234567890");
+        entryCreateDto.setLodgementDate(null);
 
         SuccessCreateEntryResponse createdDto =
                 createEntryWithUniqueSurname(tokenGenerator, entryCreateDto, surnameToLookup);
 
+        // set to current date for assertion to match
+        entryCreateDto.setLodgementDate(LocalDate.now());
         Assertions.assertNotNull(HeaderUtil.getETag(createdDto.response()));
 
         validateEntryCreationResponse(
@@ -219,6 +224,48 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 createdDto.getDetailDto(),
                 "Request for a certificate of satisfaction of "
                         + "debt registered in the register of judgements, orders and fines");
+    }
+
+    @Test
+    public void
+            givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
+                    throws Exception {
+        LocalDate today = LocalDate.now();
+        String applicationCodeValue = "ZZ90001";
+        String feeReference = "ZZ1.1";
+
+        saveActiveApplicationCode(
+                applicationCodeValue,
+                feeReference,
+                today.plusDays(30),
+                "Fallback overlapping application code");
+        final var preferredCode =
+                saveActiveApplicationCode(
+                        applicationCodeValue, feeReference, null, "Preferred application code");
+
+        saveActiveFee(
+                feeReference,
+                "Fallback overlapping fee",
+                BigDecimal.valueOf(222),
+                false,
+                today.plusDays(30));
+        final var preferredFee =
+                saveActiveFee(feeReference, "Preferred fee", BigDecimal.valueOf(111), false, null);
+
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setApplicationCode(applicationCodeValue);
+        entryCreateDto.setHasOffsiteFee(false);
+
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(
+                        createAdminToken(), entryCreateDto, UUID.randomUUID().toString());
+
+        Assertions.assertEquals(
+                preferredCode.getId(),
+                getSelectedApplicationCodeId(createdDto.getDetailDto().getId()));
+        Assertions.assertEquals(
+                preferredFee.getId(),
+                getSelectedFees(createdDto.getDetailDto().getId()).getFirst().getId());
     }
 
     @Test
@@ -2211,5 +2258,35 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         "applicant.person.name.firstForename",
                         "applicant.person.name.secondForename"),
                 new ArrayList<>(errors.keySet()));
+    }
+
+    @Test
+    public void givenAFailureCreate_whenLodgementDateIsInTheFuture_400Returned() throws Exception {
+        // setup the payload
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setLodgementDate(LocalDate.now().plusDays(1));
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpecCreate =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryCreateDto);
+
+        // assert the response
+        responseSpecCreate
+                .then()
+                .statusCode(400)
+                .body(
+                        "type",
+                        Matchers.equalTo(
+                                AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE
+                                        .getCode()
+                                        .getAppCode()));
     }
 }

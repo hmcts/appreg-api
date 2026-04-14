@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,6 +88,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -122,11 +122,12 @@ public class ApplicationListServiceImplTest {
     @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
             new DummyApplicationCreateListLocationValidator(
-                    repository, courtHouseRepository, cjaRepository);
+                    repository, courtHouseRepository, cjaRepository, businessDateProvider);
 
     @Spy
     private DummyApplicationUpdateListLocationValidator updateValidator =
@@ -134,6 +135,7 @@ public class ApplicationListServiceImplTest {
                     repository,
                     courtHouseRepository,
                     cjaRepository,
+                    businessDateProvider,
                     appListEntryResolutionRepository,
                     appListEntryOfficialRepository,
                     applicationListEntryRepository,
@@ -141,7 +143,8 @@ public class ApplicationListServiceImplTest {
 
     @Spy
     private DummyApplicationListGetValidator getValidator =
-            new DummyApplicationListGetValidator(repository, courtHouseRepository, cjaRepository);
+            new DummyApplicationListGetValidator(
+                    repository, courtHouseRepository, cjaRepository, businessDateProvider);
 
     @Spy
     private DummyApplicationDeleteListValidator deletionValidator =
@@ -167,7 +170,8 @@ public class ApplicationListServiceImplTest {
     @Mock private AuditOperationLifecycleListener auditOperationLifecycleListener;
 
     @Spy
-    private final AuditOperationService auditOperationService = new DummyAuditOperationService();
+    private final DummyAuditOperationService auditOperationService =
+            new DummyAuditOperationService();
 
     private ApplicationListServiceImpl service;
 
@@ -267,7 +271,6 @@ public class ApplicationListServiceImplTest {
         when(mapper.toGetDetailDto(eq(saved), eq(null), eq(1L), summaryCaptor.capture()))
                 .thenReturn(expectedDto);
 
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
         mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
@@ -365,7 +368,6 @@ public class ApplicationListServiceImplTest {
         PayloadForUpdate<ApplicationListUpdateDto> payloadForUpdate =
                 new PayloadForUpdate<>(dto, saved.getUuid());
 
-        when(repository.findByUuid(saved.getUuid())).thenReturn(Optional.of(saved));
         mockFindSummariesById(saved.getUuid(), ApplicationListServiceImpl.ENTRY_SUMMARY_SORT);
 
         MatchResponse<ApplicationListGetDetailDto> result = service.update(payloadForUpdate);
@@ -439,7 +441,7 @@ public class ApplicationListServiceImplTest {
                         eq(pageable)))
                 .thenReturn(dbPage);
 
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         // Page metadata mapping
         doAnswer(
@@ -487,7 +489,7 @@ public class ApplicationListServiceImplTest {
         Page<ApplicationListSummaryProjection> dbPage = new PageImpl<>(List.of(row));
 
         Pageable pageable = mock(Pageable.class);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         LocalTime expectedEndTime = DEFAULT_TIME.plusMinutes(1);
 
@@ -828,10 +830,11 @@ public class ApplicationListServiceImplTest {
     void get_returnsDto() {
         ApplicationList saved = new ApplicationList();
         UUID id = UUID.randomUUID();
+        saved.setUuid(id);
         when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
 
         Pageable pageable = mock(Pageable.class);
-        PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
 
         mockFindSummariesById(id, pageable);
 
@@ -841,6 +844,32 @@ public class ApplicationListServiceImplTest {
         ApplicationListGetDetailDto actual = service.get(id, wrapper);
 
         Assertions.assertEquals(expected, actual);
+    }
+
+    @Test
+    void get_auditsLookupIdSurrogate() {
+        ApplicationList saved = new ApplicationList();
+        UUID id = UUID.randomUUID();
+        saved.setUuid(id);
+        when(repository.findByUuid(id)).thenReturn(Optional.of(saved));
+
+        Pageable pageable = mock(Pageable.class);
+        final PagingWrapper wrapper = PagingWrapper.of(List.of(), pageable);
+
+        mockFindSummariesById(id, pageable);
+
+        ApplicationListGetDetailDto expected = new ApplicationListGetDetailDto();
+        ApplicationList auditEntity = new ApplicationList();
+        auditEntity.setUuid(id);
+        when(mapper.toGetDetailDto(eq(saved), isNull(), eq(0L), notNull())).thenReturn(expected);
+        when(mapper.toEntity(id)).thenReturn(auditEntity);
+
+        auditOperationService.clearCapturedAudit();
+        ApplicationListGetDetailDto actual = service.get(id, wrapper);
+
+        Assertions.assertEquals(expected, actual);
+        Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
+        Assertions.assertNotSame(saved, auditOperationService.getLastNewEntity());
     }
 
     @Test
@@ -862,6 +891,7 @@ public class ApplicationListServiceImplTest {
         // Given
         UUID id = UUID.randomUUID();
         ApplicationList list = new ApplicationList();
+        list.setUuid(id);
 
         when(repository.findByUuid(id)).thenReturn(Optional.of(list));
 
@@ -934,6 +964,29 @@ public class ApplicationListServiceImplTest {
     }
 
     @Test
+    void print_auditsLookupIdSurrogate() {
+        UUID id = UUID.randomUUID();
+        ApplicationList list = new ApplicationList();
+        list.setUuid(id);
+
+        when(repository.findByUuid(id)).thenReturn(Optional.of(list));
+        when(aleRepository.findByIdForPrinting(id)).thenReturn(List.of());
+
+        ApplicationListGetPrintDto expected = new ApplicationListGetPrintDto();
+        ApplicationList auditEntity = new ApplicationList();
+        auditEntity.setUuid(id);
+        when(mapper.toGetPrintDto(list)).thenReturn(expected);
+        when(mapper.toEntity(id)).thenReturn(auditEntity);
+
+        auditOperationService.clearCapturedAudit();
+        ApplicationListGetPrintDto actual = service.print(id);
+
+        Assertions.assertEquals(expected, actual);
+        Assertions.assertSame(auditEntity, auditOperationService.getLastNewEntity());
+        Assertions.assertNotSame(list, auditOperationService.getLastNewEntity());
+    }
+
+    @Test
     void print_returns404_whenApplicationListRepositoryEmpty() {
         UUID id = UUID.randomUUID();
         when(repository.findByUuid(id)).thenReturn(Optional.empty());
@@ -979,6 +1032,21 @@ public class ApplicationListServiceImplTest {
     }
 
     class DummyAuditOperationService implements AuditOperationService {
+        private Keyable lastNewEntity;
+        private AuditOperation lastAuditType;
+
+        Keyable getLastNewEntity() {
+            return lastNewEntity;
+        }
+
+        AuditOperation getLastAuditType() {
+            return lastAuditType;
+        }
+
+        void clearCapturedAudit() {
+            lastNewEntity = null;
+            lastAuditType = null;
+        }
 
         @Override
         public <T, E extends Keyable> T processAudit(
@@ -1011,6 +1079,7 @@ public class ApplicationListServiceImplTest {
                 Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
                 AuditOperationLifecycleListener... listener) {
 
+            lastAuditType = auditType;
             Optional<AuditableResult<T, E>> optional =
                     execution.apply(
                             new CompleteEvent(
@@ -1020,11 +1089,11 @@ public class ApplicationListServiceImplTest {
                                             null),
                                     "result",
                                     null));
+            lastNewEntity = optional.map(AuditableResult::getNewEntity).orElse(null);
             return optional.map(AuditableResult::getResultingValue).orElse(null);
         }
     }
 
-    @Setter
     class DummyApplicationCreateListLocationValidator
             extends ApplicationCreateListLocationValidator {
         private ListLocationValidationSuccess success;
@@ -1032,8 +1101,9 @@ public class ApplicationListServiceImplTest {
         public DummyApplicationCreateListLocationValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository cjaRepository,
+                BusinessDateProvider businessDateProvider) {
+            super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 
         @Override
@@ -1043,9 +1113,12 @@ public class ApplicationListServiceImplTest {
                         createApplicationSupplier) {
             return createApplicationSupplier.apply(dto, success);
         }
+
+        void setSuccess(ListLocationValidationSuccess success) {
+            this.success = success;
+        }
     }
 
-    @Setter
     class DummyApplicationUpdateListLocationValidator
             extends ApplicationUpdateListLocationValidator {
         private ListUpdateValidationSuccess success;
@@ -1054,6 +1127,7 @@ public class ApplicationListServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 NationalCourtHouseRepository courtHouseRepository,
                 CriminalJusticeAreaRepository criminalJusticeAreaRepository,
+                BusinessDateProvider businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository,
                 AppListEntryOfficialRepository appListEntryOfficialRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
@@ -1062,6 +1136,7 @@ public class ApplicationListServiceImplTest {
                     applicationListRepository,
                     courtHouseRepository,
                     criminalJusticeAreaRepository,
+                    businessDateProvider,
                     appListEntryResolutionRepository,
                     appListEntryOfficialRepository,
                     applicationListEntryRepository,
@@ -1078,17 +1153,21 @@ public class ApplicationListServiceImplTest {
                         createApplicationSupplier) {
             return createApplicationSupplier.apply(dto, success);
         }
+
+        void setSuccess(ListUpdateValidationSuccess success) {
+            this.success = success;
+        }
     }
 
-    @Setter
     class DummyApplicationListGetValidator extends ApplicationListGetValidator {
         private ListLocationValidationSuccess success;
 
         public DummyApplicationListGetValidator(
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
-                CriminalJusticeAreaRepository cjaRepository) {
-            super(repository, courtHouseRepository, cjaRepository);
+                CriminalJusticeAreaRepository cjaRepository,
+                BusinessDateProvider businessDateProvider) {
+            super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 
         @Override
@@ -1107,9 +1186,12 @@ public class ApplicationListServiceImplTest {
                 boolean doNotFailOnMissing) {
             return createApplicationSupplier.apply(dto, success);
         }
+
+        void setSuccess(ListLocationValidationSuccess success) {
+            this.success = success;
+        }
     }
 
-    @Setter
     class DummyApplicationDeleteListValidator extends ApplicationListDeletionValidator {
         private ListDeleteValidationSuccess success;
 
@@ -1122,6 +1204,10 @@ public class ApplicationListServiceImplTest {
                 UUID deletionId, BiFunction<UUID, ListDeleteValidationSuccess, R> deleteSupplier) {
 
             return deleteSupplier.apply(deletionId, success);
+        }
+
+        void setSuccess(ListDeleteValidationSuccess success) {
+            this.success = success;
         }
     }
 

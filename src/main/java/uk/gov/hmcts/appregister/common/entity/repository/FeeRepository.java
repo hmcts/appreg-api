@@ -20,10 +20,10 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
     List<Fee> findByReference(String reference);
 
     /**
-     * Finds a list of Fee entities by their reference and offset status.
+     * Finds a list of Fee entities by their reference.
      *
      * @param reference the reference to search for
-     * @return fee entities matching the reference and offset status
+     * @return fee entities matching the reference
      */
     @Query(
             """
@@ -32,14 +32,18 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
           ((f.endDate IS NULL OR  f.endDate >= :dateTime)
                   AND f.startDate <= :dateTime)
+        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
         """)
     List<Fee> findByReferenceBetweenDate(String reference, LocalDate dateTime);
 
     /**
-     * Finds a list of Fee entities by their reference and offset status.
+     * Finds a list of Fee entities by their reference and offsite status.
      *
      * @param reference the reference to search for
-     * @return fee entities matching the reference and offset status
+     * @return fee entities matching the reference and offsite status
      */
     @Query(
             """
@@ -48,6 +52,10 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
         ((f.endDate IS NULL OR  f.endDate >= :dateTime)
         AND f.startDate <= :dateTime) AND f.isOffsite = :offsiteStatus
+        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
         """)
     List<Fee> findByReferenceBetweenDateWithOffsite(
             String reference, LocalDate dateTime, boolean offsiteStatus);
@@ -74,6 +82,30 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         WHERE (f.id IN :ids) AND
         ((f.endDate IS NULL OR  f.endDate >= :date)
         AND f.startDate <= :date)
+        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
         """)
     List<Fee> findByIdsBetweenDate(List<Long> ids, LocalDate date);
+
+    /**
+     * Finds a list of offsite Fee entities active on the supplied date.
+     *
+     * @param dateTime the date to search for
+     * @return active offsite fee entities
+     */
+    @Query(
+            """
+        SELECT f
+        FROM Fee f
+        WHERE (f.isOffsite=true AND
+          (f.endDate IS NULL OR  f.endDate >= :dateTime)
+                  AND f.startDate <= :dateTime)
+        ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
+                 f.endDate DESC,
+                 f.startDate DESC,
+                 f.id DESC
+        """)
+    List<Fee> findOffsite(LocalDate dateTime);
 }

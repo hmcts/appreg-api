@@ -6,18 +6,21 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.courtlocation.api.CourtLocationSortFieldMapper;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
+import uk.gov.hmcts.appregister.data.NationalCourtHouseData;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
@@ -34,6 +37,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
     // --- /court-locations/{code}?date=... -----------------------------------------------------
     @Test
     void givenValidRequest_whenGetCourtLocationByCodeAndDate_Cardiff_then200() throws Exception {
+        LocalDate queryDate = LocalDate.of(2025, 1, 1);
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.ADMIN))
@@ -42,7 +46,9 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
 
         Response resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + CARDIFF_CODE, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + CARDIFF_CODE,
+                                queryDate.atStartOfDay().atOffset(ZoneOffset.UTC)),
                         token);
 
         resp.then().statusCode(200);
@@ -70,13 +76,14 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        queryDate.toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
 
     @Test
     void givenValidRequest_whenGetCourtLocationByCodeAndDate_Bristol_then200() throws Exception {
+        LocalDate queryDate = LocalDate.of(2025, 1, 1);
         var token =
                 getATokenWithValidCredentials()
                         .roles(List.of(RoleEnum.USER))
@@ -85,7 +92,9 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
 
         var resp =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(WEB_CONTEXT + "/" + BRISTOL_CODE, OffsetDateTime.now()),
+                        getLocalUrlWithDate(
+                                WEB_CONTEXT + "/" + BRISTOL_CODE,
+                                queryDate.atStartOfDay().atOffset(ZoneOffset.UTC)),
                         token);
 
         resp.then().statusCode(200);
@@ -113,7 +122,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        LocalDate.now().toString(),
+                        queryDate.toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
@@ -137,6 +146,32 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
 
         AuditAssertUtil.assertStart(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(0));
         AuditAssertUtil.assertFailCompleted(AUDIT_GET_ONE, logCaptor.getInfoLogs().get(1));
+    }
+
+    @Test
+    void givenDuplicateCourtLocations_whenGetCourtLocationByCodeAndDate_thenNewestRecordWins()
+            throws Exception {
+        String code = "CRTNUL001";
+        LocalDate queryDate = LocalDate.now();
+        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrlWithDate(WEB_CONTEXT + "/" + code, OffsetDateTime.now()), token);
+
+        resp.then().statusCode(200);
+
+        CourtLocationGetDetailDto dto = resp.as(CourtLocationGetDetailDto.class);
+        assertThat(dto.getName()).isEqualTo("Newer Court");
+        assertThat(dto.getLocationCode()).isEqualTo(code);
+        assertThat(dto.getStartDate()).isEqualTo(queryDate.minusDays(1));
     }
 
     @Test
@@ -276,6 +311,39 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                                 .name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATIONS_AUDIT_EVENT
                                 .getEventName()));
+    }
+
+    @Test
+    void givenDuplicateCourtLocations_whenGetCourtLocations_thenCallerSortControlsPageOrder()
+            throws Exception {
+        String code = "CRTNUL001";
+        LocalDate queryDate = LocalDate.now();
+        saveActiveCourt(code, "Older Court", queryDate.minusDays(5));
+        saveActiveCourt(code, "Newer Court", queryDate.minusDays(1));
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.empty(),
+                        Optional.empty(),
+                        List.of("name,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        token,
+                        new CourtLocationFilter(Optional.empty(), Optional.of(code)),
+                        new OpenApiPageMetaData());
+
+        resp.then().statusCode(200);
+
+        CourtLocationPage page = resp.as(CourtLocationPage.class);
+        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent().get(0).getLocationCode()).isEqualTo(code);
+        assertThat(page.getContent().get(0).getName()).isEqualTo("Older Court");
+        assertThat(page.getContent().get(1).getName()).isEqualTo("Newer Court");
     }
 
     @Test
@@ -616,5 +684,18 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
             }
             return rs;
         }
+    }
+
+    private void saveActiveCourt(String code, String name, LocalDate startDate) {
+        NationalCourtHouse nationalCourtHouse =
+                new NationalCourtHouseData()
+                        .someMinimal()
+                        .courtLocationCode(code)
+                        .name(name)
+                        .startDate(startDate)
+                        .endDate(null)
+                        .courtType("CHOA")
+                        .build();
+        persistance.save(nationalCourtHouse);
     }
 }

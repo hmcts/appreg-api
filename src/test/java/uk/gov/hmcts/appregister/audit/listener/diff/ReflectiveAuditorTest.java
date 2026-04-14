@@ -14,8 +14,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -212,8 +210,6 @@ public class ReflectiveAuditorTest {
     }
 
     @MappedSuperclass
-    @Getter
-    @Setter
     @EntityListeners(PreCreateUpdateEntityListener.class)
     @EqualsAndHashCode(onlyExplicitlyIncluded = true)
     public class BaseEntity implements Changeable, Deletable {
@@ -234,10 +230,59 @@ public class ReflectiveAuditorTest {
         @Convert(converter = YesNoConverter.class)
         @Column(name = "is_deleted")
         private YesOrNo deleted;
+
+        @Override
+        public String getChangedBy() {
+            return changedBy;
+        }
+
+        @Override
+        public OffsetDateTime getChangedDate() {
+            return changedDate;
+        }
+
+        @Override
+        public void setChangedBy(String changedBy) {
+            this.changedBy = changedBy;
+        }
+
+        @Override
+        public void setChangedDate(OffsetDateTime changedDate) {
+            this.changedDate = changedDate;
+        }
+
+        @Override
+        public String getDeletedBy() {
+            return deletedBy;
+        }
+
+        @Override
+        public OffsetDateTime getDeletedDate() {
+            return deletedDate;
+        }
+
+        @Override
+        public void setDeletedBy(String deleteBy) {
+            this.deletedBy = deleteBy;
+        }
+
+        @Override
+        public void setDeletedDate(OffsetDateTime deleteBy) {
+            this.deletedDate = deleteBy;
+        }
+
+        @Override
+        public YesOrNo getDeleted() {
+            return deleted;
+        }
+
+        @Override
+        public void setDeleted(YesOrNo deleted) {
+            this.deleted = deleted;
+        }
     }
 
     /** Setup some test data. */
-    @Getter
     @AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.READ, CrudEnum.UPDATE})
     @Table(name = "test_entity")
     class TestEntityAuditable extends BaseEntity implements Keyable {
@@ -268,10 +313,33 @@ public class ReflectiveAuditorTest {
 
         @Column(name = "entry2", nullable = false)
         private List<String> entryStrings = new ArrayList<>();
+
+        @Override
+        public Long getId() {
+            return id;
+        }
+
+        public CriminalJusticeArea getCriminalJusticeArea() {
+            return criminalJusticeArea;
+        }
+
+        public String getResolutionWording() {
+            return resolutionWording;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public List<ListEntity> getEntry() {
+            return entry;
+        }
+
+        public List<String> getEntryStrings() {
+            return entryStrings;
+        }
     }
 
-    @Getter
-    @Setter
     @Table(name = "random_list")
     class ListEntity implements Keyable {
         @Id
@@ -288,5 +356,30 @@ public class ReflectiveAuditorTest {
         // test recursion
         @Column(name = "lst_entity", nullable = false)
         private TestEntityAuditable entity;
+
+        @Override
+        public Long getId() {
+            return id;
+        }
+
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public TestEntityAuditable getEntity() {
+            return entity;
+        }
+
+        public void setEntity(TestEntityAuditable entity) {
+            this.entity = entity;
+        }
     }
 }

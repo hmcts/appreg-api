@@ -93,6 +93,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -162,7 +163,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             "Request to copy documents",
                             List.of(),
-                            1);
+                            2);
                 });
     }
 
@@ -173,6 +174,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -253,6 +255,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         TemplateSubstitution substitution = new TemplateSubstitution();
         substitution.setKey("Reference");
@@ -344,6 +347,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto
                 .getApplicant()
                 .getPerson()
@@ -459,7 +463,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request for copy documents on computer disc or in electronic form",
                             "Request for copy documents on computer disc or in electronic form",
                             List.of(),
-                            1);
+                            2);
                 });
     }
 
@@ -470,6 +474,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -598,7 +603,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Application for a warrant to enter premises at {{Premises Address}}"
                                     + " for date {{Premises Date}}",
                             List.of(substitution, substitution1),
-                            2);
+                            1);
                 });
     }
 
@@ -716,7 +721,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request to copy documents",
                 List.of(),
                 List.of(),
-                1);
+                2);
     }
 
     @Test
@@ -817,7 +822,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         // make sure the fee is mapped correctly to the entry
         List<Fee> fees =
                 appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.get().getId());
-        Assertions.assertEquals(2, fees.size());
+        Assertions.assertEquals(1, fees.size());
         Assertions.assertTrue(
                 fees.stream()
                         .anyMatch(
@@ -858,7 +863,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + "for date {{Premises Date}}",
                 entryUpdateDto.getWordingFields(),
                 List.of(),
-                2);
+                1);
     }
 
     @Test
@@ -902,6 +907,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         updateDto.getRespondent().getPerson().getName().setThirdForename(JsonNullable.of(null));
         updateDto.getRespondent().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
+        updateDto.setHasOffsiteFee(false);
         updateDto.setNumberOfRespondents(null);
         updateDto.setApplicationCode("MS99007");
         updateDto.setStandardApplicantCode(null);
@@ -1204,7 +1210,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 "Request for copy documents on computer disc or in electronic form",
                 List.of(),
                 List.of(),
-                1);
+                2);
     }
 
     @Test
@@ -1330,7 +1336,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                         + " {{Premises Address}} for date {{Premises Date}}",
                 List.of(substitution, substitution1),
                 List.of(),
-                2);
+                1);
     }
 
     @Test
@@ -1417,6 +1423,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(null);
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);
@@ -1458,6 +1465,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         entryCreateDto
                 .getApplicant()
@@ -1541,7 +1549,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 .setPhone(JsonNullable.of(null));
 
         entryCreateDto.setNumberOfRespondents(null);
-
+        entryCreateDto.setHasOffsiteFee(true);
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
 
@@ -1602,7 +1610,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Application for a warrant to enter premises at "
                                     + "{{Premises Address}} for date {{Premises Date}}",
                             entryCreateDto.getWordingFields(),
-                            1);
+                            2);
                 });
 
         return response.getPayload().getId();
@@ -1623,6 +1631,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
 
         entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(LocalDate.now());
 
         // no respondent for this code
         entryCreateDto.setRespondent(null);

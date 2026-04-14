@@ -7,8 +7,10 @@ import static uk.gov.hmcts.appregister.common.enumeration.Status.OPEN;
 import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEquals;
 
 import io.restassured.response.Response;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -205,6 +207,53 @@ public class ApplicationEntryResultControllerUpdateTest
         resp.then().statusCode(HttpStatus.NOT_FOUND.value());
         assertEquals(
                 ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    @DisplayName(
+            "Update Application List Entry Result: prefers active ResolutionCode with endDate NULL")
+    void givenMultipleActiveResolutionCodes_whenUpdate_thenPrefersNullEndDate() throws Exception {
+        var existingResult = givenExistingEntryResult();
+        String currentEtag = EtagUtil.generateEtag(List.of(existingResult.entryResult()));
+        LocalDate today = LocalDate.now();
+
+        saveActiveResolutionCode("DUP1", today.minusDays(10), null);
+        saveActiveResolutionCode("DUP1", today.minusDays(10), today.plusDays(10));
+
+        var payload = buildUpdatePayload("DUP1", List.of());
+
+        Response resp =
+                updateResult(
+                        existingResult.list().getUuid(),
+                        existingResult.entry().getUuid(),
+                        existingResult.entryResult().getUuid(),
+                        existingResult.token(),
+                        payload,
+                        currentEtag);
+
+        resp.then().statusCode(HttpStatus.OK.value());
+        resp.then().body("resultCode", equalTo("DUP1"));
+
+        var saved =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(
+                                existingResult.entryResult().getUuid(),
+                                existingResult.entry().getUuid())
+                        .orElseThrow(() -> new AssertionError("Updated result not found"));
+
+        var preferredId =
+                resolutionCodeRepository
+                        .findActiveResolutionCodesByCodeAndDate("DUP1", today)
+                        .stream()
+                        .filter(rc -> rc.getEndDate() == null)
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected active ResolutionCode with null endDate not found"))
+                        .getId();
+
+        Assertions.assertEquals(preferredId, saved.getResolutionCode().getId());
     }
 
     @Test

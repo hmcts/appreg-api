@@ -91,4 +91,12 @@ appreg:
     diff:
       enable-complex-diff: true
 
-
+application-list:
+  sort:
+    disabled-sort-keys:
+      - time
+      - accountReference
+      - cjaCode
+      - legislation
+      - location
+      - code
