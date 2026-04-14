@@ -38,7 +38,14 @@ public class StandardApplicantController implements StandardApplicantsApi {
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<StandardApplicantPage> getStandardApplicants(
-            String code, String name, Integer pageNumber, Integer pageSize, List<String> sort) {
+            String code,
+            String name,
+            String addressLine1,
+            LocalDate from,
+            LocalDate to,
+            Integer pageNumber,
+            Integer pageSize,
+            List<String> sort) {
         sort = sort == null || sort.isEmpty() ? List.of() : sort;
 
         // Map OpenAPI paging params into a Spring Pageable with default sort by name ascending
@@ -51,7 +58,8 @@ public class StandardApplicantController implements StandardApplicantsApi {
                         Sort.Direction.ASC,
                         StandardApplicantSortFieldEnum::getEntityValue);
 
-        StandardApplicantPage standardApplicantPage = service.findAll(code, name, pageable);
+        StandardApplicantPage standardApplicantPage =
+                service.findAll(code, name, addressLine1, from, to, pageable);
         return ResponseEntity.ok().body(standardApplicantPage);
     }
 
