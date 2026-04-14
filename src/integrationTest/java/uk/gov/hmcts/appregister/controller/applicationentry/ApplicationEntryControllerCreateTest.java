@@ -579,8 +579,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         Map<String, Object> errors = responseSpecCreate.jsonPath().getMap("errors");
 
         Assertions.assertEquals(
-                "size must be between 1 and 15",
-                errors.get("feeStatuses[0].paymentReference"));
+                "size must be between 1 and 15", errors.get("feeStatuses[0].paymentReference"));
     }
 
     @StabilityTest
