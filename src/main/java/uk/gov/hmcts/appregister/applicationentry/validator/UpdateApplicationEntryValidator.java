@@ -10,15 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -39,14 +39,14 @@ public class UpdateApplicationEntryValidator
     public UpdateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
-            FeeRepository feeRepository,
+            ApplicationFeeService feeService,
             Clock clock,
             StandardApplicantRepository standardApplicantRepository,
             ApplicationListEntryRepository applicationListEntryRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
-                feeRepository,
+                feeService,
                 clock,
                 standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
@@ -96,7 +96,7 @@ public class UpdateApplicationEntryValidator
     protected UpdateApplicationEntryValidationSuccess getResult(
             ApplicationCode code,
             WordingTemplateSentence wordingTemplateCollection,
-            Fee fee,
+            FeePair fee,
             StandardApplicant saCode,
             ApplicationList applicationList,
             PayloadForUpdateEntry payload) {

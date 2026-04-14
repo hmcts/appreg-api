@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
@@ -18,7 +18,7 @@ import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 public class CreateApplicationEntryValidationSuccess {
     private WordingTemplateSentence wordingSentence;
     private ApplicationCode applicationCode;
-    private Fee fee;
+    private FeePair fee;
     private StandardApplicant sa;
     private ApplicationList applicationList;
 }

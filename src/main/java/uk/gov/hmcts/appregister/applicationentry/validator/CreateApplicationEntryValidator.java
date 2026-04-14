@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.Fee;
+import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
@@ -33,13 +33,13 @@ public class CreateApplicationEntryValidator
     public CreateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
-            FeeRepository feeRepository,
+            ApplicationFeeService feeService,
             Clock clock,
             StandardApplicantRepository standardApplicantRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
-                feeRepository,
+                feeService,
                 clock,
                 standardApplicantRepository);
     }
@@ -48,7 +48,7 @@ public class CreateApplicationEntryValidator
     protected CreateApplicationEntryValidationSuccess getResult(
             ApplicationCode code,
             WordingTemplateSentence wordingTemplateCollection,
-            Fee fee,
+            FeePair fee,
             StandardApplicant saCode,
             ApplicationList applicationList,
             PayloadForCreate<EntryCreateDto> dto) {

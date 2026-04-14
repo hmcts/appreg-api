@@ -28,28 +28,20 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     public FeePair resolveFeePair(String feeReference) {
         List<Fee> fee =
                 feeRepository.findByReferenceBetweenDate(feeReference, LocalDate.now(clock));
-        return resolveFeePair(fee);
+        return resolveFeePair(fee.stream().findFirst(), getOffsiteFee(LocalDate.now(clock)));
     }
 
     @SuppressWarnings("java:S1135")
-    private FeePair resolveFeePair(List<Fee> feesForRef) {
-        List<Fee> main = feesForRef.stream().filter(r -> !r.isOffsite()).toList();
-        List<Fee> offsite = feesForRef.stream().filter(Fee::isOffsite).toList();
-
+    private FeePair resolveFeePair(Optional<Fee> feesForRef, Optional<Fee> offsiteFee) {
         // if we do not have a main but have an offset then error
-        if (main.isEmpty() && !offsite.isEmpty()) {
+        if (feesForRef.isEmpty() && !offsiteFee.isEmpty()) {
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 
-        // if we have more than one main or offset then we have an issue
-        if (main.size() > 1 || offsite.size() > 1) {
-            log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
-        }
+        return new FeePair(feesForRef.orElse(null), offsiteFee.orElse(null));
+    }
 
-        // Is this good enough when multiple mains and offsite exists?
-        Optional<Fee> mainFee = main.stream().max(FEE_ID_COMPARATOR);
-        Optional<Fee> offsiteFee = offsite.stream().max(FEE_ID_COMPARATOR);
-
-        return new FeePair(mainFee.orElse(null), offsiteFee.orElse(null));
+    private Optional<Fee> getOffsiteFee(LocalDate date) {
+        return feeRepository.findOffsite(date).stream().findFirst();
     }
 }
