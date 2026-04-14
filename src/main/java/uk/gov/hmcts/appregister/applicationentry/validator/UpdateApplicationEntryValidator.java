@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +20,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -40,14 +40,14 @@ public class UpdateApplicationEntryValidator
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
             ApplicationFeeService feeService,
-            Clock clock,
+            BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository,
             ApplicationListEntryRepository applicationListEntryRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
                 feeService,
-                clock,
+                businessDateProvider,
                 standardApplicantRepository);
         this.applicationListEntryRepository = applicationListEntryRepository;
     }

@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +14,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -34,13 +34,13 @@ public class CreateApplicationEntryValidator
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
             ApplicationFeeService feeService,
-            Clock clock,
+            BusinessDateProvider businessDateProvider,
             StandardApplicantRepository standardApplicantRepository) {
         super(
                 applicationListRepository,
                 applicationCodeRepository,
                 feeService,
-                clock,
+                businessDateProvider,
                 standardApplicantRepository);
     }
 
@@ -108,8 +108,6 @@ public class CreateApplicationEntryValidator
 
     @Override
     protected LocalDate getLodgementDate(PayloadForCreate<EntryCreateDto> validatable) {
-        return validatable.getData().getLodgementDate() == null
-                ? LocalDate.now()
-                : validatable.getData().getLodgementDate();
+        return validatable.getData().getLodgementDate();
     }
 }

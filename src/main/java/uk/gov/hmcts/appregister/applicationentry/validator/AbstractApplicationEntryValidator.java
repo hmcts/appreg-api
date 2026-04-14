@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -23,7 +22,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -35,7 +36,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationCodeRepository applicationCodeRepository;
     private final ApplicationFeeService feeService;
-    private final Clock clock;
+    private final BusinessDateProvider businessDateProvider;
     private final StandardApplicantRepository standardApplicantRepository;
 
     private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
@@ -161,20 +162,14 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      */
     private StandardApplicant validateStandardApplicantCode(T validatable) {
         String standardApplicantCode = getStandardApplicantCode(validatable);
+        LocalDate todayUk = currentBusinessDate();
 
         // validate the standard applicant code if provided
         List<StandardApplicant> saCode;
         if (standardApplicantCode != null) {
             saCode =
                     standardApplicantRepository.findStandardApplicantByCodeAndDate(
-                            standardApplicantCode, LocalDate.now(clock));
-
-            if (saCode.size() > 1) {
-                throw new AppRegistryException(
-                        AppListEntryError.MULTIPLE_STANDARD_APPLICANT_EXIST,
-                        "Multiple standard applicant codes exist for %s"
-                                .formatted(standardApplicantCode));
-            }
+                            standardApplicantCode, todayUk);
 
             if (saCode.isEmpty()) {
                 // throw exception we expect a valid standard applicant code
@@ -186,7 +181,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
             log.debug("Validated standard applicant {}", standardApplicantCode);
 
-            return saCode.getFirst();
+            return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                    saCode,
+                    "standard applicant",
+                    standardApplicantCode,
+                    todayUk,
+                    StandardApplicant::getApplicantEndDate);
         }
 
         return null;
@@ -333,6 +333,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      *     failure
      */
     private ApplicationCode validateApplicationCode(T validatable) {
+        LocalDate todayUk = currentBusinessDate();
         if (getApplicationCode(validatable) != null
                 && ApplicationCodeTypeEnum.isMatching(
                         ApplicationCodeTypeEnum.ENFORCEMENT_FINES,
@@ -350,14 +351,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         // validate that the application code exists and is valid for today
         List<ApplicationCode> code =
                 applicationCodeRepository.findByCodeAndDate(
-                        getApplicationCode(validatable), LocalDate.now(clock));
-
-        if (code.size() > 1) {
-            throw new AppRegistryException(
-                    AppListEntryError.MULTIPLE_APPLICATION_CODE_EXIST,
-                    "Multiple application codes exist for %s"
-                            .formatted(getApplicationCode(validatable)));
-        }
+                        getApplicationCode(validatable), todayUk);
 
         if (code.size() == 0) {
             throw new AppRegistryException(
@@ -366,7 +360,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         log.debug("Validated the application code {}", getApplicationCode(validatable));
-        return code.getFirst();
+        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
+                code,
+                "application code",
+                getApplicationCode(validatable),
+                todayUk,
+                ApplicationCode::getEndDate);
     }
 
     /**
@@ -405,12 +404,30 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            FeePair fees = feeService.resolveFeePair(applicationCode.getFeeReference());
+            feeToReturn = feeService.resolveFeePair(applicationCode.getFeeReference());
+            boolean wantsOffsiteFee = Boolean.TRUE.equals(getHasOffsiteFee(validatable));
 
-            feeToReturn = fees;
+            if ((!wantsOffsiteFee && (feeToReturn == null || feeToReturn.mainFee() == null))
+                    || (wantsOffsiteFee
+                            && (feeToReturn == null || feeToReturn.offsiteFee() == null))) {
+                throw new AppRegistryException(
+                        AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
+                        "Fee offsite does not exist for code %s"
+                                .formatted(applicationCode.getCode()));
+            }
+
+            log.debug(
+                    "Validated the fee {}",
+                    wantsOffsiteFee
+                            ? feeToReturn.offsiteFee().getId()
+                            : feeToReturn.mainFee().getId());
         }
 
         return feeToReturn;
+    }
+
+    private LocalDate currentBusinessDate() {
+        return businessDateProvider.currentUkDate();
     }
 
     /** Validates that when payment status is DUE, no payment reference is provided. */
@@ -517,7 +534,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     private void validateLodgementDate(T validatable) {
         LocalDate lodgementDate = getLodgementDate(validatable);
-        if (lodgementDate != null && lodgementDate.isAfter(LocalDate.now(clock))) {
+        if (lodgementDate != null && lodgementDate.isAfter(currentBusinessDate())) {
             throw new AppRegistryException(
                     AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE,
                     "Lodgement date cannot be after today's date");

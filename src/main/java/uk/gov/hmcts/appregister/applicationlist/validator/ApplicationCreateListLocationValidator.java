@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -23,8 +24,13 @@ public class ApplicationCreateListLocationValidator
     public ApplicationCreateListLocationValidator(
             ApplicationListRepository applicationListRepository,
             NationalCourtHouseRepository courtHouseRepository,
-            CriminalJusticeAreaRepository criminalJusticeAreaRepository) {
-        super(applicationListRepository, courtHouseRepository, criminalJusticeAreaRepository);
+            CriminalJusticeAreaRepository criminalJusticeAreaRepository,
+            BusinessDateProvider businessDateProvider) {
+        super(
+                applicationListRepository,
+                courtHouseRepository,
+                criminalJusticeAreaRepository,
+                businessDateProvider);
     }
 
     @Override

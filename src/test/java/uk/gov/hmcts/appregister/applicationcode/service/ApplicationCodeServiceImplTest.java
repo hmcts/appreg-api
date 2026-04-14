@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationcode.service;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +13,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.function.BiFunction;
-import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,8 @@ import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidationSuccess;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
@@ -89,7 +92,6 @@ public class ApplicationCodeServiceImplTest {
 
     @Test
     void findByCode() throws Exception {
-
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
         GetApplicationCodeValidationSuccess success =
@@ -103,24 +105,50 @@ public class ApplicationCodeServiceImplTest {
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
-                .thenReturn(new FeePair(dummyMain, dummyOffset));
-
         String code = "code";
 
         LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+
+        when(feeService.resolveFeePair(Mockito.notNull(), eq(localDate)))
+                .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
         ApplicationCodeGetDetailDto applicationCodeDto =
                 applicationCodeService.findByCode(payloadForGet);
 
         Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        verify(feeService).resolveFeePair(applicationCode.getFeeReference(), localDate);
         Assertions.assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyMain.getAmount()),
                 applicationCodeDto.getFeeAmount().get().getValue());
         Assertions.assertEquals(
                 CurrencyUtil.getPoundsToPennies(dummyOffset.getAmount()),
                 applicationCodeDto.getOffsiteFeeAmount().get().getValue());
+    }
+
+    @Test
+    void findByCode_auditsRequestedLookupCriteria() {
+        final String code = "code";
+        final LocalDate localDate = LocalDate.of(2025, 1, 1);
+
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+        applicationCode.setStartDate(LocalDate.of(2020, 1, 1));
+        dummyGetApplicationCodeValidator.setSuccess(
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build());
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        ApplicationCodeServiceImpl auditedService = buildServiceWithListeners(List.of(listener));
+
+        auditedService.findByCode(PayloadForGet.builder().code(code).date(localDate).build());
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        ApplicationCode audited = (ApplicationCode) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(applicationCode, audited);
+        Assertions.assertEquals(code, audited.getCode());
+        Assertions.assertEquals(localDate, audited.getStartDate());
     }
 
     @Test
@@ -138,7 +166,7 @@ public class ApplicationCodeServiceImplTest {
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.isNull()))
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         String code = "code";
@@ -177,7 +205,7 @@ public class ApplicationCodeServiceImplTest {
 
         String code = "code";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(code, null, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(code), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -189,8 +217,7 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        code, null, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(code, null, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -228,7 +255,7 @@ public class ApplicationCodeServiceImplTest {
 
         String title = "title";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(null, title, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(null), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
 
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
@@ -240,8 +267,7 @@ public class ApplicationCodeServiceImplTest {
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        null, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(null, title, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -286,14 +312,13 @@ public class ApplicationCodeServiceImplTest {
         String title = "title";
         String code = "code";
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(code, title, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(code), eq(title), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
-                applicationCodeService.findAll(
-                        code, title, PagingWrapper.of(List.of(), Pageable.ofSize(10)));
+                applicationCodeService.findAll(code, title, PagingWrapper.of(List.of(), criteria));
 
         // make assertion
         Assertions.assertEquals(applicationCodeDtoPage.getTotalElements(), 4);
@@ -329,7 +354,7 @@ public class ApplicationCodeServiceImplTest {
                         Pageable.ofSize(4).withPage(0),
                         4);
         LocalDate todayUk = LocalDate.now(fixedClock.withZone(ukZone));
-        when(repository.search(null, null, todayUk, criteria)).thenReturn(results);
+        when(repository.search(eq(null), eq(null), eq(todayUk), eq(criteria))).thenReturn(results);
 
         applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
 
@@ -342,7 +367,7 @@ public class ApplicationCodeServiceImplTest {
         // execute test
         ApplicationCodePage applicationCodeDtoPage =
                 applicationCodeService.findAll(
-                        null, null, PagingWrapper.of(List.of(), Pageable.ofSize(10).withPage(0)));
+                        null, null, PagingWrapper.of(List.of(), criteria.withPage(0)));
 
         // make assertion
         Assertions.assertEquals(4, applicationCodeDtoPage.getTotalElements());
@@ -360,7 +385,35 @@ public class ApplicationCodeServiceImplTest {
                 applicationCode4.getCode());
     }
 
-    @Setter
+    private ApplicationCodeServiceImpl buildServiceWithListeners(
+            List<AuditOperationLifecycleListener> listeners) {
+        return new ApplicationCodeServiceImpl(
+                repository,
+                applicationCodeMapper,
+                feeService,
+                new AuditOperationServiceImpl(objectMapper, listeners),
+                listeners,
+                pageMapper,
+                fixedClock,
+                ukZone,
+                dummyGetApplicationCodeValidator);
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
+    }
+
     class DummyGetApplicationCodeValidator extends GetApplicationCodeValidator {
         private GetApplicationCodeValidationSuccess success;
 
@@ -373,6 +426,10 @@ public class ApplicationCodeServiceImplTest {
                 PayloadForGet payload,
                 BiFunction<PayloadForGet, GetApplicationCodeValidationSuccess, R> getCode) {
             return getCode.apply(payload, success);
+        }
+
+        void setSuccess(GetApplicationCodeValidationSuccess success) {
+            this.success = success;
         }
     }
 }

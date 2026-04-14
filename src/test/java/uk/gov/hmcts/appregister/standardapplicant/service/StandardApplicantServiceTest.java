@@ -16,7 +16,6 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.BiFunction;
-import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -207,8 +208,57 @@ public class StandardApplicantServiceTest {
                         notNull());
     }
 
-    @Setter
+    @Test
+    void testGetByCode_auditsRequestedLookupCriteria() {
+        final String code = "APP001";
+        final LocalDate date = LocalDate.of(2025, 1, 1);
+        StandardApplicant standardApplicant = new StandardApplicant();
+        standardApplicant.setApplicantCode(code);
+        standardApplicant.setName("John Doe");
+        standardApplicant.setApplicantStartDate(LocalDate.of(2020, 1, 1));
+        validator.setSuccess(standardApplicant);
+
+        CapturingAuditListener listener = new CapturingAuditListener();
+        StandardApplicationServiceImpl localService =
+                new StandardApplicationServiceImpl(
+                        repository,
+                        standardApplicantMapper,
+                        clock,
+                        ukZone,
+                        pageMapper,
+                        validator,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new ApplicantMapperImpl());
+
+        StandardApplicantGetDetailDto actual = localService.findByCode(code, date);
+
+        Assertions.assertEquals(code, actual.getCode());
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        StandardApplicant audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
+        Assertions.assertNotSame(standardApplicant, audited);
+        Assertions.assertEquals(code, audited.getApplicantCode());
+        Assertions.assertEquals(date, audited.getApplicantStartDate());
+    }
+
+    private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
+        private CompleteEvent completeEvent;
+
+        @Override
+        public void eventPerformed(BaseAuditEvent event) {
+            if (event instanceof CompleteEvent complete) {
+                completeEvent = complete;
+            }
+        }
+
+        private CompleteEvent getCompleteEvent() {
+            return completeEvent;
+        }
+    }
+
     static class DummyStandardApplicantExistsValidator extends StandardApplicantExistsValidator {
+        private StandardApplicant success;
+
         public DummyStandardApplicantExistsValidator(StandardApplicantRepository repository) {
             super(repository);
         }
@@ -217,16 +267,21 @@ public class StandardApplicantServiceTest {
         public <R> R validate(
                 PayloadForGet saId,
                 BiFunction<PayloadForGet, StandardApplicant, R> createApplicationSupplier) {
-            return createApplicationSupplier.apply(saId, validateId());
+            return createApplicationSupplier.apply(
+                    saId, success != null ? success : defaultApplicant());
         }
 
-        private StandardApplicant validateId() {
+        private StandardApplicant defaultApplicant() {
             StandardApplicant standardApplicant = new StandardApplicant();
             standardApplicant.setApplicantCode("APP001");
             standardApplicant.setName("John Doe");
             standardApplicant.setApplicantStartDate(LocalDate.now());
             standardApplicant.setApplicantEndDate(LocalDate.now().plusDays(1));
             return standardApplicant;
+        }
+
+        void setSuccess(StandardApplicant success) {
+            this.success = success;
         }
     }
 }

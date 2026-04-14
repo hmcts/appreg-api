@@ -14,15 +14,19 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationEntryResultGetValidatorTest {
 
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
+    @Mock private ResolutionCodeRepository resolutionCodeRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationEntryResultGetValidator validator;
 

@@ -19,7 +19,6 @@ import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -75,7 +74,9 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
-                                                code, feePair.mainFee(), feePair.offsiteFee()));
+                                                code,
+                                                feePair != null ? feePair.mainFee() : null,
+                                                feePair != null ? feePair.offsiteFee() : null));
                             });
 
                     log.debug(
@@ -99,34 +100,39 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
         return auditService.processAudit(
                 null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
-                req -> {
-                    return getApplicationCodeValidator.validate(
-                            payloadForGet,
-                            (payload, success) -> {
-                                FeePair feePair =
-                                        feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference());
-                                Fee offsiteFee = feePair.offsiteFee();
+                req ->
+                        getApplicationCodeValidator.validate(
+                                payloadForGet,
+                                (payload, success) -> {
+                                    FeePair feePair =
+                                            feeService.resolveFeePair(
+                                                    success.getApplicationCode().getFeeReference(),
+                                                    payload.getDate());
 
-                                AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
-                                        result =
-                                                new AuditableResult<>(
-                                                        applicationCodeMapper
-                                                                .toApplicationCodeGetDetailDto(
-                                                                        success
-                                                                                .getApplicationCode(),
-                                                                        feePair.mainFee(),
-                                                                        offsiteFee),
-                                                        applicationCodeMapper.toEntity(
-                                                                payloadForGet));
+                                    AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
+                                            result =
+                                                    new AuditableResult<>(
+                                                            applicationCodeMapper
+                                                                    .toApplicationCodeGetDetailDto(
+                                                                            success
+                                                                                    .getApplicationCode(),
+                                                                            feePair != null
+                                                                                    ? feePair
+                                                                                            .mainFee()
+                                                                                    : null,
+                                                                            feePair != null
+                                                                                    ? feePair
+                                                                                            .offsiteFee()
+                                                                                    : null),
+                                                            applicationCodeMapper.toEntity(
+                                                                    payload));
 
-                                log.debug(
-                                        "Finish: Find Application for app code: {} date: {}",
-                                        payload.getCode(),
-                                        payload.getDate());
-                                return Optional.of(result);
-                            });
-                },
+                                    log.debug(
+                                            "Finish: Find Application for app code: {} date: {}",
+                                            payload.getCode(),
+                                            payload.getDate());
+                                    return Optional.of(result);
+                                }),
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 }

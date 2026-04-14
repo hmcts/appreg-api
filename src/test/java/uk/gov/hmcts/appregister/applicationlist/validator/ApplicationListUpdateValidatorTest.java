@@ -5,16 +5,19 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,11 +46,14 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationListUpdateValidatorTest {
+
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
@@ -57,8 +63,14 @@ public class ApplicationListUpdateValidatorTest {
     @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
     @Mock private ApplicationCodeRepository applicationCodeRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationUpdateListLocationValidator validator;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+    }
 
     private enum Field {
         COURT,
@@ -89,7 +101,7 @@ public class ApplicationListUpdateValidatorTest {
         // given
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         when(dto.getCourtLocationCode()).thenReturn("CODE1");
-        when(courtHouseRepository.findActiveCourts("CODE1")).thenReturn(List.of());
+        when(courtHouseRepository.findActiveCourts("CODE1", TODAY_UK)).thenReturn(List.of());
 
         UUID uuid = UUID.randomUUID();
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(new ApplicationList()));
@@ -102,23 +114,23 @@ public class ApplicationListUpdateValidatorTest {
     }
 
     @Test
-    void update_multipleCourtsReturnedFromRepository_throwsAppRegException() {
+    void update_multipleCourtsReturnedFromRepository_prefersFirstCourt() {
         // given
         ApplicationListUpdateDto dto = mock(ApplicationListUpdateDto.class);
         when(dto.getCourtLocationCode()).thenReturn("DUPE");
 
         NationalCourtHouse c1 = new NationalCourtHouse();
         NationalCourtHouse c2 = new NationalCourtHouse();
-        when(courtHouseRepository.findActiveCourts("DUPE")).thenReturn(List.of(c1, c2));
+        when(courtHouseRepository.findActiveCourts("DUPE", TODAY_UK)).thenReturn(List.of(c1, c2));
 
         UUID uuid = UUID.randomUUID();
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(new ApplicationList()));
         PayloadForUpdate<ApplicationListUpdateDto> payload = new PayloadForUpdate<>(dto, uuid);
 
-        // expect
-        assertThatThrownBy(() -> validator.validate(payload))
-                .isInstanceOf(AppRegistryException.class)
-                .hasMessageContaining("Multiple courts found");
+        ListLocationValidationSuccess success =
+                validator.validate(payload, (input, result) -> result);
+
+        Assertions.assertSame(c1, success.getNationalCourtHouse());
     }
 
     @Test
@@ -210,7 +222,7 @@ public class ApplicationListUpdateValidatorTest {
 
         // make sure that the national court resolves
         NationalCourtHouse court = mock(NationalCourtHouse.class);
-        when(courtHouseRepository.findActiveCourts(courtCode)).thenReturn(List.of(court));
+        when(courtHouseRepository.findActiveCourts(courtCode, TODAY_UK)).thenReturn(List.of(court));
 
         ApplicationListEntry listEntry = new ApplicationListEntry();
 
@@ -414,7 +426,7 @@ public class ApplicationListUpdateValidatorTest {
         when(repository.findByUuid(uuid)).thenReturn(Optional.of(appList));
 
         NationalCourtHouse court = mock(NationalCourtHouse.class);
-        when(courtHouseRepository.findActiveCourts(courtCode)).thenReturn(List.of(court));
+        when(courtHouseRepository.findActiveCourts(courtCode, TODAY_UK)).thenReturn(List.of(court));
 
         ApplicationListEntry listEntry = new ApplicationListEntry();
 
@@ -455,7 +467,7 @@ public class ApplicationListUpdateValidatorTest {
         @Test
         void valid_whenCourtLocationPresent_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode(), TODAY_UK))
                     .thenReturn(List.of(new NationalCourtHouse()));
 
             UUID uuid = UUID.randomUUID();
@@ -469,7 +481,7 @@ public class ApplicationListUpdateValidatorTest {
         @Test
         void valid_whenCourtLocationPresentWithCallback_only() {
             var appList = buildDto(Field.COURT);
-            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode()))
+            when(courtHouseRepository.findActiveCourts(appList.getCourtLocationCode(), TODAY_UK))
                     .thenReturn(List.of(new NationalCourtHouse()));
 
             UUID uuid = UUID.randomUUID();

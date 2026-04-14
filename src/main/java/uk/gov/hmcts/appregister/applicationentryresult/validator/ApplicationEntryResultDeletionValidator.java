@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
 /**
@@ -33,9 +34,14 @@ public class ApplicationEntryResultDeletionValidator
             ApplicationListRepository applicationListRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
             ResolutionCodeRepository resolutionCodeRepository,
+            BusinessDateProvider businessDateProvider,
             AppListEntryResolutionRepository appListEntryResultRepository) {
 
-        super(applicationListRepository, applicationListEntryRepository, resolutionCodeRepository);
+        super(
+                applicationListRepository,
+                applicationListEntryRepository,
+                resolutionCodeRepository,
+                businessDateProvider);
         this.appListEntryResultRepository = appListEntryResultRepository;
     }
 

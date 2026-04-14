@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentryresult.validator;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -31,15 +31,19 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ApplicationEntryResultCreationValidatorTest {
 
+    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private ResolutionCodeRepository resolutionCodeRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationEntryResultCreationValidator validator;
 
@@ -86,8 +90,8 @@ class ApplicationEntryResultCreationValidatorTest {
                 .thenReturn(Optional.of(list));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(entryId, listId))
                 .thenReturn(Optional.of(entry));
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        dto.getResultCode(), PageRequest.of(0, 1)))
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
     }
 
@@ -166,8 +170,7 @@ class ApplicationEntryResultCreationValidatorTest {
 
     @Test
     void validate_resolutionCodeDoesNotExist() {
-        when(resolutionCodeRepository.findPrioritisingNullEndDate(
-                        dto.getResultCode(), PageRequest.of(0, 1)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(Collections.emptyList());
 
         AppRegistryException ex =
@@ -187,8 +190,7 @@ class ApplicationEntryResultCreationValidatorTest {
         // because it's not "TYPE|REFERENCE|LENGTH" with valid LENGTH etc.
         resolutionCode.setWording("Some text {NOT_A_VALID_TEMPLATE} end.");
 
-        when(resolutionCodeRepository.findActiveByResultCodeIgnoreCase(
-                        dto.getResultCode(), PageRequest.of(0, 1)))
+        when(resolutionCodeRepository.findPrioritisingNullEndDate(dto.getResultCode(), TODAY_UK))
                 .thenReturn(List.of(resolutionCode));
 
         ListEntryResultCreateValidationSuccess success = validator.validate(payload, (v, s) -> s);

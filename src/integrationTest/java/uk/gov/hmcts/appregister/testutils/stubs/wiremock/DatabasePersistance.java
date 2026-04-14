@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -107,6 +109,12 @@ public class DatabasePersistance {
     }
 
     public NationalCourtHouse save(NationalCourtHouse data) {
+        if (data.getChangedBy() == null) {
+            data.setChangedBy(-125L);
+        }
+        if (data.getChangedDate() == null) {
+            data.setChangedDate(OffsetDateTime.now(ZoneOffset.UTC));
+        }
         return nationalCourtHouseRepository.saveAndFlush(data);
     }
 
