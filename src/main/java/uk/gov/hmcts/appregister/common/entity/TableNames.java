@@ -24,4 +24,5 @@ public class TableNames {
     public static final String APPLCATION_LISTS_ENTRY_FEE_ID = "app_list_entry_fee_id";
     public static final String APPLICATION_LIST_ENTRY_RESOLUTIONS = "app_list_entry_resolutions";
     public static final String APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING = "al_ale_sequence_mapping";
+    public static final String DATABASE_JOBS = "database_jobs";
 }
