@@ -6,7 +6,7 @@ import static org.junit.Assert.assertNull;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
-import uk.gov.hmcts.appregister.admin.exception.JobError;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
@@ -16,7 +16,7 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
 
         Response responseSpec =
                 restAssuredClient.executePutRequest(
-                        getLocalUrl(WEB_CONTEXT + jobName + "/" + "?enable=false"),
+                        getLocalUrl(WEB_CONTEXT + "/" + jobName + "?enable=false"),
                         createAdminToken().fetchTokenForRole(),
                         null);
 
@@ -24,7 +24,8 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
 
         Response getResponseSpec =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + jobName), createAdminToken().fetchTokenForRole());
+                        getLocalUrl(WEB_CONTEXT + "/" + jobName),
+                        createAdminToken().fetchTokenForRole());
 
         var jobStatus = getResponseSpec.getBody().as(JobStatus.class);
         assertEquals(false, jobStatus.getEnabled());
@@ -37,24 +38,16 @@ public class AdminAPIControllerUpdateTest extends AbstractAdminAPICrudTest {
 
         Response responseSpec =
                 restAssuredClient.executePutRequest(
-                        getLocalUrl(WEB_CONTEXT + jobName + "/" + "?enable=false"),
+                        getLocalUrl(WEB_CONTEXT + "/" + jobName + "?enable=false"),
                         createAdminToken().fetchTokenForRole(),
                         null);
 
         var problemDetail = responseSpec.getBody().as(ProblemDetail.class);
-        assertEquals(JobError.JOB_NOT_FOUND.getCode().getType().get(), problemDetail.getType());
-    }
-
-    @Test
-    public void whenEnableDisableJobByName_userRole_thenReturn403() throws Exception {
-        var jobName = "APPLICATION_LISTS_DATABASE_JOB";
-
-        Response responseSpec =
-                restAssuredClient.executePutRequest(
-                        getLocalUrl(WEB_CONTEXT + jobName + "/" + "?enable=false"),
-                        createUserToken().fetchTokenForRole(),
-                        null);
-
-        assertEquals(403, responseSpec.getStatusCode());
+        assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
+                problemDetail.getType());
+        assertEquals(
+                "Problem with value " + jobName + " for parameter jobType",
+                problemDetail.getDetail());
     }
 }

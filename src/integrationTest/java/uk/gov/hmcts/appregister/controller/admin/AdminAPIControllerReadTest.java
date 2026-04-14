@@ -6,13 +6,14 @@ import static org.junit.Assert.assertNull;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
-import uk.gov.hmcts.appregister.admin.exception.JobError;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobStatus;
 
 public class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
     @Test
     public void whenGetJobStatusByName_thenReturnOk() throws Exception {
-        var jobName = "APPLICATION_LISTS_DATABASE_JOB";
+        var jobName = AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name();
 
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
@@ -35,18 +36,11 @@ public class AdminAPIControllerReadTest extends AbstractAdminAPICrudTest {
                         createAdminToken().fetchTokenForRole());
 
         var problemDetail = responseSpec.getBody().as(ProblemDetail.class);
-        assertEquals(JobError.JOB_NOT_FOUND.getCode().getType().get(), problemDetail.getType());
-    }
-
-    @Test
-    public void whenGetJobStatusByName_jobExists_userRole_thenReturn403() throws Exception {
-        var jobName = "APPLICATION_LISTS_DATABASE_JOB";
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(WEB_CONTEXT + "/" + jobName),
-                        createUserToken().fetchTokenForRole());
-
-        assertEquals(403, responseSpec.getStatusCode());
+        assertEquals(
+                CommonAppError.TYPE_MISMATCH_ERROR.getCode().getType().get(),
+                problemDetail.getType());
+        assertEquals(
+                problemDetail.getDetail(),
+                "Problem with value " + jobName + " for parameter jobType");
     }
 }

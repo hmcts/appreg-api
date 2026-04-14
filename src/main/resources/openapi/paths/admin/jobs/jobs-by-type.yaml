@@ -34,7 +34,7 @@ put:
   description: Enables or disables a database job by its name.
   operationId: enableDisableDatabaseJobByName
   parameters:
-    - name: jobName
+    - name: jobType
       in: path
       required: true
       schema: {

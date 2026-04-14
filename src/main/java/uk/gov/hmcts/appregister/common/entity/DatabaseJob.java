@@ -3,7 +3,10 @@ package uk.gov.hmcts.appregister.common.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
@@ -25,7 +28,9 @@ import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 @Setter
 public class DatabaseJob implements Keyable {
     @Id
-    @Column(name = "dj_id", nullable = false, updatable = false, insertable = false)
+    @Column(name = "dj_id", nullable = false, updatable = false)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "dj_gen")
+    @SequenceGenerator(name = "dj_gen", sequenceName = "dj_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
     private Long id;
 
