@@ -6,17 +6,15 @@ import com.tngtech.archunit.lang.ArchCondition;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import java.lang.annotation.Annotation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * A condition to check that a class matches the preauthorize at the class or each on each public
  * method.
  */
+@Slf4j
 public class PreAuthorizeCondition extends ArchCondition<JavaClass> {
-    private static final Logger log = LoggerFactory.getLogger(PreAuthorizeCondition.class);
-
     public PreAuthorizeCondition() {
         super("preauthorize check");
     }

@@ -187,10 +187,9 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                 null,
                 AppListAuditOperation.GET_APP_LIST,
                 (req) -> {
-                    ApplicationList list = findApplicationListOrThrow(id);
                     AuditableResult<ApplicationListGetDetailDto, ApplicationList> result =
                             new AuditableResult<>(
-                                    getListDetailDto(list, pageable.getPageable()),
+                                    getListDetailDto(id, pageable.getPageable()),
                                     mapper.toEntity(id));
                     return Optional.of(result);
                 },
@@ -201,11 +200,19 @@ public class ApplicationListServiceImpl implements ApplicationListService {
      * gets the list detail without a transaction. This method should be called by a method that has
      * already established a transaction
      *
-     * @param list The application list entity
+     * @param id The uuid of the application list
      * @param pageable The paging for the entries summary
      */
-    private ApplicationListGetDetailDto getListDetailDto(ApplicationList list, Pageable pageable) {
-        UUID id = list.getUuid();
+    private ApplicationListGetDetailDto getListDetailDto(UUID id, Pageable pageable) {
+        ApplicationList list =
+                repository
+                        .findByUuid(id)
+                        .orElseThrow(
+                                () ->
+                                        new AppRegistryException(
+                                                ApplicationListError.LIST_NOT_FOUND,
+                                                "No application list found for UUID '%s'"
+                                                        .formatted(id)));
 
         // Fetch results from the repository using pagination
         Page<ApplicationListEntrySummaryProjection> dbPage =
@@ -223,16 +230,6 @@ public class ApplicationListServiceImpl implements ApplicationListService {
         Long entryCount = fetchEntryCounts(List.of(id)).getOrDefault(id, ZERO_ENTITIES);
 
         return buildGetDetailDto(list, entryCount, summaries);
-    }
-
-    private ApplicationList findApplicationListOrThrow(UUID id) {
-        return repository
-                .findByUuid(id)
-                .orElseThrow(
-                        () ->
-                                new AppRegistryException(
-                                        ApplicationListError.LIST_NOT_FOUND,
-                                        "No application list found for UUID '%s'".formatted(id)));
     }
 
     /**
@@ -307,7 +304,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                             var savedEntity = repository.save(success.getApplicationList());
                             var hydrated = refreshEntity(savedEntity);
                             ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
@@ -347,7 +344,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
 
                             // gets the summaries for the unpaged summaries.
                             ApplicationListGetDetailDto applicationListGetDetailDto =
-                                    getListDetailDto(hydrated, ENTRY_SUMMARY_SORT);
+                                    getListDetailDto(hydrated.getUuid(), ENTRY_SUMMARY_SORT);
 
                             return MatchResponse.of(
                                     mapper.toGetDetailDto(
@@ -489,7 +486,7 @@ public class ApplicationListServiceImpl implements ApplicationListService {
                     if (entryProjections.isEmpty()) {
                         var printDto = buildGetPrintDto(list, List.of());
                         AuditableResult<ApplicationListGetPrintDto, ApplicationList> result =
-                                new AuditableResult<>(printDto, mapper.toEntity(id));
+                                new AuditableResult<>(printDto, list);
 
                         return Optional.of(result);
                     }

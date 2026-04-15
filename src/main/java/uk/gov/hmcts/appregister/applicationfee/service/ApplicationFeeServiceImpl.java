@@ -1,7 +1,10 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,8 +12,6 @@ import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeC
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 
 /**
  * Service to handle application fee operations.
@@ -19,53 +20,28 @@ import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
+    private static final Comparator<Fee> FEE_ID_COMPARATOR = Comparator.comparing(Fee::getId);
     private final FeeRepository feeRepository;
-    private final BusinessDateProvider businessDateProvider;
+    private final Clock clock;
 
-    @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
-        return resolveFeePair(feeReference, businessDateProvider.currentUkDate());
+        List<Fee> fee =
+                feeRepository.findByReferenceBetweenDate(feeReference, LocalDate.now(clock));
+        return resolveFeePair(fee.stream().findFirst(), getOffsiteFee(LocalDate.now(clock)));
     }
 
-    @Override
     @SuppressWarnings("java:S1135")
-    public FeePair resolveFeePair(String feeReference, LocalDate asOfDate) {
-        LocalDate effectiveDate =
-                asOfDate != null ? asOfDate : businessDateProvider.currentUkDate();
-        List<Fee> feesForRef =
-                feeRepository.findByReferenceBetweenDate(feeReference, effectiveDate);
-        List<Fee> main = feesForRef.stream().filter(fee -> !fee.isOffsite()).toList();
-        List<Fee> offsite = feesForRef.stream().filter(Fee::isOffsite).toList();
-
-        if (main.isEmpty() && !offsite.isEmpty()) {
+    private FeePair resolveFeePair(Optional<Fee> feesForRef, Optional<Fee> offsiteFee) {
+        // if we do not have a main but have an offset then error
+        if (feesForRef.isEmpty() && !offsiteFee.isEmpty()) {
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 
-        if (main.size() > 1 || offsite.size() > 1) {
-            log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
-        }
+        return new FeePair(feesForRef.orElse(null), offsiteFee.orElse(null));
+    }
 
-        Fee mainFee =
-                main.isEmpty()
-                        ? null
-                        : ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                                main,
-                                "fee",
-                                feeReference + " (offsite=false)",
-                                effectiveDate,
-                                Fee::getEndDate);
-
-        Fee offsiteFee =
-                offsite.isEmpty()
-                        ? null
-                        : ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                                offsite,
-                                "fee",
-                                feeReference + " (offsite=true)",
-                                effectiveDate,
-                                Fee::getEndDate);
-
-        return new FeePair(mainFee, offsiteFee);
+    private Optional<Fee> getOffsiteFee(LocalDate date) {
+        return feeRepository.findOffsite(date).stream().findFirst();
     }
 }

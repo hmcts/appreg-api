@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.health;
 
 import io.restassured.response.Response;
-import io.restassured.specification.RequestSpecification;
 import java.util.function.UnaryOperator;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -37,9 +36,7 @@ public class FunctionalHealthCheckTest extends BasePostgresIntegrationTest {
     public void healthCheck() throws Exception {
         Response response =
                 restAssuredClient.executeGetRequest(
-                        getLocalUrl("health"),
-                        null,
-                        UnaryOperator.<RequestSpecification>identity());
+                        getLocalUrl("health"), null, (UnaryOperator) null);
         Assertions.assertEquals(200, response.getStatusCode());
     }
 }

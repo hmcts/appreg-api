@@ -7,12 +7,10 @@ import static org.mockito.Mockito.when;
 
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,21 +22,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.http.ProblemDetail;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.applicationcode.api.ApplicationCodeSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
-import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
-import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
-import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
-import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
@@ -51,6 +42,7 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudTest {
@@ -84,7 +76,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -133,7 +125,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(40.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -239,7 +231,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -279,34 +271,6 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     }
 
     @Test
-    public void
-            givenOverlappingActiveApplicationCodes_whenGetApplicationCodes_thenCallerSortControlsPageOrder()
-                    throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(10),
-                        Optional.of(0),
-                        List.of("title,desc"),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        new ApplicationCodeRequestFilter(
-                                Optional.of(DUPLICATE_APPCODE_CODE), Optional.empty()),
-                        new OpenApiPageMetaData());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodePage page = responseSpec.as(ApplicationCodePage.class);
-        Assertions.assertEquals(
-                DUPLICATE_APPCODE_CODE, page.getContent().getFirst().getApplicationCode());
-        Assertions.assertEquals(
-                "Copy documents (electronic)", page.getContent().getFirst().getTitle());
-        Assertions.assertEquals("Condemnation of Unfit Food", page.getContent().get(1).getTitle());
-    }
-
-    @Test
     @StabilityTest
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithUserRoleAndMultipleFeesForMainAndOffsite_thenReturn200()
@@ -327,61 +291,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(response, applicationCodeDto);
-
-        // assert the audit log message
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODE_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
-    }
-
-    @Test
-    @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
-            throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        String id = "ACMOFF001";
-        String feeReference = "TSTMAIN01";
-        LocalDate queryDate = LocalDate.of(2025, 1, 1);
-
-        saveApplicationCodeWithFees(
-                id,
-                feeReference,
-                queryDate.minusDays(10),
-                queryDate.minusDays(20),
-                queryDate.plusDays(10));
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id,
-                                queryDate.atStartOfDay().atOffset(ZoneOffset.UTC)),
-                        tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
-
-        assertEquals(id, response.getApplicationCode());
-        assertEquals("Copy documents (electronic)", response.getTitle());
-        assertEquals(FEE_DESCRIPTION, response.getFeeDescription().get());
-        assertEquals(5000L, response.getFeeAmount().get().getValue());
-        Assertions.assertFalse(response.getOffsiteFeeAmount().isPresent());
-        assertEquals(JsonNullable.of(feeReference), response.getFeeReference());
 
         // assert the audit log message
         assertTrue(
@@ -404,7 +316,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     public void
             givenValidRequest_whenGetApplicationCodesForCodeWithOffsiteFeeButNoMain_thenReturn200()
                     throws Exception {
-        // The GET-by-code endpoint resolves fees using the request date, not the mocked clock.
+        // a date that is within range for the offset but out of range for the main fee
         when(clock.instant()).thenReturn(Instant.parse(CURRENT_TIME));
         when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
@@ -415,7 +327,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Response responseSpec =
                 restAssuredClient.executeGetRequest(
                         getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse("2021-07-25T00:00Z")),
+                                WEB_CONTEXT + "/" + id, OffsetDateTime.parse(DATE_TO_FIND_CODE)),
                         tokenGenerator.fetchTokenForRole());
 
         responseSpec.then().statusCode(200);
@@ -425,7 +337,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(40.0));
+                        Optional.empty(), Optional.empty(), Optional.of(70.0));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -540,7 +452,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("CO1.1", firstEntry.getFeeReference().get());
         assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
         assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(4000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(3000L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);
@@ -556,7 +468,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         Assertions.assertFalse(secondEntry.getFeeReference().isPresent());
         Assertions.assertFalse(secondEntry.getFeeDescription().isPresent());
         Assertions.assertFalse(secondEntry.getFeeAmount().isPresent());
-        Assertions.assertFalse(secondEntry.getOffsiteFeeAmount().isPresent());
+        Assertions.assertTrue(secondEntry.getOffsiteFeeAmount().isPresent());
     }
 
     @Test
@@ -582,13 +494,13 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
         Assertions.assertEquals(
-                15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+                3000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
         Assertions.assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
     }
 
     @Test
     public void
-            givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsAbsentWithNullOffsiteFeeRef_returns200()
+            givenValidRequest_whenGetAppCodeByCodeAndDate_ensureOffsiteFeeIsPresentWithNullOffsiteFeeRef_returns200()
                     throws Exception {
         // create the token to send
         TokenGenerator tokenGenerator =
@@ -607,9 +519,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         responseSpec.then().statusCode(200);
 
         ApplicationCodeGetDetailDto detailDto = responseSpec.as(ApplicationCodeGetDetailDto.class);
-        Assertions.assertFalse(
+        assertTrue(
                 detailDto.getOffsiteFeeAmount().isPresent(),
-                "Offsite fee amount should be absent when no offsite fee exists");
+                "Offsite fee amount should be present for all records");
     }
 
     @Test
@@ -1110,7 +1022,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
     @Test
     public void
-            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturnPreferredActiveRecord()
+            givenValidRequest_whenGetApplicationCodesReturnsMultipleRecords_thenReturn200WithFirstRecord()
                     throws Exception {
 
         // a date that is within range for the offset but out of range for the main fee
@@ -1128,12 +1040,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                                 OffsetDateTime.parse("2016-01-01T00:00:00Z")),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
-        Assertions.assertEquals("MS99006", response.getApplicationCode());
-        Assertions.assertEquals("Condemnation of Unfit Food", response.getTitle());
-        Assertions.assertFalse(response.getEndDate().isPresent());
+        responseSpec.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                ApplicationCodeError.DUPLICATE_CODE_FOUND.getCode(), responseSpec);
     }
 
     @Test
@@ -1442,53 +1351,6 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
     private String getExpectedLog(String event, String action, OperationStatus operationStatus) {
         return "%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*\\R-p_messagestatus=%s\\R-p_messagecontent=.*"
                 .formatted(event, action, operationStatus.getStatus());
-    }
-
-    private void saveApplicationCodeWithFees(
-            String code,
-            String feeReference,
-            LocalDate applicationCodeStartDate,
-            LocalDate mainFeeStartDate,
-            LocalDate offsiteFeeStartDate)
-            throws Exception {
-        var jwt = TokenGenerator.builder().build().getJwtFromToken();
-        var auth = new JwtAuthenticationToken(jwt, List.of());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-        try {
-            Fee mainFee = new FeeTestData().someComplete();
-            mainFee.setReference(feeReference);
-            mainFee.setDescription(FEE_DESCRIPTION);
-            mainFee.setAmount(BigDecimal.valueOf(50));
-            mainFee.setOffsite(false);
-            mainFee.setStartDate(mainFeeStartDate);
-            mainFee.setEndDate(null);
-            persistance.save(mainFee);
-
-            Fee offsiteFee = new FeeTestData().someComplete();
-            offsiteFee.setReference(feeReference);
-            offsiteFee.setDescription(OFFSITE_FEE_DESCRIPTION);
-            offsiteFee.setAmount(BigDecimal.valueOf(70));
-            offsiteFee.setOffsite(true);
-            offsiteFee.setStartDate(offsiteFeeStartDate);
-            offsiteFee.setEndDate(null);
-            persistance.save(offsiteFee);
-
-            ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
-            applicationCode.setCode(code);
-            applicationCode.setTitle("Copy documents (electronic)");
-            applicationCode.setWording(
-                    "Request for copy documents on computer disc or in electronic form");
-            applicationCode.setFeeReference(feeReference);
-            applicationCode.setFeeDue(YesOrNo.YES);
-            applicationCode.setRequiresRespondent(YesOrNo.NO);
-            applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
-            applicationCode.setStartDate(applicationCodeStartDate);
-            applicationCode.setEndDate(null);
-            persistance.save(applicationCode);
-        } finally {
-            SecurityContextHolder.clearContext();
-        }
     }
 
     /**

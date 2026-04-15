@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
@@ -102,7 +103,6 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -184,7 +184,6 @@ public class ApplicationEntryServiceImplTest {
     @Mock private EntityManager entityManager;
 
     @Mock private ApplicantMapper applicantMapper;
-    @Mock private BusinessDateProvider businessDateProvider;
 
     @Mock private ApplicationFeeService feeService;
 
@@ -196,7 +195,7 @@ public class ApplicationEntryServiceImplTest {
                     applicationListRepository,
                     applicationCodeRepository,
                     feeService,
-                    businessDateProvider,
+                    clock,
                     standardApplicantRepository);
 
     @Spy
@@ -215,7 +214,7 @@ public class ApplicationEntryServiceImplTest {
                     applicationListRepository,
                     applicationCodeRepository,
                     feeService,
-                    businessDateProvider,
+                    clock,
                     standardApplicantRepository,
                     applicationListEntryRepository);
 
@@ -232,7 +231,6 @@ public class ApplicationEntryServiceImplTest {
     void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
         when(clock.getZone()).thenReturn(Clock.systemUTC().getZone());
-        when(businessDateProvider.currentUkDate()).thenReturn(LocalDate.of(2025, 10, 7));
 
         Fee fee = new FeeTestData().someComplete();
         fee.setId(-1L);
@@ -260,8 +258,7 @@ public class ApplicationEntryServiceImplTest {
                         entityManager,
                         getEntryValidator,
                         getApplicationListEntriesValidator,
-                        clock,
-                        businessDateProvider);
+                        clock);
     }
 
     @Test
@@ -290,8 +287,7 @@ public class ApplicationEntryServiceImplTest {
                         entityManager,
                         getEntryValidator,
                         getApplicationListEntriesValidator,
-                        clock,
-                        businessDateProvider);
+                        clock);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1379,19 +1375,20 @@ public class ApplicationEntryServiceImplTest {
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
+    @Setter
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 ApplicationFeeService feeService,
-                BusinessDateProvider businessDateProvider,
+                Clock clock,
                 StandardApplicantRepository standardApplicantRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeService,
-                    businessDateProvider,
+                    clock,
                     standardApplicantRepository);
         }
 
@@ -1457,14 +1454,14 @@ public class ApplicationEntryServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 ApplicationFeeService feeService,
-                BusinessDateProvider businessDateProvider,
+                Clock clock,
                 StandardApplicantRepository standardApplicantRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(
                     applicationListRepository,
                     applicationCodeRepository,
                     feeService,
-                    businessDateProvider,
+                    clock,
                     standardApplicantRepository,
                     applicationListEntryRepository);
         }
@@ -1508,16 +1505,13 @@ public class ApplicationEntryServiceImplTest {
         }
     }
 
+    @Setter
     static class DummyMoveEntriesValidator extends MoveEntriesValidator {
 
         private MoveEntriesValidationSuccess success;
 
         public DummyMoveEntriesValidator(ApplicationListRepository applicationListRepository) {
             super(applicationListRepository);
-        }
-
-        void setSuccess(MoveEntriesValidationSuccess success) {
-            this.success = success;
         }
 
         @Override

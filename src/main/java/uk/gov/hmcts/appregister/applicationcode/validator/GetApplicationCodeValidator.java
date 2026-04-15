@@ -10,7 +10,6 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 /**
@@ -42,17 +41,21 @@ public class GetApplicationCodeValidator
                     ApplicationCodeError.CODE_NOT_FOUND,
                     "No code found for code %s and date %s"
                             .formatted(validatable.getCode(), validatable.getDate()));
+        } else if (applicationCodeResults.size() > 1) {
+            log.warn(
+                    "Too many records found for code: {} and date: {}",
+                    validatable.getCode(),
+                    validatable.getDate());
+
+            throw new AppRegistryException(
+                    ApplicationCodeError.DUPLICATE_CODE_FOUND,
+                    "Duplicate code found for code %s and date %s"
+                            .formatted(validatable.getCode(), validatable.getDate()));
         }
 
         GetApplicationCodeValidationSuccess success =
                 GetApplicationCodeValidationSuccess.builder()
-                        .applicationCode(
-                                ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                                        applicationCodeResults,
-                                        "application code",
-                                        validatable.getCode(),
-                                        validatable.getDate(),
-                                        ApplicationCode::getEndDate))
+                        .applicationCode(applicationCodeResults.getFirst())
                         .build();
         return validateSuccess.apply(validatable, success);
     }

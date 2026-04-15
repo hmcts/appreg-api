@@ -8,14 +8,13 @@ import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 
 /**
  * A standard applicant id exists validator that validates if a standard applicant exists for a
- * given code and date. The validator throws an exception if no standard applicant is found and
- * otherwise selects the first deterministically ordered active row.
+ * given code and date. The validator throws an exception if no standard applicant is found or if
+ * multiple standard applicants are found.
  */
 @Component
 @RequiredArgsConstructor
@@ -54,13 +53,13 @@ public class StandardApplicantExistsValidator
                     StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND,
                     "No standard applicant found for code '%s' on date %s"
                             .formatted(code.getCode(), code.getDate()));
+        } else if (results.size() > SINGLE_RECORD) {
+            throw new AppRegistryException(
+                    StandardApplicantCodeError.DUPLICATE_RESULT_CODE_FOUND,
+                    "Multiple standard applicant found for code '%s' on date %s"
+                            .formatted(code.getCode(), code.getDate()));
         }
 
-        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                results,
-                "standard applicant",
-                code.getCode(),
-                code.getDate(),
-                StandardApplicant::getApplicantEndDate);
+        return results.getFirst();
     }
 }

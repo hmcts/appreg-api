@@ -4,7 +4,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -16,22 +18,21 @@ import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeServiceImpl
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationFeeServiceImplTest {
 
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
-
     @Mock private FeeRepository repository;
 
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private Clock clock;
 
     @InjectMocks private ApplicationFeeServiceImpl applicationFeeService;
 
     @Test
     public void testMainAndOffsiteFee() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         Fee feeMain = new Fee();
         feeMain.setId(1L);
@@ -43,7 +44,9 @@ public class ApplicationFeeServiceImplTest {
 
         String ref = "ref";
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeOffsite));
+                .thenReturn(List.of(feeMain));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -55,7 +58,8 @@ public class ApplicationFeeServiceImplTest {
 
     @Test
     public void testMainAndNoOffsiteFee() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         Fee feeMain = new Fee();
         feeMain.setId(1L);
@@ -75,15 +79,15 @@ public class ApplicationFeeServiceImplTest {
 
     @Test
     public void testOffsiteFeeAndNoMainFee() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         Fee feeOffsite = new Fee();
         feeOffsite.setId(1L);
         feeOffsite.setOffsite(true);
 
         String ref = "ref";
-        when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeOffsite));
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -95,7 +99,8 @@ public class ApplicationFeeServiceImplTest {
 
     @Test
     public void testNoOffsiteFeeAndNoMainFee() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         String ref = "ref";
         when(repository.findByReferenceBetweenDate(eq(ref), notNull())).thenReturn(List.of());
@@ -110,7 +115,8 @@ public class ApplicationFeeServiceImplTest {
 
     @Test
     public void testMultipleOffsiteFeeAndMainFee() {
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(clock.instant()).thenReturn(Instant.now());
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
 
         // generate multiple main and offsite fees
         Fee feeMain = new Fee();
@@ -132,7 +138,9 @@ public class ApplicationFeeServiceImplTest {
         String ref = "ref";
 
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeMain2, feeOffsite, feeOffsite2));
+                .thenReturn(List.of(feeMain, feeMain2));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite, feeOffsite2));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -140,29 +148,5 @@ public class ApplicationFeeServiceImplTest {
         // assert
         Assertions.assertEquals(feeMain, feePair.mainFee());
         Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
-    }
-
-    @Test
-    public void testResolveFeePairUsesProvidedAsOfDate() {
-        LocalDate asOfDate = LocalDate.of(2025, 12, 1);
-        String ref = "ref";
-
-        when(repository.findByReferenceBetweenDate(eq(ref), eq(asOfDate))).thenReturn(List.of());
-
-        applicationFeeService.resolveFeePair(ref, asOfDate);
-
-        org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, asOfDate);
-    }
-
-    @Test
-    public void testResolveFeePairNullDateFallsBackToBusinessDate() {
-        String ref = "ref";
-
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(repository.findByReferenceBetweenDate(eq(ref), eq(TODAY_UK))).thenReturn(List.of());
-
-        applicationFeeService.resolveFeePair(ref, null);
-
-        org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, TODAY_UK);
     }
 }

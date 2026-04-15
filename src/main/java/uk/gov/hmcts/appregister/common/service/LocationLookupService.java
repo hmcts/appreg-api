@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.common.service;
 
-import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,16 +9,15 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
 import uk.gov.hmcts.appregister.criminaljusticearea.exception.CriminalJusticeAreaError;
 
 /**
  * Centralised lookups for Courts and Criminal Justice Areas.
  *
- * <p>Guarantees a deterministic match or throws a domain-specific {@link AppRegistryException}.
- * Where multiple active court rows exist, open-ended rows are already ordered first in the
- * repository and the first row is selected with a data-quality warning.
+ * <p>Guarantees a single match or throws a domain-specific {@link AppRegistryException}. Normalises
+ * input (trimming) and provides Optional-based finders for callers that want to handle absence
+ * themselves.
  *
  * <p>Place in: uk.gov.hmcts.appregister.location.service
  */
@@ -32,20 +30,22 @@ public class LocationLookupService {
 
     private final NationalCourtHouseRepository courtHouseRepository;
     private final CriminalJusticeAreaRepository cjaRepository;
-    private final BusinessDateProvider businessDateProvider;
 
-    /** Returns the deterministically selected active court for the given code. */
+    /** Returns the single active court for the given code, or throws a domain exception. */
     public NationalCourtHouse getActiveCourtOrThrow(String code) {
-        LocalDate todayUk = businessDateProvider.currentUkDate();
-        List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(code, todayUk);
+        List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(code);
 
         if (courts.isEmpty()) {
             throw new AppRegistryException(
                     CourtLocationError.COURT_NOT_FOUND,
                     "No court found for code '%s'".formatted(code));
         }
-        return ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                courts, "court location", code, todayUk, NationalCourtHouse::getEndDate);
+        if (courts.size() > SINGLE_RECORD) {
+            throw new AppRegistryException(
+                    CourtLocationError.DUPLICATE_COURT_FOUND,
+                    "Multiple courts found for code '%s'".formatted(code));
+        }
+        return courts.getFirst();
     }
 
     /** Returns the single CJA for the given code, or throws a domain exception. */

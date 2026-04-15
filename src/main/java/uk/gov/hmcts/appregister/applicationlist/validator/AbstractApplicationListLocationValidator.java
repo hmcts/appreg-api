@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationlist.validator;
 
 import static uk.gov.hmcts.appregister.generated.model.ApplicationListStatus.CLOSED;
 
-import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -16,8 +15,6 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -84,7 +81,6 @@ public abstract class AbstractApplicationListLocationValidator<
     protected final NationalCourtHouseRepository courtHouseRepository;
 
     protected final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
-    protected final BusinessDateProvider businessDateProvider;
     protected static final int SINGLE_RECORD = 1;
 
     /**
@@ -212,24 +208,20 @@ public abstract class AbstractApplicationListLocationValidator<
      * @param dto The dto type top validate
      */
     private void validateCourt(T dto, O createApplication) {
-        LocalDate todayUk = businessDateProvider.currentUkDate();
         var courtCode = getCourtLocation().apply(dto).trim();
-        final List<NationalCourtHouse> courts =
-                courtHouseRepository.findActiveCourts(courtCode, todayUk);
+        final List<NationalCourtHouse> courts = courtHouseRepository.findActiveCourts(courtCode);
 
         if (courts.isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.COURT_NOT_FOUND,
                     "No court found for code '%s'".formatted(courtCode));
+        } else if (courts.size() > SINGLE_RECORD) {
+            throw new AppRegistryException(
+                    ApplicationListError.DUPLICATE_COURT_FOUND,
+                    "Multiple courts found for code '%s'".formatted(courtCode));
         }
 
-        createApplication.setNationalCourtHouse(
-                ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                        courts,
-                        "court location",
-                        courtCode,
-                        todayUk,
-                        NationalCourtHouse::getEndDate));
+        createApplication.setNationalCourtHouse(courts.getFirst());
     }
 
     private void validateStatus(T dto) {

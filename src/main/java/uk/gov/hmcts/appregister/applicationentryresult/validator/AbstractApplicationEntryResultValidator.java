@@ -1,12 +1,12 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -15,9 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
-import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 @Slf4j
@@ -26,7 +24,6 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final ResolutionCodeRepository resolutionCodeRepository;
-    private final BusinessDateProvider businessDateProvider;
 
     public void validate(T validatable) {
         validate(validatable, null);
@@ -51,17 +48,16 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
         ResolutionCode code = null;
         WordingTemplateSentence wordingTemplateCollection = null;
         if (resultCode != null) {
-            LocalDate todayUk = businessDateProvider.currentUkDate();
             List<ResolutionCode> list =
-                    resolutionCodeRepository.findPrioritisingNullEndDate(resultCode, todayUk);
-            if (list.isEmpty()) {
+                    resolutionCodeRepository.findPrioritisingNullEndDate(
+                            resultCode, PageRequest.of(0, 1));
+            Optional<ResolutionCode> maybe = list.stream().findFirst();
+            if (maybe.isEmpty()) {
                 throw new AppRegistryException(
                         ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST,
                         "No valid resolution code could be found %s".formatted(resultCode));
             }
-            code =
-                    ReferenceDataSelectionUtil.selectFirstOrderedActiveRecord(
-                            list, "result code", resultCode, todayUk, ResolutionCode::getEndDate);
+            code = maybe.get();
             wordingTemplateCollection = WordingTemplateSentence.with(code.getWording());
             log.debug("Validated the result code {}", resultCode);
         } else {

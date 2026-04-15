@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.api;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 /**
  * Defines the API sort field names exposed by the Application Code endpoint and the associated
@@ -9,6 +10,7 @@ import java.util.Map;
  *
  * <p>These constants represent the property names that clients/backend can use in sorting
  */
+@Getter
 public enum TestSortableOperationEnum implements SortableOperationEnum {
     TEST_NO_TIE_BREAKER("test1Api", null, "test1Entity"),
     TEST2_NO_TIE_BREAKER("test2Api", null, "test2Entity"),
@@ -33,22 +35,7 @@ public enum TestSortableOperationEnum implements SortableOperationEnum {
         }
     }
 
-    @Override
-    public String getApiValue() {
-        return apiValue;
-    }
-
-    @Override
-    public String[] getEntityValue() {
-        return entityValue;
-    }
-
     public static SortableOperationEnum getEntityValue(String apiValue) {
         return MAPPINGS.get(apiValue);
-    }
-
-    @Override
-    public String getTieBreaker() {
-        return tieBreaker;
     }
 }

@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 
 import io.restassured.response.Response;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -249,48 +248,6 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         Assertions.assertEquals(
                 "123451234512345",
                 createdDto.getDetailDto().getFeeStatuses().getFirst().getPaymentReference());
-    }
-
-    @Test
-    public void
-            givenOverlappingActiveApplicationCodesAndFees_whenCreateListEntry_thenPreferNullEndDateRecords()
-                    throws Exception {
-        LocalDate today = LocalDate.now();
-        String applicationCodeValue = "ZZ90001";
-        String feeReference = "ZZ1.1";
-
-        saveActiveApplicationCode(
-                applicationCodeValue,
-                feeReference,
-                today.plusDays(30),
-                "Fallback overlapping application code");
-        final var preferredCode =
-                saveActiveApplicationCode(
-                        applicationCodeValue, feeReference, null, "Preferred application code");
-
-        saveActiveFee(
-                feeReference,
-                "Fallback overlapping fee",
-                BigDecimal.valueOf(222),
-                false,
-                today.plusDays(30));
-        final var preferredFee =
-                saveActiveFee(feeReference, "Preferred fee", BigDecimal.valueOf(111), false, null);
-
-        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryCreateDto.setApplicationCode(applicationCodeValue);
-        entryCreateDto.setHasOffsiteFee(false);
-
-        SuccessCreateEntryResponse createdDto =
-                createEntryWithUniqueSurname(
-                        createAdminToken(), entryCreateDto, UUID.randomUUID().toString());
-
-        Assertions.assertEquals(
-                preferredCode.getId(),
-                getSelectedApplicationCodeId(createdDto.getDetailDto().getId()));
-        Assertions.assertEquals(
-                preferredFee.getId(),
-                getSelectedFees(createdDto.getDetailDto().getId()).getFirst().getId());
     }
 
     @Test

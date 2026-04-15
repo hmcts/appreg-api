@@ -25,7 +25,6 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
@@ -54,16 +53,11 @@ public class ApplicationUpdateListLocationValidator
             ApplicationListRepository applicationListRepository,
             NationalCourtHouseRepository courtHouseRepository,
             CriminalJusticeAreaRepository criminalJusticeAreaRepository,
-            BusinessDateProvider businessDateProvider,
             AppListEntryResolutionRepository appListEntryResolutionRepository,
             AppListEntryOfficialRepository appListEntryOfficialRepository,
             ApplicationListEntryRepository applicationListEntryRepository,
             AppListEntryFeeStatusRepository appListEntryFeeStatusRepository) {
-        super(
-                applicationListRepository,
-                courtHouseRepository,
-                criminalJusticeAreaRepository,
-                businessDateProvider);
+        super(applicationListRepository, courtHouseRepository, criminalJusticeAreaRepository);
         this.appListEntryResolutionRepository = appListEntryResolutionRepository;
         this.appListEntryOfficialRepository = appListEntryOfficialRepository;
         this.applicationListEntryRepository = applicationListEntryRepository;

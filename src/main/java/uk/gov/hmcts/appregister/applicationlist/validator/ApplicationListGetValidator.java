@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 
@@ -25,13 +24,8 @@ public class ApplicationListGetValidator
     public ApplicationListGetValidator(
             ApplicationListRepository applicationListRepository,
             NationalCourtHouseRepository courtHouseRepository,
-            CriminalJusticeAreaRepository criminalJusticeAreaRepository,
-            BusinessDateProvider businessDateProvider) {
-        super(
-                applicationListRepository,
-                courtHouseRepository,
-                criminalJusticeAreaRepository,
-                businessDateProvider);
+            CriminalJusticeAreaRepository criminalJusticeAreaRepository) {
+        super(applicationListRepository, courtHouseRepository, criminalJusticeAreaRepository);
     }
 
     @Override

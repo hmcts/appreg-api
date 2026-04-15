@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.Setter;
 import org.instancio.Instancio;
 import org.instancio.settings.Keys;
 import org.instancio.settings.Settings;
@@ -63,7 +64,6 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWithResultCodeProjection;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
@@ -83,7 +83,6 @@ public class ApplicationEntryResultServiceImplTest {
     @Mock private ApplicationListEntryResultEntityMapper applicationListEntryResultEntityMapper;
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
-    @Mock private BusinessDateProvider businessDateProvider;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -91,7 +90,6 @@ public class ApplicationEntryResultServiceImplTest {
                     applicationListRepository,
                     applicationListEntryRepository,
                     resolutionCodeRepository,
-                    businessDateProvider,
                     appListEntryResolutionRepository);
 
     @Spy
@@ -99,8 +97,7 @@ public class ApplicationEntryResultServiceImplTest {
             new DummyApplicationEntryResultCreationValidator(
                     applicationListRepository,
                     applicationListEntryRepository,
-                    resolutionCodeRepository,
-                    businessDateProvider);
+                    resolutionCodeRepository);
 
     @Spy
     private DummyApplicationEntryResultUpdateValidator updateValidator =
@@ -108,7 +105,6 @@ public class ApplicationEntryResultServiceImplTest {
                     applicationListRepository,
                     applicationListEntryRepository,
                     resolutionCodeRepository,
-                    businessDateProvider,
                     appListEntryResolutionRepository);
 
     @Spy
@@ -116,8 +112,7 @@ public class ApplicationEntryResultServiceImplTest {
             new DummyApplicationEntryResultGetValidator(
                     applicationListRepository,
                     applicationListEntryRepository,
-                    resolutionCodeRepository,
-                    businessDateProvider);
+                    resolutionCodeRepository);
 
     @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
@@ -193,7 +188,7 @@ public class ApplicationEntryResultServiceImplTest {
                 .thenReturn(entryToSave);
 
         PayloadForCreateEntryResult<ResultCreateDto> payload =
-                new PayloadForCreateEntryResult<>(
+                new PayloadForCreateEntryResult(
                         UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
 
         when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
@@ -298,6 +293,7 @@ public class ApplicationEntryResultServiceImplTest {
         Assertions.assertEquals("testSort", resultPage.getSort().getOrders().get(0).getProperty());
     }
 
+    @Setter
     static class DummyApplicationEntryResultDeletionValidator
             extends ApplicationEntryResultDeletionValidator {
         private ListEntryResultDeleteValidationSuccess success;
@@ -306,13 +302,11 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository) {
             super(
                     applicationListRepository,
                     applicationListEntryRepository,
                     resolutionCodeRepository,
-                    businessDateProvider,
                     appListEntryResolutionRepository);
         }
 
@@ -324,12 +318,9 @@ public class ApplicationEntryResultServiceImplTest {
 
             return deleteSupplier.apply(args, success);
         }
-
-        void setSuccess(ListEntryResultDeleteValidationSuccess success) {
-            this.success = success;
-        }
     }
 
+    @Setter
     static class DummyApplicationEntryResultCreationValidator
             extends ApplicationEntryResultCreationValidator {
 
@@ -338,14 +329,12 @@ public class ApplicationEntryResultServiceImplTest {
         public DummyApplicationEntryResultCreationValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
-                ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider) {
+                ResolutionCodeRepository resolutionCodeRepository) {
 
             super(
                     applicationListRepository,
                     applicationListEntryRepository,
-                    resolutionCodeRepository,
-                    businessDateProvider);
+                    resolutionCodeRepository);
         }
 
         @Override
@@ -359,12 +348,9 @@ public class ApplicationEntryResultServiceImplTest {
 
             return validateSuccess.apply(validatable, success);
         }
-
-        void setSuccess(ListEntryResultCreateValidationSuccess success) {
-            this.success = success;
-        }
     }
 
+    @Setter
     static class DummyApplicationEntryResultUpdateValidator
             extends ApplicationEntryResultUpdateValidator {
 
@@ -374,13 +360,11 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository) {
             super(
                     applicationListRepository,
                     applicationListEntryRepository,
                     resolutionCodeRepository,
-                    businessDateProvider,
                     appListEntryResolutionRepository);
         }
 
@@ -390,10 +374,6 @@ public class ApplicationEntryResultServiceImplTest {
                 BiFunction<PayloadForUpdateEntryResult, ListEntryResultUpdateValidationSuccess, R>
                         validateSuccess) {
             return validateSuccess.apply(validatable, success);
-        }
-
-        void setSuccess(ListEntryResultUpdateValidationSuccess success) {
-            this.success = success;
         }
     }
 
@@ -440,6 +420,7 @@ public class ApplicationEntryResultServiceImplTest {
         }
     }
 
+    @Setter
     static class DummyApplicationEntryResultGetValidator
             extends ApplicationEntryResultGetValidator {
 
@@ -448,14 +429,12 @@ public class ApplicationEntryResultServiceImplTest {
         public DummyApplicationEntryResultGetValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
-                ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider) {
+                ResolutionCodeRepository resolutionCodeRepository) {
 
             super(
                     applicationListRepository,
                     applicationListEntryRepository,
-                    resolutionCodeRepository,
-                    businessDateProvider);
+                    resolutionCodeRepository);
         }
 
         @Override
@@ -465,10 +444,6 @@ public class ApplicationEntryResultServiceImplTest {
                         validateSuccess) {
 
             return validateSuccess.apply(validatable, success);
-        }
-
-        void setSuccess(ListEntryResultGetValidationSuccess success) {
-            this.success = success;
         }
     }
 }

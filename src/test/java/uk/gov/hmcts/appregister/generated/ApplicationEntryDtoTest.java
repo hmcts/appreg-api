@@ -6,7 +6,6 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,9 +84,7 @@ public class ApplicationEntryDtoTest {
         List<ConstraintViolation<Object>> listConstraint = constraintValidator.stream().toList();
 
         // assert
-        Assertions.assertTrue(
-                constraintValidator.size() >= 5,
-                "Expected at least the five blank-string validation errors");
+        Assertions.assertEquals(5, constraintValidator.size());
 
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "accountNumber", "size must be between 1 and 20");
@@ -99,13 +96,5 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "caseReference", "size must be between 1 and 15");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "applicationCode", "size must be between 1 and 10");
-
-        if (listConstraint.stream()
-                .map(violation -> violation.getPropertyPath().toString())
-                .collect(Collectors.toSet())
-                .contains("lodgementDate")) {
-            ConstraintAssertion.assertPropertyValue(
-                    listConstraint, "lodgementDate", "must not be null");
-        }
     }
 }
