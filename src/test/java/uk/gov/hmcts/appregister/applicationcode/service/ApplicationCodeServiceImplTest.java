@@ -105,7 +105,7 @@ public class ApplicationCodeServiceImplTest {
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.notNull()))
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         String code = "code";
@@ -132,7 +132,7 @@ public class ApplicationCodeServiceImplTest {
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.notNull()))
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
@@ -173,7 +173,7 @@ public class ApplicationCodeServiceImplTest {
         Fee dummyMain = new FeeTestData().someComplete();
         Fee dummyOffset = new FeeTestData().someComplete();
 
-        when(feeService.resolveFeePair(Mockito.notNull()))
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.isNull()))
                 .thenReturn(new FeePair(dummyMain, dummyOffset));
 
         String code = "code";

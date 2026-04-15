@@ -25,11 +25,14 @@ public class ApplicationFeeServiceImpl implements ApplicationFeeService {
     @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
-        List<Fee> fee =
-                feeRepository.findByReferenceBetweenDate(
-                        feeReference, businessDateProvider.currentUkDate());
-        return resolveFeePair(
-                fee.stream().findFirst(), getOffsiteFee(businessDateProvider.currentUkDate()));
+        return resolveFeePair(feeReference, businessDateProvider.currentUkDate());
+    }
+
+    @Override
+    @SuppressWarnings("java:S1135")
+    public FeePair resolveFeePair(String feeReference, LocalDate date) {
+        List<Fee> fee = feeRepository.findByReferenceBetweenDate(feeReference, date);
+        return resolveFeePair(fee.stream().findFirst(), getOffsiteFee(date));
     }
 
     @SuppressWarnings("java:S1135")
