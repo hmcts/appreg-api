@@ -153,4 +153,16 @@ public class ApplicationFeeServiceImplTest {
 
         org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, asOfDate);
     }
+
+    @Test
+    public void testResolveFeePairNullDateFallsBackToBusinessDate() {
+        String ref = "ref";
+
+        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
+        when(repository.findByReferenceBetweenDate(eq(ref), eq(TODAY_UK))).thenReturn(List.of());
+
+        applicationFeeService.resolveFeePair(ref, null);
+
+        org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, TODAY_UK);
+    }
 }
