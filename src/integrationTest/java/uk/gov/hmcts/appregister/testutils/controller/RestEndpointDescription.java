@@ -56,7 +56,9 @@ public class RestEndpointDescription {
             return response;
         } else if (method == HttpMethod.PUT) {
             if (payload == null) {
-                throw new IllegalArgumentException("Expected payload" + method);
+
+                // tolerate this as some PUTS dont have a payload
+                payload = "";
             }
 
             Response response = client.executePutRequest(url, tokenAndJwksKey, payload);

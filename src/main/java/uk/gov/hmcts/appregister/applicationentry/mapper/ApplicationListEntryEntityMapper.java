@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.mapper;
 
+import java.time.LocalDate;
 import lombok.Setter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -41,7 +42,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "rnameaddress", source = "respondent")
     @Mapping(target = "accountNumber", source = "entryCreateDto.accountNumber")
     @Mapping(target = "caseReference", source = "entryCreateDto.caseReference")
-    @Mapping(target = "lodgementDate", source = "entryCreateDto.lodgementDate")
+    @Mapping(target = "lodgementDate", expression = "java(getLodgementDate(entryCreateDto))")
     @Mapping(target = "notes", source = "entryCreateDto.notes")
     @Mapping(target = "applicationList", source = "applicationList")
     @Mapping(target = "numberOfBulkRespondents", source = "entryCreateDto.numberOfRespondents")
@@ -75,7 +76,6 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "rnameaddress", ignore = true)
     @Mapping(target = "accountNumber", source = "entryUpdateDto.accountNumber")
     @Mapping(target = "caseReference", source = "entryUpdateDto.caseReference")
-    @Mapping(target = "lodgementDate", source = "entryUpdateDto.lodgementDate")
     @Mapping(target = "notes", source = "entryUpdateDto.notes")
     @Mapping(target = "applicationList", source = "applicationList")
     @Mapping(target = "numberOfBulkRespondents", source = "entryUpdateDto.numberOfRespondents")
@@ -95,6 +95,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "changedBy", ignore = true)
     @Mapping(target = "changedDate", ignore = true)
+    @Mapping(target = "lodgementDate", ignore = true)
     public abstract void toApplicationListEntry(
             EntryUpdateDto entryUpdateDto,
             String substituteWording,
@@ -142,4 +143,18 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "id", ignore = true)
     public abstract AppListEntryOfficial toOfficial(
             Official official, ApplicationListEntry listEntryEntity);
+
+    /**
+     * gets a lodgement date from the application list entry. If the lodgement date is null then we
+     * need to return the current date.
+     *
+     * @param entryCreateDto The application list entry create dto to get the lodgement date from
+     * @return The lodgement date
+     */
+    LocalDate getLodgementDate(EntryCreateDto entryCreateDto) {
+        if (entryCreateDto.getLodgementDate() != null) {
+            return entryCreateDto.getLodgementDate();
+        }
+        return LocalDate.now();
+    }
 }

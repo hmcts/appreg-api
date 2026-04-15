@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class WordingTemplateTest {
     private static final String DATE_TEMPLATE =
@@ -15,15 +16,11 @@ public class WordingTemplateTest {
             "This is a test {TEXT|Applicant officer|10} with a date";
 
     @Test
-    void testTemplateFailParsingDataTypeIncorrect() {
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                WordingTemplateSentence.WordingTemplate.with(
-                                        "{Wrong|Applicant officer|10}"));
+    void testTemplateAllDataTypeDefaultsToText() {
+        WordingTemplateSentence.WordingTemplate template =
+                WordingTemplateSentence.WordingTemplate.with("{Unknown|Applicant officer|10}");
         Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
+                TemplateConstraint.TypeEnum.TEXT, template.getDetail().getConstraint().getType());
     }
 
     @Test

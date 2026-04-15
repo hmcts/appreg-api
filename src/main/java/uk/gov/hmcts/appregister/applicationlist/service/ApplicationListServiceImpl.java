@@ -429,6 +429,8 @@ public class ApplicationListServiceImpl implements ApplicationListService {
     public ApplicationListPage getPage(ApplicationListGetFilterDto dto, PagingWrapper pageable) {
         TimeWindow timeWindow = computeTimeWindow(dto);
 
+        log.debug("Handling application list request with sortMode={}", pageable.getSortMode());
+
         return auditService.processAudit(
                 null,
                 AppListAuditOperation.GET_APP_LIST,

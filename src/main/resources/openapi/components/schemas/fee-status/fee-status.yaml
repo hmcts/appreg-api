@@ -10,7 +10,7 @@ properties:
     type: string
     description: The reference code used to identify the payment.
     example: "PAY-001"
-    maxLength: 12
+    maxLength: 15
     minLength: 1
 
   paymentStatus:

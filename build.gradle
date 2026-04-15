@@ -28,6 +28,7 @@ tasks.register('bundleOpenApi', org.openapitools.generator.gradle.plugin.tasks.G
   outputDir = layout.buildDirectory.file("specmerge").get()
     .asFile
     .path
+  inputs.files(fileTree("src/main/resources/openapi"))
 }
 
 /**
@@ -591,6 +592,10 @@ openApiGenerate {
   importMappings = [
     LocalTime: "java.time.LocalTime"
   ]
+}
+
+tasks.named('openApiGenerate') {
+  inputs.files(fileTree("src/main/resources/openapi"))
 }
 
 // Add a new jar that will be published to maven with the classifier -openapi

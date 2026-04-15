@@ -366,12 +366,18 @@ public class RestAssuredClient {
      * @return The specification of the response
      */
     public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
-        return given().body(object)
-                .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
-                .header("traceparent", DEFAULT_TRACE_ID)
-                .put(url)
-                .andReturn();
+        return object != null
+                ? given().body(object)
+                        .header("Authorization", "Bearer " + token.getToken())
+                        .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                        .header("traceparent", DEFAULT_TRACE_ID)
+                        .put(url)
+                        .andReturn()
+                : given().header("Authorization", "Bearer " + token.getToken())
+                        .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                        .header("traceparent", DEFAULT_TRACE_ID)
+                        .put(url)
+                        .andReturn();
     }
 
     /**
