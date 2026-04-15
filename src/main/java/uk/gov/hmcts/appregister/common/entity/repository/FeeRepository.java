@@ -30,7 +30,7 @@ public interface FeeRepository extends JpaRepository<Fee, Long> {
         SELECT f
         FROM Fee f
         WHERE (LOWER(f.reference) = LOWER(:reference)) AND
-          ((f.endDate IS NULL OR  f.endDate >= :dateTime)
+          ((f.endDate IS NULL OR  f.endDate >= :dateTime) AND f.isOffsite = false
         AND f.startDate <= :dateTime)
         ORDER BY CASE WHEN f.endDate IS NULL THEN 0 ELSE 1 END,
                  f.endDate DESC,

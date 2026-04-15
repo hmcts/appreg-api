@@ -83,7 +83,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -183,7 +183,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(70.0));
+                        Optional.empty(), Optional.empty(), Optional.of(0.5));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -238,7 +238,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -326,7 +326,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -372,7 +372,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(40.0));
+                        Optional.empty(), Optional.empty(), Optional.of(0.5));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -529,7 +529,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodePage response = responseSpec.as(ApplicationCodePage.class);
         Assertions.assertEquals(
-                3000, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
+                15500, response.getContent().get(0).getOffsiteFeeAmount().get().getValue());
         Assertions.assertFalse(response.getContent().get(0).getFeeAmount().isPresent());
     }
 

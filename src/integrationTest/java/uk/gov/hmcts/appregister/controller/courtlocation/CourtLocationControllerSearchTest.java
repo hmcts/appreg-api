@@ -66,13 +66,12 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         CARDIFF_CODE,
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
-
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        CARDIFF_START.toString(),
+                        LocalDate.now().toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }
@@ -115,7 +114,7 @@ public class CourtLocationControllerSearchTest extends AbstractCourtLocationCont
                         TableNames.NATIONAL_COURT_HOUSES,
                         "start_date",
                         null,
-                        BRISTOL_START.toString(),
+                        LocalDate.now().toString(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getType().name(),
                         CourtLocationAuditOperation.GET_COURT_LOCATION_AUDIT_EVENT.getEventName()));
     }

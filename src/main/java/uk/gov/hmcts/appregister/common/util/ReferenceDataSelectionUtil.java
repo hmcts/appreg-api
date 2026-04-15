@@ -25,7 +25,6 @@ public class ReferenceDataSelectionUtil {
             LocalDate asOfDate,
             Function<T, LocalDate> endDateExtractor) {
 
-        
         if (matches.size() > 1) {
             long nullEndDateCount =
                     matches.stream().filter(match -> endDateExtractor.apply(match) == null).count();
