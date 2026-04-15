@@ -212,7 +212,6 @@ public class StandardApplicantServiceTest {
     @Test
     void testGetByCode_auditsRequestedLookupCriteria() {
         String code = "APP001";
-        LocalDate date = LocalDate.of(2025, 1, 1);
         StandardApplicant standardApplicant = new StandardApplicant();
         standardApplicant.setApplicantCode(code);
         standardApplicant.setName("John Doe");
@@ -232,6 +231,7 @@ public class StandardApplicantServiceTest {
                         List.of(listener),
                         new ApplicantMapperImpl());
 
+        LocalDate date = LocalDate.of(2025, 1, 1);
         StandardApplicantGetDetailDto actual = localService.findByCode(code, date);
 
         Assertions.assertEquals(code, actual.getCode());

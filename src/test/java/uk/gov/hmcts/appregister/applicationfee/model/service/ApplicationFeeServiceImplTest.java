@@ -43,7 +43,9 @@ public class ApplicationFeeServiceImplTest {
 
         String ref = "ref";
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeOffsite));
+                .thenReturn(List.of(feeMain));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -82,8 +84,7 @@ public class ApplicationFeeServiceImplTest {
         feeOffsite.setOffsite(true);
 
         String ref = "ref";
-        when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeOffsite));
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -132,7 +133,9 @@ public class ApplicationFeeServiceImplTest {
         String ref = "ref";
 
         when(repository.findByReferenceBetweenDate(eq(ref), notNull()))
-                .thenReturn(List.of(feeMain, feeMain2, feeOffsite, feeOffsite2));
+                .thenReturn(List.of(feeMain, feeMain2));
+
+        when(repository.findOffsite(notNull())).thenReturn(List.of(feeOffsite, feeOffsite2));
 
         // test
         FeePair feePair = applicationFeeService.resolveFeePair(ref);
@@ -140,29 +143,5 @@ public class ApplicationFeeServiceImplTest {
         // assert
         Assertions.assertEquals(feeMain, feePair.mainFee());
         Assertions.assertEquals(feeOffsite, feePair.offsiteFee());
-    }
-
-    @Test
-    public void testResolveFeePairUsesProvidedAsOfDate() {
-        LocalDate asOfDate = LocalDate.of(2025, 12, 1);
-        String ref = "ref";
-
-        when(repository.findByReferenceBetweenDate(eq(ref), eq(asOfDate))).thenReturn(List.of());
-
-        applicationFeeService.resolveFeePair(ref, asOfDate);
-
-        org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, asOfDate);
-    }
-
-    @Test
-    public void testResolveFeePairNullDateFallsBackToBusinessDate() {
-        String ref = "ref";
-
-        when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
-        when(repository.findByReferenceBetweenDate(eq(ref), eq(TODAY_UK))).thenReturn(List.of());
-
-        applicationFeeService.resolveFeePair(ref, null);
-
-        org.mockito.Mockito.verify(repository).findByReferenceBetweenDate(ref, TODAY_UK);
     }
 }

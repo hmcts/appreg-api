@@ -352,12 +352,19 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "listId", source = "projection.listId")
     @Mapping(target = "sequenceNumber", source = "projection.sequenceNumber")
     @Mapping(target = "resulted", ignore = true)
-    @Mapping(target = "accountNumber", source = "accountReference")
+    @Mapping(target = "accountNumber", ignore = true)
     public abstract EntryGetSummaryDto toEntrySummary(
             ApplicationListEntryGetSummaryProjection projection);
 
     public abstract ResultCodeGetSummaryDto toResultCodeGetSummaryDto(
             ResolutionCode resolutionCode);
+
+    @AfterMapping
+    protected void mapEntrySummaryAccountNumber(
+            ApplicationListEntryGetSummaryProjection projection,
+            @MappingTarget EntryGetSummaryDto target) {
+        target.accountNumber(projection.getAccountReference());
+    }
 
     /**
      * gets a standard applicant or a named applicant depending on which one exists.

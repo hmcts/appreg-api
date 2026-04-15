@@ -1032,12 +1032,6 @@ public class ApplicationListServiceImplTest {
         when(aleRepository.findSummariesById(eq(id), eq(pageable))).thenReturn(dbPage);
     }
 
-    @SuppressWarnings("unchecked")
-    private static ArgumentCaptor<List<ApplicationListEntrySummary>> summaryCaptor() {
-        return (ArgumentCaptor<List<ApplicationListEntrySummary>>)
-                (ArgumentCaptor<?>) ArgumentCaptor.forClass(List.class);
-    }
-
     class DummyAuditOperationService implements AuditOperationService {
         private Keyable lastNewEntity;
         private AuditOperation lastAuditType;

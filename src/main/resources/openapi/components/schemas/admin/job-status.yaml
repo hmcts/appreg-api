@@ -1,0 +1,12 @@
+type: object
+description: Details of the database job status.
+properties:
+  lastRan:
+    type: string
+    format: date-time
+    description: The last time the job was run.
+    example: "2024-06-01T12:00:00"
+  enabled:
+    type: boolean
+    description: Whether the job is currently enabled.
+    example: "Yes"

@@ -149,12 +149,13 @@ public class ResultCodeServiceImplTest {
 
         var entity = new ResolutionCode();
         entity.setResultCode(code);
-        var expectedDto = new ResultCodeGetDetailDto();
         var auditEntity = new ResolutionCode();
         auditEntity.setResultCode(code);
         auditEntity.setStartDate(date);
         when(repository.findActiveResolutionCodesByCodeAndDate(eq(code), any()))
                 .thenReturn(List.of(entity));
+        var expectedDto = new ResultCodeGetDetailDto();
+
         when(mapper.toDetailDto(entity)).thenReturn(expectedDto);
         when(mapper.toEntity(code, date)).thenReturn(auditEntity);
 

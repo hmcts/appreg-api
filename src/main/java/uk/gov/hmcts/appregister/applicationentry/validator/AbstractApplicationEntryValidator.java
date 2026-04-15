@@ -37,6 +37,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     private final ApplicationCodeRepository applicationCodeRepository;
     private final ApplicationFeeService feeService;
     private final BusinessDateProvider businessDateProvider;
+
     private final StandardApplicantRepository standardApplicantRepository;
 
     private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
@@ -404,21 +405,9 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            feeToReturn = feeService.resolveFeePair(applicationCode.getFeeReference());
-            boolean wantsOffsiteFee = Boolean.TRUE.equals(getHasOffsiteFee(validatable));
+            FeePair fees = feeService.resolveFeePair(applicationCode.getFeeReference());
 
-            if ((!wantsOffsiteFee && (feeToReturn == null || feeToReturn.mainFee() == null))
-                    || (wantsOffsiteFee
-                            && (feeToReturn == null || feeToReturn.offsiteFee() == null))) {
-                throw new AppRegistryException(
-                        AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
-                        "Fee offsite does not exist for code %s"
-                                .formatted(applicationCode.getCode()));
-            }
-
-            log.debug(
-                    "Validated the fee {}",
-                    wantsOffsiteFee ? feeToReturn.offsiteFee().getId() : feeToReturn.mainFee().getId());
+            feeToReturn = fees;
         }
 
         return feeToReturn;

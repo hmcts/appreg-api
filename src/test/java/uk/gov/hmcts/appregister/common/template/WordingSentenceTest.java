@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 public class WordingSentenceTest {
     private static final String MULTIPLE_VALUE_TEMPLATE =
             "Application by {TEXT|Applicant officer|10} for a production ord covering "
-                    + "{DATE|No.of accounts|10} accounts(s) requiring the respondent to either produce or "
+                    + "{Unknown|No.of accounts|10} accounts(s) requiring the respondent to either produce or "
                     + "allow access to material that is in their possession or control for the purpose of "
                     + "a relevant investigation";
 
@@ -24,7 +24,7 @@ public class WordingSentenceTest {
                     + "a relevant investigation {This is not a valid template} ";
 
     private static final String SINGLE_VALUE_TEMPLATE =
-            "This is a test {DATE|Applicant officer|70} with a date";
+            "This is a test {Unknown|Applicant officer|70} with a date";
 
     @Test
     public void testParseWordingTemplateMultipleSuccess() {
@@ -309,14 +309,12 @@ public class WordingSentenceTest {
     public void testParseWordingParsingInvalidTemplates() {
         WordingTemplateSentence templateSentence = WordingTemplateSentence.with(MULTIPLE_INVALID);
 
-        Assertions.assertEquals(1, templateSentence.getTemplateableContents().length);
-        Assertions.assertEquals(3, templateSentence.getErroneousTemplates().size());
+        Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
+        Assertions.assertEquals(2, templateSentence.getErroneousTemplates().size());
         Assertions.assertEquals(
-                "NoType|No.of accounts|3", templateSentence.getErroneousTemplates().get(0));
+                "IncorrectFormat|", templateSentence.getErroneousTemplates().get(0));
         Assertions.assertEquals(
-                "IncorrectFormat|", templateSentence.getErroneousTemplates().get(1));
-        Assertions.assertEquals(
-                "This is not a valid template", templateSentence.getErroneousTemplates().get(2));
+                "This is not a valid template", templateSentence.getErroneousTemplates().get(1));
     }
 
     // TODO: Re-enable this once the decision has been made on the FE implementation.

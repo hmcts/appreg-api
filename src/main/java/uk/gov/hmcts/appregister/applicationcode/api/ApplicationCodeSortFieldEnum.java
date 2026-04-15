@@ -15,7 +15,10 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode_;
 @Getter
 public enum ApplicationCodeSortFieldEnum implements SortableOperationEnum {
     TITLE("title", ApplicationCode_.ID, ApplicationCode_.TITLE),
-    CODE("code", ApplicationCode_.ID, ApplicationCode_.CODE);
+    CODE("code", ApplicationCode_.ID, ApplicationCode_.CODE),
+    BULK_RESPONDENT_ALLOWED(
+            "bulkRespondentAllowed", ApplicationCode_.ID, ApplicationCode_.BULK_RESPONDENT_ALLOWED),
+    FEE_DUE("feeDue", ApplicationCode_.ID, ApplicationCode_.FEE_DUE);
 
     private final String apiValue;
     private final String[] entityValue;

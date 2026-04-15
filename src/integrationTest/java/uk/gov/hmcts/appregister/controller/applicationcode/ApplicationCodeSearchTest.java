@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -239,7 +238,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -327,61 +326,9 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
 
         assertApplicationCode(response, applicationCodeDto);
-
-        // assert the audit log message
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                START_AUDIT_LOG, GET_APPCODE_AUDIT_ACTION, OperationStatus.STARTED),
-                        logCaptor.getInfoLogs().get(0)));
-
-        assertTrue(
-                Pattern.matches(
-                        getExpectedLog(
-                                COMPLETION_AUDIT_LOG,
-                                GET_APPCODE_AUDIT_ACTION,
-                                OperationStatus.COMPLETED),
-                        logCaptor.getInfoLogs().get(1)));
-    }
-
-    @Test
-    @StabilityTest
-    public void givenValidRequest_whenGetApplicationCodesForCodeWithoutOffsite_thenReturn200()
-            throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        String id = "ACMOFF001";
-        String feeReference = "TSTMAIN01";
-        LocalDate queryDate = LocalDate.of(2025, 1, 1);
-
-        saveApplicationCodeWithFees(
-                id,
-                feeReference,
-                queryDate.minusDays(10),
-                queryDate.minusDays(20),
-                queryDate.plusDays(10));
-
-        Response responseSpec =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrlWithDate(
-                                WEB_CONTEXT + "/" + id,
-                                queryDate.atStartOfDay().atOffset(ZoneOffset.UTC)),
-                        tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-
-        ApplicationCodeGetDetailDto response = responseSpec.as(ApplicationCodeGetDetailDto.class);
-
-        assertEquals(id, response.getApplicationCode());
-        assertEquals("Copy documents (electronic)", response.getTitle());
-        assertEquals(FEE_DESCRIPTION, response.getFeeDescription().get());
-        assertEquals(5000L, response.getFeeAmount().get().getValue());
-        Assertions.assertFalse(response.getOffsiteFeeAmount().isPresent());
-        assertEquals(JsonNullable.of(feeReference), response.getFeeReference());
 
         // assert the audit log message
         assertTrue(

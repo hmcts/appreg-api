@@ -142,7 +142,8 @@ class CriminalJusticeAreaServiceImplTest {
 
         Assertions.assertEquals(code, dto.getCode());
         Assertions.assertNotNull(listener.getCompleteEvent());
-        CriminalJusticeArea audited = (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
+        CriminalJusticeArea audited =
+                (CriminalJusticeArea) listener.getCompleteEvent().getNewValue();
         Assertions.assertNotSame(cja, audited);
         Assertions.assertEquals(code, audited.getCode());
         Assertions.assertNull(audited.getDescription());

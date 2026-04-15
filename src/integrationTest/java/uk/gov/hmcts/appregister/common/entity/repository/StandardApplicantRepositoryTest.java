@@ -211,8 +211,7 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                                     PageRequest.of(0, 10));
 
                     assertThat(page.getContent())
-                            .extracting(
-                                    projection -> projection.getStandardApplicant().getId())
+                            .extracting(projection -> projection.getStandardApplicant().getId())
                             .containsExactlyInAnyOrder(
                                     savedStartsTodayApplicant.getId(),
                                     savedEndsTodayApplicant.getId());
