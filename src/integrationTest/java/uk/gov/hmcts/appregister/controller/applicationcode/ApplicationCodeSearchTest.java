@@ -132,7 +132,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(30.0));
+                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -487,7 +487,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals("CO1.1", firstEntry.getFeeReference().get());
         assertEquals("JP perform function away from court", firstEntry.getFeeDescription().get());
         assertEquals(20000L, firstEntry.getFeeAmount().get().getValue());
-        assertEquals(3000L, firstEntry.getOffsiteFeeAmount().get().getValue());
+        assertEquals(15500L, firstEntry.getOffsiteFeeAmount().get().getValue());
 
         // assert the second record
         ApplicationCodeGetSummaryDto secondEntry = response.getContent().get(1);

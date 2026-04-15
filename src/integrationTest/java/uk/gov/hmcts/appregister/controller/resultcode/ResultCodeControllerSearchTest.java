@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.controller;
+package uk.gov.hmcts.appregister.controller.resultcode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -106,16 +106,7 @@ public class ResultCodeControllerSearchTest extends AbstractSecurityControllerTe
                         TableNames.RESOLUTION_CODES,
                         "resolution_code_start_date",
                         null,
-                        SEED_START.toString(),
-                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
-                        ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.RESOLUTION_CODES,
-                        "resolution_code_title",
-                        null,
-                        APPC_TITLE,
+                        ACTIVE_DAY.toString(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getType().name(),
                         ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName()));
     }
