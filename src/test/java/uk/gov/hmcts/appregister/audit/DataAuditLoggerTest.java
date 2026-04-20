@@ -9,7 +9,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Optional;
+import lombok.val;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +31,8 @@ import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
+import uk.gov.hmcts.appregister.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
@@ -196,6 +202,55 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(CrudEnum.CREATE, dataAudit1.getUpdateType());
         Assertions.assertEquals("No Correlation Id Found", dataAudit.getLink());
         Assertions.assertNull(dataAudit.getCreatedUser());
+    }
+
+    @Test
+    public void testAuditSaveFailureDoesNotEscapeOnCompleteEvent() {
+        val testData = new ApplicationCodeTestData();
+        val newCode = testData.someComplete();
+        val id = 123L;
+        newCode.setId(id);
+        val logCaptor = LogCaptor.forClass(AuditOperationServiceImpl.class);
+        logCaptor.clearLogs();
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.CREATE, newCode))
+                .thenReturn(
+                        List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "value")));
+        // Simulate the repository being unavailable at the point audit rows are written.
+        when(dataAuditRepository.save(any(DataAudit.class)))
+                .thenThrow(new RuntimeException("audit persistence failed"));
+
+        val auditOperationService = new AuditOperationServiceImpl(new ObjectMapper(), List.of());
+        val listener = new DataAuditLogger(auditDifferentiator, dataAuditRepository);
+        val result =
+                Assertions.assertDoesNotThrow(
+                        // This exercises the real failing listener through the central audit
+                        // orchestration path, where audit errors should be swallowed.
+                        () ->
+                                auditOperationService.processAudit(
+                                        TestAuditOperation.CREATE,
+                                        req ->
+                                                Optional.of(
+                                                        new AuditableResult<>(
+                                                                "business-result", newCode)),
+                                        listener));
+
+        Assertions.assertEquals("business-result", result);
+        verify(dataAuditRepository, times(1)).save(any(DataAudit.class));
+        // The logger should preserve the exact failed field name without logging the field value.
+        val failureLog =
+                logCaptor.getErrorLogs().stream()
+                        .filter(log -> log.contains("failureMessage=Failed to persist audit field"))
+                        .findFirst()
+                        .orElseThrow();
+        Assertions.assertTrue(
+                failureLog.contains("failureMessage=Failed to persist audit field field"));
+        Assertions.assertTrue(
+                failureLog.contains("on table " + TableNames.APPLICATION_CODES),
+                "Expected table name in failure log");
+        Assertions.assertFalse(
+                failureLog.contains("value"),
+                "Audit field values should not be included in the failure log");
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import java.util.Optional;
+import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.audit.event.AuditEvent;
+import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
@@ -31,11 +33,15 @@ class AuditOperationServiceImplTest {
 
     private ObjectMapper objectMapper;
 
+    private LogCaptor logCaptor;
+
     @BeforeEach
     void setup() {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         auditOperationServiceImpl = new AuditOperationServiceImpl(objectMapper, List.of());
+        logCaptor = LogCaptor.forClass(AuditOperationServiceImpl.class);
+        logCaptor.clearLogs();
     }
 
     @Test
@@ -71,6 +77,55 @@ class AuditOperationServiceImplTest {
         Assertions.assertEquals(
                 objectMapper.writeValueAsString(applicationCodeDto),
                 completedOp.getMessageContent());
+    }
+
+    @Test
+    void testAuditOperationFlowDoesNotFailSuccessfulBusinessOperationWhenAuditCompletionFails() {
+        var listener = Mockito.mock(AuditOperationLifecycleListener.class);
+        Mockito.doAnswer(
+                        invocation -> {
+                            var event = invocation.getArgument(0);
+                            // Simulate an audit-side failure after the business callback has
+                            // completed successfully.
+                            if (event instanceof CompleteEvent) {
+                                throw new IllegalStateException("audit listener failed");
+                            }
+                            return null;
+                        })
+                .when(listener)
+                .eventPerformed(Mockito.any());
+
+        String result =
+                Assertions.assertDoesNotThrow(
+                        () ->
+                                auditOperationServiceImpl.processAudit(
+                                        TestAuditOperation.CREATE,
+                                        // The business operation itself succeeds; this test
+                                        // captures the Jira requirement that audit failures must
+                                        // not change that outcome.
+                                        req ->
+                                                Optional.of(
+                                                        new AuditableResult<>(
+                                                                "business-result",
+                                                                new ApplicationList())),
+                                        listener));
+
+        Assertions.assertEquals("business-result", result);
+        Mockito.verify(listener, Mockito.times(2)).eventPerformed(Mockito.any());
+
+        // The listener failure is intentionally swallowed by the audit service, so the remaining
+        // observable signal is the error log that records what was suppressed.
+        Assertions.assertTrue(
+                logCaptor.getErrorLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains("Audit listener failure suppressed.")
+                                                && log.contains("eventName=Create")
+                                                && log.contains("eventType=CompleteEvent")
+                                                && log.contains(
+                                                        "failureMessage=audit listener failed")
+                                                && log.contains(
+                                                        "correlationId=No Correlation Id Found")));
     }
 
     @Test

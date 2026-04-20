@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.audit.listener;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.event.AuditOldNewEnum;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
@@ -180,11 +181,11 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             List<AuditableData> primaryList,
             List<AuditableData> secondaryList,
             boolean primaryOld) {
-        for (int i = 0; i < primaryList.size(); i++) {
-            AuditableData diff = primaryList.get(i);
-            DataAudit audit = new DataAudit();
-            audit.setColumnName(diff.getFieldName());
+        for (var i = 0; i < primaryList.size(); i++) {
+            val diff = primaryList.get(i);
+            val audit = new DataAudit();
 
+            audit.setColumnName(diff.getFieldName());
             audit.setEventName(event.getRequestAction().getEventName());
             audit.setTableName(diff.getTableName());
             audit.setUpdateType(event.getRequestAction().getType());
@@ -197,10 +198,16 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             setNewAndOldAuditValues(
                     audit, diff, getCorrespondingData(diff, secondaryList), event, primaryOld);
 
-            // save the audit record
-            dataAuditRepository.save(audit);
-
-            log.debug("Saved data audit entity: {}", audit);
+            try {
+                // save the audit record
+                dataAuditRepository.save(audit);
+                log.debug("Saved data audit entity: {}", audit);
+            } catch (RuntimeException e) {
+                throw new RuntimeException(
+                        "Failed to persist audit field %s on table %s"
+                                .formatted(diff.getFieldName(), diff.getTableName()),
+                        e);
+            }
         }
     }
 

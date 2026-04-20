@@ -167,8 +167,21 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      */
     private void fireAuditEvent(
             AuditEvent auditEvent, AuditOperationLifecycleListener... listener) {
-        for (AuditOperationLifecycleListener l : listener) {
-            l.eventPerformed(auditEvent);
+        for (var l : listener) {
+            try {
+                l.eventPerformed(auditEvent);
+            } catch (Exception e) {
+                log.error(
+                        "Audit listener failure suppressed. listener={}, eventName={}, eventType={},"
+                                + " correlationId={}, status={}, failureMessage={}",
+                        l.getClass().getName(),
+                        auditEvent.getRequestAction().getEventName(),
+                        auditEvent.getClass().getSimpleName(),
+                        auditEvent.getMessageUuid(),
+                        auditEvent.getMessageStatus(),
+                        e.getMessage(),
+                        e);
+            }
         }
     }
 
