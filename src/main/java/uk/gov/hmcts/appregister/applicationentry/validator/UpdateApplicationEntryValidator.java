@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 /**
@@ -117,6 +118,11 @@ public class UpdateApplicationEntryValidator
     @Override
     protected Applicant getApplicant(PayloadForUpdateEntry validatable) {
         return validatable.getData().getApplicant();
+    }
+
+    @Override
+    protected List<Official> getOfficials(PayloadForUpdateEntry validatable) {
+        return validatable.getData().getOfficials();
     }
 
     @Override

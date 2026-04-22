@@ -47,6 +47,9 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -105,6 +108,7 @@ public class UpdateApplicationEntryValidatorTest {
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         entryUpdateDto = Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
+        entryUpdateDto.setOfficials(CreateEntryDtoUtil.validOfficials());
 
         appListUuid = UUID.randomUUID();
         appListEntryUuid = UUID.randomUUID();
@@ -182,6 +186,26 @@ public class UpdateApplicationEntryValidatorTest {
                 new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
 
         // validate the payload
+        updateApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testValidateSuccessWithNoOfficials() {
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setOfficials(List.of());
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryUpdateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        sanitiseFeeStatuses(entryUpdateDto.getFeeStatuses());
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
         updateApplicationEntryValidator.validate(payload);
     }
 
@@ -601,6 +625,53 @@ public class UpdateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testTooManyMagistratesFail() {
+        entryUpdateDto.setOfficials(
+                List.of(
+                        official(OfficialType.MAGISTRATE, "One"),
+                        official(OfficialType.MAGISTRATE, "Two"),
+                        official(OfficialType.MAGISTRATE, "Three"),
+                        official(OfficialType.MAGISTRATE, "Four")));
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.TOO_MANY_MAGISTRATES, appRegistryException.getCode());
+    }
+
+    @Test
+    void testTooManyCourtOfficialsFail() {
+        entryUpdateDto.setOfficials(
+                List.of(
+                        official(OfficialType.MAGISTRATE, "One"),
+                        official(OfficialType.CLERK, "CourtOne"),
+                        official(OfficialType.CLERK, "CourtTwo")));
+        entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.TOO_MANY_COURT_OFFICIALS, appRegistryException.getCode());
+    }
+
+    @Test
     void
             bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_ValidNameAndAddressRespondent_Failure() {
         ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
@@ -643,5 +714,14 @@ public class UpdateApplicationEntryValidatorTest {
                 fs.setPaymentReference(null); // must NOT be passed when DUE
             }
         }
+    }
+
+    private static Official official(OfficialType officialType, String suffix) {
+        Official official = new Official();
+        official.setTitle("Mr");
+        official.setForename("Official");
+        official.setSurname(suffix);
+        official.setType(officialType);
+        return official;
     }
 }

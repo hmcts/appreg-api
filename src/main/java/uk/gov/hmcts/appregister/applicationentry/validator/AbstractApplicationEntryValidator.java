@@ -28,6 +28,8 @@ import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 @Slf4j
@@ -42,6 +44,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
     private static final String BULK_RESPONDENT_NOT_REQUIRED_MESSAGE =
             "Bulk respondent not required for code %s";
+    private static final int MAX_MAGISTRATES = 3;
+    private static final int MAX_COURT_OFFICIALS = 1;
 
     public void validate(T validatable) {
         validate(validatable, null);
@@ -71,6 +75,8 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // ensure mutual exclusivity of the applicant
         ensureApplicantMutualExclusion(validatable);
+
+        validateOfficialCounts(validatable);
 
         ApplicationList applicationList = validateParentApplicationList(validatable);
 
@@ -246,6 +252,14 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected abstract Applicant getApplicant(T validatable);
 
     /**
+     * gets the payload officials.
+     *
+     * @param validatable The validatable payload
+     * @return The payload officials
+     */
+    protected abstract List<Official> getOfficials(T validatable);
+
+    /**
      * gets the application code.
      *
      * @param validatable The validatable payload
@@ -302,6 +316,41 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
     protected abstract String getAccountNumber(T validatable);
 
     protected abstract LocalDate getLodgementDate(T validatable);
+
+    private void validateOfficialCounts(T dto) {
+        List<Official> officials = getOfficials(dto);
+        if (officials == null || officials.isEmpty()) {
+            return;
+        }
+
+        long magistrateCount =
+                officials.stream()
+                        .filter(
+                                official ->
+                                        official != null
+                                                && official.getType() == OfficialType.MAGISTRATE)
+                        .count();
+        if (magistrateCount > MAX_MAGISTRATES) {
+            throw new AppRegistryException(
+                    AppListEntryError.TOO_MANY_MAGISTRATES,
+                    "An application entry can include no more than %s Magistrates"
+                            .formatted(MAX_MAGISTRATES));
+        }
+
+        long courtOfficialCount =
+                officials.stream()
+                        .filter(
+                                official ->
+                                        official != null
+                                                && official.getType() == OfficialType.CLERK)
+                        .count();
+        if (courtOfficialCount > MAX_COURT_OFFICIALS) {
+            throw new AppRegistryException(
+                    AppListEntryError.TOO_MANY_COURT_OFFICIALS,
+                    "An application entry can include no more than %s Court Official"
+                            .formatted(MAX_COURT_OFFICIALS));
+        }
+    }
 
     /**
      * validate the respondent of the payload and ensures mutual exclusivity between the

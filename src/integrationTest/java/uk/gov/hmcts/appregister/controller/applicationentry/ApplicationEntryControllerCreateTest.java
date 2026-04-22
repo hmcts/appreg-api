@@ -49,6 +49,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
 import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 public class ApplicationEntryControllerCreateTest extends AbstractApplicationEntryCrudTest {
@@ -130,6 +131,73 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                         uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation
                                 .CREATE_APP_ENTRY_LIST
                                 .getEventName()));
+    }
+
+    @Test
+    void givenTooManyMagistrates_whenCreateEntry_thenReturn400() throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setOfficials(
+                List.of(
+                        buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Miles", "Two", OfficialType.MAGISTRATE),
+                        buildOfficial("Mrs", "Mina", "Three", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Marco", "Four", OfficialType.MAGISTRATE)));
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        createAdminToken().fetchTokenForRole(),
+                        entryCreateDto);
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemAssertUtil.assertEquals(AppListEntryError.TOO_MANY_MAGISTRATES.getCode(), response);
+    }
+
+    @Test
+    void givenTooManyCourtOfficials_whenCreateEntry_thenReturn400() throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+        entryCreateDto.setOfficials(
+                List.of(
+                        buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Chris", "CourtOne", OfficialType.CLERK),
+                        buildOfficial("Mrs", "Clare", "CourtTwo", OfficialType.CLERK)));
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + getOpenApplicationListId()
+                                        + "/entries"),
+                        createAdminToken().fetchTokenForRole(),
+                        entryCreateDto);
+
+        response.then().statusCode(HttpStatus.BAD_REQUEST.value());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.TOO_MANY_COURT_OFFICIALS.getCode(), response);
+    }
+
+    @Test
+    void givenNoOfficials_whenCreateEntry_thenReturn201() throws Exception {
+        EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        String surnameToLookup = UUID.randomUUID().toString();
+        entryCreateDto.setOfficials(List.of());
+        entryCreateDto.setLodgementDate(LocalDate.now().minusDays(1));
+
+        SuccessCreateEntryResponse createdDto =
+                createEntryWithUniqueSurname(createAdminToken(), entryCreateDto, surnameToLookup);
+
+        validateEntryCreationResponse(
+                entryCreateDto,
+                createdDto.getDetailDto(),
+                "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
+        Assertions.assertTrue(createdDto.getDetailDto().getOfficials().isEmpty());
     }
 
     @Test
@@ -2652,5 +2720,15 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                                 AppListEntryError.LODGEMENT_DATE_CANNOT_BE_IN_FUTURE
                                         .getCode()
                                         .getAppCode()));
+    }
+
+    private static Official buildOfficial(
+            String title, String forename, String surname, OfficialType type) {
+        Official official = new Official();
+        official.setTitle(title);
+        official.setForename(forename);
+        official.setSurname(surname);
+        official.setType(type);
+        return official;
     }
 }

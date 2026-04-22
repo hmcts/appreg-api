@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
 /**
@@ -69,6 +70,11 @@ public class CreateApplicationEntryValidator
     @Override
     protected Applicant getApplicant(PayloadForCreate<EntryCreateDto> validatable) {
         return validatable.getData().getApplicant();
+    }
+
+    @Override
+    protected List<Official> getOfficials(PayloadForCreate<EntryCreateDto> validatable) {
+        return validatable.getData().getOfficials();
     }
 
     @Override

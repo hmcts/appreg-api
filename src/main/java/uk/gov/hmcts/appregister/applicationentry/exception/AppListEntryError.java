@@ -116,7 +116,17 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     "ALE-22")),
     LODGEMENT_DATE_CANNOT_BE_IN_FUTURE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23"));
+                    HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
+    TOO_MANY_MAGISTRATES(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "An application entry can include at most 3 Magistrates",
+                    "ALE-24")),
+    TOO_MANY_COURT_OFFICIALS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "An application entry can include at most 1 Court Official",
+                    "ALE-25"));
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {
