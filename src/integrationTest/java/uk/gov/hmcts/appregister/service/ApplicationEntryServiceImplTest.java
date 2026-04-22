@@ -93,8 +93,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
@@ -174,8 +173,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
@@ -255,8 +253,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     @Test
     public void createEntryWithRespondentWithoutFeeDueNoBulkRespondent() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setLodgementDate(LocalDate.now());
 
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -346,8 +343,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     public void createEntryWithCodeFeeReferencingOffsiteFeeExpectSingleFeeRecord() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setLodgementDate(LocalDate.now());
@@ -475,8 +471,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
             createEntryWithCodeFeeNotReferencingOffsiteFeeButOffsiteFeeAttachedExpectTwoFeeRecords() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
@@ -618,8 +613,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         // build the payload
-        EntryUpdateDto entryUpdateDto =
-                createEntryUpdateDto(settings);
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto
                 .getApplicant()
@@ -759,8 +753,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
         // build the payload
-        EntryUpdateDto entryUpdateDto =
-                createEntryUpdateDto(settings);
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
 
         entryUpdateDto.setNumberOfRespondents(null);
         entryUpdateDto.setApplicant(null);
@@ -900,8 +893,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final NameAddress applicantBeforeUpdate =
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
-        final EntryUpdateDto updateDto =
-                createEntryUpdateDto(settings);
+        final EntryUpdateDto updateDto = createEntryUpdateDto(settings);
         updateDto.getApplicant().setOrganisation(null);
         updateDto.getApplicant().getPerson().getName().setSecondForename(JsonNullable.of(null));
         updateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
@@ -1022,8 +1014,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         final NameAddress applicantBeforeUpdate =
                 BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
 
-        final EntryUpdateDto updateDto =
-                createEntryUpdateDto(settings);
+        final EntryUpdateDto updateDto = createEntryUpdateDto(settings);
         // set the organisation and person applicant to null so we use the standard applicant
         updateDto.getApplicant().setOrganisation(null);
         updateDto.getApplicant().setPerson(null);
@@ -1116,8 +1107,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         // build the payload
-        EntryUpdateDto entryUpdateDto =
-                createEntryUpdateDto(settings);
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto
                 .getApplicant()
@@ -1225,8 +1215,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         // build the payload
-        EntryUpdateDto entryUpdateDto =
-                createEntryUpdateDto(settings);
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto.getRespondent().setOrganisation(null);
         entryUpdateDto
@@ -1357,8 +1346,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
         Assertions.assertTrue(applicationListEntry.isPresent());
 
         // Build an update that goes through updateFees() and creates a new fee mapping
-        EntryUpdateDto entryUpdateDto =
-                createEntryUpdateDto(settings);
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
 
         entryUpdateDto.getApplicant().setOrganisation(null);
         entryUpdateDto
@@ -1415,8 +1403,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     public void createEntryWithNullHasOffsiteFeeDoesNotThrow() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -1466,8 +1453,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest() {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto.setLodgementDate(LocalDate.now());
@@ -1624,8 +1610,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     public UUID createEntryNoRespondentWithOffsiteFeeForTest() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
-        final EntryCreateDto entryCreateDto =
-                createEntryCreateDto(settings);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
