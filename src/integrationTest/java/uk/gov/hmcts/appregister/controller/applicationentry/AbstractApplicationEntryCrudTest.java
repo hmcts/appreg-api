@@ -344,13 +344,13 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected void validateEntryCreationResponse(
             EntryCreateDto entryCreateDto, EntryGetDetailDto response, String wordingSpec) {
-        List<FeeStatus> expectedFeeStatuses =
+        final List<FeeStatus> expectedFeeStatuses =
                 entryCreateDto.getFeeStatuses() == null
                         ? List.of()
                         : entryCreateDto.getFeeStatuses();
-        List<Official> expectedOfficials =
+        final List<Official> expectedOfficials =
                 entryCreateDto.getOfficials() == null ? List.of() : entryCreateDto.getOfficials();
-        List<Official> actualOfficials =
+        final List<Official> actualOfficials =
                 response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryCreateDto.getApplicant() != null) {
@@ -413,9 +413,9 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             EntryGetDetailDto response,
             String wordingSpec,
             List<FeeStatus> expectedFees) {
-        List<Official> expectedOfficials =
+        final List<Official> expectedOfficials =
                 entryUpdateDto.getOfficials() == null ? List.of() : entryUpdateDto.getOfficials();
-        List<Official> actualOfficials =
+        final List<Official> actualOfficials =
                 response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryUpdateDto.getApplicant() != null) {
