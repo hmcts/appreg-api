@@ -1110,6 +1110,73 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void testGetApplicationListEntriesTrimsAccountReferenceFilter() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(list);
+        matchingEntry.setAccountNumber("E40-123");
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setAccountNumber("ABC-123");
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("accountReference", " E40 "),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesIgnoresBlankAccountReferenceFilter() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry firstEntry = createEntry(list);
+        firstEntry.setAccountNumber("E40-123");
+        firstEntry.setSequenceNumber((short) 1);
+        firstEntry = persistance.save(firstEntry);
+
+        ApplicationListEntry secondEntry = createEntry(list);
+        secondEntry.setAccountNumber("ABC-123");
+        secondEntry.setSequenceNumber((short) 2);
+        secondEntry = persistance.save(secondEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("sequenceNumber,asc"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("accountReference", " "),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(2, page.getContent().size());
+        Assertions.assertEquals(firstEntry.getUuid(), page.getContent().get(0).getId());
+        Assertions.assertEquals(secondEntry.getUuid(), page.getContent().get(1).getId());
+    }
+
+    @Test
     public void testGetApplicationListEntriesFiltersByResultCodeAcrossEntriesWhenNotLatest()
             throws Exception {
         ApplicationList list = createAndSaveList(OPEN);

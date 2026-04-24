@@ -1194,6 +1194,73 @@ public class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void testGetApplicationListEntries_normalisesStringFiltersBeforeSearch() {
+        val applicationList = new AppListTestData().someComplete();
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        val entryGetFilterDto = new EntryApplicationListGetFilterDto();
+        entryGetFilterDto.setApplicantName(" Applicant Audit Org ");
+        entryGetFilterDto.setRespondentName(" Respondent Audit Org ");
+        entryGetFilterDto.setRespondentPostcode(" ZZ1 1ZZ ");
+        entryGetFilterDto.setAccountReference("   ");
+        entryGetFilterDto.setApplicationTitle(" Read audit application title ");
+        entryGetFilterDto.setResulted(" RC1 ");
+
+        val mockPage = mock(Pageable.class);
+        when(mockPage.getPageNumber()).thenReturn(0);
+        val wrapper = PagingWrapper.of(List.of(), mockPage);
+        val dbPage = new PageImpl<ApplicationListEntryGetSummaryProjection>(List.of(), mockPage, 0);
+
+        when(applicationListEntryRepository.searchForGetSummary(
+                        eq(applicationList.getUuid()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq("Applicant Audit Org"),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq("Respondent Audit Org"),
+                        eq("ZZ1 1ZZ"),
+                        eq(null),
+                        eq("Read audit application title"),
+                        eq("RC1"),
+                        eq(entryGetFilterDto.getFeeRequired()),
+                        eq(entryGetFilterDto.getSequenceNumber()),
+                        eq(mockPage)))
+                .thenReturn(dbPage);
+
+        val payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
+        val auditEntity = new ApplicationListEntry();
+
+        when(applicationListEntryMapStructMapper.toApplicationListEntry(
+                        payloadGetEntryInList, entryGetFilterDto))
+                .thenReturn(auditEntity);
+
+        val response =
+                service.getApplicationListEntries(
+                        payloadGetEntryInList, wrapper, entryGetFilterDto);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals("Applicant Audit Org", entryGetFilterDto.getApplicantName());
+        Assertions.assertEquals("Respondent Audit Org", entryGetFilterDto.getRespondentName());
+        Assertions.assertEquals("ZZ1 1ZZ", entryGetFilterDto.getRespondentPostcode());
+        Assertions.assertNull(entryGetFilterDto.getAccountReference());
+        Assertions.assertEquals(
+                "Read audit application title", entryGetFilterDto.getApplicationTitle());
+        Assertions.assertEquals("RC1", entryGetFilterDto.getResulted());
+        verify(applicationListEntryMapStructMapper)
+                .toApplicationListEntry(payloadGetEntryInList, entryGetFilterDto);
+    }
+
+    @Test
     void testGetApplicationListEntries_emptyEntries_success() {
         ApplicationList applicationList = new AppListTestData().someComplete();
 
