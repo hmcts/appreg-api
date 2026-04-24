@@ -41,13 +41,9 @@ public class ApplicationListFilterSortTest
         extends AbstractFilterAndSortControllerTest<ApplicationListEntry> {
     @Autowired private ApplicationListRepository applicationListRepository;
 
-    private ApplicationList applicationListToMapTo;
-
     @Override
     protected Stream<RestFilterEndpointDescription<ApplicationListEntry>> getFilterDescriptions()
             throws Exception {
-
-        applicationListToMapTo = applicationListRepository.findById(1L).get();
 
         Jwt jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
@@ -78,7 +74,7 @@ public class ApplicationListFilterSortTest
                         getLocalUrl(
                                 "application-list-entries"));
         restFilterDescription.setSortDescriptors(
-                Arrays.asList(ApplicationListSortForAppListIdEnum.values()));
+                Arrays.asList(ApplicationListEntrySortEnum.values()));
 
         // gets all of the combinations of filters
         return Stream.of(
@@ -90,8 +86,6 @@ public class ApplicationListFilterSortTest
     @Override
     protected Stream<RestSortEndpointDescription<ApplicationListEntry>> getSortDescriptions()
             throws Exception {
-
-        applicationListToMapTo = applicationListRepository.findById(1L).get();
 
         Jwt jwt = TokenGenerator.builder().build().getJwtFromToken();
         var auth = new JwtAuthenticationToken(jwt, Collections.emptyList());
@@ -135,8 +129,6 @@ public class ApplicationListFilterSortTest
 
     @Override
     protected ApplicationListEntry saveToDatabase(ApplicationListEntry keyable) {
-        keyable.setApplicationList(applicationListToMapTo);
-
         return this.persistance.save(keyable);
     }
 

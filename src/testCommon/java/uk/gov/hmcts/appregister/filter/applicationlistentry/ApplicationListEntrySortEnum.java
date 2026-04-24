@@ -91,6 +91,7 @@ public enum ApplicationListEntrySortEnum implements SortMetaDescriptorEnum<Appli
                 }).build()),
     APPLICATION_TITLE(
         SortMetaDataDescriptor.<ApplicationListEntry>builder()
+            .defaultSort(true)
             .sortableOperationEnum(ApplicationEntrySortFieldEnum.APPLICATION_TITLE)
             .sortableValueFunction((keyable) -> keyable.getApplicationCode().getTitle())
             .sortGenerator(
@@ -191,6 +192,7 @@ public enum ApplicationListEntrySortEnum implements SortMetaDescriptorEnum<Appli
         if (applicationListEntry.getAnamedaddress() == null) {
             applicationListEntry.setAnamedaddress(isOrganisation ? new NameAddressTestData().someOrganisation() :
                                                       new NameAddressTestData().somePerson());
+            applicationListEntry.getAnamedaddress().setCode(NameAddressCodeType.APPLICANT);
             return applicationListEntry.getAnamedaddress();
         }
         return applicationListEntry.getAnamedaddress();

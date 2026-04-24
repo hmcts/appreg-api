@@ -58,7 +58,17 @@ public class FilterableScenario<T extends Keyable> {
                             filterFieldDataLst = scenario.filterData.get(j);
                         }
 
-                        filterFieldDataLst.add(filterData.get(j).get(i).deepClone());
+                        // clone the first filter field data and set it as the keyable value
+                        if (filterFieldDataLst.size() == 0) {
+                            filterFieldDataLst.add(filterData.get(j).get(i).deepClone());
+                        } else {
+                            FilterFieldData<T> filterFieldValue = filterData.get(j).get(i).deepClone();
+
+                            // use the same cloned value as the first entry for all subsequent entries
+                            filterFieldValue.getKeyableValues().setKeyable(filterFieldDataLst.get(0).getKeyableValues().getKeyable());
+
+                            filterFieldDataLst.add(filterFieldValue);
+                        }
                     }
                 }
             }

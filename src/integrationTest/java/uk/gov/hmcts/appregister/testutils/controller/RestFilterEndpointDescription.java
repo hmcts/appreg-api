@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.filter.FilterFieldData;
+import uk.gov.hmcts.appregister.filter.FilterScenarioFactory;
 import uk.gov.hmcts.appregister.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.filter.meta.SortMetaDescriptorEnum;
 

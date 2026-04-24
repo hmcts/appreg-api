@@ -4,16 +4,20 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.data.AppListEntryResolutionTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
+import uk.gov.hmcts.appregister.data.CriminalJusticeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.ResolutionCodeTestData;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.filter.FilterFieldValue;
 import uk.gov.hmcts.appregister.filter.generator.FilterFieldDataGenerator;
@@ -22,6 +26,7 @@ import uk.gov.hmcts.appregister.filter.meta.FilterFieldDataMetaDescriptor;
 import uk.gov.hmcts.appregister.filter.meta.FilterMetaDescriptorEnum;
 
 import java.time.LocalDate;
+import java.util.function.Supplier;
 
 /**
  * An enumeration that allows us to setup filter for the application list entry endpoint.
@@ -29,53 +34,58 @@ import java.time.LocalDate;
 public enum ApplicationListEntryFilterEnum
         implements FilterMetaDescriptorEnum<ApplicationListEntry> {
     DATE(
-            FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
-                    .queryName("date")
-                    .partialSupport(false)
-                    .caseInsensitive(false)
-                    .filterGenerator(
-                            (count, keyable, descriptor) -> {
-                                FilterFieldData<ApplicationListEntry> filterFieldData =
-                                        new FilterFieldData<>();
-                                filterFieldData.setDescriptor(descriptor);
+        FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
+            .queryName("date")
+            .partialSupport(false)
+            .caseInsensitive(false)
+            .filterGenerator(
+                (count, keyable, descriptor) -> {
+                    FilterFieldData<ApplicationListEntry> filterFieldData =
+                        new FilterFieldData<>();
+                    filterFieldData.setDescriptor(descriptor);
 
-                                FilterFieldValue<ApplicationListEntry> filterFieldValue =
-                                        new FilterFieldValue<>();
-                                filterFieldValue.setKeyable(keyable);
-                                filterFieldValue.setValue(PrimitiveDataGenerator.getDate(count));
-                                filterFieldValue.setKeyable(keyable);
-                                keyable.setLodgementDate((LocalDate) filterFieldValue.getValue());
+                    FilterFieldValue<ApplicationListEntry> filterFieldValue =
+                        new FilterFieldValue<>();
+                    filterFieldValue.setKeyable(keyable);
+                    filterFieldValue.setValue(PrimitiveDataGenerator.getDate(count));
+                    filterFieldValue.setKeyable(keyable);
+                    keyable.setLodgementDate((LocalDate) filterFieldValue.getValue());
 
-                                filterFieldData.setKeyableValues(filterFieldValue);
-                                return filterFieldData;
-                            })
-                    .build()),
+                    filterFieldData.setKeyableValues(filterFieldValue);
+                    return filterFieldData;
+                })
+            .build()),
     APPLICANT(
-            FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
-                    .queryName("applicantName")
-                    .partialSupport(true)
-                    .caseInsensitive(true)
-                    .filterGenerator(
-                            (count, keyable, descriptor) -> {
-                                FilterFieldData<ApplicationListEntry> filterFieldData =
-                                    FilterFieldDataGenerator.getFieldDataWithString(
-                                        count, descriptor, keyable, 10);
+        FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
+            .queryName("applicantName")
+            .partialSupport(true)
+            .caseInsensitive(true)
+            .filterGenerator(
+                (count, keyable, descriptor) -> {
+                    FilterFieldData<ApplicationListEntry> filterFieldData =
+                        FilterFieldDataGenerator.getFieldDataWithString(
+                            count, descriptor, keyable, 10);
 
-                                if (count % 2 == 1) {
-                                    getApplicant(keyable, true).setName(filterFieldData.getKeyableValues().getValue().toString());
-                                } else {
+                    if (isOrganisation(count)) {
+                        filterFieldData.getKeyableValues().setValue(
+                            getName(getApplicant(keyable, true),
+                                    filterFieldData.getKeyableValues().getValue().toString()));
+                    } else {
 
-                                    FilterFieldData<ApplicationListEntry> surName =
-                                        FilterFieldDataGenerator.getFieldDataWithString(
-                                            count, descriptor, keyable, 10);
+                        FilterFieldData<ApplicationListEntry> surName =
+                            FilterFieldDataGenerator.getFieldDataWithString(
+                                count, descriptor, keyable, 10);
 
-                                    getApplicant(keyable, false).setForename1(filterFieldData.getKeyableValues().getValue().toString());
-                                    getApplicant(keyable, false).setSurname(surName.getKeyableValues().getValue().toString());
-                                }
+                        filterFieldData.getKeyableValues().setValue(
+                            getForename(getApplicant(keyable, false),
+                                    filterFieldData.getKeyableValues().getValue().toString()));
+                        getSurname(getApplicant(keyable, false),
+                               surName.getKeyableValues().getValue().toString());
+                    }
 
-                                return filterFieldData;
-                            })
-                    .build()),
+                    return filterFieldData;
+                })
+            .build()),
     RESPONDENT(
         FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
             .queryName("respondentName")
@@ -87,15 +97,19 @@ public enum ApplicationListEntryFilterEnum
                         FilterFieldDataGenerator.getFieldDataWithString(
                             count, descriptor, keyable, 10);
 
-                    if (count % 2 == 1) {
-                        getRespondent(keyable, true).setName(filterFieldData.getKeyableValues().toString());;
+                    if (isOrganisation(count)) {
+                        filterFieldData.getKeyableValues().setValue(getName(
+                            getRespondent(keyable, true),
+                            filterFieldData.getKeyableValues().toString()));
                     } else {
                         FilterFieldData<ApplicationListEntry> surName =
                             FilterFieldDataGenerator.getFieldDataWithString(
                                 count, descriptor, keyable, 10);
-
-                        getRespondent(keyable, false).setForename1(filterFieldData.getKeyableValues().toString());
-                        getRespondent(keyable, false).setSurname(surName.getKeyableValues().toString());
+                        filterFieldData.getKeyableValues().setValue(getForename(
+                            getRespondent(keyable, false),
+                                filterFieldData.getKeyableValues().toString()));
+                        getSurname(getRespondent(keyable, false),
+                                                 surName.getKeyableValues().toString());
                     }
 
                     return filterFieldData;
@@ -114,7 +128,7 @@ public enum ApplicationListEntryFilterEnum
                             count, descriptor, keyable, 8);
 
                     ApplicationList applicationList = getList(keyable);
-                    applicationList.setCourtCode(filterFieldData.getKeyableValues().toString());
+                    applicationList.setCourtCode(filterFieldData.getKeyableValues().getValue().toString());
 
                     return filterFieldData;
                 })
@@ -139,16 +153,18 @@ public enum ApplicationListEntryFilterEnum
     CJA_CODE(
         FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
             .queryName("cjaCode")
-            .partialSupport(true)
+            .partialSupport(false)
             .caseInsensitive(true)
             .filterGenerator(
                 (count, keyable, descriptor) -> {
                     FilterFieldData<ApplicationListEntry> filterFieldData =
                         FilterFieldDataGenerator.getFieldDataWithString(
-                            count, descriptor, keyable, 8);
+                            count, descriptor, keyable, 2);
 
-                    getList(keyable).setCourtCode(filterFieldData.getKeyableValues().toString());
-
+                    CriminalJusticeTestData criminalJusticeTestData = new CriminalJusticeTestData();
+                    CriminalJusticeArea criminalJusticeArea = criminalJusticeTestData.someComplete();
+                    getList(keyable).setCja(criminalJusticeArea);
+                    criminalJusticeArea.setCode(filterFieldData.getKeyableValues().getValue().toString());
                     return filterFieldData;
                 })
             .build()),
@@ -164,12 +180,10 @@ public enum ApplicationListEntryFilterEnum
                             count, descriptor, keyable, 8);
 
                     if (isOrganisation(count)) {
-                        filterFieldData =
-                            FilterFieldDataGenerator.getFieldDataWithString(
-                                count, descriptor, keyable, 8);
-                        getApplicant(keyable, true).setName(filterFieldData.getKeyableValues().toString());
+                        getName(getApplicant(keyable, true),
+                                filterFieldData.getKeyableValues().getValue().toString());
                     } else {
-                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, ""));
+                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
 
                     return filterFieldData;
@@ -189,11 +203,28 @@ public enum ApplicationListEntryFilterEnum
                         filterFieldData =
                             FilterFieldDataGenerator.getFieldDataWithString(
                                 count, descriptor, keyable, 8);
-                        getRespondent(keyable, false).setSurname(filterFieldData.getKeyableValues().toString());
+                        getSurname(getRespondent(keyable, false),
+                                   filterFieldData.getKeyableValues().toString());
                     } else {
-                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, ""));
+                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
 
+                    return filterFieldData;
+                })
+            .build()),
+    STANDARD_APPLICANT_CODE(
+        FilterFieldDataMetaDescriptor.<ApplicationListEntry>builder()
+            .queryName("standardApplicantCode")
+            .partialSupport(true)
+            .caseInsensitive(true)
+            .filterGenerator(
+                (count, keyable, descriptor) -> {
+                    FilterFieldData<ApplicationListEntry> filterFieldData =
+                        FilterFieldDataGenerator.getFieldDataWithString(
+                            count, descriptor, keyable, 8);
+                    StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+                    keyable.setStandardApplicant(standardApplicant);
+                    standardApplicant.setApplicantCode(filterFieldData.getKeyableValues().getValue().toString());
                     return filterFieldData;
                 })
             .build()),
@@ -225,12 +256,11 @@ public enum ApplicationListEntryFilterEnum
                             count, descriptor, keyable, 8);
 
                     if (isOrganisation(count)) {
-                        filterFieldData =
-                            FilterFieldDataGenerator.getFieldDataWithString(
-                                count, descriptor, keyable, 8);
-                        getRespondent(keyable, true).setName(filterFieldData.getKeyableValues().toString());
+                        filterFieldData.getKeyableValues().setValue(
+                            getName(getRespondent(keyable, true),
+                                filterFieldData.getKeyableValues().getValue().toString()));
                     } else {
-                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, ""));
+                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
 
                     return filterFieldData;
@@ -251,9 +281,11 @@ public enum ApplicationListEntryFilterEnum
                         filterFieldData =
                             FilterFieldDataGenerator.getFieldDataWithString(
                                 count, descriptor, keyable, 8);
-                        getRespondent(keyable, false).setSurname(filterFieldData.getKeyableValues().toString());
+                        filterFieldData.getKeyableValues().setValue(
+                            getSurname(getRespondent(keyable, false), filterFieldData
+                            .getKeyableValues().getKeyable().toString()));
                     } else {
-                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, ""));
+                        filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
 
                     return filterFieldData;
@@ -286,7 +318,7 @@ public enum ApplicationListEntryFilterEnum
                         FilterFieldDataGenerator.getFieldDataWithString(
                             count, descriptor, keyable, 8);
 
-                    keyable.setCaseReference(filterFieldData.getKeyableValues().getValue().toString());
+                    keyable.setAccountNumber(filterFieldData.getKeyableValues().getValue().toString());
 
                     return filterFieldData;
                 })
@@ -308,6 +340,12 @@ public enum ApplicationListEntryFilterEnum
             applicationListEntry.setAnamedaddress(isOrganisation ? new NameAddressTestData().someOrganisation() :
                                                       new NameAddressTestData().somePerson());
 
+            applicationListEntry.getAnamedaddress().setSurname(null);
+            applicationListEntry.getAnamedaddress().setForename1(null);
+            applicationListEntry.getAnamedaddress().setName(null);
+
+            applicationListEntry.getAnamedaddress().setCode(NameAddressCodeType.APPLICANT);
+
             return applicationListEntry.getAnamedaddress();
         }
         return applicationListEntry.getAnamedaddress();
@@ -318,6 +356,10 @@ public enum ApplicationListEntryFilterEnum
         if (applicationListEntry.getRnameaddress() == null) {
             applicationListEntry.setRnameaddress(isOrganisation ? new NameAddressTestData().someOrganisation() :
                                                      new NameAddressTestData().somePerson());
+            applicationListEntry.getRnameaddress().setSurname(null);
+            applicationListEntry.getRnameaddress().setForename1(null);
+            applicationListEntry.getRnameaddress().setName(null);
+
             applicationListEntry.getRnameaddress().setCode(NameAddressCodeType.RESPONDENT);
             return applicationListEntry.getRnameaddress();
         }
@@ -331,6 +373,28 @@ public enum ApplicationListEntryFilterEnum
             return applicationListEntry.getApplicationList();
         }
         return applicationListEntry.getApplicationList();
+    }
+
+    public static String getSurname(NameAddress address, String surname) {
+        if (address.getSurname() == null) {
+            address.setSurname(surname);
+        }
+        return address.getSurname();
+    }
+
+    public static String getForename(NameAddress address, String forename) {
+        if (address.getForename1() == null) {
+            address.setForename1(forename);
+        }
+        return address.getForename1();
+    }
+
+
+    public static String getName(NameAddress address, String name) {
+        if (address.getName() == null) {
+            address.setName(name);
+        }
+        return address.getName();
     }
 
     public static boolean isOrganisation(int count) {
