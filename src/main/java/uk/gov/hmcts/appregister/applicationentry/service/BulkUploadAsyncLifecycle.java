@@ -110,7 +110,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             try {
                 EntryCreateDto dto = mapper.toEntryCreateDto(row);
 
-                applicationEntryService.createEntryCore(
+                applicationEntryService.createEntry(
                     PayloadForCreate.<EntryCreateDto>builder()
                         .id(listId)
                         .data(dto)

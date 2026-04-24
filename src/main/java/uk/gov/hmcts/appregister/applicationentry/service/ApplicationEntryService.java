@@ -1,10 +1,8 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import java.util.UUID;
-
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
-import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
@@ -38,8 +36,6 @@ public interface ApplicationEntryService {
      *     Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> createEntry(PayloadForCreate<EntryCreateDto> entryCreateDto);
-
-    MatchResponse<EntryGetDetailDto> createEntryCore(PayloadForCreate<EntryCreateDto> entryCreateDto, CreateApplicationEntryValidationSuccess success);
 
     /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,

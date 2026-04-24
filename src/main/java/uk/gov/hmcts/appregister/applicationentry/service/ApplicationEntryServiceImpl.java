@@ -178,16 +178,81 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
-        PayloadForCreate<EntryCreateDto> entryCreateDto) {
-
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
+        // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
-            createApplicationEntryValidator.validate(
-                entryCreateDto,
-                this::createEntryCore
-            );
+                createApplicationEntryValidator.validate(
+                        entryCreateDto,
+                        (dto, success) -> {
+                            return auditService.processAudit(
+                                    AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
+                                    req -> {
+                                        NameAddress applicantToSave =
+                                                createApplicant(entryCreateDto);
+
+                                        NameAddress respondentToSave =
+                                                createRespondent(entryCreateDto);
+
+                                        // save the list
+                                        ApplicationListEntry listEntryEntity =
+                                                applicationListEntryEntityMapper
+                                                        .toApplicationListEntry(
+                                                                entryCreateDto.getData(),
+                                                                success.getWordingSentence()
+                                                                        .substitute(
+                                                                                entryCreateDto
+                                                                                        .getData()
+                                                                                        .getWordingFields())
+                                                                        .getSubstitutedString(),
+                                                                success.getSa(),
+                                                                applicantToSave,
+                                                                respondentToSave,
+                                                                success.getApplicationCode(),
+                                                                success.getApplicationList());
+
+                                        Long alId = success.getApplicationList().getId();
+                                        short seq = allocateNextSequence(alId);
+                                        listEntryEntity.setSequenceNumber(seq);
+
+                                        listEntryEntity =
+                                                refreshEntity(
+                                                        applicationListEntryRepository.save(
+                                                                listEntryEntity));
+                                        log.debug(
+                                                "Created application entry with id: {}",
+                                                listEntryEntity.getId());
+
+                                        List<AppListEntryFeeStatus> statusList =
+                                                createFeeStatus(listEntryEntity, entryCreateDto);
+
+                                        List<AppListEntryOfficial> officialList =
+                                                createOfficial(listEntryEntity, entryCreateDto);
+
+                                        createFees(success, listEntryEntity, entryCreateDto);
+
+                                        EntryGetDetailDto entryGetDetailDto =
+                                                applicationListEntryMapStructMapper
+                                                        .toEntryGetDetailDto(
+                                                                listEntryEntity,
+                                                                statusList,
+                                                                success.getFee(),
+                                                                officialList,
+                                                                success.getSa());
+                                        entryGetDetailDto.setHasOffsiteFee(
+                                                entryCreateDto.getData().getHasOffsiteFee());
+
+                                        return Optional.of(
+                                                new AuditableResult<>(
+                                                        MatchResponse.of(
+                                                                entryGetDetailDto,
+                                                                getKeyablesForCreateUpdateEtag(
+                                                                        listEntryEntity)),
+                                                        listEntryEntity));
+                                    });
+                        });
 
         log.debug("Finish: Create Application Entry: {}", entryCreateDto);
 
@@ -1121,63 +1186,5 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                         });
 
         return entryPage;
-    }
-
-    @Override
-    protected MatchResponse<EntryGetDetailDto> createEntryCore(
-        PayloadForCreate<EntryCreateDto> entryCreateDto,
-        CreateApplicationEntryValidationSuccess success) {
-
-        return auditService.processAudit(
-            AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST,
-            req -> {
-                NameAddress applicantToSave = createApplicant(entryCreateDto);
-                NameAddress respondentToSave = createRespondent(entryCreateDto);
-
-                ApplicationListEntry listEntryEntity =
-                    applicationListEntryEntityMapper.toApplicationListEntry(
-                        entryCreateDto.getData(),
-                        success.getWordingSentence()
-                            .substitute(entryCreateDto.getData().getWordingFields())
-                            .getSubstitutedString(),
-                        success.getSa(),
-                        applicantToSave,
-                        respondentToSave,
-                        success.getApplicationCode(),
-                        success.getApplicationList());
-
-                Long alId = success.getApplicationList().getId();
-                short seq = allocateNextSequence(alId);
-                listEntryEntity.setSequenceNumber(seq);
-
-                listEntryEntity =
-                    refreshEntity(applicationListEntryRepository.save(listEntryEntity));
-
-                List<AppListEntryFeeStatus> statusList =
-                    createFeeStatus(listEntryEntity, entryCreateDto);
-
-                List<AppListEntryOfficial> officialList =
-                    createOfficial(listEntryEntity, entryCreateDto);
-
-                createFees(success, listEntryEntity, entryCreateDto);
-
-                EntryGetDetailDto entryGetDetailDto =
-                    applicationListEntryMapStructMapper.toEntryGetDetailDto(
-                        listEntryEntity,
-                        statusList,
-                        success.getFee(),
-                        officialList,
-                        success.getSa());
-
-                entryGetDetailDto.setHasOffsiteFee(
-                    entryCreateDto.getData().getHasOffsiteFee());
-
-                return Optional.of(
-                    new AuditableResult<>(
-                        MatchResponse.of(
-                            entryGetDetailDto,
-                            getKeyablesForCreateUpdateEtag(listEntryEntity)),
-                        listEntryEntity));
-            });
     }
 }
