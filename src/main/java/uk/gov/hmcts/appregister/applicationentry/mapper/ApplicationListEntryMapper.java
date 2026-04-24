@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import org.jspecify.annotations.NonNull;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,6 +17,9 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadApplicationCommand;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -41,6 +46,7 @@ import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
@@ -54,6 +60,7 @@ import uk.gov.hmcts.appregister.generated.model.Person;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Slf4j
@@ -765,4 +772,96 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "entryFeeIds", ignore = true)
     @Mapping(target = "uuid", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(EntryGetFilterDto filterDto);
+
+    public abstract BulkUploadApplicationCommand toBulkUploadCommand(BulkUploadRow row);
+
+    @Mapping(target = "respondent", ignore = true) // handled in AfterMapping
+    @Mapping(target = "applicant", ignore = true)  // we use applicantCode instead
+    @Mapping(target = "wordingFields", ignore = true)
+    @Mapping(target = "feeStatuses", ignore = true)
+    @Mapping(target = "officials", ignore = true)
+    public abstract EntryCreateDto toEntryCreateDto(BulkUploadRow row);
+
+    @AfterMapping
+    protected void mapBulkUploadFields(BulkUploadRow row, @MappingTarget EntryCreateDto dto) {
+        // --- Respondent ---
+        dto.setRespondent(toBulkUploadRespondent(row));
+
+        // --- Applicant ---
+        dto.setStandardApplicantCode(row.getApplicantCode());
+
+        // --- Wording fields ---
+        if (row.getApplicationText1() != null || row.getApplicationText2() != null) {
+            List<TemplateSubstitution> substitutions = getTemplateSubstitutions(row);
+
+            dto.setWordingFields(substitutions);
+        }
+
+        dto.setHasOffsiteFee(Boolean.FALSE);
+    }
+
+    private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(BulkUploadRow row) {
+        List<TemplateSubstitution> substitutions = new ArrayList<>();
+
+        if (row.getApplicationText1() != null) {
+            TemplateSubstitution t1 = new TemplateSubstitution();
+            t1.setValue(row.getApplicationText1());
+            substitutions.add(t1);
+        }
+
+        if (row.getApplicationText2() != null) {
+            TemplateSubstitution t2 = new TemplateSubstitution();
+            t2.setValue(row.getApplicationText2());
+            substitutions.add(t2);
+        }
+
+        return substitutions;
+    }
+
+    private ContactDetails toRespondentContactDetails(BulkUploadRow row) {
+        ContactDetails contactDetails = new ContactDetails();
+
+        contactDetails.setAddressLine1(row.getRespondentAddressLine1());
+        contactDetails.setAddressLine2(map(row.getRespondentAddressLine2()));
+        contactDetails.setAddressLine3(map(row.getRespondentAddressLine3()));
+        contactDetails.setAddressLine4(map(row.getRespondentAddressLine4()));
+        contactDetails.setAddressLine5(map(row.getRespondentAddressLine5()));
+        contactDetails.setPostcode(row.getRespondentPostcode());
+        contactDetails.setEmail(map(row.getRespondentEmail()));
+        contactDetails.setPhone(map(row.getRespondentTelephone()));
+        contactDetails.setMobile(map(row.getRespondentMobile()));
+
+        return contactDetails;
+    }
+
+    private Respondent toBulkUploadRespondent(BulkUploadRow row) {
+        Respondent respondent = new Respondent();
+
+        ContactDetails contactDetails = toRespondentContactDetails(row);
+
+        if (row.getRespondentOrganisationName() != null) {
+
+            Organisation organisation = new Organisation();
+            organisation.setName(row.getRespondentOrganisationName());
+            organisation.setContactDetails(contactDetails);
+
+            respondent.setOrganisation(organisation);
+        } else {
+            RespondentPerson person = new RespondentPerson();
+
+            FullName name = new FullName();
+            name.setTitle(row.getRespondentTitle());
+            name.setFirstForename(row.getRespondentForename1());
+            name.setSecondForename(map(row.getRespondentForename2()));
+            name.setThirdForename(map(row.getRespondentForename3()));
+            name.setSurname(row.getRespondentSurname());
+
+            person.setName(name);
+            person.setContactDetails(contactDetails);
+
+            respondent.setPerson(person);
+        }
+
+        return respondent;
+    }
 }
