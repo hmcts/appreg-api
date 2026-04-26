@@ -49,7 +49,7 @@ public enum ApplicationListEntryFilterEnum
                     filterFieldValue.setKeyable(keyable);
                     filterFieldValue.setValue(PrimitiveDataGenerator.getDate(count));
                     filterFieldValue.setKeyable(keyable);
-                    keyable.setLodgementDate((LocalDate) filterFieldValue.getValue());
+                    getList(keyable).setDate((LocalDate) filterFieldValue.getValue());
 
                     filterFieldData.setKeyableValues(filterFieldValue);
                     return filterFieldData;
@@ -100,7 +100,7 @@ public enum ApplicationListEntryFilterEnum
                     if (isOrganisation(count)) {
                         filterFieldData.getKeyableValues().setValue(getName(
                             getRespondent(keyable, true),
-                            filterFieldData.getKeyableValues().toString()));
+                            filterFieldData.getKeyableValues().getValue().toString()));
                     } else {
                         FilterFieldData<ApplicationListEntry> surName =
                             FilterFieldDataGenerator.getFieldDataWithString(
@@ -109,7 +109,8 @@ public enum ApplicationListEntryFilterEnum
                             getRespondent(keyable, false),
                                 filterFieldData.getKeyableValues().toString()));
                         getSurname(getRespondent(keyable, false),
-                                                 surName.getKeyableValues().toString());
+                                                 surName.getKeyableValues()
+                                                     .getValue().toString());
                     }
 
                     return filterFieldData;
@@ -180,8 +181,8 @@ public enum ApplicationListEntryFilterEnum
                             count, descriptor, keyable, 8);
 
                     if (isOrganisation(count)) {
-                        getName(getApplicant(keyable, true),
-                                filterFieldData.getKeyableValues().getValue().toString());
+                        filterFieldData.getKeyableValues().setValue(getName(getApplicant(keyable, true),
+                                filterFieldData.getKeyableValues().getValue().toString()));
                     } else {
                         filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
@@ -197,14 +198,12 @@ public enum ApplicationListEntryFilterEnum
             .filterGenerator(
                 (count, keyable, descriptor) -> {
                     FilterFieldData<ApplicationListEntry> filterFieldData =
-                        new FilterFieldData<ApplicationListEntry>();
+                        FilterFieldDataGenerator.getFieldDataWithString(
+                            count, descriptor, keyable, 8);
 
                     if (!isOrganisation(count)) {
-                        filterFieldData =
-                            FilterFieldDataGenerator.getFieldDataWithString(
-                                count, descriptor, keyable, 8);
-                        getSurname(getRespondent(keyable, false),
-                                   filterFieldData.getKeyableValues().toString());
+                        filterFieldData.getKeyableValues().setValue(getSurname(getRespondent(keyable, false),
+                                   filterFieldData.getKeyableValues().toString()));
                     } else {
                         filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }
@@ -236,11 +235,14 @@ public enum ApplicationListEntryFilterEnum
             .filterGenerator(
                 (count, keyable, descriptor) -> {
                     FilterFieldData<ApplicationListEntry> filterFieldData =
-                        FilterFieldDataGenerator.getFieldDataWithString(
-                            count, descriptor, keyable, 8);
-
+                        new FilterFieldData<>();
+                    filterFieldData.setDescriptor(descriptor);
+                    FilterFieldValue<ApplicationListEntry> filterFieldValue =
+                        new FilterFieldValue<>();
+                    filterFieldValue.setKeyable(keyable);
+                    filterFieldData.setKeyableValues(filterFieldValue);
                     keyable.getApplicationList().setStatus(count % 2 == 0 ? Status.OPEN : Status.CLOSED);
-
+                    filterFieldValue.setValue(keyable.getApplicationList().getStatus());
                     return filterFieldData;
                 })
             .build()),
@@ -283,7 +285,7 @@ public enum ApplicationListEntryFilterEnum
                                 count, descriptor, keyable, 8);
                         filterFieldData.getKeyableValues().setValue(
                             getSurname(getRespondent(keyable, false), filterFieldData
-                            .getKeyableValues().getKeyable().toString()));
+                            .getKeyableValues().getValue().toString()));
                     } else {
                         filterFieldData.setKeyableValues(new FilterFieldValue<>(keyable, null));
                     }

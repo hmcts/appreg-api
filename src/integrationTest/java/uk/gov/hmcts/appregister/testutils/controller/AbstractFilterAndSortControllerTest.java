@@ -35,6 +35,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 import uk.gov.hmcts.appregister.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.filter.FilterFieldValue;
+import uk.gov.hmcts.appregister.filter.FilterScenarioStrategy;
 import uk.gov.hmcts.appregister.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.filter.PartialFilterFieldData;
 import uk.gov.hmcts.appregister.filter.exception.FilterProcessingException;
@@ -61,6 +62,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    protected FilterScenarioStrategy filterScenarioStrategy;
 
     public enum PartialEnum {
         START_OF_FILTER,
@@ -723,17 +727,15 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
                             data.getDescriptor().getQueryName(),
                             data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
                                 ? filterValue.getValue().toString().toUpperCase()
-                                : filterValue.getValue()
+                                : filterValue.getValue().toString()
                         );
                     }
-                }
-            } else {
-                if (filterValue.getValue() != null) {
+                } else {
                     requestSpecification.queryParam(
                         data.getDescriptor().getQueryName(),
                         data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
                             ? filterValue.getValue().toString().toUpperCase()
-                            : getFilterValueQueryValue(filterValue)
+                            : filterValue.getValue().toString()
                     );
                 }
             }

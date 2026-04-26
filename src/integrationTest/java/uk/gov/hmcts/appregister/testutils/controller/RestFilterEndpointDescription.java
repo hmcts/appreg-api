@@ -7,9 +7,13 @@ import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.K;
+
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.filter.FilterScenarioFactory;
+import uk.gov.hmcts.appregister.filter.FilterScenarioStrategy;
 import uk.gov.hmcts.appregister.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.filter.meta.SortMetaDescriptorEnum;
 
@@ -47,16 +51,17 @@ public class RestFilterEndpointDescription<T extends Keyable> {
     /**
      * gets all of the rest filter descriptions for a given scenario.
      *
-     * @param scenario The scenario to get the rest filter descriptions for.
+     * @param scenarioStrategy The scenario strategy to get the rest filter descriptions for.
      * @return All of the rest filter descriptions for a given scenario.
      */
-    public List<RestFilterEndpointDescription<T>> getForScenario(FilterableScenario<T> scenario) {
+    public List<RestFilterEndpointDescription<T>>
+    getForScenario(FilterScenarioStrategy scenarioStrategy) {
         List<RestFilterEndpointDescription<T>> restFilterDescriptionsLst = new ArrayList<>();
-        for (FilterableScenario<T> filterableScenario : scenario.getAllCombinations()) {
+        for (FilterableScenario<T> allScenarios :
+            scenarioStrategy.getScenarioCombinations(filterableScenario)) {
             RestFilterEndpointDescription<T> restFilterCopy =
-                    new RestFilterEndpointDescription<T>(this);
-            restFilterCopy.filterableScenario = filterableScenario;
-
+                    new RestFilterEndpointDescription(this);
+            restFilterCopy.filterableScenario = allScenarios;
             if (restFilterCopy.filterableScenario.getFilterData().size() != 0) {
                 restFilterDescriptionsLst.add(restFilterCopy);
             }

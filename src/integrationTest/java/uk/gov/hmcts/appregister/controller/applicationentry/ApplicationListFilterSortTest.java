@@ -79,7 +79,7 @@ public class ApplicationListFilterSortTest
         // gets all of the combinations of filters
         return Stream.of(
                 restFilterDescription
-                        .getForScenario(restFilterDescription.getFilterableScenario())
+                        .getForScenario(filterScenarioStrategy)
                         .toArray(new RestFilterEndpointDescription[0]));
     }
 

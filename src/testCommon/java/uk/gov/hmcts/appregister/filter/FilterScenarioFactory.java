@@ -54,9 +54,6 @@ public class FilterScenarioFactory {
             scenario.add(filterFieldDataLst);
         }
 
-        // add the sort descriptors
-        scenario.setSortDescriptorEnums(sortDescriptorEnums);
-
         return scenario;
     }
 

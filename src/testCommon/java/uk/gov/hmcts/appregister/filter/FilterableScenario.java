@@ -22,9 +22,6 @@ public class FilterableScenario<T extends Keyable> {
      */
     private List<List<FilterFieldData<T>>> filterData = new ArrayList<>();
 
-    /** The sort descriptor enums that relate to this filter. */
-    private List<SortMetaDescriptorEnum<T>> sortDescriptorEnums = new ArrayList<>();
-
     public void add(List<FilterFieldData<T>> filterFieldData) {
         this.filterData.add(filterFieldData);
     }
@@ -45,7 +42,6 @@ public class FilterableScenario<T extends Keyable> {
 
         for (int mask = 0; mask < total; mask++) {
             FilterableScenario<T> scenario = new FilterableScenario<T>();
-            scenario.setSortDescriptorEnums(sortDescriptorEnums);
 
             for (int i = 0; i < n; i++) {
                 if ((mask & (1 << i)) != 0) {

@@ -49,7 +49,7 @@ public class StandardApplicantFilterAndSortTest
         // gets all of the combinations of filters based on the start data
         return Stream.of(
                 restFilterDescription
-                        .getForScenario(scenario)
+                        .getForScenario(filterScenarioStrategy)
                         .toArray(new RestFilterEndpointDescription[0]));
     }
 
