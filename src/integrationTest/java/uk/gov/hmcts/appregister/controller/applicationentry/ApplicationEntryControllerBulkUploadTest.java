@@ -27,13 +27,13 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicationEntryCrudTest {
 
-    private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries-nle.csv";
+    private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
 
     @Autowired private StandardApplicantRepository standardApplicantRepository;
 
     @Test
-    void givenNleCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
+    void givenCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
         UUID listId = getOpenApplicationListId();
         ensureCsvReferenceData(listId);
         int entryCountBefore = countEntriesForList(listId);
@@ -105,7 +105,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                     applicant.setApplicantCode("AW62958");
                     applicant.setApplicantStartDate(LocalDate.now().minusDays(1));
                     applicant.setApplicantEndDate(null);
-                    applicant.setName("NLE test organisation");
+                    applicant.setName("Bulk upload test organisation");
                     applicant.setAddressLine1("Organisation Address Line 1");
                     applicant.setAddressLine2("Organisation Address Line 2");
                     applicant.setAddressLine3("Organisation Address Line 3");
