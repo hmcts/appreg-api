@@ -229,6 +229,9 @@ public class ReportingControllerGetTest extends BaseIntegration {
 
         responseSpec.then().statusCode(200);
         responseSpec.then().contentType("text/csv");
+        try (InputStream responseStream = responseSpec.getBody().asInputStream()) {
+            Assertions.assertTrue(responseStream.readAllBytes().length > 0);
+        }
 
         // Verify the GET audit row persisted for the requested report job UUID.
         val persistedAuditRow =

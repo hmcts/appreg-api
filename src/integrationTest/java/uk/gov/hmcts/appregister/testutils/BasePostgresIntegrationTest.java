@@ -57,12 +57,16 @@ public abstract class BasePostgresIntegrationTest {
     void tearDown() {
         // ensure that we do not leave any temp files around.
         if (AppRegTempFileUtil.doesTempFileExist()) {
+            File[] tempFiles = AppRegTempFileUtil.getTempFilesThatExist();
+
             // mark for deletion when the process ends
-            Arrays.asList(AppRegTempFileUtil.getTempFilesThatExist()).forEach(File::deleteOnExit);
+            Arrays.asList(tempFiles).forEach(File::deleteOnExit);
 
             throw new AssertionFailure(
                     "You're code is not clearing up temp files that it creates, please make sure "
-                            + "you delete files by wrapping code in try/resources where necessary.");
+                            + "you delete files by wrapping code in try/resources where necessary. "
+                            + "Found temp files: "
+                            + Arrays.stream(tempFiles).map(File::getAbsolutePath).toList());
         }
     }
 
