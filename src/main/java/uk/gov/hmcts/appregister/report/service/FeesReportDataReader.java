@@ -234,7 +234,10 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
     public void readData(
             ReadPagePosition position, PageReader<FeesReportRow> pageReader, JobContext jobContext)
             throws IOException {
-        jdbcTemplate.getJdbcTemplate().execute("SET LOCAL search_path TO \"" + schema + "\"");
+        jdbcTemplate
+                .getJdbcTemplate()
+                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
+        // S2077: schema is trusted Spring config; report filter values are bound query parameters.
 
         List<FeesReportRow> rows = readPage(position);
 

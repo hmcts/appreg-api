@@ -147,7 +147,9 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
         File file = AppRegTempFileUtil.generateTempFile("async-job-clob");
 
         jdbcTemplate.query(
-                JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS),
+                JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS), // NOSONAR
+                // S2077: schema is trusted Spring config, table name is a constant,
+                // and job id is parameter-bound below.
                 ps -> ps.setObject(1, jobId.getId()),
                 rs -> {
                     try (Reader reader = rs.getCharacterStream(1);
@@ -179,13 +181,9 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
      */
     public void setClob(InputStream inputStream, JobIdRequest jobId) {
         jdbcTemplate.execute(
-                // NOSONAR
-                JDBC_INSERT_CLOB_QUERY.formatted(
-                        schema + "." + TableNames.ASYNC_JOBS), // NOSONAR - SQL injection is not
-                // possible here as we use a prepared statement. The only dynamic configurable
-                // pieces are the schema
-                // which comes from Spring config.
-
+                JDBC_INSERT_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS), // NOSONAR
+                // S2077: schema is trusted Spring config, table name is a constant,
+                // and job id/content are parameter-bound below.
                 (PreparedStatementCallback<Void>)
                         ps -> {
                             ps.setObject(2, jobId.getId());
