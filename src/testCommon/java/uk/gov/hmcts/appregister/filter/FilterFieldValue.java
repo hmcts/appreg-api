@@ -21,6 +21,9 @@ public class FilterFieldValue<T extends Keyable> {
 
     public FilterFieldValue(FilterFieldValue<T> filterValue) {
         setKeyable(CopyUtil.deepClone(filterValue.keyable));
-        setValue(CopyUtil.deepClone(filterValue.value));
+
+        if (filterValue.value != null) {
+            setValue(CopyUtil.deepClone(filterValue.value));
+        }
     }
 }

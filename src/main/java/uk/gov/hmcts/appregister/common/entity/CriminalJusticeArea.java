@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -41,6 +42,7 @@ public class CriminalJusticeArea implements Keyable {
 
     @Column(name = "cja_code", nullable = false)
     @Audit(action = {CrudEnum.READ})
+    @Size(max = 2)
     private String code;
 
     @Column(name = "cja_description", nullable = false)

@@ -30,6 +30,7 @@ import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
 import uk.gov.hmcts.appregister.filter.FilterFieldData;
 import uk.gov.hmcts.appregister.filter.FilterFieldValue;
+import uk.gov.hmcts.appregister.filter.FilterScenarioStrategy;
 import uk.gov.hmcts.appregister.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.filter.PartialFilterFieldData;
 import uk.gov.hmcts.appregister.filter.exception.FilterProcessingException;
@@ -54,6 +55,8 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
     @Autowired protected DatabasePersistance persistance;
 
     @Autowired private EntityManager entityManager;
+
+    @Autowired protected FilterScenarioStrategy filterScenarioStrategy;
 
     public enum PartialEnum {
         START_OF_FILTER,
@@ -93,28 +96,32 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         // save all keyable data that belongs to scenario
         saveFilterScenarioData(filterDescription.getFilterableScenario());
 
-        // filter using the start data of the scenario
-        Response response =
-                runTest(
-                        filterDescription,
-                        req -> applyQueryForStart(filterDescription, req, false));
+        if (isApplicableForFilterAccordingToAvailableValues(
+                filterDescription.getFilterableScenario().getFilterData().getFirst())) {
 
-        // run the assertions
-        transactionalUnitOfWork.inTransaction(
-                () -> {
-                    List<T> reloaded =
-                            reload(
-                                    List.of(
-                                            filterDescription
-                                                    .getFilterableScenario()
-                                                    .getFilterData()
-                                                    .getFirst()
-                                                    .getFirst()
-                                                    .getKeyableValues()
-                                                    .getKeyable()));
+            // filter using the start data of the scenario
+            Response response =
+                    runTest(
+                            filterDescription,
+                            req -> applyQueryForStart(filterDescription, req, false));
 
-                    assertResponseInOrder(reloaded, response, List.of());
-                });
+            // run the assertions
+            transactionalUnitOfWork.inTransaction(
+                    () -> {
+                        List<T> reloaded =
+                                reload(
+                                        List.of(
+                                                filterDescription
+                                                        .getFilterableScenario()
+                                                        .getFilterData()
+                                                        .getFirst()
+                                                        .getFirst()
+                                                        .getKeyableValues()
+                                                        .getKeyable()));
+
+                        assertResponseInOrder(reloaded, response, List.of());
+                    });
+        }
     }
 
     @ParameterizedTest
@@ -125,7 +132,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         saveFilterScenarioData(filterDescription.getFilterableScenario());
 
         // only react to filters that are applicable to case insensitive matching
-        if (doesContainACaseInsensitiveFilter(filterDescription)) {
+        if (doesContainACaseInsensitiveFilter(filterDescription)
+                && isApplicableForFilterAccordingToAvailableValues(
+                        filterDescription.getFilterableScenario().getFilterData().getFirst())) {
 
             // filter using the start data of the scenario
             Response response =
@@ -161,7 +170,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         // save all keyable data that belongs to scenario
         saveFilterScenarioData(filterDescription.getFilterableScenario());
 
-        if (filterDescription.getFilterableScenario().isPartialOnlyConfig()) {
+        if (filterDescription.getFilterableScenario().isPartialOnlyConfig()
+                && isApplicableForFilterAccordingToAvailableValues(
+                        filterDescription.getFilterableScenario().getFilterData().getFirst())) {
             Response response =
                     runTest(
                             filterDescription,
@@ -174,7 +185,12 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
                             null,
                             null);
 
-            assertAllFilterWithDefaultSort(response, filterDescription);
+            List<T> assertedMatchingKeys =
+                    getAllKeyableThatShouldPartialMatch(
+                            filterDescription.getFilterableScenario(),
+                            filterDescription.getFilterableScenario().getFilterData().getFirst());
+
+            assertAllFilterWithDefaultSort(assertedMatchingKeys, response, filterDescription);
         }
     }
 
@@ -185,35 +201,10 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         // save all keyable data that belongs to scenario
         saveFilterScenarioData(filterDescription.getFilterableScenario());
 
-        if (filterDescription.getFilterableScenario().doesPartialExist()) {
+        if (filterDescription.getFilterableScenario().doesPartialExist()
+                && isApplicableForFilterAccordingToAvailableValues(
+                        filterDescription.getFilterableScenario().getFilterData().getFirst())) {
             runAndAssertTestPartial(filterDescription, false);
-        }
-    }
-
-    @ParameterizedTest
-    @MethodSource("getFilterDescriptions")
-    public void runPartialFilterGetAllWithEachSort(
-            RestFilterEndpointDescription<T> filterDescription) throws Exception {
-        // save all keyable data that belongs to scenario
-        saveFilterScenarioData(filterDescription.getFilterableScenario());
-        if (filterDescription.getFilterableScenario().isPartialOnlyConfig()) {
-            // run the sorts across each filter
-            for (SortMetaDescriptorEnum<T> sort :
-                    filterDescription.getFilterableScenario().getSortDescriptorEnums()) {
-                Response response =
-                        runTest(
-                                filterDescription,
-                                req ->
-                                        applyQueryForStart(
-                                                filterDescription,
-                                                req,
-                                                PartialEnum.ALL_PARTIALS_IN_SCENARIO),
-                                100,
-                                sort.getDescriptor().getSortableOperationEnum().getApiValue(),
-                                sort.getDescriptor().getOrder());
-
-                assertAllFilterWithSort(response, filterDescription, sort.getDescriptor());
-            }
         }
     }
 
@@ -333,8 +324,8 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
                 });
     }
 
-    // @ParameterizedTest
-    // @MethodSource("getSortDescriptions")
+    @ParameterizedTest
+    @MethodSource("getSortDescriptions")
     public void runMultiSortFailure(RestSortEndpointDescription<T> sortEndpointDescription)
             throws Exception {
         saveKeyables(sortEndpointDescription.getExpectedToBeGenerated());
@@ -499,7 +490,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
      * @param filterDescription The filter description.
      */
     private void assertAllFilterWithDefaultSort(
-            Response response, RestFilterEndpointDescription<T> filterDescription) {
+            List<T> assertedMatchingKeys,
+            Response response,
+            RestFilterEndpointDescription<T> filterDescription) {
         // assert that we have found the data with the query
         Assertions.assertEquals(HttpStatus.OK.value(), response.getStatusCode());
 
@@ -507,7 +500,9 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         SortMetaDataDescriptor<T> sortDataDescriptor =
                 getDefaultSort(filterDescription.getSortDescriptors());
 
-        assertAllFilterWithSort(response, filterDescription, sortDataDescriptor);
+        assertAllFilterWithSort(
+                assertedMatchingKeys, response,
+                filterDescription, sortDataDescriptor);
     }
 
     /**
@@ -517,6 +512,7 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
      * @param filterDescription The filter description.
      */
     private void assertAllFilterWithSort(
+            List<T> assertedMatchingKeys,
             Response response,
             RestFilterEndpointDescription<T> filterDescription,
             SortMetaDataDescriptor<T> descriptor) {
@@ -525,13 +521,56 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
 
         transactionalUnitOfWork.inTransaction(
                 () -> {
-                    List<T> keyables =
-                            reload(filterDescription.getFilterableScenario().getAllKeyable());
+                    List<T> keyables = reload(assertedMatchingKeys);
 
                     sortKeyables(keyables, descriptor, null);
 
                     Assertions.assertTrue(assertResponseInOrder(keyables, response, List.of()));
                 });
+    }
+
+    /**
+     * gets all matching keyables in this scenario when we exclusively partially filtering. This
+     * method considers that not all keyable fields for each row of the scenario may be returned
+     * based on a null value being returned.
+     *
+     * @param scenario The filter scenario that contains only partials.
+     * @param filterProcessing The filter that we are processing.
+     */
+    private List<T> getAllKeyableThatShouldPartialMatch(
+            FilterableScenario<T> scenario, List<FilterFieldData<T>> filterProcessing) {
+        ArrayList<T> results = new ArrayList<>();
+        for (List<FilterFieldData<T>> filterFieldDataRow : scenario.getFilterData()) {
+            boolean matchingPartial = true;
+
+            for (FilterFieldData<T> fieldOfRow : filterFieldDataRow) {
+                // loop through each field for the row we are targetting
+                for (FilterFieldData<T> filterFieldData : filterProcessing) {
+                    // if any of the partial fields matches a row value with null
+                    // then this partial field does not apply and would not match
+                    // so exclude it
+                    if (fieldOfRow
+                            .getDescriptor()
+                            .getQueryName()
+                            .equals(filterFieldData.getDescriptor().getQueryName())) {
+                        if (fieldOfRow.getKeyableValues().getValue() == null) {
+                            matchingPartial = false;
+                        }
+                    }
+                }
+            }
+
+            // add the keyable to match on the partial filter output
+            if (matchingPartial) {
+                // if we have already captured the keyable reference they do not readd
+                if (!results.contains(
+                        filterFieldDataRow.getFirst().getKeyableValues().getKeyable())) {
+                    results.add(filterFieldDataRow.getFirst().getKeyableValues().getKeyable());
+                }
+            }
+        }
+
+        return results;
     }
 
     /**
@@ -619,48 +658,60 @@ public abstract class AbstractFilterAndSortControllerTest<T extends Keyable>
         for (FilterFieldData<T> data :
                 filterSortableDescription.getFilterableScenario().getFilterData().getFirst()) {
             FilterFieldValue<T> filterValue = data.getKeyableValues();
-
-            if (data instanceof PartialFilterFieldData<T> partialFilterData) {
-                if (partialEnum == PartialEnum.START_OF_FILTER) {
-                    requestSpecification.queryParam(
-                            data.getDescriptor().getQueryName(),
-                            data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                                    ? partialFilterData.getStartsWith().toUpperCase()
-                                    : partialFilterData.getStartsWith());
-                } else if (partialEnum == PartialEnum.MIDDLE_OF_FILTER) {
-                    requestSpecification.queryParam(
-                            data.getDescriptor().getQueryName(),
-                            data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                                    ? partialFilterData.getMiddleWith().toUpperCase()
-                                    : partialFilterData.getMiddleWith());
-                } else if (partialEnum == PartialEnum.END_OF_FILTER) {
-                    requestSpecification.queryParam(
-                            data.getDescriptor().getQueryName(),
-                            data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                                    ? partialFilterData.getEndsWith().toUpperCase()
-                                    : partialFilterData.getEndsWith());
-                } else if (partialEnum == PartialEnum.ALL_PARTIALS_IN_SCENARIO) {
-                    requestSpecification.queryParam(
-                            data.getDescriptor().getQueryName(),
-                            data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                                    ? partialFilterData.getMatchOnAllPartials().toUpperCase()
-                                    : partialFilterData.getMatchOnAllPartials());
+            if (filterValue.getValue() != null) {
+                if (data instanceof PartialFilterFieldData<T> partialFilterData) {
+                    if (partialEnum == PartialEnum.START_OF_FILTER) {
+                        requestSpecification.queryParam(
+                                data.getDescriptor().getQueryName(),
+                                data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                                        ? partialFilterData.getStartsWith().toUpperCase()
+                                        : partialFilterData.getStartsWith());
+                    } else if (partialEnum == PartialEnum.MIDDLE_OF_FILTER) {
+                        requestSpecification.queryParam(
+                                data.getDescriptor().getQueryName(),
+                                data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                                        ? partialFilterData.getMiddleWith().toUpperCase()
+                                        : partialFilterData.getMiddleWith());
+                    } else if (partialEnum == PartialEnum.END_OF_FILTER) {
+                        requestSpecification.queryParam(
+                                data.getDescriptor().getQueryName(),
+                                data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                                        ? partialFilterData.getEndsWith().toUpperCase()
+                                        : partialFilterData.getEndsWith());
+                    } else if (partialEnum == PartialEnum.ALL_PARTIALS_IN_SCENARIO) {
+                        requestSpecification.queryParam(
+                                data.getDescriptor().getQueryName(),
+                                data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                                        ? partialFilterData.getMatchOnAllPartials().toUpperCase()
+                                        : partialFilterData.getMatchOnAllPartials());
+                    } else {
+                        requestSpecification.queryParam(
+                                data.getDescriptor().getQueryName(),
+                                data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
+                                        ? filterValue.getValue().toString().toUpperCase()
+                                        : filterValue.getValue().toString());
+                    }
                 } else {
                     requestSpecification.queryParam(
                             data.getDescriptor().getQueryName(),
                             data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
                                     ? filterValue.getValue().toString().toUpperCase()
-                                    : filterValue.getValue());
+                                    : filterValue.getValue().toString());
                 }
-            } else {
-                requestSpecification.queryParam(
-                        data.getDescriptor().getQueryName(),
-                        data.getDescriptor().isCaseInsensitive() && caseInsensitiveMatch
-                                ? filterValue.getValue().toString().toUpperCase()
-                                : getFilterValueQueryValue(filterValue));
             }
         }
         return requestSpecification;
+    }
+
+    /** Make sure that the filter is applicable for the filter scenario. */
+    private boolean isApplicableForFilterAccordingToAvailableValues(List<FilterFieldData<T>> data) {
+        for (FilterFieldData<T> filterFieldData : data) {
+            if (filterFieldData.getKeyableValues().getValue() != null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.filter.meta.SortMetaDescriptorEnum;
 
 /**
  * A filterable scenario that stores multiple filter scenarios.
@@ -21,9 +20,6 @@ public class FilterableScenario<T extends Keyable> {
      * filter field data mapped against it.
      */
     private List<List<FilterFieldData<T>>> filterData = new ArrayList<>();
-
-    /** The sort descriptor enums that relate to this filter. */
-    private List<SortMetaDescriptorEnum<T>> sortDescriptorEnums = new ArrayList<>();
 
     public void add(List<FilterFieldData<T>> filterFieldData) {
         this.filterData.add(filterFieldData);
@@ -45,7 +41,6 @@ public class FilterableScenario<T extends Keyable> {
 
         for (int mask = 0; mask < total; mask++) {
             FilterableScenario<T> scenario = new FilterableScenario<T>();
-            scenario.setSortDescriptorEnums(sortDescriptorEnums);
 
             for (int i = 0; i < n; i++) {
                 if ((mask & (1 << i)) != 0) {
@@ -58,7 +53,25 @@ public class FilterableScenario<T extends Keyable> {
                             filterFieldDataLst = scenario.filterData.get(j);
                         }
 
-                        filterFieldDataLst.add(filterData.get(j).get(i).deepClone());
+                        // clone the first filter field data and set it as the keyable value
+                        if (filterFieldDataLst.size() == 0) {
+                            filterFieldDataLst.add(filterData.get(j).get(i).deepClone());
+                        } else {
+                            FilterFieldData<T> filterFieldValue =
+                                    filterData.get(j).get(i).deepClone();
+
+                            // use the same cloned value as the first entry for all subsequent
+                            // entries
+                            filterFieldValue
+                                    .getKeyableValues()
+                                    .setKeyable(
+                                            filterFieldDataLst
+                                                    .get(0)
+                                                    .getKeyableValues()
+                                                    .getKeyable());
+
+                            filterFieldDataLst.add(filterFieldValue);
+                        }
                     }
                 }
             }

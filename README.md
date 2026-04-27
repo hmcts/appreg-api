@@ -33,16 +33,16 @@ The steps work on Windows, macOS, and Linux.
 
 4. **Configure run settings.**
    After indexing completes, open `.run/appreg-api-bootRun.run.xml` and set these environment variables:
-  - `OIDC_TENANT_ID`
-  - `POSTGRES_HOST` - Only required if the database was not setup using the ./docker-compose.yml file, otherwise it defaults to `localhost`
-  - `POSTGRES_PASS` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `password`
- -  `POSTGRES_DATABASE` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `appreg`
-Ask an existing developer for values.
+- `OIDC_TENANT_ID`
+- `POSTGRES_HOST` - Only required if the database was not setup using the ./docker-compose.yml file, otherwise it defaults to `localhost`
+- `POSTGRES_PASS` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `password`
+-  `POSTGRES_DATABASE` - Only required if not setup using the ./docker-compose.yml file, otherwise it defaults to `appreg`
+   Ask an existing developer for values.
 
 If the file is missing, create a new Run/Debug configuration in IntelliJ:
-  - Type: **Gradle**
-  - Tasks: `bootRun`
-  - Environment variables: add the three variables above
+- Type: **Gradle**
+- Tasks: `bootRun`
+- Environment variables: add the three variables above
 
 5. **Run the application.**
    ```bash
@@ -84,6 +84,13 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ```bash
   ./gradlew spotlessApply
   ```
+
+- **Run with all combination of pageable filters**
+
+Set the environment variable ALL_FILTER_ENABLED=true and then run the gradle build
+
+NOTE: This will take a long time to run e.g. when we have 13 filters we run the tests 1000s
+of times for each combination.
 
 ## Running Sonarqube locally
 

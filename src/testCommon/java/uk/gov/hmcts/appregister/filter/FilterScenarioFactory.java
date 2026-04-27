@@ -54,9 +54,6 @@ public class FilterScenarioFactory {
             scenario.add(filterFieldDataLst);
         }
 
-        // add the sort descriptors
-        scenario.setSortDescriptorEnums(sortDescriptorEnums);
-
         return scenario;
     }
 
@@ -77,6 +74,13 @@ public class FilterScenarioFactory {
         }
 
         return result;
+    }
+
+    public static <T extends Keyable> void applySort(
+            T keyable, List<SortMetaDescriptorEnum<T>> sortDescriptorEnums) {
+        for (int i = 0; i < NUMBER_OF_RECORDS; i++) {
+            applySort(i + 1, keyable, sortDescriptorEnums);
+        }
     }
 
     /**
