@@ -77,49 +77,16 @@ public class BulkUploadApplicationEntryValidator {
                             "Respondent details must be provided"));
         }
 
-        // --- EMAIL VALIDATION ---
-
-        if (StringUtils.isNotBlank(row.getRespondentEmail())
-                && !row.getRespondentEmail()
-                        .matches("([0-9A-Za-z'.\\-+_%]{1,126}@[0-9A-Za-z.\\-]{1,126})?")) {
-
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnName("respondentEmail"),
-                            row.getRespondentEmail(),
-                            "Invalid email format"));
-        }
-
-        // --- PHONE VALIDATION ---
-
-        if (StringUtils.isNotBlank(row.getRespondentTelephone())
-                && !row.getRespondentTelephone().matches("[0-9 \\-]*")) {
-
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnName("respondentTelephone"),
-                            row.getRespondentTelephone(),
-                            "Invalid phone format"));
-        }
-
-        if (StringUtils.isNotBlank(row.getRespondentMobile())
-                && !row.getRespondentMobile().matches("[0-9 \\-]*")) {
-
-            errors.add(
-                    new BulkUploadError(
-                            rowNumber,
-                            columnName("respondentMobile"),
-                            row.getRespondentMobile(),
-                            "Invalid mobile format"));
-        }
-
         return errors;
     }
 
     private static String columnNames() {
-        return Arrays.stream(new String[]{"respondentOrganisationName", "respondentForename1", "respondentSurname"})
+        return Arrays.stream(
+                        new String[] {
+                            "respondentOrganisationName",
+                            "respondentForename1",
+                            "respondentSurname"
+                        })
                 .map(BulkUploadApplicationEntryValidator::columnName)
                 .collect(Collectors.joining("/"));
     }

@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
+import jakarta.validation.Validator;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -65,6 +66,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
 
     private final ApplicationListEntryMapper applicationListEntryMapper;
+
+    private final Validator beanValidator;
 
     public static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
@@ -206,7 +209,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                     listId,
                                     applicationEntryService,
                                     bulkUploadApplicationEntryValidator,
-                                    applicationListEntryMapper));
+                                    applicationListEntryMapper,
+                                    beanValidator));
 
             JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
 

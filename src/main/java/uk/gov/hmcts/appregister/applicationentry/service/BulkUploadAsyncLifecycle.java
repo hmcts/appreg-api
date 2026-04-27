@@ -1,7 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private final ApplicationEntryService applicationEntryService;
     private final BulkUploadApplicationEntryValidator validator;
     private final ApplicationListEntryMapper mapper;
+    private final Validator beanValidator;
 
     /**
      * Validates uploaded rows before processing starts and records row-level failures in the job
@@ -56,7 +60,9 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = 2; // header is row 1
 
         for (BulkUploadRow row : rows) {
-            List<BulkUploadError> rowErrors = validator.validateRow(rowNumber, row);
+            List<BulkUploadError> rowErrors = new ArrayList<>();
+            rowErrors.addAll(validator.validateRow(rowNumber, row));
+            rowErrors.addAll(validateMappedDto(rowNumber, row));
 
             if (!rowErrors.isEmpty()) {
 
@@ -80,6 +86,29 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         }
 
         log.info("Bulk upload validation passed");
+    }
+
+    private List<BulkUploadError> validateMappedDto(int rowNumber, BulkUploadRow row) {
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        return beanValidator.validate(dto).stream()
+                .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
+                .map(violation -> toBulkUploadError(rowNumber, violation))
+                .toList();
+    }
+
+    private static BulkUploadError toBulkUploadError(
+            int rowNumber, ConstraintViolation<EntryCreateDto> violation) {
+        return new BulkUploadError(
+                rowNumber,
+                violation.getPropertyPath().toString(),
+                rejectedValue(violation),
+                violation.getMessage());
+    }
+
+    private static String rejectedValue(ConstraintViolation<?> violation) {
+        Object invalidValue = violation.getInvalidValue();
+        return invalidValue == null ? null : invalidValue.toString();
     }
 
     /**
