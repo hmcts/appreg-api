@@ -70,6 +70,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
@@ -139,6 +140,32 @@ class ApplicationListEntryMapperTest {
         assertThat(dto.getWordingFields())
                 .extracting(TemplateSubstitution::getValue)
                 .containsExactly("one", "two", "");
+    }
+
+    @Test
+    void testToEntryCreateDto_mapsBlankBulkUploadOrganisationAsPersonRespondent() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("APP123");
+        row.setRespondentOrganisationName("");
+        row.setRespondentTitle("Ms");
+        row.setRespondentForename1("Beatrice");
+        row.setRespondentForename2("Anne");
+        row.setRespondentForename3("Louise");
+        row.setRespondentSurname("Baxter");
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        assertThat(dto.getRespondent().getOrganisation()).isNull();
+        assertThat(dto.getRespondent().getPerson()).isNotNull();
+        assertThat(dto.getRespondent().getPerson().getName().getTitle()).isEqualTo("Ms");
+        assertThat(dto.getRespondent().getPerson().getName().getFirstForename())
+                .isEqualTo("Beatrice");
+        assertThat(dto.getRespondent().getPerson().getName().getSecondForename())
+                .isEqualTo(JsonNullable.of("Anne"));
+        assertThat(dto.getRespondent().getPerson().getName().getThirdForename())
+                .isEqualTo(JsonNullable.of("Louise"));
+        assertThat(dto.getRespondent().getPerson().getName().getSurname()).isEqualTo("Baxter");
     }
 
     @Test

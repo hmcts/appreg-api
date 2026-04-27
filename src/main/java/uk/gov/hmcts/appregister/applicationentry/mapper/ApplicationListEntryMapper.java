@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jspecify.annotations.NonNull;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -832,7 +833,7 @@ public abstract class ApplicationListEntryMapper {
 
         ContactDetails contactDetails = toRespondentContactDetails(row);
 
-        if (row.getRespondentOrganisationName() != null) {
+        if (StringUtils.isNotBlank(row.getRespondentOrganisationName())) {
 
             Organisation organisation = new Organisation();
             organisation.setName(row.getRespondentOrganisationName());
