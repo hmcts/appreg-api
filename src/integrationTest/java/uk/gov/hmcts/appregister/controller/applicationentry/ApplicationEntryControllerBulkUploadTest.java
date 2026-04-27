@@ -6,14 +6,10 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
-import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -29,15 +25,12 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
 
-    @Autowired private StandardApplicantRepository standardApplicantRepository;
-
     @Test
     void givenCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
         TokenGenerator tokenGenerator = createAdminToken();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
 
         UUID listId = createNewApplicationList(token);
-        ensureCsvReferenceData();
         Assertions.assertEquals(0, countEntriesForList(listId));
 
         Response response =
@@ -102,30 +95,6 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
 
     private File csvFile() throws URISyntaxException {
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
-    }
-
-    private void ensureCsvReferenceData() {
-        unitOfWork.inTransaction(
-                () -> {
-                    StandardApplicant applicant = new StandardApplicant();
-                    applicant.setApplicantCode("AW62958");
-                    applicant.setApplicantStartDate(LocalDate.now().minusDays(1));
-                    applicant.setApplicantEndDate(null);
-                    applicant.setName("Bulk upload test organisation");
-                    applicant.setAddressLine1("Organisation Address Line 1");
-                    applicant.setAddressLine2("Organisation Address Line 2");
-                    applicant.setAddressLine3("Organisation Address Line 3");
-                    applicant.setAddressLine4("Organisation Address Line 4");
-                    applicant.setAddressLine5("Organisation Address Line 5");
-                    applicant.setPostcode("WS1 1SY");
-                    applicant.setEmailAddress("organisation-Test@test.cgi.com");
-                    applicant.setTelephoneNumber("0207 6789012");
-                    applicant.setMobileNumber("07776 567890");
-                    applicant.setChangedBy(0L);
-                    applicant.setChangedDate(OffsetDateTime.now());
-                    standardApplicantRepository.save(applicant);
-                    standardApplicantRepository.flush();
-                });
     }
 
     private int countEntriesForList(UUID listId) {
