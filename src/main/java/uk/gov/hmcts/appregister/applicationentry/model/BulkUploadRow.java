@@ -6,7 +6,8 @@ import lombok.Setter;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 
 /**
- * CSV-backed row model used to bind application entry bulk upload records before mapping and validation.
+ * CSV-backed row model used to bind application entry bulk upload records before mapping and
+ * validation.
  */
 @Getter
 @Setter

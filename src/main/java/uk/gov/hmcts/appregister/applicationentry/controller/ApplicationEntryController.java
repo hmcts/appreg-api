@@ -24,7 +24,6 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
-import uk.gov.hmcts.appregister.common.async.model.JobIdRequest;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
@@ -180,55 +179,48 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     @Override
     public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(
-        UUID listId,
-        MultipartFile file) {
+            UUID listId, MultipartFile file) {
 
         log.info("Starting bulk upload for application list: {}", listId);
 
         if (file == null || file.isEmpty()) {
             throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_FILE_MISSING,
-                "Bulk upload file must be provided and not empty"
-            );
+                    AppListEntryError.BULK_UPLOAD_FILE_MISSING,
+                    "Bulk upload file must be provided and not empty");
         }
 
         try {
             JobTypeRequest jobTypeRequest =
-                JobTypeRequest.builder()
-                    .userName(userProvider.getUserId())
-                    .jobType(JobType.BULK_UPLOAD_ENTRIES)
-                    .build();
+                    JobTypeRequest.builder()
+                            .userName(userProvider.getUserId())
+                            .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                            .build();
 
-            CsvReader<BulkUploadRow> csvReader =
-                new CsvReader<>(file, BulkUploadRow.class);
+            CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
 
             TrackJobStatusResponse trackJobStatusResponse =
-                asyncJobService.startJob(
-                    jobTypeRequest,
-                    csvReader,
-                    new BulkUploadAsyncLifecycle(
-                        listId,
-                        applicationEntryService,
-                        bulkUploadApplicationEntryValidator,
-                        applicationListEntryMapper
-                    )
-                );
+                    asyncJobService.startJob(
+                            jobTypeRequest,
+                            csvReader,
+                            new BulkUploadAsyncLifecycle(
+                                    listId,
+                                    applicationEntryService,
+                                    bulkUploadApplicationEntryValidator,
+                                    applicationListEntryMapper));
 
-            JobAcknowledgement ack =
-                jobService.getJobAckById(trackJobStatusResponse.getUuid());
+            JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
 
             return ResponseEntity.accepted()
-                .varyBy(HttpHeaders.ACCEPT)
-                .contentType(VND_JSON_V1)
-                .header(HttpHeaders.LOCATION, "/jobs/" + trackJobStatusResponse.getUuid())
-                .body(ack);
+                    .varyBy(HttpHeaders.ACCEPT)
+                    .contentType(VND_JSON_V1)
+                    .header(HttpHeaders.LOCATION, "/jobs/" + trackJobStatusResponse.getUuid())
+                    .body(ack);
         } catch (IOException e) {
             log.error("Failed to initialise CSV reader for bulk upload", e);
 
             throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
-                "Unable to read uploaded file"
-            );
+                    AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
+                    "Unable to read uploaded file");
         }
     }
 

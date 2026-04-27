@@ -1,15 +1,14 @@
 package uk.gov.hmcts.appregister.applicationentry.enumeration;
 
+import java.util.List;
 import lombok.Getter;
 
-import java.util.List;
-
 /**
- * Defines the supported CSV headers for application entry bulk uploads, including their expected order.
+ * Defines the supported CSV headers for application entry bulk uploads, including their expected
+ * order.
  */
 @Getter
 public enum BulkUploadFieldType {
-
     APPLICANT_CODE("APPLICANT_CODE", 0, true),
 
     RESP_TITLE("RESP_TITLE", 1, false),
@@ -37,9 +36,7 @@ public enum BulkUploadFieldType {
     APPLICATION_TEXT_1("APPLICATION_TEXT1", 18, false),
     APPLICATION_TEXT_2("APPLICATION_TEXT2", 19, false);
 
-    /**
-     * Minimum number of columns required for a CSV row to include the mandatory upload fields.
-     */
+    /** Minimum number of columns required for a CSV row to include the mandatory upload fields. */
     public static final int MINIMUM_FIELDS = 18;
 
     private final String header;
@@ -59,26 +56,25 @@ public enum BulkUploadFieldType {
      */
     public static List<String> expectedHeaders() {
         return List.of(
-            APPLICANT_CODE.header,
-            RESP_TITLE.header,
-            RESP_NAME_ORG.header,
-            RESP_FORENAME1.header,
-            RESP_FORENAME2.header,
-            RESP_FORENAME3.header,
-            RESP_SURNAME.header,
-            RESP_ADDLINE1.header,
-            RESP_ADDLINE2.header,
-            RESP_ADDLINE3.header,
-            RESP_ADDLINE4.header,
-            RESP_ADDLINE5.header,
-            RESP_POSTCODE.header,
-            RESP_EMAIL.header,
-            RESP_TEL.header,
-            RESP_MOBILE.header,
-            ACCOUNT_NUMBER.header,
-            APPLICATION_CODE.header,
-            APPLICATION_TEXT_1.header,
-            APPLICATION_TEXT_2.header
-        );
+                APPLICANT_CODE.header,
+                RESP_TITLE.header,
+                RESP_NAME_ORG.header,
+                RESP_FORENAME1.header,
+                RESP_FORENAME2.header,
+                RESP_FORENAME3.header,
+                RESP_SURNAME.header,
+                RESP_ADDLINE1.header,
+                RESP_ADDLINE2.header,
+                RESP_ADDLINE3.header,
+                RESP_ADDLINE4.header,
+                RESP_ADDLINE5.header,
+                RESP_POSTCODE.header,
+                RESP_EMAIL.header,
+                RESP_TEL.header,
+                RESP_MOBILE.header,
+                ACCOUNT_NUMBER.header,
+                APPLICATION_CODE.header,
+                APPLICATION_TEXT_1.header,
+                APPLICATION_TEXT_2.header);
     }
 }

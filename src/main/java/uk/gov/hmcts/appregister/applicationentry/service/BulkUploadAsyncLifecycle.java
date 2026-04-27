@@ -20,7 +20,8 @@ import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
 /**
- * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single list.
+ * Async job lifecycle that validates and persists bulk-uploaded application entry rows for a single
+ * list.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -32,7 +33,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private final ApplicationListEntryMapper mapper;
 
     /**
-     * Validates uploaded rows before processing starts and records row-level failures in the job context.
+     * Validates uploaded rows before processing starts and records row-level failures in the job
+     * context.
      *
      * @param event the async lifecycle event containing the parsed rows and job context
      * @throws IOException if the underlying async infrastructure surfaces an I/O failure
@@ -46,9 +48,8 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         if (rows == null || rows.isEmpty()) {
             throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_EMPTY_FILE,
-                "Uploaded file contains no data rows"
-            );
+                    AppListEntryError.BULK_UPLOAD_EMPTY_FILE,
+                    "Uploaded file contains no data rows");
         }
 
         List<BulkUploadError> allErrors = new ArrayList<>();
@@ -60,17 +61,13 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             BulkUploadApplicationCommand command = mapper.toBulkUploadCommand(row);
 
             // --- VALIDATE ---
-            List<BulkUploadError> rowErrors =
-                validator.validateRow(rowNumber, command);
+            List<BulkUploadError> rowErrors = validator.validateRow(rowNumber, command);
 
             if (!rowErrors.isEmpty()) {
 
                 for (BulkUploadError err : rowErrors) {
                     context.logFailure(
-                        "Row " + rowNumber
-                            + " [" + err.getColumn() + "]: "
-                            + err.getMessage()
-                    );
+                            "Row " + rowNumber + " [" + err.getColumn() + "]: " + err.getMessage());
                 }
 
                 allErrors.addAll(rowErrors);
@@ -83,16 +80,16 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             log.error("Bulk upload validation failed with {} errors", allErrors.size());
 
             throw new AppRegistryException(
-                AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
-                "One or more rows failed validation during bulk upload"
-            );
+                    AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED,
+                    "One or more rows failed validation during bulk upload");
         }
 
         log.info("Bulk upload validation passed");
     }
 
     /**
-     * Creates application entries for each validated upload row and fails the job atomically on the first error.
+     * Creates application entries for each validated upload row and fails the job atomically on the
+     * first error.
      *
      * @param event the async lifecycle event containing the parsed rows and job context
      * @throws IOException if the underlying async infrastructure surfaces an I/O failure
@@ -110,25 +107,18 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             try {
                 EntryCreateDto dto = mapper.toEntryCreateDto(row);
 
-                applicationEntryService.createEntry(
-                    PayloadForCreate.<EntryCreateDto>builder()
-                        .id(listId)
-                        .data(dto)
-                        .build()
-                );
+                applicationEntryService.createBulkEntry(
+                        PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build());
 
             } catch (Exception ex) {
                 log.error("Failed to process row {}", rowNumber, ex);
 
                 context.logFailure(
-                    "Processing failed for row " + rowNumber + ": " + ex.getMessage()
-                );
+                        "Processing failed for row " + rowNumber + ": " + ex.getMessage());
 
                 // Atomic failure
                 throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED,
-                    ex.getMessage()
-                );
+                        AppListEntryError.BULK_UPLOAD_PROCESSING_FAILED, ex.getMessage());
             }
 
             rowNumber++;

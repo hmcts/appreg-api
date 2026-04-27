@@ -23,6 +23,7 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
@@ -63,6 +64,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -86,6 +88,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final PageMapper pageMapper;
 
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
+
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -179,12 +183,26 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, createApplicationEntryValidator);
+    }
+
+    @Override
+    @Transactional
+    public MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator);
+    }
+
+    private MatchResponse<EntryGetDetailDto> createEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
+                    validator) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
-                createApplicationEntryValidator.validate(
+                validator.validate(
                         entryCreateDto,
                         (dto, success) -> {
                             return auditService.processAudit(

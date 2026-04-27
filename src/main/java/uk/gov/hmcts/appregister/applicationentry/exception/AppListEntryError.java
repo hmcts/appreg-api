@@ -118,40 +118,34 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
     BULK_UPLOAD_FILE_MISSING(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Bulk upload file must be provided and not empty",
-            "ALE-24")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Bulk upload file must be provided and not empty",
+                    "ALE-24")),
     BULK_UPLOAD_INVALID_FILE_FORMAT(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Uploaded file must be a valid CSV file",
-            "ALE-25")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Uploaded file must be a valid CSV file", "ALE-25")),
     BULK_UPLOAD_INVALID_HEADERS(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "CSV header row is missing, invalid, or does not match the expected structure",
-            "ALE-26")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "CSV header row is missing, invalid, or does not match the expected structure",
+                    "ALE-26")),
     BULK_UPLOAD_INVALID_DELIMITER(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Invalid file delimiter. Expected pipe '|' separated values",
-            "ALE-27")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid file delimiter. Expected pipe '|' separated values",
+                    "ALE-27")),
     BULK_UPLOAD_ROW_VALIDATION_FAILED(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "One or more rows failed validation during bulk upload",
-            "ALE-28")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "One or more rows failed validation during bulk upload",
+                    "ALE-28")),
     BULK_UPLOAD_EMPTY_FILE(
-        DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Uploaded file contains no data rows",
-            "ALE-29")),
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-29")),
     BULK_UPLOAD_PROCESSING_FAILED(
-        DefaultErrorDetail.create(
-            HttpStatus.INTERNAL_SERVER_ERROR,
-            "Bulk upload processing failed",
-            "ALE-30"));
+            DefaultErrorDetail.create(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30"));
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {

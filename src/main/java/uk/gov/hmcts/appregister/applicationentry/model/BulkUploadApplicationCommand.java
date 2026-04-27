@@ -43,6 +43,5 @@ public class BulkUploadApplicationCommand {
 
     private String applicationCode;
 
-    @Builder.Default
-    private List<String> applicationTexts = new ArrayList<>();
+    @Builder.Default private List<String> applicationTexts = new ArrayList<>();
 }

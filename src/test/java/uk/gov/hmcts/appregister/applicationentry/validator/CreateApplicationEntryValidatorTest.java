@@ -66,6 +66,8 @@ public class CreateApplicationEntryValidatorTest {
 
     @InjectMocks private CreateApplicationEntryValidator createApplicationEntryValidator;
 
+    private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
     // data to be used in tests
     private EntryCreateDto entryCreateDto;
     private ApplicationCode applicationCode;
@@ -118,6 +120,14 @@ public class CreateApplicationEntryValidatorTest {
         when(standardApplicantRepository.findStandardApplicantByCodeAndDate(
                         entryCreateDto.getStandardApplicantCode(), TODAY_UK))
                 .thenReturn(List.of(standardApplicant));
+
+        bulkCreateApplicationEntryValidator =
+                new BulkCreateApplicationEntryValidator(
+                        applicationListRepository,
+                        applicationCodeRepository,
+                        feeService,
+                        businessDateProvider,
+                        standardApplicantRepository);
     }
 
     @Test
@@ -253,6 +263,38 @@ public class CreateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.FEE_REQUIRED.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testBulkCreateDoesNotRequireFeeStatusForFeeDueCode() {
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate("APP001", TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        CreateApplicationEntryValidationSuccess success =
+                bulkCreateApplicationEntryValidator.validate(
+                        payload, (validatable, result) -> result);
+
+        Assertions.assertSame(applicationCode, success.getApplicationCode());
+        Assertions.assertSame(applicationList, success.getApplicationList());
+        Assertions.assertSame(standardApplicant, success.getSa());
+        Assertions.assertSame(fee, success.getFee().offsiteFee());
     }
 
     @Test

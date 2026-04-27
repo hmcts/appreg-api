@@ -48,6 +48,7 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapp
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
@@ -202,6 +203,15 @@ public class ApplicationEntryServiceImplTest {
                     standardApplicantRepository);
 
     @Spy
+    private DummyBulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator =
+            new DummyBulkCreateApplicationEntryValidator(
+                    applicationListRepository,
+                    applicationCodeRepository,
+                    feeService,
+                    businessDateProvider,
+                    standardApplicantRepository);
+
+    @Spy
     private DummyMoveEntriesValidator moveEntriesValidator =
             new DummyMoveEntriesValidator(applicationListRepository);
 
@@ -246,6 +256,7 @@ public class ApplicationEntryServiceImplTest {
                         feeRepository,
                         pageMapper,
                         createApplicationEntryValidator,
+                        bulkCreateApplicationEntryValidator,
                         updateApplicationEntryValidator,
                         moveEntriesValidator,
                         matchService,
@@ -276,6 +287,7 @@ public class ApplicationEntryServiceImplTest {
                         feeRepository,
                         pageMapper,
                         createApplicationEntryValidator,
+                        bulkCreateApplicationEntryValidator,
                         updateApplicationEntryValidator,
                         moveEntriesValidator,
                         matchService,
@@ -1509,6 +1521,34 @@ public class ApplicationEntryServiceImplTest {
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationCodeRepository applicationCodeRepository,
+                ApplicationFeeService feeService,
+                BusinessDateProvider businessDateProvider,
+                StandardApplicantRepository standardApplicantRepository) {
+            super(
+                    applicationListRepository,
+                    applicationCodeRepository,
+                    feeService,
+                    businessDateProvider,
+                    standardApplicantRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForCreate<EntryCreateDto> validatable,
+                BiFunction<
+                                PayloadForCreate<EntryCreateDto>,
+                                CreateApplicationEntryValidationSuccess,
+                                R>
+                        validateSuccess) {
+            return validateSuccess.apply(validatable, success);
+        }
+    }
+
+    class DummyBulkCreateApplicationEntryValidator extends BulkCreateApplicationEntryValidator {
+
+        public DummyBulkCreateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
                 ApplicationFeeService feeService,

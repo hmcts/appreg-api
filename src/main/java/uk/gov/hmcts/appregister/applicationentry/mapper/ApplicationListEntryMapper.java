@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-
 import org.jspecify.annotations.NonNull;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -17,7 +16,6 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
-
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadApplicationCommand;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
@@ -773,13 +771,25 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "uuid", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(EntryGetFilterDto filterDto);
 
+    @Mapping(target = "respondentAddress1", source = "respondentAddressLine1")
+    @Mapping(target = "respondentAddress2", source = "respondentAddressLine2")
+    @Mapping(target = "respondentAddress3", source = "respondentAddressLine3")
+    @Mapping(target = "respondentAddress4", source = "respondentAddressLine4")
+    @Mapping(target = "respondentAddress5", source = "respondentAddressLine5")
+    @Mapping(target = "applicationTexts", expression = "java(getApplicationTexts(row))")
     public abstract BulkUploadApplicationCommand toBulkUploadCommand(BulkUploadRow row);
 
     @Mapping(target = "respondent", ignore = true) // handled in AfterMapping
-    @Mapping(target = "applicant", ignore = true)  // we use applicantCode instead
+    @Mapping(target = "applicant", ignore = true) // we use applicantCode instead
+    @Mapping(target = "standardApplicantCode", source = "applicantCode")
     @Mapping(target = "wordingFields", ignore = true)
     @Mapping(target = "feeStatuses", ignore = true)
     @Mapping(target = "officials", ignore = true)
+    @Mapping(target = "numberOfRespondents", ignore = true)
+    @Mapping(target = "hasOffsiteFee", constant = "false")
+    @Mapping(target = "caseReference", ignore = true)
+    @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "lodgementDate", ignore = true)
     public abstract EntryCreateDto toEntryCreateDto(BulkUploadRow row);
 
     @AfterMapping
@@ -787,35 +797,48 @@ public abstract class ApplicationListEntryMapper {
         // --- Respondent ---
         dto.setRespondent(toBulkUploadRespondent(row));
 
-        // --- Applicant ---
-        dto.setStandardApplicantCode(row.getApplicantCode());
-
         // --- Wording fields ---
-        if (row.getApplicationText1() != null || row.getApplicationText2() != null) {
+        if (isNotBlank(row.getApplicationText1()) || isNotBlank(row.getApplicationText2())) {
             List<TemplateSubstitution> substitutions = getTemplateSubstitutions(row);
 
             dto.setWordingFields(substitutions);
         }
+    }
 
-        dto.setHasOffsiteFee(Boolean.FALSE);
+    protected static @NonNull List<String> getApplicationTexts(BulkUploadRow row) {
+        List<String> texts = new ArrayList<>();
+
+        if (isNotBlank(row.getApplicationText1())) {
+            texts.add(row.getApplicationText1());
+        }
+
+        if (isNotBlank(row.getApplicationText2())) {
+            texts.add(row.getApplicationText2());
+        }
+
+        return texts;
     }
 
     private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(BulkUploadRow row) {
         List<TemplateSubstitution> substitutions = new ArrayList<>();
 
-        if (row.getApplicationText1() != null) {
+        if (isNotBlank(row.getApplicationText1())) {
             TemplateSubstitution t1 = new TemplateSubstitution();
             t1.setValue(row.getApplicationText1());
             substitutions.add(t1);
         }
 
-        if (row.getApplicationText2() != null) {
+        if (isNotBlank(row.getApplicationText2())) {
             TemplateSubstitution t2 = new TemplateSubstitution();
             t2.setValue(row.getApplicationText2());
             substitutions.add(t2);
         }
 
         return substitutions;
+    }
+
+    private static boolean isNotBlank(String value) {
+        return value != null && !value.isBlank();
     }
 
     private ContactDetails toRespondentContactDetails(BulkUploadRow row) {

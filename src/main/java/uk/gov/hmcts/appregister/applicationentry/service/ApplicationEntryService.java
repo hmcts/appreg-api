@@ -38,6 +38,16 @@ public interface ApplicationEntryService {
     MatchResponse<EntryGetDetailDto> createEntry(PayloadForCreate<EntryCreateDto> entryCreateDto);
 
     /**
+     * Creates an application entry from a bulk upload row. Bulk upload rows do not include fee
+     * status details.
+     *
+     * @param entryCreateDto The entry create dto with an id representing the list
+     * @return The entry get detail inside of a match response which contains an etag
+     */
+    MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto);
+
+    /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
      * officials are created if provided as well as applicant and respondents are created if
      * provided. The code works according to the rules prescribed by the defined application code.
