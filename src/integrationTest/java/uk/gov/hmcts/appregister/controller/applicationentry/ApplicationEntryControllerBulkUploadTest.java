@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
-import static io.restassured.RestAssured.given;
-
 import io.restassured.response.Response;
 import java.io.File;
 import java.net.URISyntaxException;
@@ -46,16 +44,12 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         Assertions.assertEquals(0, countEntriesForList(listId));
 
         Response response =
-                given().header("Authorization", "Bearer " + token.getToken())
-                        .accept("application/vnd.hmcts.appreg.v1+json")
-                        .multiPart("file", csvFile(), "text/csv")
-                        .post(
-                                getLocalUrl(
-                                        CREATE_ENTRY_CONTEXT
-                                                + "/"
-                                                + listId
-                                                + "/entries/bulk-import"))
-                        .andReturn();
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/bulk-import"),
+                        token,
+                        "file",
+                        csvFile(),
+                        "text/csv");
 
         response.then().statusCode(202);
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
