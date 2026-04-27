@@ -7,6 +7,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,8 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
-import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -34,13 +37,13 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
 
     @Test
     void givenCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
-        UUID listId = getOpenApplicationListId();
-        ensureCsvReferenceData(listId);
-        int entryCountBefore = countEntriesForList(listId);
-
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
         TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        UUID listId = createNewApplicationList(token);
+        ensureCsvReferenceData();
+        Assertions.assertEquals(0, countEntriesForList(listId));
 
         Response response =
                 given().header("Authorization", "Bearer " + token.getToken())
@@ -60,7 +63,27 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
 
         waitForJobToComplete(tokenGenerator, acknowledgement.getId());
 
-        Assertions.assertEquals(entryCountBefore + CSV_ROW_COUNT, countEntriesForList(listId));
+        Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
+    }
+
+    private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
+        var createListRequest =
+                new ApplicationListCreateDto()
+                        .date(LocalDate.now().plusDays(1))
+                        .time(LocalTime.of(10, 0))
+                        .description("Bulk upload test list " + UUID.randomUUID())
+                        .status(ApplicationListStatus.OPEN)
+                        .courtLocationCode(VALID_COURT_CODE)
+                        .durationHours(1)
+                        .durationMinutes(0);
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT), token, createListRequest);
+
+        response.then().statusCode(201);
+
+        return response.as(ApplicationListGetDetailDto.class).getId();
     }
 
     private void waitForJobToComplete(TokenGenerator tokenGenerator, UUID jobId) {
@@ -90,17 +113,9 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
     }
 
-    private void ensureCsvReferenceData(UUID listId) {
+    private void ensureCsvReferenceData() {
         unitOfWork.inTransaction(
                 () -> {
-                    ApplicationList applicationList =
-                            applicationListRepository
-                                    .findByUuidIncludingDelete(listId)
-                                    .orElseThrow();
-                    applicationList.setStatus(Status.OPEN);
-                    applicationList.setDeleted(false);
-                    applicationListRepository.save(applicationList);
-
                     StandardApplicant applicant = new StandardApplicant();
                     applicant.setApplicantCode("AW62958");
                     applicant.setApplicantStartDate(LocalDate.now().minusDays(1));
