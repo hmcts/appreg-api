@@ -67,8 +67,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
             if (!rowErrors.isEmpty()) {
 
                 for (BulkUploadError err : rowErrors) {
-                    context.logFailure(
-                            "Row " + rowNumber + " [" + err.getColumn() + "]: " + err.getMessage());
+                    logValidationFailure(context, err);
                 }
 
                 allErrors.addAll(rowErrors);
@@ -109,6 +108,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static String rejectedValue(ConstraintViolation<?> violation) {
         Object invalidValue = violation.getInvalidValue();
         return invalidValue == null ? null : invalidValue.toString();
+    }
+
+    private void logValidationFailure(JobContext context, BulkUploadError error) {
+        String failureMessage =
+                "Row " + error.getRowNumber() + " [" + error.getColumn() + "]: " + error.getMessage();
+
+        context.logFailure(failureMessage);
+        log.warn("Bulk upload validation failure for list {}: {}", listId, failureMessage);
     }
 
     /**

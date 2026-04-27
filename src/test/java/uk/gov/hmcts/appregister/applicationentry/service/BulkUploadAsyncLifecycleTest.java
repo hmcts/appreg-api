@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
@@ -21,6 +24,7 @@ import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 
+@ExtendWith(OutputCaptureExtension.class)
 class BulkUploadAsyncLifecycleTest {
 
     private BulkUploadAsyncLifecycle lifecycle;
@@ -41,8 +45,8 @@ class BulkUploadAsyncLifecycleTest {
     }
 
     @Test
-    void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure()
-            throws IOException {
+    void givenPostcodeViolatesOpenApiPattern_whenValidating_thenLogsBeanValidationFailure(
+            CapturedOutput output) throws IOException {
         BulkUploadRow row = validOrganisationRow();
         row.setRespondentPostcode("invalid");
         JobContext context = new JobContext();
@@ -61,6 +65,10 @@ class BulkUploadAsyncLifecycleTest {
                                     .contains("Row 2 [respondent.organisation.contactDetails.postcode]");
                             assertThat(message).contains("must match");
                         });
+        assertThat(output)
+                .contains("Bulk upload validation failure for list")
+                .contains("Row 2 [respondent.organisation.contactDetails.postcode]")
+                .contains("must match");
     }
 
     @Test
