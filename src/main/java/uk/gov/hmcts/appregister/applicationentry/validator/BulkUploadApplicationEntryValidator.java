@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationentry.enumeration.BulkUploadFieldType;
-import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
-import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 /**
  * Performs structural and business-rule validation for application entry bulk upload CSV files.
@@ -16,36 +13,11 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 @Component
 public class BulkUploadApplicationEntryValidator {
 
-    /**
-     * Validates header row strictly (order + exact match).
-     *
-     * @param header the CSV header values supplied in the uploaded file
-     */
-    public void validateHeader(List<String> header) {
-        List<String> expected = BulkUploadFieldType.expectedHeaders();
-
-        if (header == null || header.size() < expected.size()) {
-            throw new AppRegistryException(
-                    AppListEntryError.BULK_UPLOAD_INVALID_HEADERS,
-                    "CSV header row is missing, invalid, or does not match the expected structure");
-        }
-
-        for (int i = 0; i < expected.size(); i++) {
-            String actual = StringUtils.trimToEmpty(header.get(i));
-
-            if (!expected.get(i).equals(actual)) {
-                throw new AppRegistryException(
-                        AppListEntryError.BULK_UPLOAD_INVALID_HEADERS,
-                        "Header mismatch at column "
-                                + i
-                                + ": expected '"
-                                + expected.get(i)
-                                + "' but found '"
-                                + actual
-                                + "'");
-            }
-        }
-    }
+    private static final String APPLICANT_CODE = "APPLICANT_CODE";
+    private static final String APPLICATION_CODE = "APPLICATION_CODE";
+    private static final String RESP_EMAIL = "RESP_EMAIL";
+    private static final String RESP_TEL = "RESP_TEL";
+    private static final String RESP_MOBILE = "RESP_MOBILE";
 
     /**
      * Validates a single mapped upload row and returns all discovered row-level validation errors.
@@ -62,19 +34,13 @@ public class BulkUploadApplicationEntryValidator {
         if (StringUtils.isBlank(row.getApplicantCode())) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber,
-                            BulkUploadFieldType.APPLICANT_CODE.getHeader(),
-                            null,
-                            "Applicant code is required"));
+                            rowNumber, APPLICANT_CODE, null, "Applicant code is required"));
         }
 
         if (StringUtils.isBlank(row.getApplicationCode())) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber,
-                            BulkUploadFieldType.APPLICATION_CODE.getHeader(),
-                            null,
-                            "Application code is required"));
+                            rowNumber, APPLICATION_CODE, null, "Application code is required"));
         }
 
         // --- RESPONDENT RULES ---
@@ -114,7 +80,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            BulkUploadFieldType.RESP_EMAIL.getHeader(),
+                            RESP_EMAIL,
                             row.getRespondentEmail(),
                             "Invalid email format"));
         }
@@ -127,7 +93,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            BulkUploadFieldType.RESP_TEL.getHeader(),
+                            RESP_TEL,
                             row.getRespondentTelephone(),
                             "Invalid phone format"));
         }
@@ -138,7 +104,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            BulkUploadFieldType.RESP_MOBILE.getHeader(),
+                            RESP_MOBILE,
                             row.getRespondentMobile(),
                             "Invalid mobile format"));
         }
