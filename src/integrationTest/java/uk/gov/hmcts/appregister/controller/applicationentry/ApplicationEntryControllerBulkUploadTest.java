@@ -6,10 +6,14 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -48,6 +52,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         waitForJobToComplete(tokenGenerator, acknowledgement.getId());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
+        Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
     }
 
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
@@ -97,6 +102,230 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         return new File(getClass().getResource(BULK_UPLOAD_CSV).toURI());
     }
 
+    private List<PersistedEntry> persistedEntriesForList(UUID listId) {
+        return unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findByUuidIncludingDelete(listId)
+                                    .orElseThrow();
+                    return applicationListEntryRepository
+                            .findByApplicationListId(applicationList.getId())
+                            .stream()
+                            .sorted(Comparator.comparing(ApplicationListEntry::getSequenceNumber))
+                            .map(ApplicationEntryControllerBulkUploadTest::toPersistedEntry)
+                            .toList();
+                });
+    }
+
+    private static PersistedEntry toPersistedEntry(ApplicationListEntry entry) {
+        return new PersistedEntry(
+                entry.getSequenceNumber(),
+                entry.getStandardApplicant().getApplicantCode(),
+                entry.getApplicationCode().getCode(),
+                entry.getAccountNumber(),
+                entry.getApplicationListEntryWording(),
+                toPersistedRespondent(entry.getRnameaddress()));
+    }
+
+    private static PersistedRespondent toPersistedRespondent(NameAddress respondent) {
+        return new PersistedRespondent(
+                respondent.getName(),
+                respondent.getTitle(),
+                respondent.getForename1(),
+                respondent.getForename2(),
+                respondent.getForename3(),
+                respondent.getSurname(),
+                respondent.getAddress1(),
+                respondent.getAddress2(),
+                respondent.getAddress3(),
+                respondent.getAddress4(),
+                respondent.getAddress5(),
+                respondent.getPostcode(),
+                respondent.getEmailAddress(),
+                respondent.getTelephoneNumber(),
+                respondent.getMobileNumber());
+    }
+
+    private static List<PersistedEntry> expectedPersistedEntries() {
+        return List.of(
+                expectedEntry(
+                        (short) 1,
+                        "APP001",
+                        "AD99001",
+                        "AC2023110001",
+                        "Request to copy documents",
+                        organisationRespondent(
+                                "Alpha Holdings Ltd",
+                                "1 Alpha Street",
+                                "Suite 10",
+                                "North Quarter",
+                                "London",
+                                "Greater London",
+                                "AA1 1AA",
+                                "alpha.holdings@example.com",
+                                "0207 1111111",
+                                "07771 111111")),
+                expectedEntry(
+                        (short) 2,
+                        "APP002",
+                        "AP99001",
+                        "AC2023110002",
+                        "Notice of appeal in respect of a case heard on {2026-05-01}",
+                        personRespondent(
+                                "Ms",
+                                "Beatrice",
+                                "Anne",
+                                "Louise",
+                                "Baxter",
+                                "2 Beta Road",
+                                "Floor 2",
+                                "West Arcade",
+                                "Manchester",
+                                "Lancashire",
+                                "BB2 2BB",
+                                "beatrice.baxter@example.com",
+                                "0207 2222222",
+                                "07772 222222")),
+                expectedEntry(
+                        (short) 3,
+                        "APP003",
+                        "CT99002",
+                        "AC2023110003",
+                        "Attends to swear a complaint for the issue of a summons for the debtor "
+                                + "to answer an application for a liability order in relation to "
+                                + "unpaid council tax (reference {COUNCIL-333})",
+                        personRespondent(
+                                "Dr",
+                                "Caleb",
+                                "Morgan",
+                                "Rae",
+                                "Carter",
+                                "3 Gamma Avenue",
+                                "Unit 3",
+                                "East Park",
+                                "Birmingham",
+                                "West Midlands",
+                                "CC3 3CC",
+                                "caleb.carter@example.com",
+                                "0207 3333333",
+                                "07773 333333")),
+                expectedEntry(
+                        (short) 4,
+                        "APP001",
+                        "MS99007",
+                        "AC2023110004",
+                        "Application for a warrant to enter premises at {4 Delta Lane} "
+                                + "for date {2026-04-27}",
+                        organisationRespondent(
+                                "Delta Advisory Group",
+                                "4 Delta Lane",
+                                "Block D",
+                                "South Yard",
+                                "Leeds",
+                                "West Yorkshire",
+                                "DD4 4DD",
+                                "delta.advisory@example.com",
+                                "0207 4444444",
+                                "07774 444444")),
+                expectedEntry(
+                        (short) 5,
+                        "APP002",
+                        "SW99007",
+                        "AC2023110005",
+                        "Application for an order to allow the applicant to inspect or take "
+                                + "copies of bankers books held by {Epsilon Bank} in respect of "
+                                + "criminal proceedings at {Bristol Court}.",
+                        personRespondent(
+                                "Mrs",
+                                "Evelyn",
+                                "Priya",
+                                "Noor",
+                                "Edwards",
+                                "5 Epsilon Close",
+                                "Room 5",
+                                "Central Court",
+                                "Bristol",
+                                "Somerset",
+                                "EE5 5EE",
+                                "evelyn.edwards@example.com",
+                                "0207 5555555",
+                                "07775 555555")));
+    }
+
+    private static PersistedEntry expectedEntry(
+            short sequenceNumber,
+            String applicantCode,
+            String applicationCode,
+            String accountNumber,
+            String wording,
+            PersistedRespondent respondent) {
+        return new PersistedEntry(
+                sequenceNumber, applicantCode, applicationCode, accountNumber, wording, respondent);
+    }
+
+    private static PersistedRespondent organisationRespondent(
+            String name,
+            String address1,
+            String address2,
+            String address3,
+            String address4,
+            String address5,
+            String postcode,
+            String email,
+            String telephone,
+            String mobile) {
+        return new PersistedRespondent(
+                name,
+                null,
+                null,
+                null,
+                null,
+                null,
+                address1,
+                address2,
+                address3,
+                address4,
+                address5,
+                postcode,
+                email,
+                telephone,
+                mobile);
+    }
+
+    private static PersistedRespondent personRespondent(
+            String title,
+            String forename1,
+            String forename2,
+            String forename3,
+            String surname,
+            String address1,
+            String address2,
+            String address3,
+            String address4,
+            String address5,
+            String postcode,
+            String email,
+            String telephone,
+            String mobile) {
+        return new PersistedRespondent(
+                null,
+                title,
+                forename1,
+                forename2,
+                forename3,
+                surname,
+                address1,
+                address2,
+                address3,
+                address4,
+                address5,
+                postcode,
+                email,
+                telephone,
+                mobile);
+    }
+
     private int countEntriesForList(UUID listId) {
         return unitOfWork.inTransaction(
                 () -> {
@@ -109,4 +338,29 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                             .size();
                 });
     }
+
+    private record PersistedEntry(
+            Short sequenceNumber,
+            String applicantCode,
+            String applicationCode,
+            String accountNumber,
+            String wording,
+            PersistedRespondent respondent) {}
+
+    private record PersistedRespondent(
+            String organisationName,
+            String title,
+            String forename1,
+            String forename2,
+            String forename3,
+            String surname,
+            String address1,
+            String address2,
+            String address3,
+            String address4,
+            String address5,
+            String postcode,
+            String email,
+            String telephone,
+            String mobile) {}
 }
