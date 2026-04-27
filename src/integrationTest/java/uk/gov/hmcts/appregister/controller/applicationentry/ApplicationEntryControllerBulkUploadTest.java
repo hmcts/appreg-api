@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
@@ -124,6 +125,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                 entry.getStandardApplicant().getApplicantCode(),
                 entry.getApplicationCode().getCode(),
                 entry.getAccountNumber(),
+                entry.getBulkUpload(),
                 entry.getApplicationListEntryWording(),
                 toPersistedRespondent(entry.getRnameaddress()));
     }
@@ -261,7 +263,13 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
             String wording,
             PersistedRespondent respondent) {
         return new PersistedEntry(
-                sequenceNumber, applicantCode, applicationCode, accountNumber, wording, respondent);
+                sequenceNumber,
+                applicantCode,
+                applicationCode,
+                accountNumber,
+                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES,
+                wording,
+                respondent);
     }
 
     private static PersistedRespondent organisationRespondent(
@@ -344,6 +352,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
             String applicantCode,
             String applicationCode,
             String accountNumber,
+            String bulkUpload,
             String wording,
             PersistedRespondent respondent) {}
 

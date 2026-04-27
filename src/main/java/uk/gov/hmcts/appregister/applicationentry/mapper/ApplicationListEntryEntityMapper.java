@@ -33,7 +33,29 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 @Setter
 public abstract class ApplicationListEntryEntityMapper {
 
+    public static final String BULK_UPLOAD_YES = "Y";
+    public static final String BULK_UPLOAD_NO = "N";
+
     @Autowired OfficialMapper officialMapper;
+
+    public ApplicationListEntry toApplicationListEntry(
+            EntryCreateDto entryCreateDto,
+            String substituteWording,
+            StandardApplicant standardApplicant,
+            NameAddress applicant,
+            NameAddress respondent,
+            ApplicationCode code,
+            ApplicationList applicationList) {
+        return toApplicationListEntry(
+                entryCreateDto,
+                substituteWording,
+                standardApplicant,
+                applicant,
+                respondent,
+                code,
+                applicationList,
+                BULK_UPLOAD_NO);
+    }
 
     @Mapping(target = "applicationListEntryWording", source = "substituteWording")
     @Mapping(target = "applicationCode", source = "code")
@@ -46,10 +68,10 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "notes", source = "entryCreateDto.notes")
     @Mapping(target = "applicationList", source = "applicationList")
     @Mapping(target = "numberOfBulkRespondents", source = "entryCreateDto.numberOfRespondents")
+    @Mapping(target = "bulkUpload", source = "bulkUpload")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "version", ignore = true)
-    @Mapping(target = "bulkUpload", ignore = true)
     @Mapping(target = "tcepStatus", ignore = true)
     @Mapping(target = "messageUuid", ignore = true)
     @Mapping(target = "retryCount", ignore = true)
@@ -67,7 +89,8 @@ public abstract class ApplicationListEntryEntityMapper {
             NameAddress applicant,
             NameAddress respondent,
             ApplicationCode code,
-            ApplicationList applicationList);
+            ApplicationList applicationList,
+            String bulkUpload);
 
     @Mapping(target = "applicationListEntryWording", source = "substituteWording")
     @Mapping(target = "applicationCode", source = "code")

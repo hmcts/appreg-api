@@ -68,7 +68,8 @@ class ApplicationListEntryEntityMapperTest {
                         applicant,
                         respondent,
                         applicationCode,
-                        applicationList);
+                        applicationList,
+                        ApplicationListEntryEntityMapper.BULK_UPLOAD_YES);
 
         // make the assertion
         Assertions.assertEquals(standardApplicant, applicationListEntry.getStandardApplicant());
@@ -82,6 +83,9 @@ class ApplicationListEntryEntityMapperTest {
                 entryCreateDto.getCaseReference(), applicationListEntry.getCaseReference());
         Assertions.assertEquals(entryCreateDto.getNotes(), applicationListEntry.getNotes());
         Assertions.assertEquals("wording", applicationListEntry.getApplicationListEntryWording());
+        Assertions.assertEquals(
+                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES,
+                applicationListEntry.getBulkUpload());
     }
 
     @Test

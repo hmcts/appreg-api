@@ -183,20 +183,27 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, createApplicationEntryValidator);
+        return createEntry(
+                entryCreateDto,
+                createApplicationEntryValidator,
+                ApplicationListEntryEntityMapper.BULK_UPLOAD_NO);
     }
 
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator);
+        return createEntry(
+                entryCreateDto,
+                bulkCreateApplicationEntryValidator,
+                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES);
     }
 
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
-                    validator) {
+                    validator,
+            String bulkUpload) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
@@ -229,7 +236,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 applicantToSave,
                                                                 respondentToSave,
                                                                 success.getApplicationCode(),
-                                                                success.getApplicationList());
+                                                                success.getApplicationList(),
+                                                                bulkUpload);
 
                                         Long alId = success.getApplicationList().getId();
                                         short seq = allocateNextSequence(alId);

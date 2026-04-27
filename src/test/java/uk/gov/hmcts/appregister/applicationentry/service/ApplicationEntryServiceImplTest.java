@@ -577,7 +577,8 @@ public class ApplicationEntryServiceImplTest {
                         eq(applicant),
                         eq(respondent),
                         eq(code),
-                        eq(appList)))
+                        eq(appList),
+                        eq(ApplicationListEntryEntityMapper.BULK_UPLOAD_NO)))
                 .thenReturn(applicationListEntry);
 
         PayloadForCreate<EntryCreateDto> payload =
@@ -754,7 +755,8 @@ public class ApplicationEntryServiceImplTest {
                         eq(applicant),
                         eq(respondent),
                         eq(code),
-                        eq(appList)))
+                        eq(appList),
+                        eq(ApplicationListEntryEntityMapper.BULK_UPLOAD_NO)))
                 .thenReturn(applicationListEntry);
 
         when(applicantMapper.toApplicant(entryCreateDto.getApplicant())).thenReturn(applicant);
@@ -880,7 +882,8 @@ public class ApplicationEntryServiceImplTest {
                         eq(applicant),
                         eq(respondent),
                         eq(code),
-                        eq(appList)))
+                        eq(appList),
+                        eq(ApplicationListEntryEntityMapper.BULK_UPLOAD_NO)))
                 .thenReturn(applicationListEntry);
 
         when(applicantMapper.toApplicant(entryCreateDto.getApplicant())).thenReturn(applicant);
