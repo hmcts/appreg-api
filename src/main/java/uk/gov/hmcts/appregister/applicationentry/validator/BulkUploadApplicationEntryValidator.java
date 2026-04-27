@@ -1,7 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import com.opencsv.bean.CsvBindByName;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
@@ -12,12 +16,6 @@ import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
  */
 @Component
 public class BulkUploadApplicationEntryValidator {
-
-    private static final String APPLICANT_CODE = "APPLICANT_CODE";
-    private static final String APPLICATION_CODE = "APPLICATION_CODE";
-    private static final String RESP_EMAIL = "RESP_EMAIL";
-    private static final String RESP_TEL = "RESP_TEL";
-    private static final String RESP_MOBILE = "RESP_MOBILE";
 
     /**
      * Validates a single mapped upload row and returns all discovered row-level validation errors.
@@ -34,13 +32,19 @@ public class BulkUploadApplicationEntryValidator {
         if (StringUtils.isBlank(row.getApplicantCode())) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber, APPLICANT_CODE, null, "Applicant code is required"));
+                            rowNumber,
+                            columnName("applicantCode"),
+                            null,
+                            "Applicant code is required"));
         }
 
         if (StringUtils.isBlank(row.getApplicationCode())) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber, APPLICATION_CODE, null, "Application code is required"));
+                            rowNumber,
+                            columnName("applicationCode"),
+                            null,
+                            "Application code is required"));
         }
 
         // --- RESPONDENT RULES ---
@@ -56,7 +60,8 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            "RESP_NAME_ORG/RESP_FORENAME/RESP_SURNAME",
+                            columnNames(
+                            ),
                             null,
                             "Respondent cannot be both organisation and person"));
         }
@@ -66,7 +71,8 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            "RESP_NAME_ORG/RESP_FORENAME/RESP_SURNAME",
+                            columnNames(
+                            ),
                             null,
                             "Respondent details must be provided"));
         }
@@ -80,7 +86,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            RESP_EMAIL,
+                            columnName("respondentEmail"),
                             row.getRespondentEmail(),
                             "Invalid email format"));
         }
@@ -93,7 +99,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            RESP_TEL,
+                            columnName("respondentTelephone"),
                             row.getRespondentTelephone(),
                             "Invalid phone format"));
         }
@@ -104,11 +110,34 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            RESP_MOBILE,
+                            columnName("respondentMobile"),
                             row.getRespondentMobile(),
                             "Invalid mobile format"));
         }
 
         return errors;
+    }
+
+    private static String columnNames() {
+        return Arrays.stream(new String[]{"respondentOrganisationName", "respondentForename1", "respondentSurname"})
+                .map(BulkUploadApplicationEntryValidator::columnName)
+                .collect(Collectors.joining("/"));
+    }
+
+    private static String columnName(String fieldName) {
+        try {
+            Field field = BulkUploadRow.class.getDeclaredField(fieldName);
+            CsvBindByName binding = field.getAnnotation(CsvBindByName.class);
+
+            if (binding == null) {
+                throw new IllegalStateException(
+                        "Bulk upload row field %s is missing @CsvBindByName".formatted(fieldName));
+            }
+
+            return binding.column();
+        } catch (NoSuchFieldException e) {
+            throw new IllegalStateException(
+                    "Bulk upload row field %s does not exist".formatted(fieldName), e);
+        }
     }
 }
