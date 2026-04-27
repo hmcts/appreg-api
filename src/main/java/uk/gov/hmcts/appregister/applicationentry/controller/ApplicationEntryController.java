@@ -51,7 +51,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         page,
                         size,
                         sort,
-                        ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
+                        ApplicationEntrySortFieldEnum.DATE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
 

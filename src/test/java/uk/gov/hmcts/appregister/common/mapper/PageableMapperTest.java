@@ -23,7 +23,9 @@ class PageableMapperTest {
                 appPageable.from(
                         10,
                         2,
-                        List.of(ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue() + ", asc"),
+                        List.of(
+                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                        + ", asc"),
                         ApplicationEntrySortFieldEnum.APPLICANT,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
@@ -78,7 +80,9 @@ class PageableMapperTest {
                 appPageable.from(
                         10,
                         2,
-                        List.of(ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue() + ", DESC"),
+                        List.of(
+                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                        + ", DESC"),
                         ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
@@ -109,7 +113,9 @@ class PageableMapperTest {
                 appPageable.from(
                         null,
                         null,
-                        List.of(ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue() + ", DESC"),
+                        List.of(
+                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                        + ", DESC"),
                         ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
@@ -139,7 +145,9 @@ class PageableMapperTest {
                 appPageable.from(
                         null,
                         300,
-                        List.of(ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue() + ", DESC"),
+                        List.of(
+                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                        + ", DESC"),
                         ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);

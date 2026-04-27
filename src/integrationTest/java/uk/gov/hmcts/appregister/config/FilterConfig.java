@@ -2,9 +2,7 @@ package uk.gov.hmcts.appregister.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-
 import org.springframework.context.annotation.Configuration;
-
 import uk.gov.hmcts.appregister.filter.AllFilterCombinationScenarioStrategy;
 import uk.gov.hmcts.appregister.filter.EssentialFilterScenarioStrategy;
 
@@ -21,7 +19,10 @@ public class FilterConfig {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "all.filter.enabled", havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(
+            name = "all.filter.enabled",
+            havingValue = "false",
+            matchIfMissing = true)
     public EssentialFilterScenarioStrategy essentialFilterScenarioStrategy() {
         return new EssentialFilterScenarioStrategy();
     }

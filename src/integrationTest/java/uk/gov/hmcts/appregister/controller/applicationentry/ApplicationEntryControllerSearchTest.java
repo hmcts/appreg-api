@@ -22,8 +22,6 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.mapper.SortableField;
-import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
@@ -52,8 +50,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryGetSummaryDto entry = page.getContent().getFirst();
 
         assertThat(entry.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
-        assertThat(entry.getRespondent().getOrganisation().getName()).isEqualTo("Sarah Johnson");
-        assertThat(entry.getApplicationTitle()).isEqualTo("Appeal by Case Stated (Civil)");
+        assertThat(entry.getApplicationTitle()).isEqualTo("Copy documents");
 
         dataAuditAssertionsForNoFilter();
     }

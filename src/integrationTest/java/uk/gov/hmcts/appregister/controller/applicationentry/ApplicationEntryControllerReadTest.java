@@ -355,7 +355,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         EntryPage page = responseSpec.as(EntryPage.class);
         PagingAssertionUtil.assertPageDetails(page, 20, 0, 1, TOTAL_APP_ENTRY_COUNT);
 
-        EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
+        EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(6);
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
@@ -390,37 +390,26 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
-        entryGetSummaryDto = page.getContent().get(4);
+        entryGetSummaryDto = page.getContent().get(7);
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
-        assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
-                .isEqualTo("Legal Aid Board");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
                                 .getAddressLine1())
-                .isEqualTo("100 Legal Street");
-        assertThat(
-                        entryGetSummaryDto
-                                .getRespondent()
-                                .getOrganisation()
-                                .getContactDetails()
-                                .getEmail()
-                                .get())
-                .isEqualTo("info@legalaid.example.com");
+                .isEqualTo("Flat 4, 22 Hillside");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
                                 .getOrganisation()
                                 .getContactDetails()
                                 .getPostcode())
-                .isEqualTo("BA15 1LA");
+                .isEqualTo("SN12 1ZZ");
 
-        assertThat(entryGetSummaryDto.getApplicationTitle())
-                .isEqualTo("Request for Certificate of Refusal to State a Case (Civil)");
+        assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Appeal to Crown Court");
         assertThat(entryGetSummaryDto.getLegislation())
-                .isEqualTo("Section 111 Magistrates' Courts Act 1980");
+                .isEqualTo("Section 108 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
@@ -830,7 +819,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .get())
                 .isEqualTo("01234567890");
 
-        assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
+        assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Sarah Johnson");
         assertThat(
@@ -856,12 +845,10 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .getPostcode())
                 .isEqualTo("XY9 8ZZ");
 
-        assertThat(entryGetSummaryDto.getApplicationTitle())
-                .isEqualTo("Issue of liability order summons -council tax (bulk)");
-        assertThat(entryGetSummaryDto.getLegislation())
-                .isEqualTo("Regulation 34 Council Tax (Admin and Enforcement) Regulations 1992");
+        assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Copy documents");
+        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
-        assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
+        assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }

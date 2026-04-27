@@ -1,6 +1,16 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
 import io.restassured.response.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -14,7 +24,6 @@ import uk.gov.hmcts.appregister.filter.FilterableScenario;
 import uk.gov.hmcts.appregister.filter.NameAddressMixin;
 import uk.gov.hmcts.appregister.filter.applicationlistentry.ApplicationListEntryFilterEnum;
 import uk.gov.hmcts.appregister.filter.applicationlistentry.ApplicationListEntrySortEnum;
-import uk.gov.hmcts.appregister.filter.applicationlistentry.ApplicationListFilterForAppListIdEnum;
 import uk.gov.hmcts.appregister.filter.applicationlistentry.ApplicationListSortForAppListIdEnum;
 import uk.gov.hmcts.appregister.filter.exception.FilterProcessingException;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
@@ -24,18 +33,6 @@ import uk.gov.hmcts.appregister.testutils.controller.RestFilterEndpointDescripti
 import uk.gov.hmcts.appregister.testutils.controller.RestSortEndpointDescription;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.util.CopyUtil;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Stream;
-
-import org.junit.jupiter.api.Assertions;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
 public class ApplicationListFilterSortTest
         extends AbstractFilterAndSortControllerTest<ApplicationListEntry> {
@@ -70,9 +67,7 @@ public class ApplicationListFilterSortTest
         // lets set the rest endpoint
         restFilterDescription.setFilterableScenario(scenario);
         restFilterDescription.setGetUrlFunction(
-                (keyable) ->
-                        getLocalUrl(
-                                "application-list-entries"));
+                (keyable) -> getLocalUrl("application-list-entries"));
         restFilterDescription.setSortDescriptors(
                 Arrays.asList(ApplicationListEntrySortEnum.values()));
 
@@ -106,17 +101,14 @@ public class ApplicationListFilterSortTest
         // process the scenario
         List<ApplicationListEntry> applicationListEntries =
                 FilterScenarioFactory.createSort(
-                        applicationListEntry,
-                        Arrays.asList(ApplicationListEntrySortEnum.values()));
+                        applicationListEntry, Arrays.asList(ApplicationListEntrySortEnum.values()));
 
         for (ApplicationListEntrySortEnum applicationCodeSortEnum :
-            ApplicationListEntrySortEnum.values()) {
+                ApplicationListEntrySortEnum.values()) {
             RestSortEndpointDescription<ApplicationListEntry> restFilterDescription =
                     new RestSortEndpointDescription<>();
             restFilterDescription.setGetUrlFunction(
-                    (key) ->
-                            getLocalUrl(
-                                    "application-list-entries"));
+                    (key) -> getLocalUrl("application-list-entries"));
             restFilterDescription.setSortDescriptors(applicationCodeSortEnum);
             restFilterDescription.setExpectedToBeGenerated(applicationListEntries);
             restFilterDescription.setAllAvailableSortDescriptors(

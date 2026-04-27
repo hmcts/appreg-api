@@ -1,16 +1,12 @@
 package uk.gov.hmcts.appregister.filter;
 
-import org.springframework.stereotype.Component;
-
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-
 import java.util.ArrayList;
 import java.util.List;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 /**
- * A strategy that allows us to get a combination of filter scenarios. This
- * can only be used when time is not an issue. This strategy takes a LOOOOONNNNGGG time
- * to complete.
+ * A strategy that allows us to get a combination of filter scenarios. This can only be used when
+ * time is not an issue. This strategy takes a LOOOOONNNNGGG time to complete.
  */
 public class AllFilterCombinationScenarioStrategy implements FilterScenarioStrategy {
 
@@ -22,7 +18,8 @@ public class AllFilterCombinationScenarioStrategy implements FilterScenarioStrat
      *     in the first record of filter data. Each combination will be a subset of the original
      *     filter data.
      */
-    public <T extends Keyable> List<FilterableScenario<T>> getScenarioCombinations(FilterableScenario<T> scenario) {
+    public <T extends Keyable> List<FilterableScenario<T>> getScenarioCombinations(
+            FilterableScenario<T> scenario) {
         List<FilterableScenario<T>> result = new ArrayList<>();
 
         int n = scenario.getFilterData().getFirst().size();
@@ -44,22 +41,30 @@ public class AllFilterCombinationScenarioStrategy implements FilterScenarioStrat
 
                         // clone the first filter field data and set it as the keyable value
                         if (filterFieldDataLst.isEmpty()) {
-                            filterFieldDataLst.add(scenario.getFilterData().get(j).get(i).deepClone());
+                            filterFieldDataLst.add(
+                                    scenario.getFilterData().get(j).get(i).deepClone());
                         } else {
-                            FilterFieldData<T> filterFieldValue = scenario.getFilterData().get(j).get(i).deepClone();
-
-                            // use the same cloned value as the first entry for all subsequent entries
-                            filterFieldValue.getKeyableValues().setKeyable(filterFieldDataLst.get(0).getKeyableValues().getKeyable());
+                            FilterFieldData<T> filterFieldValue =
+                                    scenario.getFilterData().get(j).get(i).deepClone();
 
                             filterFieldDataLst.add(filterFieldValue);
+
+                            // use the same cloned value as the first entry for all subsequent
+                            // entries
+                            filterFieldValue
+                                    .getKeyableValues()
+                                    .setKeyable(
+                                            filterFieldDataLst
+                                                    .get(0)
+                                                    .getKeyableValues()
+                                                    .getKeyable());
                         }
                     }
                 }
             }
-            result.add(scenario);
+            result.add(scenarioNew);
         }
 
         return result;
     }
-
 }

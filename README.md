@@ -85,6 +85,13 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew spotlessApply
   ```
 
+- **Run with all combination of pageable filters**
+
+Set the environment variable ALL_FILTER_ENABLED=true and then run the gradle build
+
+NOTE: This will take a long time to run e.g. when we have 13 filters we run the tests 1000s
+of times for each combination.
+
 ## Running Sonarqube locally
 
 1. Ensure you have Docker installed and running

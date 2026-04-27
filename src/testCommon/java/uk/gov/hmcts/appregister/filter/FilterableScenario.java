@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-import uk.gov.hmcts.appregister.filter.meta.SortMetaDescriptorEnum;
 
 /**
  * A filterable scenario that stores multiple filter scenarios.
@@ -58,10 +57,18 @@ public class FilterableScenario<T extends Keyable> {
                         if (filterFieldDataLst.size() == 0) {
                             filterFieldDataLst.add(filterData.get(j).get(i).deepClone());
                         } else {
-                            FilterFieldData<T> filterFieldValue = filterData.get(j).get(i).deepClone();
+                            FilterFieldData<T> filterFieldValue =
+                                    filterData.get(j).get(i).deepClone();
 
-                            // use the same cloned value as the first entry for all subsequent entries
-                            filterFieldValue.getKeyableValues().setKeyable(filterFieldDataLst.get(0).getKeyableValues().getKeyable());
+                            // use the same cloned value as the first entry for all subsequent
+                            // entries
+                            filterFieldValue
+                                    .getKeyableValues()
+                                    .setKeyable(
+                                            filterFieldDataLst
+                                                    .get(0)
+                                                    .getKeyableValues()
+                                                    .getKeyable());
 
                             filterFieldDataLst.add(filterFieldValue);
                         }

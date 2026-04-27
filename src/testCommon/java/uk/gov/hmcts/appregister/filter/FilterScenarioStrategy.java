@@ -1,15 +1,15 @@
 package uk.gov.hmcts.appregister.filter;
 
-import uk.gov.hmcts.appregister.common.entity.base.Keyable;
-
 import java.util.List;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 
 public interface FilterScenarioStrategy {
     /**
-     * gets combinations= of the filters. This is vital to test all possible combinations of
-     * filter query values.
+     * gets combinations= of the filters. This is vital to test all possible combinations of filter
+     * query values.
      *
      * @return The scenarios that need to be executed
      */
-    <T extends Keyable> List<FilterableScenario<T>> getScenarioCombinations(FilterableScenario<T> scenario);
+    <T extends Keyable> List<FilterableScenario<T>> getScenarioCombinations(
+            FilterableScenario<T> scenario);
 }
