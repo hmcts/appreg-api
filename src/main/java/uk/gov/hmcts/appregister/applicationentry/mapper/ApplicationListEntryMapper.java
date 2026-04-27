@@ -789,33 +789,26 @@ public abstract class ApplicationListEntryMapper {
         dto.setRespondent(toBulkUploadRespondent(row));
 
         // --- Wording fields ---
-        if (isNotBlank(row.getApplicationText1()) || isNotBlank(row.getApplicationText2())) {
-            List<TemplateSubstitution> substitutions = getTemplateSubstitutions(row);
+        List<String> applicationTextValues = row.getApplicationTextValues();
+        if (!applicationTextValues.isEmpty()) {
+            List<TemplateSubstitution> substitutions =
+                    getTemplateSubstitutions(applicationTextValues);
 
             dto.setWordingFields(substitutions);
         }
     }
 
-    private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(BulkUploadRow row) {
+    private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(
+            List<String> applicationTextValues) {
         List<TemplateSubstitution> substitutions = new ArrayList<>();
 
-        if (isNotBlank(row.getApplicationText1())) {
-            TemplateSubstitution t1 = new TemplateSubstitution();
-            t1.setValue(row.getApplicationText1());
-            substitutions.add(t1);
-        }
-
-        if (isNotBlank(row.getApplicationText2())) {
-            TemplateSubstitution t2 = new TemplateSubstitution();
-            t2.setValue(row.getApplicationText2());
-            substitutions.add(t2);
+        for (String applicationTextValue : applicationTextValues) {
+            TemplateSubstitution substitution = new TemplateSubstitution();
+            substitution.setValue(applicationTextValue);
+            substitutions.add(substitution);
         }
 
         return substitutions;
-    }
-
-    private static boolean isNotBlank(String value) {
-        return value != null && !value.isBlank();
     }
 
     private ContactDetails toRespondentContactDetails(BulkUploadRow row) {

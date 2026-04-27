@@ -1,8 +1,14 @@
 package uk.gov.hmcts.appregister.applicationentry.model;
 
+import com.opencsv.bean.CsvBindAndJoinByName;
 import com.opencsv.bean.CsvBindByName;
+import java.util.Comparator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.collections4.MultiValuedMap;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 
 /**
@@ -12,6 +18,8 @@ import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 @Getter
 @Setter
 public class BulkUploadRow implements CsvPojo {
+    private static final Pattern APPLICATION_TEXT_COLUMN_PATTERN =
+            Pattern.compile("APPLICATION_TEXT(\\d+)");
 
     // --- APPLICANT ---
 
@@ -77,9 +85,26 @@ public class BulkUploadRow implements CsvPojo {
 
     // --- WORDING FIELDS ---
 
-    @CsvBindByName(column = "APPLICATION_TEXT1")
-    private String applicationText1;
+    @CsvBindAndJoinByName(column = "APPLICATION_TEXT\\d+", elementType = String.class)
+    private MultiValuedMap<String, String> applicationTexts;
 
-    @CsvBindByName(column = "APPLICATION_TEXT2")
-    private String applicationText2;
+    public List<String> getApplicationTextValues() {
+        if (applicationTexts == null || applicationTexts.isEmpty()) {
+            return List.of();
+        }
+
+        return applicationTexts.asMap().entrySet().stream()
+                .sorted(Comparator.comparingInt(entry -> applicationTextIndex(entry.getKey())))
+                .flatMap(entry -> entry.getValue().stream())
+                .toList();
+    }
+
+    private static int applicationTextIndex(String columnName) {
+        Matcher matcher = APPLICATION_TEXT_COLUMN_PATTERN.matcher(columnName);
+        if (!matcher.matches()) {
+            return Integer.MAX_VALUE;
+        }
+
+        return Integer.parseInt(matcher.group(1));
+    }
 }

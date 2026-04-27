@@ -66,9 +66,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.val;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
@@ -97,6 +99,7 @@ import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListEntrySummary;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetPrintDto;
@@ -104,6 +107,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
 class ApplicationListEntryMapperTest {
@@ -115,6 +119,26 @@ class ApplicationListEntryMapperTest {
         mapper = new ApplicationListEntryMapperImpl();
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         mapper.setOfficialMapper(new OfficialMapper());
+    }
+
+    @Test
+    void testToEntryCreateDto_mapsBulkUploadApplicationTextColumnsInOrder() {
+        BulkUploadRow row = new BulkUploadRow();
+        row.setApplicantCode("APP001");
+        row.setApplicationCode("APP123");
+        row.setRespondentOrganisationName("Respondent organisation");
+
+        var applicationTexts = new ArrayListValuedHashMap<String, String>();
+        applicationTexts.put("APPLICATION_TEXT2", "two");
+        applicationTexts.put("APPLICATION_TEXT1", "one");
+        applicationTexts.put("APPLICATION_TEXT3", "");
+        row.setApplicationTexts(applicationTexts);
+
+        EntryCreateDto dto = mapper.toEntryCreateDto(row);
+
+        assertThat(dto.getWordingFields())
+                .extracting(TemplateSubstitution::getValue)
+                .containsExactly("one", "two", "");
     }
 
     @Test

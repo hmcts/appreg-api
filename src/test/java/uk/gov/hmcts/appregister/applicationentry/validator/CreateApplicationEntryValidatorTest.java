@@ -38,6 +38,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.data.AppListTestData;
@@ -46,6 +47,7 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
 @ExtendWith(MockitoExtension.class)
@@ -295,6 +297,91 @@ public class CreateApplicationEntryValidatorTest {
         Assertions.assertSame(applicationList, success.getApplicationList());
         Assertions.assertSame(standardApplicant, success.getSa());
         Assertions.assertSame(fee, success.getFee().offsiteFee());
+    }
+
+    @Test
+    void testBulkCreateTrimsApplicationTextToWordingTemplatePlaceholders() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setWording(
+                "Test template {TEXT|Applicant officer|10} and second template "
+                        + "{TEXT|Applicant solicitor|10}");
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution(null, "one"),
+                        new TemplateSubstitution(null, "two"),
+                        new TemplateSubstitution(null, "three")));
+
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate("APP001", TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        CreateApplicationEntryValidationSuccess success =
+                bulkCreateApplicationEntryValidator.validate(
+                        payload, (validatable, result) -> result);
+
+        Assertions.assertEquals(2, entryCreateDto.getWordingFields().size());
+        Assertions.assertEquals(
+                "Applicant officer", entryCreateDto.getWordingFields().get(0).getKey());
+        Assertions.assertEquals("one", entryCreateDto.getWordingFields().get(0).getValue());
+        Assertions.assertEquals(
+                "Applicant solicitor", entryCreateDto.getWordingFields().get(1).getKey());
+        Assertions.assertEquals("two", entryCreateDto.getWordingFields().get(1).getValue());
+        Assertions.assertEquals(
+                "Test template {one} and second template {two}",
+                success.getWordingSentence()
+                        .substitute(entryCreateDto.getWordingFields())
+                        .getSubstitutedString());
+    }
+
+    @Test
+    void testBulkCreateRequiresEnoughApplicationTextForWordingTemplatePlaceholders() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setWording(
+                "Test template {TEXT|Applicant officer|10} and second template "
+                        + "{TEXT|Applicant solicitor|10}");
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "one")));
+
+        when(standardApplicantRepository.findStandardApplicantByCodeAndDate("APP001", TODAY_UK))
+                .thenReturn(List.of(standardApplicant));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                bulkCreateApplicationEntryValidator.validate(
+                                        payload, (validatable, result) -> result));
+
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
     @Test
