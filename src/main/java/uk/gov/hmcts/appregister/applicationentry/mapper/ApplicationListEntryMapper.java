@@ -16,7 +16,6 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadApplicationCommand;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
@@ -771,14 +770,6 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "uuid", ignore = true)
     public abstract ApplicationListEntry toApplicationListEntry(EntryGetFilterDto filterDto);
 
-    @Mapping(target = "respondentAddress1", source = "respondentAddressLine1")
-    @Mapping(target = "respondentAddress2", source = "respondentAddressLine2")
-    @Mapping(target = "respondentAddress3", source = "respondentAddressLine3")
-    @Mapping(target = "respondentAddress4", source = "respondentAddressLine4")
-    @Mapping(target = "respondentAddress5", source = "respondentAddressLine5")
-    @Mapping(target = "applicationTexts", expression = "java(getApplicationTexts(row))")
-    public abstract BulkUploadApplicationCommand toBulkUploadCommand(BulkUploadRow row);
-
     @Mapping(target = "respondent", ignore = true) // handled in AfterMapping
     @Mapping(target = "applicant", ignore = true) // we use applicantCode instead
     @Mapping(target = "standardApplicantCode", source = "applicantCode")
@@ -803,20 +794,6 @@ public abstract class ApplicationListEntryMapper {
 
             dto.setWordingFields(substitutions);
         }
-    }
-
-    protected static @NonNull List<String> getApplicationTexts(BulkUploadRow row) {
-        List<String> texts = new ArrayList<>();
-
-        if (isNotBlank(row.getApplicationText1())) {
-            texts.add(row.getApplicationText1());
-        }
-
-        if (isNotBlank(row.getApplicationText2())) {
-            texts.add(row.getApplicationText2());
-        }
-
-        return texts;
     }
 
     private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(BulkUploadRow row) {

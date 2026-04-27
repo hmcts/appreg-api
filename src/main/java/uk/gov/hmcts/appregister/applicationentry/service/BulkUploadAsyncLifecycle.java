@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadApplicationCommand;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
@@ -57,11 +56,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = 2; // header is row 1
 
         for (BulkUploadRow row : rows) {
-            // --- MAP ROW to COMMAND ---
-            BulkUploadApplicationCommand command = mapper.toBulkUploadCommand(row);
-
-            // --- VALIDATE ---
-            List<BulkUploadError> rowErrors = validator.validateRow(rowNumber, command);
+            List<BulkUploadError> rowErrors = validator.validateRow(rowNumber, row);
 
             if (!rowErrors.isEmpty()) {
 

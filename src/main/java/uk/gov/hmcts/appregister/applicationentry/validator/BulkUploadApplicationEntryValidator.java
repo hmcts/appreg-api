@@ -6,8 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.enumeration.BulkUploadFieldType;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadApplicationCommand;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 
 /**
@@ -51,15 +51,15 @@ public class BulkUploadApplicationEntryValidator {
      * Validates a single mapped upload row and returns all discovered row-level validation errors.
      *
      * @param rowNumber the 1-based CSV row number including the header row
-     * @param command the mapped bulk upload command to validate
+     * @param row the parsed bulk upload row to validate
      * @return the list of validation errors for the supplied row
      */
-    public List<BulkUploadError> validateRow(int rowNumber, BulkUploadApplicationCommand command) {
+    public List<BulkUploadError> validateRow(int rowNumber, BulkUploadRow row) {
         List<BulkUploadError> errors = new ArrayList<>();
 
         // --- REQUIRED FIELDS ---
 
-        if (StringUtils.isBlank(command.getApplicantCode())) {
+        if (StringUtils.isBlank(row.getApplicantCode())) {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
@@ -68,7 +68,7 @@ public class BulkUploadApplicationEntryValidator {
                             "Applicant code is required"));
         }
 
-        if (StringUtils.isBlank(command.getApplicationCode())) {
+        if (StringUtils.isBlank(row.getApplicationCode())) {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
@@ -79,11 +79,11 @@ public class BulkUploadApplicationEntryValidator {
 
         // --- RESPONDENT RULES ---
 
-        boolean hasOrganisation = StringUtils.isNotBlank(command.getRespondentOrganisationName());
+        boolean hasOrganisation = StringUtils.isNotBlank(row.getRespondentOrganisationName());
 
         boolean hasPerson =
-                StringUtils.isNotBlank(command.getRespondentForename1())
-                        || StringUtils.isNotBlank(command.getRespondentSurname());
+                StringUtils.isNotBlank(row.getRespondentForename1())
+                        || StringUtils.isNotBlank(row.getRespondentSurname());
 
         // Must not have both
         if (hasOrganisation && hasPerson) {
@@ -107,39 +107,39 @@ public class BulkUploadApplicationEntryValidator {
 
         // --- EMAIL VALIDATION ---
 
-        if (StringUtils.isNotBlank(command.getRespondentEmail())
-                && !command.getRespondentEmail()
+        if (StringUtils.isNotBlank(row.getRespondentEmail())
+                && !row.getRespondentEmail()
                         .matches("([0-9A-Za-z'.\\-+_%]{1,126}@[0-9A-Za-z.\\-]{1,126})?")) {
 
             errors.add(
                     new BulkUploadError(
                             rowNumber,
                             BulkUploadFieldType.RESP_EMAIL.getHeader(),
-                            command.getRespondentEmail(),
+                            row.getRespondentEmail(),
                             "Invalid email format"));
         }
 
         // --- PHONE VALIDATION ---
 
-        if (StringUtils.isNotBlank(command.getRespondentTelephone())
-                && !command.getRespondentTelephone().matches("[0-9 \\-]*")) {
+        if (StringUtils.isNotBlank(row.getRespondentTelephone())
+                && !row.getRespondentTelephone().matches("[0-9 \\-]*")) {
 
             errors.add(
                     new BulkUploadError(
                             rowNumber,
                             BulkUploadFieldType.RESP_TEL.getHeader(),
-                            command.getRespondentTelephone(),
+                            row.getRespondentTelephone(),
                             "Invalid phone format"));
         }
 
-        if (StringUtils.isNotBlank(command.getRespondentMobile())
-                && !command.getRespondentMobile().matches("[0-9 \\-]*")) {
+        if (StringUtils.isNotBlank(row.getRespondentMobile())
+                && !row.getRespondentMobile().matches("[0-9 \\-]*")) {
 
             errors.add(
                     new BulkUploadError(
                             rowNumber,
                             BulkUploadFieldType.RESP_MOBILE.getHeader(),
-                            command.getRespondentMobile(),
+                            row.getRespondentMobile(),
                             "Invalid mobile format"));
         }
 
