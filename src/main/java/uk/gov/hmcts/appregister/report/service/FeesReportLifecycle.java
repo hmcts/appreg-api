@@ -43,7 +43,7 @@ class FeesReportLifecycle implements AsyncJobLifecycle<FeesReportRow> {
     private boolean headersWritten;
 
     FeesReportLifecycle() throws IOException {
-        this.file = AppRegTempFileUtil.generateTempFile();
+        this.file = AppRegTempFileUtil.generateTempFile("fees-report");
     }
 
     @Override

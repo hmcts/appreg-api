@@ -144,7 +144,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     private InputStreamResource getClobToOutputStream(JobIdRequest jobId) throws IOException {
-        File file = AppRegTempFileUtil.generateTempFile();
+        File file = AppRegTempFileUtil.generateTempFile("async-job-clob");
 
         jdbcTemplate.query(
                 JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS),

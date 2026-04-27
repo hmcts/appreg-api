@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 public class DeletableFileInputStreamTest extends AbstractAsyncTest {
     @Test
     public void testDeleteFile() throws Exception {
-        File file = AppRegTempFileUtil.generateTempFile();
+        File file = AppRegTempFileUtil.generateTempFile("deleteable-input-stream-test");
         Assertions.assertTrue(file.exists());
 
         try (DeleteableFileInputStream stream = new DeleteableFileInputStream(file)) {

@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.common.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.UUID;
 
 /**
@@ -11,6 +12,7 @@ import java.util.UUID;
 public class AppRegTempFileUtil {
 
     public static final String TEMP_FILE_EXTENSION = "appregtmp";
+    private static final String TEMP_DIRECTORY_NAME = "appreg-" + UUID.randomUUID();
 
     private AppRegTempFileUtil() {
         // Utility class
@@ -22,11 +24,25 @@ public class AppRegTempFileUtil {
      * @return The temp file
      */
     public static File generateTempFile() throws IOException {
+        return generateTempFile("appreg");
+    }
 
+    /**
+     * generates a temp file with a source-specific prefix.
+     *
+     * @param prefix The prefix to use in the generated file name
+     * @return The temp file
+     */
+    public static File generateTempFile(String prefix) throws IOException {
+        File tempDirectory = getTempDirectory();
+        Files.createDirectories(tempDirectory.toPath());
+
+        // Use a process-specific directory so stale files from another JVM do not fail this
+        // process' cleanup checks.
         return File.createTempFile(
-                UUID.randomUUID().toString(), "." + TEMP_FILE_EXTENSION); // NOSONAR
-        // - we want to use the default temp directory as this is guaranteed to be writable
-        // and will be cleaned up by the system.
+                prefix + "-" + UUID.randomUUID(),
+                "." + TEMP_FILE_EXTENSION,
+                tempDirectory); // NOSONAR
     }
 
     /**
@@ -35,9 +51,7 @@ public class AppRegTempFileUtil {
      * @return true if they do, false if they don't
      */
     public static boolean doesTempFileExist() {
-        File[] files =
-                new File(System.getProperty("java.io.tmpdir"))
-                        .listFiles(file -> file.getName().endsWith(TEMP_FILE_EXTENSION));
+        File[] files = getTempFilesThatExist();
 
         return files != null && files.length > 0;
     }
@@ -48,7 +62,15 @@ public class AppRegTempFileUtil {
      * @return The temp files that exist
      */
     public static File[] getTempFilesThatExist() {
-        return new File(System.getProperty("java.io.tmpdir"))
-                .listFiles(file -> file.getName().endsWith(TEMP_FILE_EXTENSION));
+        File tempDirectory = getTempDirectory();
+        if (!tempDirectory.exists()) {
+            return new File[0];
+        }
+
+        return tempDirectory.listFiles(file -> file.getName().endsWith(TEMP_FILE_EXTENSION));
+    }
+
+    private static File getTempDirectory() {
+        return new File(System.getProperty("java.io.tmpdir"), TEMP_DIRECTORY_NAME);
     }
 }

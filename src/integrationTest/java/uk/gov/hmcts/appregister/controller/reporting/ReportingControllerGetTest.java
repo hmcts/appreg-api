@@ -119,7 +119,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
         responseSpec.then().contentType("text/csv");
 
         // now lets parse the response to make sure it is as expected
-        File fileToWriteResponseTo = AppRegTempFileUtil.generateTempFile();
+        File fileToWriteResponseTo = AppRegTempFileUtil.generateTempFile("reporting-download");
         try (InputStream inputStream = responseSpec.getBody().asInputStream();
                 OutputStream fileOutputStream =
                         new DeleteableFileOutputStream(fileToWriteResponseTo)) {
