@@ -2,6 +2,8 @@ type: object
 description: >
   Filter criteria for POST /reports/fees/jobs.
   Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  If dateFrom is later than dateTo, the API treats the earlier date as the
+  inclusive start and the later date as the inclusive end.
 additionalProperties: false
 required:
   - dateFrom

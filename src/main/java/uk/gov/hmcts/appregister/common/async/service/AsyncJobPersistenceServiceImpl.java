@@ -2,9 +2,12 @@ package uk.gov.hmcts.appregister.common.async.service;
 
 import jakarta.persistence.EntityManager;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.Optional;
@@ -39,12 +42,12 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
 
-    /** Gets hold of the blob stream. */
-    private static final String JDBC_BLOB_QUERY = "SELECT csv_output, id FROM %s WHERE id = ?";
+    /** Gets hold of the clob stream. */
+    private static final String JDBC_CLOB_QUERY = "SELECT csv_output, id FROM %s WHERE id = ?";
 
-    /** Update the blob with a stream. */
+    /** Update the clob with a stream. */
     // NOSONAR - SQL injection is not possible here as the id is a UUID.
-    private static final String JDBC_INSERT_BLOB_QUERY =
+    private static final String JDBC_INSERT_CLOB_QUERY =
             "UPDATE %s SET csv_output = ? WHERE id = ?";
 
     /** The jdbc template to use to interact with the database. */
@@ -131,25 +134,28 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void writeBlob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException {
-        setBlob(inputStream, jobIdRequest);
+    public void writeClob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException {
+        setClob(inputStream, jobIdRequest);
     }
 
     @Override
-    public InputStreamResource readBlob(JobIdRequest jobIdRequest) throws IOException {
-        return getBlobToOutputStream(jobIdRequest);
+    public InputStreamResource readClob(JobIdRequest jobIdRequest) throws IOException {
+        return getClobToOutputStream(jobIdRequest);
     }
 
-    private InputStreamResource getBlobToOutputStream(JobIdRequest jobId) throws IOException {
+    private InputStreamResource getClobToOutputStream(JobIdRequest jobId) throws IOException {
         File file = AppRegTempFileUtil.generateTempFile();
 
         jdbcTemplate.query(
-                JDBC_BLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS),
+                JDBC_CLOB_QUERY.formatted(schema + "." + TableNames.ASYNC_JOBS),
                 ps -> ps.setObject(1, jobId.getId()),
                 rs -> {
-                    try (InputStream in = rs.getBinaryStream(1)) {
-                        if (in != null) {
-                            in.transferTo(new FileOutputStream(file));
+                    try (Reader reader = rs.getCharacterStream(1);
+                            Writer writer =
+                                    Files.newBufferedWriter(
+                                            file.toPath(), StandardCharsets.UTF_8)) {
+                        if (reader != null) {
+                            reader.transferTo(writer);
                         }
                     } catch (IOException e) {
                         throw new SQLException(e);
@@ -166,15 +172,15 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     /**
-     * sets the blob in the database.
+     * sets the clob in the database.
      *
      * @param inputStream The input stream to write to the database.
-     * @param jobId The job id we are setting the blob on.
+     * @param jobId The job id we are setting the clob on.
      */
-    public void setBlob(InputStream inputStream, JobIdRequest jobId) {
+    public void setClob(InputStream inputStream, JobIdRequest jobId) {
         jdbcTemplate.execute(
                 // NOSONAR
-                JDBC_INSERT_BLOB_QUERY.formatted(
+                JDBC_INSERT_CLOB_QUERY.formatted(
                         schema + "." + TableNames.ASYNC_JOBS), // NOSONAR - SQL injection is not
                 // possible here as we use a prepared statement. The only dynamic configurable
                 // pieces are the schema
@@ -183,8 +189,13 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
                 (PreparedStatementCallback<Void>)
                         ps -> {
                             ps.setObject(2, jobId.getId());
-                            ps.setBinaryStream(1, inputStream);
-                            ps.executeUpdate();
+                            try (Reader reader =
+                                    new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                                ps.setCharacterStream(1, reader);
+                                ps.executeUpdate();
+                            } catch (IOException e) {
+                                throw new SQLException(e);
+                            }
                             return null;
                         });
     }

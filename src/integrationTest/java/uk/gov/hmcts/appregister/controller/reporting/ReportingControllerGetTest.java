@@ -127,7 +127,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
             // copy the input stream to a file
             IOUtils.copy(inputStream, fileOutputStream);
 
-            // lets make sure the blob is csv and it is as is expected
+            // lets make sure the clob is csv and it is as is expected
             try (CsvReader<ApplicationCodeCsvPojo> csvReaderFile =
                             new CsvReader<>(
                                     getClass().getResourceAsStream("/appcodes.csv"),
@@ -213,7 +213,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
         val csvWriterLifecycle =
                 new JobProcessCsvWriteLifecycle(new CsvWriter<>(ApplicationCodeCsvPojo.class));
 
-        // Create the downloadable report blob that the endpoint will stream back to the caller.
+        // Create the downloadable report clob that the endpoint will stream back to the caller.
         val response = asyncJobService.startJob(request, reader, csvWriterLifecycle);
         response.getFuture().get();
 
