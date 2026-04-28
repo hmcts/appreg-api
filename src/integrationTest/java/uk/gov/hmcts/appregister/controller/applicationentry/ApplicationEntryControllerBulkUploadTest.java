@@ -11,10 +11,14 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -29,6 +33,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
 
     private static final String BULK_UPLOAD_CSV = "/bulk-upload-application-list-entries.csv";
     private static final int CSV_ROW_COUNT = 5;
+
+    @Autowired private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
 
     @Test
     void givenCsv_whenBulkUploadApplicationListEntries_thenCreatesEntries() throws Exception {
@@ -54,6 +60,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
+        Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
     }
 
     private UUID createNewApplicationList(TokenAndJwksKey token) throws Exception {
@@ -147,6 +154,40 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                 respondent.getEmailAddress(),
                 respondent.getTelephoneNumber(),
                 respondent.getMobileNumber());
+    }
+
+    private List<PersistedFeeStatus> persistedFeeStatusesForList(UUID listId) {
+        return unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findByUuidIncludingDelete(listId)
+                                    .orElseThrow();
+                    return applicationListEntryRepository
+                            .findByApplicationListId(applicationList.getId())
+                            .stream()
+                            .sorted(Comparator.comparing(ApplicationListEntry::getSequenceNumber))
+                            .map(this::persistedFeeStatusesForEntry)
+                            .flatMap(List::stream)
+                            .toList();
+                });
+    }
+
+    private List<PersistedFeeStatus> persistedFeeStatusesForEntry(ApplicationListEntry entry) {
+        return appListEntryFeeStatusRepository.findByAppListEntryId(entry.getId()).stream()
+                .map(feeStatus -> toPersistedFeeStatus(entry, feeStatus))
+                .toList();
+    }
+
+    private static PersistedFeeStatus toPersistedFeeStatus(
+            ApplicationListEntry entry, AppListEntryFeeStatus feeStatus) {
+        Assertions.assertNotNull(feeStatus.getAlefsFeeStatusDate());
+        Assertions.assertNotNull(feeStatus.getAlefsStatusCreationDate());
+        return new PersistedFeeStatus(
+                entry.getSequenceNumber(),
+                entry.getApplicationCode().getCode(),
+                feeStatus.getAlefsFeeStatus(),
+                feeStatus.getAlefsPaymentReference());
     }
 
     private static List<PersistedEntry> expectedPersistedEntries() {
@@ -255,6 +296,12 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                                 "07775 555555")));
     }
 
+    private static List<PersistedFeeStatus> expectedInitialFeeStatuses() {
+        return List.of(
+                new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null),
+                new PersistedFeeStatus((short) 4, "MS99007", FeeStatusType.DUE, null));
+    }
+
     private static PersistedEntry expectedEntry(
             short sequenceNumber,
             String applicantCode,
@@ -355,6 +402,12 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
             String bulkUpload,
             String wording,
             PersistedRespondent respondent) {}
+
+    private record PersistedFeeStatus(
+            Short sequenceNumber,
+            String applicationCode,
+            FeeStatusType feeStatus,
+            String paymentReference) {}
 
     private record PersistedRespondent(
             String organisationName,
