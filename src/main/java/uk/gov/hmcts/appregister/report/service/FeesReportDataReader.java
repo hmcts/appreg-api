@@ -19,45 +19,7 @@ import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 class FeesReportDataReader implements DataReader<FeesReportRow> {
     private static final String REPORT_QUERY =
             """
-            WITH latest_fee_status AS (
-                SELECT
-                    alefs_ale_id,
-                    alefs_fee_status_date,
-                    alefs_payment_reference,
-                    CASE alefs_fee_status
-                        WHEN 'D' THEN 'Due'
-                        WHEN 'P' THEN 'Paid'
-                        WHEN 'R' THEN 'Remitted'
-                        WHEN 'U' THEN 'Undertaking'
-                        ELSE alefs_fee_status
-                    END AS fee_status,
-                    ROW_NUMBER() OVER (
-                        PARTITION BY alefs_ale_id
-                        ORDER BY alefs_status_creation_date DESC NULLS LAST, alefs_id DESC
-                    ) AS rn
-                FROM app_list_entry_fee_status
-            ),
-            entry_fee_values AS (
-                SELECT
-                    alefi.ale_ale_id,
-                    MAX(
-                        CASE
-                            WHEN curr_fee.is_offsite IS NOT TRUE
-                            THEN curr_fee.fee_value
-                        END
-                    )::numeric(9, 2) AS fee_value,
-                    MAX(
-                        CASE
-                            WHEN curr_fee.is_offsite IS TRUE
-                            THEN curr_fee.fee_value
-                        END
-                    )::numeric(9, 2) AS off_site_fee_value
-                FROM app_list_entry_fee_id alefi
-                JOIN fee curr_fee
-                    ON curr_fee.fee_id = alefi.fee_fee_id
-                GROUP BY alefi.ale_ale_id
-            ),
-            base_apps AS (
+            WITH candidate_apps AS (
                 SELECT
                     al.application_list_date,
                     CASE
@@ -74,9 +36,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     na.surname,
                     ac.application_code,
                     ac.application_code_title,
-                    ale.ale_id,
-                    efv.fee_value,
-                    efv.off_site_fee_value
+                    ale.ale_id
                 FROM application_lists al
                 JOIN application_list_entries ale
                     ON ale.al_al_id = al.al_id
@@ -86,8 +46,6 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     ON ale.a_na_id = na.na_id
                 LEFT JOIN criminal_justice_area cja
                     ON al.cja_cja_id = cja.cja_id
-                JOIN entry_fee_values efv
-                    ON efv.ale_ale_id = ale.ale_id
                 WHERE ac.fee_due = 'Y'
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
@@ -105,9 +63,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     na.surname,
                     ac.application_code,
                     ac.application_code_title,
-                    ale.ale_id,
-                    efv.fee_value,
-                    efv.off_site_fee_value
+                    ale.ale_id
 
                 UNION ALL
 
@@ -127,9 +83,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     sa.surname,
                     ac.application_code,
                     ac.application_code_title,
-                    ale.ale_id,
-                    efv.fee_value,
-                    efv.off_site_fee_value
+                    ale.ale_id
                 FROM application_lists al
                 JOIN application_list_entries ale
                     ON ale.al_al_id = al.al_id
@@ -139,8 +93,6 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     ON ale.sa_sa_id = sa.sa_id
                 LEFT JOIN criminal_justice_area cja
                     ON al.cja_cja_id = cja.cja_id
-                JOIN entry_fee_values efv
-                    ON efv.ale_ale_id = ale.ale_id
                 WHERE ac.fee_due = 'Y'
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
@@ -162,9 +114,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     sa.surname,
                     ac.application_code,
                     ac.application_code_title,
-                    ale.ale_id,
-                    efv.fee_value,
-                    efv.off_site_fee_value
+                    ale.ale_id
             ),
             applicant_names AS (
                 SELECT
@@ -180,7 +130,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                             ''
                         )
                     ) AS applicant_display_name
-                FROM base_apps b
+                FROM candidate_apps b
             ),
             filtered_apps AS (
                 SELECT b.*
@@ -208,6 +158,48 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                         :courthouseCode IS NULL
                         OR UPPER(b.courthouse_code) = UPPER(:courthouseCode)
                     )
+            ),
+            latest_fee_status AS (
+                SELECT
+                    alefs_ale_id,
+                    alefs_fee_status_date,
+                    alefs_payment_reference,
+                    CASE alefs_fee_status
+                        WHEN 'D' THEN 'Due'
+                        WHEN 'P' THEN 'Paid'
+                        WHEN 'R' THEN 'Remitted'
+                        WHEN 'U' THEN 'Undertaking'
+                        ELSE alefs_fee_status
+                    END AS fee_status,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY alefs_ale_id
+                        ORDER BY alefs_status_creation_date DESC NULLS LAST, alefs_id DESC
+                    ) AS rn
+                FROM app_list_entry_fee_status alefs
+                JOIN filtered_apps fa
+                    ON fa.ale_id = alefs.alefs_ale_id
+            ),
+            entry_fee_values AS (
+                SELECT
+                    alefi.ale_ale_id,
+                    MAX(
+                        CASE
+                            WHEN curr_fee.is_offsite IS NOT TRUE
+                            THEN curr_fee.fee_value
+                        END
+                    )::numeric(9, 2) AS fee_value,
+                    MAX(
+                        CASE
+                            WHEN curr_fee.is_offsite IS TRUE
+                            THEN curr_fee.fee_value
+                        END
+                    )::numeric(9, 2) AS off_site_fee_value
+                FROM app_list_entry_fee_id alefi
+                JOIN filtered_apps fa
+                    ON fa.ale_id = alefi.ale_ale_id
+                JOIN fee curr_fee
+                    ON curr_fee.fee_id = alefi.fee_fee_id
+                GROUP BY alefi.ale_ale_id
             )
             SELECT
                 fa.application_list_date AS list_date,
@@ -218,17 +210,19 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                 fa.applicant_display_name AS applicant_full_name,
                 fa.application_code,
                 fa.application_code_title,
-                fa.fee_value,
-                fa.off_site_fee_value,
+                efv.fee_value,
+                efv.off_site_fee_value,
                 (
-                    COALESCE(fa.fee_value, 0::numeric)
-                    + COALESCE(fa.off_site_fee_value, 0::numeric)
+                    COALESCE(efv.fee_value, 0::numeric)
+                    + COALESCE(efv.off_site_fee_value, 0::numeric)
                 )::numeric(9, 2)
                     AS total_fee_value,
                 lfs.fee_status,
                 lfs.alefs_fee_status_date AS fee_status_date,
                 lfs.alefs_payment_reference AS payment_reference
             FROM filtered_apps fa
+            JOIN entry_fee_values efv
+                ON efv.ale_ale_id = fa.ale_id
             LEFT JOIN latest_fee_status lfs
                 ON lfs.alefs_ale_id = fa.ale_id
                 AND lfs.rn = 1
