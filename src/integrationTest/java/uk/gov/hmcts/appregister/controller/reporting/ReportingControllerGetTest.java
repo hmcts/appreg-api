@@ -119,7 +119,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
         responseSpec.then().contentType("text/csv");
 
         // now lets parse the response to make sure it is as expected
-        File fileToWriteResponseTo = AppRegTempFileUtil.generateTempFile();
+        File fileToWriteResponseTo = AppRegTempFileUtil.generateTempFile("reporting-download");
         try (InputStream inputStream = responseSpec.getBody().asInputStream();
                 OutputStream fileOutputStream =
                         new DeleteableFileOutputStream(fileToWriteResponseTo)) {
@@ -127,7 +127,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
             // copy the input stream to a file
             IOUtils.copy(inputStream, fileOutputStream);
 
-            // lets make sure the blob is csv and it is as is expected
+            // lets make sure the clob is csv and it is as is expected
             try (CsvReader<ApplicationCodeCsvPojo> csvReaderFile =
                             new CsvReader<>(
                                     getClass().getResourceAsStream("/appcodes.csv"),
@@ -213,7 +213,7 @@ public class ReportingControllerGetTest extends BaseIntegration {
         val csvWriterLifecycle =
                 new JobProcessCsvWriteLifecycle(new CsvWriter<>(ApplicationCodeCsvPojo.class));
 
-        // Create the downloadable report blob that the endpoint will stream back to the caller.
+        // Create the downloadable report clob that the endpoint will stream back to the caller.
         val response = asyncJobService.startJob(request, reader, csvWriterLifecycle);
         response.getFuture().get();
 
@@ -229,6 +229,9 @@ public class ReportingControllerGetTest extends BaseIntegration {
 
         responseSpec.then().statusCode(200);
         responseSpec.then().contentType("text/csv");
+        try (InputStream responseStream = responseSpec.getBody().asInputStream()) {
+            Assertions.assertTrue(responseStream.readAllBytes().length > 0);
+        }
 
         // Verify the GET audit row persisted for the requested report job UUID.
         val persistedAuditRow =

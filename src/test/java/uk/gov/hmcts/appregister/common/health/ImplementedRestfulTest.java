@@ -23,7 +23,6 @@ public class ImplementedRestfulTest {
                     "POST /reports/list-maintenance/jobs",
                     "POST /reports/search-warrants/jobs",
                     "POST /reports/duration/jobs",
-                    "POST /reports/fees/jobs",
                     "POST /reports/search-warrants/jobs");
 
     @Test

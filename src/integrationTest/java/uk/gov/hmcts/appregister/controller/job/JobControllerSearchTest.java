@@ -114,6 +114,8 @@ public class JobControllerSearchTest extends BaseIntegration {
                     }
                 },
                 Duration.ofSeconds(30));
+
+        response.getFuture().get();
     }
 
     @Test
@@ -128,7 +130,7 @@ public class JobControllerSearchTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT + "/" + UUID.randomUUID()),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(400);
+        responseSpec.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER.getCode(), responseSpec);
     }
@@ -177,7 +179,7 @@ public class JobControllerSearchTest extends BaseIntegration {
                         getLocalUrl(WEB_CONTEXT + "/" + response.getJobId().getId().toString()),
                         tokenGenerator.fetchTokenForRole());
 
-        responseSpec.then().statusCode(400);
+        responseSpec.then().statusCode(404);
         ProblemAssertUtil.assertEquals(
                 JobError.JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER.getCode(), responseSpec);
     }
