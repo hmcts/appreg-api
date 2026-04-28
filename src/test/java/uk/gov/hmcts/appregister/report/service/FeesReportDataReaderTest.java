@@ -123,8 +123,8 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
         Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("STD1", parameters.getValue("standardApplicantCode"));
-        Assertions.assertEquals("Smith", parameters.getValue("applicantSurname"));
-        Assertions.assertEquals("British Gas", parameters.getValue("organisationName"));
+        Assertions.assertEquals("John Smith", parameters.getValue("applicantName"));
+        Assertions.assertEquals("British Gas", parameters.getValue("applicantOrganisation"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -142,8 +142,8 @@ class FeesReportDataReaderTest {
                 .dateFrom(LocalDate.of(2018, 5, 1))
                 .dateTo(LocalDate.of(2018, 5, 31))
                 .standardApplicantCode("STD1")
-                .applicantSurname("Smith")
-                .organisationName("British Gas")
+                .applicantName("John Smith")
+                .applicantOrganisation("British Gas")
                 .location(location);
     }
 

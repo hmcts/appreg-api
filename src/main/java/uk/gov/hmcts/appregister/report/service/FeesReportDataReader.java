@@ -70,6 +70,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     cja.cja_code,
                     NULL AS standard_applicant_code,
                     na.name,
+                    na.forename_1,
                     na.surname,
                     ac.application_code,
                     ac.application_code_title,
@@ -100,6 +101,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     al.courthouse_code,
                     cja.cja_code,
                     na.name,
+                    na.forename_1,
                     na.surname,
                     ac.application_code,
                     ac.application_code_title,
@@ -121,6 +123,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     cja.cja_code,
                     sa.standard_applicant_code,
                     sa.name,
+                    sa.forename_1,
                     sa.surname,
                     ac.application_code,
                     ac.application_code_title,
@@ -155,6 +158,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     cja.cja_code,
                     sa.standard_applicant_code,
                     sa.name,
+                    sa.forename_1,
                     sa.surname,
                     ac.application_code,
                     ac.application_code_title,
@@ -162,17 +166,33 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     efv.fee_value,
                     efv.off_site_fee_value
             ),
+            applicant_names AS (
+                SELECT
+                    b.*,
+                    COALESCE(
+                        NULLIF(TRIM(b.name), ''),
+                        NULLIF(
+                            TRIM(
+                                COALESCE(b.forename_1, '')
+                                || ' '
+                                || COALESCE(b.surname, '')
+                            ),
+                            ''
+                        )
+                    ) AS applicant_display_name
+                FROM base_apps b
+            ),
             filtered_apps AS (
                 SELECT b.*
-                FROM base_apps b
+                FROM applicant_names b
                 WHERE (
-                        :applicantSurname IS NULL
-                        OR UPPER(b.surname) LIKE '%' || UPPER(:applicantSurname) || '%'
-                        OR UPPER(b.name) LIKE '%' || UPPER(:applicantSurname) || '%'
+                        :applicantName IS NULL
+                        OR UPPER(b.applicant_display_name)
+                            LIKE '%' || UPPER(:applicantName) || '%'
                     )
                     AND (
-                        :organisationName IS NULL
-                        OR UPPER(b.name) LIKE '%' || UPPER(:organisationName) || '%'
+                        :applicantOrganisation IS NULL
+                        OR UPPER(b.name) LIKE '%' || UPPER(:applicantOrganisation) || '%'
                     )
                     AND (
                         :cjaCode IS NULL
@@ -195,8 +215,7 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                 fa.other_courthouse,
                 fa.cja_code,
                 fa.standard_applicant_code,
-                TRIM(COALESCE(fa.name, '') || ' ' || COALESCE(fa.surname, ''))
-                    AS applicant_full_name,
+                fa.applicant_display_name AS applicant_full_name,
                 fa.application_code,
                 fa.application_code_title,
                 fa.fee_value,
@@ -262,8 +281,11 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                                 "standardApplicantCode",
                                 filter.getStandardApplicantCode(),
                                 Types.VARCHAR)
-                        .addValue("applicantSurname", filter.getApplicantSurname(), Types.VARCHAR)
-                        .addValue("organisationName", filter.getOrganisationName(), Types.VARCHAR)
+                        .addValue("applicantName", filter.getApplicantName(), Types.VARCHAR)
+                        .addValue(
+                                "applicantOrganisation",
+                                filter.getApplicantOrganisation(),
+                                Types.VARCHAR)
                         .addValue("cjaCode", getLocationValue(Location::getCjaCode), Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
