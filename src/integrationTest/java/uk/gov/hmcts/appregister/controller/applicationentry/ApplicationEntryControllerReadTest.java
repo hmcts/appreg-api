@@ -1079,6 +1079,52 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void
+            testGetApplicationListEntriesWithSpecialCharacterSequenceNumberReturnsWholeNumberMessage()
+                    throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?sequenceNumber=1;--"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"sequenceNumber":"Please ensure sequenceNumber is a whole number"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidRespondentPostcodeReturnsValidationError()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "@£1 1@£"));
+
+        responseSpec.then().statusCode(400);
+        responseSpec
+                .then()
+                .body("errors.respondentPostcode", Matchers.containsString("must match"));
+    }
+
+    @Test
     public void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);

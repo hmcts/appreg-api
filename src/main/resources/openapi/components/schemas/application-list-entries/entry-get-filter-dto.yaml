@@ -62,7 +62,8 @@ properties:
 
   respondentPostcode:
     type: string
-    description: The postcode associated with the respondent’s address. This has to be Exact.
+    description: The postcode associated with the respondent’s address. This has to be Exact. When supplied, it must be a valid UK postcode.
+    pattern: '^$|^(([A-Z]{1,2}((\d[A-Z\d])|(\d)) \d[A-Z]{2})|(GIR 0A{2}))$'
     example: "SW1A 1AA"
     maxLength: 8
 
