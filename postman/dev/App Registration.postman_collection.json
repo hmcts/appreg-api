@@ -725,6 +725,58 @@
           "response": []
         },
         {
+          "name": "Bulk Upload Application List Entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(202);",
+                  "const response = pm.response.json();",
+                  "pm.environment.set(\"BULK_UPLOAD_JOB_STATUS_URL\", pm.response.headers.get(\"Location\"));",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Create Entry",
           "event": [
             {
