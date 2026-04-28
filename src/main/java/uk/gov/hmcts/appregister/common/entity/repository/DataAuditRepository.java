@@ -45,6 +45,21 @@ public interface DataAuditRepository extends JpaRepository<DataAudit, Long> {
                     + "WHERE da.tableName = :table "
                     + "AND da.columnName = :column "
                     + "AND da.newValue = :newValue")
+    List<DataAudit> findDataAuditListForTableAndColumnAndNewValue(
+            String table, String column, String newValue);
+
+    /**
+     * finds a unique record for a data audit record with a new value.
+     *
+     * @param table The table
+     * @param column The column
+     * @param newValue The new value
+     */
+    @Query(
+            "SELECT da FROM DataAudit da "
+                    + "WHERE da.tableName = :table "
+                    + "AND da.columnName = :column "
+                    + "AND da.newValue = :newValue")
     Optional<DataAudit> findDataAuditForTableAndColumnAndNewValue(
             String table, String column, String newValue);
 
