@@ -30,57 +30,10 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     al.other_courthouse,
                     al.courthouse_code,
                     cja.cja_code,
-                    NULL AS standard_applicant_code,
-                    na.name,
-                    na.forename_1,
-                    na.surname,
-                    ac.application_code,
-                    ac.application_code_title,
-                    ale.ale_id
-                FROM application_lists al
-                JOIN application_list_entries ale
-                    ON ale.al_al_id = al.al_id
-                JOIN application_codes ac
-                    ON ale.ac_ac_id = ac.ac_id
-                JOIN name_address na
-                    ON ale.a_na_id = na.na_id
-                LEFT JOIN criminal_justice_area cja
-                    ON al.cja_cja_id = cja.cja_id
-                WHERE ac.fee_due = 'Y'
-                    AND al.application_list_date >= :dateFrom
-                    AND al.application_list_date < (:dateTo + INTERVAL '1 day')
-                    AND (al.is_deleted IS NULL OR al.is_deleted <> 'Y')
-                    AND (ale.is_deleted IS NULL OR ale.is_deleted <> 'Y')
-                    AND :standardApplicantCode IS NULL
-                GROUP BY
-                    al.application_list_date,
-                    courthouse_name,
-                    al.other_courthouse,
-                    al.courthouse_code,
-                    cja.cja_code,
-                    na.name,
-                    na.forename_1,
-                    na.surname,
-                    ac.application_code,
-                    ac.application_code_title,
-                    ale.ale_id
-
-                UNION ALL
-
-                SELECT
-                    al.application_list_date,
-                    CASE
-                        WHEN al.courthouse_code IS NOT NULL
-                        THEN al.courthouse_code || ' - ' || al.courthouse_name
-                        ELSE NULL
-                    END AS courthouse_name,
-                    al.other_courthouse,
-                    al.courthouse_code,
-                    cja.cja_code,
                     sa.standard_applicant_code,
-                    sa.name,
-                    sa.forename_1,
-                    sa.surname,
+                    COALESCE(na.name, sa.name) AS name,
+                    COALESCE(na.forename_1, sa.forename_1) AS forename_1,
+                    COALESCE(na.surname, sa.surname) AS surname,
                     ac.application_code,
                     ac.application_code_title,
                     ale.ale_id
@@ -89,7 +42,9 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     ON ale.al_al_id = al.al_id
                 JOIN application_codes ac
                     ON ale.ac_ac_id = ac.ac_id
-                JOIN standard_applicants sa
+                LEFT JOIN name_address na
+                    ON ale.a_na_id = na.na_id
+                LEFT JOIN standard_applicants sa
                     ON ale.sa_sa_id = sa.sa_id
                 LEFT JOIN criminal_justice_area cja
                     ON al.cja_cja_id = cja.cja_id
@@ -99,22 +54,19 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                     AND (al.is_deleted IS NULL OR al.is_deleted <> 'Y')
                     AND (ale.is_deleted IS NULL OR ale.is_deleted <> 'Y')
                     AND (
-                        :standardApplicantCode IS NULL
-                        OR UPPER(sa.standard_applicant_code) = UPPER(:standardApplicantCode)
+                        (
+                            ale.a_na_id IS NOT NULL
+                            AND :standardApplicantCode IS NULL
+                        )
+                        OR (
+                            ale.sa_sa_id IS NOT NULL
+                            AND (
+                                :standardApplicantCode IS NULL
+                                OR UPPER(sa.standard_applicant_code)
+                                    = UPPER(:standardApplicantCode)
+                            )
+                        )
                     )
-                GROUP BY
-                    al.application_list_date,
-                    courthouse_name,
-                    al.other_courthouse,
-                    al.courthouse_code,
-                    cja.cja_code,
-                    sa.standard_applicant_code,
-                    sa.name,
-                    sa.forename_1,
-                    sa.surname,
-                    ac.application_code,
-                    ac.application_code_title,
-                    ale.ale_id
             ),
             applicant_names AS (
                 SELECT
