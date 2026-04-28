@@ -777,6 +777,49 @@
           "response": []
         },
         {
+          "name": "Get Bulk Upload Job Status",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.environment.get(\"BULK_UPLOAD_JOB_STATUS_URL\"), \"BULK_UPLOAD_JOB_STATUS_URL\").to.exist;",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);",
+                  "const response = pm.response.json();",
+                  "pm.expect(response.status).to.be.oneOf([\"RECEIVED\", \"VALIDATING\", \"PROCESSING\", \"FAILED\", \"COMPLETED\"]);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "url": "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}"
+          },
+          "response": []
+        },
+        {
           "name": "Create Entry",
           "event": [
             {
