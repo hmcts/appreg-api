@@ -797,6 +797,8 @@ public abstract class ApplicationListEntryMapper {
 
             dto.setWordingFields(substitutions);
         }
+
+        truncateBulkUploadEntryCreateDto(dto);
     }
 
     private static @NonNull List<TemplateSubstitution> getTemplateSubstitutions(
@@ -857,5 +859,91 @@ public abstract class ApplicationListEntryMapper {
         }
 
         return respondent;
+    }
+
+    private void truncateBulkUploadEntryCreateDto(EntryCreateDto dto) {
+        if (dto == null) {
+            return;
+        }
+
+        dto.setStandardApplicantCode(StringUtils.left(dto.getStandardApplicantCode(), 10));
+        dto.setApplicationCode(StringUtils.left(dto.getApplicationCode(), 10));
+        dto.setAccountNumber(StringUtils.left(dto.getAccountNumber(), 20));
+        dto.setCaseReference(StringUtils.left(dto.getCaseReference(), 15));
+        dto.setNotes(StringUtils.left(dto.getNotes(), 4000));
+
+        truncateApplicant(dto.getApplicant());
+        truncateRespondent(dto.getRespondent());
+    }
+
+    private void truncateApplicant(Applicant applicant) {
+        if (applicant == null) {
+            return;
+        }
+
+        if (applicant.getOrganisation() != null) {
+            Organisation organisation = applicant.getOrganisation();
+            organisation.setName(StringUtils.left(organisation.getName(), 100));
+            truncateContactDetails(organisation.getContactDetails());
+        }
+
+        if (applicant.getPerson() != null) {
+            truncateFullName(applicant.getPerson().getName());
+            truncateContactDetails(applicant.getPerson().getContactDetails());
+        }
+    }
+
+    private void truncateRespondent(Respondent respondent) {
+        if (respondent == null) {
+            return;
+        }
+
+        if (respondent.getOrganisation() != null) {
+            Organisation organisation = respondent.getOrganisation();
+            organisation.setName(StringUtils.left(organisation.getName(), 100));
+            truncateContactDetails(organisation.getContactDetails());
+        }
+
+        if (respondent.getPerson() != null) {
+            RespondentPerson person = respondent.getPerson();
+            truncateFullName(person.getName());
+            truncateContactDetails(person.getContactDetails());
+        }
+    }
+
+    private void truncateFullName(FullName name) {
+        if (name == null) {
+            return;
+        }
+
+        name.setTitle(StringUtils.left(name.getTitle(), 100));
+        name.setFirstForename(StringUtils.left(name.getFirstForename(), 100));
+        name.setSecondForename(truncate(name.getSecondForename(), 100));
+        name.setThirdForename(truncate(name.getThirdForename(), 100));
+        name.setSurname(StringUtils.left(name.getSurname(), 100));
+    }
+
+    private void truncateContactDetails(ContactDetails details) {
+        if (details == null) {
+            return;
+        }
+
+        details.setAddressLine1(StringUtils.left(details.getAddressLine1(), 35));
+        details.setAddressLine2(truncate(details.getAddressLine2(), 35));
+        details.setAddressLine3(truncate(details.getAddressLine3(), 35));
+        details.setAddressLine4(truncate(details.getAddressLine4(), 35));
+        details.setAddressLine5(truncate(details.getAddressLine5(), 35));
+        details.setPostcode(StringUtils.left(details.getPostcode(), 8));
+        details.setEmail(truncate(details.getEmail(), 253));
+        details.setPhone(truncate(details.getPhone(), 20));
+        details.setMobile(truncate(details.getMobile(), 20));
+    }
+
+    private JsonNullable<String> truncate(JsonNullable<String> value, int length) {
+        if (value == null || !value.isPresent()) {
+            return value;
+        }
+
+        return JsonNullable.of(StringUtils.left(value.get(), length));
     }
 }

@@ -83,6 +83,22 @@ class BulkUploadAsyncLifecycleTest {
         assertThat(context.hasFailure()).isFalse();
     }
 
+    @Test
+    void givenOverlengthFields_whenValidating_thenValidationPassesAfterTruncation()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        row.setRespondentOrganisationName("O".repeat(105));
+        row.setRespondentAddressLine1("1".repeat(40));
+        row.setRespondentPostcode("SW1A 2AAZZZ");
+        row.setRespondentTelephone("1".repeat(25));
+        row.setRespondentMobile("2".repeat(25));
+        JobContext context = new JobContext();
+
+        lifecycle.validating(event(row, context));
+
+        assertThat(context.hasFailure()).isFalse();
+    }
+
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(
             BulkUploadRow row, JobContext context) {
         return new AsyncJobLifecycleEvent<>(null, List.of(row), context, JobStatus1.VALIDATING);
