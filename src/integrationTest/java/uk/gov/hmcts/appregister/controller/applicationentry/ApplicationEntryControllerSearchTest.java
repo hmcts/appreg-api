@@ -92,7 +92,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
         filter.setApplicantName("Match Org");
 
-        EntryIdsDto response = executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
 
         Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
         Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
@@ -133,7 +134,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                                 Optional.of(10),
                                 Optional.of(0),
                                 List.of(),
-                                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
                                 createAdminToken().fetchTokenForRole(),
                                 rs -> rs.queryParam("accountReference", "MULTIPAGE-"),
                                 new OpenApiPageMetaData())
@@ -142,7 +144,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
         filter.setAccountReference("MULTIPAGE-");
 
-        EntryIdsDto response = executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
 
         Assertions.assertEquals(10, pagedResponse.getContent().size());
         Assertions.assertEquals(12, pagedResponse.getTotalElements());
