@@ -485,7 +485,7 @@ dependencies {
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
   // Database
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.9'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.11'
   // TODO: runtimeOnly group: 'p6spy', name: 'p6spy', version: '3.9.1'
 
   // Testing
