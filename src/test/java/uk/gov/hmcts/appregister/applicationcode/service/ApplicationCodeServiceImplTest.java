@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
@@ -390,6 +391,34 @@ public class ApplicationCodeServiceImplTest {
         Assertions.assertEquals(
                 applicationCodeDtoPage.getContent().get(3).getApplicationCode(),
                 applicationCode4.getCode());
+    }
+
+    @Test
+    void findByCodeWithFeesEmpty() throws Exception {
+        ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+
+        GetApplicationCodeValidationSuccess success =
+                GetApplicationCodeValidationSuccess.builder()
+                        .applicationCode(applicationCode)
+                        .build();
+        dummyGetApplicationCodeValidator.setSuccess(success);
+
+        applicationCodeMapper.setWordingTemplateMapper(new WordingTemplateMapper());
+
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.notNull()))
+                .thenReturn(new FeePair(null, null));
+
+        String code = "code";
+
+        LocalDate localDate = LocalDate.now(ZoneOffset.UTC);
+
+        PayloadForGet payloadForGet = PayloadForGet.builder().code(code).date(localDate).build();
+        ApplicationCodeGetDetailDto applicationCodeDto =
+                applicationCodeService.findByCode(payloadForGet);
+
+        Assertions.assertEquals(applicationCodeDto.getApplicationCode(), applicationCode.getCode());
+        Assertions.assertEquals(JsonNullable.undefined(), applicationCodeDto.getFeeAmount());
+        Assertions.assertEquals(JsonNullable.undefined(), applicationCodeDto.getOffsiteFeeAmount());
     }
 
     private ApplicationCodeServiceImpl buildServiceWithListeners(

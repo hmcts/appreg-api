@@ -38,7 +38,7 @@ public class JobStatusResponse {
     /** The error message if the job has failed. */
     private final String errorMessage;
 
-    /** The persistence layer to use to store and read the associated blob. */
+    /** The persistence layer to use to store and read the associated clob. */
     @Getter(AccessLevel.NONE)
     protected final AsyncJobPersistenceService persistence;
 
@@ -52,26 +52,26 @@ public class JobStatusResponse {
     }
 
     /**
-     * write the input stream to the blob associated with the job.
+     * write the input stream to the clob associated with the job.
      *
-     * @param updateWithInputStream The input stream to write to the blob.
+     * @param updateWithInputStream The input stream to write to the clob.
      * @throws IOException Any problems
      */
     public void write(InputStream updateWithInputStream) throws IOException {
         if (status.equals(JobStatus1.FAILED) || status.equals(JobStatus1.COMPLETED)) {
-            throw new JobException("Can't write blob to a finished job %s".formatted(getJobId()));
+            throw new JobException("Can't write clob to a finished job %s".formatted(getJobId()));
         }
 
-        persistence.writeBlob(getJobId(), updateWithInputStream);
+        persistence.writeClob(getJobId(), updateWithInputStream);
     }
 
     /**
-     * reads the underlying blob stream associated with the job.
+     * reads the underlying clob stream associated with the job.
      *
-     * @return The blob resources. This is a spring resource that can easily be returned from the
+     * @return The clob resources. This is a spring resource that can easily be returned from the
      *     edge of the rest API.
      */
     public InputStreamResource read() throws IOException {
-        return persistence.readBlob(getJobId());
+        return persistence.readClob(getJobId());
     }
 }

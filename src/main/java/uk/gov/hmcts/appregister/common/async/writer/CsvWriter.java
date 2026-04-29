@@ -41,7 +41,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
     private NoHeaderStrategy<T> noHeaderStrategy;
 
     public CsvWriter(Class<T> cls) throws IOException {
-        this.file = AppRegTempFileUtil.generateTempFile();
+        this.file = AppRegTempFileUtil.generateTempFile("csv-writer");
         noHeaderStrategy = new NoHeaderStrategy<>(file);
         noHeaderStrategy.setType(cls);
     }

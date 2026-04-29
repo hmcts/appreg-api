@@ -67,10 +67,17 @@ properties:
     nullable: true
     description: Descriptive text for the fee.
     example: "Fee for application to Crown Court"
+
+  offsiteFeeReference:
+    type: string
+    nullable: true
+    description: A short reference code that identifies a offsite Fee.
+    example: "CO5.2"
+
   offsiteFeeAmount:
     type: object
     description: >
-      Fee amount for this Application Code, expressed in pence (GBP minor units).
+      Offsite Fee amount for this Application Code, expressed in pence (GBP minor units).
       Always use integer values; 1 GBP = 100 pence.
     nullable: true
     required:
@@ -88,6 +95,12 @@ properties:
         example: GBP
         default: GBP
         enum: [ GBP ]
+
+  offsiteFeeDescription:
+    type: string
+    nullable: true
+    description: Descriptive text for the offsite fee.
+    example: "Offsite Fee for application to Crown Court"
   startDate:
     type: string
     format: date

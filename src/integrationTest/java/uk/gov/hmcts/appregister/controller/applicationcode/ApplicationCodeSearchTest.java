@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
@@ -83,7 +84,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
+                        Optional.of(FEE_DESCRIPTION),
+                        Optional.of(200.0),
+                        Optional.of("CO1.1"),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION),
+                        Optional.of(155.0),
+                        Optional.of("CO2.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -132,7 +138,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(200.0), Optional.of(155.0));
+                        Optional.of(FEE_DESCRIPTION),
+                        Optional.of(200.0),
+                        Optional.of("CO1.1"),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION),
+                        Optional.of(155.0),
+                        Optional.of("CO2.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -183,7 +194,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetSummaryDto applicationCodeDto =
                 generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(0.5));
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION2),
+                        Optional.of(0.50),
+                        Optional.of("CO4.1"));
 
         assertApplicationCode(page.getContent().get(1), applicationCodeDto);
 
@@ -238,7 +254,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION),
+                        Optional.of(50.0),
+                        Optional.of("CO1.1"),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.of(70.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(responseContent, applicationCodeDto);
 
@@ -326,7 +347,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         // assert the first auth code record
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.of(FEE_DESCRIPTION), Optional.of(50.0), Optional.of(70.0));
+                        Optional.of(FEE_DESCRIPTION),
+                        Optional.of(50.0),
+                        Optional.of("CO1.1"),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.of(70.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -372,7 +398,12 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
 
         ApplicationCodeGetDetailDto applicationCodeDto =
                 generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
-                        Optional.empty(), Optional.empty(), Optional.of(40.0));
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(OFFSITE_FEE_DESCRIPTION3),
+                        Optional.of(40.0),
+                        Optional.of("CO1.1"));
 
         assertApplicationCode(response, applicationCodeDto);
 
@@ -1217,7 +1248,10 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             generateDefaultApplicationCodeGetSummaryDtoAssertionPayload(
                     Optional<String> mainFeeDesc,
                     Optional<Double> mainFeeAmt,
-                    Optional<Double> offsiteFeeAmt) {
+                    Optional<String> mainFeeReference,
+                    Optional<String> offsiteFeeDesc,
+                    Optional<Double> offsiteFeeAmt,
+                    Optional<String> offsiteFeeReference) {
         ApplicationCodeGetSummaryDto applicationCodeGetSummaryDto =
                 new ApplicationCodeGetSummaryDto();
         applicationCodeGetSummaryDto.setApplicationCode("AD99002");
@@ -1230,7 +1264,6 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
-        applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of("CO1.1"));
 
         if (mainFeeDesc.isPresent()) {
             applicationCodeGetSummaryDto.setFeeDescription(JsonNullable.of(mainFeeDesc.get()));
@@ -1245,21 +1278,39 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                     .setValue(Math.round(mainFeeAmt.get() * 100));
         }
 
+        if (mainFeeReference.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of(mainFeeReference.get()));
+        }
+
+        if (offsiteFeeDesc.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeDescription(
+                    JsonNullable.of(offsiteFeeDesc.get()));
+        }
+
         if (offsiteFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setOffsiteFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoOffsiteFeeAmount()));
             applicationCodeGetSummaryDto
                     .getOffsiteFeeAmount()
                     .get()
                     .setValue(Math.round(offsiteFeeAmt.get() * 100));
         }
+
+        if (offsiteFeeReference.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeReference(
+                    JsonNullable.of(offsiteFeeReference.get()));
+        }
+
         return applicationCodeGetSummaryDto;
     }
 
     private ApplicationCodeGetDetailDto generateDefaultApplicationCodeGetDetailDtoAssertionPayload(
             Optional<String> mainFeeDesc,
             Optional<Double> mainFeeAmt,
-            Optional<Double> offsiteFeeAmt) {
+            Optional<String> mainFeeReference,
+            Optional<String> offsiteFeeDesc,
+            Optional<Double> offsiteFeeAmt,
+            Optional<String> offsiteFeeReference) {
 
         ApplicationCodeGetDetailDto applicationCodeGetSummaryDto =
                 new ApplicationCodeGetDetailDto();
@@ -1275,10 +1326,13 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         applicationCodeGetSummaryDto.setIsFeeDue(true);
         applicationCodeGetSummaryDto.setRequiresRespondent(false);
         applicationCodeGetSummaryDto.setBulkRespondentAllowed(false);
-        applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of("CO1.1"));
 
         if (mainFeeDesc.isPresent()) {
             applicationCodeGetSummaryDto.setFeeDescription(JsonNullable.of(mainFeeDesc.get()));
+        }
+
+        if (mainFeeReference.isPresent()) {
+            applicationCodeGetSummaryDto.setFeeReference(JsonNullable.of(mainFeeReference.get()));
         }
 
         if (mainFeeAmt.isPresent()) {
@@ -1290,14 +1344,25 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
                     .setValue(Math.round(mainFeeAmt.get() * 100));
         }
 
+        if (offsiteFeeDesc.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeDescription(
+                    JsonNullable.of(offsiteFeeDesc.get()));
+        }
+
+        if (offsiteFeeReference.isPresent()) {
+            applicationCodeGetSummaryDto.setOffsiteFeeReference(
+                    JsonNullable.of(offsiteFeeReference.get()));
+        }
+
         if (offsiteFeeAmt.isPresent()) {
             applicationCodeGetSummaryDto.setOffsiteFeeAmount(
-                    JsonNullable.of(new ApplicationCodeGetSummaryDtoFeeAmount()));
+                    JsonNullable.of(new ApplicationCodeGetSummaryDtoOffsiteFeeAmount()));
             applicationCodeGetSummaryDto
                     .getOffsiteFeeAmount()
                     .get()
                     .setValue(Math.round(offsiteFeeAmt.get() * 100));
         }
+
         return applicationCodeGetSummaryDto;
     }
 
@@ -1318,16 +1383,6 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             assertEquals(expected.getFeeAmount().isPresent(), actual.getFeeAmount().isPresent());
         }
 
-        if (expected.getOffsiteFeeAmount().isPresent()) {
-            assertEquals(
-                    expected.getOffsiteFeeAmount().get().getValue(),
-                    actual.getOffsiteFeeAmount().get().getValue());
-        } else {
-            assertEquals(
-                    expected.getOffsiteFeeAmount().isPresent(),
-                    actual.getOffsiteFeeAmount().isPresent());
-        }
-
         if (expected.getFeeDescription().isPresent()) {
             assertEquals(expected.getFeeDescription(), actual.getFeeDescription());
         } else {
@@ -1342,6 +1397,32 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
             assertEquals(
                     expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
         }
+
+        if (expected.getOffsiteFeeAmount().isPresent()) {
+            assertEquals(
+                    expected.getOffsiteFeeAmount().get().getValue(),
+                    actual.getOffsiteFeeAmount().get().getValue());
+        } else {
+            assertEquals(
+                    expected.getOffsiteFeeAmount().isPresent(),
+                    actual.getOffsiteFeeAmount().isPresent());
+        }
+
+        if (expected.getOffsiteFeeDescription().isPresent()) {
+            assertEquals(expected.getOffsiteFeeDescription(), actual.getOffsiteFeeDescription());
+        } else {
+            assertEquals(
+                    expected.getOffsiteFeeDescription().isPresent(),
+                    actual.getOffsiteFeeDescription().isPresent());
+        }
+
+        if (expected.getOffsiteFeeReference().isPresent()) {
+            assertEquals(expected.getOffsiteFeeReference(), actual.getOffsiteFeeReference());
+        } else {
+            assertEquals(
+                    expected.getOffsiteFeeReference().isPresent(),
+                    actual.getOffsiteFeeReference().isPresent());
+        }
     }
 
     private void assertApplicationCode(
@@ -1352,7 +1433,7 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         assertEquals(expected.getIsFeeDue(), actual.getIsFeeDue());
         assertEquals(expected.getRequiresRespondent(), actual.getRequiresRespondent());
         assertEquals(expected.getBulkRespondentAllowed(), actual.getBulkRespondentAllowed());
-        if (expected.getFeeDescription().isPresent()) {
+        if (expected.getFeeAmount().isPresent()) {
             assertEquals(
                     expected.getFeeAmount().get().getValue(),
                     actual.getFeeAmount().get().getValue());
@@ -1383,6 +1464,22 @@ public class ApplicationCodeSearchTest extends AbstractApplicationCodeEntryCrudT
         } else {
             assertEquals(
                     expected.getFeeReference().isPresent(), actual.getFeeReference().isPresent());
+        }
+
+        if (expected.getOffsiteFeeDescription().isPresent()) {
+            assertEquals(expected.getOffsiteFeeDescription(), actual.getOffsiteFeeDescription());
+        } else {
+            assertEquals(
+                    expected.getOffsiteFeeDescription().isPresent(),
+                    actual.getOffsiteFeeDescription().isPresent());
+        }
+
+        if (expected.getOffsiteFeeReference().isPresent()) {
+            assertEquals(expected.getOffsiteFeeReference(), actual.getOffsiteFeeReference());
+        } else {
+            assertEquals(
+                    expected.getOffsiteFeeReference().isPresent(),
+                    actual.getOffsiteFeeReference().isPresent());
         }
     }
 

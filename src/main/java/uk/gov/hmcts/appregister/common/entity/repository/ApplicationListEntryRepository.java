@@ -187,6 +187,10 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                          ana.name
                     WHEN ana.surname IS NOT NULL OR ana.forename1 IS NOT NULL THEN
                         FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)
+                    WHEN sa.name IS NOT NULL THEN
+                         sa.name
+                    WHEN sa.applicantSurname IS NOT NULL OR sa.applicantForename1 IS NOT NULL THEN
+                        FUNCTION('concat_ws', ' ', sa.applicantForename1, sa.applicantSurname)
                     END as applicantName,
                     CASE WHEN rna.name IS NOT NULL THEN
                          rna.name
@@ -222,11 +226,26 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                             LIKE CONCAT('%', LOWER(cast(:otherLocationDescription AS string)), '%') ESCAPE '\\')
                     AND (:courtCode IS NULL OR LOWER(al.courtCode) = LOWER(cast(:courtCode AS string )))
                     AND (:cjaCode IS NULL OR LOWER(cja.code)=LOWER(cast(:cjaCode AS STRING )))
-                    AND (:applicantName IS NULL OR LOWER(COALESCE(
-                                        ana.name,
-                                        FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)))
-                            LIKE CONCAT('%', LOWER(cast(:applicantName AS string)) , '%') ESCAPE '\\'
-                            AND ana.code='NA')
+                    AND (
+                            :applicantName IS NULL
+                            OR (
+                                    ana.code = 'NA'
+                                    AND LOWER(COALESCE(
+                                            ana.name,
+                                            FUNCTION('concat_ws', ' ', ana.forename1, ana.surname)))
+                                            LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
+                                                    ESCAPE '\\'
+                            )
+                            OR LOWER(COALESCE(
+                                            sa.name,
+                                            FUNCTION(
+                                                    'concat_ws',
+                                                    ' ',
+                                                    sa.applicantForename1,
+                                                    sa.applicantSurname)))
+                                    LIKE CONCAT('%', LOWER(cast(:applicantName AS string)), '%')
+                                            ESCAPE '\\'
+                    )
                     AND (:applicantOrganisation IS NULL OR LOWER(ana.name)
                             LIKE CONCAT('%',LOWER(cast(:applicantOrganisation AS string)), '%') ESCAPE '\\'
                             AND ana.code='NA')
@@ -256,7 +275,16 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                 CONCAT('%', LOWER(cast(:applicationTitle AS string)), '%')  ESCAPE '\\')
                     AND (:feeRequired IS NULL OR ac.feeDue = CASE WHEN :feeRequired = true THEN 'Y' ELSE 'N' END)
                     AND (:sequenceNumber IS NULL OR ale.sequenceNumber = :sequenceNumber)
-                    AND (:resulted IS NULL OR rc.resultCode = :resulted)
+                    AND (
+                            :resulted IS NULL
+                            OR EXISTS (
+                                    SELECT 1
+                                    FROM AppListEntryResolution allResolutions
+                                    JOIN allResolutions.resolutionCode anyResolutionCode
+                                    WHERE allResolutions.applicationList = ale
+                                    AND anyResolutionCode.resultCode = :resulted
+                            )
+                    )
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
                     AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
             """)

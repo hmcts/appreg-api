@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -22,20 +23,43 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
+import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
+import uk.gov.hmcts.appregister.report.service.ReportService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @Controller
 @RequiredArgsConstructor
 @Slf4j
 public class ReportController implements ReportsApi {
+    private static final MediaType VND_JSON_V1 =
+            MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+
+    private final ReportService reportService;
     private final JobService jobService;
     private final JobMapper jobMapper;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> createFeesReport(
+            FeesReportFilterDto feesReportFilterDto) {
+        JobAcknowledgement acknowledgement = reportService.createFeesReport(feesReportFilterDto);
+
+        return ResponseEntity.accepted()
+                .location(
+                        ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .path("/jobs/{jobId}")
+                                .buildAndExpand(acknowledgement.getId())
+                                .toUri())
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(acknowledgement);
+    }
 
     @Override
     public ResponseEntity<Resource> downloadReport(UUID jobId) {

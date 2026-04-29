@@ -174,7 +174,7 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
                 JobStatus1.COMPLETED,
                 asyncJobService.getJobStatus(response.getJobId()).get().getStatus());
 
-        // lets make sure the generated blob in the database is the same as the original
+        // lets make sure the generated clob in the database is the same as the original
         try (CsvReader<ApplicationCodeCsvPojo> csvReaderFile =
                         new CsvReader<>(
                                 getClass().getResourceAsStream("/appcodes.csv"),

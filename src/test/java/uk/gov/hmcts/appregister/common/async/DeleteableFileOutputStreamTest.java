@@ -10,7 +10,7 @@ public class DeleteableFileOutputStreamTest extends AbstractAsyncTest {
 
     @Test
     public void testDeleteFile() throws Exception {
-        File file = AppRegTempFileUtil.generateTempFile();
+        File file = AppRegTempFileUtil.generateTempFile("deleteable-output-stream-test");
         Assertions.assertTrue(file.exists());
 
         try (DeleteableFileOutputStream stream = new DeleteableFileOutputStream(file)) {

@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,6 +30,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 @RestControllerAdvice
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final Set<String> WHOLE_NUMBER_FIELDS =
+            Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
+
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
@@ -144,6 +148,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                             if (fieldError.getCode() == null
                                     || !fieldError.getCode().contains("typeMismatch")) {
                                 errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                            } else if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure %s is a whole number"
+                                                .formatted(fieldError.getField()));
                             } else {
                                 errors.put(
                                         fieldError.getField(),
