@@ -112,14 +112,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private void logValidationFailure(JobContext context, BulkUploadError error) {
-        String failureMessage =
-                "Row "
-                        + error.getRowNumber()
-                        + " ["
-                        + error.getColumn()
-                        + "]: "
-                        + error.getMessage();
-
+        String failureMessage = error.toString();
         context.logFailure(failureMessage);
         log.warn("Bulk upload validation failure for list {}: {}", listId, failureMessage);
     }

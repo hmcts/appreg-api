@@ -14,4 +14,16 @@ public class BulkUploadError {
     private String column;
     private String rejectedValue;
     private String message;
+
+    @Override
+    public String toString() {
+        StringBuilder error =
+                new StringBuilder("Row ").append(rowNumber).append(" [").append(column).append("]");
+
+        if (rejectedValue != null) {
+            error.append(" rejected value [").append(rejectedValue).append("]");
+        }
+
+        return error.append(": ").append(message).toString();
+    }
 }

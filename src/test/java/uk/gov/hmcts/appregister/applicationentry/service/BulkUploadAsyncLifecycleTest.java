@@ -64,11 +64,13 @@ class BulkUploadAsyncLifecycleTest {
                             assertThat(message)
                                     .contains(
                                             "Row 2 [respondent.organisation.contactDetails.postcode]");
+                            assertThat(message).contains("rejected value [invalid]");
                             assertThat(message).contains("must match");
                         });
         assertThat(output)
                 .contains("Bulk upload validation failure for list")
                 .contains("Row 2 [respondent.organisation.contactDetails.postcode]")
+                .contains("rejected value [invalid]")
                 .contains("must match");
     }
 
