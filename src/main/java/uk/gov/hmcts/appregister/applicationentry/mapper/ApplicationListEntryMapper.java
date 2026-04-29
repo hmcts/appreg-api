@@ -843,8 +843,6 @@ public abstract class ApplicationListEntryMapper {
 
             respondent.setOrganisation(organisation);
         } else {
-            RespondentPerson person = new RespondentPerson();
-
             FullName name = new FullName();
             name.setTitle(row.getRespondentTitle());
             name.setFirstForename(row.getRespondentForename1());
@@ -852,6 +850,7 @@ public abstract class ApplicationListEntryMapper {
             name.setThirdForename(map(row.getRespondentForename3()));
             name.setSurname(row.getRespondentSurname());
 
+            RespondentPerson person = new RespondentPerson();
             person.setName(name);
             person.setContactDetails(contactDetails);
 

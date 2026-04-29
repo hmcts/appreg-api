@@ -62,7 +62,8 @@ class BulkUploadAsyncLifecycleTest {
                 .anySatisfy(
                         message -> {
                             assertThat(message)
-                                    .contains("Row 2 [respondent.organisation.contactDetails.postcode]");
+                                    .contains(
+                                            "Row 2 [respondent.organisation.contactDetails.postcode]");
                             assertThat(message).contains("must match");
                         });
         assertThat(output)

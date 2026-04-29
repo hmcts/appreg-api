@@ -191,16 +191,6 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 ApplicationListEntryEntityMapper.BULK_UPLOAD_NO);
     }
 
-    @Override
-    @Transactional
-    public MatchResponse<EntryGetDetailDto> createBulkEntry(
-            PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(
-                entryCreateDto,
-                bulkCreateApplicationEntryValidator,
-                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES);
-    }
-
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
@@ -289,6 +279,16 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Finish: Create Application Entry: {}", entryCreateDto);
 
         return getDetailDto;
+    }
+
+    @Override
+    @Transactional
+    public MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(
+                entryCreateDto,
+                bulkCreateApplicationEntryValidator,
+                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES);
     }
 
     @Override
@@ -547,8 +547,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private void saveFeeStatus(
-            AppListEntryFeeStatus appListEntryFeeStatus,
-            List<AppListEntryFeeStatus> statusList) {
+            AppListEntryFeeStatus appListEntryFeeStatus, List<AppListEntryFeeStatus> statusList) {
         auditService.processAudit(
                 AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
                 req -> {

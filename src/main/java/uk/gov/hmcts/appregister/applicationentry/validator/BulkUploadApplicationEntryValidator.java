@@ -60,8 +60,7 @@ public class BulkUploadApplicationEntryValidator {
             errors.add(
                     new BulkUploadError(
                             rowNumber,
-                            columnNames(
-                            ),
+                            columnNames(),
                             null,
                             "Respondent cannot be both organisation and person"));
         }
@@ -70,11 +69,7 @@ public class BulkUploadApplicationEntryValidator {
         if (!hasOrganisation && !hasPerson) {
             errors.add(
                     new BulkUploadError(
-                            rowNumber,
-                            columnNames(
-                            ),
-                            null,
-                            "Respondent details must be provided"));
+                            rowNumber, columnNames(), null, "Respondent details must be provided"));
         }
 
         return errors;
@@ -83,9 +78,7 @@ public class BulkUploadApplicationEntryValidator {
     private static String columnNames() {
         return Arrays.stream(
                         new String[] {
-                            "respondentOrganisationName",
-                            "respondentForename1",
-                            "respondentSurname"
+                            "respondentOrganisationName", "respondentForename1", "respondentSurname"
                         })
                 .map(BulkUploadApplicationEntryValidator::columnName)
                 .collect(Collectors.joining("/"));

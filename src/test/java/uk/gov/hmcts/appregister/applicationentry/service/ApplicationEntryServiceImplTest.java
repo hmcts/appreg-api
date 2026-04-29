@@ -700,12 +700,6 @@ public class ApplicationEntryServiceImplTest {
         code.setCode("AD99001");
         code.setWording("Request to copy documents");
 
-        StandardApplicant sa = new StandardApplicant();
-        Fee fee = new Fee();
-        fee.setId(4L);
-        fee.setVersion(1L);
-        FeePair pair = new FeePair(fee, null);
-
         EntryCreateDto entryCreateDto = new EntryCreateDto();
         entryCreateDto.setApplicationCode("AD99001");
         entryCreateDto.setStandardApplicantCode("APP001");
@@ -714,11 +708,11 @@ public class ApplicationEntryServiceImplTest {
         entryCreateDto.setOfficials(null);
         entryCreateDto.setHasOffsiteFee(false);
 
-        PayloadForCreate<EntryCreateDto> payload =
-                PayloadForCreate.<EntryCreateDto>builder()
-                        .id(UUID.randomUUID())
-                        .data(entryCreateDto)
-                        .build();
+        Fee fee = new Fee();
+        fee.setId(4L);
+        fee.setVersion(1L);
+        FeePair pair = new FeePair(fee, null);
+        StandardApplicant sa = new StandardApplicant();
 
         success =
                 CreateApplicationEntryValidationSuccess.builder()
@@ -762,6 +756,12 @@ public class ApplicationEntryServiceImplTest {
         when(appListEntryFeeRepository.getFeeForEntryId(applicationListEntry.getId()))
                 .thenReturn(List.of(fee));
 
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(UUID.randomUUID())
+                        .data(entryCreateDto)
+                        .build();
+
         MatchResponse<EntryGetDetailDto> response = service.createBulkEntry(payload);
 
         Assertions.assertEquals(entryGetDetailDto, response.getPayload());
@@ -774,8 +774,7 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(applicationListEntry, savedFeeStatus.getAppListEntry());
         Assertions.assertEquals(FeeStatusType.DUE, savedFeeStatus.getAlefsFeeStatus());
         Assertions.assertNull(savedFeeStatus.getAlefsPaymentReference());
-        Assertions.assertEquals(
-                LocalDate.of(2025, 10, 7), savedFeeStatus.getAlefsFeeStatusDate());
+        Assertions.assertEquals(LocalDate.of(2025, 10, 7), savedFeeStatus.getAlefsFeeStatusDate());
         Assertions.assertNotNull(savedFeeStatus.getAlefsStatusCreationDate());
     }
 

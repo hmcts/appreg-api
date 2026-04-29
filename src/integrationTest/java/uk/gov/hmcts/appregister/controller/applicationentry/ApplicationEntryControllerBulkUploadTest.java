@@ -331,21 +331,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
             String telephone,
             String mobile) {
         return new PersistedRespondent(
-                name,
-                null,
-                null,
-                null,
-                null,
-                null,
-                address1,
-                address2,
-                address3,
-                address4,
-                address5,
-                postcode,
-                email,
-                telephone,
-                mobile);
+                name, null, null, null, null, null, address1, address2, address3, address4,
+                address5, postcode, email, telephone, mobile);
     }
 
     private static PersistedRespondent personRespondent(
@@ -364,21 +351,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
             String telephone,
             String mobile) {
         return new PersistedRespondent(
-                null,
-                title,
-                forename1,
-                forename2,
-                forename3,
-                surname,
-                address1,
-                address2,
-                address3,
-                address4,
-                address5,
-                postcode,
-                email,
-                telephone,
-                mobile);
+                null, title, forename1, forename2, forename3, surname, address1, address2, address3,
+                address4, address5, postcode, email, telephone, mobile);
     }
 
     private int countEntriesForList(UUID listId) {
