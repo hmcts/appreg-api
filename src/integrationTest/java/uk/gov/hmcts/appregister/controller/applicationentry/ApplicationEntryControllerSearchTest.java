@@ -63,8 +63,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     @Test
     void givenMatchingFilter_whenGetApplicationListEntryIds_thenReturnOnlyMatchingIds()
             throws Exception {
-        var list = createAndSaveList(Status.OPEN);
-        var applicationCode = createApplicationCode("APPIDSFILTER", true);
+        final var list = createAndSaveList(Status.OPEN);
 
         var matchingApplicant = new NameAddressTestData().someOrganisation();
         matchingApplicant.setCode(NameAddressCodeType.APPLICANT);
@@ -75,6 +74,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         nonMatchingApplicant.setCode(NameAddressCodeType.APPLICANT);
         nonMatchingApplicant.setName("Different Org");
         nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+
+        final var applicationCode = createApplicationCode("APPIDSFILTER", true);
 
         var matchingEntry = createEntry(list);
         matchingEntry.setApplicationCode(applicationCode);
@@ -113,9 +114,9 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     @Test
     void givenMoreThanOnePageOfMatches_whenGetApplicationListEntryIds_thenReturnAllIds()
             throws Exception {
-        var list = createAndSaveList(Status.OPEN);
-        var applicationCode = createApplicationCode("APPIDSMULTI", true);
+        final var list = createAndSaveList(Status.OPEN);
         List<UUID> expectedIds = new ArrayList<>();
+        final var applicationCode = createApplicationCode("APPIDSMULTI", true);
 
         for (short i = 1; i <= 12; i++) {
             var entry = createEntry(list);
