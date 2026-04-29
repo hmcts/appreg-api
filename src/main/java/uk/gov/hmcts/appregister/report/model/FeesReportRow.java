@@ -8,6 +8,7 @@ import lombok.Value;
 @Value
 @Builder
 public class FeesReportRow {
+    Long applicationListEntryId;
     LocalDate listDate;
     String courthouseName;
     String otherCourthouse;

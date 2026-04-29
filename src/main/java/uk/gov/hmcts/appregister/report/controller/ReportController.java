@@ -23,11 +23,14 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
+import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
+import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
@@ -46,9 +49,48 @@ public class ReportController implements ReportsApi {
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     @Override
+    public ResponseEntity<JobAcknowledgement> createActivityAuditReport(
+            ActivityAuditFilterDto activityAuditFilterDto) {
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            ActivityAuditReportParameterAudit reportParameterAudit =
+                                    ActivityAuditReportParameterAudit.from(activityAuditFilterDto);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportService.createActivityAuditReport(
+                                                    activityAuditFilterDto),
+                                            reportParameterAudit));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        return ResponseEntity.accepted()
+                .location(
+                        ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .path("/jobs/{jobId}")
+                                .buildAndExpand(acknowledgement.getId())
+                                .toUri())
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(acknowledgement);
+    }
+
+    @Override
     public ResponseEntity<JobAcknowledgement> createFeesReport(
             FeesReportFilterDto feesReportFilterDto) {
-        JobAcknowledgement acknowledgement = reportService.createFeesReport(feesReportFilterDto);
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            FeesReportParameterAudit reportParameterAudit =
+                                    FeesReportParameterAudit.from(feesReportFilterDto);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportService.createFeesReport(feesReportFilterDto),
+                                            reportParameterAudit));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
         return ResponseEntity.accepted()
                 .location(
