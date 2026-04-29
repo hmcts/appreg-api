@@ -454,7 +454,7 @@ dependencies {
 
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.48'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.49'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0'
 
@@ -478,7 +478,7 @@ dependencies {
   implementation("commons-io:commons-io:2.21.0")
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.48.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.49.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
@@ -509,7 +509,7 @@ dependencies {
   testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.1.0"
   testImplementation 'org.instancio:instancio-junit:5.5.1'
 
-  testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+  testImplementation "com.tngtech.archunit:archunit-junit5:1.4.2"
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'
