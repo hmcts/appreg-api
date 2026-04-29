@@ -134,23 +134,18 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     "ALE-26")),
     BULK_UPLOAD_INVALID_FILE_FORMAT(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Uploaded file must be a valid CSV file", "ALE-25")),
-    BULK_UPLOAD_INVALID_DELIMITER(
-            DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid file delimiter. Expected pipe '|' separated values",
-                    "ALE-27")),
+                    HttpStatus.BAD_REQUEST, "Uploaded file must be a valid CSV file", "ALE-27")),
     BULK_UPLOAD_ROW_VALIDATION_FAILED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "One or more rows failed validation during bulk upload",
-                    "ALE-28"));
+                    "ALE-28")),
     BULK_UPLOAD_EMPTY_FILE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-28")),
+                    HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-29")),
     BULK_UPLOAD_PROCESSING_FAILED(
             DefaultErrorDetail.create(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-29"));
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30"));
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {
