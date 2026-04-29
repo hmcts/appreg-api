@@ -62,7 +62,7 @@ class FeesReportDataReaderTest {
         FeesReportFilterDto filter = filter();
         FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
 
-        reader.readData(new ReadPagePosition(25, 5), pageReader, jobContext);
+        reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
         verify(rawJdbcTemplate).execute("SET LOCAL search_path TO \"appreg\"");
         Assertions.assertEquals(1, pages.size());
@@ -125,6 +125,35 @@ class FeesReportDataReaderTest {
         assertKeysetPredicateRunsBeforeFeeCtes(queries.getFirst());
     }
 
+    @Test
+    void givenShortPage_whenReadData_thenStopsWithoutEmptyRead() throws Exception {
+        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
+        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+
+        when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
+        when(jdbcTemplate.query(
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<FeesReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            parameterSources.add(invocation.getArgument(1));
+                            RowMapper<FeesReportRow> rowMapper = invocation.getArgument(2);
+                            return List.of(rowMapper.mapRow(resultSet(), 0));
+                        });
+
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter(), "appreg");
+
+        reader.readData(
+                new ReadPagePosition(25, 0),
+                (rows, context) -> Assertions.assertEquals(1, rows.size()),
+                mock(JobContext.class));
+
+        Assertions.assertEquals(1, parameterSources.size());
+        Assertions.assertEquals(25, parameterSources.getFirst().getValue("limit"));
+    }
+
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
         Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
         Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
@@ -134,7 +163,7 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
-        Assertions.assertEquals(25, parameters.getValue("limit"));
+        Assertions.assertEquals(1, parameters.getValue("limit"));
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
         if (expectedCursor) {

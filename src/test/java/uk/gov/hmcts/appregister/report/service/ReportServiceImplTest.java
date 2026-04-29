@@ -49,7 +49,7 @@ class ReportServiceImplTest {
         AtomicReference<ActivityAuditReportLifecycle> lifecycle = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
-        when(asyncJobService.startJob(any(), any(), any()))
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
                 .thenAnswer(
                         invocation -> {
                             dataReader.set(invocation.getArgument(1));
@@ -61,6 +61,7 @@ class ReportServiceImplTest {
         ReportServiceImpl service =
                 new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
         ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
                         .dateFrom(expectedDateTo)
@@ -81,7 +82,8 @@ class ReportServiceImplTest {
                                     request ->
                                             request.getJobType() == JobType.ACTIVITY_AUDIT_REPORT),
                             Mockito.same(dataReader.get()),
-                            Mockito.same(lifecycle.get()));
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
         } finally {
             lifecycle
                     .get()
@@ -99,7 +101,7 @@ class ReportServiceImplTest {
         AtomicReference<FeesReportLifecycle> lifecycle = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
-        when(asyncJobService.startJob(any(), any(), any()))
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
                 .thenAnswer(
                         invocation -> {
                             dataReader.set(invocation.getArgument(1));
@@ -111,6 +113,7 @@ class ReportServiceImplTest {
         ReportServiceImpl service =
                 new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
         ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
                 new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
@@ -121,6 +124,12 @@ class ReportServiceImplTest {
                     (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            Mockito.verify(asyncJobService)
+                    .startJob(
+                            Mockito.argThat(request -> request.getJobType() == JobType.FEES_REPORT),
+                            Mockito.same(dataReader.get()),
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
         } finally {
             lifecycle
                     .get()

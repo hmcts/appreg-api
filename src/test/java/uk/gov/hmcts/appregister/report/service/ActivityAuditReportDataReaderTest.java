@@ -61,7 +61,7 @@ class ActivityAuditReportDataReaderTest {
         ActivityAuditReportDataReader reader =
                 new ActivityAuditReportDataReader(jdbcTemplate, filter(), "appreg");
 
-        reader.readData(new ReadPagePosition(25, 5), pageReader, jobContext);
+        reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
         verify(rawJdbcTemplate).execute("SET LOCAL search_path TO \"appreg\"");
         Assertions.assertEquals(1, pages.size());
@@ -85,7 +85,7 @@ class ActivityAuditReportDataReaderTest {
     }
 
     @Test
-    void givenRowsReachReportCap_whenReadData_thenStopsAtMaximumRows() throws Exception {
+    void givenLargePageSize_whenReadData_thenUsesPageSizeForEachPage() throws Exception {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
         List<MapSqlParameterSource> parameterSources = new ArrayList<>();
@@ -98,7 +98,7 @@ class ActivityAuditReportDataReaderTest {
                 .thenAnswer(
                         invocation -> {
                             parameterSources.add(invocation.getArgument(1));
-                            return rows(600);
+                            return rows(20);
                         });
 
         ActivityAuditReportDataReader reader =
@@ -109,9 +109,8 @@ class ActivityAuditReportDataReaderTest {
                 (rows, context) -> Assertions.assertFalse(rows.isEmpty()),
                 mock(JobContext.class));
 
-        Assertions.assertEquals(2, parameterSources.size());
+        Assertions.assertEquals(1, parameterSources.size());
         Assertions.assertEquals(600, parameterSources.getFirst().getValue("limit"));
-        Assertions.assertEquals(400, parameterSources.get(1).getValue("limit"));
     }
 
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
@@ -125,7 +124,7 @@ class ActivityAuditReportDataReaderTest {
                         "Update Application",
                         "Update Entry Application List"),
                 parameters.getValue("eventNames"));
-        Assertions.assertEquals(25, parameters.getValue("limit"));
+        Assertions.assertEquals(1, parameters.getValue("limit"));
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
         Assertions.assertEquals("Add Application", parameters.getValue("eventName0"));
         Assertions.assertEquals("Create Entry Application List", parameters.getValue("eventName1"));

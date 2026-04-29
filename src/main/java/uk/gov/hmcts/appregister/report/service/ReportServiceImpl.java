@@ -26,6 +26,9 @@ public class ReportServiceImpl implements ReportService {
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
 
+    @Value("${appreg.report.page-size}")
+    private int reportPageSize;
+
     @Override
     public JobAcknowledgement createActivityAuditReport(ActivityAuditFilterDto filter) {
         normaliseDateRange(filter);
@@ -48,7 +51,8 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new ActivityAuditReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle);
+                        lifecycle,
+                        reportPageSize);
 
         return jobMapper.toDto(response);
     }
@@ -74,7 +78,8 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new FeesReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle);
+                        lifecycle,
+                        reportPageSize);
 
         return jobMapper.toDto(response);
     }

@@ -225,6 +225,9 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
 
         while (!rows.isEmpty()) {
             pageReader.readData(rows, jobContext);
+            if (rows.size() < cursor.pageSize()) {
+                return;
+            }
             cursor.advance(rows);
             rows = readPage(cursor);
         }

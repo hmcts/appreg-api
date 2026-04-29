@@ -20,7 +20,6 @@ import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
 class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow> {
-    private static final int MAX_ROWS = 1000;
     private static final String REPORT_QUERY =
             """
             WITH filtered_audit AS (
@@ -173,6 +172,9 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
 
         while (!rows.isEmpty()) {
             pageReader.readData(rows, jobContext);
+            if (rows.size() < auditCursor.pageSize()) {
+                return;
+            }
             auditCursor.advance(rows);
             rows = readPage(auditCursor);
         }
@@ -184,10 +186,6 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
     }
 
     private List<ActivityAuditReportRow> readPage(ActivityAuditReadCursor cursor) {
-        if (cursor.isLimitReached()) {
-            return List.of();
-        }
-
         EventNameFilter eventNameFilter = eventNameFilter();
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
@@ -202,7 +200,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                                 cursor.lastCreatedDateTime(),
                                 Types.TIMESTAMP)
                         .addValue("lastDataId", cursor.lastDataId(), Types.BIGINT)
-                        .addValue("limit", cursor.pageSizeUpTo(MAX_ROWS), Types.INTEGER);
+                        .addValue("limit", cursor.pageSize(), Types.INTEGER);
 
         for (int index = 0; index < eventNameFilter.orderedEventNames().size(); index++) {
             parameters.addValue(
@@ -245,7 +243,6 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
 
     private static class ActivityAuditReadCursor {
         private final int pageSize;
-        private int rowsRead;
         private ActivityAuditReportRow lastRow;
 
         ActivityAuditReadCursor(int pageSize) {
@@ -253,20 +250,15 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
         }
 
         void advance(List<ActivityAuditReportRow> rows) {
-            rowsRead += rows.size();
             lastRow = rows.getLast();
-        }
-
-        boolean isLimitReached() {
-            return rowsRead >= MAX_ROWS;
-        }
-
-        int pageSizeUpTo(int maximumRows) {
-            return Math.min(pageSize, maximumRows - rowsRead);
         }
 
         boolean hasLastRow() {
             return lastRow != null;
+        }
+
+        int pageSize() {
+            return pageSize;
         }
 
         Integer lastActivityOrder() {
