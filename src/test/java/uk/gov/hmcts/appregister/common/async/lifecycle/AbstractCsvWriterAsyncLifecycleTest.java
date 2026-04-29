@@ -85,7 +85,7 @@ public class AbstractCsvWriterAsyncLifecycleTest {
                         jobContext,
                         JobStatus1.COMPLETED));
 
-        // ensure we try to write the blob
+        // ensure we try to write the clob
         verify(jobStatusResponse, times(1)).write(notNull());
 
         // make sure the reader and writer streams are closed
@@ -155,7 +155,7 @@ public class AbstractCsvWriterAsyncLifecycleTest {
                         jobContext,
                         JobStatus1.FAILED));
 
-        // ensure we did not write the blob
+        // ensure we did not write the clob
         verify(jobStatusResponse, times(0)).write(notNull());
 
         // make sure the reader and writer streams are closed

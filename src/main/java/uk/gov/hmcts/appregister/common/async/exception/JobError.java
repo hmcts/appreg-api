@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
 public enum JobError implements ErrorCodeEnum {
     JOB_DOES_NOT_EXIST_OR_NOT_FOR_USER(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST,
+                    HttpStatus.NOT_FOUND,
                     "The requested job does not exist or it is not for the user",
                     "JOB-1")),
     JOB_TYPE_IS_ALREADY_RUNNING(

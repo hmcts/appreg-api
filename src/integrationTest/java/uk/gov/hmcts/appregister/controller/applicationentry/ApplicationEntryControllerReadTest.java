@@ -1768,6 +1768,50 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
 
     @Test
     @StabilityTest
+    public void testGetApplicationListEntriesSortsByStandardApplicantDisplayName()
+            throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry zoe = createEntry(list);
+        zoe.setStandardApplicant(createStandardApplicantPerson("APPZOE", "Dr", "Zoe", "Anderson"));
+        persistance.save(zoe);
+
+        ApplicationListEntry amy = createEntry(list);
+        amy.setStandardApplicant(createStandardApplicantPerson("APPAMY", "Mr", "Amy", "Zimmer"));
+        persistance.save(amy);
+
+        ApplicationListEntry betaOrg = createEntry(list);
+        betaOrg.setStandardApplicant(createStandardApplicantOrganisation("APPORG", "Beta Org"));
+        persistance.save(betaOrg);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(
+                                SortableField.getSortStringForAsc(
+                                        ApplicationEntryByListIdSortFieldEnum.APPLICANT)),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        List<String> applicantNames =
+                page.getContent().stream()
+                        .map(this::renderApplicantDisplayName)
+                        .map(String::toLowerCase)
+                        .toList();
+
+        Assertions.assertEquals(
+                List.of("mr amy zimmer", "beta org", "dr zoe anderson"), applicantNames);
+    }
+
+    @Test
+    @StabilityTest
     public void testGetApplicationListEntriesSortsByRespondentName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
@@ -1822,6 +1866,40 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         LocalDate.of(1975, 9, 9),
                         LocalDate.of(1990, 1, 1)),
                 respondentDobs);
+    }
+
+    private StandardApplicant createStandardApplicantPerson(
+            String applicantCode, String title, String forename, String surname) {
+        StandardApplicant applicant = new StandardApplicantTestData().someComplete();
+        applicant.setApplicantCode(applicantCode);
+        applicant.setName(null);
+        applicant.setApplicantTitle(title);
+        applicant.setApplicantForename1(forename);
+        applicant.setApplicantSurname(surname);
+        return persistance.save(applicant);
+    }
+
+    private StandardApplicant createStandardApplicantOrganisation(
+            String applicantCode, String name) {
+        StandardApplicant applicant = new StandardApplicantTestData().someComplete();
+        applicant.setApplicantCode(applicantCode);
+        applicant.setName(name);
+        applicant.setApplicantTitle(null);
+        applicant.setApplicantForename1(null);
+        applicant.setApplicantSurname(null);
+        return persistance.save(applicant);
+    }
+
+    private String renderApplicantDisplayName(EntryGetSummaryDto dto) {
+        if (dto.getApplicant() == null) {
+            return "";
+        }
+
+        if (dto.getApplicant().getOrganisation() != null) {
+            return dto.getApplicant().getOrganisation().getName();
+        }
+
+        return renderApplicantName(dto);
     }
 
     record ApplicationEntryFilter(
