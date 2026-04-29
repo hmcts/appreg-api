@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 @Slf4j
 @RequiredArgsConstructor
 public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow> {
+    private static final int FIRST_DATA_ROW_NUMBER = 2;
 
     private final UUID listId;
     private final ApplicationEntryService applicationEntryService;
@@ -57,7 +58,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         List<BulkUploadError> allErrors = new ArrayList<>();
 
-        int rowNumber = 2; // header is row 1
+        int rowNumber = FIRST_DATA_ROW_NUMBER;
 
         for (BulkUploadRow row : rows) {
             List<BulkUploadError> rowErrors = new ArrayList<>();
@@ -137,7 +138,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
 
         log.info("Processing bulk upload for list {}", listId);
 
-        int rowNumber = 2;
+        int rowNumber = FIRST_DATA_ROW_NUMBER;
 
         for (BulkUploadRow row : rows) {
             try {
