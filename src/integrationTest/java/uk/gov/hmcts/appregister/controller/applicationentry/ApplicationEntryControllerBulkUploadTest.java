@@ -7,9 +7,11 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.openapitools.jackson.nullable.JsonNullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
@@ -21,9 +23,15 @@ import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ContactDetails;
+import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.Organisation;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
+import uk.gov.hmcts.appregister.generated.model.RespondentPerson;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -64,6 +72,7 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                 JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
+        Assertions.assertEquals(expectedApiEntries(), apiEntriesForList(listId, token));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
         Assertions.assertEquals(expectedInitialFeeStatuses(), persistedFeeStatusesForList(listId));
     }
@@ -106,6 +115,81 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                             .map(ApplicationEntryControllerBulkUploadTest::toPersistedEntry)
                             .toList();
                 });
+    }
+
+    private List<ApiEntry> apiEntriesForList(UUID listId, TokenAndJwksKey token) throws Exception {
+        Response response =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(CSV_ROW_COUNT),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries"),
+                        token);
+
+        response.then().statusCode(200);
+
+        EntryPage page = response.as(EntryPage.class);
+        Assertions.assertEquals(CSV_ROW_COUNT, page.getContent().size());
+        Assertions.assertEquals(CSV_ROW_COUNT, page.getTotalElements());
+
+        return page.getContent().stream().map(entry -> toApiEntry(listId, entry)).toList();
+    }
+
+    private static ApiEntry toApiEntry(UUID listId, EntryGetSummaryDto entry) {
+        Assertions.assertNotNull(entry.getId());
+        Assertions.assertEquals(listId, entry.getListId());
+        Assertions.assertEquals(ApplicationListStatus.OPEN, entry.getStatus());
+        Assertions.assertFalse(entry.getIsResulted());
+        Assertions.assertTrue(entry.getResulted().isEmpty());
+        Assertions.assertNotNull(entry.getDate());
+
+        return new ApiEntry(
+                entry.getSequenceNumber(),
+                entry.getApplicationTitle(),
+                entry.getIsFeeRequired(),
+                valueOrNull(entry.getAccountNumber()),
+                toApiRespondent(entry.getRespondent()),
+                entry.getStatus());
+    }
+
+    private static PersistedRespondent toApiRespondent(Respondent respondent) {
+        if (respondent.getOrganisation() != null) {
+            Organisation organisation = respondent.getOrganisation();
+            ContactDetails contactDetails = organisation.getContactDetails();
+            return organisationRespondent(
+                    organisation.getName(),
+                    contactDetails.getAddressLine1(),
+                    valueOrNull(contactDetails.getAddressLine2()),
+                    valueOrNull(contactDetails.getAddressLine3()),
+                    valueOrNull(contactDetails.getAddressLine4()),
+                    valueOrNull(contactDetails.getAddressLine5()),
+                    contactDetails.getPostcode(),
+                    valueOrNull(contactDetails.getEmail()),
+                    valueOrNull(contactDetails.getPhone()),
+                    valueOrNull(contactDetails.getMobile()));
+        }
+
+        RespondentPerson person = respondent.getPerson();
+        ContactDetails contactDetails = person.getContactDetails();
+        return personRespondent(
+                person.getName().getTitle(),
+                person.getName().getFirstForename(),
+                valueOrNull(person.getName().getSecondForename()),
+                valueOrNull(person.getName().getThirdForename()),
+                person.getName().getSurname(),
+                contactDetails.getAddressLine1(),
+                valueOrNull(contactDetails.getAddressLine2()),
+                valueOrNull(contactDetails.getAddressLine3()),
+                valueOrNull(contactDetails.getAddressLine4()),
+                valueOrNull(contactDetails.getAddressLine5()),
+                contactDetails.getPostcode(),
+                valueOrNull(contactDetails.getEmail()),
+                valueOrNull(contactDetails.getPhone()),
+                valueOrNull(contactDetails.getMobile()));
+    }
+
+    private static String valueOrNull(JsonNullable<String> value) {
+        return value == null || !value.isPresent() ? null : value.get();
     }
 
     private static PersistedEntry toPersistedEntry(ApplicationListEntry entry) {
@@ -278,10 +362,40 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                                 "07775 555555")));
     }
 
+    private static List<ApiEntry> expectedApiEntries() {
+        List<PersistedEntry> entries = expectedPersistedEntries();
+        List<String> applicationTitles =
+                List.of(
+                        "Copy documents",
+                        "Appeal to Crown Court",
+                        "Issue of liability order summons - council tax",
+                        "Copy documents",
+                        "Inspection of Bankers' Books (criminal proceedings)");
+        List<Boolean> feeRequired = List.of(true, false, false, true, false);
+
+        return List.of(
+                expectedApiEntry(entries.get(0), applicationTitles.get(0), feeRequired.get(0)),
+                expectedApiEntry(entries.get(1), applicationTitles.get(1), feeRequired.get(1)),
+                expectedApiEntry(entries.get(2), applicationTitles.get(2), feeRequired.get(2)),
+                expectedApiEntry(entries.get(3), applicationTitles.get(3), feeRequired.get(3)),
+                expectedApiEntry(entries.get(4), applicationTitles.get(4), feeRequired.get(4)));
+    }
+
     private static List<PersistedFeeStatus> expectedInitialFeeStatuses() {
         return List.of(
                 new PersistedFeeStatus((short) 1, "AD99001", FeeStatusType.DUE, null),
                 new PersistedFeeStatus((short) 4, "MS99007", FeeStatusType.DUE, null));
+    }
+
+    private static ApiEntry expectedApiEntry(
+            PersistedEntry entry, String applicationTitle, boolean feeRequired) {
+        return new ApiEntry(
+                entry.sequenceNumber().intValue(),
+                applicationTitle,
+                feeRequired,
+                entry.accountNumber(),
+                entry.respondent(),
+                ApplicationListStatus.OPEN);
     }
 
     private static PersistedEntry expectedEntry(
@@ -349,6 +463,14 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                             .size();
                 });
     }
+
+    private record ApiEntry(
+            Integer sequenceNumber,
+            String applicationTitle,
+            Boolean feeRequired,
+            String accountNumber,
+            PersistedRespondent respondent,
+            ApplicationListStatus status) {}
 
     private record PersistedEntry(
             Short sequenceNumber,
