@@ -67,6 +67,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
@@ -1000,6 +1001,64 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     return Optional.of(
                                             new AuditableResult<>(
                                                     entryPage,
+                                                    new ApplicationListEntryReadAudit(
+                                                            applicationListEntryMapStructMapper
+                                                                    .toApplicationListEntry(
+                                                                            payloadForGet,
+                                                                            normalisedFilterDto),
+                                                            normalisedFilterDto.getResulted())));
+                                }));
+    }
+
+    @Override
+    public EntryIdsDto getApplicationListEntryIds(
+            PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filterDto) {
+        log.debug(
+                "Started: Getting application list entry ids for list: {}",
+                payloadForGet.getListId());
+
+        EntryApplicationListGetFilterDto normalisedFilterDto = normaliseEntryListFilter(filterDto);
+
+        return getApplicationListEntriesValidator.validate(
+                payloadForGet,
+                (req, success) ->
+                        auditService.processAudit(
+                                null,
+                                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                                (r) -> {
+                                    List<UUID> entryIds =
+                                            applicationListEntryRepository.searchForGetSummaryIds(
+                                                    payloadForGet.getListId(),
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    normalisedFilterDto.getApplicantName(),
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    normalisedFilterDto.getRespondentName(),
+                                                    normalisedFilterDto.getRespondentPostcode(),
+                                                    normalisedFilterDto.getAccountReference(),
+                                                    normalisedFilterDto.getApplicationTitle(),
+                                                    normalisedFilterDto.getResulted(),
+                                                    normalisedFilterDto.getFeeRequired(),
+                                                    normalisedFilterDto.getSequenceNumber());
+
+                                    EntryIdsDto response = new EntryIdsDto();
+                                    response.setIds(entryIds);
+
+                                    log.debug(
+                                            "Finished: Getting application list entry ids for list: {}",
+                                            payloadForGet.getListId());
+
+                                    return Optional.of(
+                                            new AuditableResult<>(
+                                                    response,
                                                     new ApplicationListEntryReadAudit(
                                                             applicationListEntryMapStructMapper
                                                                     .toApplicationListEntry(
