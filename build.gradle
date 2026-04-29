@@ -478,7 +478,7 @@ dependencies {
   implementation("commons-io:commons-io:2.21.0")
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.48.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.49.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
