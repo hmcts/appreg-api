@@ -1125,6 +1125,27 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "applicationTitle", "Title;--");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidApplicantNameReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "applicantName", "Jane#");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidRespondentNameReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "respondentName", "Smith<>");
+    }
+
+    @Test
     public void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
@@ -1912,6 +1933,23 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         LocalDate.of(1975, 9, 9),
                         LocalDate.of(1990, 1, 1)),
                 respondentDobs);
+    }
+
+    private void assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+            String fieldName, String fieldValue) throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam(fieldName, fieldValue));
+
+        responseSpec.then().statusCode(400);
+        responseSpec.then().body("errors." + fieldName, Matchers.containsString("must match"));
     }
 
     private StandardApplicant createStandardApplicantPerson(
