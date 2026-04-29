@@ -29,6 +29,9 @@ public class ApplicationCodeFilterSortTest
         // create the application code
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
 
+        // make sure that the fee reference actually references a fee record
+        applicationCode.setFeeReference("CO3.2");
+
         // process the scenario
         FilterableScenario<ApplicationCode> scenario =
                 FilterScenarioFactory.createFilterScenario(
@@ -55,6 +58,9 @@ public class ApplicationCodeFilterSortTest
             throws Exception {
         // create the application code
         ApplicationCode applicationCode = new ApplicationCodeTestData().someComplete();
+
+        // make sure that the fee reference actually references a fee record
+        applicationCode.setFeeReference("CO3.2");
 
         // process the scenario
         List<ApplicationCode> applicationCodes =
