@@ -49,11 +49,8 @@ public class BulkUploadApplicationEntryValidator {
 
         // --- RESPONDENT RULES ---
 
-        boolean hasOrganisation = StringUtils.isNotBlank(row.getRespondentOrganisationName());
-
-        boolean hasPerson =
-                StringUtils.isNotBlank(row.getRespondentForename1())
-                        || StringUtils.isNotBlank(row.getRespondentSurname());
+        boolean hasOrganisation = BulkUploadRow.hasRespondentOrganisation(row);
+        boolean hasPerson = BulkUploadRow.hasRespondentPerson(row);
 
         // Must not have both
         if (hasOrganisation && hasPerson) {

@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.lang3.StringUtils;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
 
 /**
@@ -87,6 +88,16 @@ public class BulkUploadRow implements CsvPojo {
 
     @CsvBindAndJoinByName(column = "APPLICATION_TEXT\\d+", elementType = String.class)
     private MultiValuedMap<String, String> applicationTexts;
+
+    public static boolean hasRespondentOrganisation(BulkUploadRow row) {
+        return row != null && StringUtils.isNotBlank(row.getRespondentOrganisationName());
+    }
+
+    public static boolean hasRespondentPerson(BulkUploadRow row) {
+        return row != null
+                && (StringUtils.isNotBlank(row.getRespondentForename1())
+                        || StringUtils.isNotBlank(row.getRespondentSurname()));
+    }
 
     public List<String> getApplicationTextValues() {
         if (applicationTexts == null || applicationTexts.isEmpty()) {
