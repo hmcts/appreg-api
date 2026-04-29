@@ -33,6 +33,8 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
 
+    private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
+
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
@@ -152,6 +154,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                                 errors.put(
                                         fieldError.getField(),
                                         "Please ensure %s is a whole number"
+                                                .formatted(fieldError.getField()));
+                            } else if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure %s is a valid boolean value"
                                                 .formatted(fieldError.getField()));
                             } else {
                                 errors.put(
