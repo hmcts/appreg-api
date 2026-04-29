@@ -274,6 +274,46 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void givenBooleanTypeMismatch_whenTheExceptionIsThrown_thenBooleanMessageIsReturned()
+            throws Exception {
+
+        BindingResult result = Mockito.mock(BindingResult.class);
+
+        List<FieldError> fieldErrors =
+                List.of(
+                        new FieldError(
+                                "objectName",
+                                "feeRequired",
+                                "maybe",
+                                false,
+                                new String[] {"typeMismatch"},
+                                null,
+                                "defaultMessage"));
+
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
+
+        MethodArgumentNotValidException exception =
+                new MethodArgumentNotValidException(null, result) {
+                    @Override
+                    public String getMessage() {
+                        return "type mismatch";
+                    }
+                };
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+
+        Assertions.assertNotNull(problemDetail);
+        Assertions.assertNotNull(problemDetail.getBody());
+
+        ProblemDetail body = (ProblemDetail) problemDetail.getBody();
+        Map<?, ?> errors = (Map<?, ?>) body.getProperties().get("errors");
+
+        Assertions.assertEquals(
+                "Please ensure feeRequired is a valid boolean value", errors.get("feeRequired"));
+    }
+
+    @Test
     void
             givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {
