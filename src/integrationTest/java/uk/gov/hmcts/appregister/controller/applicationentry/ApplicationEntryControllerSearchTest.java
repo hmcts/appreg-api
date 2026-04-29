@@ -75,7 +75,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         nonMatchingApplicant.setName("Different Org");
         nonMatchingApplicant = persistance.save(nonMatchingApplicant);
 
-        final var applicationCode = createApplicationCode("APPIDSFILTER", true);
+        final var applicationCode = createApplicationCode("APPIDSFLT", true);
 
         var matchingEntry = createEntry(list);
         matchingEntry.setApplicationCode(applicationCode);
@@ -117,7 +117,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             throws Exception {
         final var list = createAndSaveList(Status.OPEN);
         List<UUID> expectedIds = new ArrayList<>();
-        final var applicationCode = createApplicationCode("APPIDSMULTI", true);
+        final var applicationCode = createApplicationCode("APPIDSMUL", true);
 
         for (short i = 1; i <= 12; i++) {
             var entry = createEntry(list);
