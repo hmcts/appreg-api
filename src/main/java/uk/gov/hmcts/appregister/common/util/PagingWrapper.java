@@ -16,33 +16,13 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 public class PagingWrapper {
     private final List<SortableField> sortStrings;
     private final Pageable pageable;
-    private final PagingSortMode sortMode;
-
-    public PagingWrapper(List<SortableField> sortStrings, Pageable pageable) {
-        this(sortStrings, pageable, PagingSortMode.REQUESTED);
-    }
 
     /**
-     * Creates a {@link PagingWrapper} using the provided sort and pageable information.
+     * The original pageable details.
      *
-     * @param sort the parsed API sort fields
-     * @param page the resolved {@link Pageable}
-     * @return a {@link PagingWrapper} with {@code REQUESTED} sort mode
+     * @param sort The sort details
      */
     public static PagingWrapper of(List<SortableField> sort, Pageable page) {
-        return new PagingWrapper(sort, page, PagingSortMode.REQUESTED);
-    }
-
-    /**
-     * Creates a {@link PagingWrapper} with an explicit {@link PagingSortMode}.
-     *
-     * @param sort the parsed API sort fields
-     * @param page the resolved {@link Pageable}
-     * @param sortMode the explicit sort mode to apply
-     * @return a {@link PagingWrapper} with the given sort mode
-     */
-    public static PagingWrapper of(
-            List<SortableField> sort, Pageable page, PagingSortMode sortMode) {
-        return new PagingWrapper(sort, page, sortMode);
+        return new PagingWrapper(sort, page);
     }
 }

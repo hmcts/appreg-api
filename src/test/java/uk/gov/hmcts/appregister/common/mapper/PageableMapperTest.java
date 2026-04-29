@@ -9,7 +9,6 @@ import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummar
 import uk.gov.hmcts.appregister.common.api.TestSortableOperationEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.common.util.PagingSortMode;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 
 class PageableMapperTest {
@@ -279,62 +278,5 @@ class PageableMapperTest {
         Assertions.assertEquals(
                 Sort.Direction.DESC,
                 pageable.getPageable().getSort().get().toList().get(1).getDirection());
-    }
-
-    @Test
-    void testPageableRequestedSortModeUsesRequestedSort() {
-        PageableMapper appPageable = new PageableMapper();
-        appPageable.setMaxPageSize(10);
-        appPageable.setDefaultPageSize(23);
-
-        PagingWrapper pageable =
-                appPageable.from(
-                        10,
-                        2,
-                        List.of(
-                                TestSortableOperationEnum.TEST_NO_TIE_BREAKER.getApiValue()
-                                        + ", DESC"),
-                        TestSortableOperationEnum.TEST2_NO_TIE_BREAKER,
-                        Sort.Direction.ASC,
-                        TestSortableOperationEnum::getEntityValue,
-                        PagingSortMode.REQUESTED);
-
-        Assertions.assertEquals(10, pageable.getPageable().getPageNumber());
-        Assertions.assertEquals(2, pageable.getPageable().getPageSize());
-        Assertions.assertEquals(
-                TestSortableOperationEnum.TEST_NO_TIE_BREAKER.getEntityValue()[0],
-                pageable.getPageable().getSort().get().findFirst().get().getProperty());
-        Assertions.assertEquals(
-                Sort.Direction.DESC,
-                pageable.getPageable().getSort().get().findFirst().get().getDirection());
-    }
-
-    @Test
-    void testPageableDefaultSortModeIgnoresRequestedSort() {
-        PageableMapper appPageable = new PageableMapper();
-        appPageable.setMaxPageSize(10);
-        appPageable.setDefaultPageSize(23);
-
-        PagingWrapper pageable =
-                appPageable.from(
-                        10,
-                        2,
-                        List.of(
-                                TestSortableOperationEnum.TEST_NO_TIE_BREAKER.getApiValue()
-                                        + ", DESC"),
-                        TestSortableOperationEnum.TEST2_NO_TIE_BREAKER,
-                        Sort.Direction.ASC,
-                        TestSortableOperationEnum::getEntityValue,
-                        PagingSortMode.DEFAULT);
-
-        Assertions.assertEquals(10, pageable.getPageable().getPageNumber());
-        Assertions.assertEquals(2, pageable.getPageable().getPageSize());
-        Assertions.assertEquals(1, pageable.getPageable().getSort().toList().size());
-        Assertions.assertEquals(
-                TestSortableOperationEnum.TEST2_NO_TIE_BREAKER.getEntityValue()[0],
-                pageable.getPageable().getSort().get().findFirst().get().getProperty());
-        Assertions.assertEquals(
-                Sort.Direction.ASC,
-                pageable.getPageable().getSort().get().findFirst().get().getDirection());
     }
 }

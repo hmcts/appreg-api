@@ -49,19 +49,16 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Retrieve a page of active Standrd Applicant Codes filtered by code/name (case-insensitive).
+     * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).
      *
      * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
-     * <p>Name can represent the name title or the forename_1 or the surname. If name is not null we
-     * use name as this is an organisation. The expectations is that the forename and surname will
-     * be null in this case.
-     *
-     * <p>If the name is not null then we search matching results on the name, forename_1 and
-     * surname fields.
+     * <p>Name can represent either the organisation name or a person name. For person records, the
+     * effective display/sort value is based on {@code applicantForename1 + " " + applicantSurname}.
+     * Search continues to match organisation name, first forename, and surname fields.
      *
      * @param code optional partial code filter (case-insensitive)
-     * @param name optional partial title filter (case-insensitive)
+     * @param name optional partial applicant display-name filter (case-insensitive)
      * @param addressLine1 optional partial address line 1 filter (case-insensitive)
      * @param from optional start date range filter
      * @param to optional end date range filter
@@ -78,7 +75,6 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
                     NULLIF(
                         TRIM(
                             FUNCTION('concat_ws', ' ',
-                                c.applicantTitle,
                                 c.applicantForename1,
                                 c.applicantSurname
                             )

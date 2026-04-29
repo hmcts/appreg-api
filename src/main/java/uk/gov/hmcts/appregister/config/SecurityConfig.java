@@ -11,6 +11,7 @@ import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -21,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * Configuration for securing the API using Spring Security and JWTs.
  */
 @Configuration
+@Profile("!nosecurity")
 @EnableMethodSecurity
 public class SecurityConfig {
 

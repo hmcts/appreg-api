@@ -47,6 +47,8 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -103,6 +105,7 @@ public class CreateApplicationEntryValidatorTest {
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         entryCreateDto = Instancio.of(EntryCreateDto.class).withSettings(settings).create();
+        entryCreateDto.setOfficials(CreateEntryDtoUtil.validOfficials());
 
         appListUuid = UUID.randomUUID();
 
@@ -194,6 +197,25 @@ public class CreateApplicationEntryValidatorTest {
                         .build();
 
         // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
+    @Test
+    void testValidateSuccessWithNoOfficials() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setOfficials(List.of());
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
         createApplicationEntryValidator.validate(payload);
     }
 
@@ -774,6 +796,55 @@ public class CreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testTooManyMagistratesFail() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setOfficials(
+                List.of(
+                        official(OfficialType.MAGISTRATE, "One"),
+                        official(OfficialType.MAGISTRATE, "Two"),
+                        official(OfficialType.MAGISTRATE, "Three"),
+                        official(OfficialType.MAGISTRATE, "Four")));
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.TOO_MANY_MAGISTRATES, appRegistryException.getCode());
+    }
+
+    @Test
+    void testTooManyCourtOfficialsFail() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.setOfficials(
+                List.of(
+                        official(OfficialType.MAGISTRATE, "One"),
+                        official(OfficialType.CLERK, "CourtOne"),
+                        official(OfficialType.CLERK, "CourtTwo")));
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> createApplicationEntryValidator.validate(payload));
+        Assertions.assertEquals(
+                AppListEntryError.TOO_MANY_COURT_OFFICIALS, appRegistryException.getCode());
+    }
+
+    @Test
     void
             bulkRespondentAllowed_NoACRespondent_ValidBulkRespondentNumber_ValidNameAndAddressRespondent_Failure() {
         ApplicationCodeTestData applicationCodeTestData = new ApplicationCodeTestData();
@@ -806,5 +877,14 @@ public class CreateApplicationEntryValidatorTest {
         Assertions.assertEquals(
                 AppListEntryError.BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
                 appRegistryException.getCode());
+    }
+
+    private static Official official(OfficialType officialType, String suffix) {
+        Official official = new Official();
+        official.setTitle("Mr");
+        official.setForename("Official");
+        official.setSurname(suffix);
+        official.setType(officialType);
+        return official;
     }
 }

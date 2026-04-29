@@ -55,19 +55,19 @@ public interface AsyncJobPersistenceService {
     JobIdRequest startJob(JobTypeRequest request);
 
     /**
-     * writes a blob to the job id request.
+     * writes a clob to the job id request.
      *
      * @param jobIdRequest The job id request.
      * @param inputStream The input stream to write.
      * @throws IOException Any problems
      */
-    void writeBlob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException;
+    void writeClob(JobIdRequest jobIdRequest, InputStream inputStream) throws IOException;
 
     /**
-     * reads a blob from the job id request.
+     * reads a clob from the job id request.
      *
      * @param jobIdRequest The job id request.
      * @throws IOException Any problems
      */
-    InputStreamResource readBlob(JobIdRequest jobIdRequest) throws IOException;
+    InputStreamResource readClob(JobIdRequest jobIdRequest) throws IOException;
 }

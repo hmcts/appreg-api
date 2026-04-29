@@ -12,6 +12,7 @@ import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -39,11 +40,10 @@ public class CreateEntryDtoUtil {
     public EntryCreateDto getCorrectCreateEntryDto(boolean satisfyForClose) {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
-        List<Official> officials = Instancio.ofList(Official.class).size(4).create();
         EntryCreateDto entryCreateDto =
                 Instancio.of(EntryCreateDto.class).withSettings(settings).create();
         entryCreateDto.setLodgementDate(LocalDate.now());
-        entryCreateDto.setOfficials(officials);
+        entryCreateDto.setOfficials(validOfficials());
 
         if (satisfyForClose) {
             FeeStatus feeStatus = new FeeStatus();
@@ -184,5 +184,23 @@ public class CreateEntryDtoUtil {
                 fs.setPaymentReference(null);
             }
         }
+    }
+
+    public static List<Official> validOfficials() {
+        return List.of(
+                official("Ms", "Mary", "MagistrateOne", OfficialType.MAGISTRATE),
+                official("Mr", "Michael", "MagistrateTwo", OfficialType.MAGISTRATE),
+                official("Mrs", "Moira", "MagistrateThree", OfficialType.MAGISTRATE),
+                official("Mr", "Chris", "CourtOfficial", OfficialType.CLERK));
+    }
+
+    private static Official official(
+            String title, String forename, String surname, OfficialType officialType) {
+        Official official = new Official();
+        official.setTitle(title);
+        official.setForename(forename);
+        official.setSurname(surname);
+        official.setType(officialType);
+        return official;
     }
 }

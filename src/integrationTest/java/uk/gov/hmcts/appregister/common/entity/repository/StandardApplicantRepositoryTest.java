@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
@@ -253,6 +254,65 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
                     StandardApplicantEnrichedProjection row = results.getContent().getFirst();
                     assertEquals("APP900", row.getStandardApplicant().getApplicantCode());
                     assertEquals("221B Baker Street", row.getStandardApplicant().getAddressLine1());
+                });
+    }
+
+    @Test
+    public void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+
+                    StandardApplicant zoeApplicant = new StandardApplicantTestData().someComplete();
+                    zoeApplicant.setApplicantCode("APP-ZOE");
+                    zoeApplicant.setName(null);
+                    zoeApplicant.setApplicantTitle("Dr");
+                    zoeApplicant.setApplicantForename1("Zoe");
+                    zoeApplicant.setApplicantSurname("Anderson");
+                    zoeApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    zoeApplicant.setApplicantEndDate(null);
+                    zoeApplicant.setAddressLine1("Shared Sort Address");
+
+                    StandardApplicant amyApplicant = new StandardApplicantTestData().someComplete();
+                    amyApplicant.setApplicantCode("APP-AMY");
+                    amyApplicant.setName(null);
+                    amyApplicant.setApplicantTitle("Mr");
+                    amyApplicant.setApplicantForename1("Amy");
+                    amyApplicant.setApplicantSurname("Zimmer");
+                    amyApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    amyApplicant.setApplicantEndDate(null);
+                    amyApplicant.setAddressLine1("Shared Sort Address");
+
+                    StandardApplicant organisationApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    organisationApplicant.setApplicantCode("APP-ORG");
+                    organisationApplicant.setName("Beta Org");
+                    organisationApplicant.setApplicantTitle(null);
+                    organisationApplicant.setApplicantForename1(null);
+                    organisationApplicant.setApplicantSurname(null);
+                    organisationApplicant.setApplicantStartDate(activeDate.minusDays(1));
+                    organisationApplicant.setApplicantEndDate(null);
+                    organisationApplicant.setAddressLine1("Shared Sort Address");
+
+                    repository.save(zoeApplicant);
+                    repository.save(amyApplicant);
+                    repository.save(organisationApplicant);
+
+                    Page<StandardApplicantEnrichedProjection> results =
+                            repository.search(
+                                    null,
+                                    null,
+                                    "shared sort address",
+                                    null,
+                                    null,
+                                    activeDate,
+                                    PageRequest.of(0, 10, Sort.by("effectiveName").ascending()));
+
+                    assertThat(results.getContent())
+                            .extracting(
+                                    projection ->
+                                            projection.getStandardApplicant().getApplicantCode())
+                            .containsSequence("APP-AMY", "APP-ORG", "APP-ZOE");
                 });
     }
 }

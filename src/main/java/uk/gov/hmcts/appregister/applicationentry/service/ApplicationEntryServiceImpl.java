@@ -1017,6 +1017,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 "Started: Getting application list entries for list: {}",
                 payloadForGet.getListId());
 
+        EntryApplicationListGetFilterDto normalisedFilterDto = normaliseEntryListFilter(filterDto);
+
         return getApplicationListEntriesValidator.validate(
                 payloadForGet,
                 (req, success) ->
@@ -1035,18 +1037,18 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                     null,
                                                     null,
                                                     null,
-                                                    filterDto.getApplicantName(),
+                                                    normalisedFilterDto.getApplicantName(),
                                                     null,
                                                     null,
                                                     null,
                                                     null,
-                                                    filterDto.getRespondentName(),
-                                                    filterDto.getRespondentPostcode(),
-                                                    filterDto.getAccountReference(),
-                                                    filterDto.getApplicationTitle(),
-                                                    filterDto.getResulted(),
-                                                    filterDto.getFeeRequired(),
-                                                    filterDto.getSequenceNumber(),
+                                                    normalisedFilterDto.getRespondentName(),
+                                                    normalisedFilterDto.getRespondentPostcode(),
+                                                    normalisedFilterDto.getAccountReference(),
+                                                    normalisedFilterDto.getApplicationTitle(),
+                                                    normalisedFilterDto.getResulted(),
+                                                    normalisedFilterDto.getFeeRequired(),
+                                                    normalisedFilterDto.getSequenceNumber(),
                                                     pageable.getPageable());
 
                                     EntryPage entryPage = buildEntryPage(entries, pageable);
@@ -1066,9 +1068,38 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                             applicationListEntryMapStructMapper
                                                                     .toApplicationListEntry(
                                                                             payloadForGet,
-                                                                            filterDto),
-                                                            filterDto.getResulted())));
+                                                                            normalisedFilterDto),
+                                                            normalisedFilterDto.getResulted())));
                                 }));
+    }
+
+    private EntryApplicationListGetFilterDto normaliseEntryListFilter(
+            EntryApplicationListGetFilterDto filterDto) {
+        EntryApplicationListGetFilterDto normalisedFilterDto =
+                filterDto == null ? new EntryApplicationListGetFilterDto() : filterDto;
+
+        normalisedFilterDto.setApplicantName(
+                normaliseStringFilter(normalisedFilterDto.getApplicantName()));
+        normalisedFilterDto.setRespondentName(
+                normaliseStringFilter(normalisedFilterDto.getRespondentName()));
+        normalisedFilterDto.setRespondentPostcode(
+                normaliseStringFilter(normalisedFilterDto.getRespondentPostcode()));
+        normalisedFilterDto.setAccountReference(
+                normaliseStringFilter(normalisedFilterDto.getAccountReference()));
+        normalisedFilterDto.setApplicationTitle(
+                normaliseStringFilter(normalisedFilterDto.getApplicationTitle()));
+        normalisedFilterDto.setResulted(normaliseStringFilter(normalisedFilterDto.getResulted()));
+
+        return normalisedFilterDto;
+    }
+
+    private String normaliseStringFilter(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmedValue = value.trim();
+        return trimmedValue.isEmpty() ? null : trimmedValue;
     }
 
     @Override

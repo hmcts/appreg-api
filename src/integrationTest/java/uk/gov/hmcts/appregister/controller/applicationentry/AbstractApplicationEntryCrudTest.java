@@ -344,6 +344,14 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected void validateEntryCreationResponse(
             EntryCreateDto entryCreateDto, EntryGetDetailDto response, String wordingSpec) {
+        final List<FeeStatus> expectedFeeStatuses =
+                entryCreateDto.getFeeStatuses() == null
+                        ? List.of()
+                        : entryCreateDto.getFeeStatuses();
+        final List<Official> expectedOfficials =
+                entryCreateDto.getOfficials() == null ? List.of() : entryCreateDto.getOfficials();
+        final List<Official> actualOfficials =
+                response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryCreateDto.getApplicant() != null) {
             Assertions.assertEquals(entryCreateDto.getApplicant(), response.getApplicant());
@@ -372,31 +380,31 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         Assertions.assertEquals(entryCreateDto.getLodgementDate(), response.getLodgementDate());
         Assertions.assertEquals(entryCreateDto.getHasOffsiteFee(), response.getHasOffsiteFee());
 
-        for (int i = 0; i < response.getFeeStatuses().size(); i++) {
+        Assertions.assertEquals(expectedFeeStatuses.size(), response.getFeeStatuses().size());
+
+        for (int i = 0; i < expectedFeeStatuses.size(); i++) {
             Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getPaymentReference(),
+                    expectedFeeStatuses.get(i).getPaymentReference(),
                     response.getFeeStatuses().get(i).getPaymentReference());
             Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getStatusDate(),
+                    expectedFeeStatuses.get(i).getStatusDate(),
                     response.getFeeStatuses().get(i).getStatusDate());
             Assertions.assertEquals(
-                    entryCreateDto.getFeeStatuses().get(i).getPaymentStatus(),
+                    expectedFeeStatuses.get(i).getPaymentStatus(),
                     response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
-        for (int i = 0; i < response.getOfficials().size(); i++) {
+        Assertions.assertEquals(expectedOfficials.size(), actualOfficials.size());
+
+        for (int i = 0; i < actualOfficials.size(); i++) {
             Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getType(),
-                    response.getOfficials().get(i).getType());
+                    expectedOfficials.get(i).getType(), actualOfficials.get(i).getType());
             Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getSurname(),
-                    response.getOfficials().get(i).getSurname());
+                    expectedOfficials.get(i).getSurname(), actualOfficials.get(i).getSurname());
             Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getTitle(),
-                    response.getOfficials().get(i).getTitle());
+                    expectedOfficials.get(i).getTitle(), actualOfficials.get(i).getTitle());
             Assertions.assertEquals(
-                    entryCreateDto.getOfficials().get(i).getForename(),
-                    response.getOfficials().get(i).getForename());
+                    expectedOfficials.get(i).getForename(), actualOfficials.get(i).getForename());
         }
     }
 
@@ -405,6 +413,10 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             EntryGetDetailDto response,
             String wordingSpec,
             List<FeeStatus> expectedFees) {
+        final List<Official> expectedOfficials =
+                entryUpdateDto.getOfficials() == null ? List.of() : entryUpdateDto.getOfficials();
+        final List<Official> actualOfficials =
+                response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryUpdateDto.getApplicant() != null) {
             Assertions.assertEquals(entryUpdateDto.getApplicant(), response.getApplicant());
@@ -444,19 +456,17 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                     response.getFeeStatuses().get(i).getPaymentStatus());
         }
 
-        for (int i = 0; i < response.getOfficials().size(); i++) {
+        Assertions.assertEquals(expectedOfficials.size(), actualOfficials.size());
+
+        for (int i = 0; i < actualOfficials.size(); i++) {
             Assertions.assertEquals(
-                    entryUpdateDto.getOfficials().get(i).getType(),
-                    response.getOfficials().get(i).getType());
+                    expectedOfficials.get(i).getType(), actualOfficials.get(i).getType());
             Assertions.assertEquals(
-                    entryUpdateDto.getOfficials().get(i).getSurname(),
-                    response.getOfficials().get(i).getSurname());
+                    expectedOfficials.get(i).getSurname(), actualOfficials.get(i).getSurname());
             Assertions.assertEquals(
-                    entryUpdateDto.getOfficials().get(i).getTitle(),
-                    response.getOfficials().get(i).getTitle());
+                    expectedOfficials.get(i).getTitle(), actualOfficials.get(i).getTitle());
             Assertions.assertEquals(
-                    entryUpdateDto.getOfficials().get(i).getForename(),
-                    response.getOfficials().get(i).getForename());
+                    expectedOfficials.get(i).getForename(), actualOfficials.get(i).getForename());
         }
     }
 
@@ -563,8 +573,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         final EntryUpdateDto updateDto =
                 Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
 
-        final List<Official> officials = Instancio.ofList(Official.class).size(4).create();
-
         updateDto.getApplicant().setPerson(null);
         updateDto.getApplicant().getOrganisation().getContactDetails().setPostcode("AA13 1BB");
         updateDto
@@ -638,7 +646,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
         updateDto.getRespondent().setOrganisation(null);
         updateDto.setStandardApplicantCode(null);
-        updateDto.setOfficials(officials);
+        updateDto.setOfficials(CreateEntryDtoUtil.validOfficials());
 
         updateDto.setApplicationCode("ZS99007");
         updateDto.setHasOffsiteFee(true);

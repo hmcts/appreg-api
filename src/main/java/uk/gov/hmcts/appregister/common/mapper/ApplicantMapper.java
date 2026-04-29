@@ -21,8 +21,6 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public abstract class ApplicantMapper {
 
-    private static final String COMMA_DELIMITER = ", ";
-
     /**
      * Maps the applicant to a name address.
      *
@@ -226,24 +224,15 @@ public abstract class ApplicantMapper {
      * @param applicant The person to use. This can be null.
      * @return The name that should be used for the applicant or respondent depending. If both are
      *     present then the organisation name will be used. If a person, the name is in the format
-     *     title, forename1, surname. If an organisation the name is used. If all else fails then an
-     *     empty string is returned.
+     *     forename1 surname. If an organisation the name is used. If all else fails then an empty
+     *     string is returned.
      */
     public String getNameForApplicant(StandardApplicant sa, NameAddress applicant) {
         if (sa != null) {
 
-            // if the name is not set i.e. not an org then
-            // use the title, forename and surname
+            // if the name is not set i.e. not an org then use forename and surname
             if (sa.getName() == null) {
-                if (sa.getApplicantTitle() != null) {
-                    return sa.getApplicantSurname()
-                            + COMMA_DELIMITER
-                            + sa.getApplicantForename1()
-                            + COMMA_DELIMITER
-                            + sa.getApplicantTitle();
-                } else {
-                    return sa.getApplicantSurname() + COMMA_DELIMITER + sa.getApplicantForename1();
-                }
+                return formatPersonName(sa.getApplicantForename1(), sa.getApplicantSurname());
             } else {
                 return sa.getName();
             }
@@ -260,26 +249,30 @@ public abstract class ApplicantMapper {
      * not.
      *
      * @param nameAddress The name address to get the name. This can be null.
-     * @return The name string for the address in the format title, forename1, surname if a person
-     *     or the name if an organisation. If all else fails then an empty string is returned.
+     * @return The name string for the address in the format forename1 surname if a person or the
+     *     name if an organisation. If all else fails then an empty string is returned.
      */
     public String getNameForNameAddress(NameAddress nameAddress) {
         String name = "";
         if (nameAddress != null && nameAddress.getName() == null) {
-            if (nameAddress.getTitle() != null) {
-                name =
-                        nameAddress.getSurname()
-                                + COMMA_DELIMITER
-                                + nameAddress.getForename1()
-                                + COMMA_DELIMITER
-                                + nameAddress.getTitle();
-            } else {
-                name = nameAddress.getSurname() + COMMA_DELIMITER + nameAddress.getForename1();
-            }
+            name = formatPersonName(nameAddress.getForename1(), nameAddress.getSurname());
         } else if (nameAddress != null) {
             name = nameAddress.getName();
         }
         return name;
+    }
+
+    private String formatPersonName(String forename, String surname) {
+        if (forename == null && surname == null) {
+            return "";
+        }
+        if (forename == null) {
+            return surname;
+        }
+        if (surname == null) {
+            return forename;
+        }
+        return forename + " " + surname;
     }
 
     public String map(JsonNullable<String> str) {

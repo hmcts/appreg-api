@@ -22,9 +22,18 @@ public class AppRegTempFileUtil {
      * @return The temp file
      */
     public static File generateTempFile() throws IOException {
+        return generateTempFile("appreg");
+    }
 
+    /**
+     * generates a temp file with a source-specific prefix.
+     *
+     * @param prefix The prefix to use in the generated file name
+     * @return The temp file
+     */
+    public static File generateTempFile(String prefix) throws IOException {
         return File.createTempFile(
-                UUID.randomUUID().toString(), "." + TEMP_FILE_EXTENSION); // NOSONAR
+                prefix + "-" + UUID.randomUUID(), "." + TEMP_FILE_EXTENSION); // NOSONAR
         // - we want to use the default temp directory as this is guaranteed to be writable
         // and will be cleaned up by the system.
     }
@@ -35,9 +44,7 @@ public class AppRegTempFileUtil {
      * @return true if they do, false if they don't
      */
     public static boolean doesTempFileExist() {
-        File[] files =
-                new File(System.getProperty("java.io.tmpdir"))
-                        .listFiles(file -> file.getName().endsWith(TEMP_FILE_EXTENSION));
+        File[] files = getTempFilesThatExist();
 
         return files != null && files.length > 0;
     }

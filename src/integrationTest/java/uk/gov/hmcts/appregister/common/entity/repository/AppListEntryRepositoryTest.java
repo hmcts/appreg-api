@@ -529,7 +529,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         "APP002",
                         Status.OPEN,
                         "Sarah Johnson",
-                        "Johnson",
+                        null,
                         null,
                         "XY9 8ZZ",
                         "29345",
@@ -553,7 +553,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getAnameAddress().getTelephoneNumber())
                 .isEqualTo("01234567890");
 
-        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Johnson");
+        assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isNull();
         assertThat(page0.getContent().get(0).getRnameAddress().getName())
                 .isEqualTo("Sarah Johnson");
         assertThat(page0.getContent().get(0).getRnameAddress().getCode())
@@ -589,9 +589,9 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
                         null,
                         "PP001",
                         Status.OPEN,
-                        "Jac",
-                        "Turn",
                         null,
+                        "Turn",
+                        "John",
                         "AB11 2CD",
                         null,
                         null,
@@ -612,7 +612,7 @@ public class AppListEntryRepositoryTest extends BaseRepositoryTest {
         assertThat(page0.getContent().get(0).getRnameAddress().getForename1()).isEqualTo("John");
         assertThat(page0.getContent().get(0).getRnameAddress().getSurname()).isEqualTo("Turner");
 
-        assertThat(page0.getContent().get(0).getRnameAddress().getName()).isEqualTo("Jack Turner");
+        assertThat(page0.getContent().get(0).getRnameAddress().getName()).isNull();
         assertThat(page0.getContent().get(0).getRnameAddress().getCode())
                 .isEqualTo(NameAddressCodeType.RESPONDENT);
         assertThat(page0.getContent().get(0).getRnameAddress().getPostcode()).isEqualTo("AB11 2CD");

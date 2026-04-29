@@ -117,11 +117,21 @@ public enum AppListEntryError implements ErrorCodeEnum {
     LODGEMENT_DATE_CANNOT_BE_IN_FUTURE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
+    TOO_MANY_MAGISTRATES(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "An application entry can include at most 3 Magistrates",
+                    "ALE-24")),
+    TOO_MANY_COURT_OFFICIALS(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "An application entry can include at most 1 Court Official",
+                    "ALE-25")),
     BULK_UPLOAD_FILE_MISSING(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Bulk upload file must be provided and not empty",
-                    "ALE-24")),
+                    "ALE-26")),
     BULK_UPLOAD_INVALID_FILE_FORMAT(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Uploaded file must be a valid CSV file", "ALE-25")),
@@ -129,12 +139,12 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Invalid file delimiter. Expected pipe '|' separated values",
-                    "ALE-26")),
+                    "ALE-27")),
     BULK_UPLOAD_ROW_VALIDATION_FAILED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "One or more rows failed validation during bulk upload",
-                    "ALE-27")),
+                    "ALE-28"));
     BULK_UPLOAD_EMPTY_FILE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-28")),

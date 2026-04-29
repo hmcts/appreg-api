@@ -52,7 +52,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
     }
 
     public CsvReader(InputStream is, Class<T> cls) throws IOException {
-        source = AppRegTempFileUtil.generateTempFile();
+        source = AppRegTempFileUtil.generateTempFile("csv-reader");
         try (InputStream closeableis = is;
                 FileOutputStream fileOutputStream = new FileOutputStream(source)) {
             IOUtils.copy(closeableis, fileOutputStream);

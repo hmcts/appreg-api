@@ -12,9 +12,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 import lombok.val;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -23,10 +25,12 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
@@ -36,6 +40,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -206,6 +211,27 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(
                 AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode().getType().get(),
                 problemDetail.getType());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesForUnknownListReturns404() throws Exception {
+        var tokenGenerator = createAdminToken();
+
+        var responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(404);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getType().get(),
+                problemDetail.getType());
+        Assertions.assertEquals(404, problemDetail.getStatus());
+        Assertions.assertEquals(
+                ApplicationListError.LIST_NOT_FOUND.getCode().getMessage(),
+                problemDetail.getDetail());
     }
 
     @Test
@@ -1027,6 +1053,179 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void testGetApplicationListEntriesWithInvalidSequenceNumberReturnsWholeNumberMessage()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?sequenceNumber=NaN"
+                                        + "&pageNumber=0&pageSize=10&sort=sequenceNumber,asc"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"sequenceNumber":"Please ensure sequenceNumber is a whole number"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+        ApplicationCode applicationCode = createApplicationCode("APP002", true);
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry = persistance.save(entry);
+
+        saveResolutions(entry, "RC1", "RC2");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("resulted", "RC1"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getId());
+        assertResultCodes(page.getContent().getFirst(), "RC1", "RC2");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesTrimsAccountReferenceFilter() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(list);
+        matchingEntry.setAccountNumber("E40-123");
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setAccountNumber("ABC-123");
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("accountReference", " E40 "),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesIgnoresBlankAccountReferenceFilter() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry firstEntry = createEntry(list);
+        firstEntry.setAccountNumber("E40-123");
+        firstEntry.setSequenceNumber((short) 1);
+        firstEntry = persistance.save(firstEntry);
+
+        ApplicationListEntry secondEntry = createEntry(list);
+        secondEntry.setAccountNumber("ABC-123");
+        secondEntry.setSequenceNumber((short) 2);
+        secondEntry = persistance.save(secondEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("sequenceNumber,asc"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("accountReference", " "),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(2, page.getContent().size());
+        Assertions.assertEquals(firstEntry.getUuid(), page.getContent().get(0).getId());
+        Assertions.assertEquals(secondEntry.getUuid(), page.getContent().get(1).getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByResultCodeAcrossEntriesWhenNotLatest()
+            throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+        ApplicationListEntry latestMatchingEntry = createEntry(list);
+        latestMatchingEntry.setApplicationCode(createApplicationCode("APP002", true));
+        latestMatchingEntry.setSequenceNumber((short) 1);
+        latestMatchingEntry = persistance.save(latestMatchingEntry);
+        saveResolutions(latestMatchingEntry, "RC1");
+
+        ApplicationListEntry historicalMatchingEntryOne = createEntry(list);
+        historicalMatchingEntryOne.setApplicationCode(createApplicationCode("APP003", true));
+        historicalMatchingEntryOne.setSequenceNumber((short) 2);
+        historicalMatchingEntryOne = persistance.save(historicalMatchingEntryOne);
+        saveResolutions(historicalMatchingEntryOne, "RC1", "RC2");
+
+        ApplicationListEntry historicalMatchingEntryTwo = createEntry(list);
+        historicalMatchingEntryTwo.setApplicationCode(createApplicationCode("APP004", true));
+        historicalMatchingEntryTwo.setSequenceNumber((short) 3);
+        historicalMatchingEntryTwo = persistance.save(historicalMatchingEntryTwo);
+        saveResolutions(historicalMatchingEntryTwo, "RC1", "RC3");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("sequenceNumber,asc"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("resulted", "RC1"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(3, page.getContent().size());
+        Assertions.assertEquals(3, page.getTotalElements());
+        Assertions.assertEquals(latestMatchingEntry.getUuid(), page.getContent().get(0).getId());
+        Assertions.assertEquals(
+                historicalMatchingEntryOne.getUuid(), page.getContent().get(1).getId());
+        Assertions.assertEquals(
+                historicalMatchingEntryTwo.getUuid(), page.getContent().get(2).getId());
+        assertResultCodes(page.getContent().get(0), "RC1");
+        assertResultCodes(page.getContent().get(1), "RC1", "RC2");
+        assertResultCodes(page.getContent().get(2), "RC1", "RC3");
+    }
+
+    @Test
     public void testGetApplicationListEntriesFiltersByApplicantNameOnly() throws Exception {
         ApplicationList applicationList = createAndSaveList(Status.OPEN);
 
@@ -1055,6 +1254,78 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                         + applicationList.getUuid()
                                         + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "John Turner"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByApplicantNamePartialForename()
+            throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        setApplicantName(matchingEntry, "Mr", "John", "Turner");
+        persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        setApplicantName(nonMatchingEntry, "Ms", "Jane", "Smith");
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "John"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByApplicantNamePartialSurname()
+            throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        setApplicantName(matchingEntry, "Mr", "John", "Turner");
+        persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        setApplicantName(nonMatchingEntry, "Ms", "Jane", "Smith");
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
                         rs -> rs.queryParam("applicantName", "Turner"),
                         new OpenApiPageMetaData());
 
@@ -1063,6 +1334,201 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         EntryPage page = responseSpec.as(EntryPage.class);
         Assertions.assertEquals(1, page.getContent().size());
         Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByStandardApplicantName() throws Exception {
+        final ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        StandardApplicant matchingApplicant = new StandardApplicantTestData().someComplete();
+        matchingApplicant.setName(null);
+        matchingApplicant.setApplicantForename1("Jane");
+        matchingApplicant.setApplicantSurname("Doe");
+        matchingApplicant = persistance.save(matchingApplicant);
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        matchingEntry.setStandardApplicant(matchingApplicant);
+        persistance.save(matchingEntry);
+
+        StandardApplicant nonMatchingApplicant = new StandardApplicantTestData().someComplete();
+        nonMatchingApplicant.setName(null);
+        nonMatchingApplicant.setApplicantForename1("John");
+        nonMatchingApplicant.setApplicantSurname("Smith");
+        nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        nonMatchingEntry.setStandardApplicant(nonMatchingApplicant);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "Jane Doe"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialForename()
+            throws Exception {
+        final ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        StandardApplicant matchingApplicant = new StandardApplicantTestData().someComplete();
+        matchingApplicant.setName(null);
+        matchingApplicant.setApplicantForename1("Jane");
+        matchingApplicant.setApplicantSurname("Doe");
+        matchingApplicant = persistance.save(matchingApplicant);
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        matchingEntry.setStandardApplicant(matchingApplicant);
+        persistance.save(matchingEntry);
+
+        StandardApplicant nonMatchingApplicant = new StandardApplicantTestData().someComplete();
+        nonMatchingApplicant.setName(null);
+        nonMatchingApplicant.setApplicantForename1("John");
+        nonMatchingApplicant.setApplicantSurname("Smith");
+        nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        nonMatchingEntry.setStandardApplicant(nonMatchingApplicant);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "Jane"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByStandardApplicantNamePartialSurname()
+            throws Exception {
+        final ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        StandardApplicant matchingApplicant = new StandardApplicantTestData().someComplete();
+        matchingApplicant.setName(null);
+        matchingApplicant.setApplicantForename1("Jane");
+        matchingApplicant.setApplicantSurname("Doe");
+        matchingApplicant = persistance.save(matchingApplicant);
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        matchingEntry.setStandardApplicant(matchingApplicant);
+        persistance.save(matchingEntry);
+
+        StandardApplicant nonMatchingApplicant = new StandardApplicantTestData().someComplete();
+        nonMatchingApplicant.setName(null);
+        nonMatchingApplicant.setApplicantForename1("John");
+        nonMatchingApplicant.setApplicantSurname("Smith");
+        nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        nonMatchingEntry.setStandardApplicant(nonMatchingApplicant);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "Doe"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByStandardApplicantName_returnsExpectedJson()
+            throws Exception {
+        final ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        StandardApplicant matchingApplicant = new StandardApplicantTestData().someComplete();
+        matchingApplicant.setName(null);
+        matchingApplicant.setApplicantTitle("Ms");
+        matchingApplicant.setApplicantForename1("Jane");
+        matchingApplicant.setApplicantSurname("Doe");
+        matchingApplicant = persistance.save(matchingApplicant);
+
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        matchingEntry.setStandardApplicant(matchingApplicant);
+        matchingEntry.setSequenceNumber((short) 3);
+        persistance.save(matchingEntry);
+
+        StandardApplicant nonMatchingApplicant = new StandardApplicantTestData().someComplete();
+        nonMatchingApplicant.setName(null);
+        nonMatchingApplicant.setApplicantForename1("John");
+        nonMatchingApplicant.setApplicantSurname("Smith");
+        nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        nonMatchingEntry.setStandardApplicant(nonMatchingApplicant);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("applicantName", "Jane Doe"),
+                        new OpenApiPageMetaData());
+
+        responseSpec
+                .then()
+                .statusCode(200)
+                .body("pageNumber", Matchers.equalTo(0))
+                .body("pageSize", Matchers.equalTo(10))
+                .body("totalElements", Matchers.equalTo(1))
+                .body("content.size()", Matchers.equalTo(1))
+                .body("content[0].id", Matchers.equalTo(matchingEntry.getUuid().toString()))
+                .body("content[0].listId", Matchers.equalTo(applicationList.getUuid().toString()))
+                .body("content[0].sequenceNumber", Matchers.equalTo(3))
+                .body("content[0].applicant.person.name.title", Matchers.equalTo("Ms"))
+                .body("content[0].applicant.person.name.firstForename", Matchers.equalTo("Jane"))
+                .body("content[0].applicant.person.name.surname", Matchers.equalTo("Doe"));
     }
 
     @Test
@@ -1078,6 +1544,78 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         // same applicant, different respondent, should not match
         ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
         setApplicantName(nonMatchingEntry, "Mr", "John", "Turner");
+        setRespondentName(nonMatchingEntry, "Mr", "Bob", "Brown");
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentName", "Sarah Johnson"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByRespondentNamePartialForename()
+            throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        setRespondentName(matchingEntry, "Mrs", "Sarah", "Johnson");
+        persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
+        setRespondentName(nonMatchingEntry, "Mr", "Bob", "Brown");
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.getUuid()
+                                        + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentName", "Sarah"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByRespondentNamePartialSurname()
+            throws Exception {
+        ApplicationList applicationList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(applicationList);
+        setRespondentName(matchingEntry, "Mrs", "Sarah", "Johnson");
+        persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(applicationList);
         setRespondentName(nonMatchingEntry, "Mr", "Bob", "Brown");
         persistance.save(nonMatchingEntry);
 
@@ -1141,8 +1679,8 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                         + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         rs ->
-                                rs.queryParam("applicantName", "Turner")
-                                        .queryParam("respondentName", "Johnson"),
+                                rs.queryParam("applicantName", "John Turner")
+                                        .queryParam("respondentName", "Sarah Johnson"),
                         new OpenApiPageMetaData());
 
         responseSpec.then().statusCode(200);
@@ -1190,17 +1728,17 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     public void testGetApplicationListEntriesSortsByApplicantName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
-        ApplicationListEntry john = createEntry(list);
-        setApplicantName(john, "Mr", "John", "Smith");
-        persistance.save(john);
+        ApplicationListEntry zoe = createEntry(list);
+        setApplicantName(zoe, "Dr", "Zoe", "Anderson");
+        persistance.save(zoe);
 
-        ApplicationListEntry jane = createEntry(list);
-        setApplicantName(jane, "Ms", "Jane", "Doe");
-        persistance.save(jane);
+        ApplicationListEntry amy = createEntry(list);
+        setApplicantName(amy, "Mr", "Amy", "Zimmer");
+        persistance.save(amy);
 
-        ApplicationListEntry alex = createEntry(list);
-        setApplicantName(alex, "Dr", "Alex", "Taylor");
-        persistance.save(alex);
+        ApplicationListEntry bob = createEntry(list);
+        setApplicantName(bob, "Ms", "Bob", "Brown");
+        persistance.save(bob);
 
         TokenGenerator tokenGenerator = createAdminToken();
 
@@ -1225,7 +1763,51 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         .toList();
 
         Assertions.assertEquals(
-                List.of("ms jane doe", "mr john smith", "dr alex taylor"), applicantNames);
+                List.of("mr amy zimmer", "ms bob brown", "dr zoe anderson"), applicantNames);
+    }
+
+    @Test
+    @StabilityTest
+    public void testGetApplicationListEntriesSortsByStandardApplicantDisplayName()
+            throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry zoe = createEntry(list);
+        zoe.setStandardApplicant(createStandardApplicantPerson("APPZOE", "Dr", "Zoe", "Anderson"));
+        persistance.save(zoe);
+
+        ApplicationListEntry amy = createEntry(list);
+        amy.setStandardApplicant(createStandardApplicantPerson("APPAMY", "Mr", "Amy", "Zimmer"));
+        persistance.save(amy);
+
+        ApplicationListEntry betaOrg = createEntry(list);
+        betaOrg.setStandardApplicant(createStandardApplicantOrganisation("APPORG", "Beta Org"));
+        persistance.save(betaOrg);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(
+                                SortableField.getSortStringForAsc(
+                                        ApplicationEntryByListIdSortFieldEnum.APPLICANT)),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        List<String> applicantNames =
+                page.getContent().stream()
+                        .map(this::renderApplicantDisplayName)
+                        .map(String::toLowerCase)
+                        .toList();
+
+        Assertions.assertEquals(
+                List.of("mr amy zimmer", "beta org", "dr zoe anderson"), applicantNames);
     }
 
     @Test
@@ -1233,20 +1815,20 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     public void testGetApplicationListEntriesSortsByRespondentName() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
 
-        ApplicationListEntry john = createEntry(list);
-        setRespondentName(john, "Mr", "John", "Smith");
-        john.getRnameaddress().setDateOfBirth(LocalDate.of(1990, 1, 1));
-        persistance.save(john);
+        ApplicationListEntry zoe = createEntry(list);
+        setRespondentName(zoe, "Dr", "Zoe", "Anderson");
+        zoe.getRnameaddress().setDateOfBirth(LocalDate.of(1990, 1, 1));
+        persistance.save(zoe);
 
-        ApplicationListEntry jane = createEntry(list);
-        setRespondentName(jane, "Ms", "Jane", "Doe");
-        jane.getRnameaddress().setDateOfBirth(LocalDate.of(1985, 5, 5));
-        persistance.save(jane);
+        ApplicationListEntry amy = createEntry(list);
+        setRespondentName(amy, "Mr", "Amy", "Zimmer");
+        amy.getRnameaddress().setDateOfBirth(LocalDate.of(1985, 5, 5));
+        persistance.save(amy);
 
-        ApplicationListEntry alex = createEntry(list);
-        setRespondentName(alex, "Dr", "Alex", "Taylor");
-        alex.getRnameaddress().setDateOfBirth(LocalDate.of(1975, 9, 9));
-        persistance.save(alex);
+        ApplicationListEntry bob = createEntry(list);
+        setRespondentName(bob, "Ms", "Bob", "Brown");
+        bob.getRnameaddress().setDateOfBirth(LocalDate.of(1975, 9, 9));
+        persistance.save(bob);
 
         TokenGenerator tokenGenerator = createAdminToken();
 
@@ -1271,7 +1853,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         .toList();
 
         Assertions.assertEquals(
-                List.of("ms jane doe", "mr john smith", "dr alex taylor"), respondentNames);
+                List.of("mr amy zimmer", "ms bob brown", "dr zoe anderson"), respondentNames);
 
         List<LocalDate> respondentDobs =
                 page.getContent().stream()
@@ -1281,9 +1863,43 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(
                 List.of(
                         LocalDate.of(1985, 5, 5),
-                        LocalDate.of(1990, 1, 1),
-                        LocalDate.of(1975, 9, 9)),
+                        LocalDate.of(1975, 9, 9),
+                        LocalDate.of(1990, 1, 1)),
                 respondentDobs);
+    }
+
+    private StandardApplicant createStandardApplicantPerson(
+            String applicantCode, String title, String forename, String surname) {
+        StandardApplicant applicant = new StandardApplicantTestData().someComplete();
+        applicant.setApplicantCode(applicantCode);
+        applicant.setName(null);
+        applicant.setApplicantTitle(title);
+        applicant.setApplicantForename1(forename);
+        applicant.setApplicantSurname(surname);
+        return persistance.save(applicant);
+    }
+
+    private StandardApplicant createStandardApplicantOrganisation(
+            String applicantCode, String name) {
+        StandardApplicant applicant = new StandardApplicantTestData().someComplete();
+        applicant.setApplicantCode(applicantCode);
+        applicant.setName(name);
+        applicant.setApplicantTitle(null);
+        applicant.setApplicantForename1(null);
+        applicant.setApplicantSurname(null);
+        return persistance.save(applicant);
+    }
+
+    private String renderApplicantDisplayName(EntryGetSummaryDto dto) {
+        if (dto.getApplicant() == null) {
+            return "";
+        }
+
+        if (dto.getApplicant().getOrganisation() != null) {
+            return dto.getApplicant().getOrganisation().getName();
+        }
+
+        return renderApplicantName(dto);
     }
 
     record ApplicationEntryFilter(

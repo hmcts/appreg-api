@@ -2,7 +2,7 @@ plugins {
   id 'application'
   id 'jacoco'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.springframework.boot' version '4.0.5'
+  id 'org.springframework.boot' version '4.0.6'
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
   id 'org.openapi.generator' version '7.3.0'
@@ -418,7 +418,7 @@ repositories {
 }
 
 ext {
-  log4JVersion = "2.25.3"
+  log4JVersion = "2.25.4"
   logbackVersion = "1.5.18"
 }
 
@@ -454,7 +454,7 @@ dependencies {
 
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.48'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.49'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0'
 
@@ -478,14 +478,15 @@ dependencies {
   implementation("commons-io:commons-io:2.21.0")
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.48.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.49.Final'
 
   // Lombok
   compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
 
   // Database
-  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.9'
+  runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.11'
+  // TODO: runtimeOnly group: 'p6spy', name: 'p6spy', version: '3.9.1'
 
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
@@ -508,7 +509,7 @@ dependencies {
   testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.1.0"
   testImplementation 'org.instancio:instancio-junit:5.5.1'
 
-  testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+  testImplementation "com.tngtech.archunit:archunit-junit5:1.4.2"
   testImplementation 'org.springframework.boot:spring-boot-starter-flyway-test'
 
   rewrite group: 'org.openrewrite.recipe', name: 'rewrite-static-analysis', version: '2.16.0'

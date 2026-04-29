@@ -234,6 +234,46 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
+    void givenWholeNumberTypeMismatch_whenTheExceptionIsThrown_thenWholeNumberMessageIsReturned()
+            throws Exception {
+
+        BindingResult result = Mockito.mock(BindingResult.class);
+
+        List<FieldError> fieldErrors =
+                List.of(
+                        new FieldError(
+                                "objectName",
+                                "sequenceNumber",
+                                "NaN",
+                                false,
+                                new String[] {"typeMismatch"},
+                                null,
+                                "defaultMessage"));
+
+        Mockito.when(result.getFieldErrors()).thenReturn(fieldErrors);
+
+        MethodArgumentNotValidException exception =
+                new MethodArgumentNotValidException(null, result) {
+                    @Override
+                    public String getMessage() {
+                        return "type mismatch";
+                    }
+                };
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMethodArgumentNotValid(exception, null, null, null);
+
+        Assertions.assertNotNull(problemDetail);
+        Assertions.assertNotNull(problemDetail.getBody());
+
+        ProblemDetail body = (ProblemDetail) problemDetail.getBody();
+        Map<?, ?> errors = (Map<?, ?>) body.getProperties().get("errors");
+
+        Assertions.assertEquals(
+                "Please ensure sequenceNumber is a whole number", errors.get("sequenceNumber"));
+    }
+
+    @Test
     void
             givenHttpMessageNotReadableExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
                     throws Exception {

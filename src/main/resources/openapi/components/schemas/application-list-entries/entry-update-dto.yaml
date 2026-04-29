@@ -71,5 +71,5 @@ properties:
   officials:
     type: array
     items: { $ref: "../participants/official.yaml" }
-    description: An array of Officials who will decide the outcome of the Application.
+    description: An array of Officials who will decide the outcome of the Application. A maximum of 4 officials may be supplied, with no more than 3 MAGISTRATE entries and no more than 1 CLERK entry.
     maxItems: 4

@@ -11,6 +11,7 @@ import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class ApplicationCodeMapperTest {
@@ -23,17 +24,19 @@ public class ApplicationCodeMapperTest {
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
+        fee.setReference("reference");
 
         Fee offsitefee = new Fee();
         offsitefee.setAmount(BigDecimal.valueOf(23666.34));
         offsitefee.setDescription("Description offset");
         offsitefee.setOffsite(true);
+        offsitefee.setReference("offsite fee");
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(LocalDate.now());
         code.setStartDate(LocalDate.now());
-        code.setFeeReference("reference");
+
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
@@ -93,13 +96,17 @@ public class ApplicationCodeMapperTest {
                 summaryDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, summaryDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 summaryDto.getOffsiteFeeAmount().get().getCurrency());
+
         Assertions.assertEquals("reference", summaryDto.getFeeReference().get());
+        Assertions.assertEquals("offsite fee", summaryDto.getOffsiteFeeReference().get());
+
         Assertions.assertEquals(Boolean.FALSE, summaryDto.getIsFeeDue());
         Assertions.assertEquals(Boolean.FALSE, summaryDto.getRequiresRespondent());
         Assertions.assertEquals(Boolean.TRUE, summaryDto.getBulkRespondentAllowed());
         Assertions.assertEquals("Description", summaryDto.getFeeDescription().get());
+        Assertions.assertEquals("Description offset", summaryDto.getOffsiteFeeDescription().get());
     }
 
     @Test
@@ -134,17 +141,19 @@ public class ApplicationCodeMapperTest {
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
+        fee.setReference("reference");
 
         Fee offsetfee = new Fee();
         offsetfee.setAmount(BigDecimal.valueOf(23666.34));
         offsetfee.setDescription("Description offset");
         offsetfee.setOffsite(true);
+        offsetfee.setReference("offsite fee");
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(LocalDate.now());
         code.setStartDate(LocalDate.now());
-        code.setFeeReference("reference");
+
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
@@ -162,9 +171,13 @@ public class ApplicationCodeMapperTest {
                 getDetailDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, getDetailDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 getDetailDto.getOffsiteFeeAmount().get().getCurrency());
         Assertions.assertEquals("reference", getDetailDto.getFeeReference().get());
+        Assertions.assertEquals("offsite fee", getDetailDto.getOffsiteFeeReference().get());
+        Assertions.assertEquals(
+                "Description offset", getDetailDto.getOffsiteFeeDescription().get());
+
         Assertions.assertEquals(Boolean.FALSE, getDetailDto.getIsFeeDue());
         Assertions.assertEquals(Boolean.FALSE, getDetailDto.getRequiresRespondent());
         Assertions.assertEquals(Boolean.TRUE, getDetailDto.getBulkRespondentAllowed());

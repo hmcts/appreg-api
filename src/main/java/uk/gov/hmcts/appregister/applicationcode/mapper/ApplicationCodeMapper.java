@@ -1,7 +1,5 @@
 package uk.gov.hmcts.appregister.applicationcode.mapper;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import lombok.Setter;
 import org.mapstruct.InjectionStrategy;
@@ -18,9 +16,11 @@ import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
+import uk.gov.hmcts.appregister.common.util.CurrencyUtil;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 
 /**
  * Mapper for ApplicationCode entity and ApplicationCodeDto.
@@ -42,17 +42,9 @@ public abstract class ApplicationCodeMapper {
      * @param fee Maps a fee to the dto.
      * @return the fee amount dto
      */
+    @Named("mapFee")
     public JsonNullable<ApplicationCodeGetSummaryDtoFeeAmount> map(Fee fee) {
-        if (fee == null || fee.getAmount() == null) {
-            return JsonNullable.undefined();
-        }
-
-        // Expecting NUMERIC(9,2) mapped to BigDecimal scale=2
-        BigDecimal pounds = fee.getAmount();
-
-        BigDecimal scaled = pounds.setScale(2, RoundingMode.UNNECESSARY);
-
-        long pence = scaled.movePointRight(2).longValueExact();
+        long pence = CurrencyUtil.getPennies(fee);
 
         ApplicationCodeGetSummaryDtoFeeAmount dto = new ApplicationCodeGetSummaryDtoFeeAmount();
         dto.setValue(pence);
@@ -75,6 +67,18 @@ public abstract class ApplicationCodeMapper {
         return JsonNullable.of(str);
     }
 
+    @Named("mapOffsite")
+    public JsonNullable<ApplicationCodeGetSummaryDtoOffsiteFeeAmount> mapOffsite(Fee fee) {
+        long pence = CurrencyUtil.getPennies(fee);
+
+        ApplicationCodeGetSummaryDtoOffsiteFeeAmount dto =
+                new ApplicationCodeGetSummaryDtoOffsiteFeeAmount();
+        dto.setValue(pence);
+        dto.setCurrency(ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP);
+
+        return JsonNullable.of(dto);
+    }
+
     @Named("mapFeeReference")
     public JsonNullable<String> mapFeeReference(String feeReference) {
         return JsonNullable.of(feeReference);
@@ -85,8 +89,8 @@ public abstract class ApplicationCodeMapper {
         return (localDate == null) ? JsonNullable.undefined() : JsonNullable.of(localDate);
     }
 
-    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee")
-    @Mapping(target = "feeAmount", source = "fee")
+    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee", qualifiedByName = "mapOffsite")
+    @Mapping(target = "feeAmount", source = "fee", qualifiedByName = "mapFee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
     @Mapping(
@@ -95,12 +99,14 @@ public abstract class ApplicationCodeMapper {
                     "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
-    @Mapping(
-            target = "feeReference",
-            source = "entity.feeReference",
-            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "feeReference", source = "fee.reference", qualifiedByName = "mapFeeReference")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
+    @Mapping(
+            target = "offsiteFeeReference",
+            source = "offsiteFee.reference",
+            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
 
     /**
      * maps the application code entity to summary dto.
@@ -121,8 +127,8 @@ public abstract class ApplicationCodeMapper {
      * @param offsiteFee the offsite fee
      * @return The application code detail dto
      */
-    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee")
-    @Mapping(target = "feeAmount", source = "fee")
+    @Mapping(target = "offsiteFeeAmount", source = "offsiteFee", qualifiedByName = "mapOffsite")
+    @Mapping(target = "feeAmount", source = "fee", qualifiedByName = "mapFee")
     @Mapping(target = "applicationCode", source = "entity.code")
     @Mapping(target = "title", source = "entity.title")
     @Mapping(
@@ -131,10 +137,7 @@ public abstract class ApplicationCodeMapper {
                     "java(wordingTemplateMapper.getTemplateDetail(() -> entity.getWording(), null))")
     @Mapping(target = "requiresRespondent", source = "entity.requiresRespondent")
     @Mapping(target = "bulkRespondentAllowed", source = "entity.bulkRespondentAllowed")
-    @Mapping(
-            target = "feeReference",
-            source = "entity.feeReference",
-            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "feeReference", source = "fee.reference", qualifiedByName = "mapFeeReference")
     @Mapping(target = "startDate", source = "entity.startDate")
     @Mapping(
             target = "endDate",
@@ -142,6 +145,11 @@ public abstract class ApplicationCodeMapper {
             qualifiedByName = "mapNullableLocalDate")
     @Mapping(target = "feeDescription", source = "fee.description")
     @Mapping(target = "isFeeDue", source = "entity.feeDue")
+    @Mapping(
+            target = "offsiteFeeReference",
+            source = "offsiteFee.reference",
+            qualifiedByName = "mapFeeReference")
+    @Mapping(target = "offsiteFeeDescription", source = "offsiteFee.description")
     public abstract ApplicationCodeGetDetailDto toApplicationCodeGetDetailDto(
             ApplicationCode entity, Fee fee, Fee offsiteFee);
 

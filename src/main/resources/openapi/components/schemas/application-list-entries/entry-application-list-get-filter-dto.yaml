@@ -16,14 +16,14 @@ properties:
 
   applicantName:
     type: string
-    description: The name of the organisation submitting the application. This can be Partial.
-    example: "Smith Legal Services Ltd"
+    description: The applicant display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
+    example: "John Turner"
     maxLength: 300
 
   respondentName:
     type: string
-    description: The name of the organisation responding to the application.
-    example: "Jones Consulting Group"
+    description: The respondent display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
+    example: "Sarah Johnson"
     maxLength: 300
 
   respondentPostcode:

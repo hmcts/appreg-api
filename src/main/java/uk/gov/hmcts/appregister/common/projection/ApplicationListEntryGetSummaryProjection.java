@@ -23,14 +23,14 @@ public interface ApplicationListEntryGetSummaryProjection {
 
     NameAddress getAnameAddress();
 
-    /** The applicant name that is a combination of surname, name and title. */
+    /** Applicant display name for sorting/filtering summaries. */
     String getApplicantName();
 
     String getStandardApplicantCode();
 
     NameAddress getRnameAddress();
 
-    /** The respondent name that is a combination of surname, name and title. */
+    /** Respondent display name for sorting/filtering summaries. */
     String getRespondentName();
 
     Status getStatus();

@@ -44,17 +44,4 @@ public enum ApplicationListSortFieldEnum implements SortableOperationEnum {
     public static SortableOperationEnum getEntityValue(String apiValue) {
         return MAPPINGS.get(apiValue);
     }
-
-    public static java.util.Optional<ApplicationListSortFieldEnum> fromApiValue(String apiValue) {
-        if (apiValue == null) {
-            return java.util.Optional.empty();
-        }
-
-        SortableOperationEnum value = MAPPINGS.get(apiValue);
-        if (value instanceof ApplicationListSortFieldEnum enumValue) {
-            return java.util.Optional.of(enumValue);
-        }
-
-        return java.util.Optional.empty();
-    }
 }

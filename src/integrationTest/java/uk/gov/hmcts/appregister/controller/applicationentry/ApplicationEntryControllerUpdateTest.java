@@ -1270,4 +1270,81 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                                         .getCode()
                                         .getAppCode()));
     }
+
+    @Test
+    void givenTooManyMagistrates_whenUpdateEntry_thenReturn400() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setOfficials(
+                List.of(
+                        buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Miles", "Two", OfficialType.MAGISTRATE),
+                        buildOfficial("Mrs", "Mina", "Three", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Marco", "Four", OfficialType.MAGISTRATE)));
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        createAdminToken().fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.TOO_MANY_MAGISTRATES.getCode(), responseSpecUpdate);
+    }
+
+    @Test
+    void givenTooManyCourtOfficials_whenUpdateEntry_thenReturn400() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setOfficials(
+                List.of(
+                        buildOfficial("Ms", "Maya", "One", OfficialType.MAGISTRATE),
+                        buildOfficial("Mr", "Chris", "CourtOne", OfficialType.CLERK),
+                        buildOfficial("Mrs", "Clare", "CourtTwo", OfficialType.CLERK)));
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        createAdminToken().fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.TOO_MANY_COURT_OFFICIALS.getCode(), responseSpecUpdate);
+    }
+
+    @Test
+    void givenNoOfficials_whenUpdateEntry_thenReturn200() throws Exception {
+        Response responseSpecCreate = createListEntryWithAllData();
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        entryUpdateDto.setOfficials(List.of());
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        createAdminToken().fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(200);
+
+        EntryGetDetailDto updatedDto = responseSpecUpdate.as(EntryGetDetailDto.class);
+        validateEntryUpdateResponse(
+                entryUpdateDto,
+                updatedDto,
+                "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
+                entryUpdateDto.getFeeStatuses());
+        Assertions.assertTrue(updatedDto.getOfficials().isEmpty());
+    }
+
+    private static Official buildOfficial(
+            String title, String forename, String surname, OfficialType type) {
+        Official official = new Official();
+        official.setTitle(title);
+        official.setForename(forename);
+        official.setSurname(surname);
+        official.setType(type);
+        return official;
+    }
 }
