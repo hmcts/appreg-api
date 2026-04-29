@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.controller.applicationentry;
 import io.restassured.response.Response;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Comparator;
@@ -56,7 +55,13 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         JobAcknowledgement acknowledgement = response.as(JobAcknowledgement.class);
         Assertions.assertEquals(JobType.BULK_UPLOAD_ENTRIES, acknowledgement.getType());
 
-        waitForJobToComplete(tokenGenerator, acknowledgement.getId());
+        JobAcknowledgement completedJob =
+                AwaitilityUtil.waitForJobToReachTerminalStatus(
+                        restAssuredClient,
+                        getLocalUrl("jobs/" + acknowledgement.getId()),
+                        tokenGenerator.fetchTokenForRole());
+        Assertions.assertEquals(
+                JobStatus1.COMPLETED, completedJob.getStatus(), completedJob.getErrorDescription());
 
         Assertions.assertEquals(CSV_ROW_COUNT, countEntriesForList(listId));
         Assertions.assertEquals(expectedPersistedEntries(), persistedEntriesForList(listId));
@@ -81,29 +86,6 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
         response.then().statusCode(201);
 
         return response.as(ApplicationListGetDetailDto.class).getId();
-    }
-
-    private void waitForJobToComplete(TokenGenerator tokenGenerator, UUID jobId) {
-        AwaitilityUtil.waitForMaxWithOneSecondPoll(
-                () -> {
-                    Response jobResponse =
-                            restAssuredClient.executeGetRequest(
-                                    getLocalUrl("jobs/" + jobId),
-                                    tokenGenerator.fetchTokenForRole());
-
-                    if (jobResponse.statusCode() != 200) {
-                        return false;
-                    }
-
-                    JobAcknowledgement jobStatus = jobResponse.as(JobAcknowledgement.class);
-
-                    if (jobStatus.getStatus() == JobStatus1.FAILED) {
-                        Assertions.fail(jobStatus.getErrorDescription());
-                    }
-
-                    return jobStatus.getStatus() == JobStatus1.COMPLETED;
-                },
-                Duration.ofSeconds(30));
     }
 
     private File csvFile() throws URISyntaxException {
