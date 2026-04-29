@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -597,6 +598,26 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         Assertions.assertEquals(
                 CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
                 problemDetail.getType());
+    }
+
+    @Test
+    public void givenInvalidRespondentPostcodeFilter_whenGetApplicationEntries_thenReturn400()
+            throws Exception {
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(maxPageSize),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "@£1 1@£"));
+
+        responseSpec.then().statusCode(400);
+        responseSpec
+                .then()
+                .body("errors.respondentPostcode", Matchers.containsString("must match"));
     }
 
     @StabilityTest
