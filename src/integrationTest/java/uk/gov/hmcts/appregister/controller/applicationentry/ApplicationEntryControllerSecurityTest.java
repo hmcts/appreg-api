@@ -42,6 +42,17 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                                         CREATE_ENTRY_CONTEXT
                                                 + "/"
                                                 + UUID.randomUUID()
+                                                + "/entries/ids"))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
                                                 + "/entries/"
                                                 + UUID.randomUUID()))
                         .method(HttpMethod.PUT)
