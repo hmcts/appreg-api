@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "4c0955d2-569f-40bc-95b2-6cac30026780",
+    "_postman_id": "4c93dad8-c4d9-4785-8f17-ee9dc600fe8a",
     "name": "App Registration Copy",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-4c0955d2-569f-40bc-95b2-6cac30026780?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-4c93dad8-c4d9-4785-8f17-ee9dc600fe8a?source=collection_link"
   },
   "item": [
     {
@@ -1034,7 +1034,41 @@
           "response": []
         },
         {
-          "name": "Bulk Result",
+          "name": "Bulk Result for Application List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entryIds\": [\n        \"{{CREATED_ENTRY_ID}}\"\n    ],\n    \"result\": {\n        \"resultCode\": \"RTC\",\n        \"wordingFields\": [\n            {\n                \"key\": \"Date\",\n                \"value\": \"Date\"\n            },\n            {\n                \"key\": \"Courthouse\",\n                \"value\": \"ch\"\n            }\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/entries/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "results"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Result for Application List Copy",
           "request": {
             "method": "POST",
             "header": [
@@ -1303,6 +1337,14 @@
             "token"
           ]
         }
+      },
+      "response": []
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": []
       },
       "response": []
     }
