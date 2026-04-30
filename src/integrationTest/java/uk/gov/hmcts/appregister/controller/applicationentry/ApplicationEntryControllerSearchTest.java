@@ -127,7 +127,8 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             entry = persistance.save(entry);
             applicationCode =
                     createApplicationCodeCopy(
-                            applicationCodeRepository.findById(applicationCode.getId())
+                            applicationCodeRepository
+                                    .findById(applicationCode.getId())
                                     .orElseThrow());
             expectedIds.add(entry.getUuid());
         }
