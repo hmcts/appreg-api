@@ -475,7 +475,7 @@ dependencies {
   implementation("com.opencsv:opencsv:5.12.0")
 
   // Source: https://mvnrepository.com/artifact/commons-io/commons-io
-  implementation("commons-io:commons-io:2.21.0")
+  implementation("commons-io:commons-io:2.22.0")
 
   // A hibernate library that generates column constants
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.49.Final'
