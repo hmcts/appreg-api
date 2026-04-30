@@ -11,7 +11,7 @@ plugins {
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
-  id 'uk.gov.hmcts.java' version '0.12.67'
+  id 'uk.gov.hmcts.java' version '0.12.68'
   id 'com.diffplug.spotless' version '8.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'maven-publish'
@@ -59,7 +59,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.24.0")
+    mavenBom("io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.27.0")
   }
 }
 
@@ -456,17 +456,17 @@ dependencies {
 
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.49'
 
-  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.0'
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3'
 
   implementation 'org.flywaydb:flyway-database-postgresql:12.0.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-core
-  implementation("tools.jackson.core:jackson-core:3.1.0")
+  implementation("tools.jackson.core:jackson-core:3.1.2")
 
   // Source: https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
-  implementation("tools.jackson.core:jackson-databind:3.1.0")
+  implementation("tools.jackson.core:jackson-databind:3.1.2")
 
   // Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-annotations
   implementation("com.fasterxml.jackson.core:jackson-annotations:2.21")
@@ -475,14 +475,14 @@ dependencies {
   implementation("com.opencsv:opencsv:5.12.0")
 
   // Source: https://mvnrepository.com/artifact/commons-io/commons-io
-  implementation("commons-io:commons-io:2.21.0")
+  implementation("commons-io:commons-io:2.22.0")
 
   // A hibernate library that generates column constants
   annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.49.Final'
 
   // Lombok
-  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.42'
+  compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.46'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.46'
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.11'
