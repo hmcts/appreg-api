@@ -117,7 +117,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             throws Exception {
         final var list = createAndSaveList(Status.OPEN);
         List<UUID> expectedIds = new ArrayList<>();
-        final var applicationCode = createApplicationCode("APPIDSMUL", true);
+        var applicationCode = createApplicationCode("APPIDSMUL", true);
 
         for (short i = 1; i <= 12; i++) {
             var entry = createEntry(list);
@@ -125,6 +125,10 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
             entry.setSequenceNumber(i);
             entry.setAccountNumber("MULTIPAGE-" + i);
             entry = persistance.save(entry);
+            applicationCode =
+                    createApplicationCodeCopy(
+                            applicationCodeRepository.findById(applicationCode.getId())
+                                    .orElseThrow());
             expectedIds.add(entry.getUuid());
         }
 
