@@ -8,6 +8,7 @@ additionalProperties: false
 required:
   - dateFrom
   - dateTo
+  - activityTypes
 
 properties:
 
@@ -22,7 +23,6 @@ properties:
     format: date
     description: Inclusive end date (YYYY-MM-DD).
     example: "2025-10-31"
-    minLength: 1
 
   username:
     type: string
