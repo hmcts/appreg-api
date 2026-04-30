@@ -225,6 +225,24 @@ class ReportServiceImplTest {
         Mockito.verifyNoInteractions(userProvider, asyncJobService, jobMapper);
     }
 
+    @Test
+    void givenDurationOtherLocationWithoutCja_whenCreatingReport_thenRejectsLocationCombination() {
+        ReportServiceImpl service =
+                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+        DurationFilterDto filter =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new Location().otherLocationDescription("Town Hall"));
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.createDurationReport(filter));
+
+        Assertions.assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        Mockito.verifyNoInteractions(userProvider, asyncJobService, jobMapper);
+    }
+
     private TrackJobStatusResponse createJobResponse(JobType jobType) {
         JobStatusResponse response =
                 JobStatusResponse.builder()

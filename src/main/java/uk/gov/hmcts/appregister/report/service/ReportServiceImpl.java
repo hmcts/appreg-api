@@ -121,7 +121,7 @@ public class ReportServiceImpl implements ReportService {
         boolean hasOtherLocation = StringUtils.hasText(location.getOtherLocationDescription());
         boolean hasCja = StringUtils.hasText(location.getCjaCode());
 
-        if (hasCourt && (hasOtherLocation || hasCja)) {
+        if ((hasCourt && (hasOtherLocation || hasCja)) || (hasOtherLocation && !hasCja)) {
             throw invalidDurationLocation();
         }
     }
@@ -129,7 +129,7 @@ public class ReportServiceImpl implements ReportService {
     private AppRegistryException invalidDurationLocation() {
         return new AppRegistryException(
                 ReportError.INVALID_LOCATION_COMBINATION,
-                "Provide no location filter, courtLocationCode only, otherLocationDescription only, "
-                        + "cjaCode only, or cjaCode with otherLocationDescription.");
+                "Provide no location filter, courtLocationCode only, cjaCode only, "
+                        + "or cjaCode with otherLocationDescription.");
     }
 }
