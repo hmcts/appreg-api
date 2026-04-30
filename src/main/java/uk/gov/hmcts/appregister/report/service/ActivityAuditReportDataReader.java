@@ -44,7 +44,7 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                     :username IS NULL
                     OR da.user_name = :username
                 )
-                AND da.column_name NOT LIKE '%%_ID%%'
+                AND POSITION('_ID' IN UPPER(da.column_name)) = 0
             )
             SELECT
                 activity_order,

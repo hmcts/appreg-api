@@ -1,9 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -38,8 +35,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public JobAcknowledgement createActivityAuditReport(ActivityAuditFilterDto filter) {
-        normaliseDateRange(filter);
-
         ActivityAuditReportLifecycle lifecycle;
         try {
             lifecycle = new ActivityAuditReportLifecycle();
@@ -66,8 +61,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public JobAcknowledgement createFeesReport(FeesReportFilterDto filter) {
-        normaliseDateRange(filter);
-
         FeesReportLifecycle lifecycle;
         try {
             lifecycle = new FeesReportLifecycle();
@@ -93,7 +86,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public JobAcknowledgement createDurationReport(DurationFilterDto filter) {
-        normaliseDateRange(filter);
         validateDurationLocation(filter);
 
         DurationReportLifecycle lifecycle;
@@ -117,35 +109,6 @@ public class ReportServiceImpl implements ReportService {
                         reportPageSize);
 
         return jobMapper.toDto(response);
-    }
-
-    private void normaliseDateRange(ActivityAuditFilterDto filter) {
-        normaliseDateRange(
-                filter::getDateFrom, filter::getDateTo, filter::setDateFrom, filter::setDateTo);
-    }
-
-    private void normaliseDateRange(FeesReportFilterDto filter) {
-        normaliseDateRange(
-                filter::getDateFrom, filter::getDateTo, filter::setDateFrom, filter::setDateTo);
-    }
-
-    private void normaliseDateRange(DurationFilterDto filter) {
-        normaliseDateRange(
-                filter::getDateFrom, filter::getDateTo, filter::setDateFrom, filter::setDateTo);
-    }
-
-    private void normaliseDateRange(
-            Supplier<LocalDate> dateFromSupplier,
-            Supplier<LocalDate> dateToSupplier,
-            Consumer<LocalDate> dateFromSetter,
-            Consumer<LocalDate> dateToSetter) {
-        LocalDate dateFrom = dateFromSupplier.get();
-        LocalDate dateTo = dateToSupplier.get();
-
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
-            dateFromSetter.accept(dateTo);
-            dateToSetter.accept(dateFrom);
-        }
     }
 
     private void validateDurationLocation(DurationFilterDto filter) {
