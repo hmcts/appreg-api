@@ -75,13 +75,16 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         nonMatchingApplicant.setName("Different Org");
         nonMatchingApplicant = persistance.save(nonMatchingApplicant);
 
-        final var applicationCode = createApplicationCode("APPIDSFLT", true);
+        var applicationCode = createApplicationCode("APPIDSFLT", true);
 
         var matchingEntry = createEntry(list);
         matchingEntry.setApplicationCode(applicationCode);
         matchingEntry.setAnamedaddress(matchingApplicant);
         matchingEntry.setSequenceNumber((short) 1);
         matchingEntry = persistance.save(matchingEntry);
+        applicationCode =
+                createApplicationCodeCopy(
+                        applicationCodeRepository.findById(applicationCode.getId()).orElseThrow());
 
         var nonMatchingEntry = createEntry(list);
         nonMatchingEntry.setApplicationCode(applicationCode);
