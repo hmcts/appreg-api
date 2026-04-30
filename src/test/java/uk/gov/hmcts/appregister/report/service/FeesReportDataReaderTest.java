@@ -40,6 +40,7 @@ class FeesReportDataReaderTest {
                     pages.add(rows);
                 };
         List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+        List<String> queries = new ArrayList<>();
         AtomicInteger queryCount = new AtomicInteger();
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
@@ -49,6 +50,7 @@ class FeesReportDataReaderTest {
                         ArgumentMatchers.<RowMapper<FeesReportRow>>any()))
                 .thenAnswer(
                         invocation -> {
+                            queries.add(invocation.getArgument(0));
                             parameterSources.add(invocation.getArgument(1));
                             RowMapper<FeesReportRow> rowMapper = invocation.getArgument(2);
                             if (queryCount.getAndIncrement() == 0) {
@@ -60,7 +62,7 @@ class FeesReportDataReaderTest {
         FeesReportFilterDto filter = filter();
         FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter, "appreg");
 
-        reader.readData(new ReadPagePosition(25, 5), pageReader, jobContext);
+        reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
         verify(rawJdbcTemplate).execute("SET LOCAL search_path TO \"appreg\"");
         Assertions.assertEquals(1, pages.size());
@@ -82,8 +84,9 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals("REF-1", row.getPaymentReference());
 
         Assertions.assertEquals(2, parameterSources.size());
-        assertParameters(parameterSources.getFirst(), 5);
-        assertParameters(parameterSources.get(1), 30);
+        assertParameters(parameterSources.getFirst(), false);
+        assertParameters(parameterSources.get(1), true);
+        assertKeysetPredicateRunsBeforeFeeCtes(queries.getFirst());
     }
 
     @Test
@@ -91,6 +94,7 @@ class FeesReportDataReaderTest {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
         List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+        List<String> queries = new ArrayList<>();
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
@@ -99,6 +103,7 @@ class FeesReportDataReaderTest {
                         ArgumentMatchers.<RowMapper<FeesReportRow>>any()))
                 .thenAnswer(
                         invocation -> {
+                            queries.add(invocation.getArgument(0));
                             parameterSources.add(invocation.getArgument(1));
                             return List.of();
                         });
@@ -117,9 +122,39 @@ class FeesReportDataReaderTest {
         Assertions.assertNull(parameters.getValue("cjaCode"));
         Assertions.assertNull(parameters.getValue("otherCourthouse"));
         Assertions.assertNull(parameters.getValue("courthouseCode"));
+        assertKeysetPredicateRunsBeforeFeeCtes(queries.getFirst());
     }
 
-    private void assertParameters(MapSqlParameterSource parameters, int expectedOffset) {
+    @Test
+    void givenShortPage_whenReadData_thenStopsWithoutEmptyRead() throws Exception {
+        NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        JdbcTemplate rawJdbcTemplate = mock(JdbcTemplate.class);
+        List<MapSqlParameterSource> parameterSources = new ArrayList<>();
+
+        when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
+        when(jdbcTemplate.query(
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<FeesReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            parameterSources.add(invocation.getArgument(1));
+                            RowMapper<FeesReportRow> rowMapper = invocation.getArgument(2);
+                            return List.of(rowMapper.mapRow(resultSet(), 0));
+                        });
+
+        FeesReportDataReader reader = new FeesReportDataReader(jdbcTemplate, filter(), "appreg");
+
+        reader.readData(
+                new ReadPagePosition(25, 0),
+                (rows, context) -> Assertions.assertEquals(1, rows.size()),
+                mock(JobContext.class));
+
+        Assertions.assertEquals(1, parameterSources.size());
+        Assertions.assertEquals(25, parameterSources.getFirst().getValue("limit"));
+    }
+
+    private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
         Assertions.assertEquals(LocalDate.of(2018, 5, 1), parameters.getValue("dateFrom"));
         Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("STD1", parameters.getValue("standardApplicantCode"));
@@ -128,8 +163,16 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
-        Assertions.assertEquals(25, parameters.getValue("limit"));
-        Assertions.assertEquals(expectedOffset, parameters.getValue("offset"));
+        Assertions.assertEquals(1, parameters.getValue("limit"));
+        Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
+
+        if (expectedCursor) {
+            Assertions.assertEquals(LocalDate.of(2018, 5, 18), parameters.getValue("lastListDate"));
+            Assertions.assertEquals(123L, parameters.getValue("lastApplicationListEntryId"));
+        } else {
+            Assertions.assertNull(parameters.getValue("lastListDate"));
+            Assertions.assertNull(parameters.getValue("lastApplicationListEntryId"));
+        }
     }
 
     private FeesReportFilterDto filter() {
@@ -147,8 +190,23 @@ class FeesReportDataReaderTest {
                 .location(location);
     }
 
+    private void assertKeysetPredicateRunsBeforeFeeCtes(String query) {
+        int cursorPredicateIndex = query.indexOf(":hasCursor IS FALSE");
+        int latestFeeStatusIndex = query.indexOf("latest_fee_status AS");
+        int finalSelectIndex = query.indexOf("fa.application_list_date AS list_date");
+
+        Assertions.assertTrue(cursorPredicateIndex > -1);
+        Assertions.assertTrue(latestFeeStatusIndex > -1);
+        Assertions.assertTrue(finalSelectIndex > -1);
+        Assertions.assertTrue(cursorPredicateIndex < latestFeeStatusIndex);
+        Assertions.assertEquals(-1, query.indexOf(":hasCursor IS FALSE", finalSelectIndex));
+        Assertions.assertTrue(query.contains("EXISTS ("));
+        Assertions.assertTrue(query.contains("FROM app_list_entry_fee_id cursor_alefi"));
+    }
+
     private ResultSet resultSet() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
+        when(resultSet.getLong("ale_id")).thenReturn(123L);
         when(resultSet.getObject("list_date", LocalDate.class))
                 .thenReturn(LocalDate.of(2018, 5, 18));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Westminster");
