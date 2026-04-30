@@ -1723,10 +1723,10 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         resultCreateDto.setResultCode("CASE");
 
         var token =
-            getATokenWithValidCredentials()
-                .roles(List.of(RoleEnum.ADMIN))
-                .build()
-                .fetchTokenForRole();
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
 
         // result the entry
         Response responseResult =
