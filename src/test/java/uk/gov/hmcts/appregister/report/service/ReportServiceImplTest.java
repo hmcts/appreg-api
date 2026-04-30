@@ -39,9 +39,8 @@ class ReportServiceImplTest {
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
 
     @Test
-    void
-            givenActivityAuditDateRangeIsReversed_whenCreatingReport_thenDatesAreSwappedBeforeJobStarts()
-                    throws IOException {
+    void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
+            throws IOException {
         final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
         final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.ACTIVITY_AUDIT_REPORT);
@@ -64,8 +63,8 @@ class ReportServiceImplTest {
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
-                        .dateFrom(expectedDateTo)
-                        .dateTo(expectedDateFrom)
+                        .dateFrom(expectedDateFrom)
+                        .dateTo(expectedDateTo)
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
 
         service.createActivityAuditReport(filter);
@@ -92,8 +91,7 @@ class ReportServiceImplTest {
     }
 
     @Test
-    void givenFeesDateRangeIsReversed_whenCreatingReport_thenDatesAreSwappedBeforeJobStarts()
-            throws IOException {
+    void givenFeesFilter_whenCreatingReport_thenStartsJobWithReportPageSize() throws IOException {
         final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
         final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.FEES_REPORT);
@@ -115,7 +113,7 @@ class ReportServiceImplTest {
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
-                new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
+                new FeesReportFilterDto().dateFrom(expectedDateFrom).dateTo(expectedDateTo);
 
         service.createFeesReport(filter);
 

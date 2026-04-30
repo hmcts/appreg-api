@@ -1,7 +1,6 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -31,8 +30,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public JobAcknowledgement createActivityAuditReport(ActivityAuditFilterDto filter) {
-        normaliseDateRange(filter);
-
         ActivityAuditReportLifecycle lifecycle;
         try {
             lifecycle = new ActivityAuditReportLifecycle();
@@ -59,8 +56,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public JobAcknowledgement createFeesReport(FeesReportFilterDto filter) {
-        normaliseDateRange(filter);
-
         FeesReportLifecycle lifecycle;
         try {
             lifecycle = new FeesReportLifecycle();
@@ -82,25 +77,5 @@ public class ReportServiceImpl implements ReportService {
                         reportPageSize);
 
         return jobMapper.toDto(response);
-    }
-
-    private void normaliseDateRange(ActivityAuditFilterDto filter) {
-        LocalDate dateFrom = filter.getDateFrom();
-        LocalDate dateTo = filter.getDateTo();
-
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
-            filter.setDateFrom(dateTo);
-            filter.setDateTo(dateFrom);
-        }
-    }
-
-    private void normaliseDateRange(FeesReportFilterDto filter) {
-        LocalDate dateFrom = filter.getDateFrom();
-        LocalDate dateTo = filter.getDateTo();
-
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
-            filter.setDateFrom(dateTo);
-            filter.setDateTo(dateFrom);
-        }
     }
 }
