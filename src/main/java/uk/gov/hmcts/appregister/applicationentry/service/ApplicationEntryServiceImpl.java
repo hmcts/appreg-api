@@ -57,6 +57,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -185,17 +186,14 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(
-                entryCreateDto,
-                createApplicationEntryValidator,
-                ApplicationListEntryEntityMapper.BULK_UPLOAD_NO);
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
     }
 
     private MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
-            String bulkUpload) {
+            YesOrNo bulkUpload) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
@@ -285,10 +283,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public MatchResponse<EntryGetDetailDto> createBulkEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
-        return createEntry(
-                entryCreateDto,
-                bulkCreateApplicationEntryValidator,
-                ApplicationListEntryEntityMapper.BULK_UPLOAD_YES);
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
     }
 
     @Override
@@ -507,7 +502,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             ApplicationListEntry listEntryEntity,
             PayloadForCreate<EntryCreateDto> entryCreateDto,
             CreateApplicationEntryValidationSuccess success,
-            String bulkUpload) {
+            YesOrNo bulkUpload) {
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
         List<FeeStatus> feeStatuses =
@@ -529,8 +524,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private boolean shouldCreateInitialBulkUploadFeeStatus(
-            CreateApplicationEntryValidationSuccess success, String bulkUpload) {
-        return ApplicationListEntryEntityMapper.BULK_UPLOAD_YES.equals(bulkUpload)
+            CreateApplicationEntryValidationSuccess success, YesOrNo bulkUpload) {
+        return bulkUpload == YesOrNo.YES
                 && success.getFee() != null
                 && success.getFee().mainFee() != null;
     }

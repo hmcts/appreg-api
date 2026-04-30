@@ -15,6 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
@@ -32,9 +33,6 @@ import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 @Setter
 public abstract class ApplicationListEntryEntityMapper {
-
-    public static final String BULK_UPLOAD_YES = "Y";
-    public static final String BULK_UPLOAD_NO = "N";
 
     @Autowired OfficialMapper officialMapper;
 
@@ -54,7 +52,7 @@ public abstract class ApplicationListEntryEntityMapper {
                 respondent,
                 code,
                 applicationList,
-                BULK_UPLOAD_NO);
+                YesOrNo.NO);
     }
 
     @Mapping(target = "applicationListEntryWording", source = "substituteWording")
@@ -68,7 +66,7 @@ public abstract class ApplicationListEntryEntityMapper {
     @Mapping(target = "notes", source = "entryCreateDto.notes")
     @Mapping(target = "applicationList", source = "applicationList")
     @Mapping(target = "numberOfBulkRespondents", source = "entryCreateDto.numberOfRespondents")
-    @Mapping(target = "bulkUpload", source = "bulkUpload")
+    @Mapping(target = "bulkUpload", expression = "java(toBulkUploadValue(bulkUpload))")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdUser", ignore = true)
     @Mapping(target = "version", ignore = true)
@@ -90,7 +88,7 @@ public abstract class ApplicationListEntryEntityMapper {
             NameAddress respondent,
             ApplicationCode code,
             ApplicationList applicationList,
-            String bulkUpload);
+            YesOrNo bulkUpload);
 
     @Mapping(target = "applicationListEntryWording", source = "substituteWording")
     @Mapping(target = "applicationCode", source = "code")
@@ -126,6 +124,10 @@ public abstract class ApplicationListEntryEntityMapper {
             ApplicationCode code,
             ApplicationList applicationList,
             @MappingTarget ApplicationListEntry entry);
+
+    String toBulkUploadValue(YesOrNo bulkUpload) {
+        return bulkUpload == null ? null : bulkUpload.getValue();
+    }
 
     @Mapping(target = "alefsFeeStatus", expression = "java(toStatus(feeStatus.getPaymentStatus()))")
     @Mapping(target = "appListEntry", source = "applicationListEntry")
