@@ -68,6 +68,8 @@ paths:
   /application-lists/{listId}/entries/{entryId}:                    { $ref: './paths/application-list-entries/application-list-entries-by-id.yaml' }
   /application-lists/{listId}/entries/bulk-import:                  { $ref: './paths/application-list-entries/entries-bulk-import.yaml' }
   /application-lists/{listId}/entries/move:                         { $ref: './paths/application-list-entries/entries-move.yaml' }
+  /application-lists/{listId}/entries/closed/{entryId}:             { $ref: './paths/application-list-entries/application-list-closed-entries.yaml' }
+
   # APPLICATION LIST ENTRY RESULTS
   /application-lists/{listId}/entries/results:                      { $ref: './paths/application-list-entry-results/entries-bulk-result.yaml' }
   /application-lists/{listId}/entries/{entryId}/results:            { $ref: './paths/application-list-entry-results/application-list-entry-results.yaml' }

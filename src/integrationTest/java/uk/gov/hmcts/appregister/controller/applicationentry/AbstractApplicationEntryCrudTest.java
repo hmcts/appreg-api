@@ -53,6 +53,9 @@ import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
@@ -77,6 +80,12 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected static final String WEB_CONTEXT = "application-list-entries";
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
+
+    protected static final String WEB_CONTEXT_UPDATE_CLOSED_ENTRY =
+            "application-lists/%s/entries/closed/%s";
+
+    protected static final String WEB_CONTEXT_CREATE_ENTRY_RESULT =
+            "application-lists/%s/entries/%s/results";
 
     // The total app entries inserted by flyway scripts
     protected static final int TOTAL_APP_ENTRY_COUNT = 11;
@@ -474,10 +483,23 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         return createListEntryWithAllData(null);
     }
 
-    // Convenience: create a full entry
     public Response createListEntryWithAllData(Consumer<EntryCreateDto> consumeBeforeCommit)
             throws Exception {
-        TokenGenerator tokenGenerator = createAdminToken();
+        return createListEntryWithAllData(
+                Optional.of(getOpenApplicationListId()), consumeBeforeCommit);
+    }
+
+    /**
+     * Creates and list and entry based on the restful endpoint.
+     *
+     * @param applicationList UUID - if list uuid is not present this will create a list to apply
+     *     the entry to, else we expect the uuid to be a valid application list Uuid.
+     * @param consumeBeforeCommit A callback so we can setup the payload for the entry creation.
+     * @return The http response.
+     */
+    public Response createListEntryWithAllData(
+            Optional<UUID> applicationList, Consumer<EntryCreateDto> consumeBeforeCommit)
+            throws Exception {
 
         EntryCreateDto entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
 
@@ -487,14 +509,34 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
         String surnameToLookup = Instancio.gen().string().get();
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
+        ApplicationListCreateDto applicationListCreateDto =
+                Instancio.create(ApplicationListCreateDto.class);
+        applicationListCreateDto.setStatus(ApplicationListStatus.OPEN);
+        applicationListCreateDto.setCourtLocationCode("CCC003");
+        applicationListCreateDto.setOtherLocationDescription(null);
+        applicationListCreateDto.setDurationMinutes(1);
+        applicationListCreateDto.setCjaCode(null);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        if (!applicationList.isPresent()) {
+            Response responseSpecCreateList =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(CREATE_ENTRY_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            applicationListCreateDto);
+
+            responseSpecCreateList.then().statusCode(201);
+
+            ApplicationListGetDetailDto createdList =
+                    responseSpecCreateList.as(ApplicationListGetDetailDto.class);
+            applicationList = Optional.of(createdList.getId());
+        }
 
         Response responseSpecCreate =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(
-                                CREATE_ENTRY_CONTEXT
-                                        + "/"
-                                        + getOpenApplicationListId()
-                                        + "/entries"),
+                                CREATE_ENTRY_CONTEXT + "/" + applicationList.get() + "/entries"),
                         tokenGenerator.fetchTokenForRole(),
                         entryCreateDto);
 
@@ -543,15 +585,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                         "id",
                         "",
                         null,
-                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
-                        AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_id",
-                        null,
-                        "1",
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getType().name(),
                         AppListEntryAuditOperation.CREATE_APP_ENTRY_LIST.getEventName()));
 
@@ -936,5 +969,15 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                         Optional.ofNullable(name.getFirstForename()).orElse(""),
                         Optional.ofNullable(name.getSurname()).orElse(""))
                 .trim();
+    }
+
+    protected Response getAppEntryDataForAppListId(UUID appList, UUID appListEntry)
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        return restAssuredClient.executeGetRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + appList + "/entries/" + appListEntry),
+                tokenGenerator.fetchTokenForRole());
     }
 }

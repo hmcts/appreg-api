@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
@@ -28,6 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
@@ -149,6 +151,21 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         applicationEntryService.move(listId, moveEntriesDto);
 
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> updateClosedApplicationListEntry(
+            UUID listId, UUID entryId, EntryUpdateClosedDto entryUpdateClosedDto) {
+        PayloadForUpdateClosedEntry entryUpdateClosedDtoWithIds =
+                new PayloadForUpdateClosedEntry(entryUpdateClosedDto, listId, entryId);
+
+        MatchResponse<Void> matchResponse =
+                applicationEntryService.updateClosedEntry(entryUpdateClosedDtoWithIds);
+        return ResponseEntity.noContent()
+                .varyBy(HttpHeaders.ACCEPT)
+                .eTag(matchResponse.getEtag())
+                .build();
     }
 
     /**

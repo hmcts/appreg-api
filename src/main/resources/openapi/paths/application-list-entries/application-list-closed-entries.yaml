@@ -1,0 +1,39 @@
+parameters:
+  - in: path
+    name: listId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List.
+    example: "123e4567-e89b-12d3-a456-426655440000"
+  - in: path
+    name: entryId
+    required: true
+    schema: { type: string, format: uuid }
+    description: Public identifier of the Application List Entry.
+    example: "123e4567-e89b-12d3-a456-426655440000"
+put:
+  operationId: updateClosedApplicationListEntry
+  tags: [ application-list-entries ]
+  summary: Update a closed Application List Entry
+  description: >
+    Updates the AL when it is closed.
+  requestBody:
+    required: true
+    content:
+      application/vnd.hmcts.appreg.v1+json:
+        schema: { $ref: "../../components/schemas/application-list-entries/entry_update_closed_dto.yaml" }
+  responses:
+    "200":
+      description: Returns the updated Application List Entry
+      headers:
+        Vary:
+          description: Response varies by Accept for media-type versioning.
+          schema:
+            type: string
+            example: Accept
+    "400": { $ref: "../../components/responses/bad-request-error.yaml" }
+    "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
+    "403": { $ref: "../../components/responses/forbidden-error.yaml" }
+    "404": { $ref: "../../components/responses/not-found-error.yaml" }
+    "409": { $ref: "../../components/responses/conflict-error.yaml" }
+    "500": { $ref: "../../components/responses/internal-server-error.yaml" }

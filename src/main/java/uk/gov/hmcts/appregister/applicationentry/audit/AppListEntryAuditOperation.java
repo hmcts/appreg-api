@@ -10,6 +10,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 public enum AppListEntryAuditOperation implements AuditOperation {
     CREATE_APP_ENTRY_LIST("Create Entry Application List", CrudEnum.CREATE),
     UPDATE_APP_ENTRY_LIST("Update Entry Application List", CrudEnum.UPDATE),
+    UPDATE_CLOSED_APP_ENTRY_LIST("Update Closed Entry Application List", CrudEnum.UPDATE),
     CREATE_OFFICIAL_ENTRY("Create Official", CrudEnum.CREATE),
     DELETE_OFFICIAL_ENTRY("Delete Official", CrudEnum.DELETE),
     CREATE_FEE_STATUS_ENTRY("Create Fee Status Official", CrudEnum.CREATE),
