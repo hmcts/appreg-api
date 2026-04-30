@@ -3,7 +3,8 @@ post:
   tags: [reports]
   summary: Generate a Duration report of closed application lists.
   description: >
-    Initiates an asynchronous job to create a CSV report of closed application lists within the specified duration.
+    Initiates an asynchronous job to create a CSV report of closed application lists within the specified date range.
+    Duration values are the recorded duration hours and minutes on the application list.
     Returns an acknowledgement containing the job ID for tracking progress.
   requestBody:
     required: true

@@ -1,8 +1,11 @@
 type: object
 description: >
   Filter criteria for POST /reports/duration/jobs.
-  Both dateFrom and dateTo are required and are treated as inclusive bounds.
-  Blank fields will be rejected, nulls should be used instead.
+  Both dateFrom and dateTo are required inclusive bounds.
+  Location is optional. Provide either courtLocationCode, otherLocationDescription,
+  cjaCode, or cjaCode with otherLocationDescription.
+  A cjaCode-only filter also includes court lists whose court code maps to that CJA.
+  Blank fields will be rejected; use null instead.
 additionalProperties: false
 required:
   - dateFrom
