@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "9a7ae3cc-dba0-4126-ab33-da71654351e8",
+    "_postman_id": "52894f58-9661-44f8-b9ef-8135968df84f",
     "name": "App Registration Copy",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-9a7ae3cc-dba0-4126-ab33-da71654351e8?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-52894f58-9661-44f8-b9ef-8135968df84f?source=collection_link"
   },
   "item": [
     {
@@ -880,6 +880,47 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update Closed",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"additionalNotes\": \"test\"\r\n}"
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/closed/{{CREATED_ENTRY_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "closed",
+                "{{CREATED_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -939,12 +980,14 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.expect(pm.response.code).to.equal(201);",
                   "const response = pm.response.json();",
                   "pm.environment.set(\"CREATED_ENTRY_RESULT_ID\", response.id);"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -974,7 +1017,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Name of Crown Court\",\r\n      \"value\": \"The Central Criminal Court\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"resultCode\": \"FRO\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Reason text\",\r\n      \"value\": \"Caseworker discretion\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
