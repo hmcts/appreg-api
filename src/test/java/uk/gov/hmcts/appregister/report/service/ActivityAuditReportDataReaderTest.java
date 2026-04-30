@@ -113,6 +113,14 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertEquals(600, parameterSources.getFirst().getValue("limit"));
     }
 
+    @Test
+    void givenAuditColumnNames_whenCheckingIdColumnPredicate_thenOnlyLiteralIdSuffixIsExcluded() {
+        Assertions.assertFalse(wouldPassIdColumnPredicate("al_id"));
+        Assertions.assertFalse(wouldPassIdColumnPredicate("AL_ID"));
+        Assertions.assertTrue(wouldPassIdColumnPredicate("PAID"));
+        Assertions.assertTrue(wouldPassIdColumnPredicate("application_code"));
+    }
+
     private void assertParameters(MapSqlParameterSource parameters, boolean expectedCursor) {
         Assertions.assertEquals(LocalDate.of(2026, 4, 1), parameters.getValue("dateFrom"));
         Assertions.assertEquals(LocalDate.of(2026, 4, 30), parameters.getValue("dateTo"));
@@ -150,10 +158,14 @@ class ActivityAuditReportDataReaderTest {
                         "CASE da.event_name WHEN :eventName0 THEN 0 WHEN :eventName1 THEN 1"));
         Assertions.assertTrue(query.contains("da.created_date >= :dateFrom"));
         Assertions.assertTrue(query.contains("da.event_name IN (:eventNames)"));
-        Assertions.assertTrue(query.contains("da.column_name NOT LIKE '%_ID%'"));
+        Assertions.assertTrue(query.contains("POSITION('_ID' IN UPPER(da.column_name)) = 0"));
         Assertions.assertTrue(query.contains("ORDER BY"));
         Assertions.assertTrue(query.contains("activity_order"));
         Assertions.assertTrue(query.contains("LIMIT :limit"));
+    }
+
+    private boolean wouldPassIdColumnPredicate(String columnName) {
+        return !columnName.toUpperCase().contains("_ID");
     }
 
     private ActivityAuditFilterDto filter() {
