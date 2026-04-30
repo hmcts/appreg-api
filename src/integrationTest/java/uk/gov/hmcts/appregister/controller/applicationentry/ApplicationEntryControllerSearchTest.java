@@ -621,8 +621,9 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
-    public void givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
-            throws Exception {
+    public void
+            givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
+                    throws Exception {
         ApplicationList matchingList = createAndSaveList(Status.OPEN);
 
         ApplicationListEntry matchingEntry = createEntry(matchingList);
