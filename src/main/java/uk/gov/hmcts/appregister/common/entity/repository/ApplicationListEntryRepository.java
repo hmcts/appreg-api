@@ -313,7 +313,7 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
 
     @Query(
             """
-             SELECT DISTINCT ale.uuid
+             SELECT ale.uuid
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
