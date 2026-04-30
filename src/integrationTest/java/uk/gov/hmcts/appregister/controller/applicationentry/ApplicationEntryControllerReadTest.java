@@ -1125,6 +1125,31 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void testGetApplicationListEntriesWithInvalidFeeRequiredReturnsBooleanMessage()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?feeRequired=maybe"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"feeRequired":"Please ensure feeRequired is a valid boolean value"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
     public void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
             throws Exception {
         assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
