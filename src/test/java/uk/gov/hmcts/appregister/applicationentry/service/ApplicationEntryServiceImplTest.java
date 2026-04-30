@@ -121,6 +121,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -1125,6 +1126,62 @@ public class ApplicationEntryServiceImplTest {
         // audit surrogate from the path parameter and query-string filter.
         verify(applicationListEntryMapStructMapper)
                 .toApplicationListEntry(payloadGetEntryInList, entryGetFilterDto);
+    }
+
+    @Test
+    void testGetApplicationListEntryIds_success() {
+        ApplicationList applicationList = new AppListTestData().someComplete();
+
+        when(applicationListRepository.findByUuid(applicationList.getUuid()))
+                .thenReturn(Optional.of(applicationList));
+
+        EntryApplicationListGetFilterDto entryGetFilterDto = new EntryApplicationListGetFilterDto();
+        entryGetFilterDto.setApplicantName("  Applicant Match  ");
+        entryGetFilterDto.setAccountReference("  ACC-123  ");
+        entryGetFilterDto.setResulted("  RC1  ");
+        entryGetFilterDto.setSequenceNumber(7);
+
+        List<UUID> expectedIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+        when(applicationListEntryRepository.searchForGetSummaryIds(
+                        eq(applicationList.getUuid()),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq("Applicant Match"),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq(null),
+                        eq("ACC-123"),
+                        eq(null),
+                        eq("RC1"),
+                        eq(null),
+                        eq(7)))
+                .thenReturn(expectedIds);
+
+        PayloadGetEntryInList payloadGetEntryInList =
+                PayloadGetEntryInList.builder().listId(applicationList.getUuid()).build();
+
+        when(applicationListEntryMapStructMapper.toApplicationListEntry(
+                        any(PayloadGetEntryInList.class),
+                        any(EntryApplicationListGetFilterDto.class)))
+                .thenReturn(new ApplicationListEntry());
+
+        EntryIdsDto response =
+                service.getApplicationListEntryIds(payloadGetEntryInList, entryGetFilterDto);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertEquals(expectedIds, response.getIds());
+
+        verify(applicationListEntryMapStructMapper)
+                .toApplicationListEntry(any(PayloadGetEntryInList.class), any());
     }
 
     @Test

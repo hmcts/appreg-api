@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import utils.ConstraintAssertion;
 
@@ -96,5 +97,20 @@ public class ApplicationEntryDtoTest {
                 listConstraint, "caseReference", "size must be between 1 and 15");
         ConstraintAssertion.assertPropertyValue(
                 listConstraint, "applicationCode", "size must be between 1 and 10");
+    }
+
+    @Test
+    void testEntryIdsDtoAllowsEmptyIdList() {
+        EntryIdsDto entryIdsDto = new EntryIdsDto();
+        entryIdsDto.setIds(List.of());
+
+        Set<ConstraintViolation<Object>> constraintValidator =
+                Validation.byDefaultProvider()
+                        .configure()
+                        .buildValidatorFactory()
+                        .getValidator()
+                        .validate((Object) entryIdsDto);
+
+        Assertions.assertEquals(0, constraintValidator.size());
     }
 }

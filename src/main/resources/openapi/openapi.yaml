@@ -65,6 +65,7 @@ paths:
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
+  /application-lists/{listId}/entries/ids:                          { $ref: './paths/application-list-entries/application-list-entry-ids.yaml' }
   /application-lists/{listId}/entries/{entryId}:                    { $ref: './paths/application-list-entries/application-list-entries-by-id.yaml' }
   /application-lists/{listId}/entries/bulk-import:                  { $ref: './paths/application-list-entries/entries-bulk-import.yaml' }
   /application-lists/{listId}/entries/move:                         { $ref: './paths/application-list-entries/entries-move.yaml' }
@@ -100,4 +101,3 @@ components:
   schemas:
     # APPLICATION CODES
     application-code-get-summary-dto:     { $ref: './components/schemas/application-codes/application-code-get-summary-dto.yaml' }
-
