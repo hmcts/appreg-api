@@ -11,7 +11,7 @@ plugins {
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
-  id 'uk.gov.hmcts.java' version '0.12.67'
+  id 'uk.gov.hmcts.java' version '0.12.68'
   id 'com.diffplug.spotless' version '8.2.1'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'maven-publish'
