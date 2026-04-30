@@ -680,7 +680,7 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         responseSpec.then().statusCode(200);
         EntryPage page = responseSpec.as(EntryPage.class);
 
-        Assertions.assertEquals(0, page.getContent().size());
+        Assertions.assertNull(page.getContent());
     }
 
     @StabilityTest
