@@ -195,9 +195,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         createResponse.then().statusCode(202);
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "dateFrom", "2018-05-31");
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "dateFrom", "2018-05-01");
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "dateTo", "2018-05-01");
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "dateTo", "2018-05-31");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "applicantName", "Smith");
         assertReportParameterAuditRow(
