@@ -741,6 +741,69 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                 .body("errors.respondentPostcode", Matchers.containsString("must match"));
     }
 
+    @Test
+    public void
+            givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
+                    throws Exception {
+        ApplicationList matchingList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(matchingList);
+        setRespondentName(matchingEntry, "Mr", "Partial", "Match");
+        matchingEntry.getRnameaddress().setPostcode("SW1A 1AA");
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationList nonMatchingList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(nonMatchingList);
+        setRespondentName(nonMatchingEntry, "Ms", "Partial", "Miss");
+        nonMatchingEntry.getRnameaddress().setPostcode("XY9 8ZZ");
+        persistance.save(nonMatchingEntry);
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(maxPageSize),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "sw1"));
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void givenPartialRespondentPostcodeMiss_whenGetApplicationEntries_thenReturnEmptyPage()
+            throws Exception {
+        ApplicationList list = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry entry = createEntry(list);
+        setRespondentName(entry, "Mr", "Partial", "Miss");
+        entry.getRnameaddress().setPostcode("SW1A 1AA");
+        persistance.save(entry);
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(maxPageSize),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "ZZ9"));
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertNull(page.getContent());
+    }
+
     @StabilityTest
     public void givenValidRequest_whenSortAccountNumber_thenReturn200() throws Exception {
         // set up the data

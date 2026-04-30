@@ -92,5 +92,6 @@ appreg:
       enable-complex-diff: true
   job:
     page-size: 10
-
+  report:
+    page-size: 500
 
