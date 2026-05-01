@@ -7,7 +7,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
-import uk.gov.hmcts.appregister.report.service.ReportCsvLifecycle;
 
 public class FeesReportLifecycle extends ReportCsvLifecycle<FeesReportRow> {
     private static final DateTimeFormatter LIST_DATE_FORMAT =

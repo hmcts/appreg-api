@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Objects;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
-import uk.gov.hmcts.appregister.report.service.ReportCsvLifecycle;
 
 public class ActivityAuditReportLifecycle extends ReportCsvLifecycle<ActivityAuditReportRow> {
     private static final String[] HEADERS = {

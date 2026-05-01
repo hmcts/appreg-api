@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.stereotype.Component;
@@ -139,11 +138,11 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
     }
 
     @Override
-    public InputStreamResource readClob(JobIdRequest jobIdRequest) throws IOException {
+    public InputStream readClob(JobIdRequest jobIdRequest) throws IOException {
         return getClobToOutputStream(jobIdRequest);
     }
 
-    private InputStreamResource getClobToOutputStream(JobIdRequest jobId) throws IOException {
+    private InputStream getClobToOutputStream(JobIdRequest jobId) throws IOException {
         File file = AppRegTempFileUtil.generateTempFile("async-job-clob");
 
         jdbcTemplate.query(
@@ -166,7 +165,7 @@ public class AsyncJobPersistenceServiceImpl implements AsyncJobPersistenceServic
 
         if (file.length() > 0) {
             // return the spring input stream resource
-            return new InputStreamResource(new DeleteableFileInputStream(file));
+            return new DeleteableFileInputStream(file);
         } else {
             Files.deleteIfExists(file.toPath());
         }

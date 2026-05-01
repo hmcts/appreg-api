@@ -3,11 +3,13 @@ package uk.gov.hmcts.appregister.common.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * A utility that allows us to generate and search for temp files that may have been created across
  * the system.
  */
+@Slf4j
 public class AppRegTempFileUtil {
 
     public static final String TEMP_FILE_EXTENSION = "appregtmp";
@@ -34,8 +36,6 @@ public class AppRegTempFileUtil {
     public static File generateTempFile(String prefix) throws IOException {
         return File.createTempFile(
                 prefix + "-" + UUID.randomUUID(), "." + TEMP_FILE_EXTENSION); // NOSONAR
-        // - we want to use the default temp directory as this is guaranteed to be writable
-        // and will be cleaned up by the system.
     }
 
     /**

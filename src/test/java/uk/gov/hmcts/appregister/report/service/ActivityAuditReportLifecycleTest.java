@@ -7,12 +7,14 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -20,7 +22,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.report.job.ActivityAuditReportLifecycle;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
-class ActivityAuditReportLifecycleTest {
+class ActivityAuditReportLifecycleTest extends AbstractAsyncTest {
     @Test
     void givenReportRows_whenCompleted_thenWritesCsvAndDeletesTempFile() throws Exception {
         AtomicReference<String> csv = new AtomicReference<>();
@@ -49,7 +51,7 @@ class ActivityAuditReportLifecycleTest {
             Assertions.assertTrue(csv.get().contains("old,new,2026-04-01,caseworker"));
             Assertions.assertTrue(csv.get().contains(",,,,,,"));
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 
@@ -75,7 +77,7 @@ class ActivityAuditReportLifecycleTest {
             Assertions.assertTrue(csv.get().contains("Activity Audit Report"));
             Assertions.assertTrue(csv.get().contains("Event Name,Table Name,Column Name"));
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 
@@ -90,7 +92,7 @@ class ActivityAuditReportLifecycleTest {
 
             Assertions.assertFalse(outputFile.exists());
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 

@@ -1,7 +1,8 @@
-package uk.gov.hmcts.appregister.report.service;
+package uk.gov.hmcts.appregister.report.job;
 
 import com.opencsv.CSVWriterBuilder;
 import com.opencsv.ICSVWriter;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,7 +13,7 @@ import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.util.AppRegTempFileUtil;
 
-public abstract class ReportCsvLifecycle<T> implements AsyncJobLifecycle<T> {
+public abstract class ReportCsvLifecycle<T> implements AsyncJobLifecycle<T>, Closeable {
     private final File file;
     private final String reportTitle;
     private final String[] headers;
@@ -78,7 +79,7 @@ public abstract class ReportCsvLifecycle<T> implements AsyncJobLifecycle<T> {
                 .build();
     }
 
-    private void close() throws IOException {
+    public void close() throws IOException {
         Files.deleteIfExists(file.toPath());
     }
 }

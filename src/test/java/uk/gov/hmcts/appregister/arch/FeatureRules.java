@@ -62,7 +62,14 @@ public class FeatureRules extends BaseRules {
                     .definedBy(BASE_PACKAGE + ".(*).normaliser..")
                     .whereLayer("controller")
                     .mayOnlyAccessLayers(
-                            "api", "service", "common", "model", "generated", "helper", "mapper")
+                            "exception",
+                            "api",
+                            "service",
+                            "common",
+                            "model",
+                            "generated",
+                            "helper",
+                            "mapper")
                     .whereLayer("api")
                     .mayOnlyAccessLayers("common", "service", "generated")
                     .whereLayer("service")
@@ -105,7 +112,10 @@ public class FeatureRules extends BaseRules {
                             resideInAPackage(BASE_PACKAGE + ".."),
                             resideInAPackage("com.opencsv.."))
                     .ignoreDependency(
-                            resideInAPackage(BASE_PACKAGE + ".."), resideInAPackage("lombok.."));
+                            resideInAPackage(BASE_PACKAGE + ".."), resideInAPackage("lombok.."))
+                    .ignoreDependency(
+                            resideInAPackage(BASE_PACKAGE + ".."),
+                            resideInAPackage("org.apache.commons.lang3.."));
 
     // TODO: We need to correct the sort api classes before enabling this rule
     /*

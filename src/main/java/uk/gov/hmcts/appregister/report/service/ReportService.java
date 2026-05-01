@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import java.io.InputStream;
 import java.util.UUID;
-import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
@@ -31,7 +31,7 @@ public interface ReportService {
      * @param jobId The job id to get the download stream for
      * @return The download stream
      */
-    InputStreamResource getDownloadStream(UUID jobId);
+    InputStream getDownloadStream(UUID jobId);
 
     /**
      * runs the duration report.

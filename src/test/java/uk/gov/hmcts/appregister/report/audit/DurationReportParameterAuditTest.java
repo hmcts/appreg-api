@@ -4,12 +4,14 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.report.audit.model.DurationReportParameterAudit;
 
-class DurationReportParameterAuditTest {
+class DurationReportParameterAuditTest extends AbstractAsyncTest {
     @Test
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
         DurationFilterDto filter =

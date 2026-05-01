@@ -1,12 +1,12 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.appregister.common.async.exception.JobError;
@@ -25,13 +25,15 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
-import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.model.ActivityAuditReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.model.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.model.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.job.ActivityAuditReportLifecycle;
+import uk.gov.hmcts.appregister.report.job.DurationReportLifecycle;
 import uk.gov.hmcts.appregister.report.job.FeesReportLifecycle;
 import uk.gov.hmcts.appregister.report.job.reader.ActivityAuditReportDataReader;
+import uk.gov.hmcts.appregister.report.job.reader.DurationReportDataReader;
 import uk.gov.hmcts.appregister.report.job.reader.FeesReportDataReader;
 import uk.gov.hmcts.appregister.report.normaliser.ReportFilterNormaliser;
 
@@ -85,7 +87,7 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public InputStreamResource getDownloadStream(UUID jobId) {
+    public InputStream getDownloadStream(UUID jobId) {
         return auditService.processAudit(
                 ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT,
                 unused -> {
@@ -98,7 +100,7 @@ public class ReportServiceImpl implements ReportService {
                     }
 
                     try {
-                        InputStreamResource resource = jobStatusResponse.read();
+                        InputStream resource = jobStatusResponse.read();
 
                         // if no downloadable resource is available for job, return an error
                         if (resource == null) {
@@ -130,7 +132,7 @@ public class ReportServiceImpl implements ReportService {
                     JobAcknowledgement jobAcknowledgement = runDurationReport(filter);
 
                     return Optional.of(
-                            new AuditableResult<>(runDurationReport(normalisedFilter), null));
+                            new AuditableResult<>(jobAcknowledgement, reportParameterAudit));
                 });
     }
 

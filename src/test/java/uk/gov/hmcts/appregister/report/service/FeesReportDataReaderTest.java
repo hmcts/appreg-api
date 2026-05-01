@@ -20,6 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
@@ -28,7 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.job.reader.FeesReportDataReader;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
-class FeesReportDataReaderTest {
+class FeesReportDataReaderTest extends AbstractAsyncTest {
     @Test
     void givenReportRowsExist_whenReadData_thenReadsPagesWithExpectedParameters() throws Exception {
         NamedParameterJdbcTemplate jdbcTemplate = mock(NamedParameterJdbcTemplate.class);

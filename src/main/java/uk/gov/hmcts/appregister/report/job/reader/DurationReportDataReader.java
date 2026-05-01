@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.report.service;
+package uk.gov.hmcts.appregister.report.job.reader;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -17,7 +17,7 @@ import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
-class DurationReportDataReader implements DataReader<DurationReportRow> {
+public class DurationReportDataReader implements DataReader<DurationReportRow> {
     private static final String REPORT_QUERY =
             """
             SELECT
@@ -95,7 +95,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
     private final DurationFilterDto filter;
     private final String schema;
 
-    DurationReportDataReader(
+    public DurationReportDataReader(
             NamedParameterJdbcTemplate jdbcTemplate, DurationFilterDto filter, String schema) {
         this.jdbcTemplate = jdbcTemplate;
         this.filter = filter;

@@ -180,8 +180,7 @@ public class AsyncJobServiceImplTest extends BaseIntegration {
                                 getClass().getResourceAsStream("/appcodes.csv"),
                                 ApplicationCodeCsvPojo.class);
                 CsvReader<ApplicationCodeCsvPojo> csvReaderDbStream =
-                        new CsvReader<>(
-                                response.read().getInputStream(), ApplicationCodeCsvPojo.class); ) {
+                        new CsvReader<>(response.read(), ApplicationCodeCsvPojo.class); ) {
             Assertions.assertEquals(
                     0,
                     new ApplicationCodeCsvReaderComparator()

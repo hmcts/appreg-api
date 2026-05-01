@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
-import jakarta.validation.Validator;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -18,23 +17,15 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
-import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
-import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
-import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
-import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
-import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
-import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
-import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
-import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.applicationentry.service.UploadService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
-import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
@@ -45,9 +36,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
-import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
-import uk.gov.hmcts.appregister.job.service.JobService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @RestController
@@ -58,17 +47,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     private final PageableMapper pageableMapper;
 
-    private final AsyncJobService asyncJobService;
-
-    private final JobService jobService;
-
-    private final UserProvider userProvider;
-
-    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
-
-    private final ApplicationListEntryMapper applicationListEntryMapper;
-
-    private final Validator beanValidator;
+    private final UploadService uploadService;
 
     public static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
@@ -211,31 +190,12 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         }
 
         try {
-            JobTypeRequest jobTypeRequest =
-                    JobTypeRequest.builder()
-                            .userName(userProvider.getUserId())
-                            .jobType(JobType.BULK_UPLOAD_ENTRIES)
-                            .build();
-
-            CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
-
-            TrackJobStatusResponse trackJobStatusResponse =
-                    asyncJobService.startJob(
-                            jobTypeRequest,
-                            csvReader,
-                            new BulkUploadAsyncLifecycle(
-                                    listId,
-                                    applicationEntryService,
-                                    bulkUploadApplicationEntryValidator,
-                                    applicationListEntryMapper,
-                                    beanValidator));
-
-            JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
+            JobAcknowledgement ack = uploadService.uploadAppEntryCsv(listId, file);
 
             return ResponseEntity.accepted()
                     .varyBy(HttpHeaders.ACCEPT)
                     .contentType(VND_JSON_V1)
-                    .header(HttpHeaders.LOCATION, "/jobs/" + trackJobStatusResponse.getUuid())
+                    .header(HttpHeaders.LOCATION, "/jobs/" + ack.getId())
                     .body(ack);
         } catch (IOException e) {
             log.error("Failed to initialise CSV reader for bulk upload", e);

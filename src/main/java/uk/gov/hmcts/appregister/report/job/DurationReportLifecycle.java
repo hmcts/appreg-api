@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.report.service;
+package uk.gov.hmcts.appregister.report.job;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
-class DurationReportLifecycle extends ReportCsvLifecycle<DurationReportRow> {
+public class DurationReportLifecycle extends ReportCsvLifecycle<DurationReportRow> {
     private static final DateTimeFormatter LIST_DATE_FORMAT =
             DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] HEADERS = {
@@ -19,7 +19,7 @@ class DurationReportLifecycle extends ReportCsvLifecycle<DurationReportRow> {
         "Duration Minutes"
     };
 
-    DurationReportLifecycle() throws IOException {
+    public DurationReportLifecycle() throws IOException {
         super("duration-report", "Duration Report", HEADERS);
     }
 

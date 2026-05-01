@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.job.BulkUploadAsyncLifecycle;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;

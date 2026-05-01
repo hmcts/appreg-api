@@ -10,12 +10,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.common.validator.Validator;
 
 /**
  * Performs structural and business-rule validation for application entry bulk upload CSV files.
  */
 @Component
-public class BulkUploadApplicationEntryValidator {
+public class BulkUploadApplicationEntryValidator implements Validator<Integer, BulkUploadRow> {
+    @Override
+    public void validate(Integer validatable) {
+        // DO NOTHING
+    }
 
     /**
      * Validates a single mapped upload row and returns all discovered row-level validation errors.

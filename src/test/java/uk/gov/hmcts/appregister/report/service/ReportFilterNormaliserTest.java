@@ -3,12 +3,13 @@ package uk.gov.hmcts.appregister.report.service;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.report.normaliser.ReportFilterNormaliser;
 
-class ReportFilterNormaliserTest {
+class ReportFilterNormaliserTest extends AbstractAsyncTest {
     private final ReportFilterNormaliser normaliser = new ReportFilterNormaliser();
 
     @Test

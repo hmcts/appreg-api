@@ -7,19 +7,22 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.report.job.DurationReportLifecycle;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
-class DurationReportLifecycleTest {
+class DurationReportLifecycleTest extends AbstractAsyncTest {
     @Test
     void givenReportRows_whenCompleted_thenWritesCsvAndDeletesTempFile() throws Exception {
         AtomicReference<String> csv = new AtomicReference<>();
@@ -47,7 +50,7 @@ class DurationReportLifecycleTest {
             Assertions.assertTrue(csv.get().contains("Other court,01,Morning list,2,45"));
             Assertions.assertTrue(csv.get().contains(",,,,,,"));
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 
@@ -62,7 +65,7 @@ class DurationReportLifecycleTest {
 
             Assertions.assertFalse(outputFile.exists());
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 

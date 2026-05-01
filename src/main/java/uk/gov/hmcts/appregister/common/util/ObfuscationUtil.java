@@ -51,10 +51,6 @@ public class ObfuscationUtil {
         try {
             SimpleModule maskingModule = new SimpleModule();
 
-            maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
-            maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
-            maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
-
             mapper.registerModule(maskingModule);
             mapper.registerModule(new JsonNullableModule());
             mapper.registerModule(new JavaTimeModule());

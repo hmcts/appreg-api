@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.applicationentry.service;
+package uk.gov.hmcts.appregister.applicationentry.job;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;

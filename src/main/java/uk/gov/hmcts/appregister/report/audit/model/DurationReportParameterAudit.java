@@ -1,4 +1,4 @@
-package uk.gov.hmcts.appregister.report.audit;
+package uk.gov.hmcts.appregister.report.audit.model;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

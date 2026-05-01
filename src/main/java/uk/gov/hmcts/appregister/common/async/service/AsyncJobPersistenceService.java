@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.common.async.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
-import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.model.JobIdRequest;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
@@ -69,5 +68,5 @@ public interface AsyncJobPersistenceService {
      * @param jobIdRequest The job id request.
      * @throws IOException Any problems
      */
-    InputStreamResource readClob(JobIdRequest jobIdRequest) throws IOException;
+    InputStream readClob(JobIdRequest jobIdRequest) throws IOException;
 }

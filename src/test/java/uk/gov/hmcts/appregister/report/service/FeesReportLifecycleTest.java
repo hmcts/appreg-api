@@ -8,12 +8,14 @@ import java.io.File;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.common.async.AbstractAsyncTest;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
@@ -21,7 +23,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.report.job.FeesReportLifecycle;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
-class FeesReportLifecycleTest {
+class FeesReportLifecycleTest extends AbstractAsyncTest {
     @Test
     void givenReportRows_whenCompleted_thenWritesCsvAndDeletesTempFile() throws Exception {
         AtomicReference<String> csv = new AtomicReference<>();
@@ -49,7 +51,7 @@ class FeesReportLifecycleTest {
             Assertions.assertTrue(csv.get().contains("20.13,1.00,21.13,Due,2018-12-03,REF-1"));
             Assertions.assertTrue(csv.get().contains(",,,,,,,,,,,,,"));
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 
@@ -64,7 +66,7 @@ class FeesReportLifecycleTest {
 
             Assertions.assertFalse(outputFile.exists());
         } finally {
-            outputFile.delete();
+            Files.deleteIfExists(outputFile.toPath());
         }
     }
 

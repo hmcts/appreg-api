@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.common.async.exception.JobException;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
@@ -71,7 +70,7 @@ public class JobStatusResponse {
      * @return The clob resources. This is a spring resource that can easily be returned from the
      *     edge of the rest API.
      */
-    public InputStreamResource read() throws IOException {
+    public InputStream read() throws IOException {
         return persistence.readClob(getJobId());
     }
 }
