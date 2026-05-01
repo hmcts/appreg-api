@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.report.service;
 import java.util.UUID;
 import org.springframework.core.io.InputStreamResource;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 
@@ -31,4 +32,12 @@ public interface ReportService {
      * @return The download stream
      */
     InputStreamResource getDownloadStream(UUID jobId);
+
+    /**
+     * runs the duration report.
+     *
+     * @param filter The filter criteria to limit data set being reported on
+     * @return The job acknowledgement
+     */
+    JobAcknowledgement createDurationReport(DurationFilterDto filter);
 }

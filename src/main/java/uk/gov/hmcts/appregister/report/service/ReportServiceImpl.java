@@ -18,12 +18,14 @@ import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
+import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.model.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.model.FeesReportParameterAudit;
@@ -117,6 +119,21 @@ public class ReportServiceImpl implements ReportService {
                 });
     }
 
+    @Override
+    public JobAcknowledgement createDurationReport(DurationFilterDto filter) {
+        return auditService.processAudit(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
+                unused -> {
+                    DurationFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+                    DurationReportParameterAudit reportParameterAudit =
+                            DurationReportParameterAudit.from(normalisedFilter);
+                    JobAcknowledgement jobAcknowledgement = runDurationReport(filter);
+
+                    return Optional.of(
+                            new AuditableResult<>(runDurationReport(normalisedFilter), null));
+                });
+    }
+
     private JobAcknowledgement runFeesReport(FeesReportFilterDto filter) {
         FeesReportLifecycle lifecycle;
         try {
@@ -160,6 +177,30 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new ActivityAuditReportDataReader(jdbcTemplate, filter, schema),
+                        lifecycle,
+                        reportPageSize);
+
+        return jobMapper.toDto(response);
+    }
+
+    private JobAcknowledgement runDurationReport(DurationFilterDto filter) {
+        DurationReportLifecycle lifecycle;
+        try {
+            lifecycle = new DurationReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create duration report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.DURATION_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new DurationReportDataReader(jdbcTemplate, filter, schema),
                         lifecycle,
                         reportPageSize);
 

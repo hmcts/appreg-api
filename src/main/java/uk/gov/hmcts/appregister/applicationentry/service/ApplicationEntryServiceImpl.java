@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
@@ -53,7 +55,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -63,6 +67,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -87,6 +92,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final PageMapper pageMapper;
 
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
+
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
@@ -180,12 +187,20 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
+    }
+
+    private MatchResponse<EntryGetDetailDto> createEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
+                    validator,
+            YesOrNo bulkUpload) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
-                createApplicationEntryValidator.validate(
+                validator.validate(
                         entryCreateDto,
                         (dto, success) -> {
                             return auditService.processAudit(
@@ -212,7 +227,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 applicantToSave,
                                                                 respondentToSave,
                                                                 success.getApplicationCode(),
-                                                                success.getApplicationList());
+                                                                success.getApplicationList(),
+                                                                bulkUpload);
 
                                         Long alId = success.getApplicationList().getId();
                                         short seq = allocateNextSequence(alId);
@@ -227,7 +243,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 listEntryEntity.getId());
 
                                         List<AppListEntryFeeStatus> statusList =
-                                                createFeeStatus(listEntryEntity, entryCreateDto);
+                                                createFeeStatus(
+                                                        listEntryEntity,
+                                                        entryCreateDto,
+                                                        success,
+                                                        bulkUpload);
 
                                         List<AppListEntryOfficial> officialList =
                                                 createOfficial(listEntryEntity, entryCreateDto);
@@ -258,6 +278,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Finish: Create Application Entry: {}", entryCreateDto);
 
         return getDetailDto;
+    }
+
+    @Override
+    @Transactional
+    public MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
     }
 
     @Override
@@ -467,35 +494,67 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      * create all fee statuses and map them to the entry.
      *
      * @param listEntryEntity The list entry entity to add the officials to
-     * @param entryCreateDto The create payload containing the officials
+     * @param entryCreateDto The create payload containing the fee statuses
+     * @param success The successful validation result containing resolved fees
+     * @param bulkUpload The bulk upload indicator for the create path
      * @return The application fees that were created
      */
     private List<AppListEntryFeeStatus> createFeeStatus(
-            ApplicationListEntry listEntryEntity, PayloadForCreate<EntryCreateDto> entryCreateDto) {
+            ApplicationListEntry listEntryEntity,
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            CreateApplicationEntryValidationSuccess success,
+            YesOrNo bulkUpload) {
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
-        if (entryCreateDto.getData().getFeeStatuses() != null) {
-            // create the fee statuses and map to entry
-            for (FeeStatus feeStatus : entryCreateDto.getData().getFeeStatuses()) {
+        List<FeeStatus> feeStatuses =
+                entryCreateDto.getData().getFeeStatuses() == null
+                        ? List.of()
+                        : entryCreateDto.getData().getFeeStatuses();
 
-                auditService.processAudit(
-                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
-                        req -> {
-                            AppListEntryFeeStatus createdAppListStatus =
-                                    appListEntryFeeStatusRepository.save(
-                                            applicationListEntryEntityMapper.toFeeStatus(
-                                                    feeStatus, listEntryEntity));
-                            statusList.add(createdAppListStatus);
-                            log.debug(
-                                    "Fee status created and mapped to application "
-                                            + "entry with id: {}",
-                                    createdAppListStatus.getId());
-                            return Optional.of(new AuditableResult<>(null, createdAppListStatus));
-                        });
-            }
+        for (FeeStatus feeStatus : feeStatuses) {
+            AppListEntryFeeStatus appListEntryFeeStatus =
+                    applicationListEntryEntityMapper.toFeeStatus(feeStatus, listEntryEntity);
+            saveFeeStatus(appListEntryFeeStatus, statusList);
+        }
+
+        if (feeStatuses.isEmpty() && shouldCreateInitialBulkUploadFeeStatus(success, bulkUpload)) {
+            saveFeeStatus(createInitialBulkUploadFeeStatus(listEntryEntity), statusList);
         }
 
         return statusList;
+    }
+
+    private boolean shouldCreateInitialBulkUploadFeeStatus(
+            CreateApplicationEntryValidationSuccess success, YesOrNo bulkUpload) {
+        return bulkUpload == YesOrNo.YES
+                && success.getFee() != null
+                && success.getFee().mainFee() != null;
+    }
+
+    private AppListEntryFeeStatus createInitialBulkUploadFeeStatus(
+            ApplicationListEntry listEntryEntity) {
+        AppListEntryFeeStatus feeStatus = new AppListEntryFeeStatus();
+        feeStatus.setAppListEntry(listEntryEntity);
+        feeStatus.setAlefsFeeStatus(FeeStatusType.DUE);
+        feeStatus.setAlefsPaymentReference(null);
+        feeStatus.setAlefsFeeStatusDate(businessDateProvider.currentUkDate());
+        feeStatus.setAlefsStatusCreationDate(OffsetDateTime.now(clock));
+        return feeStatus;
+    }
+
+    private void saveFeeStatus(
+            AppListEntryFeeStatus appListEntryFeeStatus, List<AppListEntryFeeStatus> statusList) {
+        auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
+                req -> {
+                    AppListEntryFeeStatus createdAppListStatus =
+                            appListEntryFeeStatusRepository.save(appListEntryFeeStatus);
+                    statusList.add(createdAppListStatus);
+                    log.debug(
+                            "Fee status created and mapped to application entry with id: {}",
+                            createdAppListStatus.getId());
+                    return Optional.of(new AuditableResult<>(null, createdAppListStatus));
+                });
     }
 
     /**

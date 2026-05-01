@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 public class FeesReportDataReader implements DataReader<FeesReportRow> {
@@ -63,8 +63,9 @@ public class FeesReportDataReader implements DataReader<FeesReportRow> {
                             ale.sa_sa_id IS NOT NULL
                             AND (
                                 :standardApplicantCode IS NULL
+                                -- Maintains legacy MIS Fees report standard applicant contains match.
                                 OR UPPER(sa.standard_applicant_code)
-                                    = UPPER(:standardApplicantCode)
+                                    LIKE '%' || UPPER(:standardApplicantCode) || '%'
                             )
                         )
                     )
@@ -97,19 +98,43 @@ public class FeesReportDataReader implements DataReader<FeesReportRow> {
                         :applicantOrganisation IS NULL
                         OR UPPER(b.name) LIKE '%' || UPPER(:applicantOrganisation) || '%'
                     )
+                    -- Maintains legacy MIS Fees report AR5-7 location semantics.
                     AND (
-                        :cjaCode IS NULL
-                        OR b.cja_code = :cjaCode
-                        OR SUBSTRING(b.courthouse_code FROM 2 FOR 2) = :cjaCode
-                    )
-                    AND (
-                        :otherCourthouse IS NULL
-                        OR UPPER(b.other_courthouse)
-                            LIKE '%' || UPPER(:otherCourthouse) || '%'
-                    )
-                    AND (
-                        :courthouseCode IS NULL
-                        OR UPPER(b.courthouse_code) = UPPER(:courthouseCode)
+                        (
+                            :cjaCode IS NOT NULL
+                            AND UPPER(b.cja_code) = UPPER(:cjaCode)
+                            AND UPPER(b.other_courthouse)
+                                LIKE '%' || UPPER(:otherCourthouse) || '%'
+                            AND :courthouseCode IS NULL
+                        )
+                        OR (
+                            :cjaCode IS NULL
+                            AND (
+                                UPPER(b.other_courthouse)
+                                    LIKE '%' || UPPER(:otherCourthouse) || '%'
+                                OR :otherCourthouse IS NULL
+                            )
+                            AND (
+                                UPPER(b.courthouse_code)
+                                    LIKE '%' || UPPER(:courthouseCode) || '%'
+                                OR :courthouseCode IS NULL
+                            )
+                        )
+                        OR (
+                            :cjaCode IS NOT NULL
+                            AND (
+                                UPPER(SUBSTRING(b.courthouse_code FROM 2 FOR 2))
+                                    = UPPER(:cjaCode)
+                                OR UPPER(b.cja_code) = UPPER(:cjaCode)
+                            )
+                            AND :otherCourthouse IS NULL
+                            AND :courthouseCode IS NULL
+                        )
+                        OR (
+                            :cjaCode IS NULL
+                            AND :otherCourthouse IS NULL
+                            AND :courthouseCode IS NULL
+                        )
                     )
                     AND EXISTS (
                         SELECT 1
@@ -252,14 +277,17 @@ public class FeesReportDataReader implements DataReader<FeesReportRow> {
                                 "applicantOrganisation",
                                 filter.getApplicantOrganisation(),
                                 Types.VARCHAR)
-                        .addValue("cjaCode", getLocationValue(Location::getCjaCode), Types.VARCHAR)
+                        .addValue(
+                                "cjaCode",
+                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(Location::getOtherLocationDescription),
+                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(Location::getCourtLocationCode),
+                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -272,7 +300,8 @@ public class FeesReportDataReader implements DataReader<FeesReportRow> {
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(java.util.function.Function<Location, String> getter) {
+    private String getLocationValue(
+            java.util.function.Function<LegacyReportLocation, String> getter) {
         if (filter.getLocation() == null) {
             return null;
         }
