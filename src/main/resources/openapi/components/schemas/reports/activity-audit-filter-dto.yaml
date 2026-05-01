@@ -2,6 +2,8 @@ type: object
 description: >
   Filter criteria for POST /reports/activity-audit/jobs.
   Both dateFrom and dateTo are required and are treated as inclusive bounds.
+  If dateFrom is later than dateTo, the API treats the earlier date as the
+  inclusive start and the later date as the inclusive end.
   The username must match exactly.
   Blank fields will be rejected, nulls should be used instead.
 additionalProperties: false

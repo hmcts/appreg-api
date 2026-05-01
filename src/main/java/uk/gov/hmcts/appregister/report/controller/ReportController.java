@@ -24,12 +24,14 @@ import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.service.ReportFilterNormaliser;
@@ -69,15 +71,7 @@ public class ReportController implements ReportsApi {
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
-        return ResponseEntity.accepted()
-                .location(
-                        ServletUriComponentsBuilder.fromCurrentContextPath()
-                                .path("/jobs/{jobId}")
-                                .buildAndExpand(acknowledgement.getId())
-                                .toUri())
-                .varyBy(HttpHeaders.ACCEPT)
-                .contentType(VND_JSON_V1)
-                .body(acknowledgement);
+        return accepted(acknowledgement);
     }
 
     @Override
@@ -98,15 +92,28 @@ public class ReportController implements ReportsApi {
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
-        return ResponseEntity.accepted()
-                .location(
-                        ServletUriComponentsBuilder.fromCurrentContextPath()
-                                .path("/jobs/{jobId}")
-                                .buildAndExpand(acknowledgement.getId())
-                                .toUri())
-                .varyBy(HttpHeaders.ACCEPT)
-                .contentType(VND_JSON_V1)
-                .body(acknowledgement);
+        return accepted(acknowledgement);
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> createDurationReport(
+            DurationFilterDto durationFilterDto) {
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            DurationFilterDto normalisedFilter =
+                                    reportFilterNormaliser.normalise(durationFilterDto);
+                            DurationReportParameterAudit reportParameterAudit =
+                                    DurationReportParameterAudit.from(normalisedFilter);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportService.createDurationReport(normalisedFilter),
+                                            reportParameterAudit));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        return accepted(acknowledgement);
     }
 
     @Override
@@ -153,5 +160,17 @@ public class ReportController implements ReportsApi {
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(MediaType.parseMediaType("text/csv"))
                 .body(resourceHolder.get());
+    }
+
+    private ResponseEntity<JobAcknowledgement> accepted(JobAcknowledgement acknowledgement) {
+        return ResponseEntity.accepted()
+                .location(
+                        ServletUriComponentsBuilder.fromCurrentContextPath()
+                                .path("/jobs/{jobId}")
+                                .buildAndExpand(acknowledgement.getId())
+                                .toUri())
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(acknowledgement);
     }
 }

@@ -58,21 +58,17 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                 created_date_time,
                 user_name
             FROM filtered_audit
+            -- Maintains legacy MIS Activity Audit report ordering by CREATED_DATE.
+            -- data_id is a deterministic tie-breaker so keyset paging cannot skip or duplicate rows.
             WHERE (
                 :hasCursor IS FALSE
-                OR activity_order > :lastActivityOrder
+                OR created_date_time > :lastCreatedDateTime
                 OR (
-                    activity_order = :lastActivityOrder
-                    AND created_date_time > :lastCreatedDateTime
-                )
-                OR (
-                    activity_order = :lastActivityOrder
-                    AND created_date_time = :lastCreatedDateTime
+                    created_date_time = :lastCreatedDateTime
                     AND data_id > :lastDataId
                 )
             )
             ORDER BY
-                activity_order,
                 created_date_time,
                 data_id
             LIMIT :limit
@@ -194,7 +190,6 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                         .addValue("username", filter.getUsername(), Types.VARCHAR)
                         .addValue("eventNames", eventNameFilter.eventNames())
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
-                        .addValue("lastActivityOrder", cursor.lastActivityOrder(), Types.INTEGER)
                         .addValue(
                                 "lastCreatedDateTime",
                                 cursor.lastCreatedDateTime(),
@@ -259,10 +254,6 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
 
         int pageSize() {
             return pageSize;
-        }
-
-        Integer lastActivityOrder() {
-            return hasLastRow() ? lastRow.getActivityOrder() : null;
         }
 
         LocalDateTime lastCreatedDateTime() {

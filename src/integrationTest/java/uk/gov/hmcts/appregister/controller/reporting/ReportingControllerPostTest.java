@@ -18,11 +18,12 @@ import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -31,6 +32,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 public class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
+    private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
     private static final String JOB_WEB_CONTEXT = "jobs/%s";
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
 
@@ -182,7 +184,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2018, 5, 1))
                         .applicantName("Smith")
                         .location(
-                                new Location()
+                                new LegacyReportLocation()
                                         .courtLocationCode("LOC123")
                                         .otherLocationDescription("Town Hall")
                                         .cjaCode("52"));
@@ -243,6 +245,89 @@ public class ReportingControllerPostTest extends BaseIntegration {
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
             Assertions.assertTrue(report.contains("Fees Report"));
+        }
+    }
+
+    @Test
+    public void
+            givenValidDurationReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 10);
+        insertApplicationListRow(
+                "CLOSED",
+                listDate,
+                "XCD123",
+                "County Hall",
+                "Duration report integration list",
+                "Duration Court",
+                2,
+                45,
+                3);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        DurationFilterDto request =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(DURATION_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, "dateFrom", "2026-04-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, "cjaCode", "CD");
+        assertOnlyReportParametersAuditedFor(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.DURATION_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.DURATION_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Duration Report"));
+            Assertions.assertTrue(report.contains("10/04/2026"));
+            Assertions.assertTrue(report.contains("XCD123 - Duration Court"));
+            Assertions.assertTrue(report.contains("County Hall"));
+            Assertions.assertTrue(report.contains("Duration report integration list"));
+            Assertions.assertTrue(report.contains("2"));
+            Assertions.assertTrue(report.contains("45"));
         }
     }
 
@@ -309,6 +394,67 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createdDate,
                 eventName,
                 userName);
+    }
+
+    private void insertApplicationListRow(
+            String status,
+            LocalDate listDate,
+            String courthouseCode,
+            String otherCourthouse,
+            String listDescription,
+            String courthouseName,
+            int durationHours,
+            int durationMinutes,
+            int cjaId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.application_lists (
+                    al_id,
+                    application_list_status,
+                    application_list_date,
+                    application_list_time,
+                    courthouse_code,
+                    other_courthouse,
+                    list_description,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    courthouse_name,
+                    duration_hour,
+                    duration_minute,
+                    cja_cja_id
+                )
+                VALUES (
+                    nextval('%s.al_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                )
+                """,
+                        schema, schema),
+                status,
+                listDate,
+                listDate.atTime(10, 0),
+                courthouseCode,
+                otherCourthouse,
+                listDescription,
+                courthouseName,
+                durationHours,
+                durationMinutes,
+                cjaId);
     }
 
     private void assertReportParameterAuditRow(

@@ -9,6 +9,7 @@ import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -73,6 +74,31 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new FeesReportDataReader(jdbcTemplate, filter, schema),
+                        lifecycle,
+                        reportPageSize);
+
+        return jobMapper.toDto(response);
+    }
+
+    @Override
+    public JobAcknowledgement createDurationReport(DurationFilterDto filter) {
+        DurationReportLifecycle lifecycle;
+        try {
+            lifecycle = new DurationReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create duration report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.DURATION_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new DurationReportDataReader(jdbcTemplate, filter, schema),
                         lifecycle,
                         reportPageSize);
 

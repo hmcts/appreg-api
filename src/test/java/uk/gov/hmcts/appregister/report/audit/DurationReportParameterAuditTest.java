@@ -6,36 +6,29 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 
-class FeesReportParameterAuditTest {
+class DurationReportParameterAuditTest {
     @Test
     void givenFilter_whenFrom_thenAuditsOnlyReportParameters() {
-        FeesReportFilterDto filter =
-                new FeesReportFilterDto()
+        DurationFilterDto filter =
+                new DurationFilterDto()
                         .dateFrom(LocalDate.of(2026, 4, 1))
                         .dateTo(LocalDate.of(2026, 4, 30))
-                        .standardApplicantCode("STD1")
-                        .applicantName("Jane Smith")
-                        .applicantOrganisation("British Gas")
                         .location(
                                 new LegacyReportLocation()
                                         .courtLocationCode("B01IX00")
                                         .otherLocationDescription("Other court")
                                         .cjaCode("01"));
 
-        FeesReportParameterAudit audit = FeesReportParameterAudit.from(filter);
+        DurationReportParameterAudit audit = DurationReportParameterAudit.from(filter);
 
         Assertions.assertNull(audit.getId());
         Assertions.assertEquals(
                 List.of(
                         new AuditableData("report_parameters", "dateFrom", "2026-04-01"),
                         new AuditableData("report_parameters", "dateTo", "2026-04-30"),
-                        new AuditableData("report_parameters", "standardApplicantCode", "STD1"),
-                        new AuditableData("report_parameters", "applicantName", "Jane Smith"),
-                        new AuditableData(
-                                "report_parameters", "applicantOrganisation", "British Gas"),
                         new AuditableData("report_parameters", "courtLocationCode", "B01IX00"),
                         new AuditableData(
                                 "report_parameters", "otherLocationDescription", "Other court"),
@@ -45,9 +38,9 @@ class FeesReportParameterAuditTest {
 
     @Test
     void givenNoLocation_whenExtractAuditData_thenSkipsNullValues() {
-        FeesReportParameterAudit audit =
-                FeesReportParameterAudit.from(
-                        new FeesReportFilterDto()
+        DurationReportParameterAudit audit =
+                DurationReportParameterAudit.from(
+                        new DurationFilterDto()
                                 .dateFrom(LocalDate.of(2026, 4, 1))
                                 .dateTo(LocalDate.of(2026, 4, 30)));
 
