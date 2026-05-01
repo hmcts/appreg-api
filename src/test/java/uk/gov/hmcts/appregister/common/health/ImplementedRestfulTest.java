@@ -17,7 +17,6 @@ public class ImplementedRestfulTest {
     private static final List<String> UNIMPLEMENTED_ENDPOINTS =
             List.of(
                     "POST /application-lists/{listId}/entries/results",
-                    "POST /application-lists/{listId}/entries/bulk-import",
                     "DELETE /application-lists/{listId}/entries/{entryId}",
                     "POST /reports/private-prosecutors-index/jobs",
                     "POST /reports/workload/jobs",
