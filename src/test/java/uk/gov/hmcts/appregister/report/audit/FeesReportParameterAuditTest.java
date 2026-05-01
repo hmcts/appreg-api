@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 
 class FeesReportParameterAuditTest {
     @Test
@@ -20,7 +20,7 @@ class FeesReportParameterAuditTest {
                         .applicantName("Jane Smith")
                         .applicantOrganisation("British Gas")
                         .location(
-                                new Location()
+                                new LegacyReportLocation()
                                         .courtLocationCode("B01IX00")
                                         .otherLocationDescription("Other court")
                                         .cjaCode("01"));

@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
 class DurationReportDataReader implements DataReader<DurationReportRow> {
@@ -40,6 +40,7 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                 AND al.application_list_date >= :dateFrom
                 AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                 AND (al.is_deleted IS NULL OR al.is_deleted <> 'Y')
+                -- Maintains legacy MIS Duration report AR5-7 location semantics.
                 AND (
                     (
                         :cjaCode IS NOT NULL
@@ -135,14 +136,17 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filter.getDateFrom(), Types.DATE)
                         .addValue("dateTo", filter.getDateTo(), Types.DATE)
-                        .addValue("cjaCode", getLocationValue(Location::getCjaCode), Types.VARCHAR)
+                        .addValue(
+                                "cjaCode",
+                                getLocationValue(LegacyReportLocation::getCjaCode),
+                                Types.VARCHAR)
                         .addValue(
                                 "otherCourthouse",
-                                getLocationValue(Location::getOtherLocationDescription),
+                                getLocationValue(LegacyReportLocation::getOtherLocationDescription),
                                 Types.VARCHAR)
                         .addValue(
                                 "courthouseCode",
-                                getLocationValue(Location::getCourtLocationCode),
+                                getLocationValue(LegacyReportLocation::getCourtLocationCode),
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
@@ -155,7 +159,8 @@ class DurationReportDataReader implements DataReader<DurationReportRow> {
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
-    private String getLocationValue(java.util.function.Function<Location, String> getter) {
+    private String getLocationValue(
+            java.util.function.Function<LegacyReportLocation, String> getter) {
         if (filter.getLocation() == null) {
             return null;
         }

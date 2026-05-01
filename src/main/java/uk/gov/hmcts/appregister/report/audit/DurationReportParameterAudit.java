@@ -9,7 +9,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 
 @Builder
 @Getter
@@ -43,7 +43,7 @@ public class DurationReportParameterAudit implements Auditable {
     }
 
     public static DurationReportParameterAudit from(DurationFilterDto filter) {
-        Location location = filter.getLocation();
+        LegacyReportLocation location = filter.getLocation();
         return DurationReportParameterAudit.builder()
                 .dateFrom(filter.getDateFrom())
                 .dateTo(filter.getDateTo())

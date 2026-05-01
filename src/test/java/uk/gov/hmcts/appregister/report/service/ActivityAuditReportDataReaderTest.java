@@ -134,33 +134,37 @@ class ActivityAuditReportDataReaderTest {
                 parameters.getValue("eventNames"));
         Assertions.assertEquals(1, parameters.getValue("limit"));
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
+        Assertions.assertFalse(parameters.hasValue("lastActivityOrder"));
         Assertions.assertEquals("Add Application", parameters.getValue("eventName0"));
         Assertions.assertEquals("Create Entry Application List", parameters.getValue("eventName1"));
         Assertions.assertEquals("Update Application", parameters.getValue("eventName2"));
         Assertions.assertEquals("Update Entry Application List", parameters.getValue("eventName3"));
 
         if (expectedCursor) {
-            Assertions.assertEquals(0, parameters.getValue("lastActivityOrder"));
             Assertions.assertEquals(
                     LocalDateTime.of(2026, 4, 1, 10, 15),
                     parameters.getValue("lastCreatedDateTime"));
             Assertions.assertEquals(123L, parameters.getValue("lastDataId"));
         } else {
-            Assertions.assertNull(parameters.getValue("lastActivityOrder"));
             Assertions.assertNull(parameters.getValue("lastCreatedDateTime"));
             Assertions.assertNull(parameters.getValue("lastDataId"));
         }
     }
 
     private void assertQueryShape(String query) {
+        String normalisedQuery = query.replaceAll("\\s+", " ");
         Assertions.assertTrue(
                 query.contains(
                         "CASE da.event_name WHEN :eventName0 THEN 0 WHEN :eventName1 THEN 1"));
         Assertions.assertTrue(query.contains("da.created_date >= :dateFrom"));
         Assertions.assertTrue(query.contains("da.event_name IN (:eventNames)"));
         Assertions.assertTrue(query.contains("POSITION('_ID' IN UPPER(da.column_name)) = 0"));
+        Assertions.assertTrue(
+                query.contains("Maintains legacy MIS Activity Audit report ordering"));
         Assertions.assertTrue(query.contains("ORDER BY"));
-        Assertions.assertTrue(query.contains("activity_order"));
+        Assertions.assertEquals(-1, query.indexOf(":lastActivityOrder"));
+        Assertions.assertEquals(-1, query.indexOf("ORDER BY\n                activity_order"));
+        Assertions.assertTrue(normalisedQuery.contains("ORDER BY created_date_time, data_id"));
         Assertions.assertTrue(query.contains("LIMIT :limit"));
     }
 

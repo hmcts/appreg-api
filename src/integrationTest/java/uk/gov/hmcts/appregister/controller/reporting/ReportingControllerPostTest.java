@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -184,7 +184,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2018, 5, 1))
                         .applicantName("Smith")
                         .location(
-                                new Location()
+                                new LegacyReportLocation()
                                         .courtLocationCode("LOC123")
                                         .otherLocationDescription("Town Hall")
                                         .cjaCode("52"));
@@ -271,7 +271,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2026, 4, 1))
                         .dateTo(LocalDate.of(2026, 4, 28))
-                        .location(new Location().cjaCode("CD"));
+                        .location(new LegacyReportLocation().cjaCode("CD"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(

@@ -23,7 +23,7 @@ import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 
 class DurationReportDataReaderTest {
@@ -165,8 +165,8 @@ class DurationReportDataReaderTest {
     }
 
     private DurationFilterDto filter() {
-        Location location =
-                new Location()
+        LegacyReportLocation location =
+                new LegacyReportLocation()
                         .cjaCode("01")
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");

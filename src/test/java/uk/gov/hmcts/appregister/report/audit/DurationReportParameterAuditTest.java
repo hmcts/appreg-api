@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 
 class DurationReportParameterAuditTest {
     @Test
@@ -17,7 +17,7 @@ class DurationReportParameterAuditTest {
                         .dateFrom(LocalDate.of(2026, 4, 1))
                         .dateTo(LocalDate.of(2026, 4, 30))
                         .location(
-                                new Location()
+                                new LegacyReportLocation()
                                         .courtLocationCode("B01IX00")
                                         .otherLocationDescription("Other court")
                                         .cjaCode("01"));

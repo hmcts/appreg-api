@@ -24,7 +24,7 @@ import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
-import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 class FeesReportDataReaderTest {
@@ -87,6 +87,7 @@ class FeesReportDataReaderTest {
         assertParameters(parameterSources.getFirst(), false);
         assertParameters(parameterSources.get(1), true);
         assertKeysetPredicateRunsBeforeFeeCtes(queries.getFirst());
+        assertLegacyFeesQueryShape(queries.getFirst());
     }
 
     @Test
@@ -176,8 +177,8 @@ class FeesReportDataReaderTest {
     }
 
     private FeesReportFilterDto filter() {
-        Location location =
-                new Location()
+        LegacyReportLocation location =
+                new LegacyReportLocation()
                         .cjaCode("01")
                         .otherLocationDescription("Other court")
                         .courtLocationCode("B01IX00");
@@ -202,6 +203,27 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(-1, query.indexOf(":hasCursor IS FALSE", finalSelectIndex));
         Assertions.assertTrue(query.contains("EXISTS ("));
         Assertions.assertTrue(query.contains("FROM app_list_entry_fee_id cursor_alefi"));
+    }
+
+    private void assertLegacyFeesQueryShape(String query) {
+        String normalisedQuery = query.replaceAll("\\s+", " ");
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "UPPER(sa.standard_applicant_code) "
+                                + "LIKE '%' || UPPER(:standardApplicantCode) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "UPPER(b.other_courthouse) "
+                                + "LIKE '%' || UPPER(:otherCourthouse) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "UPPER(b.courthouse_code) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains("UPPER(SUBSTRING(b.courthouse_code FROM 2 FOR 2))"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :otherCourthouse IS NULL"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
+        Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(b.courthouse_code) = UPPER"));
+        Assertions.assertEquals(-1, normalisedQuery.indexOf("UPPER(sa.standard_applicant_code) ="));
     }
 
     private ResultSet resultSet() throws Exception {
