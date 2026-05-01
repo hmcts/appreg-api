@@ -4,22 +4,22 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import org.springframework.stereotype.Service;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.service.LocationLookupService;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.audit.CriminalJusticeAuditOperation;
-import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CodeAndDescription;
+import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CodeAndDescriptionMapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.mapper.CriminalJusticeMapper;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class CriminalJusticeServiceImpl implements CriminalJusticeService {
@@ -67,7 +67,8 @@ public class CriminalJusticeServiceImpl implements CriminalJusticeService {
                                             craPage.addContentItem(
                                                     criminalJusticeMapper.toDto(entry)));
 
-                    CodeAndDescription record = new CodeAndDescription(code, description);
+                    CodeAndDescriptionMapper record =
+                            new CodeAndDescriptionMapper(code, description);
                     AuditableResult<CriminalJusticeAreaPage, CriminalJusticeArea> result =
                             new AuditableResult<>(craPage, criminalJusticeMapper.toEntity(record));
 

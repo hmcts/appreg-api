@@ -10,9 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
@@ -22,8 +22,8 @@ import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProje
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
-import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
-import uk.gov.hmcts.appregister.standardapplicant.mapper.CodeAndName;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantAuditOperation;
+import uk.gov.hmcts.appregister.standardapplicant.mapper.CodeAndNameMapper;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapper;
 import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExistsValidator;
 
@@ -58,7 +58,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
 
         return auditService.processAudit(
                 null,
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS,
+                StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS,
                 (req) -> {
                     // Use today's date to ensure we only return Result Codes that are currently
                     // active.
@@ -89,7 +89,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             name,
                             pageable);
 
-                    CodeAndName record = new CodeAndName(code, name, addressLine1, from, to);
+                    CodeAndNameMapper record =
+                            new CodeAndNameMapper(code, name, addressLine1, from, to);
                     AuditableResult<StandardApplicantPage, StandardApplicant> result =
                             new AuditableResult<>(newPage, mapper.toEntity(record));
 
@@ -102,7 +103,7 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
     public StandardApplicantGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
                 null,
-                StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE,
+                StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE,
                 (req) -> {
                     log.debug(
                             "Start: Find Standard Applicant By Code for: app code: {} date: {}",

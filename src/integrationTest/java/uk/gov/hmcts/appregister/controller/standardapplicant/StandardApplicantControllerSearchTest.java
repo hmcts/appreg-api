@@ -38,7 +38,7 @@ import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
 import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
-import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantAuditOperation;
 import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
@@ -140,10 +140,10 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         APPCODE_CODE,
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
@@ -152,10 +152,10 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         LocalDate.now().toString(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getEventName()));
     }
 
@@ -238,10 +238,10 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         APPCODE_CODE_ORGANISATION,
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
@@ -250,10 +250,10 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         LocalDate.now().toString(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getType()
                                 .name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
                                 .getEventName()));
     }
 
@@ -417,8 +417,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -426,8 +426,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -502,8 +502,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -511,8 +511,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -569,8 +569,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -578,8 +578,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -621,8 +621,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "not exist",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -630,8 +630,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "does not exist",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -674,8 +674,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -683,8 +683,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -728,8 +728,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "APP00",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -737,8 +737,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -791,8 +791,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -800,8 +800,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "ORG",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -878,8 +878,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -887,8 +887,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "D",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -954,8 +954,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -963,8 +963,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "Dunn",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -1009,8 +1009,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "APP001",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1018,8 +1018,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "Smith",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test
@@ -1062,8 +1062,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_code",
                         null,
                         "APP001",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1071,8 +1071,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "name",
                         null,
                         "John",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @StabilityTest
@@ -1113,8 +1113,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "standard_applicant_code",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
                     DataAuditLogAsserter.getDataAuditAssertion(
@@ -1122,8 +1125,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "name",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -1277,8 +1283,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "standard_applicant_code",
                             null,
                             "P0",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
                     DataAuditLogAsserter.getDataAuditAssertion(
@@ -1286,8 +1295,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "name",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
         }
 
         Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
@@ -1333,8 +1345,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "standard_applicant_code",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
                     DataAuditLogAsserter.getDataAuditAssertion(
@@ -1342,8 +1357,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "name",
                             null,
                             "anisation 1",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
         }
     }
 
@@ -1388,8 +1406,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "standard_applicant_code",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
                     DataAuditLogAsserter.getDataAuditAssertion(
@@ -1397,8 +1418,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "name",
                             null,
                             "Owe",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
         }
     }
 
@@ -1443,8 +1467,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "standard_applicant_code",
                             null,
                             "",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
 
             differenceLogAsserter.assertDataAuditChange(
                     DataAuditLogAsserter.getDataAuditAssertion(
@@ -1452,8 +1479,11 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                             "name",
                             null,
                             "Jones",
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getType()
+                                    .name(),
+                            StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS
+                                    .getEventName()));
         }
     }
 
@@ -1551,8 +1581,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "address_l1",
                         null,
                         "123 High Street",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
 
         differenceLogAsserter.assertDataAuditChange(
                 DataAuditLogAsserter.getDataAuditAssertion(
@@ -1560,8 +1590,8 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                         "standard_applicant_start_date",
                         null,
                         "2026-04-01",
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
-                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS.getEventName()));
     }
 
     @Test

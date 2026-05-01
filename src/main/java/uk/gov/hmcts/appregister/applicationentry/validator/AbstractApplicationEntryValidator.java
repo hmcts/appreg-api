@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uk.gov.hmcts.appregister.applicationcode.enumeration.ApplicationCodeTypeEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -22,7 +22,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantReposi
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
@@ -37,8 +37,8 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 public abstract class AbstractApplicationEntryValidator<T, O> implements Validator<T, O> {
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationCodeRepository applicationCodeRepository;
-    private final ApplicationFeeService feeService;
-    private final BusinessDateProvider businessDateProvider;
+    private final ApplicationFeeHelper feeService;
+    private final BusinessDateProviderService businessDateProvider;
 
     private final StandardApplicantRepository standardApplicantRepository;
 

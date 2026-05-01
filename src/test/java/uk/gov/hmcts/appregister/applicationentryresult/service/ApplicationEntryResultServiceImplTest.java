@@ -41,12 +41,12 @@ import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResult
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultUpdateValidationSuccess;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -64,7 +64,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWithResultCodeProjection;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
@@ -84,7 +84,7 @@ public class ApplicationEntryResultServiceImplTest {
     @Mock private ApplicationListEntryResultEntityMapper applicationListEntryResultEntityMapper;
     @Mock private EntityManager entityManager;
     @Mock private UserProvider userProvider;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @Spy
     private DummyApplicationEntryResultDeletionValidator deletionValidator =
@@ -308,7 +308,7 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider,
+                BusinessDateProviderService businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository) {
             super(
                     applicationListRepository,
@@ -338,7 +338,7 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider) {
+                BusinessDateProviderService businessDateProvider) {
 
             super(
                     applicationListRepository,
@@ -370,7 +370,7 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider,
+                BusinessDateProviderService businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository) {
             super(
                     applicationListRepository,
@@ -442,7 +442,7 @@ public class ApplicationEntryResultServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
                 ResolutionCodeRepository resolutionCodeRepository,
-                BusinessDateProvider businessDateProvider) {
+                BusinessDateProviderService businessDateProvider) {
 
             super(
                     applicationListRepository,

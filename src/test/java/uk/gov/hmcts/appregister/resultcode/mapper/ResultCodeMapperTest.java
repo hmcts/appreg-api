@@ -117,7 +117,7 @@ public class ResultCodeMapperTest {
 
     @Test
     void testNoEntity() {
-        CodeAndTitle record = new CodeAndTitle(null, null);
+        CodeAndTitleMapper record = new CodeAndTitleMapper(null, null);
 
         var mapper = new ResultCodeMapperImpl();
         Assertions.assertNotNull(mapper.toEntity(record));

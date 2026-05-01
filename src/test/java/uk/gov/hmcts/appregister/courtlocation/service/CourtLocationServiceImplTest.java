@@ -22,17 +22,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
@@ -48,7 +48,7 @@ public class CourtLocationServiceImplTest {
     private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
 
     @Mock private NationalCourtHouseRepository repository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @Spy
     private List<AuditOperationLifecycleListener> auditListeners =

@@ -12,7 +12,6 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.criminaljusticearea.api.CriminalJusticeSortFieldEnum;
 import uk.gov.hmcts.appregister.criminaljusticearea.service.CriminalJusticeService;
-import uk.gov.hmcts.appregister.criminaljusticearea.validator.CriminalJusticeAreaSortValidator;
 import uk.gov.hmcts.appregister.generated.api.CriminalJusticeAreasApi;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaGetDto;
 import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
@@ -26,7 +25,6 @@ import uk.gov.hmcts.appregister.generated.model.CriminalJusticeAreaPage;
 public class CriminalJusticeAreaController implements CriminalJusticeAreasApi {
     private final CriminalJusticeService criminalJusticeService;
     private final PageableMapper appRegPageable;
-    private final CriminalJusticeAreaSortValidator sortValidator;
 
     @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)

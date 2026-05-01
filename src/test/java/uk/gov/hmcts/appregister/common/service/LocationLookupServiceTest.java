@@ -28,7 +28,7 @@ class LocationLookupServiceTest {
 
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @InjectMocks private LocationLookupService service;
 

@@ -32,7 +32,7 @@ public class LocationLookupService {
 
     private final NationalCourtHouseRepository courtHouseRepository;
     private final CriminalJusticeAreaRepository cjaRepository;
-    private final BusinessDateProvider businessDateProvider;
+    private final BusinessDateProviderService businessDateProvider;
 
     /** Returns the deterministically selected active court for the given code. */
     public NationalCourtHouse getActiveCourtOrThrow(String code) {

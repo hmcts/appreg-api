@@ -1,7 +1,7 @@
 package uk.gov.hmcts.appregister.controller.resultcode;
 
 import java.time.LocalDate;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeAuditOperation;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
 
 public class AbstractResultCodeControllerCrudTest extends BaseIntegration {
@@ -19,9 +19,9 @@ public class AbstractResultCodeControllerCrudTest extends BaseIntegration {
 
     // Audit event names
     protected static final String AUDIT_GET_ONE =
-            ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
+            ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT.getEventName();
     protected static final String AUDIT_GET_PAGE =
-            ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
+            ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT.getEventName();
 
     protected static final int DEFAULT_PAGE_SIZE = 10;
 

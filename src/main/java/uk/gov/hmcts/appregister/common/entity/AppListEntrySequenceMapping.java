@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**

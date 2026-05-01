@@ -4,10 +4,11 @@ import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
+import uk.gov.hmcts.appregister.report.audit.model.ActivityAuditReportParameterAudit;
 
 class ActivityAuditReportParameterAuditTest {
     @Test

@@ -18,6 +18,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.AuditEnabled;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.ReflectiveAuditor;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
@@ -240,7 +244,7 @@ public class ReflectiveAuditorTest {
     @Getter
     @AuditEnabled(types = {CrudEnum.DELETE, CrudEnum.CREATE, CrudEnum.READ, CrudEnum.UPDATE})
     @Table(name = "test_entity")
-    class TestEntityAuditable extends BaseEntity implements Keyable {
+    public class TestEntityAuditable extends BaseEntity implements Keyable {
         @Id
         @Column(name = "adr_id", nullable = false, updatable = false)
         @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "adr_gen")

@@ -2,12 +2,13 @@ package uk.gov.hmcts.appregister.common.util;
 
 import org.hibernate.proxy.HibernateProxy;
 import org.springframework.beans.BeanUtils;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 
 public class BeanUtil {
     /**
      * copies the bean. This is useful when you want to maintain the original state of the bean
      * before any updates are made to it. This is useful when using the Audit API {@link
-     * uk.gov.hmcts.appregister.audit.service.AuditOperationService}
+     * AuditOperationService}
      *
      * <p>This method handles Hibernate proxies by instantiating the underlying class.
      *

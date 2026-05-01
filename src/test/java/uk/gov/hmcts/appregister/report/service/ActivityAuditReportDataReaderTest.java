@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
+import uk.gov.hmcts.appregister.report.job.reader.ActivityAuditReportDataReader;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
 class ActivityAuditReportDataReaderTest {

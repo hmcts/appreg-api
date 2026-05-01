@@ -228,7 +228,7 @@ public class StandardApplicantMapperTest {
 
     @Test
     void testNoEntity() {
-        val record = new CodeAndName(null, null, null, null, null);
+        val record = new CodeAndNameMapper(null, null, null, null, null);
 
         var mapper = new StandardApplicantMapperImpl();
         Assertions.assertNotNull(mapper.toEntity(record));
@@ -239,7 +239,7 @@ public class StandardApplicantMapperTest {
         // Build the same lightweight surrogate entity that the GET /standard-applicants search
         // endpoint passes into the audit framework.
         val record =
-                new CodeAndName(
+                new CodeAndNameMapper(
                         "APP001",
                         "John Doe",
                         "123 High Street",

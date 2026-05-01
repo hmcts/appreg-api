@@ -46,7 +46,7 @@ import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.model.PayloadForUpdate;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 
@@ -63,7 +63,7 @@ public class ApplicationListUpdateValidatorTest {
     @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
     @Mock private ApplicationCodeRepository applicationCodeRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @InjectMocks private ApplicationUpdateListLocationValidator validator;
 

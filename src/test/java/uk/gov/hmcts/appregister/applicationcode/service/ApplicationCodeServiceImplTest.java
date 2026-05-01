@@ -28,12 +28,12 @@ import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapperImpl;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidationSuccess;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelper;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -54,7 +54,7 @@ public class ApplicationCodeServiceImplTest {
     @Mock private ApplicationCodeRepository repository;
     @Spy private ApplicationCodeMapper applicationCodeMapper = new ApplicationCodeMapperImpl();
 
-    @Mock private ApplicationFeeService feeService;
+    @Mock private ApplicationFeeHelper feeService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Spy private final List<AuditOperationLifecycleListener> auditLifecycleListeners = List.of();

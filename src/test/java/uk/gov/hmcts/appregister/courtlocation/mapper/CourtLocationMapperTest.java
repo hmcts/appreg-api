@@ -68,7 +68,7 @@ public class CourtLocationMapperTest {
 
     @Test
     void testNoEntity() {
-        CodeAndName record = new CodeAndName(null, null);
+        CodeAndNameMapper record = new CodeAndNameMapper(null, null);
 
         var mapper = new CourtLocationMapperImpl();
         Assertions.assertNotNull(mapper.toEntity(record));

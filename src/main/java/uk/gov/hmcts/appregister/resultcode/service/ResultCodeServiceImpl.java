@@ -11,9 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
@@ -23,9 +23,9 @@ import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeAuditOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
-import uk.gov.hmcts.appregister.resultcode.mapper.CodeAndTitle;
+import uk.gov.hmcts.appregister.resultcode.mapper.CodeAndTitleMapper;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
 /**
@@ -76,7 +76,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
     @Override
     public ResultCodeGetDetailDto findByCode(String code, LocalDate date) {
         return auditService.processAudit(
-                ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT,
+                ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT,
                 unused -> {
                     log.debug("Start: Find active Result Code using code: {} date: {}", code, date);
                     final List<ResolutionCode> rows =
@@ -121,7 +121,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
         var todayUk = LocalDate.now(clock.withZone(ukZone));
 
         return auditService.processAudit(
-                ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT,
+                ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT,
                 unused -> {
                     Page<ResolutionCode> dbPage =
                             repository.findActiveOnDate(
@@ -143,7 +143,7 @@ public class ResultCodeServiceImpl implements ResultCodeService {
                             codeFilter,
                             titleFilter);
 
-                    CodeAndTitle record = new CodeAndTitle(codeFilter, titleFilter);
+                    CodeAndTitleMapper record = new CodeAndTitleMapper(codeFilter, titleFilter);
                     AuditableResult<ResultCodePage, Keyable> result =
                             new AuditableResult<>(responsePage, mapper.toEntity(record));
                     return Optional.of(result);

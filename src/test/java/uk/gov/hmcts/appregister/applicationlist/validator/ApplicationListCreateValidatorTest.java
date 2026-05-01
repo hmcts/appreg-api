@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +43,7 @@ public class ApplicationListCreateValidatorTest {
     @Mock private ApplicationListRepository repository;
     @Mock private NationalCourtHouseRepository courtHouseRepository;
     @Mock private CriminalJusticeAreaRepository cjaRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @InjectMocks private ApplicationCreateListLocationValidator validator;
 

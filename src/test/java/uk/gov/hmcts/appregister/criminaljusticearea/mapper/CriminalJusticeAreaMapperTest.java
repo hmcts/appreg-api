@@ -26,7 +26,7 @@ public class CriminalJusticeAreaMapperTest {
 
     @Test
     void testNoEntity() {
-        CodeAndDescription record = new CodeAndDescription(null, null);
+        CodeAndDescriptionMapper record = new CodeAndDescriptionMapper(null, null);
 
         var mapper = new CriminalJusticeMapperImpl();
         Assertions.assertNotNull(mapper.toEntity(record));

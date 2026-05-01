@@ -57,7 +57,7 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "resultCode", source = "code")
     @Mapping(target = "title", source = "title")
-    public abstract ResolutionCode toEntity(CodeAndTitle record);
+    public abstract ResolutionCode toEntity(CodeAndTitleMapper record);
 
     JsonNullable<LocalDate> map(LocalDate value) {
         return value != null ? JsonNullable.of(value) : JsonNullable.undefined();

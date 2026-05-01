@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.report.job.FeesReportLifecycle;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 class FeesReportLifecycleTest {

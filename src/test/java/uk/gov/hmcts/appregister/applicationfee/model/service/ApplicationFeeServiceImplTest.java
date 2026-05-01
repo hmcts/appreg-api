@@ -12,11 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeServiceImpl;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelperImpl;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 
 @ExtendWith(MockitoExtension.class)
 public class ApplicationFeeServiceImplTest {
@@ -25,9 +25,9 @@ public class ApplicationFeeServiceImplTest {
 
     @Mock private FeeRepository repository;
 
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
-    @InjectMocks private ApplicationFeeServiceImpl applicationFeeService;
+    @InjectMocks private ApplicationFeeHelperImpl applicationFeeService;
 
     @Test
     public void testMainAndOffsiteFee() {

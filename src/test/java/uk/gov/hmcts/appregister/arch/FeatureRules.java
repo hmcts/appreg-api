@@ -10,7 +10,6 @@ import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
-import com.tngtech.archunit.junit.ArchIgnore;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.library.dependencies.SliceRule;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
@@ -18,13 +17,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.appregister.arch.predicate.NoEndingWithImplPredicate;
 import uk.gov.hmcts.appregister.arch.predicate.NoInnerPredicate;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.Auditable;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 
 /**
  * The layered architecture rules for each feature package.
  */
-@ArchIgnore
 @AnalyzeClasses(
         packages = BaseRules.BASE_PACKAGE,
         importOptions = {ImportOption.DoNotIncludeTests.class})
@@ -55,6 +54,15 @@ public class FeatureRules extends BaseRules {
                     .definedBy(BASE_PACKAGE + ".generated..")
                     .layer("model")
                     .definedBy(BASE_PACKAGE + ".(*).model..")
+                    .layer("helper")
+                    .definedBy(BASE_PACKAGE + ".(*).helper..")
+                    .layer("job")
+                    .definedBy(BASE_PACKAGE + ".(*).job..")
+                    .layer("normaliser")
+                    .definedBy(BASE_PACKAGE + ".(*).normaliser..")
+                    .whereLayer("controller")
+                    .mayOnlyAccessLayers(
+                            "api", "service", "common", "model", "generated", "helper", "mapper")
                     .whereLayer("api")
                     .mayOnlyAccessLayers("common", "service", "generated")
                     .whereLayer("service")
@@ -65,8 +73,14 @@ public class FeatureRules extends BaseRules {
                             "common",
                             "mapper",
                             "validator",
-                            "exception")
+                            "exception",
+                            "helper",
+                            "job",
+                            "normaliser")
                     .whereLayer("validator")
+                    .mayOnlyAccessLayers(
+                            "enumeration", "common", "generated", "exception", "model", "helper")
+                    .whereLayer("helper")
                     .mayOnlyAccessLayers("enumeration", "common", "generated", "exception", "model")
 
                     // ignore the third parties when assessing dependencies
@@ -87,6 +101,9 @@ public class FeatureRules extends BaseRules {
                     .ignoreDependency(
                             resideInAPackage(BASE_PACKAGE + ".."),
                             resideInAPackage("org.openapitools.."))
+                    .ignoreDependency(
+                            resideInAPackage(BASE_PACKAGE + ".."),
+                            resideInAPackage("com.opencsv.."))
                     .ignoreDependency(
                             resideInAPackage(BASE_PACKAGE + ".."), resideInAPackage("lombok.."));
 
@@ -186,10 +203,14 @@ public class FeatureRules extends BaseRules {
     static final com.tngtech.archunit.lang.ArchRule audit_format_rule =
             classes()
                     .that()
-                    .resideInAPackage(BASE_PACKAGE + ".(*).audit..")
-                    .and(not(resideInAPackage(BASE_PACKAGE + "..common..")))
-                    .and(new NoInnerPredicate())
+                    .resideInAPackage(BASE_PACKAGE + ".(*).audit")
                     .should()
+                    .beEnums()
+                    .andShould(
+                            com.tngtech.archunit.lang.conditions.ArchConditions.not(
+                                    com.tngtech.archunit.lang.conditions.ArchConditions
+                                            .resideInAPackage(BASE_PACKAGE + "..common..")))
+                    .andShould()
                     .haveSimpleNameContaining("AuditOperation")
                     .andShould()
                     .beAssignableTo(AuditOperation.class)
@@ -208,6 +229,31 @@ public class FeatureRules extends BaseRules {
                     .and(not(resideInAPackage(BASE_PACKAGE + "..common..")))
                     .should()
                     .resideInAPackage(BASE_PACKAGE + "..(*).audit..");
+
+    @ArchTest
+    static final com.tngtech.archunit.lang.ArchRule auditable_format_rule =
+            classes()
+                    .that()
+                    .resideInAPackage(BASE_PACKAGE + ".(*).audit.model")
+                    .and(not(resideInAPackage(BASE_PACKAGE + "..common..")))
+                    .and(new NoInnerPredicate())
+                    .should()
+                    .haveSimpleNameContaining("Audit")
+                    .andShould()
+                    .beAssignableTo(Auditable.class);
+
+    @ArchTest
+    public static final com.tngtech.archunit.lang.ArchRule auditable_always_in_feature_package =
+            classes()
+                    .that()
+                    .resideInAPackage(BASE_PACKAGE + "..")
+                    .and(new NoInnerPredicate())
+                    .and()
+                    .areAssignableTo(Auditable.class)
+                    .and(not(simpleNameEndingWith("Success")))
+                    .and(not(resideInAPackage(BASE_PACKAGE + "..common..")))
+                    .should()
+                    .resideInAPackage(BASE_PACKAGE + "..(*).audit.model");
 
     @ArchTest
     static final com.tngtech.archunit.lang.ArchRule mapper_package_should_contain_mappers =

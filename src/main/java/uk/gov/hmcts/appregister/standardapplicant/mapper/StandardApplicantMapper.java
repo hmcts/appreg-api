@@ -76,7 +76,7 @@ public abstract class StandardApplicantMapper {
     @Mapping(target = "emailAddress", ignore = true)
     @Mapping(target = "telephoneNumber", ignore = true)
     @Mapping(target = "mobileNumber", ignore = true)
-    public abstract StandardApplicant toEntity(CodeAndName codeAndName);
+    public abstract StandardApplicant toEntity(CodeAndNameMapper codeAndName);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "applicantCode", source = "code")

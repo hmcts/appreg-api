@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.FailEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.FailEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
 
 class AuditOperationSlf4jLoggerTest {
 

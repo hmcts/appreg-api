@@ -23,12 +23,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
@@ -37,7 +37,7 @@ import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCodePage;
-import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeOperation;
+import uk.gov.hmcts.appregister.resultcode.audit.ResultCodeAuditOperation;
 import uk.gov.hmcts.appregister.resultcode.exception.ResultCodeError;
 import uk.gov.hmcts.appregister.resultcode.mapper.ResultCodeMapper;
 
@@ -98,7 +98,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -119,7 +121,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     @Test
@@ -139,7 +143,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODE_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODE_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     @Test
@@ -220,7 +226,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     /**
@@ -257,7 +265,9 @@ public class ResultCodeServiceImplTest {
 
         verify(auditOperationService)
                 .processAudit(
-                        eq(ResultCodeOperation.GET_RESULT_CODES_AUDIT_EVENT), notNull(), notNull());
+                        eq(ResultCodeAuditOperation.GET_RESULT_CODES_AUDIT_EVENT),
+                        notNull(),
+                        notNull());
     }
 
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {

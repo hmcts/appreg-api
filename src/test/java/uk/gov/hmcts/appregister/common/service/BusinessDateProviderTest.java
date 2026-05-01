@@ -13,8 +13,8 @@ class BusinessDateProviderTest {
     @Test
     void currentUkDate_usesConfiguredUkTimezone() {
         Clock utcClock = Clock.fixed(Instant.parse("2025-06-01T23:30:00Z"), ZoneId.of("UTC"));
-        BusinessDateProvider provider =
-                new BusinessDateProvider(utcClock, ZoneId.of("Europe/London"));
+        BusinessDateProviderService provider =
+                new BusinessDateProviderService(utcClock, ZoneId.of("Europe/London"));
 
         assertEquals(LocalDate.of(2025, 6, 2), provider.currentUkDate());
     }

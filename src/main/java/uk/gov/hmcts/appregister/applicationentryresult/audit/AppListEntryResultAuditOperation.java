@@ -2,7 +2,7 @@ package uk.gov.hmcts.appregister.applicationentryresult.audit;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 @RequiredArgsConstructor

@@ -12,12 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
-import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
+import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitleMapper;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelper;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -38,7 +38,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
     private final ApplicationCodeRepository repository;
     private final ApplicationCodeMapper applicationCodeMapper;
-    private final ApplicationFeeService feeService;
+    private final ApplicationFeeHelper feeService;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final PageMapper pageMapper;
@@ -84,7 +84,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             appTitle,
                             pageable);
 
-                    CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
+                    CodeAndTitleMapper record = new CodeAndTitleMapper(appCode, appTitle);
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
                             new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
 

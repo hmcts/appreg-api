@@ -3,16 +3,14 @@ package uk.gov.hmcts.appregister.testutils.util;
 import java.util.regex.Pattern;
 import nl.altindag.log.LogCaptor;
 import org.junit.jupiter.api.Assertions;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
 
 /**
  * Allows us to make assertions around activity/operation audit logs. This assertion class assumes
  * logs were written using the default @{AuditOperationSlf4jLogger} listener.
  */
 public class ActivityAuditLogAsserter {
-    protected final LogCaptor operationLogger =
-            LogCaptor.forClass(
-                    uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger.class);
+    protected final LogCaptor operationLogger = LogCaptor.forClass(AuditOperationSlf4jLogger.class);
 
     /**
      * Asserts the activity log contains the expected values.

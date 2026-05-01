@@ -6,22 +6,34 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
@@ -30,6 +42,12 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.job.service.JobService;
+import uk.gov.hmcts.appregister.report.job.ActivityAuditReportLifecycle;
+import uk.gov.hmcts.appregister.report.job.FeesReportLifecycle;
+import uk.gov.hmcts.appregister.report.job.reader.ActivityAuditReportDataReader;
+import uk.gov.hmcts.appregister.report.job.reader.FeesReportDataReader;
+import uk.gov.hmcts.appregister.report.normaliser.ReportFilterNormaliser;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
@@ -37,6 +55,12 @@ class ReportServiceImplTest {
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
+    @Mock private JobService jobService;
+
+    @Spy
+    private final AuditOperationService auditOperationService = new DummyAuditOperationService();
+
+    @Spy private final ReportFilterNormaliser reportFilterNormaliser = new ReportFilterNormaliser();
 
     @Test
     void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
@@ -58,7 +82,14 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        auditOperationService,
+                        jobService,
+                        reportFilterNormaliser);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
@@ -109,7 +140,14 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        auditOperationService,
+                        jobService,
+                        reportFilterNormaliser);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
@@ -145,5 +183,50 @@ class ReportServiceImplTest {
                         .persistence(Mockito.mock(AsyncJobPersistenceService.class))
                         .build();
         return new TrackJobStatusResponse(response, CompletableFuture.completedFuture(null));
+    }
+
+    class DummyAuditOperationService implements AuditOperationService {
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+            return processAudit(
+                    oldValue, auditType, execution, (AuditOperationLifecycleListener) null);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution) {
+            return processAudit(null, auditType, execution);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            return processAudit(null, auditType, execution, listener);
+        }
+
+        @Override
+        public <T, E extends Keyable> T processAudit(
+                E oldValue,
+                AuditOperation auditType,
+                Function<BaseAuditEvent, Optional<AuditableResult<T, E>>> execution,
+                AuditOperationLifecycleListener... listener) {
+            Optional<AuditableResult<T, E>> optional =
+                    execution.apply(
+                            new CompleteEvent(
+                                    new StartEvent(
+                                            AppListAuditOperation.CREATE_APP_LIST,
+                                            UUID.randomUUID().toString(),
+                                            null),
+                                    "result",
+                                    null));
+            return optional.get().getResultingValue();
+        }
     }
 }

@@ -55,19 +55,19 @@ import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEnt
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelper;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -104,7 +104,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionProjection;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.data.AppListEntryFeeStatusTestData;
@@ -187,9 +187,9 @@ public class ApplicationEntryServiceImplTest {
     @Mock private EntityManager entityManager;
 
     @Mock private ApplicantMapper applicantMapper;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
-    @Mock private ApplicationFeeService feeService;
+    @Mock private ApplicationFeeHelper feeService;
 
     private ApplicationEntryService service;
 
@@ -1635,8 +1635,8 @@ public class ApplicationEntryServiceImplTest {
         public DummyCreateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
-                ApplicationFeeService feeService,
-                BusinessDateProvider businessDateProvider,
+                ApplicationFeeHelper feeService,
+                BusinessDateProviderService businessDateProvider,
                 StandardApplicantRepository standardApplicantRepository) {
             super(
                     applicationListRepository,
@@ -1707,8 +1707,8 @@ public class ApplicationEntryServiceImplTest {
         public DummyUpdateApplicationEntryValidator(
                 ApplicationListRepository applicationListRepository,
                 ApplicationCodeRepository applicationCodeRepository,
-                ApplicationFeeService feeService,
-                BusinessDateProvider businessDateProvider,
+                ApplicationFeeHelper feeService,
+                BusinessDateProviderService businessDateProvider,
                 StandardApplicantRepository standardApplicantRepository,
                 ApplicationListEntryRepository applicationListEntryRepository) {
             super(

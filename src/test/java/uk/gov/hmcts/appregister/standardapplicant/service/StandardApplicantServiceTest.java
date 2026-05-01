@@ -28,12 +28,12 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
@@ -41,7 +41,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForGet;
 import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
-import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantAuditOperation;
 import uk.gov.hmcts.appregister.standardapplicant.mapper.StandardApplicantMapperImpl;
 import uk.gov.hmcts.appregister.standardapplicant.validator.StandardApplicantExistsValidator;
 
@@ -180,7 +180,7 @@ public class StandardApplicantServiceTest {
         verify(auditOperationService)
                 .processAudit(
                         isNull(),
-                        eq(StandardApplicantOperation.GET_STANDARD_APPLICANTS),
+                        eq(StandardApplicantAuditOperation.GET_STANDARD_APPLICANTS),
                         notNull(),
                         notNull());
     }
@@ -198,7 +198,9 @@ public class StandardApplicantServiceTest {
         verify(auditOperationService)
                 .processAudit(
                         isNull(),
-                        eq(StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE),
+                        eq(
+                                StandardApplicantAuditOperation
+                                        .GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE),
                         notNull(),
                         notNull());
     }

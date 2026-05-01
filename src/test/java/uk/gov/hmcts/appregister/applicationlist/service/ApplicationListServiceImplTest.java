@@ -58,13 +58,13 @@ import uk.gov.hmcts.appregister.applicationlist.validator.ApplicationUpdateListL
 import uk.gov.hmcts.appregister.applicationlist.validator.ListDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListLocationValidationSuccess;
 import uk.gov.hmcts.appregister.applicationlist.validator.ListUpdateValidationSuccess;
-import uk.gov.hmcts.appregister.audit.event.BaseAuditEvent;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import uk.gov.hmcts.appregister.common.audit.event.BaseAuditEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.operation.AuditOperation;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchProvider;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.concurrency.MatchService;
@@ -90,7 +90,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryOfficialPr
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolutionPrintProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntrySummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListSummaryProjection;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.util.OfficialTypeUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -124,7 +124,7 @@ public class ApplicationListServiceImplTest {
     @Mock private AppListEntryOfficialRepository appListEntryOfficialRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @Spy
     private DummyApplicationCreateListLocationValidator validator =
@@ -1172,7 +1172,7 @@ public class ApplicationListServiceImplTest {
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
                 CriminalJusticeAreaRepository cjaRepository,
-                BusinessDateProvider businessDateProvider) {
+                BusinessDateProviderService businessDateProvider) {
             super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 
@@ -1194,7 +1194,7 @@ public class ApplicationListServiceImplTest {
                 ApplicationListRepository applicationListRepository,
                 NationalCourtHouseRepository courtHouseRepository,
                 CriminalJusticeAreaRepository criminalJusticeAreaRepository,
-                BusinessDateProvider businessDateProvider,
+                BusinessDateProviderService businessDateProvider,
                 AppListEntryResolutionRepository appListEntryResolutionRepository,
                 AppListEntryOfficialRepository appListEntryOfficialRepository,
                 ApplicationListEntryRepository applicationListEntryRepository,
@@ -1230,7 +1230,7 @@ public class ApplicationListServiceImplTest {
                 ApplicationListRepository repository,
                 NationalCourtHouseRepository courtHouseRepository,
                 CriminalJusticeAreaRepository cjaRepository,
-                BusinessDateProvider businessDateProvider) {
+                BusinessDateProviderService businessDateProvider) {
             super(repository, courtHouseRepository, cjaRepository, businessDateProvider);
         }
 

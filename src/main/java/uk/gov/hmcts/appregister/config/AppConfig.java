@@ -14,10 +14,11 @@ import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
-import uk.gov.hmcts.appregister.audit.listener.DataAuditLogger;
-import uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationSlf4jLogger;
+import uk.gov.hmcts.appregister.common.audit.listener.DataAuditLogger;
+import uk.gov.hmcts.appregister.common.audit.listener.diff.ReflectiveAuditor;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 
 @Configuration
@@ -52,7 +53,7 @@ public class AppConfig implements WebMvcConfigurer {
 
     /**
      * Defines a audit lifecycle listener that can be called when working with the {@link
-     * uk.gov.hmcts.appregister.audit.service.AuditOperationService}.
+     * AuditOperationService}.
      */
     @Bean
     public AuditOperationLifecycleListener getSystemLevelAuditListener() {
@@ -69,7 +70,7 @@ public class AppConfig implements WebMvcConfigurer {
      * differentiator. The default differentiator is a reflective one that checks all fields for
      * differences. Reflective nesting of complex objects as well as collections are disabled by
      * default. This can be overridden as appropriate NOTE: This can be overridden at the operation
-     * level. See {@link uk.gov.hmcts.appregister.audit.service.AuditOperationService}
+     * level. See {@link AuditOperationService}
      */
     @Bean
     public DataAuditLogger auditDifferentiator(DataAuditRepository dataAuditRepository) {

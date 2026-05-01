@@ -31,7 +31,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepositor
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +43,7 @@ class ApplicationEntryResultCreationValidatorTest {
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private ResolutionCodeRepository resolutionCodeRepository;
-    @Mock private BusinessDateProvider businessDateProvider;
+    @Mock private BusinessDateProviderService businessDateProvider;
 
     @InjectMocks private ApplicationEntryResultCreationValidator validator;
 

@@ -64,7 +64,7 @@ public interface CourtLocationMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "courtLocationCode", source = "code", defaultValue = "")
     @Mapping(target = "name", source = "name", defaultValue = "")
-    NationalCourtHouse toEntity(CodeAndName code);
+    NationalCourtHouse toEntity(CodeAndNameMapper code);
 
     /**
      * Utility mapping method to wrap a {@link LocalDate} in a {@link JsonNullable}.

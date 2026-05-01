@@ -16,7 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -84,7 +84,7 @@ public abstract class AbstractApplicationListLocationValidator<
     protected final NationalCourtHouseRepository courtHouseRepository;
 
     protected final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
-    protected final BusinessDateProvider businessDateProvider;
+    protected final BusinessDateProviderService businessDateProvider;
     protected static final int SINGLE_RECORD = 1;
 
     /**

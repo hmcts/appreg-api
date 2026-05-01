@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.report.normaliser.ReportFilterNormaliser;
 
 class ReportFilterNormaliserTest {
     private final ReportFilterNormaliser normaliser = new ReportFilterNormaliser();

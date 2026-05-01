@@ -6,9 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.Mockito;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
-import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
-import uk.gov.hmcts.appregister.audit.event.FailEvent;
-import uk.gov.hmcts.appregister.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.event.CompleteEvent;
+import uk.gov.hmcts.appregister.common.audit.event.FailEvent;
+import uk.gov.hmcts.appregister.common.audit.event.StartEvent;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListenerAdapter;
 
 class AuditOperationLifecycleListenerAdapterTest {
 

@@ -15,7 +15,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.common.validator.Validator;
@@ -26,7 +26,7 @@ public abstract class AbstractApplicationEntryResultValidator<T, O> implements V
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final ResolutionCodeRepository resolutionCodeRepository;
-    private final BusinessDateProvider businessDateProvider;
+    private final BusinessDateProviderService businessDateProvider;
 
     public void validate(T validatable) {
         validate(validatable, null);

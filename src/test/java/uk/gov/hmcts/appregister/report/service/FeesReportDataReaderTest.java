@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.Location;
+import uk.gov.hmcts.appregister.report.job.reader.FeesReportDataReader;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 class FeesReportDataReaderTest {

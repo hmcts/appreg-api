@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
+import uk.gov.hmcts.appregister.applicationfee.helper.ApplicationFeeHelper;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
@@ -14,7 +14,7 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeReposito
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
@@ -34,8 +34,8 @@ public class CreateApplicationEntryValidator
     public CreateApplicationEntryValidator(
             ApplicationListRepository applicationListRepository,
             ApplicationCodeRepository applicationCodeRepository,
-            ApplicationFeeService feeService,
-            BusinessDateProvider businessDateProvider,
+            ApplicationFeeHelper feeService,
+            BusinessDateProviderService businessDateProvider,
             StandardApplicantRepository standardApplicantRepository) {
         super(
                 applicationListRepository,

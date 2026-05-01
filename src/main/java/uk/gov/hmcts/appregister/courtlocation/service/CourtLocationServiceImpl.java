@@ -7,20 +7,20 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
-import uk.gov.hmcts.appregister.audit.model.AuditableResult;
-import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
+import org.springframework.stereotype.Service;
+import uk.gov.hmcts.appregister.common.audit.listener.AuditOperationLifecycleListener;
+import uk.gov.hmcts.appregister.common.audit.model.AuditableResult;
+import uk.gov.hmcts.appregister.common.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
-import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProviderService;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.util.ReferenceDataSelectionUtil;
 import uk.gov.hmcts.appregister.courtlocation.audit.CourtLocationAuditOperation;
 import uk.gov.hmcts.appregister.courtlocation.exception.CourtLocationError;
-import uk.gov.hmcts.appregister.courtlocation.mapper.CodeAndName;
+import uk.gov.hmcts.appregister.courtlocation.mapper.CodeAndNameMapper;
 import uk.gov.hmcts.appregister.courtlocation.mapper.CourtLocationMapper;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
@@ -32,7 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.CourtLocationPage;
  * NationalCourtHouseRepository} and mapping entities into API DTOs. All operations are executed
  * within an audited context using {@link AuditOperationService}.
  */
-@Component
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class CourtLocationServiceImpl implements CourtLocationService {
@@ -51,7 +51,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
 
     // Mapper for transferring Spring Data {@link Page} metadata into API page objects.
     private final PageMapper pageMapper;
-    private final BusinessDateProvider businessDateProvider;
+    private final BusinessDateProviderService businessDateProvider;
 
     /**
      * Retrieve a Court Location by its code and effective date.
@@ -136,7 +136,7 @@ public class CourtLocationServiceImpl implements CourtLocationService {
                     dbPage.forEach(
                             court -> responsePage.addContentItem(mapper.toSummaryDto(court)));
 
-                    CodeAndName record = new CodeAndName(codeFilter, nameFilter);
+                    CodeAndNameMapper record = new CodeAndNameMapper(codeFilter, nameFilter);
                     AuditableResult<CourtLocationPage, NationalCourtHouse> result =
                             new AuditableResult<>(responsePage, mapper.toEntity(record));
                     return Optional.of(result);
