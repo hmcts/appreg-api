@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
@@ -45,6 +46,7 @@ class ReportControllerTest {
     private final JobService jobService = mock(JobService.class);
     private final JobMapper jobMapper = mock(JobMapper.class);
     private final AuditOperationService auditService = mock(AuditOperationService.class);
+    private final UserProvider userProvider = mock(UserProvider.class);
     private final ReportController controller =
             new ReportController(
                     reportService,
@@ -52,12 +54,14 @@ class ReportControllerTest {
                     jobMapper,
                     auditService,
                     List.of(),
-                    new ReportFilterNormaliser());
+                    new ReportFilterNormaliser(),
+                    userProvider);
 
     @BeforeEach
     void setUpRequestContext() {
         RequestContextHolder.setRequestAttributes(
                 new ServletRequestAttributes(new MockHttpServletRequest()));
+        when(userProvider.getUserId()).thenReturn("requesting-user");
     }
 
     @AfterEach
@@ -101,6 +105,7 @@ class ReportControllerTest {
                         .get()
                         .extractAuditData(CrudEnum.READ)
                         .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
+        assertReportJobAudit(auditedParameters.get(), acknowledgement);
     }
 
     @Test
@@ -138,6 +143,7 @@ class ReportControllerTest {
                         .get()
                         .extractAuditData(CrudEnum.READ)
                         .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
+        assertReportJobAudit(auditedParameters.get(), acknowledgement);
     }
 
     @Test
@@ -175,6 +181,7 @@ class ReportControllerTest {
                         .get()
                         .extractAuditData(CrudEnum.READ)
                         .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
+        assertReportJobAudit(auditedParameters.get(), acknowledgement);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -200,5 +207,18 @@ class ReportControllerTest {
                 .id(UUID.randomUUID())
                 .type(jobType)
                 .status(JobStatus1.RECEIVED);
+    }
+
+    private void assertReportJobAudit(Auditable auditedParameters, JobAcknowledgement job) {
+        List<AuditableData> auditData = auditedParameters.extractAuditData(CrudEnum.CREATE);
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "jobId", job.getId().toString())));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "reportType", job.getType().toString())));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData("report_jobs", "requestingUser", "requesting-user")));
     }
 }

@@ -14,6 +14,7 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +23,7 @@ public class ReportServiceImpl implements ReportService {
     private final UserProvider userProvider;
     private final JobMapper jobMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ReportJobAuditService reportJobAuditService;
 
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
@@ -49,7 +51,7 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new ActivityAuditReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        audited(lifecycle),
                         reportPageSize);
 
         return jobMapper.toDto(response);
@@ -74,7 +76,7 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new FeesReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        audited(lifecycle),
                         reportPageSize);
 
         return jobMapper.toDto(response);
@@ -99,9 +101,13 @@ public class ReportServiceImpl implements ReportService {
                 asyncJobService.startJob(
                         jobRequest,
                         new DurationReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        audited(lifecycle),
                         reportPageSize);
 
         return jobMapper.toDto(response);
+    }
+
+    private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {
+        return new AuditedReportLifecycle<>(lifecycle, reportJobAuditService);
     }
 }

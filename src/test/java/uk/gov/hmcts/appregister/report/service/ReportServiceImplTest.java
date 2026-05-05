@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
@@ -36,6 +37,10 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
+import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
+import uk.gov.hmcts.appregister.report.model.DurationReportRow;
+import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
@@ -43,6 +48,7 @@ class ReportServiceImplTest {
     @Mock private UserProvider userProvider;
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
+    @Mock private ReportJobAuditService reportJobAuditService;
 
     @Test
     void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
@@ -51,7 +57,8 @@ class ReportServiceImplTest {
         final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.ACTIVITY_AUDIT_REPORT);
         AtomicReference<ActivityAuditReportDataReader> dataReader = new AtomicReference<>();
-        AtomicReference<ActivityAuditReportLifecycle> lifecycle = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<ActivityAuditReportRow>> lifecycle =
+                new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -64,7 +71,12 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
@@ -92,7 +104,8 @@ class ReportServiceImplTest {
         } finally {
             lifecycle
                     .get()
-                    .failed(new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+                    .lifeCycleEventPerformed(
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
         }
     }
 
@@ -102,7 +115,7 @@ class ReportServiceImplTest {
         final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.FEES_REPORT);
         AtomicReference<FeesReportDataReader> dataReader = new AtomicReference<>();
-        AtomicReference<FeesReportLifecycle> lifecycle = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<FeesReportRow>> lifecycle = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -115,7 +128,12 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
@@ -137,7 +155,8 @@ class ReportServiceImplTest {
         } finally {
             lifecycle
                     .get()
-                    .failed(new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+                    .lifeCycleEventPerformed(
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
         }
     }
 
@@ -148,7 +167,7 @@ class ReportServiceImplTest {
         final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
-        AtomicReference<DurationReportLifecycle> lifecycle = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<DurationReportRow>> lifecycle = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -161,7 +180,12 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -184,7 +208,8 @@ class ReportServiceImplTest {
         } finally {
             lifecycle
                     .get()
-                    .failed(new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+                    .lifeCycleEventPerformed(
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
         }
     }
 
@@ -194,7 +219,7 @@ class ReportServiceImplTest {
             LegacyReportLocation location) throws IOException {
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
-        AtomicReference<DurationReportLifecycle> lifecycle = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<DurationReportRow>> lifecycle = new AtomicReference<>();
 
         when(userProvider.getUserId()).thenReturn("user-id");
         when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
@@ -207,7 +232,12 @@ class ReportServiceImplTest {
         when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
 
         ReportServiceImpl service =
-                new ReportServiceImpl(asyncJobService, userProvider, jobMapper, jdbcTemplate);
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -232,7 +262,8 @@ class ReportServiceImplTest {
         } finally {
             lifecycle
                     .get()
-                    .failed(new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+                    .lifeCycleEventPerformed(
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
         }
     }
 
