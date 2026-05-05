@@ -85,9 +85,9 @@ class ReportServiceImplTest {
                         .dateTo(expectedDateTo)
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
 
-        service.createActivityAuditReport(filter);
-
         try {
+            service.createActivityAuditReport(filter);
+
             ActivityAuditFilterDto readerFilter =
                     (ActivityAuditFilterDto)
                             ReflectionTestUtils.getField(dataReader.get(), "filter");
@@ -102,10 +102,7 @@ class ReportServiceImplTest {
                             Mockito.same(lifecycle.get()),
                             Mockito.eq(500));
         } finally {
-            lifecycle
-                    .get()
-                    .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+            closeLifecycle(lifecycle);
         }
     }
 
@@ -139,9 +136,9 @@ class ReportServiceImplTest {
         FeesReportFilterDto filter =
                 new FeesReportFilterDto().dateFrom(expectedDateFrom).dateTo(expectedDateTo);
 
-        service.createFeesReport(filter);
-
         try {
+            service.createFeesReport(filter);
+
             FeesReportFilterDto readerFilter =
                     (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
@@ -153,10 +150,7 @@ class ReportServiceImplTest {
                             Mockito.same(lifecycle.get()),
                             Mockito.eq(500));
         } finally {
-            lifecycle
-                    .get()
-                    .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+            closeLifecycle(lifecycle);
         }
     }
 
@@ -191,9 +185,9 @@ class ReportServiceImplTest {
         DurationFilterDto filter =
                 new DurationFilterDto().dateFrom(expectedDateFrom).dateTo(expectedDateTo);
 
-        service.createDurationReport(filter);
-
         try {
+            service.createDurationReport(filter);
+
             DurationFilterDto readerFilter =
                     (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
@@ -206,10 +200,7 @@ class ReportServiceImplTest {
                             Mockito.same(lifecycle.get()),
                             Mockito.eq(500));
         } finally {
-            lifecycle
-                    .get()
-                    .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+            closeLifecycle(lifecycle);
         }
     }
 
@@ -246,9 +237,9 @@ class ReportServiceImplTest {
                         .dateTo(LocalDate.of(2018, 5, 31))
                         .location(location);
 
-        service.createDurationReport(filter);
-
         try {
+            service.createDurationReport(filter);
+
             DurationFilterDto readerFilter =
                     (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertSame(location, readerFilter.getLocation());
@@ -260,10 +251,7 @@ class ReportServiceImplTest {
                             Mockito.same(lifecycle.get()),
                             Mockito.eq(500));
         } finally {
-            lifecycle
-                    .get()
-                    .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+            closeLifecycle(lifecycle);
         }
     }
 
@@ -292,5 +280,15 @@ class ReportServiceImplTest {
                         .persistence(Mockito.mock(AsyncJobPersistenceService.class))
                         .build();
         return new TrackJobStatusResponse(response, CompletableFuture.completedFuture(null));
+    }
+
+    private <T> void closeLifecycle(AtomicReference<AsyncJobLifecycle<T>> lifecycle)
+            throws IOException {
+        if (lifecycle.get() != null) {
+            lifecycle
+                    .get()
+                    .lifeCycleEventPerformed(
+                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+        }
     }
 }

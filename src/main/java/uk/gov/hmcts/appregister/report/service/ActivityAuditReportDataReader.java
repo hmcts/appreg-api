@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
+import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 
 class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow> {
@@ -115,6 +116,25 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                     Map.entry(
                             ActivityType.MOVE_APPLICATION,
                             List.of("Move Application", "Move Entry")),
+                    Map.entry(
+                            ActivityType.REPORT_CREATED,
+                            List.of(
+                                    ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT
+                                            .getEventName())),
+                    Map.entry(
+                            ActivityType.REPORT_DOWNLOADED,
+                            List.of(
+                                    ReportAuditOperation.DOWNLOAD_REPORT_AUDIT_EVENT
+                                            .getEventName())),
+                    Map.entry(
+                            ActivityType.REPORT_STATUS_TRANSITION,
+                            List.of(
+                                    ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT
+                                            .getEventName())),
                     Map.entry(
                             ActivityType.RESULT_APPLICATION,
                             List.of("Result Application", "Create Application List Entry Result")),
