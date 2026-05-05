@@ -2,6 +2,8 @@ type: object
 description: >
   Filter criteria for POST /reports/duration/jobs.
   Both dateFrom and dateTo are required inclusive bounds.
+  If dateFrom is later than dateTo, the API treats the earlier date as the
+  inclusive start and the later date as the inclusive end.
   Location is optional and follows the legacy MIS Duration report filtering semantics.
   When no cjaCode is supplied, courtLocationCode and otherLocationDescription are
   case-insensitive contains matches and can be combined. A cjaCode-only filter includes

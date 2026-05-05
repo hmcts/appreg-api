@@ -22,19 +22,17 @@ import uk.gov.hmcts.appregister.common.async.exception.JobError;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.api.ReportsApi;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
-import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
-import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
-import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
-import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
-import uk.gov.hmcts.appregister.report.service.ReportFilterNormaliser;
+import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
+import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
@@ -44,13 +42,13 @@ import uk.gov.hmcts.appregister.report.service.ReportService;
 public class ReportController implements ReportsApi {
     private static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    private static final String REPORT_DOWNLOAD_FILENAME = "report.csv";
 
     private final ReportService reportService;
     private final JobService jobService;
-    private final JobMapper jobMapper;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
-    private final ReportFilterNormaliser reportFilterNormaliser;
+    private final UserProvider userProvider;
 
     @Override
     public ResponseEntity<JobAcknowledgement> createActivityAuditReport(
@@ -59,15 +57,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
                         unused -> {
-                            ActivityAuditFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(activityAuditFilterDto);
-                            ActivityAuditReportParameterAudit reportParameterAudit =
-                                    ActivityAuditReportParameterAudit.from(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createActivityAuditReport(activityAuditFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            reportService.createActivityAuditReport(
-                                                    normalisedFilter),
-                                            reportParameterAudit));
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
@@ -81,14 +79,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
                         unused -> {
-                            FeesReportFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(feesReportFilterDto);
-                            FeesReportParameterAudit reportParameterAudit =
-                                    FeesReportParameterAudit.from(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createFeesReport(feesReportFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            reportService.createFeesReport(normalisedFilter),
-                                            reportParameterAudit));
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
@@ -102,14 +101,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
                         unused -> {
-                            DurationFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(durationFilterDto);
-                            DurationReportParameterAudit reportParameterAudit =
-                                    DurationReportParameterAudit.from(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createDurationReport(durationFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            reportService.createDurationReport(normalisedFilter),
-                                            reportParameterAudit));
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
@@ -143,7 +143,12 @@ public class ReportController implements ReportsApi {
                         } else {
                             resourceHolder.set(resource);
                             return Optional.of(
-                                    new AuditableResult<>("report.csv", jobMapper.toEntity(jobId)));
+                                    new AuditableResult<>(
+                                            REPORT_DOWNLOAD_FILENAME,
+                                            ReportJobAudit.downloaded(
+                                                    jobStatusResponse,
+                                                    userProvider.getUserId(),
+                                                    REPORT_DOWNLOAD_FILENAME)));
                         }
                     } catch (IOException e) {
                         log.error("Error reading download stream for job id: {}", jobId, e);
@@ -155,7 +160,9 @@ public class ReportController implements ReportsApi {
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"report.csv\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + REPORT_DOWNLOAD_FILENAME + "\"")
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(MediaType.parseMediaType("text/csv"))
