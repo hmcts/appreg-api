@@ -85,6 +85,12 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew spotlessApply
   ```
 
+- **Enable P6Spy SQL logging**
+  Activate the `p6spy` Spring profile alongside the usual local profile.
+  ```bash
+  SPRING_PROFILES_ACTIVE=functional,p6spy ./gradlew bootRun
+  ```
+
 ## Running Sonarqube locally
 
 1. Ensure you have Docker installed and running
