@@ -29,7 +29,6 @@ import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
-import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
@@ -43,10 +42,10 @@ import uk.gov.hmcts.appregister.report.service.ReportService;
 public class ReportController implements ReportsApi {
     private static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+    private static final String REPORT_DOWNLOAD_FILENAME = "report.csv";
 
     private final ReportService reportService;
     private final JobService jobService;
-    private final JobMapper jobMapper;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
     private final UserProvider userProvider;
@@ -144,7 +143,12 @@ public class ReportController implements ReportsApi {
                         } else {
                             resourceHolder.set(resource);
                             return Optional.of(
-                                    new AuditableResult<>("report.csv", jobMapper.toEntity(jobId)));
+                                    new AuditableResult<>(
+                                            REPORT_DOWNLOAD_FILENAME,
+                                            ReportJobAudit.downloaded(
+                                                    jobStatusResponse,
+                                                    userProvider.getUserId(),
+                                                    REPORT_DOWNLOAD_FILENAME)));
                         }
                     } catch (IOException e) {
                         log.error("Error reading download stream for job id: {}", jobId, e);
@@ -156,7 +160,9 @@ public class ReportController implements ReportsApi {
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"report.csv\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + REPORT_DOWNLOAD_FILENAME + "\"")
                 .header(HttpHeaders.CACHE_CONTROL, "no-cache")
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(MediaType.parseMediaType("text/csv"))

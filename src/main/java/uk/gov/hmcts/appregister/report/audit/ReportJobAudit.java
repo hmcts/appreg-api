@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
+import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
@@ -66,6 +67,17 @@ public class ReportJobAudit implements Auditable {
                 .reportType(acknowledgement.getType())
                 .requestingUser(requestingUser)
                 .reportParameters(reportParameters)
+                .build();
+    }
+
+    /** Builds the read-audit payload for a downloaded report file. */
+    public static ReportJobAudit downloaded(
+            JobStatusResponse jobStatusResponse, String requestingUser, String fileReference) {
+        return ReportJobAudit.builder()
+                .jobId(jobStatusResponse.getUuid())
+                .reportType(jobStatusResponse.getType())
+                .requestingUser(requestingUser)
+                .fileReference(fileReference)
                 .build();
     }
 
