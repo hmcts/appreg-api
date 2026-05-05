@@ -25,7 +25,7 @@ public class ReportJobAuditService {
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
 
     /**
-     * Audits report job completion or failure when the job transitions out of PROCESSING.
+     * Audits report job completion or failure from the last observed non-terminal status.
      *
      * <p>Audit listener failures are handled by {@link AuditOperationService}, preserving the
      * primary job status update.
@@ -61,7 +61,7 @@ public class ReportJobAuditService {
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
-    /** Applies the ticket scope: report jobs only, and only PROCESSING to COMPLETED or FAILED. */
+    /** Applies the ticket scope: report jobs only, and only transitions into terminal status. */
     private boolean shouldAudit(
             JobStatusResponse jobStatusResponse,
             JobStatus1 previousStatus,
@@ -77,11 +77,15 @@ public class ReportJobAuditService {
             return false;
         }
 
-        if (previousStatus != JobStatus1.PROCESSING) {
+        if (previousStatus == null || previousStatus == newStatus || isTerminalStatus(previousStatus)) {
             return false;
         }
 
-        return newStatus == JobStatus1.COMPLETED || newStatus == JobStatus1.FAILED;
+        return isTerminalStatus(newStatus);
+    }
+
+    private boolean isTerminalStatus(JobStatus1 status) {
+        return status == JobStatus1.COMPLETED || status == JobStatus1.FAILED;
     }
 
     private String failureReason(JobStatus1 newStatus, String errorReason) {

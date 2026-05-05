@@ -40,6 +40,21 @@ class AuditedReportLifecycleTest {
     }
 
     @Test
+    void givenReportJobCompletesWithoutProcessing_whenLifecycleRuns_thenAuditsReceivedToCompleted()
+            throws IOException {
+        AuditedReportLifecycle<String> lifecycle =
+                new AuditedReportLifecycle<>(delegate, reportJobAuditService);
+        JobStatusResponse response = reportJob(JobType.FEES_REPORT);
+
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.RECEIVED));
+        lifecycle.lifeCycleEventPerformed(event(response, new JobContext(), JobStatus1.COMPLETED));
+
+        verify(delegate, times(2)).lifeCycleEventPerformed(any());
+        verify(reportJobAuditService)
+                .auditStatusTransition(response, JobStatus1.RECEIVED, JobStatus1.COMPLETED, null);
+    }
+
+    @Test
     void givenReportJobFails_whenLifecycleRuns_thenAuditsProcessingToFailedWithReason()
             throws IOException {
         AuditedReportLifecycle<String> lifecycle =

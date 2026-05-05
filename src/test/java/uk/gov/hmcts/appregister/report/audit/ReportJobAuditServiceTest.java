@@ -64,7 +64,36 @@ class ReportJobAuditServiceTest {
                                 new AuditableData(
                                         "report_jobs",
                                         "reportType",
-                                        JobType.FEES_REPORT.toString())));
+                        JobType.FEES_REPORT.toString())));
+    }
+
+    @Test
+    void givenReportJobCompletesFromReceived_whenAuditingTransition_thenWritesUpdateAudit() {
+        ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
+        JobStatusResponse job = reportJob(JobType.FEES_REPORT);
+        ArgumentCaptor<ReportJobAudit> oldAuditCaptor =
+                ArgumentCaptor.forClass(ReportJobAudit.class);
+        ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
+                executionCaptor = ArgumentCaptor.forClass(Function.class);
+
+        Mockito.doReturn(null)
+                .when(auditService)
+                .processAudit(
+                        oldAuditCaptor.capture(),
+                        eq(ReportAuditOperation.REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT),
+                        executionCaptor.capture(),
+                        any(AuditOperationLifecycleListener[].class));
+
+        service.auditStatusTransition(job, JobStatus1.RECEIVED, JobStatus1.COMPLETED, null);
+
+        ReportJobAudit oldAudit = oldAuditCaptor.getValue();
+        ReportJobAudit newAudit =
+                executionCaptor.getValue().apply(null).orElseThrow().getNewEntity();
+
+        Assertions.assertTrue(
+                oldAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.RECEIVED)));
+        Assertions.assertTrue(
+                newAudit.extractAuditData(CrudEnum.UPDATE).contains(status(JobStatus1.COMPLETED)));
     }
 
     @Test
@@ -137,6 +166,8 @@ class ReportJobAuditServiceTest {
                 null);
         service.auditStatusTransition(
                 reportJob(JobType.FEES_REPORT), JobStatus1.VALIDATING, JobStatus1.PROCESSING, null);
+        service.auditStatusTransition(
+                reportJob(JobType.FEES_REPORT), JobStatus1.COMPLETED, JobStatus1.FAILED, null);
 
         verify(auditService, never())
                 .processAudit(
