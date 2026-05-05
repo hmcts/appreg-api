@@ -6,7 +6,7 @@ plugins {
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'org.sonarqube' version '6.3.1.5724'
   id 'org.openapi.generator' version '7.3.0'
-  id "io.freefair.lombok" version "8.14.4"
+  id "io.freefair.lombok" version "9.5.0"
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
@@ -458,7 +458,7 @@ dependencies {
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.0.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.5.0'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
@@ -494,7 +494,7 @@ dependencies {
 
   // This causes us problems with testing. We need to use groovy 3 -->
 
-  testImplementation (group: 'io.rest-assured', name: 'rest-assured', version: '5.5.0') {
+  testImplementation (group: 'io.rest-assured', name: 'rest-assured', version: '5.5.7') {
     exclude(group : "org.apache.groovy", module : "groovy")
   }
 
@@ -506,7 +506,7 @@ dependencies {
   testImplementation 'org.testcontainers:testcontainers:1.21.4'
   testImplementation 'org.testcontainers:postgresql:1.21.4'
   testImplementation 'io.github.hakky54:logcaptor:2.12.6'
-  testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.1.0"
+  testImplementation "org.wiremock.integrations:wiremock-spring-boot:4.2.1"
   testImplementation 'org.instancio:instancio-junit:5.5.1'
 
   testImplementation "com.tngtech.archunit:archunit-junit5:1.4.2"
