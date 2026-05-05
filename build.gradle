@@ -211,6 +211,11 @@ sourceSets {
 }
 
 configurations {
+  localDebugRuntimeOnly {
+    canBeConsumed = false
+    canBeResolved = true
+  }
+
   testCommonImplementation.extendsFrom testImplementation
 
   functionalTestImplementation.extendsFrom testImplementation
@@ -241,6 +246,21 @@ tasks.register('smoke', Test) {
   description = "Runs Smoke Tests"
   testClassesDirs = sourceSets.smokeTest.output.classesDirs
   classpath = files(sourceSets.smokeTest.runtimeClasspath, sourceSets.testCommon.runtimeClasspath)
+}
+
+tasks.register('bootRunLocalDev', org.springframework.boot.gradle.tasks.run.BootRun) {
+  description = "Runs the application locally with no security and P6Spy SQL logging enabled"
+  group = "Application"
+  mainClass = application.mainClass
+  classpath = sourceSets.main.runtimeClasspath +
+    configurations.localDebugRuntimeOnly +
+    files('src/localDebug/resources')
+
+  def activeProfiles = providers.gradleProperty('springProfiles')
+    .orElse(providers.systemProperty('spring.profiles.active'))
+    .orElse('nosecurity,p6spy')
+
+  systemProperty 'spring.profiles.active', activeProfiles.get()
 }
 
 def commonJacocoExclusionsIntegration = [
@@ -349,8 +369,6 @@ def xmls = [
     'Once the server is running, you can execute this task using: ./gradlew localSonar'
     'Default login credentials are admin/admin. You can change these in the properties below.
 """
-import org.sonarqube.gradle.SonarTask;
-import org.sonarqube.gradle.SonarExtension
 // Register a brand-new task that runs a local analysis
 tasks.register('localSonarqube', GradleBuild) {
   dependsOn('sonarqube')
@@ -486,7 +504,7 @@ dependencies {
 
   // Database
   runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.11'
-  // TODO: runtimeOnly group: 'p6spy', name: 'p6spy', version: '3.9.1'
+  localDebugRuntimeOnly group: 'p6spy', name: 'p6spy', version: '3.9.1'
 
   // Testing
   testImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-test'
@@ -557,7 +575,6 @@ wrapper {
 }
 
 // Put this near the top-level of the file (outside any block)
-import org.apache.tools.ant.filters.ReplaceTokens
 
 tasks.named('processResources', Copy) {
   inputs.property("version", project.version.toString())
