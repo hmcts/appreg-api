@@ -77,7 +77,9 @@ public class ReportJobAuditService {
             return false;
         }
 
-        if (previousStatus == null || previousStatus == newStatus || isTerminalStatus(previousStatus)) {
+        if (previousStatus == null
+                || previousStatus == newStatus
+                || isTerminalStatus(previousStatus)) {
             return false;
         }
 

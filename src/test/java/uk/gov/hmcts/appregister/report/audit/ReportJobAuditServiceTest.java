@@ -64,7 +64,7 @@ class ReportJobAuditServiceTest {
                                 new AuditableData(
                                         "report_jobs",
                                         "reportType",
-                        JobType.FEES_REPORT.toString())));
+                                        JobType.FEES_REPORT.toString())));
     }
 
     @Test
