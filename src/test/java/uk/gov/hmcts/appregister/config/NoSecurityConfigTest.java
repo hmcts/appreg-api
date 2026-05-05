@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.config;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.net.URL;
 import org.junit.jupiter.api.Test;
 
 class NoSecurityConfigTest {
@@ -31,5 +32,30 @@ class NoSecurityConfigTest {
         assertThatThrownBy(() -> NoSecurityConfig.verifyLoopbackAddress("0.0.0.0"))
                 .isInstanceOf(NoSecurityConfigurationException.class)
                 .hasMessageContaining("loopback");
+    }
+
+    @Test
+    void verifyLocalDebugRuntime_allowsClasspathWithMarker() {
+        ClassLoader classLoader =
+                new ClassLoader(null) {
+                    @Override
+                    public URL getResource(String name) {
+                        if (NoSecurityConfig.LOCAL_DEBUG_MARKER.equals(name)) {
+                            return NoSecurityConfigTest.class.getResource(
+                                    "NoSecurityConfigTest.class");
+                        }
+                        return null;
+                    }
+                };
+
+        assertThatCode(() -> NoSecurityConfig.verifyLocalDebugRuntime(classLoader))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void verifyLocalDebugRuntime_rejectsClasspathWithoutMarker() {
+        assertThatThrownBy(() -> NoSecurityConfig.verifyLocalDebugRuntime(new ClassLoader(null) {}))
+                .isInstanceOf(NoSecurityConfigurationException.class)
+                .hasMessageContaining("local debug");
     }
 }

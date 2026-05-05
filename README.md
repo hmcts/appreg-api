@@ -86,9 +86,14 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ```
 
 - **Enable P6Spy SQL logging**
-  Activate the `p6spy` Spring profile alongside the usual local profile.
+  Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only
+  `nosecurity` and `p6spy` Spring profiles without including them in the normal release build.
   ```bash
-  SPRING_PROFILES_ACTIVE=functional,p6spy ./gradlew bootRun
+  ./gradlew bootRunLocalDev
+  ```
+  To override the active profiles, pass `springProfiles`. For example:
+  ```bash
+  ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
   ```
 
 ## Running Sonarqube locally

@@ -130,7 +130,12 @@ class ActivityAuditReportDataReaderTest {
                         "Add Application",
                         "Create Entry Application List",
                         "Update Application",
-                        "Update Entry Application List"),
+                        "Update Entry Application List",
+                        "Create Activity Audit Report",
+                        "Create Fees Report",
+                        "Create Duration Report",
+                        "Report Job Status Transition",
+                        "Download Report"),
                 parameters.getValue("eventNames"));
         Assertions.assertEquals(1, parameters.getValue("limit"));
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
@@ -139,6 +144,11 @@ class ActivityAuditReportDataReaderTest {
         Assertions.assertEquals("Create Entry Application List", parameters.getValue("eventName1"));
         Assertions.assertEquals("Update Application", parameters.getValue("eventName2"));
         Assertions.assertEquals("Update Entry Application List", parameters.getValue("eventName3"));
+        Assertions.assertEquals("Create Activity Audit Report", parameters.getValue("eventName4"));
+        Assertions.assertEquals("Create Fees Report", parameters.getValue("eventName5"));
+        Assertions.assertEquals("Create Duration Report", parameters.getValue("eventName6"));
+        Assertions.assertEquals("Report Job Status Transition", parameters.getValue("eventName7"));
+        Assertions.assertEquals("Download Report", parameters.getValue("eventName8"));
 
         if (expectedCursor) {
             Assertions.assertEquals(
@@ -181,6 +191,9 @@ class ActivityAuditReportDataReaderTest {
                         List.of(
                                 ActivityType.ADD_APPLICATION,
                                 ActivityType.UPDATE_APPLICATION,
+                                ActivityType.REPORT_CREATED,
+                                ActivityType.REPORT_STATUS_TRANSITION,
+                                ActivityType.REPORT_DOWNLOADED,
                                 ActivityType.ADD_APPLICATION));
     }
 
