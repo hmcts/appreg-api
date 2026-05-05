@@ -37,8 +37,11 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
+import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
-import uk.gov.hmcts.appregister.report.service.ReportFilterNormaliser;
+import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
 class ReportControllerTest {
@@ -49,13 +52,7 @@ class ReportControllerTest {
     private final UserProvider userProvider = mock(UserProvider.class);
     private final ReportController controller =
             new ReportController(
-                    reportService,
-                    jobService,
-                    jobMapper,
-                    auditService,
-                    List.of(),
-                    new ReportFilterNormaliser(),
-                    userProvider);
+                    reportService, jobService, jobMapper, auditService, List.of(), userProvider);
 
     @BeforeEach
     void setUpRequestContext() {
@@ -74,26 +71,28 @@ class ReportControllerTest {
         JobAcknowledgement acknowledgement = acknowledgement(JobType.ACTIVITY_AUDIT_REPORT);
         AtomicReference<Auditable> auditedParameters = new AtomicReference<>();
 
-        when(reportService.createActivityAuditReport(any())).thenReturn(acknowledgement);
-        runAuditAndCaptureParameters(
-                ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, auditedParameters);
-
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1))
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
+        ActivityAuditFilterDto normalisedFilter =
+                new ActivityAuditFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
+
+        when(reportService.createActivityAuditReport(filter))
+                .thenReturn(
+                        new ReportJobCreation(
+                                acknowledgement,
+                                ActivityAuditReportParameterAudit.from(normalisedFilter)));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT, auditedParameters);
 
         controller.createActivityAuditReport(filter);
 
-        verify(reportService)
-                .createActivityAuditReport(
-                        org.mockito.ArgumentMatchers.argThat(
-                                normalisedFilter ->
-                                        LocalDate.of(2018, 5, 1)
-                                                        .equals(normalisedFilter.getDateFrom())
-                                                && LocalDate.of(2018, 5, 31)
-                                                        .equals(normalisedFilter.getDateTo())));
+        verify(reportService).createActivityAuditReport(filter);
         Assertions.assertTrue(
                 auditedParameters
                         .get()
@@ -113,25 +112,25 @@ class ReportControllerTest {
         JobAcknowledgement acknowledgement = acknowledgement(JobType.FEES_REPORT);
         AtomicReference<Auditable> auditedParameters = new AtomicReference<>();
 
-        when(reportService.createFeesReport(any())).thenReturn(acknowledgement);
-        runAuditAndCaptureParameters(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, auditedParameters);
-
         FeesReportFilterDto filter =
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1));
+        FeesReportFilterDto normalisedFilter =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31));
+
+        when(reportService.createFeesReport(filter))
+                .thenReturn(
+                        new ReportJobCreation(
+                                acknowledgement, FeesReportParameterAudit.from(normalisedFilter)));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, auditedParameters);
 
         controller.createFeesReport(filter);
 
-        verify(reportService)
-                .createFeesReport(
-                        org.mockito.ArgumentMatchers.argThat(
-                                normalisedFilter ->
-                                        LocalDate.of(2018, 5, 1)
-                                                        .equals(normalisedFilter.getDateFrom())
-                                                && LocalDate.of(2018, 5, 31)
-                                                        .equals(normalisedFilter.getDateTo())));
+        verify(reportService).createFeesReport(filter);
         Assertions.assertTrue(
                 auditedParameters
                         .get()
@@ -151,25 +150,26 @@ class ReportControllerTest {
         JobAcknowledgement acknowledgement = acknowledgement(JobType.DURATION_REPORT);
         AtomicReference<Auditable> auditedParameters = new AtomicReference<>();
 
-        when(reportService.createDurationReport(any())).thenReturn(acknowledgement);
-        runAuditAndCaptureParameters(
-                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, auditedParameters);
-
         DurationFilterDto filter =
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1));
+        DurationFilterDto normalisedFilter =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31));
+
+        when(reportService.createDurationReport(filter))
+                .thenReturn(
+                        new ReportJobCreation(
+                                acknowledgement,
+                                DurationReportParameterAudit.from(normalisedFilter)));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, auditedParameters);
 
         controller.createDurationReport(filter);
 
-        verify(reportService)
-                .createDurationReport(
-                        org.mockito.ArgumentMatchers.argThat(
-                                normalisedFilter ->
-                                        LocalDate.of(2018, 5, 1)
-                                                        .equals(normalisedFilter.getDateFrom())
-                                                && LocalDate.of(2018, 5, 31)
-                                                        .equals(normalisedFilter.getDateTo())));
+        verify(reportService).createDurationReport(filter);
         Assertions.assertTrue(
                 auditedParameters
                         .get()

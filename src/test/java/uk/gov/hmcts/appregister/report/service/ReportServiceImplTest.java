@@ -21,12 +21,15 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
@@ -76,23 +79,25 @@ class ReportServiceImplTest {
                         userProvider,
                         jobMapper,
                         jdbcTemplate,
-                        reportJobAuditService);
+                        reportJobAuditService,
+                        new ReportFilterNormaliser());
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
                 new ActivityAuditFilterDto()
-                        .dateFrom(expectedDateFrom)
-                        .dateTo(expectedDateTo)
+                        .dateFrom(expectedDateTo)
+                        .dateTo(expectedDateFrom)
                         .activityTypes(List.of(ActivityType.BULK_APPLICATION_UPLOAD));
 
         try {
-            service.createActivityAuditReport(filter);
+            ReportJobCreation result = service.createActivityAuditReport(filter);
 
             ActivityAuditFilterDto readerFilter =
                     (ActivityAuditFilterDto)
                             ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -130,19 +135,21 @@ class ReportServiceImplTest {
                         userProvider,
                         jobMapper,
                         jdbcTemplate,
-                        reportJobAuditService);
+                        reportJobAuditService,
+                        new ReportFilterNormaliser());
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
-                new FeesReportFilterDto().dateFrom(expectedDateFrom).dateTo(expectedDateTo);
+                new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
-            service.createFeesReport(filter);
+            ReportJobCreation result = service.createFeesReport(filter);
 
             FeesReportFilterDto readerFilter =
                     (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(request -> request.getJobType() == JobType.FEES_REPORT),
@@ -179,19 +186,21 @@ class ReportServiceImplTest {
                         userProvider,
                         jobMapper,
                         jdbcTemplate,
-                        reportJobAuditService);
+                        reportJobAuditService,
+                        new ReportFilterNormaliser());
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
-                new DurationFilterDto().dateFrom(expectedDateFrom).dateTo(expectedDateTo);
+                new DurationFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
 
         try {
-            service.createDurationReport(filter);
+            ReportJobCreation result = service.createDurationReport(filter);
 
             DurationFilterDto readerFilter =
                     (DurationFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(
@@ -228,7 +237,8 @@ class ReportServiceImplTest {
                         userProvider,
                         jobMapper,
                         jdbcTemplate,
-                        reportJobAuditService);
+                        reportJobAuditService,
+                        new ReportFilterNormaliser());
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -290,5 +300,18 @@ class ReportServiceImplTest {
                     .lifeCycleEventPerformed(
                             new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
         }
+    }
+
+    private void assertAuditDateRange(
+            Auditable reportParameters, LocalDate expectedDateFrom, LocalDate expectedDateTo) {
+        List<AuditableData> auditData = reportParameters.extractAuditData(CrudEnum.READ);
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData(
+                                "report_parameters", "dateFrom", expectedDateFrom.toString())));
+        Assertions.assertTrue(
+                auditData.contains(
+                        new AuditableData(
+                                "report_parameters", "dateTo", expectedDateTo.toString())));
     }
 }

@@ -31,12 +31,9 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.job.service.JobService;
-import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
-import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
-import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
-import uk.gov.hmcts.appregister.report.service.ReportFilterNormaliser;
+import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
@@ -52,7 +49,6 @@ public class ReportController implements ReportsApi {
     private final JobMapper jobMapper;
     private final AuditOperationService auditService;
     private final List<AuditOperationLifecycleListener> auditLifecycleListeners;
-    private final ReportFilterNormaliser reportFilterNormaliser;
     private final UserProvider userProvider;
 
     @Override
@@ -62,19 +58,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_ACTIVITY_AUDIT_REPORT_AUDIT_EVENT,
                         unused -> {
-                            ActivityAuditFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(activityAuditFilterDto);
-                            ActivityAuditReportParameterAudit reportParameterAudit =
-                                    ActivityAuditReportParameterAudit.from(normalisedFilter);
-                            JobAcknowledgement createdJob =
-                                    reportService.createActivityAuditReport(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createActivityAuditReport(activityAuditFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            createdJob,
+                                            reportJobCreation.acknowledgement(),
                                             ReportJobAudit.created(
-                                                    createdJob,
+                                                    reportJobCreation.acknowledgement(),
                                                     userProvider.getUserId(),
-                                                    reportParameterAudit)));
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
@@ -88,19 +80,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
                         unused -> {
-                            FeesReportFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(feesReportFilterDto);
-                            FeesReportParameterAudit reportParameterAudit =
-                                    FeesReportParameterAudit.from(normalisedFilter);
-                            JobAcknowledgement createdJob =
-                                    reportService.createFeesReport(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createFeesReport(feesReportFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            createdJob,
+                                            reportJobCreation.acknowledgement(),
                                             ReportJobAudit.created(
-                                                    createdJob,
+                                                    reportJobCreation.acknowledgement(),
                                                     userProvider.getUserId(),
-                                                    reportParameterAudit)));
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
@@ -114,19 +102,15 @@ public class ReportController implements ReportsApi {
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
                         unused -> {
-                            DurationFilterDto normalisedFilter =
-                                    reportFilterNormaliser.normalise(durationFilterDto);
-                            DurationReportParameterAudit reportParameterAudit =
-                                    DurationReportParameterAudit.from(normalisedFilter);
-                            JobAcknowledgement createdJob =
-                                    reportService.createDurationReport(normalisedFilter);
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createDurationReport(durationFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
-                                            createdJob,
+                                            reportJobCreation.acknowledgement(),
                                             ReportJobAudit.created(
-                                                    createdJob,
+                                                    reportJobCreation.acknowledgement(),
                                                     userProvider.getUserId(),
-                                                    reportParameterAudit)));
+                                                    reportJobCreation.reportParameters())));
                         },
                         auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
 
