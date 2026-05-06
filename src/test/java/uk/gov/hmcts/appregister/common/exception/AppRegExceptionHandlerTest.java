@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.exception;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
@@ -24,6 +25,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
@@ -367,6 +369,47 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(400, problemDetail.getStatusCode().value());
         Assertions.assertEquals(
                 dateExContent, ((ProblemDetail) problemDetail.getBody()).getDetail());
+        Assertions.assertEquals(
+                CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
+                ((ProblemDetail) problemDetail.getBody()).getType());
+    }
+
+    @Test
+    void
+            givenHttpMessageNotReadableEnumExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
+                    throws Exception {
+        String content = "Not Readable Error";
+        String body =
+                """
+                {
+                  "entryIds": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
+                  "officials": [
+                    {
+                      "type": "JUDGE"
+                    }
+                  ]
+                }
+                """;
+
+        Exception cause =
+                Assertions.assertThrows(
+                        Exception.class,
+                        () -> new ObjectMapper().readValue(body, BulkOfficialsUpdateDto.class));
+
+        HttpMessageNotReadableException exception =
+                new HttpMessageNotReadableException(content, cause, null);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHttpMessageNotReadable(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatusCode.valueOf(400), problemDetail.getStatusCode());
+        Assertions.assertNotNull(problemDetail.getBody());
+        Assertions.assertTrue(problemDetail.getBody() instanceof ProblemDetail);
+
+        Assertions.assertEquals(400, problemDetail.getStatusCode().value());
+        Assertions.assertEquals(
+                "Problem setting value for officials[0].type. Accepted values are: MAGISTRATE, CLERK",
+                ((ProblemDetail) problemDetail.getBody()).getDetail());
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());

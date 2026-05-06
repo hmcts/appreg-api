@@ -232,6 +232,47 @@ class ApplicationEntryControllerBulkOfficialsTest extends AbstractApplicationEnt
                 AppListEntryError.TOO_MANY_COURT_OFFICIALS.getCode(), response);
     }
 
+    @Test
+    void givenUnknownOfficialType_whenReplaceOfficials_thenReturnsHelpfulEnumMessage()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(List.of(official("Mr", "Original", "UnknownType", OfficialType.CLERK)));
+        String payload =
+                """
+                {
+                  "entryIds": [
+                    "%s"
+                  ],
+                  "officials": [
+                    {
+                      "title": "Ms",
+                      "forename": "Invalid",
+                      "surname": "Official",
+                      "type": "JUDGE"
+                    }
+                  ]
+                }
+                """
+                        .formatted(entry.getId());
+
+        Response response =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + entry.getListId()
+                                        + "/entries/officials"),
+                        tokenGenerator.fetchTokenForRole(),
+                        payload);
+
+        response.then().statusCode(400);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getDetail())
+                .isEqualTo(
+                        "Problem setting value for officials[0].type. Accepted values are: MAGISTRATE, CLERK");
+    }
+
     private EntryGetDetailDto createEntry(List<Official> officials) throws Exception {
         Response response = createListEntryWithAllData(dto -> dto.setOfficials(officials));
         response.then().statusCode(201);

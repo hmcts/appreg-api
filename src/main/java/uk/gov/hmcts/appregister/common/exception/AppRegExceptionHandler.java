@@ -1,16 +1,18 @@
 package uk.gov.hmcts.appregister.common.exception;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
+
 import java.net.URI;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -26,6 +28,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 
 @Slf4j
 @RestControllerAdvice
@@ -183,18 +188,22 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        ValueInstantiationException valueInstantiationException =
+                findCause(ex, ValueInstantiationException.class);
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
         // if we have a date exception use that as it gives us a more specific error message
         if (dateException != null) {
             problemDetail.setDetail(dateException.getMessage());
+        } else if (isEnumInstantiationProblem(valueInstantiationException)) {
+            problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
-                                    invalidFormatException.getPath().size() > 0
-                                            ? invalidFormatException.getPath().get(0).getFieldName()
+                                    !invalidFormatException.getPath().isEmpty()
+                                            ? invalidFormatException.getPath().getFirst().getFieldName()
                                             : "unknown field"));
         } else {
             problemDetail.setDetail(
@@ -202,6 +211,43 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    private boolean isEnumInstantiationProblem(ValueInstantiationException exception) {
+        return exception != null
+                && exception.getType() != null
+                && exception.getType().getRawClass().isEnum();
+    }
+
+    private String getEnumInstantiationProblemDetail(ValueInstantiationException exception) {
+        Class<?> enumType = exception.getType().getRawClass();
+        String acceptedValues =
+                String.join(
+                        ", ",
+                        Arrays.stream(enumType.getEnumConstants()).map(String::valueOf).toList());
+
+        return "Problem setting value for %s. Accepted values are: %s"
+                .formatted(getJsonPath(exception), acceptedValues);
+    }
+
+    private String getJsonPath(ValueInstantiationException exception) {
+        if (exception.getPath().isEmpty()) {
+            return "unknown field";
+        }
+
+        StringBuilder path = new StringBuilder();
+        for (var reference : exception.getPath()) {
+            if (reference.getFieldName() != null) {
+                if (!path.isEmpty()) {
+                    path.append(".");
+                }
+                path.append(reference.getFieldName());
+            } else if (reference.getIndex() >= 0) {
+                path.append("[").append(reference.getIndex()).append("]");
+            }
+        }
+
+        return path.isEmpty() ? "unknown field" : path.toString();
     }
 
     @Override
