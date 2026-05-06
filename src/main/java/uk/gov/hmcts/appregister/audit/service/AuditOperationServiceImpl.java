@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +19,7 @@ import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 
 /**
  * Encapsulates a unit of work for the lifecycle of an auditable operation. Behaviour of each audit
@@ -151,12 +151,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      * @return The body as a string or defaulted on an marshalling error
      */
     private String getBodyAsString(Object body) {
-        try {
-            return mapper.writeValueAsString(body);
-        } catch (JsonProcessingException e) {
-            log.error("Problem marshalling the json response for auditing", e);
-            return "Problem marshalling the json response for auditing";
-        }
+        return ObfuscationUtil.getObfuscatedString(body);
     }
 
     /**
