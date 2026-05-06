@@ -12,7 +12,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.68'
-  id 'com.diffplug.spotless' version '8.2.1'
+  id 'com.diffplug.spotless' version '8.4.0'
   id 'org.openrewrite.rewrite' version 'latest.release'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '2.6'
