@@ -29,7 +29,6 @@ import uk.gov.hmcts.appregister.common.async.reader.JpaDataReader;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.async.writer.CsvWriter;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
-import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
@@ -233,23 +232,24 @@ public class ReportingControllerGetTest extends BaseIntegration {
             Assertions.assertTrue(responseStream.readAllBytes().length > 0);
         }
 
-        // Verify the GET audit row persisted for the requested report job UUID.
+        assertDownloadReportJobAuditRow("jobId", response.getJobId().getId().toString());
+        assertDownloadReportJobAuditRow("reportType", JobType.FEES_REPORT.toString());
+        assertDownloadReportJobAuditRow("fileReference", "report.csv");
+    }
+
+    private void assertDownloadReportJobAuditRow(String columnName, String value) {
         val persistedAuditRow =
                 dataAuditRepository.findAll().stream()
-                        .filter(row -> TableNames.ASYNC_JOBS.equals(row.getTableName()))
-                        .filter(row -> "id".equals(row.getColumnName()))
-                        .filter(
-                                row ->
-                                        response.getJobId()
-                                                .getId()
-                                                .toString()
-                                                .equals(row.getNewValue()))
+                        .filter(row -> "report_jobs".equals(row.getTableName()))
+                        .filter(row -> columnName.equals(row.getColumnName()))
+                        .filter(row -> value.equals(row.getNewValue()))
                         .findFirst()
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected an asynch_jobs.id audit row for GET"
-                                                        + " /reports/jobs/{jobId}/download"));
+                                                ("Expected a report_jobs.%s audit row for GET"
+                                                                + " /reports/jobs/{jobId}/download")
+                                                        .formatted(columnName)));
 
         Assertions.assertEquals("", persistedAuditRow.getOldValue());
         Assertions.assertEquals(

@@ -14,6 +14,10 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
+import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +26,8 @@ public class ReportServiceImpl implements ReportService {
     private final UserProvider userProvider;
     private final JobMapper jobMapper;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ReportJobAuditService reportJobAuditService;
+    private final ReportFilterNormaliser reportFilterNormaliser;
 
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
@@ -30,7 +36,8 @@ public class ReportServiceImpl implements ReportService {
     private int reportPageSize;
 
     @Override
-    public JobAcknowledgement createActivityAuditReport(ActivityAuditFilterDto filter) {
+    public ReportJobCreation createActivityAuditReport(ActivityAuditFilterDto filter) {
+        ActivityAuditFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
         ActivityAuditReportLifecycle lifecycle;
         try {
             lifecycle = new ActivityAuditReportLifecycle();
@@ -48,15 +55,18 @@ public class ReportServiceImpl implements ReportService {
         var response =
                 asyncJobService.startJob(
                         jobRequest,
-                        new ActivityAuditReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        new ActivityAuditReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
                         reportPageSize);
 
-        return jobMapper.toDto(response);
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, ActivityAuditReportParameterAudit.from(normalisedFilter));
     }
 
     @Override
-    public JobAcknowledgement createFeesReport(FeesReportFilterDto filter) {
+    public ReportJobCreation createFeesReport(FeesReportFilterDto filter) {
+        FeesReportFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
         FeesReportLifecycle lifecycle;
         try {
             lifecycle = new FeesReportLifecycle();
@@ -73,15 +83,18 @@ public class ReportServiceImpl implements ReportService {
         var response =
                 asyncJobService.startJob(
                         jobRequest,
-                        new FeesReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        new FeesReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
                         reportPageSize);
 
-        return jobMapper.toDto(response);
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, FeesReportParameterAudit.from(normalisedFilter));
     }
 
     @Override
-    public JobAcknowledgement createDurationReport(DurationFilterDto filter) {
+    public ReportJobCreation createDurationReport(DurationFilterDto filter) {
+        DurationFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
         DurationReportLifecycle lifecycle;
         try {
             lifecycle = new DurationReportLifecycle();
@@ -98,10 +111,16 @@ public class ReportServiceImpl implements ReportService {
         var response =
                 asyncJobService.startJob(
                         jobRequest,
-                        new DurationReportDataReader(jdbcTemplate, filter, schema),
-                        lifecycle,
+                        new DurationReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
                         reportPageSize);
 
-        return jobMapper.toDto(response);
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, DurationReportParameterAudit.from(normalisedFilter));
+    }
+
+    private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {
+        return new AuditedReportLifecycle<>(lifecycle, reportJobAuditService);
     }
 }

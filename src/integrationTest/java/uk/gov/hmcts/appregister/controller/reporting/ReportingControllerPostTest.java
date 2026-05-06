@@ -481,7 +481,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
         Assertions.assertTrue(
                 reportAuditRows(operation).stream()
                         .map(DataAudit::getTableName)
-                        .allMatch("report_parameters"::equals));
+                        .allMatch(
+                                tableName ->
+                                        "report_parameters".equals(tableName)
+                                                || "report_jobs".equals(tableName)));
     }
 
     private Collection<DataAudit> reportAuditRows(ReportAuditOperation operation) {

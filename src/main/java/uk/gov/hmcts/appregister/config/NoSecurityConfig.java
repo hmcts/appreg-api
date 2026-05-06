@@ -20,10 +20,16 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class NoSecurityConfig {
 
+    static final String LOCAL_DEBUG_MARKER = "appreg-local-debug-only.properties";
+
+    private static final String LOCAL_DEBUG_ONLY_MESSAGE =
+            "The 'nosecurity' profile can only be used with the local debug Gradle runtime";
+
     private static final String LOOPBACK_ONLY_MESSAGE =
             "The 'nosecurity' profile requires server.address to be a valid loopback address";
 
     public NoSecurityConfig(@Value("${server.address:127.0.0.1}") String serverAddress) {
+        verifyLocalDebugRuntime(Thread.currentThread().getContextClassLoader());
         InetAddress bindAddress = verifyLoopbackAddress(serverAddress);
         log.warn(
                 "The 'nosecurity' profile is active. Authentication is disabled and the API "
@@ -40,6 +46,14 @@ public class NoSecurityConfig {
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
+    }
+
+    static void verifyLocalDebugRuntime(ClassLoader classLoader) {
+        ClassLoader resourceLoader =
+                classLoader == null ? NoSecurityConfig.class.getClassLoader() : classLoader;
+        if (resourceLoader.getResource(LOCAL_DEBUG_MARKER) == null) {
+            throw new NoSecurityConfigurationException(LOCAL_DEBUG_ONLY_MESSAGE);
+        }
     }
 
     static InetAddress verifyLoopbackAddress(String serverAddress) {
