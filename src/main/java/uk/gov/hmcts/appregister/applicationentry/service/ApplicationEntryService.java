@@ -24,6 +24,8 @@ public interface ApplicationEntryService {
      */
     EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
 
+    EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
+
     /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,
      * officials are created if provided as well as applicant and respondants are created if

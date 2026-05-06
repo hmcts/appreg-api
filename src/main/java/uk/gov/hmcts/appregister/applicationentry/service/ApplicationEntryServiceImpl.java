@@ -184,6 +184,58 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
+        EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
+
+        log.debug("Started: Find Application Entry IDs for criteria: {}", safeFilterDto);
+
+        return auditService.processAudit(
+                null,
+                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                req -> {
+                    Status status =
+                            applicationListEntryMapStructMapper.toStatus(safeFilterDto.getStatus());
+
+                    List<UUID> entryIds =
+                            applicationListEntryRepository.searchForGetSummaryIds(
+                                    null,
+                                    safeFilterDto.getDate() != null,
+                                    safeFilterDto.getDate(),
+                                    safeFilterDto.getCourtCode(),
+                                    safeFilterDto.getOtherLocationDescription(),
+                                    safeFilterDto.getCjaCode(),
+                                    safeFilterDto.getApplicantOrganisation(),
+                                    safeFilterDto.getApplicantSurname(),
+                                    null,
+                                    safeFilterDto.getStandardApplicantCode(),
+                                    status,
+                                    safeFilterDto.getRespondentOrganisation(),
+                                    safeFilterDto.getRespondentSurname(),
+                                    null,
+                                    safeFilterDto.getRespondentPostcode(),
+                                    safeFilterDto.getAccountReference(),
+                                    null,
+                                    null,
+                                    null,
+                                    null);
+
+                    EntryIdsDto response = new EntryIdsDto();
+                    response.setIds(entryIds);
+
+                    log.debug(
+                            "Finished: Find Application Entry IDs for criteria: {}", safeFilterDto);
+
+                    AuditableResult<EntryIdsDto, ApplicationListEntry> result =
+                            new AuditableResult<>(
+                                    response,
+                                    applicationListEntryMapStructMapper.toApplicationListEntry(
+                                            safeFilterDto));
+
+                    return Optional.of(result);
+                });
+    }
+
+    @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {

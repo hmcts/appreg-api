@@ -94,6 +94,16 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
+    public ResponseEntity<EntryIdsDto> getEntryIds(EntryGetFilterDto filter) {
+        EntryIdsDto entryIds = applicationEntryService.getEntryIds(filter);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(entryIds);
+    }
+
+    @Override
     public ResponseEntity<EntryGetDetailDto> createApplicationListEntry(
             UUID listId, EntryCreateDto entryCreateDto) {
         // create the entry
