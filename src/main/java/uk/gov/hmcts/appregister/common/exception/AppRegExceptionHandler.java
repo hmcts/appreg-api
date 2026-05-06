@@ -203,7 +203,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
                                     !invalidFormatException.getPath().isEmpty()
-                                            ? invalidFormatException.getPath().getFirst().getFieldName()
+                                            ? invalidFormatException
+                                                    .getPath()
+                                                    .getFirst()
+                                                    .getFieldName()
                                             : "unknown field"));
         } else {
             problemDetail.setDetail(
