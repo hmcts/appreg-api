@@ -145,7 +145,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-29")),
     BULK_UPLOAD_PROCESSING_FAILED(
             DefaultErrorDetail.create(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30"));
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30")),
+    OFFICIALS_NOT_PROVIDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Officials must be provided", "ALE-31")),
+    OFFICIAL_TYPE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Official type must be provided", "ALE-32"));
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {

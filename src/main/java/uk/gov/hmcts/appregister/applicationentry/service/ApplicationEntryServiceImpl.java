@@ -22,9 +22,11 @@ import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveA
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
@@ -68,6 +70,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -98,6 +101,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
     private final MoveEntriesValidator moveEntriesValidator;
+
+    private final BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     // Services
     private final MatchService matchService;
@@ -393,6 +398,29 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Finish: Update Application Entry: {}", updateEntry);
 
         return getDetailDto;
+    }
+
+    @Override
+    @Transactional
+    public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
+
+        bulkUpdateOfficialsValidator.validate(
+                payload,
+                (req, success) -> {
+                    List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
+                    entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+
+                    for (ApplicationListEntry entry : entries) {
+                        replaceOfficialsForEntry(entry, req.data().getOfficials());
+                    }
+
+                    log.info(
+                            "Completed bulk officials replacement for {} entries in list {}",
+                            entries.size(),
+                            listId);
+                    return null;
+                });
     }
 
     /**
@@ -961,6 +989,34 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
 
         return officialList;
+    }
+
+    private void replaceOfficialsForEntry(
+            ApplicationListEntry entry, List<Official> replacementOfficials) {
+        List<AppListEntryOfficial> existingOfficials =
+                appListEntryOfficialRepository.getOfficialByEntryUuid(entry.getUuid());
+
+        for (AppListEntryOfficial existingOfficial : existingOfficials) {
+            auditService.processAudit(
+                    existingOfficial,
+                    AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY,
+                    req -> {
+                        appListEntryOfficialRepository.delete(existingOfficial);
+                        return Optional.empty();
+                    });
+        }
+
+        for (Official official : replacementOfficials) {
+            auditService.processAudit(
+                    AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
+                    req -> {
+                        AppListEntryOfficial createdOfficial =
+                                appListEntryOfficialRepository.save(
+                                        applicationListEntryEntityMapper.toOfficial(
+                                                official, entry));
+                        return Optional.of(new AuditableResult<>(null, createdOfficial));
+                    });
+        }
     }
 
     @Override
