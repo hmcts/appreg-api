@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.List;
 import java.util.Optional;
 import nl.altindag.log.LogCaptor;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,8 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
-import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
+import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
 @ExtendWith(MockitoExtension.class)
 class AuditOperationServiceImplTest {
@@ -46,7 +48,7 @@ class AuditOperationServiceImplTest {
 
     @Test
     void testAuditOperationFlowWithResponsePayload() throws Exception {
-        ApplicationCodeGetSummaryDto applicationCodeDto = new ApplicationCodeGetSummaryDto();
+        EntryCreateDto entryCreateDto = Instancio.create(EntryCreateDto.class);
 
         AuditOperationLifecycleListener listener =
                 Mockito.mock(AuditOperationLifecycleListener.class);
@@ -54,7 +56,7 @@ class AuditOperationServiceImplTest {
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 (req) -> {
                     // Simulate some processing and return a response
-                    return Optional.of(new AuditableResult<>(applicationCodeDto, null));
+                    return Optional.of(new AuditableResult<>(entryCreateDto, null));
                 },
                 listener);
 
@@ -75,7 +77,7 @@ class AuditOperationServiceImplTest {
         Assertions.assertEquals("No Correlation Id Found", completedOp.getMessageUuid());
         Assertions.assertEquals(10, completedOp.getMessageStatus().getStatus());
         Assertions.assertEquals(
-                objectMapper.writeValueAsString(applicationCodeDto),
+                ObfuscationUtil.getObfuscatedString(entryCreateDto),
                 completedOp.getMessageContent());
     }
 
