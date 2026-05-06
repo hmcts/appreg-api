@@ -13,7 +13,7 @@ plugins {
  */
   id 'uk.gov.hmcts.java' version '0.12.68'
   id 'com.diffplug.spotless' version '8.4.0'
-  id 'org.openrewrite.rewrite' version '7.18.0'
+  id 'org.openrewrite.rewrite' version '7.32.1'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '2.9'
 }
