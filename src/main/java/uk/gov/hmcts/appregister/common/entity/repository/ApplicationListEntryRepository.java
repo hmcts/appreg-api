@@ -282,7 +282,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     FROM AppListEntryResolution allResolutions
                                     JOIN allResolutions.resolutionCode anyResolutionCode
                                     WHERE allResolutions.applicationList = ale
-                                    AND anyResolutionCode.resultCode = :resulted
+                                    AND LOWER(anyResolutionCode.resultCode)
+                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
                             )
                     )
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
@@ -383,7 +384,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     FROM AppListEntryResolution allResolutions
                                     JOIN allResolutions.resolutionCode anyResolutionCode
                                     WHERE allResolutions.applicationList = ale
-                                    AND anyResolutionCode.resultCode = :resulted
+                                    AND LOWER(anyResolutionCode.resultCode)
+                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
                             )
                     )
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
