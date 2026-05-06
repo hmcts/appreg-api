@@ -103,6 +103,33 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @Test
+    void givenPartialResultedFilter_whenGetApplicationListEntryIds_thenReturnMatchingIds()
+            throws Exception {
+        final var list = createAndSaveList(Status.OPEN);
+
+        var matchingEntry = createEntry(list);
+        matchingEntry.setApplicationCode(createApplicationCode("APPIDSR1", true));
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+        saveResolutions(matchingEntry, "APPC");
+
+        var nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setApplicationCode(createApplicationCode("APPIDSR2", true));
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+        saveResolutions(nonMatchingEntry, "RC1");
+
+        EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
+        filter.setResulted("AP");
+
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+
+        Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
+        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+    }
+
+    @Test
     void givenNoMatches_whenGetApplicationListEntryIds_thenReturnEmptyList() throws Exception {
         UUID listId = getOpenApplicationListId();
 
