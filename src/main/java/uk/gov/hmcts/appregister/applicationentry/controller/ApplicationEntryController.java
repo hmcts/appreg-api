@@ -20,6 +20,7 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
@@ -263,6 +264,14 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                     AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
                     "Unable to read uploaded file");
         }
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteApplicationListEntry(UUID listId, UUID entryId) {
+        PayloadForDeleteEntry payload = new PayloadForDeleteEntry(listId, entryId);
+        applicationEntryService.deleteEntry(payload);
+
+        return ResponseEntity.noContent().build();
     }
 
     /**

@@ -47,12 +47,15 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.DeleteEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
@@ -248,6 +251,11 @@ public class ApplicationEntryServiceImplTest {
     private GetApplicationListEntriesValidator getApplicationListEntriesValidator =
             new DummyGetApplicationListEntriesValidator(applicationListRepository);
 
+    @Spy
+    private DummyDeleteEntryValidator deleteEntryValidator =
+            new DummyDeleteEntryValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
     @BeforeEach
     void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
@@ -286,7 +294,8 @@ public class ApplicationEntryServiceImplTest {
                         getEntryValidator,
                         getApplicationListEntriesValidator,
                         clock,
-                        businessDateProvider);
+                        businessDateProvider,
+                        deleteEntryValidator);
     }
 
     @Test
@@ -318,7 +327,8 @@ public class ApplicationEntryServiceImplTest {
                         getEntryValidator,
                         getApplicationListEntriesValidator,
                         clock,
-                        businessDateProvider);
+                        businessDateProvider,
+                        deleteEntryValidator);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1854,6 +1864,23 @@ public class ApplicationEntryServiceImplTest {
                 .isEqualTo(org.springframework.http.HttpStatus.BAD_REQUEST);
     }
 
+    @Test
+    void deleteEntrySuccess() {
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+
+        // set the success payload that the validator has validated.
+        deleteEntryValidator.success = new DeleteEntryValidationSuccess(applicationListEntry);
+
+        // now make the call to delete
+        PayloadForDeleteEntry payloadForDeleteEntry =
+                new PayloadForDeleteEntry(UUID.randomUUID(), UUID.randomUUID());
+        service.deleteEntry(payloadForDeleteEntry);
+
+        // ensure that we called save and that we set the soft deleted state to true
+        Assertions.assertTrue(applicationListEntry.isDeleted());
+        verify(applicationListEntryRepository, times(1)).save(eq(applicationListEntry));
+    }
+
     class DummyCreateApplicationEntryValidator extends CreateApplicationEntryValidator {
 
         public DummyCreateApplicationEntryValidator(
@@ -2030,6 +2057,24 @@ public class ApplicationEntryServiceImplTest {
                         createSupplier) {
 
             return createSupplier.apply(payload, success);
+        }
+    }
+
+    class DummyDeleteEntryValidator extends DeleteApplicationListEntryValidator {
+        private DeleteEntryValidationSuccess success;
+
+        public DummyDeleteEntryValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListRepository, applicationListEntryRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForDeleteEntry validatable,
+                BiFunction<PayloadForDeleteEntry, DeleteEntryValidationSuccess, R>
+                        validateSuccess) {
+            return validateSuccess.apply(validatable, success);
         }
     }
 }

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import java.util.UUID;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -103,4 +104,13 @@ public interface ApplicationEntryService {
      *     or the associated target ApplicationList entity is not found
      */
     void move(UUID listId, MoveEntriesDto moveEntriesDto);
+
+    /**
+     * Soft deletes an application entry.
+     *
+     * @param idToDelete The id to delete. This contains the list if and the entry id.
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
+     *     or the associated target ApplicationList entity is not found
+     */
+    void deleteEntry(PayloadForDeleteEntry idToDelete);
 }
