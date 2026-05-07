@@ -7,8 +7,10 @@ import static uk.gov.hmcts.appregister.common.security.RoleEnum.ADMIN;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
@@ -21,14 +23,18 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
 import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
@@ -39,6 +45,222 @@ import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 public class ApplicationEntryControllerSearchTest extends AbstractApplicationEntryCrudTest {
+
+    @Test
+    void givenExistingList_whenGetApplicationListEntryIdsWithoutFilters_thenReturnAllIds()
+            throws Exception {
+        UUID listId = getOpenApplicationListId();
+
+        EntryPage page = executeGetEntries(listId, 100, 0).as(EntryPage.class);
+        EntryIdsDto response = executeListEntryIdsSearch(createAdminToken(), listId, null);
+
+        Assertions.assertNotNull(response.getIds());
+        List<UUID> expectedIds = page.getContent().stream().map(EntryGetSummaryDto::getId).toList();
+        Assertions.assertEquals(expectedIds.size(), response.getIds().size());
+        Assertions.assertTrue(response.getIds().containsAll(expectedIds));
+    }
+
+    @Test
+    void givenMatchingFilter_whenGetApplicationListEntryIds_thenReturnOnlyMatchingIds()
+            throws Exception {
+        final var list = createAndSaveList(Status.OPEN);
+
+        var matchingApplicant = new NameAddressTestData().someOrganisation();
+        matchingApplicant.setCode(NameAddressCodeType.APPLICANT);
+        matchingApplicant.setName("Filter Match Org");
+        matchingApplicant = persistance.save(matchingApplicant);
+
+        var nonMatchingApplicant = new NameAddressTestData().someOrganisation();
+        nonMatchingApplicant.setCode(NameAddressCodeType.APPLICANT);
+        nonMatchingApplicant.setName("Different Org");
+        nonMatchingApplicant = persistance.save(nonMatchingApplicant);
+
+        var applicationCode = createApplicationCode("APPIDSFLT", true);
+
+        var matchingEntry = createEntry(list);
+        matchingEntry.setApplicationCode(applicationCode);
+        matchingEntry.setAnamedaddress(matchingApplicant);
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+        applicationCode =
+                createApplicationCodeCopy(
+                        applicationCodeRepository.findById(applicationCode.getId()).orElseThrow());
+
+        var nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setApplicationCode(applicationCode);
+        nonMatchingEntry.setAnamedaddress(nonMatchingApplicant);
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+
+        EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
+        filter.setApplicantName("Match Org");
+
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+
+        Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
+        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+    }
+
+    @Test
+    void givenPartialResultedFilter_whenGetApplicationListEntryIds_thenReturnMatchingIds()
+            throws Exception {
+        final var list = createAndSaveList(Status.OPEN);
+
+        var matchingEntry = createEntry(list);
+        matchingEntry.setApplicationCode(createApplicationCode("APPIDSR1", true));
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+        saveResolutions(matchingEntry, "APPC");
+
+        var nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setApplicationCode(createApplicationCode("APPIDSR2", true));
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+        saveResolutions(nonMatchingEntry, "RC1");
+
+        EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
+        filter.setResulted("AP");
+
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+
+        Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
+        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+    }
+
+    @Test
+    void givenNoMatches_whenGetApplicationListEntryIds_thenReturnEmptyList() throws Exception {
+        UUID listId = getOpenApplicationListId();
+
+        EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
+        filter.setApplicantName("definitely-no-match-for-entry-ids");
+
+        EntryIdsDto response = executeListEntryIdsSearch(createAdminToken(), listId, filter);
+
+        Assertions.assertNotNull(response.getIds());
+        Assertions.assertTrue(response.getIds().isEmpty());
+    }
+
+    @Test
+    void givenMoreThanOnePageOfMatches_whenGetApplicationListEntryIds_thenReturnAllIds()
+            throws Exception {
+        final var list = createAndSaveList(Status.OPEN);
+        List<UUID> expectedIds = new ArrayList<>();
+        var applicationCode = createApplicationCode("APPIDSMUL", true);
+
+        for (short i = 1; i <= 12; i++) {
+            var entry = createEntry(list);
+            entry.setApplicationCode(applicationCode);
+            entry.setSequenceNumber(i);
+            entry.setAccountNumber("MULTIPAGE-" + i);
+            entry = persistance.save(entry);
+            applicationCode =
+                    createApplicationCodeCopy(
+                            applicationCodeRepository
+                                    .findById(applicationCode.getId())
+                                    .orElseThrow());
+            expectedIds.add(entry.getUuid());
+        }
+
+        EntryPage pagedResponse =
+                restAssuredClient
+                        .executeGetRequestWithPaging(
+                                Optional.of(10),
+                                Optional.of(0),
+                                List.of(),
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                                createAdminToken().fetchTokenForRole(),
+                                rs -> rs.queryParam("accountReference", "MULTIPAGE-"),
+                                new OpenApiPageMetaData())
+                        .as(EntryPage.class);
+
+        EntryApplicationListGetFilterDto filter = new EntryApplicationListGetFilterDto();
+        filter.setAccountReference("MULTIPAGE-");
+
+        EntryIdsDto response =
+                executeListEntryIdsSearch(createAdminToken(), list.getUuid(), filter);
+
+        Assertions.assertEquals(10, pagedResponse.getContent().size());
+        Assertions.assertEquals(12, pagedResponse.getTotalElements());
+        Assertions.assertEquals(expectedIds.size(), response.getIds().size());
+        Assertions.assertTrue(response.getIds().containsAll(expectedIds));
+    }
+
+    @Test
+    void givenExistingEntries_whenGetEntryIdsWithoutFilters_thenReturnAllIds() throws Exception {
+        EntryPage page = executeSearch(createAdminToken(), null, 100);
+        EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), null);
+
+        Assertions.assertNotNull(response.getIds());
+        List<UUID> expectedIds = page.getContent().stream().map(EntryGetSummaryDto::getId).toList();
+        Assertions.assertEquals(expectedIds.size(), response.getIds().size());
+        Assertions.assertTrue(response.getIds().containsAll(expectedIds));
+    }
+
+    @Test
+    void givenMatchingGlobalFilter_whenGetEntryIds_thenReturnOnlyMatchingIds() throws Exception {
+        ApplicationList matchingList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry matchingEntry = createEntry(matchingList);
+        matchingEntry.setAccountNumber("GLOB-ID-MATCH");
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationList nonMatchingList = createAndSaveList(Status.OPEN);
+        ApplicationListEntry nonMatchingEntry = createEntry(nonMatchingList);
+        nonMatchingEntry.setAccountNumber("GLOB-ID-OTHER");
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("GLOB-ID-MATCH");
+
+        EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), filter);
+
+        Assertions.assertEquals(List.of(matchingEntry.getUuid()), response.getIds());
+        Assertions.assertFalse(response.getIds().contains(nonMatchingEntry.getUuid()));
+    }
+
+    @Test
+    void givenNoGlobalMatches_whenGetEntryIds_thenReturnEmptyList() throws Exception {
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("NO-GLOB-MATCH");
+
+        EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), filter);
+
+        Assertions.assertNotNull(response.getIds());
+        Assertions.assertTrue(response.getIds().isEmpty());
+    }
+
+    @Test
+    void givenMoreThanOnePageOfGlobalMatches_whenGetEntryIds_thenReturnAllIds() throws Exception {
+        List<UUID> expectedIds = new ArrayList<>();
+        ApplicationCode applicationCode = createApplicationCode("GLOBIDS", true);
+
+        for (int i = 1; i <= 12; i++) {
+            ApplicationList list = createAndSaveList(Status.OPEN);
+            ApplicationListEntry entry = createEntry(list);
+            entry.setApplicationCode(applicationCode);
+            entry.setAccountNumber("GLOB-MULTI");
+            entry = persistance.save(entry);
+            applicationCode =
+                    createApplicationCodeCopy(
+                            applicationCodeRepository
+                                    .findById(applicationCode.getId())
+                                    .orElseThrow());
+            expectedIds.add(entry.getUuid());
+        }
+
+        EntryGetFilterDto filter = new EntryGetFilterDto();
+        filter.setAccountReference("GLOB-MULTI");
+
+        EntryPage pagedResponse = executeSearch(createAdminToken(), filter, 10);
+        EntryIdsDto response = executeGlobalEntryIdsSearch(createAdminToken(), filter);
+
+        Assertions.assertEquals(10, pagedResponse.getContent().size());
+        Assertions.assertEquals(12, pagedResponse.getTotalElements());
+        Assertions.assertEquals(expectedIds.size(), response.getIds().size());
+        Assertions.assertTrue(response.getIds().containsAll(expectedIds));
+    }
 
     @StabilityTest
     public void testGetApplicationEntriesSearch() throws Exception {
@@ -620,6 +842,69 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                 .body("errors.respondentPostcode", Matchers.containsString("must match"));
     }
 
+    @Test
+    public void
+            givenPartialRespondentPostcodeMatch_whenGetApplicationEntries_thenReturnMatchingEntry()
+                    throws Exception {
+        ApplicationList matchingList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(matchingList);
+        setRespondentName(matchingEntry, "Mr", "Partial", "Match");
+        matchingEntry.getRnameaddress().setPostcode("SW1A 1AA");
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationList nonMatchingList = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(nonMatchingList);
+        setRespondentName(nonMatchingEntry, "Ms", "Partial", "Miss");
+        nonMatchingEntry.getRnameaddress().setPostcode("XY9 8ZZ");
+        persistance.save(nonMatchingEntry);
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(maxPageSize),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "sw1"));
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void givenPartialRespondentPostcodeMiss_whenGetApplicationEntries_thenReturnEmptyPage()
+            throws Exception {
+        ApplicationList list = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry entry = createEntry(list);
+        setRespondentName(entry, "Mr", "Partial", "Miss");
+        entry.getRnameaddress().setPostcode("SW1A 1AA");
+        persistance.save(entry);
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(maxPageSize),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "ZZ9"));
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertNull(page.getContent());
+    }
+
     @StabilityTest
     public void givenValidRequest_whenSortAccountNumber_thenReturn200() throws Exception {
         // set up the data
@@ -930,5 +1215,133 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         "",
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getType().name(),
                         AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST.getEventName()));
+    }
+
+    private EntryIdsDto executeGlobalEntryIdsSearch(
+            TokenGenerator tokenGenerator, EntryGetFilterDto filterDto) throws Exception {
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/ids"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> {
+                            if (filterDto == null) {
+                                return rs;
+                            }
+                            if (filterDto.getDate() != null) {
+                                rs = rs.queryParam("date", filterDto.getDate());
+                            }
+                            if (filterDto.getCourtCode() != null) {
+                                rs = rs.queryParam("courtCode", filterDto.getCourtCode());
+                            }
+                            if (filterDto.getOtherLocationDescription() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "otherLocationDescription",
+                                                filterDto.getOtherLocationDescription());
+                            }
+                            if (filterDto.getCjaCode() != null) {
+                                rs = rs.queryParam("cjaCode", filterDto.getCjaCode());
+                            }
+                            if (filterDto.getApplicantOrganisation() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "applicantOrganisation",
+                                                filterDto.getApplicantOrganisation());
+                            }
+                            if (filterDto.getApplicantSurname() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "applicantSurname",
+                                                filterDto.getApplicantSurname());
+                            }
+                            if (filterDto.getStandardApplicantCode() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "standardApplicantCode",
+                                                filterDto.getStandardApplicantCode());
+                            }
+                            if (filterDto.getStatus() != null) {
+                                rs = rs.queryParam("status", filterDto.getStatus());
+                            }
+                            if (filterDto.getRespondentOrganisation() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "respondentOrganisation",
+                                                filterDto.getRespondentOrganisation());
+                            }
+                            if (filterDto.getRespondentSurname() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "respondentSurname",
+                                                filterDto.getRespondentSurname());
+                            }
+                            if (filterDto.getRespondentPostcode() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "respondentPostcode",
+                                                filterDto.getRespondentPostcode());
+                            }
+                            if (filterDto.getAccountReference() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "accountReference",
+                                                filterDto.getAccountReference());
+                            }
+                            return rs;
+                        });
+
+        response.then().statusCode(200);
+        return response.as(EntryIdsDto.class);
+    }
+
+    private EntryIdsDto executeListEntryIdsSearch(
+            TokenGenerator tokenGenerator, UUID listId, EntryApplicationListGetFilterDto filterDto)
+            throws Exception {
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/ids"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> {
+                            if (filterDto == null) {
+                                return rs;
+                            }
+                            if (filterDto.getApplicantName() != null) {
+                                rs = rs.queryParam("applicantName", filterDto.getApplicantName());
+                            }
+                            if (filterDto.getRespondentName() != null) {
+                                rs = rs.queryParam("respondentName", filterDto.getRespondentName());
+                            }
+                            if (filterDto.getRespondentPostcode() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "respondentPostcode",
+                                                filterDto.getRespondentPostcode());
+                            }
+                            if (filterDto.getAccountReference() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "accountReference",
+                                                filterDto.getAccountReference());
+                            }
+                            if (filterDto.getApplicationTitle() != null) {
+                                rs =
+                                        rs.queryParam(
+                                                "applicationTitle",
+                                                filterDto.getApplicationTitle());
+                            }
+                            if (filterDto.getFeeRequired() != null) {
+                                rs = rs.queryParam("feeRequired", filterDto.getFeeRequired());
+                            }
+                            if (filterDto.getResulted() != null) {
+                                rs = rs.queryParam("resulted", filterDto.getResulted());
+                            }
+                            if (filterDto.getSequenceNumber() != null) {
+                                rs = rs.queryParam("sequenceNumber", filterDto.getSequenceNumber());
+                            }
+                            return rs;
+                        });
+
+        response.then().statusCode(200);
+        return response.as(EntryIdsDto.class);
     }
 }

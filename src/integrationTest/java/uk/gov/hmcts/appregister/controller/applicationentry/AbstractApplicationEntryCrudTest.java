@@ -80,6 +80,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
     protected static final String WEB_CONTEXT = "application-list-entries";
     protected static final String CREATE_ENTRY_CONTEXT = "application-lists";
+    protected static final String DELETE_ENTRY_CONTEXT = "application-lists/%s/entries/%s";
 
     protected static final String WEB_CONTEXT_UPDATE_CLOSED_ENTRY =
             "application-lists/%s/entries/closed/%s";

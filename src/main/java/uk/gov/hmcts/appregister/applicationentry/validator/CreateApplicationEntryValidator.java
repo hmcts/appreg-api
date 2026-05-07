@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -26,6 +27,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
  * Validates the dto for an application entry create.
  */
 @Component
+@Primary
 @Slf4j
 public class CreateApplicationEntryValidator
         extends AbstractApplicationEntryValidator<

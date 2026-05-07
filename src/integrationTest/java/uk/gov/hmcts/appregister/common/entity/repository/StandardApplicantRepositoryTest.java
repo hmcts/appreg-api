@@ -220,6 +220,32 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testSearchFiltersIndividualByCombinedForenameAndSurname() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    LocalDate activeDate = LocalDate.now();
+
+                    var page =
+                            repository.search(
+                                    "APP001",
+                                    "John Smith",
+                                    null,
+                                    null,
+                                    null,
+                                    activeDate,
+                                    PageRequest.of(0, 10));
+
+                    assertEquals(1, page.getTotalElements());
+
+                    StandardApplicant standardApplicant =
+                            page.getContent().getFirst().getStandardApplicant();
+                    assertEquals("APP001", standardApplicant.getApplicantCode());
+                    assertEquals("John", standardApplicant.getApplicantForename1());
+                    assertEquals("Smith", standardApplicant.getApplicantSurname());
+                });
+    }
+
+    @Test
     public void testSearchFiltersByAddressLine1AndDateRange() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {

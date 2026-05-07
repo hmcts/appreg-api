@@ -277,7 +277,7 @@ public class DataConstraintControllerTest extends BaseIntegration {
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 problemDetail.getType());
         Assertions.assertEquals(
-                "Type conversion problem. Something in the payload is not correct",
+                "Problem setting value for status. Accepted values are: OPEN, CLOSED",
                 problemDetail.getDetail());
     }
 
