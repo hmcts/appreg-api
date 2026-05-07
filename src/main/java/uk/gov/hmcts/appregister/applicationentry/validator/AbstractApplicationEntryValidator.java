@@ -438,7 +438,7 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // check that the fee status payload make sense according to the application code
         YesOrNo yesOrNo = applicationCode.getFeeDue();
-        if (yesOrNo == YesOrNo.YES && feeStatuses.isEmpty()) {
+        if (isFeeStatusRequired(applicationCode, validatable) && feeStatuses.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
@@ -460,6 +460,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         }
 
         return feeToReturn;
+    }
+
+    protected boolean isFeeStatusRequired(ApplicationCode applicationCode, T validatable) {
+        return applicationCode.getFeeDue() == YesOrNo.YES;
     }
 
     private LocalDate currentBusinessDate() {

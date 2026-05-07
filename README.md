@@ -92,6 +92,17 @@ Set the environment variable ALL_FILTER_ENABLED=true and then run the gradle bui
 NOTE: This will take a long time to run e.g. when we have 13 filters we run the tests 1000s
 of times for each combination.
 
+- **Enable P6Spy SQL logging**
+  Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only
+  `nosecurity` and `p6spy` Spring profiles without including them in the normal release build.
+  ```bash
+  ./gradlew bootRunLocalDev
+  ```
+  To override the active profiles, pass `springProfiles`. For example:
+  ```bash
+  ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
+  ```
+
 ## Running Sonarqube locally
 
 1. Ensure you have Docker installed and running

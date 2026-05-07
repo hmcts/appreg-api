@@ -1125,6 +1125,31 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void testGetApplicationListEntriesWithInvalidFeeRequiredReturnsBooleanMessage()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?feeRequired=maybe"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"feeRequired":"Please ensure feeRequired is a valid boolean value"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
     public void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
             throws Exception {
         assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
@@ -1239,6 +1264,42 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(1, page.getContent().size());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getId());
         assertResultCodes(page.getContent().getFirst(), "RC1", "RC2");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByPartialResultCode() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(list);
+        matchingEntry.setApplicationCode(createApplicationCode("APP002", true));
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+        saveResolutions(matchingEntry, "APPC");
+
+        ApplicationListEntry nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setApplicationCode(createApplicationCode("APP003", true));
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+        saveResolutions(nonMatchingEntry, "RC1");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("sequenceNumber,asc"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("resulted", "AP"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+        assertResultCodes(page.getContent().getFirst(), "APPC");
     }
 
     @Test
