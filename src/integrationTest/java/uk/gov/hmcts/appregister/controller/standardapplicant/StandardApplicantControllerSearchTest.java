@@ -1023,6 +1023,58 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithFullNameFilterForIndividual_thenReturn200()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        int pageSize = 1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP001"),
+                                Optional.of("John Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+
+        StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
+        assertEquals("APP001", firstEntry.getCode());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "John Smith",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
     @StabilityTest
     public void
             givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()

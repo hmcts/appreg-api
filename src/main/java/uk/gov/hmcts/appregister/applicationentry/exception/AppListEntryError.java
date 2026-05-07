@@ -97,59 +97,79 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST,
                     "Payment reference must not be provided when payment status is DUE",
                     "ALE-19")),
+  
     ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Account number is required for EF applications",
                     "ALE-20")),
+  
     BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Respondent and Bulk respondent number are mutually exclusive",
                     "ALE-21")),
+  
     RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Either respondent details or number of respondents must be provided",
                     "ALE-22")),
+  
     LODGEMENT_DATE_CANNOT_BE_IN_FUTURE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Lodgement date cannot be in the future", "ALE-23")),
+  
     TOO_MANY_MAGISTRATES(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "An application entry can include at most 3 Magistrates",
                     "ALE-24")),
+  
     TOO_MANY_COURT_OFFICIALS(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "An application entry can include at most 1 Court Official",
                     "ALE-25")),
+  
     BULK_UPLOAD_FILE_MISSING(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Bulk upload file must be provided and not empty",
                     "ALE-26")),
+  
     BULK_UPLOAD_INVALID_FILE_FORMAT(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Uploaded file must be a valid CSV file", "ALE-27")),
+  
     BULK_UPLOAD_ROW_VALIDATION_FAILED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "One or more rows failed validation during bulk upload",
                     "ALE-28")),
+  
     BULK_UPLOAD_EMPTY_FILE(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-29")),
+  
     BULK_UPLOAD_PROCESSING_FAILED(
             DefaultErrorDetail.create(
                     HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30")),
+  
+    OFFICIALS_NOT_PROVIDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Officials must be provided", "ALE-31")),
+  
+    OFFICIAL_TYPE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Official type must be provided", "ALE-32")),
+  
     DELETION_ALREADY_IN_DELETABLE_STATE(
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "The application list is not in a deletable state",
-                    "ALE-31"));
-
+                    "ALE-33"));
+  
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {
