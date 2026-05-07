@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "9a7ae3cc-dba0-4126-ab33-da71654351e8",
+    "_postman_id": "ef42f47c-e986-4ee8-ab19-83a8c9ff779e",
     "name": "App Registration Copy",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-9a7ae3cc-dba0-4126-ab33-da71654351e8?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-ef42f47c-e986-4ee8-ab19-83a8c9ff779e?source=collection_link"
   },
   "item": [
     {
@@ -757,7 +757,7 @@
                 {
                   "key": "file",
                   "type": "file",
-                  "src": ""
+                  "value": ""
                 }
               ]
             },
@@ -815,7 +815,12 @@
                 "type": "text"
               }
             ],
-            "url": "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}"
+            "url": {
+              "raw": "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}",
+              "host": [
+                "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}"
+              ]
+            }
           },
           "response": []
         },
@@ -971,6 +976,26 @@
                 "{{APP_LIST_ID}}",
                 "entries",
                 "move"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Entry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "{{CREATED_ENTRY_ID}}"
               ]
             }
           },

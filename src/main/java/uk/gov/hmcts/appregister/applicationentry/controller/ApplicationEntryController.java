@@ -20,6 +20,7 @@ import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEn
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
@@ -37,6 +38,7 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -209,6 +211,14 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
+    public ResponseEntity<Void> replaceApplicationListEntryOfficials(
+            UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
     public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(
             UUID listId, MultipartFile file) {
 
@@ -254,6 +264,14 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                     AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
                     "Unable to read uploaded file");
         }
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteApplicationListEntry(UUID listId, UUID entryId) {
+        PayloadForDeleteEntry payload = new PayloadForDeleteEntry(listId, entryId);
+        applicationEntryService.deleteEntry(payload);
+
+        return ResponseEntity.noContent().build();
     }
 
     /**

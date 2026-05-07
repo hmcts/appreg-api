@@ -96,14 +96,15 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
                   '%'
               ) ESCAPE '\\'
           )
-          AND (:name IS NULL
-                  OR (((c.name IS NOT NULL AND LOWER(c.name) LIKE CONCAT('%',
-                          LOWER(CAST(:name AS string)), '%')  ESCAPE '\\')
-                  OR (c.applicantForename1 IS NOT NULL AND LOWER(c.applicantForename1)
-                          ILIKE CONCAT('%', LOWER(CAST(:name AS string)), '%')  ESCAPE '\\'))
-                  OR (c.applicantSurname IS NOT NULL
-                          AND LOWER(c.applicantSurname) LIKE CONCAT('%',
-                                   LOWER(CAST(:name AS string)), '%')  ESCAPE '\\')))
+          AND (
+              :name IS NULL
+              OR (
+                  c.name IS NOT NULL
+                  AND LOWER(c.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR LOWER(FUNCTION('concat_ws', ' ', c.applicantForename1, c.applicantSurname))
+                  LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+          )
         """)
     Page<StandardApplicantEnrichedProjection> search(
             @LikeParam @Param("code") String code,
