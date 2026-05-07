@@ -24,8 +24,8 @@ public class JacksonConfig {
      * Registers Jackson modules required for OpenAPI-generated models. JsonNullableModule: supports
      * fields of type JsonNullable
      *
-     * <p>This method supports the ability for our rest API to use strings of the format "H:mm" when
-     * serializing and deserializing LocalTime fields.
+     * <p>This method supports the ability for our rest API to use strings of the format "HH:mm"
+     * when serializing and deserializing LocalTime fields.
      */
     @Bean
     Jackson2ObjectMapperBuilderCustomizer jsonNullableCustomizer() {

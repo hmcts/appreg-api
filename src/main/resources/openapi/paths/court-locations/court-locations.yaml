@@ -14,12 +14,14 @@ get:
         type: string
         maxLength: 100
       description: Filter by court name (contains, case-insensitive).
+      example: "Cardiff Crown Court Set 1"
     - in: query
       name: code
       description: Filter by Court Location code (contains, case-insensitive).
       schema:
         type: string
         maxLength: 10
+      example: "MCJC002"
     - in: query
       name: pageNumber
       schema: { type: integer, format: int32, minimum: 0, default: 0 }

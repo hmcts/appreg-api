@@ -4,12 +4,14 @@ import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_AUTH_REQUIRE
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ERR_FORBIDDEN;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.OPENAPI;
+import static uk.gov.hmcts.appregister.config.SecurityConstants.REST_IMPLEMENTATION_HEALTH;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_CLAIM;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.ROLE_PREFIX;
 import static uk.gov.hmcts.appregister.config.SecurityConstants.SWAGGER_UI;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -20,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * Configuration for securing the API using Spring Security and JWTs.
  */
 @Configuration
+@Profile("!nosecurity")
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -35,7 +38,11 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(SWAGGER_UI, OPENAPI, HEALTH)
+                                auth.requestMatchers(
+                                                SWAGGER_UI,
+                                                OPENAPI,
+                                                HEALTH,
+                                                REST_IMPLEMENTATION_HEALTH)
                                         .permitAll()
                                         .anyRequest()
                                         .authenticated())

@@ -6,12 +6,14 @@ parameters:
     schema:
       type: string
       maxLength: 10
+    example: "SA"
   - in: query
     name: date
     required: true
     schema: { type: string, format: date }
     description: |
       ISO date (yyyy-MM-dd) on which the Standard Applicant must be valid.
+    example: "2021-01-01"
 get:
   operationId: getStandardApplicantByCodeAndDate
   tags: [standard-applicants]

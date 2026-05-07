@@ -24,7 +24,7 @@ properties:
   respondent:
     description: Name of the person or organisation responding to the application.
     example: "Jane Smith"
-    $ref: '../participants/applicant.yaml'
+    $ref: '../participants/respondent.yaml'
 
   applicationTitle:
     type: string
@@ -56,5 +56,22 @@ properties:
     description: Single date of the Application List.
     example: "2025-10-07"
 
+  sequenceNumber:
+    type: integer
+    description: The sequence number of the application in the list.
+    example: 1
+
+  resulted:
+    type: array
+    description: List of result codes applied to this application list entry.
+    items:
+      $ref: "../result-codes/result-code-get-summary-dto.yaml"
+
   status:
     $ref: '../application-lists/application-list-status.yaml'
+
+  accountNumber:
+    type: string
+    maxLength: 20
+    nullable: true
+    example: "ACC-001"

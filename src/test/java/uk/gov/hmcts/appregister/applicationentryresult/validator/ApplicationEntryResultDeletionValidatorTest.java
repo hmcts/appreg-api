@@ -12,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
@@ -21,7 +20,9 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationEntryResultDeletionValidatorTest {
@@ -29,6 +30,8 @@ class ApplicationEntryResultDeletionValidatorTest {
     @Mock private ApplicationListRepository applicationListRepository;
     @Mock private ApplicationListEntryRepository applicationListEntryRepository;
     @Mock private AppListEntryResolutionRepository appListEntryResultRepository;
+    @Mock private ResolutionCodeRepository resolutionCodeRepository;
+    @Mock private BusinessDateProvider businessDateProvider;
 
     @InjectMocks private ApplicationEntryResultDeletionValidator validator;
 
@@ -44,7 +47,7 @@ class ApplicationEntryResultDeletionValidatorTest {
         ApplicationListEntry entry = new ApplicationListEntry();
         AppListEntryResolution entryResult = new AppListEntryResolution();
 
-        when(applicationListRepository.findByUuid(eq(listId)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))
@@ -63,13 +66,14 @@ class ApplicationEntryResultDeletionValidatorTest {
         UUID entryId = UUID.randomUUID();
         UUID resultId = UUID.randomUUID();
 
-        when(applicationListRepository.findByUuid(eq(listId))).thenReturn(Optional.empty());
+        when(applicationListRepository.findByUuidIncludingDelete(eq(listId)))
+                .thenReturn(Optional.empty());
 
         ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
         AppRegistryException ex =
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(args));
         Assertions.assertEquals(
-                ApplicationListEntryResultError.ENTRY_RESULT_LIST_NOT_FOUND, ex.getCode());
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST, ex.getCode());
     }
 
     @Test
@@ -80,16 +84,15 @@ class ApplicationEntryResultDeletionValidatorTest {
 
         ApplicationList applicationList = mock(ApplicationList.class);
         when(applicationList.isOpen()).thenReturn(false);
-        when(applicationList.getUuid()).thenReturn(listId);
 
-        when(applicationListRepository.findByUuid(eq(listId)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
 
         ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
         AppRegistryException ex =
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(args));
         Assertions.assertEquals(
-                ApplicationListEntryResultError.INVALID_ENTRY_RESULT_LIST_STATUS, ex.getCode());
+                ApplicationListEntryResultError.APPLICATION_LIST_STATE_IS_INCORRECT, ex.getCode());
     }
 
     @Test
@@ -101,7 +104,7 @@ class ApplicationEntryResultDeletionValidatorTest {
         ApplicationList applicationList = mock(ApplicationList.class);
         when(applicationList.isOpen()).thenReturn(true);
 
-        when(applicationListRepository.findByUuid(eq(listId)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))
@@ -110,7 +113,8 @@ class ApplicationEntryResultDeletionValidatorTest {
         ListEntryResultDeleteArgs args = new ListEntryResultDeleteArgs(listId, entryId, resultId);
         AppRegistryException ex =
                 Assertions.assertThrows(AppRegistryException.class, () -> validator.validate(args));
-        Assertions.assertEquals(AppListEntryError.LIST_ENTRY_NOT_FOUND, ex.getCode());
+        Assertions.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST, ex.getCode());
     }
 
     @Test
@@ -124,7 +128,7 @@ class ApplicationEntryResultDeletionValidatorTest {
 
         ApplicationListEntry entry = new ApplicationListEntry();
 
-        when(applicationListRepository.findByUuid(eq(listId)))
+        when(applicationListRepository.findByUuidIncludingDelete(eq(listId)))
                 .thenReturn(Optional.of(applicationList));
         when(applicationListEntryRepository.findActiveByUuidAndApplicationListUuid(
                         eq(entryId), eq(listId)))

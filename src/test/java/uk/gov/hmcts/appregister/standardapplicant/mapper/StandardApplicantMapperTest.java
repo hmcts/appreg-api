@@ -1,24 +1,23 @@
 package uk.gov.hmcts.appregister.standardapplicant.mapper;
 
+import java.time.LocalDate;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
-import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
 
 public class StandardApplicantMapperTest {
     @Test
     public void testStandardApplicantMapperForIndividual() {
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+        val standardApplicant = new StandardApplicantTestData().someComplete();
 
         // make the name null to simulate individual
         standardApplicant.setName(null);
 
-        StandardApplicantMapper standardApplicantMapper = new StandardApplicantMapperImpl();
+        val standardApplicantMapper = new StandardApplicantMapperImpl();
         standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
-        StandardApplicantGetDetailDto standardApplicantGetDetailDto =
-                standardApplicantMapper.toReadGetDto(standardApplicant);
+        val standardApplicantGetDetailDto = standardApplicantMapper.toReadGetDto(standardApplicant);
 
         Assertions.assertEquals(
                 standardApplicant.getApplicantStartDate(),
@@ -48,14 +47,16 @@ public class StandardApplicantMapperTest {
                         .getApplicant()
                         .getPerson()
                         .getName()
-                        .getSecondForename());
+                        .getSecondForename()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getApplicantForename3(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getName()
-                        .getThirdForename());
+                        .getThirdForename()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getApplicantSurname(),
                 standardApplicantGetDetailDto.getApplicant().getPerson().getName().getSurname());
@@ -72,49 +73,56 @@ public class StandardApplicantMapperTest {
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine2());
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine3(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine3());
+                        .getAddressLine3()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine5(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine5());
+                        .getAddressLine5()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine4(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getAddressLine4());
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getEmailAddress(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getEmail());
+                        .getEmail()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getMobileNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getMobile());
+                        .getMobile()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getTelephoneNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getContactDetails()
-                        .getPhone());
+                        .getPhone()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getPostcode(),
                 standardApplicantGetDetailDto
@@ -126,13 +134,12 @@ public class StandardApplicantMapperTest {
 
     @Test
     public void testStandardApplicantMapperForOrganisation() {
-        StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+        val standardApplicant = new StandardApplicantTestData().someComplete();
 
-        StandardApplicantMapper standardApplicantMapper = new StandardApplicantMapperImpl();
+        val standardApplicantMapper = new StandardApplicantMapperImpl();
         standardApplicantMapper.setApplicantMapper(new ApplicantMapperImpl());
 
-        StandardApplicantGetDetailDto standardApplicantGetDetailDto =
-                standardApplicantMapper.toReadGetDto(standardApplicant);
+        val standardApplicantGetDetailDto = standardApplicantMapper.toReadGetDto(standardApplicant);
 
         Assertions.assertEquals(
                 standardApplicant.getApplicantStartDate(),
@@ -160,49 +167,56 @@ public class StandardApplicantMapperTest {
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine2());
+                        .getAddressLine2()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine3(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine3());
+                        .getAddressLine3()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine5(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine5());
+                        .getAddressLine5()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getAddressLine4(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getAddressLine4());
+                        .getAddressLine4()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getEmailAddress(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getEmail());
+                        .getEmail()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getMobileNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getMobile());
+                        .getMobile()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getTelephoneNumber(),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getOrganisation()
                         .getContactDetails()
-                        .getPhone());
+                        .getPhone()
+                        .get());
         Assertions.assertNotNull(
                 standardApplicant.getPostcode(),
                 standardApplicantGetDetailDto
@@ -210,5 +224,37 @@ public class StandardApplicantMapperTest {
                         .getOrganisation()
                         .getContactDetails()
                         .getPostcode());
+    }
+
+    @Test
+    void testNoEntity() {
+        val record = new CodeAndName(null, null, null, null, null);
+
+        var mapper = new StandardApplicantMapperImpl();
+        Assertions.assertNotNull(mapper.toEntity(record));
+    }
+
+    @Test
+    void testSearchAuditEntityIncludesAllAuditedFilters() {
+        // Build the same lightweight surrogate entity that the GET /standard-applicants search
+        // endpoint passes into the audit framework.
+        val record =
+                new CodeAndName(
+                        "APP001",
+                        "John Doe",
+                        "123 High Street",
+                        LocalDate.of(2026, 4, 1),
+                        LocalDate.of(2026, 12, 31));
+
+        var mapper = new StandardApplicantMapperImpl();
+        val entity = mapper.toEntity(record);
+
+        // Each populated field below maps to a real database column and is now eligible for READ
+        // audit extraction.
+        Assertions.assertEquals("APP001", entity.getApplicantCode());
+        Assertions.assertEquals("John Doe", entity.getName());
+        Assertions.assertEquals("123 High Street", entity.getAddressLine1());
+        Assertions.assertEquals(LocalDate.of(2026, 4, 1), entity.getApplicantStartDate());
+        Assertions.assertEquals(LocalDate.of(2026, 12, 31), entity.getApplicantEndDate());
     }
 }

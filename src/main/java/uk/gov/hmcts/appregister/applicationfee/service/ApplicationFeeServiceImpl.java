@@ -1,8 +1,6 @@
 package uk.gov.hmcts.appregister.applicationfee.service;
 
-import java.time.Clock;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +10,7 @@ import uk.gov.hmcts.appregister.applicationfee.service.exception.ApplicationFeeC
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 
 /**
  * Service to handle application fee operations.
@@ -20,36 +19,33 @@ import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationFeeServiceImpl implements ApplicationFeeService {
-    private static final Comparator<Fee> FEE_ID_COMPARATOR = Comparator.comparing(Fee::getId);
     private final FeeRepository feeRepository;
-    private final Clock clock;
+    private final BusinessDateProvider businessDateProvider;
 
+    @Override
     @SuppressWarnings("java:S1135")
     public FeePair resolveFeePair(String feeReference) {
-        List<Fee> fee =
-                feeRepository.findByReferenceBetweenDate(feeReference, LocalDate.now(clock));
-        return resolveFeePair(fee);
+        return resolveFeePair(feeReference, businessDateProvider.currentUkDate());
+    }
+
+    @Override
+    @SuppressWarnings("java:S1135")
+    public FeePair resolveFeePair(String feeReference, LocalDate date) {
+        List<Fee> fee = feeRepository.findByReferenceBetweenDate(feeReference, date);
+        return resolveFeePair(fee.stream().findFirst(), getOffsiteFee(date));
     }
 
     @SuppressWarnings("java:S1135")
-    private FeePair resolveFeePair(List<Fee> feesForRef) {
-        List<Fee> main = feesForRef.stream().filter(r -> !r.isOffsite()).toList();
-        List<Fee> offsite = feesForRef.stream().filter(Fee::isOffsite).toList();
-
+    private FeePair resolveFeePair(Optional<Fee> feesForRef, Optional<Fee> offsiteFee) {
         // if we do not have a main but have an offset then error
-        if (main.isEmpty() && !offsite.isEmpty()) {
+        if (feesForRef.isEmpty() && !offsiteFee.isEmpty()) {
             log.warn(ApplicationFeeCode.NO_MAIN_FEE.getCode().getMessage());
         }
 
-        // if we have more than one main or offset then we have an issue
-        if (main.size() > 1 || offsite.size() > 1) {
-            log.warn(ApplicationFeeCode.AMBIGUOUS_FEE.getCode().getMessage());
-        }
+        return new FeePair(feesForRef.orElse(null), offsiteFee.orElse(null));
+    }
 
-        // Is this good enough when multiple mains and offsite exists?
-        Optional<Fee> mainFee = main.stream().max(FEE_ID_COMPARATOR);
-        Optional<Fee> offsiteFee = offsite.stream().max(FEE_ID_COMPARATOR);
-
-        return new FeePair(mainFee.orElse(null), offsiteFee.orElse(null));
+    private Optional<Fee> getOffsiteFee(LocalDate date) {
+        return feeRepository.findOffsite(date).stream().findFirst();
     }
 }

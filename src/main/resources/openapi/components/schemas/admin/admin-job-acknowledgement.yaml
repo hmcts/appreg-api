@@ -1,0 +1,22 @@
+type: object
+description: Acknowledgement returned when a background job is created.
+additionalProperties: false
+required:
+  - id
+  - type
+  - status
+
+properties:
+
+  id:
+    type: string
+    format: uuid
+    description: Unique identifier for the job, in UUID v4 format.
+    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
+
+  type:
+    $ref: './admin-job-type.yaml'
+
+  status:
+    $ref: '../common/job-status.yaml'
+

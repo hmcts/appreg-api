@@ -61,7 +61,33 @@ public enum ApplicationListError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Cannot create the application because the " + "list has a CLOSED 'status'",
-                    "AL-15"));
+                    "AL-15")),
+    INVALID_FOR_CLOSE_DURATION(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "List cannot be closed. Please add duration hours and/or duration minutes.",
+                    "AL-16")),
+    INVALID_FOR_CLOSE_NOT_RESULTED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "List cannot be closed. Please result all the applications in the list and try again",
+                    "AL-17")),
+    INVALID_FOR_CLOSE_NO_OFFICIAL(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "List cannot be closed. No Official is recorded against any of the applications in the list.",
+                    "AL-18")),
+    INVALID_FOR_CLOSE_NOT_SETTLED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "List cannot be closed. At least one application does not have a Paid or Remitted fee status.",
+                    "AL-19")),
+    UPDATE_NOT_ALLOWED_ON_CLOSED_LIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "A closed application list is not allowed to be updated",
+                    "AL-20"));
+
     private final DefaultErrorDetail defaultErrorCode;
 
     ApplicationListError(DefaultErrorDetail defaultErrorCode) {

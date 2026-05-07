@@ -1,13 +1,17 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,6 +19,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -27,11 +32,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 @RestControllerAdvice
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
+    private static final Set<String> WHOLE_NUMBER_FIELDS =
+            Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
+    private static final String UNKNOWN_FIELD = "unknown field";
+
+    private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
 
-        // gets the core exception code that we used to apply the application specific code
+        // getss the core exception code that we used to apply the application specific code
         ErrorCodeEnum error = exception.getCode();
 
         log.error("A app register exception occurred", exception);
@@ -134,25 +144,32 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setDetail("Validation failed for fields:");
         problemDetail.setProperties(new java.util.HashMap<>());
 
-        Map<String, Object> errors = new HashMap();
+        Map<String, Object> errors = new LinkedHashMap<>();
 
-        // add the failure specifics to the problem detail properties
-        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
-
-            // we cant check on the sub class of field error. Instead lets check on the name of the
-            // class to determine if this is a violation error
-            // or a type mismatch error as these are the most common errors we want to give specific
-            // messages for
-            if (fieldError.getCode() == null || !fieldError.getCode().contains("typeMismatch")) {
-                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
-            } else {
-                // if this is a type mismatch error, we want to give a more specific message about
-                // the expected format as this is a common error for our date and time fields
-                errors.put(
-                        fieldError.getField(),
-                        "Please ensure that any times are in the format HH:mm and dates are in the format yyyy-MM-dd");
-            }
-        }
+        ex.getBindingResult().getFieldErrors().stream()
+                .sorted(Comparator.comparing(FieldError::getField))
+                .forEach(
+                        fieldError -> {
+                            if (fieldError.getCode() == null
+                                    || !fieldError.getCode().contains("typeMismatch")) {
+                                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+                            } else if (WHOLE_NUMBER_FIELDS.contains(fieldError.getField())) {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure %s is a whole number"
+                                                .formatted(fieldError.getField()));
+                            } else if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure %s is a valid boolean value"
+                                                .formatted(fieldError.getField()));
+                            } else {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure that any times are in the format HH:mm and dates are in the"
+                                                + " format yyyy-MM-dd");
+                            }
+                        });
 
         problemDetail.setProperty("errors", errors);
 
@@ -169,25 +186,69 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        ValueInstantiationException valueInstantiationException =
+                findCause(ex, ValueInstantiationException.class);
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
         // if we have a date exception use that as it gives us a more specific error message
         if (dateException != null) {
             problemDetail.setDetail(dateException.getMessage());
+        } else if (isEnumInstantiationProblem(valueInstantiationException)) {
+            problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
-                                    invalidFormatException.getPath().size() > 0
-                                            ? invalidFormatException.getPath().get(0).getFieldName()
-                                            : "unknown field"));
+                                    !invalidFormatException.getPath().isEmpty()
+                                            ? invalidFormatException
+                                                    .getPath()
+                                                    .getFirst()
+                                                    .getFieldName()
+                                            : UNKNOWN_FIELD));
         } else {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    private boolean isEnumInstantiationProblem(ValueInstantiationException exception) {
+        return exception != null
+                && exception.getType() != null
+                && exception.getType().getRawClass().isEnum();
+    }
+
+    private String getEnumInstantiationProblemDetail(ValueInstantiationException exception) {
+        Class<?> enumType = exception.getType().getRawClass();
+        String acceptedValues =
+                String.join(
+                        ", ",
+                        Arrays.stream(enumType.getEnumConstants()).map(String::valueOf).toList());
+
+        return "Problem setting value for %s. Accepted values are: %s"
+                .formatted(getJsonPath(exception), acceptedValues);
+    }
+
+    private String getJsonPath(ValueInstantiationException exception) {
+        if (exception.getPath().isEmpty()) {
+            return UNKNOWN_FIELD;
+        }
+
+        StringBuilder path = new StringBuilder();
+        for (var reference : exception.getPath()) {
+            if (reference.getFieldName() != null) {
+                if (!path.isEmpty()) {
+                    path.append(".");
+                }
+                path.append(reference.getFieldName());
+            } else if (reference.getIndex() >= 0) {
+                path.append("[").append(reference.getIndex()).append("]");
+            }
+        }
+
+        return path.isEmpty() ? UNKNOWN_FIELD : path.toString();
     }
 
     @Override
@@ -221,5 +282,23 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             current = current.getCause();
         }
         return null;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied", ex);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> handleUnexpectedException(Exception ex) {
+        log.error("Unexpected error occurred", ex);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(
+                        ProblemDetail.forStatusAndDetail(
+                                HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred"));
     }
 }

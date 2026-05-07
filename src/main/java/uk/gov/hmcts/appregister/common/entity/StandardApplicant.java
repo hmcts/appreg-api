@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,10 +16,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uk.gov.hmcts.appregister.audit.listener.diff.Audit;
+import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseUnmanagedChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.base.Versionable;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 
 /**
  * Represents a StandardApplicant entity mapped to the "standard_applicants" table in the database.
@@ -31,6 +35,7 @@ import uk.gov.hmcts.appregister.common.entity.base.Versionable;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
 public class StandardApplicant extends BaseUnmanagedChangeableEntity
         implements Accountable, Versionable, Keyable {
     @Id
@@ -41,12 +46,20 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private Long id;
 
     @Column(name = "standard_applicant_code", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
+    @Pattern(
+            regexp = "[a-zA-Z0-9\\-\\+\\._ ]*",
+            message =
+                    "Applicant code must be alphanumeric and can include"
+                            + " hyphens, plus signs, dots, underscores, and spaces")
     private String applicantCode;
 
     @Column(name = "standard_applicant_start_date", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private LocalDate applicantStartDate;
 
     @Column(name = "standard_applicant_end_date")
+    @Audit(action = {CrudEnum.READ})
     private LocalDate applicantEndDate;
 
     @Column(name = "version", nullable = false)
@@ -57,6 +70,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String createdUser;
 
     @Column(name = "name", length = 100)
+    @Audit(action = {CrudEnum.READ})
     private String name;
 
     @Column(name = "title", length = 100)
@@ -75,6 +89,7 @@ public class StandardApplicant extends BaseUnmanagedChangeableEntity
     private String applicantSurname;
 
     @Column(name = "address_l1", length = 35, nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private String addressLine1;
 
     @Column(name = "address_l2", length = 35)

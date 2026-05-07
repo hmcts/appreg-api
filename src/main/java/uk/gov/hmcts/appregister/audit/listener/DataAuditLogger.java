@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.audit.listener;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.event.AuditOldNewEnum;
 import uk.gov.hmcts.appregister.audit.event.CompleteEvent;
@@ -11,7 +12,9 @@ import uk.gov.hmcts.appregister.audit.event.StartEvent;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditor;
+import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
+import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
@@ -44,32 +47,29 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
 
     @Override
     protected void finished(CompleteEvent event) {
-
-        // data audit for all operations. Ignores get operations
-        if (!event.getRequestAction().getType().isRead()) {
-            // make sure if we are comparing old or new then the types match
-            if (event.getOldValue() != null
-                    && event.getNewValue() != null
-                    && ((!event.getOldValue()
-                                    .getClass()
-                                    .getCanonicalName()
-                                    .equals(event.getNewValue().getClass().getCanonicalName()))
-                            || !event.getOldValue().getId().equals(event.getNewValue().getId()))) {
-                log.debug(
-                        "New and old audit values are not the same type and or id{} {}",
-                        event.getOldValue().getClass().getCanonicalName(),
-                        event.getNewValue().getClass().getCanonicalName());
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "New and old audit values are not the same type");
-            } else if (event.getOldValue() == null && event.getNewValue() == null) {
-                throw new AppRegistryException(
-                        CommonAppError.INTERNAL_SERVER_ERROR,
-                        "Cannot audit when both old and new values are null");
-            }
-
-            auditDataBasedOnCompleteEventState(event);
+        // make sure if we are comparing old or new then the types match
+        if (event.getOldValue() != null
+                && event.getNewValue() != null
+                && ((!event.getOldValue()
+                                .getClass()
+                                .getCanonicalName()
+                                .equals(event.getNewValue().getClass().getCanonicalName()))
+                        || !defaultKeyableId(event.getOldValue())
+                                .equals(defaultKeyableId(event.getNewValue())))) {
+            log.debug(
+                    "New and old audit values are not the same type and or id{} {}",
+                    event.getOldValue().getClass().getCanonicalName(),
+                    event.getNewValue().getClass().getCanonicalName());
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "New and old audit values are not the same type");
+        } else if (event.getOldValue() == null && event.getNewValue() == null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR,
+                    "Cannot audit when both old and new values are null");
         }
+
+        auditDataBasedOnCompleteEventState(event);
     }
 
     /**
@@ -181,24 +181,33 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             List<AuditableData> primaryList,
             List<AuditableData> secondaryList,
             boolean primaryOld) {
-        for (int i = 0; i < primaryList.size(); i++) {
-            AuditableData diff = primaryList.get(i);
-            DataAudit audit = new DataAudit();
-            audit.setColumnName(diff.getFieldName());
+        for (var i = 0; i < primaryList.size(); i++) {
+            val diff = primaryList.get(i);
+            val audit = new DataAudit();
 
+            audit.setColumnName(diff.getFieldName());
             audit.setEventName(event.getRequestAction().getEventName());
             audit.setTableName(diff.getTableName());
             audit.setUpdateType(event.getRequestAction().getType());
             audit.setSchemaName(schemaName);
 
+            // gets and set trace id from audit service
+            audit.setLink(AuditOperationServiceImpl.getTraceId());
+
             // store the new and old values based on the state
             setNewAndOldAuditValues(
                     audit, diff, getCorrespondingData(diff, secondaryList), event, primaryOld);
 
-            // save the audit record
-            dataAuditRepository.save(audit);
-
-            log.debug("Saved data audit entity: {}", audit);
+            try {
+                // save the audit record
+                dataAuditRepository.save(audit);
+                log.debug("Saved data audit entity: {}", audit);
+            } catch (RuntimeException e) {
+                throw new RuntimeException(
+                        "Failed to persist audit field %s on table %s"
+                                .formatted(diff.getFieldName(), diff.getTableName()),
+                        e);
+            }
         }
     }
 
@@ -239,16 +248,16 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             boolean primaryOld) {
         if (primaryOld && secondaryDiff == null) {
             log.debug(SAVING_OLD_AUDIT_MESSAGE, primaryDiff);
-            audit.setRelatedKey(event.getOldValue() != null ? event.getOldValue().getId() : -1L);
+            audit.setRelatedKey(defaultKeyableId(event.getOldValue()));
             audit.setNewValue(EMPTY_VALUE);
             audit.setOldValue(primaryDiff.getValue());
         } else if (!primaryOld && secondaryDiff == null) {
             log.debug(SAVING_NEW_AUDIT_MESSAGE, primaryDiff);
-            audit.setRelatedKey(event.getNewValue() != null ? event.getNewValue().getId() : -1L);
+            audit.setRelatedKey(defaultKeyableId(event.getNewValue()));
             audit.setNewValue(primaryDiff.getValue());
             audit.setOldValue(EMPTY_VALUE);
         } else {
-            audit.setRelatedKey(event.getOldValue() != null ? event.getNewValue().getId() : -1L);
+            audit.setRelatedKey(defaultKeyableId(event.getNewValue()));
 
             if (primaryOld) {
                 audit.setOldValue(primaryDiff.getValue());
@@ -262,6 +271,20 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                 log.debug(SAVING_OLD_AUDIT_MESSAGE, secondaryDiff);
             }
         }
+    }
+
+    /**
+     * The default keyable long with a default.
+     *
+     * @param l The long or a default value if null
+     * @return The long or -1 if null
+     */
+    private Long defaultKeyableId(Keyable l) {
+        if (l != null && l.getId() != null) {
+            return l.getId();
+        }
+
+        return -1L;
     }
 
     @Override

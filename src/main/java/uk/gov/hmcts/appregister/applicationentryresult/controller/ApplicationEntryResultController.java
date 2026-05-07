@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.applicationentryresult.controller;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -11,14 +13,21 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import uk.gov.hmcts.appregister.applicationentryresult.api.ApplicationEntryResultSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.applicationentryresult.service.ApplicationEntryResultService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntryResultsApi;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 
 /**
  * REST controller for managing Application List Entry Results.
@@ -30,6 +39,9 @@ import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 public class ApplicationEntryResultController implements ApplicationListEntryResultsApi {
 
     private final ApplicationEntryResultService service;
+
+    // Mapper converting OpenAPI paging params to Spring Data {@link Pageable}.
+    private final PageableMapper pageableMapper;
 
     public static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
@@ -85,15 +97,67 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
                                 .entryId(entryId)
                                 .data(resultCreateDto)
                                 .build());
-        log.info(
-                "Successfully created Application List Entry Result with id:{}",
-                resultGetDto.getPayload().getId());
 
         return ResponseEntity.created(locationOf(resultGetDto.getPayload().getId()))
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .eTag(resultGetDto.getEtag())
                 .body(resultGetDto.getPayload());
+    }
+
+    /**
+     * Updates an Application List Entry Result.
+     *
+     * <ul>
+     *   <li>Accessible only to users with USER or ADMIN roles (see {@link RoleNames}).
+     * </ul>
+     *
+     * @param listId Public identifier of the Application List. (required)
+     * @param entryId Public identifier of the Application List Entry. (required)
+     * @param resultId Public identifier of the Application List Entry Result. (required)
+     * @param resultUpdateDto (required)
+     * @return Returns the updated Application List Entry Result (status code 200)
+     */
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<ResultGetDto> updateApplicationListEntryResult(
+            UUID listId, UUID entryId, UUID resultId, ResultUpdateDto resultUpdateDto) {
+        PayloadForUpdateEntryResult payloadForUpdateEntryResult =
+                new PayloadForUpdateEntryResult(resultUpdateDto, listId, entryId, resultId);
+
+        // update the entry result
+        MatchResponse<ResultGetDto> resultGetDto = service.update(payloadForUpdateEntryResult);
+        log.info(
+                "Successfully updated Application List Entry Result with id:{}",
+                resultGetDto.getPayload().getId());
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .headers(h -> h.setLocation(locationOf(resultGetDto.getPayload().getId())))
+                .eTag(resultGetDto.getEtag())
+                .body(resultGetDto.getPayload());
+    }
+
+    @Override
+    public ResponseEntity<ResultPage> getApplicationListEntryResults(
+            UUID listId, UUID entryId, Integer pageNumber, Integer pageSize) {
+        PagingWrapper pagingWrapper =
+                pageableMapper.from(
+                        pageNumber,
+                        pageSize,
+                        List.of(),
+                        ApplicationEntryResultSortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        ApplicationEntryResultSortFieldEnum::getEntityValue);
+        ResultPage resultPage =
+                service.search(
+                        PayloadGetEntryResultInList.builder()
+                                .listId(listId)
+                                .entryId(entryId)
+                                .build(),
+                        pagingWrapper);
+        return ResponseEntity.ok().body(resultPage);
     }
 
     /**

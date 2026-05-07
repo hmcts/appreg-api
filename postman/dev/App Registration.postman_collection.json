@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "b533d999-921a-413b-98e3-3490243c8ac5",
-    "name": "App Registration",
+    "_postman_id": "ef42f47c-e986-4ee8-ab19-83a8c9ff779e",
+    "name": "App Registration Copy",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "15829068",
-    "_collection_link": "https://go.postman.co/collection/15829068-b533d999-921a-413b-98e3-3490243c8ac5?source=collection_link"
+    "_collection_link": "https://go.postman.co/collection/15829068-ef42f47c-e986-4ee8-ab19-83a8c9ff779e?source=collection_link"
   },
   "item": [
     {
@@ -350,6 +350,48 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Get Application List Entries For Application List",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}"
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -657,8 +699,243 @@
       ]
     },
     {
-      "name": "actions",
+      "name": "application_list_entries",
       "item": [
+        {
+          "name": "Get Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-list-entries?sort=courtCode,desc",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-list-entries"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "courtCode,desc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Upload Application List Entries",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(202);",
+                  "const response = pm.response.json();",
+                  "pm.environment.set(\"BULK_UPLOAD_JOB_STATUS_URL\", pm.response.headers.get(\"Location\"));",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/bulk-import",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "bulk-import"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bulk Upload Job Status",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.environment.get(\"BULK_UPLOAD_JOB_STATUS_URL\"), \"BULK_UPLOAD_JOB_STATUS_URL\").to.exist;",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);",
+                  "const response = pm.response.json();",
+                  "pm.expect(response.status).to.be.oneOf([\"RECEIVED\", \"VALIDATING\", \"PROCESSING\", \"FAILED\", \"COMPLETED\"]);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}",
+              "host": [
+                "{{APP_REG_HOST}}{{BULK_UPLOAD_JOB_STATUS_URL}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Entry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(201);",
+                  "const response = pm.response.json();",
+                  "pm.environment.set(\"CREATED_ENTRY_ID\", response.id);",
+                  "pm.environment.set(\"APP_LIST_ID\", response.listId);",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\" : null,\n  \"applicationCode\" : \"ZS99007\",\n  \"applicant\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"VSSH\",\n        \"surname\" : \"416a9332-4ced-44a7-a6f2-c0096da2b308\",\n        \"firstForename\" : \"VAVWDFRQR\",\n        \"secondForename\" : \"MCPVQJVYFH\",\n        \"thirdForename\" : \"KTBVKS\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"HARWGLVW\",\n        \"addressLine2\" : \"OPGVLRATC\",\n        \"addressLine3\" : \"TSK\",\n        \"addressLine4\" : \"FOOFO\",\n        \"addressLine5\" : \"FTKUPUNUXG\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"12313\",\n        \"mobile\" : \"1121323232\",\n        \"email\" : \"APPLICANT@TEST.COM\"\n      }\n    },\n    \"organisation\" : null\n  },\n  \"respondent\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"EUXO\",\n        \"surname\" : \"WJN\",\n        \"firstForename\" : \"VIJIR\",\n        \"secondForename\" : \"LWSKYSRSF\",\n        \"thirdForename\" : \"VHYBCIILT\",\n        \"dateOfBirth\" : [ 2020, 6, 19 ]\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"FEDHXY\",\n        \"addressLine2\" : \"MBCRYS\",\n        \"addressLine3\" : \"DATIDAMQ\",\n        \"addressLine4\" : \"LFSUYUBZ\",\n        \"addressLine5\" : \"KECO\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"12121123\",\n        \"mobile\" : \"12121\",\n        \"email\" : \"RESPONDENT@TEST.COM\"\n      }\n    },\n    \"organisation\" : null\n  },\n  \"numberOfRespondents\" : null,\n  \"wordingFields\" : [ {\n  \"key\" : \"Premises Address\",\n  \"value\" : \"test wording\"\n    },\n    {\n    \"key\" : \"Premises Date\",\n    \"value\" : \"2025-11-28\"\n    }],\n  \"feeStatuses\" : [ {\n    \"paymentReference\" : \"VEMWZXSEL\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2029, 10, 16 ]\n  }, {\n    \"paymentReference\" : \"TZSRNMYLAC\",\n    \"paymentStatus\" : \"PAID\",\n    \"statusDate\" : [ 1998, 1, 10 ]\n  }, {\n    \"paymentReference\" : \"ZXCEAA\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2084, 2, 17 ]\n  }, {\n    \"paymentStatus\" : \"DUE\",\n    \"statusDate\" : [ 2011, 8, 18 ]\n  }, {\n    \"paymentStatus\" : \"DUE\",\n    \"statusDate\" : [ 2043, 10, 17 ]\n  } ],\n  \"hasOffsiteFee\" : true,\n  \"caseReference\" : \"SLFYW\",\n  \"accountNumber\" : \"CZP\",\n  \"notes\" : \"GRETRXZG\",\n  \"lodgementDate\" : [ 2012, 10, 22 ],\n  \"officials\" : [ {\n    \"title\" : \"JXXYMBUM\",\n    \"surname\" : \"KDJQYYKYGB\",\n    \"forename\" : \"ZJNHZM\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"WFJPL\",\n    \"surname\" : \"DEUHJDTGGW\",\n    \"forename\" : \"PFOBZJ\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"YZVGM\",\n    \"surname\" : \"XURR\",\n    \"forename\" : \"MBOGQTYWKO\",\n    \"type\" : \"CLERK\"\n  }, {\n    \"title\" : \"TZWUQB\",\n    \"surname\" : \"YZDCKI\",\n    \"forename\" : \"RHOFHO\",\n    \"type\" : \"MAGISTRATE\"\n  } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Entry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"standardApplicantCode\" : null,\n  \"applicationCode\" : \"ZS99007\",\n  \"applicant\" : {\n    \"person\" : null,\n    \"organisation\" : {\n      \"name\" : \"CRWD\",\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BDNJZ\",\n        \"addressLine2\" : \"JPCS\",\n        \"addressLine3\" : \"OBYTF\",\n        \"addressLine4\" : \"PQRSULKEIJ\",\n        \"addressLine5\" : \"ERYYEAM\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"324242\",\n        \"mobile\" : \"23432423\",\n        \"email\" : \"test@org.com\"\n      }\n    }\n  },\n  \"respondent\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"WTFOHQEMHC\",\n        \"surname\" : \"YGBYV\",\n        \"firstForename\" : \"HDKZ\",\n        \"secondForename\" : \"YSZMBRCM\",\n        \"thirdForename\" : \"KVJZWKOOR\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BCRQHTJJ\",\n        \"addressLine2\" : \"SZRUV\",\n        \"addressLine3\" : \"JHVFRDRFJ\",\n        \"addressLine4\" : \"TVE\",\n        \"addressLine5\" : \"HHFXL\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"12321312\",\n        \"mobile\" : \"131312321\",\n        \"email\" : \"test@test.com\"\n      }\n    },\n    \"dateOfBirth\" : [ 2084, 5, 15 ],\n    \"organisation\" : null\n  },\n  \"numberOfRespondents\" : null,\n    \"wordingFields\" : [ {\n  \"key\" : \"Premises Address\",\n  \"value\" : \"test wording\"\n    },\n    {\n    \"key\" : \"Premises Date\",\n    \"value\" : \"2025-11-28\"\n    }],\n  \"feeStatuses\" : [ {\n    \"paymentReference\" : \"FJFNJW\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2021, 5, 22 ]\n  }, {\n    \"paymentReference\" : \"OMVZYQZDQD\",\n    \"paymentStatus\" : \"PAID\",\n    \"statusDate\" : [ 2023, 8, 12 ]\n  }, {\n    \"paymentReference\" : \"QGN\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2081, 6, 16 ]\n  }, {\n    \"paymentReference\" : \"QUBGYVSB\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2068, 8, 28 ]\n  }, {\n    \"paymentReference\" : \"CTNVTIX\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2016, 5, 12 ]\n  } ],\n  \"hasOffsiteFee\" : true,\n  \"caseReference\" : \"IYQELBGV\",\n  \"accountNumber\" : \"HMIY\",\n  \"notes\" : \"JBBCLCW\",\n  \"officials\" : [ {\n    \"title\" : \"LXCWS\",\n    \"surname\" : \"MNEGZXJZX\",\n    \"forename\" : \"OGJUMVX\",\n    \"type\" : \"CLERK\"\n  }, {\n    \"title\" : \"MVKEYF\",\n    \"surname\" : \"XCLWTILNBH\",\n    \"forename\" : \"WBZEW\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"KYZH\",\n    \"surname\" : \"USPB\",\n    \"forename\" : \"UJRVOSR\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"ZULBGQNP\",\n    \"surname\" : \"PIVPA\",\n    \"forename\" : \"BFSPTNRO\",\n    \"type\" : \"CLERK\"\n  } ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "{{CREATED_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get App Entry",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "{{CREATED_ENTRY_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
         {
           "name": "Move Application List Entries",
           "request": {
@@ -703,132 +980,12 @@
             }
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "application_list_entries",
-      "item": [
+        },
         {
-          "name": "Get Summary",
+          "name": "Delete Entry",
           "request": {
-            "method": "GET",
+            "method": "DELETE",
             "header": [],
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-list-entries?sort=courtCode,desc",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-list-entries"
-              ],
-              "query": [
-                {
-                  "key": "sort",
-                  "value": "courtCode,desc"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create Entry",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.expect(pm.response.code).to.equal(201);",
-                  "const response = pm.response.json();",
-                  "pm.environment.set(\"CREATED_ENTRY_ID\", response.id);",
-                  "pm.environment.set(\"APP_LIST_ID\", response.listId);",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\" : null,\n  \"applicationCode\" : \"ZS99007\",\n  \"applicant\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"VSSH\",\n        \"surname\" : \"416a9332-4ced-44a7-a6f2-c0096da2b308\",\n        \"firstForename\" : \"VAVWDFRQR\",\n        \"secondForename\" : \"MCPVQJVYFH\",\n        \"thirdForename\" : \"KTBVKS\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"HARWGLVW\",\n        \"addressLine2\" : \"OPGVLRATC\",\n        \"addressLine3\" : \"TSK\",\n        \"addressLine4\" : \"FOOFO\",\n        \"addressLine5\" : \"FTKUPUNUXG\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"YUOERAJAY\",\n        \"mobile\" : \"KHIBRC\",\n        \"email\" : \"APPLICANT@TEST.COM\"\n      }\n    },\n    \"organisation\" : null\n  },\n  \"respondent\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"EUXO\",\n        \"surname\" : \"WJN\",\n        \"firstForename\" : \"VIJIR\",\n        \"secondForename\" : \"LWSKYSRSF\",\n        \"thirdForename\" : \"VHYBCIILT\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"FEDHXY\",\n        \"addressLine2\" : \"MBCRYS\",\n        \"addressLine3\" : \"DATIDAMQ\",\n        \"addressLine4\" : \"LFSUYUBZ\",\n        \"addressLine5\" : \"KECO\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"JCBS\",\n        \"mobile\" : \"EQL\",\n        \"email\" : \"RESPONDENT@TEST.COM\"\n      }\n    },\n    \"dateOfBirth\" : [ 2020, 6, 19 ],\n    \"organisation\" : null\n  },\n  \"numberOfRespondents\" : null,\n  \"wordingFields\" : [ {\n  \"key\" : \"Premises Address\",\n  \"value\" : \"test wording\"\n    },\n    {\n    \"key\" : \"Premises Date\",\n    \"value\" : \"2025-11-28\"\n    }],\n  \"feeStatuses\" : [ {\n    \"paymentReference\" : \"VEMWZXSEL\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2029, 10, 16 ]\n  }, {\n    \"paymentReference\" : \"TZSRNMYLAC\",\n    \"paymentStatus\" : \"PAID\",\n    \"statusDate\" : [ 1998, 1, 10 ]\n  }, {\n    \"paymentReference\" : \"ZXCEAA\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2084, 2, 17 ]\n  }, {\n    \"paymentReference\" : \"WFA\",\n    \"paymentStatus\" : \"DUE\",\n    \"statusDate\" : [ 2011, 8, 18 ]\n  }, {\n    \"paymentReference\" : \"XIJ\",\n    \"paymentStatus\" : \"DUE\",\n    \"statusDate\" : [ 2043, 10, 17 ]\n  } ],\n  \"hasOffsiteFee\" : true,\n  \"caseReference\" : \"SLFYW\",\n  \"accountNumber\" : \"CZP\",\n  \"notes\" : \"GRETRXZG\",\n  \"lodgementDate\" : [ 2045, 10, 22 ],\n  \"officials\" : [ {\n    \"title\" : \"JXXYMBUM\",\n    \"surname\" : \"KDJQYYKYGB\",\n    \"forename\" : \"ZJNHZM\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"WFJPL\",\n    \"surname\" : \"DEUHJDTGGW\",\n    \"forename\" : \"PFOBZJ\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"YZVGM\",\n    \"surname\" : \"XURR\",\n    \"forename\" : \"MBOGQTYWKO\",\n    \"type\" : \"CLERK\"\n  }, {\n    \"title\" : \"TZWUQB\",\n    \"surname\" : \"YZDCKI\",\n    \"forename\" : \"RHOFHO\",\n    \"type\" : \"MAGISTRATE\"\n  } ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-lists",
-                "{{APP_LIST_ID}}",
-                "entries"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Update Entry",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json",
-                "type": "text"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"standardApplicantCode\" : null,\n  \"applicationCode\" : \"ZS99007\",\n  \"applicant\" : {\n    \"person\" : null,\n    \"organisation\" : {\n      \"name\" : \"CRWD\",\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BDNJZ\",\n        \"addressLine2\" : \"JPCS\",\n        \"addressLine3\" : \"OBYTF\",\n        \"addressLine4\" : \"PQRSULKEIJ\",\n        \"addressLine5\" : \"ERYYEAM\",\n        \"postcode\" : \"AA1 12B\",\n        \"phone\" : \"MRWIDMXQ\",\n        \"mobile\" : \"HQFHZ\",\n        \"email\" : \"test@org.com\"\n      }\n    }\n  },\n  \"respondent\" : {\n    \"person\" : {\n      \"name\" : {\n        \"title\" : \"WTFOHQEMHC\",\n        \"surname\" : \"YGBYV\",\n        \"firstForename\" : \"HDKZ\",\n        \"secondForename\" : \"YSZMBRCM\",\n        \"thirdForename\" : \"KVJZWKOOR\"\n      },\n      \"contactDetails\" : {\n        \"addressLine1\" : \"BCRQHTJJ\",\n        \"addressLine2\" : \"SZRUV\",\n        \"addressLine3\" : \"JHVFRDRFJ\",\n        \"addressLine4\" : \"TVE\",\n        \"addressLine5\" : \"HHFXL\",\n        \"postcode\" : \"AA1 1AA\",\n        \"phone\" : \"CWIHLRFQ\",\n        \"mobile\" : \"OVPBNCBOSZ\",\n        \"email\" : \"test@test.com\"\n      }\n    },\n    \"dateOfBirth\" : [ 2084, 5, 15 ],\n    \"organisation\" : null\n  },\n  \"numberOfRespondents\" : null,\n    \"wordingFields\" : [ {\n  \"key\" : \"Premises Address\",\n  \"value\" : \"test wording\"\n    },\n    {\n    \"key\" : \"Premises Date\",\n    \"value\" : \"2025-11-28\"\n    }],\n  \"feeStatuses\" : [ {\n    \"paymentReference\" : \"FJFNJW\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2021, 5, 22 ]\n  }, {\n    \"paymentReference\" : \"OMVZYQZDQD\",\n    \"paymentStatus\" : \"PAID\",\n    \"statusDate\" : [ 2023, 8, 12 ]\n  }, {\n    \"paymentReference\" : \"QGN\",\n    \"paymentStatus\" : \"UNDERTAKEN\",\n    \"statusDate\" : [ 2081, 6, 16 ]\n  }, {\n    \"paymentReference\" : \"QUBGYVSB\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2068, 8, 28 ]\n  }, {\n    \"paymentReference\" : \"CTNVTIX\",\n    \"paymentStatus\" : \"REMITTED\",\n    \"statusDate\" : [ 2016, 5, 12 ]\n  } ],\n  \"hasOffsiteFee\" : true,\n  \"caseReference\" : \"IYQELBGV\",\n  \"accountNumber\" : \"HMIY\",\n  \"notes\" : \"JBBCLCW\",\n  \"lodgementDate\" : [ 2074, 5, 31 ],\n  \"officials\" : [ {\n    \"title\" : \"LXCWS\",\n    \"surname\" : \"MNEGZXJZX\",\n    \"forename\" : \"OGJUMVX\",\n    \"type\" : \"CLERK\"\n  }, {\n    \"title\" : \"MVKEYF\",\n    \"surname\" : \"XCLWTILNBH\",\n    \"forename\" : \"WBZEW\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"KYZH\",\n    \"surname\" : \"USPB\",\n    \"forename\" : \"UJRVOSR\",\n    \"type\" : \"MAGISTRATE\"\n  }, {\n    \"title\" : \"ZULBGQNP\",\n    \"surname\" : \"PIVPA\",\n    \"forename\" : \"BFSPTNRO\",\n    \"type\" : \"CLERK\"\n  } ]\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-lists",
-                "{{APP_LIST_ID}}",
-                "entries",
-                "{{CREATED_ENTRY_ID}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get App Entry",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/vnd.hmcts.appreg.v1+json",
-                "type": "text"
-              }
-            ],
             "url": {
               "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
               "host": [
@@ -898,6 +1055,19 @@
         },
         {
           "name": "Create Application List Entry Result",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(201);",
+                  "const response = pm.response.json();",
+                  "pm.environment.set(\"CREATED_ENTRY_RESULT_ID\", response.id);"
+                ]
+              }
+            }
+          ],
           "protocolProfileBehavior": {
             "disabledSystemHeaders": {
               "content-type": true
@@ -946,6 +1116,181 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Update Application List Entry Result",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {
+              "content-type": true
+            }
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"resultCode\": \"FRO\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Reason text\",\r\n      \"value\": \"Caseworker discretion\"\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}/results/{{CREATED_ENTRY_RESULT_ID}}",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "{{CREATED_ENTRY_ID}}",
+                "results",
+                "{{CREATED_ENTRY_RESULT_ID}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Application Entry Results",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}"
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists//entries/{entryId}/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "",
+                "entries",
+                "{entryId}",
+                "results"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "jobs",
+          "item": [
+            {
+              "name": "Enable Application List Expired Job",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=true",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ],
+                  "query": [
+                    {
+                      "key": "enable",
+                      "value": "true"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Application List Expired Job Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Disable Application List Expired Job",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=false",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB"
+                  ],
+                  "query": [
+                    {
+                      "key": "enable",
+                      "value": "false"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
         }
       ]
     },
@@ -1000,6 +1345,85 @@
             {
               "key": "username",
               "value": "{{USER_NAME}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{PASSWORD}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://login.microsoftonline.com/{{TENANT}}/oauth2/v2.0/token",
+          "protocol": "https",
+          "host": [
+            "login",
+            "microsoftonline",
+            "com"
+          ],
+          "path": [
+            "{{TENANT}}",
+            "oauth2",
+            "v2.0",
+            "token"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtain Admin Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.expect(pm.response.code).to.equal(200);\r",
+              "const response = pm.response.json();\r",
+              "pm.environment.set(\"access_token\", response.access_token);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "password",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{CLIENT_ID}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{SECRET}}",
+              "type": "text"
+            },
+            {
+              "key": "scope",
+              "value": "{{SCOPE}}",
+              "type": "text"
+            },
+            {
+              "key": "username",
+              "value": "{{ADMIN_USER_NAME}}",
               "type": "text"
             },
             {

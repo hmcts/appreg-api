@@ -12,7 +12,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 public class WordingSentenceTest {
     private static final String MULTIPLE_VALUE_TEMPLATE =
             "Application by {TEXT|Applicant officer|10} for a production ord covering "
-                    + "{DATE|No.of accounts|10} accounts(s) requiring the respondent to either produce or "
+                    + "{Unknown|No.of accounts|10} accounts(s) requiring the respondent to either produce or "
                     + "allow access to material that is in their possession or control for the purpose of "
                     + "a relevant investigation";
 
@@ -24,21 +24,23 @@ public class WordingSentenceTest {
                     + "a relevant investigation {This is not a valid template} ";
 
     private static final String SINGLE_VALUE_TEMPLATE =
-            "This is a test {DATE|Applicant officer|70} with a date";
+            "This is a test {Unknown|Applicant officer|70} with a date";
 
     @Test
     public void testParseWordingTemplateMultipleSuccess() {
         WordingTemplateSentence templateSentence =
                 WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
 
+        Assertions.assertNotNull(templateSentence.getKeysToBeSubstituted());
         Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
-
+        templateSentence.getKeysToBeSubstituted();
         Assertions.assertEquals(
                 "Application by {{Applicant officer}} for a "
                         + "production ord covering {{No.of accounts}} accounts(s) requiring the respondent to "
                         + "either produce or allow access to material that is in their possession or control for the "
                         + "purpose of a relevant investigation",
                 templateSentence.getDetail().getTemplate());
+
         Assertions.assertEquals(
                 "Applicant officer",
                 templateSentence.getDetail().getSubstitutionKeyConstraints().get(0).getKey());
@@ -307,29 +309,31 @@ public class WordingSentenceTest {
     public void testParseWordingParsingInvalidTemplates() {
         WordingTemplateSentence templateSentence = WordingTemplateSentence.with(MULTIPLE_INVALID);
 
-        Assertions.assertEquals(1, templateSentence.getTemplateableContents().length);
-        Assertions.assertEquals(3, templateSentence.getErroneousTemplates().size());
+        Assertions.assertEquals(2, templateSentence.getTemplateableContents().length);
+        Assertions.assertEquals(2, templateSentence.getErroneousTemplates().size());
         Assertions.assertEquals(
-                "NoType|No.of accounts|3", templateSentence.getErroneousTemplates().get(0));
+                "IncorrectFormat|", templateSentence.getErroneousTemplates().get(0));
         Assertions.assertEquals(
-                "IncorrectFormat|", templateSentence.getErroneousTemplates().get(1));
-        Assertions.assertEquals(
-                "This is not a valid template", templateSentence.getErroneousTemplates().get(2));
+                "This is not a valid template", templateSentence.getErroneousTemplates().get(1));
     }
 
+    // TODO: Re-enable this once the decision has been made on the FE implementation.
+    /*
     @Test
     public void testInvalidDateFormatFailure() {
-        WordingTemplateSentence templateSentence =
-                WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                templateSentence.substituteForTemplate(
-                                        templateSentence.getTemplateableContents()[1], "not date"));
-        Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
+                WordingTemplateSentence templateSentence =
+                        WordingTemplateSentence.with(MULTIPLE_VALUE_TEMPLATE);
+                AppRegistryException appRegistryException =
+                        Assertions.assertThrows(
+                                AppRegistryException.class,
+                                () ->
+                                        templateSentence.substituteForTemplate(
+                                                templateSentence.getTemplateableContents()[1],
+         "not date"));
+                Assertions.assertEquals(
+                        CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
     }
+    */
 
     @Test
     public void testInvalidLengthFormatFailure() {
@@ -436,5 +440,18 @@ public class WordingSentenceTest {
                         () -> templateSentence.substitute(List.of(substitution, substitution2)));
         Assertions.assertEquals(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
+    }
+
+    @Test
+    public void testSubstituteNullValuesThrows() {
+        WordingTemplateSentence templateSentence =
+                WordingTemplateSentence.with(SINGLE_VALUE_TEMPLATE);
+
+        AppRegistryException exception =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> templateSentence.substitute(null));
+
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, exception.getCode());
     }
 }

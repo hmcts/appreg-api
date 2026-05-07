@@ -7,7 +7,6 @@ required:
   - status
 
 properties:
-
   id:
     type: string
     format: uuid
@@ -19,4 +18,8 @@ properties:
 
   status:
     $ref: './job-status.yaml'
+
+  error_description:
+    description: A description of the errorneous outcome of the job. Typically used for error messages.
+    type: string
 

@@ -1,0 +1,10 @@
+type: object
+description: Response containing matching Application List Entry public identifiers.
+properties:
+  ids:
+    type: array
+    items:
+      type: string
+      format: uuid
+required:
+  - ids

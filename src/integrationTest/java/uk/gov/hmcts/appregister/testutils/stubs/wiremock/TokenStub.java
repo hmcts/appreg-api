@@ -5,10 +5,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
-import com.github.tomakehurst.wiremock.extension.Parameters;
-import com.github.tomakehurst.wiremock.http.Request;
-import com.github.tomakehurst.wiremock.matching.MatchResult;
-import com.github.tomakehurst.wiremock.matching.RequestMatcherExtension;
 import java.net.URI;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -33,18 +29,5 @@ public class TokenStub {
                                 {"keys":[%s]}
                                 """
                                                         .formatted(keys))));
-    }
-
-    static class UrlMatcher extends RequestMatcherExtension {
-        private final String url;
-
-        UrlMatcher(String url) {
-            this.url = url;
-        }
-
-        @Override
-        public MatchResult match(Request request, Parameters parameters) {
-            return MatchResult.of(request.getAbsoluteUrl().equals(url));
-        }
     }
 }

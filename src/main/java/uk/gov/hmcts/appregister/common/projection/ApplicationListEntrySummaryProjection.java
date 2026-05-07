@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.projection;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import uk.gov.hmcts.appregister.common.entity.NameAddress;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 
 public interface ApplicationListEntrySummaryProjection {
     Long getId();
@@ -11,10 +13,6 @@ public interface ApplicationListEntrySummaryProjection {
     short getSequenceNumber();
 
     String getAccountNumber();
-
-    String getApplicant();
-
-    String getRespondent();
 
     String getPostCode();
 
@@ -27,4 +25,10 @@ public interface ApplicationListEntrySummaryProjection {
     UUID getListId();
 
     LocalDate getDate();
+
+    StandardApplicant getStandardApplicant();
+
+    NameAddress getApplicant();
+
+    NameAddress getRespondent();
 }

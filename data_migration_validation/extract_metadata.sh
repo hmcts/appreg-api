@@ -13,6 +13,8 @@
 # Version History:
 # Version	Date		Who		Purpose
 # 1.0		29/08/2025	Matthew Harman	Initial Version
+# 2.0		24/03/2026	Matthew Harman	Remove redundant tables
+#						Add retention policy
 #
 # Configuration:	The following section should be modified to suit the
 #			environment
@@ -20,13 +22,24 @@
 # spool_location	Location to store extracted files
 spool_location='/opt/moj/rman/appreg';
 
+# retention_mode	Retention mode, YES to implement retention policy
+#				i.e. we won't count data out of retention
+#					NO to no retention policy in use
+#				i.e. we will count all data
+retention_mode='YES';
+
+# retention_policy	Retention policy, date before which we will migrate
+#				data.  Only applicable if retention_mode
+#				above is set to YES
+retention_policy='TRUNC(SYSDATE-1825)';
+
 # TABLES_TO_EXTRACT	Stores a comma separated list of tables prefixed with
 #			schema name that we need to migrate, with a third field
 #			being the changed date field name, e.g.
 #			<SCHEMA NAME>.<TABLE_NAME>.CHANGED_DATE
 #			
 # Removed APPREGISTER.DATA_AUDIT
-TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES.CHANGED_DATE,APPREGISTER.APPLICATION_LISTS.CHANGED_DATE,APPREGISTER.APPLICATION_LIST_ENTRIES.CHANGED_DATE,APPREGISTER.APPLICATION_REGISTER.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_ID.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS.ALEFS_CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_OFFICIAL.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS.CHANGED_DATE,APPREGISTER.CRIMINAL_JUSTICE_AREA.NO_FIELD,APPREGISTER.FEE.FEE_CHANGED_DATE,APPREGISTER.NAME_ADDRESS.CHANGED_DATE,APPREGISTER.RESOLUTION_CODES.CHANGED_DATE,APPREGISTER.STANDARD_APPLICANTS.CHANGED_DATE,LIBRA.NATIONAL_COURT_HOUSES.CHANGED_DATE,LIBRA.LINK_ADDRESSES.CHANGED_DATE,LIBRA.ADDRESSES.CHANGED_DATE,LIBRA.LINK_COMMUNICATION_MEDIA.CHANGED_DATE,LIBRA.COMMUNICATION_MEDIA.CHANGED_DATE,LIBRA.PETTY_SESSIONAL_AREAS.CHANGED_DATE';
+TABLES_TO_EXTRACT='APPREGISTER.APPLICATION_CODES.CHANGED_DATE,APPREGISTER.APPLICATION_LISTS.CHANGED_DATE,APPREGISTER.APPLICATION_LIST_ENTRIES.CHANGED_DATE,APPREGISTER.APPLICATION_REGISTER.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_ID.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_FEE_STATUS.ALEFS_CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_OFFICIAL.CHANGED_DATE,APPREGISTER.APP_LIST_ENTRY_RESOLUTIONS.CHANGED_DATE,APPREGISTER.CRIMINAL_JUSTICE_AREA.NO_FIELD,APPREGISTER.FEE.FEE_CHANGED_DATE,APPREGISTER.NAME_ADDRESS.CHANGED_DATE,APPREGISTER.RESOLUTION_CODES.CHANGED_DATE,APPREGISTER.STANDARD_APPLICANTS.CHANGED_DATE,LIBRA.NATIONAL_COURT_HOUSES.CHANGED_DATE';
 
 # Table Structure to profile data
 # One record for each table, stored via a case statement
@@ -44,11 +57,6 @@ NAME_ADDRESS_STRUCTURE='NA_ID:NUMBER,CODE:VARCHAR,NAME:VARCHAR,TITLE:VARCHAR,FOR
 RESOLUTION_CODES_STRUCTURE='RC_ID:NUMBER,RESOLUTION_CODE:VARCHAR,RESOLUTION_CODE_TITLE:VARCHAR,RESOLUTION_CODE_WORDING:CLOB,RESOLUTION_LEGISLATION:CLOB,RC_DESTINATION_EMAIL_ADDRESS_1:VARCHAR,RC_DESTINATION_EMAIL_ADDRESS_2:VARCHAR,RESOLUTION_CODE_START_DATE:DATE,RESOLUTION_CODE_END_DATE:DATE,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR';
 STANDARD_APPLICANTS_STRUCTURE='SA_ID:NUMBER,STANDARD_APPLICANT_CODE:VARCHAR,STANDARD_APPLICANT_START_DATE:DATE,STANDARD_APPLICANT_END_DATE:DATE,VERSION:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,USER_NAME:VARCHAR,NAME:VARCHAR,TITLE:VARCHAR,FORENAME_1:VARCHAR,FORENAME_2:VARCHAR,FORENAME_3:VARCHAR,SURNAME:VARCHAR,ADDRESS_L1:VARCHAR,ADDRESS_L2:VARCHAR,ADDRESS_L3:VARCHAR,ADDRESS_L4:VARCHAR,ADDRESS_L5:VARCHAR,POSTCODE:VARCHAR,EMAIL_ADDRESS:VARCHAR,TELEPHONE_NUMBER:VARCHAR,MOBILE_NUMBER:VARCHAR';
 NATIONAL_COURT_HOUSES_STRUCTURE='NCH_ID:NUMBER,COURTHOUSE_NAME:VARCHAR,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,COURT_TYPE:VARCHAR,START_DATE:DATE,END_DATE:DATE,LOC_LOC_ID:NUMBER,PSA_PSA_ID:NUMBER,COURT_LOCATION_CODE:VARCHAR,SL_COURTHOUSE_NAME:VARCHAR,NORG_ID:NUMBER';
-LINK_ADDRESSES_STRUCTURE='LA_ID:NUMBER,NO_FIXED_ABODE:VARCHAR,LA_TYPE:VARCHAR,START_DATE:DATE,END_DATE:DATE,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,ADR_ADR_ID:NUMBER,BU_BU_ID:NUMBER,ER_ER_ID:NUMBER,LOC_LOC_ID:NUMBER,HEAD_OFFICE_INDICATOR:VARCHAR';
-ADDRESSES_STRUCTURE='ADR_ID:NUMBER,LINE1:VARCHAR,LINE2:VARCHAR,LINE3:VARCHAR,LINE4:VARCHAR,LINE5:VARCHAR,POSTCODE:VARCHAR,START_DATE:DATE,END_DATE:DATE,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,MCC_MCC_ID:NUMBER';
-LINK_COMMUNICATION_MEDIA_STRUCTURE='LCM_ID:NUMBER,LCM_TYPE:VARCHAR,START_DATE:DATE,END_DATE:DATE,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,COMM_COMM_ID:NUMBER,LOC_LOC_ID:NUMBER,ER_ER_ID:NUMBER,BU_BU_ID:NUMBER';
-COMMUNICATION_MEDIA_STRUCTURE='COMM_ID:NUMBER,DETAIL:VARCHAR,START_DATE:DATE,END_DATE:DATE,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE';
-PETTY_SESSIONAL_AREAS_STRUCTURE='PSA_ID:NUMBER,PSA_NAME:VARCHAR,SHORT_NAME:VARCHAR,VERSION_NUMBER:NUMBER,CHANGED_BY:NUMBER,CHANGED_DATE:DATE,CMA_CMA_ID:NUMBER,PSA_CODE:VARCHAR,START_DATE:DATE,END_DATE:DATE,JC_NAME:VARCHAR,COURT_TYPE:VARCHAR,CRIME_CASES_LOC_ID:NUMBER,FINE_ACCOUNTS_LOC_ID:NUMBER,MAINTENANCE_ENFORCEMENT_LOC_ID:NUMBER,FAMILY_CASES_LOC_ID:NUMBER,COURT_LOCATION_CODE:VARCHAR,CENTRAL_FINANCE_LOC_ID:NUMBER,SL_PSA_NAME:VARCHAR,NORG_ID:NUMBER';
 
 # Further configuration that should not need changing
 sql_header1="SET PAGESIZE 0 HEADING OFF FEEDBACK OFF VERIFY OFF";
@@ -83,78 +91,74 @@ do
         	APPLICATION_CODES)
 	               	echo "in APPLICATION_CODES"
        	        	table_structure=$APPLICATION_CODES_STRUCTURE;
+			retention_clause='';
        	         	;;
         	APPLICATION_LISTS)
 	               	echo "in APPLICATION_LISTS"
        	        	table_structure=$APPLICATION_LISTS_STRUCTURE;
+			# No retention of APPLICATION_LISTS, the retention
+			# is on tables that hang off it.
+			retention_clause='';
        	         	;;
         	APPLICATION_LIST_ENTRIES)
 	               	echo "in APPLICATION_LIST_ENTRIES"
        	        	table_structure=$APPLICATION_LIST_ENTRIES_STRUCTURE;
+			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy})))";
        	         	;;
         	APPLICATION_REGISTER)
 	               	echo "in APPLICATION_REGISTER"
        	        	table_structure=$APPLICATION_REGISTER_STRUCTURE;
+			retention_clause="AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy})))";
        	         	;;
         	APP_LIST_ENTRY_FEE_ID)
 	               	echo "in APP_LIST_ENTRY_FEE_ID"
        	        	table_structure=$APP_LIST_ENTRY_FEE_ID_STRUCTURE;
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
        	         	;;
         	APP_LIST_ENTRY_FEE_STATUS)
 	               	echo "in APP_LIST_ENTRY_FEE_STATUS"
        	        	table_structure=$APP_LIST_ENTRY_FEE_STATUS_STRUCTURE;
+			retention_clause="ALEFS_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
        	         	;;
         	APP_LIST_ENTRY_OFFICIAL)
 	               	echo "in APP_LIST_ENTRY_OFFICIAL"
        	        	table_structure=$APP_LIST_ENTRY_OFFICIAL_STRUCTURE;
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
        	         	;;
         	APP_LIST_ENTRY_RESOLUTIONS)
 	               	echo "in APP_LIST_ENTRY_RESOLUTIONS"
        	        	table_structure=$APP_LIST_ENTRY_RESOLUTIONS_STRUCTURE;
+			retention_clause="ALE_ALE_ID IN (SELECT ALE_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (APPLICATION_LIST_STATUS='CLOSED' AND trunc(changed_date) > ${retention_policy}))))";
        	         	;;
         	CRIMINAL_JUSTICE_AREA)
 	               	echo "in CRIMINAL_JUSTICE_AREA"
        	        	table_structure=$CRIMINAL_JUSTICE_AREA_STRUCTURE;
+			retention_clause='';
        	         	;;
         	FEE)
 	               	echo "in FEE"
        	        	table_structure=$FEE_STRUCTURE;
+			retention_clause='';
        	         	;;
         	NAME_ADDRESS)
 	               	echo "in NAME_ADDRESS"
        	        	table_structure=$NAME_ADDRESS_STRUCTURE;
+			retention_clause="(NA_ID IN (SELECT A_NA_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists WHERE (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))) OR NA_ID IN (SELECT R_NA_ID FROM appregister.application_list_entries WHERE AL_AL_ID IN (SELECT AL_ID FROM appregister.application_lists where (application_list_status = 'OPEN' OR (application_list_status = 'CLOSED' AND trunc(changed_date) > ${retention_policy})))))";
        	         	;;
         	RESOLUTION_CODES)
 	               	echo "in RESOLUTION_CODES"
        	        	table_structure=$RESOLUTION_CODES_STRUCTURE;
+			retention_clause='';
        	         	;;
         	STANDARD_APPLICANTS)
 	               	echo "in STANDARD_APPLICANTS"
        	        	table_structure=$STANDARD_APPLICANTS_STRUCTURE;
+			retention_clause='';
        	         	;;
         	NATIONAL_COURT_HOUSES)
 	               	echo "in NATIONAL_COURT_HOUSES"
        	        	table_structure=$NATIONAL_COURT_HOUSES_STRUCTURE;
-       	         	;;
-        	LINK_ADDRESSES)
-	               	echo "in LINK_ADDRESSES"
-       	        	table_structure=$LINK_ADDRESSES_STRUCTURE;
-       	         	;;
-        	ADDRESSES)
-	               	echo "in ADDRESSES"
-       	        	table_structure=$ADDRESSES_STRUCTURE;
-       	         	;;
-        	LINK_COMMUNICATION_MEDIA)
-	               	echo "in LINK_COMMUNICATION_MEDIA"
-       	        	table_structure=$LINK_COMMUNICATION_MEDIA_STRUCTURE;
-       	         	;;
-        	COMMUNICATION_MEDIA)
-	               	echo "in COMMUNICATION_MEDIA"
-       	        	table_structure=$COMMUNICATION_MEDIA_STRUCTURE;
-       	         	;;
-        	PETTY_SESSIONAL_AREAS)
-	               	echo "in PETTY_SESSIONAL_AREAS"
-       	        	table_structure=$PETTY_SESSIONAL_AREAS_STRUCTURE;
+			retention_clause='';
        	         	;;
 	esac
 
@@ -196,7 +200,14 @@ echo "sql2: $sql_script"
 	sql_script="${sql_script}spool ${spool_location}/oracle_rowcounts.csv append;${NEWLINE}";
 	sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 	sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
-	sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name};${NEWLINE}";
+	sql_script="${sql_script}count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+	# Do we need to add in retention clause
+	if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+	then
+		sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+	else
+		sql_script="${sql_script};${NEWLINE}";
+	fi
 	sql_script="${sql_script}spool off;${NEWLINE}";
 	echo "sqlbb: $sql_script"
 	echo "${sql_script}">>oracle_metadata.sql;
@@ -209,6 +220,10 @@ echo "sql2: $sql_script"
 		sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 		sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 		sql_script="${sql_script}TO_CHAR(TRUNC(${changed_date_field}),'YYYY-MM-DD')||','||count(*) FROM ${schema_name}.${table_name}${NEWLINE}";
+		if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+		then
+			sql_script="${sql_script} WHERE ${retention_clause}${NEWLINE}";
+		fi
 		sql_script="${sql_script}group by TRUNC(${changed_date_field});${NEWLINE}";
 		sql_script="${sql_script}spool off;${NEWLINE}";
 		echo "sqlcc: $sql_script"
@@ -231,7 +246,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'min'||','||min(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
@@ -242,7 +263,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'max'||','||max(${field_name}) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
@@ -255,7 +282,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'min'||','||min(to_char(${field_name},'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
@@ -266,7 +299,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'max'||','||max(to_char(${field_name}, 'YYYY-MM-DD HH24:MI:SS')) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
@@ -279,7 +318,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(length(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;
@@ -292,7 +337,13 @@ echo "a1";
 				sql_script="${sql_script}SELECT '${schema_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${table_name}'||','||${NEWLINE}";
 				sql_script="${sql_script}'${field_name}'||','||${NEWLINE}";
-				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name};${NEWLINE}";
+				sql_script="${sql_script}'avg_len'||','||to_char(NVL(avg(dbms_lob.getlength(${field_name})),0)) FROM ${schema_name}.${table_name}${NEWLINE}";
+				if [[ ${retention_mode} == "YES" ]] && [[ ! -z "${retention_clause}" ]]
+				then
+					sql_script="${sql_script} WHERE ${retention_clause};${NEWLINE}";
+				else
+					sql_script="${sql_script};${NEWLINE}";
+				fi
 				sql_script="${sql_script}spool off;${NEWLINE}";
 				echo "sqlcc: $sql_script"
 				echo "${sql_script}">>oracle_metadata.sql;

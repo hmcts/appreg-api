@@ -1,9 +1,12 @@
 package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.AppListEntrySequenceMapping;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
@@ -16,6 +19,7 @@ import uk.gov.hmcts.appregister.common.entity.NationalCourtHouse;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
@@ -61,6 +65,8 @@ public class DatabasePersistance {
 
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
+    @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+
     public ApplicationCode save(ApplicationCode data) {
 
         if (data.getApplicationListEntryList() != null) {
@@ -103,6 +109,12 @@ public class DatabasePersistance {
     }
 
     public NationalCourtHouse save(NationalCourtHouse data) {
+        if (data.getChangedBy() == null) {
+            data.setChangedBy(-125L);
+        }
+        if (data.getChangedDate() == null) {
+            data.setChangedDate(OffsetDateTime.now(ZoneOffset.UTC));
+        }
         return nationalCourtHouseRepository.saveAndFlush(data);
     }
 
@@ -122,6 +134,10 @@ public class DatabasePersistance {
 
         if (entry.getRnameaddress() != null) {
             save(entry.getRnameaddress());
+        }
+
+        if (entry.getAnamedaddress() != null) {
+            save(entry.getAnamedaddress());
         }
 
         return applicationListEntryRepository.saveAndFlush(entry);
@@ -158,5 +174,9 @@ public class DatabasePersistance {
 
     public ResolutionCode save(ResolutionCode resolutionCode) {
         return resolutionCodeRepository.saveAndFlush(resolutionCode);
+    }
+
+    public AppListEntrySequenceMapping save(AppListEntrySequenceMapping data) {
+        return appListEntrySequenceMappingRepository.saveAndFlush(data);
     }
 }

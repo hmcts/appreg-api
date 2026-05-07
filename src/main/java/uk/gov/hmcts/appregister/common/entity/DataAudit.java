@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.Changeable;
 import uk.gov.hmcts.appregister.common.entity.base.PreCreateUpdateEntityListener;
 import uk.gov.hmcts.appregister.common.entity.converter.CrudConverter;
@@ -37,7 +38,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Setter
 @EntityListeners(PreCreateUpdateEntityListener.class)
 @ToString
-public class DataAudit implements Changeable {
+public class DataAudit implements Changeable, Accountable {
     @Id
     @Column(name = "data_id", nullable = false, updatable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "add_dataaudit_event_gen")
@@ -70,7 +71,7 @@ public class DataAudit implements Changeable {
 
     @Column(name = "user_id")
     @Size(max = 32)
-    private String userId;
+    private String createdUser;
 
     @Column(name = "link")
     @Size(max = 100)

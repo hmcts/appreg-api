@@ -7,14 +7,11 @@ management:
   endpoint:
     health:
       show-details: "always"
-      # group:
-      #  readiness:
-      #   include: "db"
   endpoints:
     web:
       base-path: /
       exposure:
-        include: health, info, prometheus
+        include: health, info, prometheus, rest-implementation-status
 
 springdoc:
   writer-with-order-by-keys: true
@@ -80,12 +77,6 @@ spring:
           tenant: ${AZURE_TENANT_ID:00000000-0000-0000-0000-000000000000}
   mvc:
     static-path-pattern: /specs/**
-logging:
-  level:
-    org.springframework.*: DEBUG
-  pattern:
-    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{traceId} - %msg%n"
-    correlation: "[%X{traceId}/%X{spanId}]"
 
 app:
   timezone: "Europe/London"
@@ -99,5 +90,8 @@ appreg:
   audit:
     diff:
       enable-complex-diff: true
-
+  job:
+    page-size: 10
+  report:
+    page-size: 500
 

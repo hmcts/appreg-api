@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
@@ -21,7 +23,10 @@ import uk.gov.hmcts.appregister.audit.listener.diff.AuditEnabled;
 import uk.gov.hmcts.appregister.common.entity.base.Accountable;
 import uk.gov.hmcts.appregister.common.entity.base.BaseChangeableEntity;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
+import uk.gov.hmcts.appregister.common.entity.constraint.ValidNameAddress;
+import uk.gov.hmcts.appregister.common.entity.converter.NameAddressConverter;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 
 /**
  * Represents a Name and Address entity mapped to the "name_address" table in the database.
@@ -34,10 +39,9 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
+@ValidNameAddress
 public class NameAddress extends BaseChangeableEntity implements Accountable, Keyable {
-    public static final String RESPONDENT_CODE = "RE";
-    public static final String APPLICANT_CODE = "AP";
 
     @Id
     @Column(name = "na_id", nullable = false, updatable = false)
@@ -48,63 +52,81 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private Long id;
 
     @Column(name = "code")
-    private String code;
+    @Convert(converter = NameAddressConverter.class)
+    @NotNull
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
+    private NameAddressCodeType code;
 
     @Column(name = "name")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
     private String name;
 
     @Column(name = "title")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
     private String title;
 
     @Column(name = "forename_1")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String forename1;
 
     @Column(name = "forename_2")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String forename2;
 
     @Column(name = "forename_3")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String forename3;
 
     @Column(name = "surname")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
     private String surname;
 
     @Column(name = "address_l1")
     @Size(max = 35)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String address1;
 
     @Column(name = "address_l2")
     @Size(max = 35)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String address2;
 
     @Column(name = "address_l3")
     @Size(max = 35)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String address3;
 
     @Column(name = "address_l4")
     @Size(max = 35)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String address4;
 
     @Column(name = "address_l5")
     @Size(max = 35)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String address5;
 
     @Column(name = "postcode")
     @Size(max = 8)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
     private String postcode;
 
     @Column(name = "email_address")
     @Size(max = 253)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String emailAddress;
 
     @Column(name = "telephone_number")
     @Size(max = 20)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String telephoneNumber;
 
     @Column(name = "mobile_number")
     @Size(max = 20)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String mobileNumber;
 
     @Column(name = "version", nullable = false)
@@ -116,6 +138,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     private String userName;
 
     @Column(name = "date_of_birth")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private LocalDate dateOfBirth;
 
     @Column(name = "dms_id")
@@ -133,10 +156,10 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
     }
 
     public boolean isApplicant() {
-        return code != null && code.startsWith(APPLICANT_CODE);
+        return code != null && code == NameAddressCodeType.APPLICANT;
     }
 
     public boolean isRespondent() {
-        return code != null && code.startsWith(RESPONDENT_CODE);
+        return code != null && code == NameAddressCodeType.RESPONDENT;
     }
 }

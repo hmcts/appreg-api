@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
+import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class WordingTemplateTest {
     private static final String DATE_TEMPLATE =
@@ -15,15 +16,11 @@ public class WordingTemplateTest {
             "This is a test {TEXT|Applicant officer|10} with a date";
 
     @Test
-    void testTemplateFailParsingDataTypeIncorrect() {
-        AppRegistryException appRegistryException =
-                Assertions.assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                WordingTemplateSentence.WordingTemplate.with(
-                                        "{Wrong|Applicant officer|10}"));
+    void testTemplateAllDataTypeDefaultsToText() {
+        WordingTemplateSentence.WordingTemplate template =
+                WordingTemplateSentence.WordingTemplate.with("{Unknown|Applicant officer|10}");
         Assertions.assertEquals(
-                CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
+                TemplateConstraint.TypeEnum.TEXT, template.getDetail().getConstraint().getType());
     }
 
     @Test
@@ -56,6 +53,8 @@ public class WordingTemplateTest {
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
     }
 
+    // TODO: Re-enable this once the decision has been made on the FE implementation.
+    /*
     @Test
     public void testInvalidDateFormatFailure() {
         WordingTemplateSentence collection = WordingTemplateSentence.with(DATE_TEMPLATE);
@@ -67,7 +66,7 @@ public class WordingTemplateTest {
                                         collection.getTemplateableContents()[0], "not date"));
         Assertions.assertEquals(
                 CommonAppError.WORDING_DATA_TYPE_FAILURE, appRegistryException.getCode());
-    }
+    } */
 
     @Test
     public void testInvalidLengthFormatFailure() {

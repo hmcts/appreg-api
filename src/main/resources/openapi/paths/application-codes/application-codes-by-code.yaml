@@ -6,12 +6,14 @@ parameters:
     schema:
       type: string
       maxLength: 10
+    example: "AD99004"
   - in: query
     name: date
     required: true
     schema: { type: string, format: date }
     description: |
       ISO date (yyyy-MM-dd) on which the Application Code must be valid.
+    example: "2021-01-01"
 get:
   operationId: getApplicationCodeByCodeAndDate
   tags: [application-codes]

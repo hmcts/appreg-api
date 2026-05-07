@@ -7,9 +7,11 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
 import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.WordingTemplateMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoFeeAmount;
+import uk.gov.hmcts.appregister.generated.model.ApplicationCodeGetSummaryDtoOffsiteFeeAmount;
 import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 
 public class ApplicationCodeMapperTest {
@@ -22,26 +24,49 @@ public class ApplicationCodeMapperTest {
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
+        fee.setReference("reference");
 
         Fee offsitefee = new Fee();
         offsitefee.setAmount(BigDecimal.valueOf(23666.34));
         offsitefee.setDescription("Description offset");
         offsitefee.setOffsite(true);
+        offsitefee.setReference("offsite fee");
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(LocalDate.now());
         code.setStartDate(LocalDate.now());
-        code.setFeeReference("reference");
+
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
         code.setWording("namely {TEXT|Specify Document Lost|100}");
 
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, fee, offsitefee);
 
         // assert
+        Assertions.assertEquals(
+                "Specify Document Lost",
+                summaryDto.getWording().getSubstitutionKeyConstraints().get(0).getKey());
+        Assertions.assertEquals(
+                100,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getLength());
+        Assertions.assertEquals(
+                TemplateConstraint.TypeEnum.TEXT,
+                summaryDto
+                        .getWording()
+                        .getSubstitutionKeyConstraints()
+                        .get(0)
+                        .getConstraint()
+                        .getType());
+
         Assertions.assertEquals(
                 "namely {{Specify Document Lost}}", summaryDto.getWording().getTemplate());
         Assertions.assertEquals(
@@ -71,13 +96,17 @@ public class ApplicationCodeMapperTest {
                 summaryDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, summaryDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 summaryDto.getOffsiteFeeAmount().get().getCurrency());
+
         Assertions.assertEquals("reference", summaryDto.getFeeReference().get());
+        Assertions.assertEquals("offsite fee", summaryDto.getOffsiteFeeReference().get());
+
         Assertions.assertEquals(Boolean.FALSE, summaryDto.getIsFeeDue());
         Assertions.assertEquals(Boolean.FALSE, summaryDto.getRequiresRespondent());
         Assertions.assertEquals(Boolean.TRUE, summaryDto.getBulkRespondentAllowed());
         Assertions.assertEquals("Description", summaryDto.getFeeDescription().get());
+        Assertions.assertEquals("Description offset", summaryDto.getOffsiteFeeDescription().get());
     }
 
     @Test
@@ -89,6 +118,9 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetSummaryDto summaryDto =
                 applicationCodeMapper.toApplicationCodeGetSummaryDto(code, null, null);
 
@@ -109,20 +141,25 @@ public class ApplicationCodeMapperTest {
         fee.setAmount(BigDecimal.valueOf(232.34));
         fee.setDescription("Description");
         fee.setOffsite(false);
+        fee.setReference("reference");
 
         Fee offsetfee = new Fee();
         offsetfee.setAmount(BigDecimal.valueOf(23666.34));
         offsetfee.setDescription("Description offset");
         offsetfee.setOffsite(true);
+        offsetfee.setReference("offsite fee");
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("appcode");
         code.setEndDate(LocalDate.now());
         code.setStartDate(LocalDate.now());
-        code.setFeeReference("reference");
+
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, fee, offsetfee);
 
@@ -134,9 +171,13 @@ public class ApplicationCodeMapperTest {
                 getDetailDto.getFeeAmount().get().getCurrency());
         Assertions.assertEquals(2366634, getDetailDto.getOffsiteFeeAmount().get().getValue());
         Assertions.assertEquals(
-                ApplicationCodeGetSummaryDtoFeeAmount.CurrencyEnum.GBP,
+                ApplicationCodeGetSummaryDtoOffsiteFeeAmount.CurrencyEnum.GBP,
                 getDetailDto.getOffsiteFeeAmount().get().getCurrency());
         Assertions.assertEquals("reference", getDetailDto.getFeeReference().get());
+        Assertions.assertEquals("offsite fee", getDetailDto.getOffsiteFeeReference().get());
+        Assertions.assertEquals(
+                "Description offset", getDetailDto.getOffsiteFeeDescription().get());
+
         Assertions.assertEquals(Boolean.FALSE, getDetailDto.getIsFeeDue());
         Assertions.assertEquals(Boolean.FALSE, getDetailDto.getRequiresRespondent());
         Assertions.assertEquals(Boolean.TRUE, getDetailDto.getBulkRespondentAllowed());
@@ -152,6 +193,9 @@ public class ApplicationCodeMapperTest {
         code.setBulkRespondentAllowed(YesOrNo.YES);
         code.setRequiresRespondent(YesOrNo.NO);
         code.setFeeDue(YesOrNo.NO);
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
         ApplicationCodeGetDetailDto getDetailDto =
                 applicationCodeMapper.toApplicationCodeGetDetailDto(code, null, null);
 
@@ -188,6 +232,9 @@ public class ApplicationCodeMapperTest {
 
         ApplicationCode code = new ApplicationCode();
         code.setCode("x");
+        code.setWording("namely {TEXT|Specify Document Lost|100}");
+
+        applicationCodeMapper.wordingTemplateMapper = new WordingTemplateMapperImpl();
 
         var dtoMin = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, min, null);
         var dtoMax = applicationCodeMapper.toApplicationCodeGetSummaryDto(code, max, null);

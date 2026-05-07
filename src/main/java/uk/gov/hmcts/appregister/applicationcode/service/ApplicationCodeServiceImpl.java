@@ -12,12 +12,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.appregister.applicationcode.audit.AppCodeAuditOperation;
 import uk.gov.hmcts.appregister.applicationcode.mapper.ApplicationCodeMapper;
+import uk.gov.hmcts.appregister.applicationcode.mapper.CodeAndTitle;
 import uk.gov.hmcts.appregister.applicationcode.validator.GetApplicationCodeValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
+import uk.gov.hmcts.appregister.common.entity.Fee;
 import uk.gov.hmcts.appregister.common.entity.FeePair;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -45,7 +47,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
     private final GetApplicationCodeValidator getApplicationCodeValidator;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationCodePage findAll(String appCode, String appTitle, PagingWrapper pageable) {
 
         // Use today's date to ensure we only return Result Codes that are currently active.
@@ -73,9 +75,7 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
 
                                 return newPage.addContentItem(
                                         applicationCodeMapper.toApplicationCodeGetSummaryDto(
-                                                code,
-                                                feePair != null ? feePair.mainFee() : null,
-                                                feePair != null ? feePair.offsiteFee() : null));
+                                                code, feePair.mainFee(), feePair.offsiteFee()));
                             });
 
                     log.debug(
@@ -84,30 +84,30 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                             appTitle,
                             pageable);
 
+                    CodeAndTitle record = new CodeAndTitle(appCode, appTitle);
                     AuditableResult<ApplicationCodePage, ApplicationCode> result =
-                            new AuditableResult<>(newPage, null);
+                            new AuditableResult<>(newPage, applicationCodeMapper.toEntity(record));
+
                     return Optional.of(result);
                 },
                 auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationCodeGetDetailDto findByCode(PayloadForGet payloadForGet) {
         return auditService.processAudit(
+                null,
                 AppCodeAuditOperation.GET_APPLICATION_CODE_AUDIT_EVENT,
                 req -> {
-                    log.debug(
-                            "Start: Find active Application Code using code: {} date: {}",
-                            payloadForGet.getCode(),
-                            payloadForGet.getDate());
-
                     return getApplicationCodeValidator.validate(
                             payloadForGet,
                             (payload, success) -> {
                                 FeePair feePair =
                                         feeService.resolveFeePair(
-                                                success.getApplicationCode().getFeeReference());
+                                                success.getApplicationCode().getFeeReference(),
+                                                payloadForGet.getDate());
+                                Fee offsiteFee = feePair.offsiteFee();
 
                                 AuditableResult<ApplicationCodeGetDetailDto, ApplicationCode>
                                         result =
@@ -116,14 +116,10 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                                                 .toApplicationCodeGetDetailDto(
                                                                         success
                                                                                 .getApplicationCode(),
-                                                                        feePair != null
-                                                                                ? feePair.mainFee()
-                                                                                : null,
-                                                                        feePair != null
-                                                                                ? feePair
-                                                                                        .offsiteFee()
-                                                                                : null),
-                                                        null);
+                                                                        feePair.mainFee(),
+                                                                        offsiteFee),
+                                                        applicationCodeMapper.toEntity(
+                                                                payloadForGet));
 
                                 log.debug(
                                         "Finish: Find Application for app code: {} date: {}",
@@ -131,7 +127,6 @@ public class ApplicationCodeServiceImpl implements ApplicationCodeService {
                                         payload.getDate());
                                 return Optional.of(result);
                             });
-                },
-                auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+                });
     }
 }

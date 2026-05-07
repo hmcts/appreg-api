@@ -1,5 +1,5 @@
 type: object
-description: Request payload to create an Application List.
+description: Request payload to create an Application List. Blank fields will be rejected, nulls should be used instead.
 required:
   - date
   - time
@@ -22,7 +22,8 @@ properties:
 
   description:
     type: string
-
+    minLength: 1
+    maxLength: 200
   status:
     $ref: './application-list-status.yaml'
 
@@ -31,18 +32,21 @@ properties:
     description: Code that identifies the Court Location.
     example: "LOC123"
     maxLength: 10
+    minLength: 1
 
   otherLocationDescription:
     type: string
     description: Free-text location if not using a standard court.
     example: "Temporary Courtroom at Town Hall"
     maxLength: 200
+    minLength: 1
 
   cjaCode:
     type: string
     description: Criminal Justice Area code.
     example: "CJ"
     maxLength: 2
+    minLength: 1
 
   durationHours:
     type: integer

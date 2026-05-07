@@ -188,11 +188,14 @@ public class ReflectiveAuditorTest {
                 reflectiveAuditDifferentiator.extractAuditData(CrudEnum.DELETE, appList);
 
         // only id should be audited on delete
-        Assertions.assertEquals(2, differenceList.size());
+        Assertions.assertEquals(3, differenceList.size());
         Assertions.assertEquals(
                 new AuditableData(
                         TableNames.APPLICATION_LISTS, "al_id", appList.getId().toString()),
                 findByField("al_id", differenceList));
+        Assertions.assertEquals(
+                new AuditableData(TableNames.APPLICATION_LISTS, "id", appList.getUuid().toString()),
+                findByField("id", differenceList));
         Assertions.assertEquals(
                 new AuditableData(
                         TableNames.APPLICATION_LISTS, "version", appList.getVersion().toString()),

@@ -15,6 +15,8 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
@@ -67,7 +69,8 @@ class ApplicationListEntryEntityMapperTest {
                         applicant,
                         respondent,
                         applicationCode,
-                        applicationList);
+                        applicationList,
+                        YesOrNo.YES);
 
         // make the assertion
         Assertions.assertEquals(standardApplicant, applicationListEntry.getStandardApplicant());
@@ -81,6 +84,7 @@ class ApplicationListEntryEntityMapperTest {
                 entryCreateDto.getCaseReference(), applicationListEntry.getCaseReference());
         Assertions.assertEquals(entryCreateDto.getNotes(), applicationListEntry.getNotes());
         Assertions.assertEquals("wording", applicationListEntry.getApplicationListEntryWording());
+        Assertions.assertEquals(YesOrNo.YES.getValue(), applicationListEntry.getBulkUpload());
     }
 
     @Test
@@ -133,35 +137,37 @@ class ApplicationListEntryEntityMapperTest {
         applicant.setOrganisation(null);
 
         NameAddress nameAddress = applicantMapper.toApplicant(applicant);
-        Assertions.assertEquals("AP", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.APPLICANT, nameAddress.getCode());
         Assertions.assertEquals(
                 applicant.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
-                applicant.getPerson().getName().getSecondForename(), nameAddress.getForename2());
+                applicant.getPerson().getName().getSecondForename().orElse(null),
+                nameAddress.getForename2());
         Assertions.assertEquals(
-                applicant.getPerson().getName().getThirdForename(), nameAddress.getForename3());
+                applicant.getPerson().getName().getThirdForename().orElse(null),
+                nameAddress.getForename3());
         Assertions.assertEquals(
                 applicant.getPerson().getName().getSurname(), nameAddress.getSurname());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getPhone(),
+                applicant.getPerson().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getEmail(),
+                applicant.getPerson().getContactDetails().getEmail().orElse(null),
                 nameAddress.getEmailAddress());
         Assertions.assertEquals(
                 applicant.getPerson().getContactDetails().getAddressLine1(),
                 nameAddress.getAddress1());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getAddressLine2(),
+                applicant.getPerson().getContactDetails().getAddressLine2().orElse(null),
                 nameAddress.getAddress2());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getAddressLine3(),
+                applicant.getPerson().getContactDetails().getAddressLine3().orElse(null),
                 nameAddress.getAddress3());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getAddressLine4(),
+                applicant.getPerson().getContactDetails().getAddressLine4().orElse(null),
                 nameAddress.getAddress4());
         Assertions.assertEquals(
-                applicant.getPerson().getContactDetails().getAddressLine5(),
+                applicant.getPerson().getContactDetails().getAddressLine5().orElse(null),
                 nameAddress.getAddress5());
         Assertions.assertEquals(
                 applicant.getPerson().getContactDetails().getPostcode(), nameAddress.getPostcode());
@@ -175,28 +181,28 @@ class ApplicationListEntryEntityMapperTest {
         applicant.setPerson(null);
 
         NameAddress nameAddress = applicantMapper.toApplicant(applicant);
-        Assertions.assertEquals("AP", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.APPLICANT, nameAddress.getCode());
         Assertions.assertEquals(nameAddress.getName(), applicant.getOrganisation().getName());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getPhone(),
+                applicant.getOrganisation().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getEmail(),
+                applicant.getOrganisation().getContactDetails().getEmail().orElse(null),
                 nameAddress.getEmailAddress());
         Assertions.assertEquals(
                 applicant.getOrganisation().getContactDetails().getAddressLine1(),
                 nameAddress.getAddress1());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getAddressLine2(),
+                applicant.getOrganisation().getContactDetails().getAddressLine2().orElse(null),
                 nameAddress.getAddress2());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getAddressLine3(),
+                applicant.getOrganisation().getContactDetails().getAddressLine3().orElse(null),
                 nameAddress.getAddress3());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getAddressLine4(),
+                applicant.getOrganisation().getContactDetails().getAddressLine4().orElse(null),
                 nameAddress.getAddress4());
         Assertions.assertEquals(
-                applicant.getOrganisation().getContactDetails().getAddressLine5(),
+                applicant.getOrganisation().getContactDetails().getAddressLine5().orElse(null),
                 nameAddress.getAddress5());
         Assertions.assertEquals(
                 applicant.getOrganisation().getContactDetails().getPostcode(),
@@ -211,35 +217,37 @@ class ApplicationListEntryEntityMapperTest {
         respondent.setOrganisation(null);
 
         NameAddress nameAddress = applicantMapper.toRespondent(respondent);
-        Assertions.assertEquals("RE", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.RESPONDENT, nameAddress.getCode());
         Assertions.assertEquals(
                 respondent.getPerson().getName().getFirstForename(), nameAddress.getForename1());
         Assertions.assertEquals(
-                respondent.getPerson().getName().getSecondForename(), nameAddress.getForename2());
+                respondent.getPerson().getName().getSecondForename().orElse(null),
+                nameAddress.getForename2());
         Assertions.assertEquals(
-                respondent.getPerson().getName().getThirdForename(), nameAddress.getForename3());
+                respondent.getPerson().getName().getThirdForename().orElse(null),
+                nameAddress.getForename3());
         Assertions.assertEquals(
                 respondent.getPerson().getName().getSurname(), nameAddress.getSurname());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getPhone(),
+                respondent.getPerson().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getEmail(),
+                respondent.getPerson().getContactDetails().getEmail().orElse(null),
                 nameAddress.getEmailAddress());
         Assertions.assertEquals(
                 respondent.getPerson().getContactDetails().getAddressLine1(),
                 nameAddress.getAddress1());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getAddressLine2(),
+                respondent.getPerson().getContactDetails().getAddressLine2().orElse(null),
                 nameAddress.getAddress2());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getAddressLine3(),
+                respondent.getPerson().getContactDetails().getAddressLine3().orElse(null),
                 nameAddress.getAddress3());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getAddressLine4(),
+                respondent.getPerson().getContactDetails().getAddressLine4().orElse(null),
                 nameAddress.getAddress4());
         Assertions.assertEquals(
-                respondent.getPerson().getContactDetails().getAddressLine5(),
+                respondent.getPerson().getContactDetails().getAddressLine5().orElse(null),
                 nameAddress.getAddress5());
         Assertions.assertEquals(
                 respondent.getPerson().getContactDetails().getPostcode(),
@@ -254,28 +262,28 @@ class ApplicationListEntryEntityMapperTest {
         respondent.setPerson(null);
 
         NameAddress nameAddress = applicantMapper.toRespondent(respondent);
-        Assertions.assertEquals("RE", nameAddress.getCode());
+        Assertions.assertEquals(NameAddressCodeType.RESPONDENT, nameAddress.getCode());
         Assertions.assertEquals(nameAddress.getName(), respondent.getOrganisation().getName());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getPhone(),
+                respondent.getOrganisation().getContactDetails().getPhone().orElse(null),
                 nameAddress.getTelephoneNumber());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getEmail(),
+                respondent.getOrganisation().getContactDetails().getEmail().orElse(null),
                 nameAddress.getEmailAddress());
         Assertions.assertEquals(
                 respondent.getOrganisation().getContactDetails().getAddressLine1(),
                 nameAddress.getAddress1());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getAddressLine2(),
+                respondent.getOrganisation().getContactDetails().getAddressLine2().orElse(null),
                 nameAddress.getAddress2());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getAddressLine3(),
+                respondent.getOrganisation().getContactDetails().getAddressLine3().orElse(null),
                 nameAddress.getAddress3());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getAddressLine4(),
+                respondent.getOrganisation().getContactDetails().getAddressLine4().orElse(null),
                 nameAddress.getAddress4());
         Assertions.assertEquals(
-                respondent.getOrganisation().getContactDetails().getAddressLine5(),
+                respondent.getOrganisation().getContactDetails().getAddressLine5().orElse(null),
                 nameAddress.getAddress5());
         Assertions.assertEquals(
                 respondent.getOrganisation().getContactDetails().getPostcode(),

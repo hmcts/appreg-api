@@ -9,15 +9,19 @@ properties:
   name:
     type: string
     description: Human-readable court name.
+    example: "Cardiff Crown Court Set 1"
   locationCode:
     type: string
     description: Code that identifies the Court Location.
+    example: "CCC003"
   startDate:
     type: string
     format: date
     description: Date the Court Location became active.
+    example: "2025-09-17"
   endDate:
     type: string
     format: date
     description: Date the Court Location became inactive. `null` indicates that this row is still active.
     nullable: true
+    example: "2025-12-01"

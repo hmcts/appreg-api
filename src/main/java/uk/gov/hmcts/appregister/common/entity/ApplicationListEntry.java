@@ -45,7 +45,7 @@ import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 @Getter
 @EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuppressWarnings("javaarchitecture:S7027")
-@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE})
+@AuditEnabled(types = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ, CrudEnum.DELETE})
 public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
         implements Accountable, Versionable, Keyable {
 
@@ -54,54 +54,65 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ale_gen")
     @SequenceGenerator(name = "ale_gen", sequenceName = "ale_seq", allocationSize = 1)
     @EqualsAndHashCode.Include
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ, CrudEnum.DELETE})
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "al_al_id")
-    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ, CrudEnum.DELETE})
     private ApplicationList applicationList;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sa_sa_id")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private StandardApplicant standardApplicant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ac_ac_id", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE, CrudEnum.READ})
     private ApplicationCode applicationCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "a_na_id")
+    @Audit(action = {CrudEnum.READ, CrudEnum.DELETE})
     private NameAddress anamedaddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "r_na_id")
+    @Audit(action = {CrudEnum.READ, CrudEnum.DELETE})
     private NameAddress rnameaddress;
 
     @Column(name = "number_of_bulk_respondents")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private Short numberOfBulkRespondents;
 
     @Column(name = "application_list_entry_wording", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String applicationListEntryWording;
 
     @Column(name = "case_reference")
     @Size(max = 15)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String caseReference;
 
     @Column(name = "account_number")
     @Size(max = 20)
+    @Audit(action = {CrudEnum.READ})
     private String accountNumber;
 
     @Column(name = "entry_rescheduled", nullable = false)
     @Size(max = 1)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String entryRescheduled;
 
     @Column(name = "notes")
     @Size(max = 4000)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.UPDATE})
     private String notes;
 
     @Column(name = "version", nullable = false)
     @Version
+    @Audit(action = {CrudEnum.UPDATE, CrudEnum.DELETE})
     private Long version;
 
     @Column(name = "bulk_upload")
@@ -111,6 +122,7 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
     private String createdUser;
 
     @Column(name = "sequence_number", nullable = false)
+    @Audit(action = {CrudEnum.READ})
     private Short sequenceNumber;
 
     @Column(name = "tcep_status")
@@ -139,5 +151,6 @@ public class ApplicationListEntry extends BaseChangeableAndDeletableEntity
 
     @Column(name = "id")
     @Generated(event = EventType.INSERT)
+    @Audit(action = {CrudEnum.READ, CrudEnum.DELETE})
     private UUID uuid;
 }

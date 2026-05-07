@@ -59,17 +59,21 @@ public class AppListEntryFeeStatus implements Changeable, Accountable, Versionab
     private ApplicationListEntry appListEntry;
 
     @Column(name = "alefs_payment_reference")
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String alefsPaymentReference;
 
     @Column(name = "alefs_fee_status")
     @Convert(converter = FeeStatusTypeConverter.class)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private FeeStatusType alefsFeeStatus;
 
     @Column(name = "alefs_fee_status_date", nullable = false)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private LocalDate alefsFeeStatusDate;
 
     @Column(name = "alefs_version", nullable = false)
     @Version
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private Long version;
 
     @Column(name = "alefs_changed_by", nullable = false)

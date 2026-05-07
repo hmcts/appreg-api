@@ -85,6 +85,17 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew spotlessApply
   ```
 
+- **Enable P6Spy SQL logging**
+  Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only
+  `nosecurity` and `p6spy` Spring profiles without including them in the normal release build.
+  ```bash
+  ./gradlew bootRunLocalDev
+  ```
+  To override the active profiles, pass `springProfiles`. For example:
+  ```bash
+  ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
+  ```
+
 ## Running Sonarqube locally
 
 1. Ensure you have Docker installed and running
@@ -160,3 +171,6 @@ and set the environment variables to match your local setup. The postman suite c
 ## License
 
 This project is licensed under the MIT License — see [LICENSE](LICENSE).
+
+To obtain all license dependencies please run `./gradlew generateLicenseReport`. The license output report can be found
+[here](./build/reports/dependency-license/index.json)

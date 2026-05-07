@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.security;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import uk.gov.hmcts.appregister.common.exception.JwtError;
  * to have already taken place
  */
 @Component
+@Profile("!nosecurity")
 @SuppressWarnings({"java:S1135", "java:S3516"})
 public class UserProvider {
 

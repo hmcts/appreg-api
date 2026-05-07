@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.audit.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +19,7 @@ import uk.gov.hmcts.appregister.audit.operation.AuditOperation;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 
 /**
  * Encapsulates a unit of work for the lifecycle of an auditable operation. Behaviour of each audit
@@ -33,7 +33,7 @@ import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 public class AuditOperationServiceImpl implements AuditOperationService {
 
     /** The trace id name that is inserted by micrometer. */
-    private static final String TRACE_ID = "traceId";
+    public static final String TRACE_ID = "traceId";
 
     private final ObjectMapper mapper;
 
@@ -81,7 +81,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
         // before execution hook
         fireAuditEvent(event, listener);
 
-        log.debug("Processed start of auditable operation: {}", event);
+        log.debug("Processed start of auditable operation: {}", auditType.getEventName());
         Optional<AuditableResult<T, E>> responsePayload;
         try {
             responsePayload = execution.apply(event);
@@ -94,7 +94,9 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                 fireAuditEvent(
                         new CompleteEvent(
                                 event,
-                                getBodyAsString(responsePayload.get().getResultingValue()),
+                                responsePayload.get().getResultingValue() != null
+                                        ? getBodyAsString(responsePayload.get().getResultingValue())
+                                        : null,
                                 responsePayload.get().getNewEntity()),
                         listener);
             } else {
@@ -102,12 +104,12 @@ public class AuditOperationServiceImpl implements AuditOperationService {
                 fireAuditEvent(new CompleteEvent(event, null, null), listener);
             }
 
-            log.debug("Processed success auditable operation: {}", event);
+            log.debug("Processed success auditable operation: {}", auditType.getEventName());
         } catch (Exception e) {
             // fire after the failure of an operation
             fireAuditEvent(new FailEvent(event), listener);
 
-            log.debug("Processed failure auditable operation: {}", event);
+            log.debug("Processed failure auditable operation: {}", auditType.getEventName());
             throw e;
         }
 
@@ -125,18 +127,21 @@ public class AuditOperationServiceImpl implements AuditOperationService {
     private <T, E extends Keyable> void checkIfAuditOperationIsSuitableForResult(
             AuditOperation eventEnum, E oldValue, Optional<AuditableResult<T, E>> result) {
         if (eventEnum.getType().isCreate()
-                && ((result.isPresent() && oldValue != null)
+                && ((oldValue != null)
                         || (result.isPresent() && result.get().getNewEntity() == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Create audit cannot have old entity");
         } else if (eventEnum.getType().isUpdate()
-                && result.isPresent()
-                && (result.get().getNewEntity() == null || oldValue == null)) {
+                && (!result.isPresent()
+                        || (result.get().getNewEntity() == null || oldValue == null))) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Update audit must have old and new");
         } else if (eventEnum.getType().isDelete() && oldValue == null) {
             throw new AppRegistryException(
                     CommonAppError.INTERNAL_SERVER_ERROR, "Delete audit must have old");
+        } else if (eventEnum.getType().isRead() && oldValue != null) {
+            throw new AppRegistryException(
+                    CommonAppError.INTERNAL_SERVER_ERROR, "Read audit cannot have old entity");
         }
     }
 
@@ -146,12 +151,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      * @return The body as a string or defaulted on an marshalling error
      */
     private String getBodyAsString(Object body) {
-        try {
-            return mapper.writeValueAsString(body);
-        } catch (JsonProcessingException e) {
-            log.error("Problem marshalling the json response for auditing", e);
-            return "Problem marshalling the json response for auditing";
-        }
+        return ObfuscationUtil.getObfuscatedString(body);
     }
 
     /**
@@ -162,8 +162,21 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      */
     private void fireAuditEvent(
             AuditEvent auditEvent, AuditOperationLifecycleListener... listener) {
-        for (AuditOperationLifecycleListener l : listener) {
-            l.eventPerformed(auditEvent);
+        for (var l : listener) {
+            try {
+                l.eventPerformed(auditEvent);
+            } catch (Exception e) {
+                log.error(
+                        "Audit listener failure suppressed. listener={}, eventName={}, eventType={},"
+                                + " correlationId={}, status={}, failureMessage={}",
+                        l.getClass().getName(),
+                        auditEvent.getRequestAction().getEventName(),
+                        auditEvent.getClass().getSimpleName(),
+                        auditEvent.getMessageUuid(),
+                        auditEvent.getMessageStatus(),
+                        e.getMessage(),
+                        e);
+            }
         }
     }
 
@@ -172,7 +185,7 @@ public class AuditOperationServiceImpl implements AuditOperationService {
      *
      * @return The trace id or a default message if not found
      */
-    protected String getTraceId() {
+    public static String getTraceId() {
         try {
             String traceId = MDC.get(TRACE_ID);
             if (traceId != null) {

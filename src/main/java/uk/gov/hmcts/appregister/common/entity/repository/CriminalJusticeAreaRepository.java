@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.CriminalJusticeArea;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 
 /**
  * Repository interface for managing ApplicationCode entities.
@@ -32,12 +33,13 @@ public interface CriminalJusticeAreaRepository extends JpaRepository<CriminalJus
             """
         SELECT c
         FROM CriminalJusticeArea c
-        WHERE (:code IS NULL OR c.code ILIKE :code)
-        AND (:description IS NULL OR c.description ILIKE :description)
+        WHERE (:code IS NULL OR LOWER(c.code) = LOWER(cast(:code AS STRING)))
+        AND (:description IS NULL OR LOWER(c.description) LIKE concat('%',
+                LOWER(cast(:description AS STRING)), '%')  ESCAPE '\\')
         """)
     Page<CriminalJusticeArea> search(
             @Param("code") String code,
-            @Param("description") String description,
+            @LikeParam @Param("description") String description,
             Pageable pageable);
 
     /**

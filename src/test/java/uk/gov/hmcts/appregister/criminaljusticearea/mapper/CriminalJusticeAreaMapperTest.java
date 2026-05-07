@@ -23,4 +23,12 @@ public class CriminalJusticeAreaMapperTest {
         Assertions.assertEquals(code, actual.getCode());
         Assertions.assertEquals(description, actual.getDescription());
     }
+
+    @Test
+    void testNoEntity() {
+        CodeAndDescription record = new CodeAndDescription(null, null);
+
+        var mapper = new CriminalJusticeMapperImpl();
+        Assertions.assertNotNull(mapper.toEntity(record));
+    }
 }

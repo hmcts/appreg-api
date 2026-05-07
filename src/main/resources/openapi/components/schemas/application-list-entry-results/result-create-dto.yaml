@@ -1,5 +1,5 @@
 type: object
-description: Request payload to create an Application List Entry Result.
+description: Request payload to create an Application List Entry Result. Blank fields will be rejected, nulls should be used instead.
 required:
   - resultCode
 
@@ -10,6 +10,7 @@ properties:
     description: Code that identifies the Result Code.
     example: "RC-001"
     maxLength: 10
+    minLength: 1
 
   wordingFields:
     type: array
@@ -19,4 +20,3 @@ properties:
     description: >
       An array of user-provided values used to populate placeholders in the 'wording'. The wording is a field belonging
       to the linked Result Code. Each string is applied to the wording in the order they are provided.
-    example: ["25 October 2025", "London"]

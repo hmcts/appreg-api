@@ -1,5 +1,5 @@
 type: object
-description: The Official hearing the application.
+description: The Official hearing the application. Blank fields will be rejected, nulls should be used instead.
 properties:
 
   title:
@@ -7,18 +7,21 @@ properties:
     description: Prefix before a persons name.
     example: "Mr, Mrs"
     maxLength: 100
+    minLength: 1
 
   surname:
     type: string
     description: The persons family name.
     example: "Smith"
     maxLength: 100
+    minLength: 1
 
   forename:
     type: string
     description: The persons first name.
     example: "John"
     maxLength: 100
+    minLength: 1
 
   type:
     $ref: './official-type.yaml'

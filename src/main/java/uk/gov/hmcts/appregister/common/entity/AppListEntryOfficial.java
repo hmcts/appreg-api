@@ -55,18 +55,22 @@ public class AppListEntryOfficial extends BaseChangeableEntity implements Accoun
 
     @Column(name = "title")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String title;
 
     @Column(name = "forename")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String forename;
 
     @Column(name = "surname")
     @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private String surname;
 
     @Column(name = "official_type", nullable = false)
     @Convert(converter = OfficialConverter.class)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
     private OfficialType officialType;
 
     @Column(name = "user_name", nullable = false)

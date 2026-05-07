@@ -1,18 +1,29 @@
 package uk.gov.hmcts.appregister.applicationentryresult.validator;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
+import uk.gov.hmcts.appregister.common.entity.ApplicationList;
+import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
+import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
+import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 
 /**
- * A successful output come of {@link uk.gov.hmcts.appregister.applicationlist.validator
- * .ApplicationEntryResultDeletionValidator}.
+ * The state of the validation success for {@link ApplicationEntryResultDeletionValidator}.
  */
 @Getter
-@RequiredArgsConstructor
 @Setter
-public class ListEntryResultDeleteValidationSuccess {
-    /** The application list entry result being deleted. */
+public class ListEntryResultDeleteValidationSuccess extends ListEntryResultCreateValidationSuccess {
+    public ListEntryResultDeleteValidationSuccess(
+            WordingTemplateSentence wordingSentence,
+            ResolutionCode resultCode,
+            ApplicationList applicationList,
+            ApplicationListEntry applicationListEntry,
+            AppListEntryResolution appListEntryResult) {
+
+        super(applicationList, applicationListEntry, resultCode, wordingSentence);
+        this.appListEntryResult = appListEntryResult;
+    }
+
     private AppListEntryResolution appListEntryResult;
 }

@@ -141,7 +141,25 @@ public class WordingTemplateSentence implements TemplateableSentence {
     public SubstitutedSentence substitute(List<TemplateSubstitution> values) {
         String returnedString = templateWithProcessedPlaceholders;
 
-        if ((values == null || values.isEmpty()) && contents.isEmpty()) {
+        if (values == null) {
+            if (contents.isEmpty()) {
+                // No templates AND no values, safe to return the original template
+                log.debug("No substitution values provided, returning original template");
+                return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
+            }
+
+            // Templates exist but values are null, invalid scenario
+            throw new AppRegistryException(
+                    CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                    "Substitution values cannot be null when template contains placeholders",
+                    Map.of(
+                            "templateSize",
+                            Integer.toString(getTemplatesToBeProcessed()),
+                            "valueSize",
+                            "null"));
+        }
+
+        if ((values.isEmpty()) && contents.isEmpty()) {
             log.debug("No substitution values provided, returning original template");
             return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
         }
@@ -247,8 +265,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
     @Override
     public List<TemplateSubstitution> getKeysToBeSubstituted() {
         List<TemplateSubstitution> substitutionList = new ArrayList<>();
-        for (TemplateKeyWithConstraint constraint :
-                templateDetail.getSubstitutionKeyConstraints()) {
+        for (TemplateKeyWithConstraint constraint : getDetail().getSubstitutionKeyConstraints()) {
             TemplateSubstitution templateSubstitution = new TemplateSubstitution();
             templateSubstitution.setKey(constraint.getKey());
             substitutionList.add(templateSubstitution);
@@ -373,7 +390,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             constraint.setLength(length);
 
             // validates the data type
-            DataType type = validateDataType(parts[0]);
+            WordingDataTypes type = validateDataType(parts[0]);
 
             if (type == null) {
                 throw new AppRegistryException(
@@ -381,7 +398,7 @@ public class WordingTemplateSentence implements TemplateableSentence {
             }
 
             // validates the data type
-            constraint.setType(TemplateConstraint.TypeEnum.valueOf(parts[0]));
+            constraint.setType(type.getValue());
         }
 
         /**
@@ -420,7 +437,9 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         @Override
         public void canValueBeSubstituted(String value) {
-            DataType type = validateDataType(this.getDetail().getConstraint().getType().getValue());
+            DataType type =
+                    validateDataType(this.getDetail().getConstraint().getType().getValue())
+                            .getType();
             log.debug("Validating value '{}' for template: {}", value, this);
             if (!type.validateForType(value)) {
                 throw new AppRegistryException(
@@ -456,17 +475,22 @@ public class WordingTemplateSentence implements TemplateableSentence {
         /**
          * gets a java data type class for a template type.
          *
-         * @return The data type or null if not found
+         * @return Always return a TEXT for now.
          */
-        public static DataType validateDataType(String type) {
+        public static WordingDataTypes validateDataType(String type) {
+            // TODO: When we know more about how specific data types work
+            // we can interpret and validate for them. At the moment lets return a
+            // TEXT which is completely open and accepts any value.
+            /*
             // check the data types is correct in the template
             for (WordingDataTypes types : WordingDataTypes.values()) {
                 if (types.getValue().equals(type)) {
                     return types.getType();
                 }
             }
+             */
 
-            return null;
+            return WordingDataTypes.TEXT;
         }
 
         @Override

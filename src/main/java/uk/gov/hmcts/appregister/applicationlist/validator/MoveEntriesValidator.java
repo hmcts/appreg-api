@@ -1,43 +1,36 @@
 package uk.gov.hmcts.appregister.applicationlist.validator;
 
-import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.validator.Validator;
-import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MoveEntriesValidator
-        implements Validator<MoveEntriesDto, MoveEntriesValidationSuccess> {
+        implements Validator<MoveEntriesPayload, MoveEntriesValidationSuccess> {
 
     private final ApplicationListRepository applicationListRepository;
 
-    // Injected ad-hoc per validation call
-    @Setter private UUID sourceListId;
-
-    public MoveEntriesValidator withSourceList(UUID sourceListId) {
-        this.sourceListId = sourceListId;
-        return this;
-    }
-
     @Override
-    public void validate(MoveEntriesDto dto) {
-        validate(dto, (req, success) -> null);
+    public void validate(MoveEntriesPayload payload) {
+        validate(payload, (req, success) -> null);
     }
 
     @Override
     public <R> R validate(
-            MoveEntriesDto dto,
-            BiFunction<MoveEntriesDto, MoveEntriesValidationSuccess, R> createSupplier) {
+            MoveEntriesPayload payload,
+            BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R> createSupplier) {
+        var sourceListId = payload.sourceListId();
+        var moveEntriesDto = payload.moveEntriesDto();
+
         ApplicationList sourceList =
                 applicationListRepository
                         .findByUuid(sourceListId)
@@ -50,25 +43,26 @@ public class MoveEntriesValidator
 
         ApplicationList targetList =
                 applicationListRepository
-                        .findByUuid(dto.getTargetListId())
+                        .findByUuid(moveEntriesDto.getTargetListId())
                         .orElseThrow(
                                 () ->
                                         new AppRegistryException(
                                                 ApplicationListError.TARGET_LIST_NOT_FOUND,
                                                 "No target application list found for UUID '%s'"
-                                                        .formatted(dto.getTargetListId())));
+                                                        .formatted(
+                                                                moveEntriesDto.getTargetListId())));
 
         validateLists(sourceList, targetList);
 
-        if (dto.getEntryIds() == null || dto.getEntryIds().isEmpty()) {
+        if (moveEntriesDto.getEntryIds() == null || moveEntriesDto.getEntryIds().isEmpty()) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        MoveEntriesValidationSuccess success = new MoveEntriesValidationSuccess();
+        var success = new MoveEntriesValidationSuccess();
         success.setTargetList(targetList);
 
-        return createSupplier.apply(dto, success);
+        return createSupplier.apply(payload, success);
     }
 
     private void validateLists(ApplicationList sourceList, ApplicationList targetList) {

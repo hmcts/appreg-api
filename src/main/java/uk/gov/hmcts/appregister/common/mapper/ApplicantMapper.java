@@ -3,8 +3,10 @@ package uk.gov.hmcts.appregister.common.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
+import org.openapitools.jackson.nullable.JsonNullable;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
@@ -27,7 +29,7 @@ public abstract class ApplicantMapper {
      */
     public NameAddress toApplicant(Applicant applicant) {
         NameAddress nameAddress = toApplicantNameAddress(applicant);
-        nameAddress.setCode(NameAddress.APPLICANT_CODE);
+        nameAddress.setCode(NameAddressCodeType.APPLICANT);
         return nameAddress;
     }
 
@@ -73,8 +75,8 @@ public abstract class ApplicantMapper {
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getTitle());
         fullName.setFirstForename(applicant.getForename1());
-        fullName.setSecondForename(applicant.getForename2());
-        fullName.setThirdForename(applicant.getForename3());
+        fullName.setSecondForename(JsonNullable.of(applicant.getForename2()));
+        fullName.setThirdForename(JsonNullable.of(applicant.getForename3()));
         fullName.setSurname(applicant.getSurname());
         return fullName;
     }
@@ -89,13 +91,13 @@ public abstract class ApplicantMapper {
         ContactDetails contactDetails = new ContactDetails();
         if (applicant != null) {
             contactDetails.setAddressLine1(applicant.getAddress1());
-            contactDetails.setAddressLine2(applicant.getAddress2());
-            contactDetails.setAddressLine3(applicant.getAddress3());
-            contactDetails.setAddressLine4(applicant.getAddress4());
-            contactDetails.setAddressLine5(applicant.getAddress5());
-            contactDetails.setEmail(applicant.getEmailAddress());
-            contactDetails.setMobile(applicant.getMobileNumber());
-            contactDetails.setPhone(applicant.getTelephoneNumber());
+            contactDetails.setAddressLine2(map(applicant.getAddress2()));
+            contactDetails.setAddressLine3(map(applicant.getAddress3()));
+            contactDetails.setAddressLine4(map(applicant.getAddress4()));
+            contactDetails.setAddressLine5(map(applicant.getAddress5()));
+            contactDetails.setEmail(map(applicant.getEmailAddress()));
+            contactDetails.setMobile(map(applicant.getMobileNumber()));
+            contactDetails.setPhone(map(applicant.getTelephoneNumber()));
             contactDetails.setPostcode(applicant.getPostcode());
         }
         return contactDetails;
@@ -172,12 +174,10 @@ public abstract class ApplicantMapper {
     public NameAddress toRespondentNameAddress(Respondent applicant) {
         if (applicant != null && applicant.getPerson() != null) {
             NameAddress nameAddress = toPerson(applicant.getPerson());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
+            nameAddress.setDateOfBirth(applicant.getPerson().getDateOfBirth());
             return nameAddress;
         } else if (applicant != null && applicant.getOrganisation() != null) {
-            NameAddress nameAddress = toOrganisation(applicant.getOrganisation());
-            nameAddress.setDateOfBirth(applicant.getDateOfBirth());
-            return nameAddress;
+            return toOrganisation(applicant.getOrganisation());
         } else {
             return null;
         }
@@ -191,7 +191,7 @@ public abstract class ApplicantMapper {
      */
     public NameAddress toRespondent(Respondent respondent) {
         NameAddress nameAddress = toRespondentNameAddress(respondent);
-        nameAddress.setCode(NameAddress.RESPONDENT_CODE);
+        nameAddress.setCode(NameAddressCodeType.RESPONDENT);
         return nameAddress;
     }
 
@@ -201,7 +201,7 @@ public abstract class ApplicantMapper {
      * @param standardApplicant The standard applicant
      * @return The name address entity representation
      */
-    @Mapping(target = "code", source = "applicantCode")
+    @Mapping(target = "code", ignore = true)
     @Mapping(target = "title", source = "applicantTitle")
     @Mapping(target = "forename1", source = "applicantForename1")
     @Mapping(target = "forename2", source = "applicantForename2")
@@ -216,4 +216,70 @@ public abstract class ApplicantMapper {
     @Mapping(target = "dateOfBirth", ignore = true)
     @Mapping(target = "dmsId", ignore = true)
     public abstract NameAddress toApplicantEntity(StandardApplicant standardApplicant);
+
+    /**
+     * Decides the name that should take precedent based on an organisation or person.
+     *
+     * @param sa The standard applicant to use. This can be null.
+     * @param applicant The person to use. This can be null.
+     * @return The name that should be used for the applicant or respondent depending. If both are
+     *     present then the organisation name will be used. If a person, the name is in the format
+     *     forename1 surname. If an organisation the name is used. If all else fails then an empty
+     *     string is returned.
+     */
+    public String getNameForApplicant(StandardApplicant sa, NameAddress applicant) {
+        if (sa != null) {
+
+            // if the name is not set i.e. not an org then use forename and surname
+            if (sa.getName() == null) {
+                return formatPersonName(sa.getApplicantForename1(), sa.getApplicantSurname());
+            } else {
+                return sa.getName();
+            }
+        } else if (applicant != null) {
+            return getNameForNameAddress(applicant);
+        }
+
+        // return an empty string
+        return "";
+    }
+
+    /**
+     * gets the name for the name address based on whether the name address has an organisation or
+     * not.
+     *
+     * @param nameAddress The name address to get the name. This can be null.
+     * @return The name string for the address in the format forename1 surname if a person or the
+     *     name if an organisation. If all else fails then an empty string is returned.
+     */
+    public String getNameForNameAddress(NameAddress nameAddress) {
+        String name = "";
+        if (nameAddress != null && nameAddress.getName() == null) {
+            name = formatPersonName(nameAddress.getForename1(), nameAddress.getSurname());
+        } else if (nameAddress != null) {
+            name = nameAddress.getName();
+        }
+        return name;
+    }
+
+    private String formatPersonName(String forename, String surname) {
+        if (forename == null && surname == null) {
+            return "";
+        }
+        if (forename == null) {
+            return surname;
+        }
+        if (surname == null) {
+            return forename;
+        }
+        return forename + " " + surname;
+    }
+
+    public String map(JsonNullable<String> str) {
+        return str.isPresent() ? str.get() : null;
+    }
+
+    public JsonNullable<String> map(String string) {
+        return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
+    }
 }

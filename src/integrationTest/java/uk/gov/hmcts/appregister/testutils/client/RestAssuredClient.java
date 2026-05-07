@@ -11,6 +11,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.LocalTime;
@@ -25,6 +26,10 @@ import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 
 @Component
 public class RestAssuredClient {
+
+    public static final String DEFAULT_TRACE_ID = "ecaf9ce5d2b348338cd6b7630c837186";
+
+    public static final String DEFAULT_TRACE = "00-" + DEFAULT_TRACE_ID + "-7b3f6a2c9e4d1a8f-01";
 
     // Initialize RestAssured configuration
     {
@@ -54,10 +59,34 @@ public class RestAssuredClient {
      * @return The specification of the response
      */
     public Response executeGetRequest(URL url, TokenAndJwksKey token) throws URISyntaxException {
-        return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
-                .header("Authorization", "Bearer " + token.getToken())
-                .get(url)
-                .andReturn();
+        return executeGetRequest(url, token, (String) null);
+    }
+
+    /**
+     * gets a request builder that can be used to make requests (with trace) against the
+     * application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param trace The traceparent header value
+     * @return The specification of the response with W3C Trace header
+     *     https://www.w3.org/TR/trace-context/
+     */
+    public Response executeGetRequest(URL url, TokenAndJwksKey token, String trace)
+            throws URISyntaxException {
+        if (trace != null) {
+            return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                    .header("Authorization", "Bearer " + token.getToken())
+                    .header("traceparent", trace)
+                    .get(url)
+                    .andReturn();
+        } else {
+            return given().header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                    .header("Authorization", "Bearer " + token.getToken())
+                    .header("traceparent", DEFAULT_TRACE_ID)
+                    .get(url)
+                    .andReturn();
+        }
     }
 
     /**
@@ -73,10 +102,19 @@ public class RestAssuredClient {
             TokenAndJwksKey token,
             UnaryOperator<RequestSpecification> requestSpecificationConsumer)
             throws URISyntaxException {
-        return requestSpecificationConsumer
-                .apply(given().header("Authorization", "Bearer " + token.getToken()))
-                .get(url)
-                .andReturn();
+        RequestSpecification requestSpecification = given();
+
+        if (token != null) {
+            requestSpecification =
+                    given().header("Authorization", "Bearer " + token.getToken())
+                            .header("traceparent", DEFAULT_TRACE_ID);
+        }
+
+        if (requestSpecificationConsumer != null) {
+            requestSpecificationConsumer.apply(requestSpecification);
+        }
+
+        return requestSpecification.get(url).andReturn();
     }
 
     /**
@@ -94,7 +132,7 @@ public class RestAssuredClient {
             TokenAndJwksKey token,
             PageMetaData pageMetaData) {
         return executeGetRequestWithPaging(
-                pageSize, pageNumber, pageSort, url, token, rs -> rs, pageMetaData);
+                pageSize, pageNumber, pageSort, url, token, rs -> rs, pageMetaData, DEFAULT_TRACE);
     }
 
     /**
@@ -111,7 +149,14 @@ public class RestAssuredClient {
             URL url,
             TokenAndJwksKey token) {
         return executeGetRequestWithPaging(
-                pageSize, pageNumber, pageSort, url, token, rs -> rs, new OpenApiPageMetaData());
+                pageSize,
+                pageNumber,
+                pageSort,
+                url,
+                token,
+                rs -> rs,
+                new OpenApiPageMetaData(),
+                DEFAULT_TRACE);
     }
 
     /**
@@ -141,7 +186,8 @@ public class RestAssuredClient {
                 url,
                 token,
                 requestSpecificationConsumer,
-                new OpenApiPageMetaData());
+                new OpenApiPageMetaData(),
+                DEFAULT_TRACE);
     }
 
     /**
@@ -166,14 +212,51 @@ public class RestAssuredClient {
             TokenAndJwksKey token,
             UnaryOperator<RequestSpecification> requestSpecificationConsumer,
             PageMetaData pageMetaData) {
+        return executeGetRequestWithPaging(
+                pageSize,
+                pageNumber,
+                pageSort,
+                url,
+                token,
+                requestSpecificationConsumer,
+                pageMetaData,
+                DEFAULT_TRACE);
+    }
+
+    /**
+     * gets a request builder that can be used to make requests against the application.
+     *
+     * @param pageSize The page size of the reuest
+     * @param pageNumber The page number of the request
+     * @param pageSort The page sort number of the request
+     * @param url The url context
+     * @param token The bearer token
+     * @param requestSpecificationConsumer A request specification that will be called before
+     *     sending the request. Allows operation specific payload customisation i.e. request
+     *     parameters to be added etc
+     * @param pageMetaData The meta data for the paging request
+     * @return The specification of the response
+     */
+    public Response executeGetRequestWithPaging(
+            Optional<Integer> pageSize,
+            Optional<Integer> pageNumber,
+            List<String> pageSort,
+            URL url,
+            TokenAndJwksKey token,
+            UnaryOperator<RequestSpecification> requestSpecificationConsumer,
+            PageMetaData pageMetaData,
+            String traceId) {
         return requestSpecificationConsumer
                 .apply(
                         applyPageDetails(
-                                given().header("Authorization", "Bearer " + token.getToken()),
-                                pageNumber,
-                                pageSize,
-                                pageSort,
-                                pageMetaData))
+                                        given().header(
+                                                        "Authorization",
+                                                        "Bearer " + token.getToken()),
+                                        pageNumber,
+                                        pageSize,
+                                        pageSort,
+                                        pageMetaData)
+                                .header("traceparent", traceId))
                 .get(url)
                 .andReturn();
     }
@@ -244,6 +327,26 @@ public class RestAssuredClient {
     }
 
     /**
+     * posts a multipart file request against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param controlName The multipart form control name
+     * @param file The file to upload
+     * @param mimeType The file MIME type
+     * @return The specification of the response
+     */
+    public Response executePostRequest(
+            URL url, TokenAndJwksKey token, String controlName, File file, String mimeType) {
+        return given().header("Authorization", "Bearer " + token.getToken())
+                .header(HttpHeaders.ACCEPT, "application/vnd.hmcts.appreg.v1+json")
+                .header("traceparent", DEFAULT_TRACE_ID)
+                .multiPart(controlName, file, mimeType)
+                .post(url)
+                .andReturn();
+    }
+
+    /**
      * deletes a request builder that can be used to make requests against the application.
      *
      * @param url The url context
@@ -253,6 +356,7 @@ public class RestAssuredClient {
     public Response executeDeleteRequest(URL url, TokenAndJwksKey token) {
         return given().header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .header("traceparent", DEFAULT_TRACE_ID)
                 .delete(url)
                 .andReturn();
     }
@@ -270,6 +374,7 @@ public class RestAssuredClient {
         return given().header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
                 .header("If-Match", ifMatch)
+                .header("traceparent", DEFAULT_TRACE_ID)
                 .delete(url)
                 .andReturn();
     }
@@ -282,11 +387,18 @@ public class RestAssuredClient {
      * @return The specification of the response
      */
     public Response executePutRequest(URL url, TokenAndJwksKey token, Object object) {
-        return given().body(object)
-                .header("Authorization", "Bearer " + token.getToken())
-                .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
-                .put(url)
-                .andReturn();
+        return object != null
+                ? given().body(object)
+                        .header("Authorization", "Bearer " + token.getToken())
+                        .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                        .header("traceparent", DEFAULT_TRACE_ID)
+                        .put(url)
+                        .andReturn()
+                : given().header("Authorization", "Bearer " + token.getToken())
+                        .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                        .header("traceparent", DEFAULT_TRACE_ID)
+                        .put(url)
+                        .andReturn();
     }
 
     /**

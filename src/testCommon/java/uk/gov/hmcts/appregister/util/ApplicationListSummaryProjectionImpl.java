@@ -28,4 +28,6 @@ public class ApplicationListSummaryProjectionImpl implements ApplicationListSumm
     private LocalTime time;
 
     private Status status;
+
+    private String effectiveLocation;
 }

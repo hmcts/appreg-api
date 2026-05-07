@@ -16,30 +16,37 @@ properties:
   uuid:
     type: string
     format: uuid
+    example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 
   sequenceNumber:
     type: integer
     format: int32
+    example: 2
 
   accountNumber:
     type: string
     maxLength: 20
     nullable: true
+    example: "ACC-001"
 
   applicant:
     type: string
     nullable: true
+    example: "Applicant name"
 
   respondent:
     type: string
     nullable: true
+    example: "Respondent name"
 
   postCode:
     type: string
     nullable: true
+    example: "SW1A 2AA"
 
   applicationTitle:
     type: string
+    example: "Application to Crown Court"
 
   feeRequired:
     type: boolean

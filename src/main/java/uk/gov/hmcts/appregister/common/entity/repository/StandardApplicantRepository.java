@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
+import uk.gov.hmcts.appregister.common.projection.StandardApplicantEnrichedProjection;
 
 /**
  * Repository for StandardApplicant entities.
@@ -30,6 +32,10 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
         WHERE LOWER(sa.applicantCode) = LOWER(CAST(:code AS string))
         AND sa.applicantStartDate <= :date
         AND (sa.applicantEndDate IS NULL OR sa.applicantEndDate >= :date)
+        ORDER BY CASE WHEN sa.applicantEndDate IS NULL THEN 0 ELSE 1 END,
+                 sa.applicantEndDate DESC,
+                 sa.applicantStartDate DESC,
+                 sa.id DESC
         """)
     List<StandardApplicant> findStandardApplicantByCodeAndDate(
             @Param("code") String code, @Param("date") LocalDate date);
@@ -43,40 +49,69 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
     List<StandardApplicant> findByIdGreaterThanEqual(Integer value);
 
     /**
-     * Retrieve a page of active Standrd Applicant Codes filtered by code/name (case-insensitive).
+     * Retrieve a page of active Standard Applicant codes filtered by code/name (case-insensitive).
      *
-     * <p>Active if: c.startDate < :date AND (c.endDate IS NULL OR c.endDate >= :date)
+     * <p>Active if: c.startDate <= :date AND (c.endDate IS NULL OR c.endDate >= :date)
      *
-     * <p>Name can represent the name title or the forename_1 or the surname. If name is not null we
-     * use name as this is an organisation. The expectations is that the forename and surname will
-     * be null in this case.
-     *
-     * <p>If the name is not null then we search matching results on the name, forename_1 and
-     * surname fields.
+     * <p>Name can represent either the organisation name or a person name. For person records, the
+     * effective display/sort value is based on {@code applicantForename1 + " " + applicantSurname}.
+     * Search continues to match organisation name, first forename, and surname fields.
      *
      * @param code optional partial code filter (case-insensitive)
-     * @param name optional partial title filter (case-insensitive)
+     * @param name optional partial applicant display-name filter (case-insensitive)
+     * @param addressLine1 optional partial address line 1 filter (case-insensitive)
+     * @param from optional start date range filter
+     * @param to optional end date range filter
      * @param active date to evaluate "active" on
      * @param pageable paging/sorting
      * @return page of matching entities
      */
     @Query(
             """
-        SELECT c
+        SELECT
+                c AS standardApplicant,
+                COALESCE(
+                    c.name,
+                    NULLIF(
+                        TRIM(
+                            FUNCTION('concat_ws', ' ',
+                                c.applicantForename1,
+                                c.applicantSurname
+                            )
+                        ),
+                        ''
+                    )
+                ) AS effectiveName
         FROM StandardApplicant c
-        WHERE (:code IS NULL OR c.applicantCode ILIKE CONCAT('%', CAST(:code AS string), '%'))
-          AND (c.applicantStartDate < :active)
-          AND (c.applicantEndDate IS NULL OR c.applicantEndDate > :active)
-          AND (:name IS NULL
-                  OR (((c.name IS NOT NULL AND c.name ILIKE CONCAT('%', CAST(:name AS string), '%'))
-                  OR (c.applicantForename1 IS NOT NULL AND c.applicantForename1
-                          ILIKE CONCAT('%', CAST(:name AS string), '%')))
-                  OR (c.applicantSurname IS NOT NULL
-                          AND c.applicantSurname ILIKE CONCAT('%', CAST(:name AS string), '%'))))
+        WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
+          AND (c.applicantStartDate <= :active)
+          AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :active)
+          AND (CAST(:from AS date) IS NULL OR c.applicantStartDate >= :from)
+          AND (CAST(:to AS date) IS NULL OR c.applicantEndDate <= :to)
+          AND (
+              :addressLine1 IS NULL
+              OR LOWER(c.addressLine1) LIKE CONCAT(
+                  '%',
+                  LOWER(CAST(:addressLine1 AS string)),
+                  '%'
+              ) ESCAPE '\\'
+          )
+          AND (
+              :name IS NULL
+              OR (
+                  c.name IS NOT NULL
+                  AND LOWER(c.name) LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+              )
+              OR LOWER(FUNCTION('concat_ws', ' ', c.applicantForename1, c.applicantSurname))
+                  LIKE CONCAT('%', LOWER(CAST(:name AS string)), '%') ESCAPE '\\'
+          )
         """)
-    Page<StandardApplicant> search(
-            @Param("code") String code,
-            @Param("name") String name,
+    Page<StandardApplicantEnrichedProjection> search(
+            @LikeParam @Param("code") String code,
+            @LikeParam @Param("name") String name,
+            @LikeParam @Param("addressLine1") String addressLine1,
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
             @Param("active") LocalDate active,
             Pageable pageable);
 }

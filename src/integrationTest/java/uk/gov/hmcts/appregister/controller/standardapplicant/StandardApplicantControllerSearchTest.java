@@ -1,0 +1,1763 @@
+package uk.gov.hmcts.appregister.controller.standardapplicant;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
+import lombok.val;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ProblemDetail;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
+import uk.gov.hmcts.appregister.generated.model.SortOrdersInner;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.StandardApplicantPage;
+import uk.gov.hmcts.appregister.standardapplicant.api.StandardApplicantSortFieldEnum;
+import uk.gov.hmcts.appregister.standardapplicant.audit.StandardApplicantOperation;
+import uk.gov.hmcts.appregister.standardapplicant.exception.StandardApplicantCodeError;
+import uk.gov.hmcts.appregister.testutils.annotation.StabilityTest;
+import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
+import uk.gov.hmcts.appregister.testutils.client.request.DateGetRequest;
+import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
+import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
+
+public class StandardApplicantControllerSearchTest extends AbstractSecurityControllerTest {
+    private static final String WEB_CONTEXT = "standard-applicants";
+
+    @Value("${spring.data.web.pageable.default-page-size}")
+    private Integer defaultPageSize;
+
+    @Value("${spring.data.web.pageable.max-page-size}")
+    private Integer maxPageSize;
+
+    @MockitoBean private Clock clock; // replaces Clock bean in Spring context
+
+    // The total standard applicant inserted by flyway scripts. See V6__InitialTestData.sql
+    private static final int TOTAL_STANDARD_APPLICANT_COUNT = 7;
+
+    private static final String APPCODE_CODE = "APP001";
+    private static final String APPCODE_CODE_ORGANISATION = "APP005";
+
+    private static final String DUPLICATE_APPCODE_CODE = "APP003";
+
+    @BeforeEach
+    public void before() {
+        when(clock.instant()).thenReturn(Instant.now().plus(2, ChronoUnit.DAYS));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
+    }
+
+    @Test
+    public void givenValidRequest_whenGetStandardApplicantByCodeAndDateForIndividual_thenReturn200()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now()));
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+
+        // assert the data
+        Assertions.assertEquals("APP001", returnedSa.getCode());
+        Assertions.assertEquals(LocalDate.now(), returnedSa.getStartDate());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertNotNull(returnedSa.getApplicant().getPerson().getName());
+        Assertions.assertEquals("Mr", returnedSa.getApplicant().getPerson().getName().getTitle());
+        Assertions.assertEquals(
+                "John", returnedSa.getApplicant().getPerson().getName().getFirstForename());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getSecondForename().get());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getName().getThirdForename().get());
+        Assertions.assertEquals(
+                "Smith", returnedSa.getApplicant().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "123 High Street",
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine2().get());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine3().get());
+        Assertions.assertEquals(
+                "Townsville",
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine4().get());
+        Assertions.assertNull(
+                returnedSa.getApplicant().getPerson().getContactDetails().getAddressLine5().get());
+        Assertions.assertEquals(
+                "john.smith@example.com",
+                returnedSa.getApplicant().getPerson().getContactDetails().getEmail().get());
+        Assertions.assertEquals(
+                "07123456789",
+                returnedSa.getApplicant().getPerson().getContactDetails().getMobile().get());
+        Assertions.assertEquals(
+                "01234567890",
+                returnedSa.getApplicant().getPerson().getContactDetails().getPhone().get());
+        Assertions.assertEquals(
+                "TS1 1AB", returnedSa.getApplicant().getPerson().getContactDetails().getPostcode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateForOrganisation_thenReturn200()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + APPCODE_CODE_ORGANISATION),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now()));
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+
+        // assert the data
+        Assertions.assertEquals(APPCODE_CODE_ORGANISATION, returnedSa.getCode());
+        Assertions.assertEquals(LocalDate.now().minusDays(1), returnedSa.getStartDate());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+        Assertions.assertEquals(
+                "Organisation 1", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "123 High Street",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        Assertions.assertNull(
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine2()
+                        .get());
+        Assertions.assertNull(
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine3()
+                        .get());
+        Assertions.assertEquals(
+                "Townsville",
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine4()
+                        .get());
+        Assertions.assertNull(
+                returnedSa
+                        .getApplicant()
+                        .getOrganisation()
+                        .getContactDetails()
+                        .getAddressLine5()
+                        .get());
+        Assertions.assertEquals(
+                "john.smith@example.com",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getEmail().get());
+        Assertions.assertEquals(
+                "07123456789",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getMobile().get());
+        Assertions.assertEquals(
+                "01234567890",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPhone().get());
+        Assertions.assertEquals(
+                "TS1 1AB",
+                returnedSa.getApplicant().getOrganisation().getContactDetails().getPostcode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        APPCODE_CODE_ORGANISATION,
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        LocalDate.now().toString(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getType()
+                                .name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS_BY_CODE_AND_DATE
+                                .getEventName()));
+    }
+
+    @Test
+    public void givenValidRequest_whenGetStandardApplicantByCodeAndCodeNotExist_thenReturn404()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + "NotExist"),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now()));
+
+        // assert the response
+        ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND.getCode().getAppCode(),
+                returnedSc.getType().toString());
+        Assertions.assertEquals(
+                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND
+                        .getCode()
+                        .getHttpCode()
+                        .value(),
+                responseSpec.getStatusCode());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateNotWithinRange_thenReturn404()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + DUPLICATE_APPCODE_CODE),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(LocalDate.now().minusDays(1)));
+
+        // assert the response
+        ProblemDetail returnedSc = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND.getCode().getAppCode(),
+                returnedSc.getType().toString());
+        Assertions.assertEquals(
+                StandardApplicantCodeError.STANDARD_APPLICANT_NOT_FOUND
+                        .getCode()
+                        .getHttpCode()
+                        .value(),
+                responseSpec.getStatusCode());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantByCodeAndDateMultiple_thenReturnPreferredRecord()
+                    throws Exception {
+        String code = "SANULL001";
+        LocalDate queryDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", queryDate.minusDays(2), queryDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", queryDate.minusDays(1), null);
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT + "/" + code),
+                        tokenGenerator.fetchTokenForRole(),
+                        new DateGetRequest(queryDate));
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantGetDetailDto returnedSa =
+                responseSpec.as(StandardApplicantGetDetailDto.class);
+        Assertions.assertEquals(code, returnedSa.getCode());
+        Assertions.assertEquals(
+                "Open-Ended Applicant", returnedSa.getApplicant().getOrganisation().getName());
+        Assertions.assertFalse(returnedSa.getEndDate().isPresent());
+    }
+
+    @Test
+    public void
+            givenDuplicateApplicants_whenGetAllStandardApplicants_thenCallerSortControlsPageOrder()
+                    throws Exception {
+        String code = "SANULL001";
+        LocalDate activeDate = LocalDate.now();
+        saveStandardApplicant(
+                code, "Time-Bounded Applicant", activeDate.minusDays(2), activeDate.plusDays(5));
+        saveStandardApplicant(code, "Open-Ended Applicant", activeDate.minusDays(1), null);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of(code),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        Assertions.assertEquals(2, response.getContent().size());
+        Assertions.assertEquals(code, response.getContent().get(0).getCode());
+        Assertions.assertEquals(
+                "Time-Bounded Applicant",
+                response.getContent().get(0).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(code, response.getContent().get(1).getCode());
+        Assertions.assertEquals(
+                "Open-Ended Applicant",
+                response.getContent().get(1).getApplicant().getOrganisation().getName());
+    }
+
+    @Test
+    @StabilityTest
+    public void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(WEB_CONTEXT), tokenGenerator.fetchTokenForRole());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage responseContent = responseSpec.as(StandardApplicantPage.class);
+
+        // make the assertions
+        PagingAssertionUtil.assertPageDetails(
+                responseContent, 10, 0, 1, TOTAL_STANDARD_APPLICANT_COUNT);
+
+        // assert
+        StandardApplicantGetSummaryDto returnedSc = responseContent.getContent().get(2);
+        Assertions.assertEquals("APP003", returnedSc.getCode());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @StabilityTest
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithoutExplicitSort_thenReturn200()
+                    throws Exception {
+
+        // create the token to send
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 10;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        // make the assertions
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 1, TOTAL_STANDARD_APPLICANT_COUNT);
+
+        // assert the first auth code record
+        StandardApplicantGetSummaryDto firstEntry = response.getContent().get(0);
+
+        assertEquals("APP001", firstEntry.getCode());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals(
+                "123 High Street",
+                firstEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        assertNotNull(firstEntry.getStartDate());
+        assertFalse(firstEntry.getEndDate().isPresent());
+
+        StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
+        assertEquals("APP002", secondEntry.getCode());
+        assertEquals("Jane", secondEntry.getApplicant().getPerson().getName().getFirstForename());
+        assertEquals("Doe", secondEntry.getApplicant().getPerson().getName().getSurname());
+        assertEquals(
+                "456 Elm Road",
+                secondEntry.getApplicant().getPerson().getContactDetails().getAddressLine1());
+        assertNotNull(secondEntry.getStartDate());
+        assertFalse(secondEntry.getEndDate().isPresent());
+
+        StandardApplicantGetSummaryDto org = response.getContent().get(6);
+        assertEquals("APP006", org.getCode());
+        assertEquals("Organisation 3", org.getApplicant().getOrganisation().getName());
+        assertEquals(
+                "456 Elm Road",
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        assertEquals(
+                "Apt 5",
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine2().get());
+        assertEquals(
+                "Cityville",
+                org.getApplicant().getOrganisation().getContactDetails().getAddressLine4().get());
+        assertNotNull(secondEntry.getStartDate());
+        assertFalse(secondEntry.getEndDate().isPresent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingCriteriaWithExplicitSort_thenReturn200()
+                    throws Exception {
+
+        // create the token to send
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 10;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name,desc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        // assert the response
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 1, TOTAL_STANDARD_APPLICANT_COUNT);
+
+        // assert records are sorted based on the title of the auth codes
+        StandardApplicantGetSummaryDto firstEntry = response.getContent().get(0);
+        assertEquals("APP006", firstEntry.getCode());
+        assertEquals("Organisation 3", firstEntry.getApplicant().getOrganisation().getName());
+        assertEquals(
+                "456 Elm Road",
+                firstEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        assertNotNull(firstEntry.getStartDate());
+        assertFalse(firstEntry.getEndDate().isPresent());
+
+        StandardApplicantGetSummaryDto secondEntry = response.getContent().get(1);
+        assertEquals("APP004", secondEntry.getCode());
+        assertEquals("Organisation 2", secondEntry.getApplicant().getOrganisation().getName());
+        assertEquals(
+                "123 High Street",
+                secondEntry.getApplicant().getOrganisation().getContactDetails().getAddressLine1());
+        assertNotNull(secondEntry.getStartDate());
+        assertFalse(secondEntry.getEndDate().isPresent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void givenValidRequest_whenGetStandardApplicantWithPagingNoResult_thenReturn200()
+            throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        int pageSize = 2;
+        int pageNumber = 1;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("not exist"),
+                                Optional.of("does not exist"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response is successful with no content
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "does not exist",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNoResultDateRange_thenReturn200()
+                    throws Exception {
+
+        Mockito.reset(clock);
+
+        when(clock.instant()).thenReturn(Instant.now().minus(2, ChronoUnit.DAYS));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.any(ZoneId.class))).thenReturn(clock);
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        int pageSize = 2;
+        int pageNumber = 1;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new OpenApiPageMetaData());
+
+        // assert the response is successful with no content
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 0, 0);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingFilterPartialCode_thenReturn200()
+                    throws Exception {
+
+        // create a token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // test the functionality
+        int pageSize = 2;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP00"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        Assertions.assertEquals(200, responseSpec.getStatusCode());
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(
+                response, pageSize, pageNumber, 4, TOTAL_STANDARD_APPLICANT_COUNT);
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP00",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForOrganisation_thenReturn200()
+                    throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute functionality
+        int pageSize = 3;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("ORG"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 3);
+
+        Assertions.assertEquals(
+                "Organisation 1",
+                response.getContent().get(0).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "Organisation 2",
+                response.getContent().get(1).getApplicant().getOrganisation().getName());
+        Assertions.assertEquals(
+                "Organisation 3",
+                response.getContent().get(2).getApplicant().getOrganisation().getName());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "ORG",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForNameOfIndividual_thenReturn200()
+                    throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute functionality
+        int pageSize = 3;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("D"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 3);
+
+        Assertions.assertEquals(
+                "Alex",
+                response.getContent()
+                        .get(0)
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getFirstForename());
+        Assertions.assertEquals(
+                "Dunn",
+                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "Alex",
+                response.getContent()
+                        .get(1)
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getFirstForename());
+        Assertions.assertEquals(
+                "Dunn",
+                response.getContent().get(1).getApplicant().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "Jane",
+                response.getContent()
+                        .get(2)
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getFirstForename());
+        Assertions.assertEquals(
+                "Doe",
+                response.getContent().get(2).getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "D",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingNameFilterPartialForSurNameOfIndividual_thenReturn200()
+                    throws Exception {
+
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute functionality
+        int pageSize = 3;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.of("Dunn"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(response, pageSize, pageNumber, 1, 2);
+
+        Assertions.assertEquals(
+                "Alex",
+                response.getContent()
+                        .get(0)
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getFirstForename());
+        Assertions.assertEquals(
+                "Dunn",
+                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+        Assertions.assertEquals(
+                "Alex",
+                response.getContent()
+                        .get(0)
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getFirstForename());
+        Assertions.assertEquals(
+                "Dunn",
+                response.getContent().get(0).getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Dunn",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void givenValidRequest_whenGetStandardApplicantWithPagingAllFilter_thenReturn200()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP001"),
+                                Optional.of("Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
+        assertEquals("APP001", firstEntry.getCode());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "Smith",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithFullNameFilterForIndividual_thenReturn200()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        int pageSize = 1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP001"),
+                                Optional.of("John Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+
+        StandardApplicantGetSummaryDto firstEntry = page.getContent().get(0);
+        assertEquals("APP001", firstEntry.getCode());
+        assertEquals("John", firstEntry.getApplicant().getPerson().getName().getFirstForename());
+        assertEquals("Smith", firstEntry.getApplicant().getPerson().getName().getSurname());
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "John Smith",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    @StabilityTest
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPageNumberBeyondResultBoundary_thenReturn200()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 6;
+        int pageNumber = 200;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("name"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("APP001"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        // assert the response
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        PagingAssertionUtil.assertPageDetails(page, pageSize, pageNumber, 1, 1);
+        Assertions.assertNull(page.getContent());
+
+        // audit assertion
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_code",
+                        null,
+                        "APP001",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "name",
+                        null,
+                        "John",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @StabilityTest
+    public void givenSASuccessfulSort_whenSearchWithAllSortKeys_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(standardApplicantSortFieldEnum.getApiValue() + "," + "desc"),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getSort().getOrders().size());
+            Assertions.assertEquals(
+                    SortOrdersInner.DirectionEnum.DESC,
+                    page.getSort().getOrders().get(0).getDirection());
+            Assertions.assertEquals(
+                    standardApplicantSortFieldEnum.getApiValue(),
+                    page.getSort().getOrders().get(0).getProperty());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+        }
+
+        Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
+    }
+
+    @Test
+    public void givenValidRequest_whenGetStandardApplicantWithPagingInvalidSortQuery_thenReturn400()
+            throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = 1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of("incorrect"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("AP99004"),
+                                Optional.of("John, Smith"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+        // assert the response
+        responseSpec.then().statusCode(400);
+    }
+
+    // NOTE: Spring is more forgiving in this scenario and defaults the page number to
+    // 0 and returns a 200. Our implementation
+    // returns a 500
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageNumber_thenReturn400()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = -1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("AP99004"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
+    }
+
+    // NOTE: Spring defaults the page size to the max size if we try and increase it beyond. This
+    // does not behave
+    // accordingly
+    @Test
+    public void
+            givenValidRequest_whenGetStandardApplicantWithPagingInvalidPageSizeBeyondDefault_thenReturn400()
+                    throws Exception {
+        // create the token
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        // execute the functionality
+        int pageSize = maxPageSize + 1;
+        int pageNumber = 0;
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(pageSize),
+                        Optional.of(pageNumber),
+                        List.of(),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of("AP99004"),
+                                Optional.of("John"),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        Assertions.assertEquals(
+                CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(), problemDetail.getType());
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialCode_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.of("P0"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(7, page.getContent().size());
+            Assertions.assertEquals("APP001", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP002", page.getContent().get(1).getCode());
+
+            // we have a duplicate record
+            Assertions.assertEquals("APP003", page.getContent().get(2).getCode());
+            Assertions.assertEquals("APP003", page.getContent().get(3).getCode());
+
+            Assertions.assertEquals("APP004", page.getContent().get(4).getCode());
+            Assertions.assertEquals("APP005", page.getContent().get(5).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "P0",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+        }
+
+        Assertions.assertTrue(StandardApplicantSortFieldEnum.values().length > 0);
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialName_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(),
+                                    Optional.of("anisation 1"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(1, page.getContent().size());
+            Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "anisation 1",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+        }
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialForename_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(),
+                                    Optional.of("Owe"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(2, page.getContent().size());
+            Assertions.assertEquals("APP005", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP006", page.getContent().get(1).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Owe",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+        }
+    }
+
+    @StabilityTest
+    public void givenASuccessfulFilterPartialSurname_whenSearch_thenSuccessResponse()
+            throws Exception {
+        for (StandardApplicantSortFieldEnum standardApplicantSortFieldEnum :
+                StandardApplicantSortFieldEnum.values()) {
+
+            // create the token
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            // test the functionality
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(10),
+                            Optional.of(0),
+                            List.of(),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            new StandardApplicantRequestFilter(
+                                    Optional.empty(),
+                                    Optional.of("Jones"),
+                                    Optional.empty(),
+                                    Optional.empty(),
+                                    Optional.empty()),
+                            new OpenApiPageMetaData());
+
+            StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+
+            // make sure the order response marries with the request data
+            responseSpec.then().statusCode(200);
+            Assertions.assertEquals(2, page.getContent().size());
+            Assertions.assertEquals("APP004", page.getContent().get(0).getCode());
+            Assertions.assertEquals("APP005", page.getContent().get(1).getCode());
+
+            // audit assertion
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "standard_applicant_code",
+                            null,
+                            "",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+            differenceLogAsserter.assertDataAuditChange(
+                    DataAuditLogAsserter.getDataAuditAssertion(
+                            TableNames.STANDARD_APPLICANTS,
+                            "name",
+                            null,
+                            "Jones",
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                            StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+        }
+    }
+
+    @Test
+    public void givenValidRequest_whenMultipleSortsArePresent_thenReturn400() throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.USER))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of(
+                                StandardApplicantSortFieldEnum.CODE.getApiValue(),
+                                StandardApplicantSortFieldEnum.NAME.getApiValue()),
+                        getLocalUrl(WEB_CONTEXT),
+                        token);
+
+        // assert the response
+        responseSpec.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
+        Assertions.assertEquals(
+                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
+    public void
+            givenValidRequest_whenFilterByAddressLine1AndFromDateAndSortByName_thenReturnSortedResults()
+                    throws Exception {
+        val tokenGenerator = getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        val responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of("123 High Street"),
+                                Optional.of(LocalDate.of(2026, 4, 1)), // matches seeded data
+                                Optional.empty()),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+
+        val page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        // verify sorting by name (ascending)
+        val first = page.getContent().get(0);
+        val second = page.getContent().get(1);
+
+        val firstName =
+                first.getApplicant().getOrganisation() != null
+                        ? first.getApplicant().getOrganisation().getName()
+                        : first.getApplicant().getPerson().getName().getFirstForename();
+
+        val secondName =
+                second.getApplicant().getOrganisation() != null
+                        ? second.getApplicant().getOrganisation().getName()
+                        : second.getApplicant().getPerson().getName().getFirstForename();
+
+        Assertions.assertEquals("John", firstName);
+        Assertions.assertEquals("Organisation 1", secondName);
+
+        // verify filter applied
+        page.getContent()
+                .forEach(
+                        item -> {
+                            val address =
+                                    item.getApplicant().getOrganisation() != null
+                                            ? item.getApplicant()
+                                                    .getOrganisation()
+                                                    .getContactDetails()
+                                                    .getAddressLine1()
+                                            : item.getApplicant()
+                                                    .getPerson()
+                                                    .getContactDetails()
+                                                    .getAddressLine1();
+
+                            Assertions.assertEquals("123 High Street", address);
+                        });
+
+        // The GET audit should capture each DB-backed filter value that was sent on the request.
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "address_l1",
+                        null,
+                        "123 High Street",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.STANDARD_APPLICANTS,
+                        "standard_applicant_start_date",
+                        null,
+                        "2026-04-01",
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getType().name(),
+                        StandardApplicantOperation.GET_STANDARD_APPLICANTS.getEventName()));
+    }
+
+    @Test
+    public void givenValidRequest_whenSortByAddressLine1_thenReturnSortedResults()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("addressLine1,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        String firstAddress = extractAddress(page.getContent().get(0));
+        String secondAddress = extractAddress(page.getContent().get(1));
+        String thirdAddress = extractAddress(page.getContent().get(2));
+        String fourthAddress = extractAddress(page.getContent().get(3));
+
+        Assertions.assertEquals("123 High Street", firstAddress);
+        Assertions.assertEquals("123 High Street", secondAddress);
+        Assertions.assertEquals("123 High Street", thirdAddress);
+        Assertions.assertEquals("456 Elm Road", fourthAddress);
+    }
+
+    @Test
+    public void givenValidRequest_whenSortByFrom_thenReturnSortedResults() throws Exception {
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("from,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(200);
+
+        StandardApplicantPage page = responseSpec.as(StandardApplicantPage.class);
+        Assertions.assertFalse(page.getContent().isEmpty());
+
+        List<LocalDate> dates =
+                page.getContent().stream()
+                        .map(StandardApplicantGetSummaryDto::getStartDate)
+                        .toList();
+
+        List<LocalDate> sortedDates = dates.stream().sorted().toList();
+
+        Assertions.assertEquals(sortedDates, dates);
+    }
+
+    @RequiredArgsConstructor
+    static class StandardApplicantRequestFilter implements UnaryOperator<RequestSpecification> {
+        private final Optional<String> code;
+        private final Optional<String> name;
+        private final Optional<String> addressLine1;
+        private final Optional<LocalDate> from;
+        private final Optional<LocalDate> to;
+
+        @Override
+        public RequestSpecification apply(RequestSpecification rs) {
+            if (code.isPresent()) {
+                rs = rs.queryParam("code", code.get());
+            }
+
+            if (name.isPresent()) {
+                rs = rs.queryParam("name", name.get());
+            }
+
+            if (addressLine1.isPresent()) {
+                rs = rs.queryParam("addressLine1", addressLine1.get());
+            }
+
+            if (from.isPresent()) {
+                rs = rs.queryParam("from", from.get().toString());
+            }
+
+            if (to.isPresent()) {
+                rs = rs.queryParam("to", to.get().toString());
+            }
+
+            return rs;
+        }
+    }
+
+    private void saveStandardApplicant(
+            String code, String name, LocalDate startDate, LocalDate endDate) throws Exception {
+        var jwt = TokenGenerator.builder().build().getJwtFromToken();
+        var auth = new JwtAuthenticationToken(jwt, List.of());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            StandardApplicant standardApplicant = new StandardApplicantTestData().someComplete();
+            standardApplicant.setApplicantCode(code);
+            standardApplicant.setName(name);
+            standardApplicant.setApplicantTitle(null);
+            standardApplicant.setApplicantForename1(null);
+            standardApplicant.setApplicantForename2(null);
+            standardApplicant.setApplicantForename3(null);
+            standardApplicant.setApplicantSurname(null);
+            standardApplicant.setApplicantStartDate(startDate);
+            standardApplicant.setApplicantEndDate(endDate);
+            persistance.save(standardApplicant);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Override
+    protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
+        return Stream.of(
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT
+                                                + "/"
+                                                + APPCODE_CODE
+                                                + "?date="
+                                                + LocalDate.now()))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl(WEB_CONTEXT))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build());
+    }
+
+    private String extractAddress(StandardApplicantGetSummaryDto dto) {
+        return dto.getApplicant().getOrganisation() != null
+                ? dto.getApplicant().getOrganisation().getContactDetails().getAddressLine1()
+                : dto.getApplicant().getPerson().getContactDetails().getAddressLine1();
+    }
+}

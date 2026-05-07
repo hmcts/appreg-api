@@ -1,5 +1,5 @@
 get:
-  operationId: getJobStatus
+  operationId: getJobStatusById
   tags: [ jobs ]
   summary: Get the status of a background job.
   description: Returns the current status and details of a background job.
@@ -9,6 +9,7 @@ get:
       required: true
       schema: { type: string, format: uuid }
       description: The unique identifier of the job.
+      example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
   responses:
     "200":
       description: Job status retrieved successfully.

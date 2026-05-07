@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.testutils.util;
 
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -11,14 +12,15 @@ import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
-import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryOfficialRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
+import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
 import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 /**
  * A useful assertion class for the create/update application entry functionality. This class aims
@@ -44,6 +46,7 @@ public class ApplicationListEntryAssertion {
      * @param entryCreateDto The entry create dto
      * @param applicationListEntry The application list database entity that was created
      * @param response The response from the service
+     * @param assertWordingApplied The wording with applied values
      * @param assertWording The wording we expect to result from the associated code wording
      *     template
      * @param expectedWordingFields The fields associated with the wording template that we expect
@@ -54,15 +57,19 @@ public class ApplicationListEntryAssertion {
             ApplicationListEntryWrapperDto entryCreateDto,
             ApplicationListEntry applicationListEntry,
             EntryGetDetailDto response,
+            String assertWordingApplied,
             String assertWording,
-            List<String> expectedWordingFields) {
+            List<TemplateSubstitution> expectedWordingFields,
+            int expectedNumberOfFees) {
         validateEntityAndResponseForEntryUpdate(
                 entryCreateDto,
                 applicationListEntry,
                 response,
+                assertWordingApplied,
                 assertWording,
                 expectedWordingFields,
-                List.of());
+                List.of(),
+                expectedNumberOfFees);
     }
 
     /**
@@ -84,9 +91,11 @@ public class ApplicationListEntryAssertion {
             ApplicationListEntryWrapperDto entryCreateUpdateDto,
             ApplicationListEntry applicationListEntry,
             EntryGetDetailDto response,
+            String assertWordingApplied,
             String assertWording,
-            List<String> expectedWordingFields,
-            List<Long> existingFeeStatuses) {
+            List<TemplateSubstitution> expectedWordingFields,
+            List<Long> existingFeeStatuses,
+            int expectedNumberOfFees) {
 
         // validate applicant with the dto
         if (entryCreateUpdateDto.getStandardApplicantCode() != null) {
@@ -112,14 +121,15 @@ public class ApplicationListEntryAssertion {
                 ApplicantAssertion.validatePerson(
                         entryCreateUpdateDto.getRespondent().getPerson(),
                         applicationListEntry.getRnameaddress());
+
+                Assertions.assertEquals(
+                        entryCreateUpdateDto.getRespondent().getPerson().getDateOfBirth(),
+                        applicationListEntry.getRnameaddress().getDateOfBirth());
             } else {
                 ApplicantAssertion.validateOrganisation(
                         entryCreateUpdateDto.getRespondent().getOrganisation(),
                         applicationListEntry.getRnameaddress());
             }
-            Assertions.assertEquals(
-                    entryCreateUpdateDto.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
         }
 
         // make sure the code of the applicant and respondent are set correctly in the database
@@ -128,7 +138,8 @@ public class ApplicationListEntryAssertion {
                         || entryCreateUpdateDto.getApplicant().getOrganisation() != null)) {
             // validate the application code
             Assertions.assertEquals(
-                    NameAddress.APPLICANT_CODE, applicationListEntry.getAnamedaddress().getCode());
+                    NameAddressCodeType.APPLICANT,
+                    applicationListEntry.getAnamedaddress().getCode());
         } else {
             Assertions.assertNull(applicationListEntry.getAnamedaddress());
             Assertions.assertEquals(
@@ -141,7 +152,8 @@ public class ApplicationListEntryAssertion {
                         || entryCreateUpdateDto.getRespondent().getOrganisation() != null)) {
             // validate the application code
             Assertions.assertEquals(
-                    NameAddress.RESPONDENT_CODE, applicationListEntry.getRnameaddress().getCode());
+                    NameAddressCodeType.RESPONDENT,
+                    applicationListEntry.getRnameaddress().getCode());
         }
 
         // if number or respondents is set make sure it was saved
@@ -162,7 +174,7 @@ public class ApplicationListEntryAssertion {
 
         // assert that the wording template in the code has been processed correctly
         Assertions.assertEquals(
-                assertWording, applicationListEntry.getApplicationListEntryWording());
+                assertWordingApplied, applicationListEntry.getApplicationListEntryWording());
 
         // validate the fees are created in the database and they are aligned with offsite
         List<AppListEntryFeeStatus> fees =
@@ -171,11 +183,17 @@ public class ApplicationListEntryAssertion {
         if (entryCreateUpdateDto.getFeeStatuses() != null
                 && !entryCreateUpdateDto.getFeeStatuses().isEmpty()) {
             Assertions.assertFalse(applicationListEntry.getEntryFeeIds().isEmpty());
+
+            boolean containsOffsite = false;
             for (AppListEntryFeeId fee : applicationListEntry.getEntryFeeIds()) {
-                Assertions.assertEquals(
-                        entryCreateUpdateDto.getHasOffsiteFee(),
-                        feeRepository.findById(fee.getFeeId()).get().isOffsite());
+                containsOffsite = feeRepository.findById(fee.getFeeId()).get().isOffsite();
+                if (containsOffsite) {
+                    break;
+                }
             }
+            Assertions.assertEquals(entryCreateUpdateDto.getHasOffsiteFee(), containsOffsite);
+            Assertions.assertEquals(
+                    expectedNumberOfFees, applicationListEntry.getEntryFeeIds().size());
         }
 
         // ensure the database fees align ignoring pre existing fee statuses
@@ -278,9 +296,6 @@ public class ApplicationListEntryAssertion {
                         response.getRespondent().getOrganisation(),
                         applicationListEntry.getRnameaddress());
             }
-            Assertions.assertEquals(
-                    response.getRespondent().getDateOfBirth(),
-                    applicationListEntry.getRnameaddress().getDateOfBirth());
         }
 
         // validate the response fields
@@ -291,7 +306,8 @@ public class ApplicationListEntryAssertion {
                 entryCreateUpdateDto.getAccountNumber(), response.getAccountNumber());
 
         // lets assert that the response should contain the wording template fields
-        Assertions.assertEquals(expectedWordingFields, response.getWordingFields());
+        TemplateAssertion.assertTemplateWithValues(
+                assertWording, expectedWordingFields, response.getWording());
 
         Assertions.assertEquals(
                 applicationListEntry.getApplicationList().getUuid(), response.getListId());
@@ -355,7 +371,7 @@ public class ApplicationListEntryAssertion {
     private AppListEntryFeeStatus getFeeForReference(
             List<AppListEntryFeeStatus> statusLst, String ref) {
         for (AppListEntryFeeStatus appListEntryFeeStatus : statusLst) {
-            if (appListEntryFeeStatus.getAlefsPaymentReference().equals(ref)) {
+            if (Objects.equals(appListEntryFeeStatus.getAlefsPaymentReference(), ref)) {
                 return appListEntryFeeStatus;
             }
         }

@@ -1,907 +1,1310 @@
 {
-	"info": {
-		"_postman_id": "450db1bb-d2e9-4754-a31c-045c64a2b97a",
-		"name": "hmcts-app-reg",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "15829068",
-		"_collection_link": "https://speeding-resonance-716248.postman.co/workspace/darts-workspace2~8cfe3af4-319e-46ad-920e-2ba6cc1f253b/collection/15829068-450db1bb-d2e9-4754-a31c-045c64a2b97a?action=share&source=collection_link&creator=15829068"
-	},
-	"item": [
-		{
-			"name": "Application Code",
-			"item": [
-				{
-					"name": "Application Codes",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/vnd.hmcts.appreg.v1+json",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"url": {
-							"raw": "{{baseURL}}/application-codes/:id?date=2016-01-01",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"application-codes",
-								":id"
-							],
-							"query": [
-								{
-									"key": "date",
-									"value": "2016-01-01"
-								}
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "AD99001"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "All Application Codes",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {}
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/application-codes?size=15&page=0",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"application-codes"
-							],
-							"query": [
-								{
-									"key": "size",
-									"value": "15"
-								},
-								{
-									"key": "page",
-									"value": "0"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Application Lists",
-			"item": [
-				{
-					"name": "All Application Lists",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/application-lists",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"application-lists"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Application Lists",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/application-lists/:id",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"application-lists",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "15"
-								}
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "application-lists",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {
-							"content-type": true
-						}
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"date\": \"2025-10-16\",\n  \"time\": \"10:30:00\",\n  \"description\": \"List of applications scheduled for review at the local court.\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 2,\n  \"durationMinutes\": 30\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseURL}}/application-lists",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"application-lists"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Court Location",
-			"item": [
-				{
-					"name": "All Court Location",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/court-locations?name&code&page=0&size=20&sort=name, asc",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"court-locations"
-							],
-							"query": [
-								{
-									"key": "name",
-									"value": null
-								},
-								{
-									"key": "code",
-									"value": null
-								},
-								{
-									"key": "page",
-									"value": "0"
-								},
-								{
-									"key": "size",
-									"value": "20"
-								},
-								{
-									"key": "sort",
-									"value": "name, asc"
-								}
-							]
-						},
-						"description": "Generated from cURL: curl -i -b jar.txt -H 'Accept: application/json' http://localhost:4000/national-court-houses"
-					},
-					"response": []
-				},
-				{
-					"name": "200 OK Court Location",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"disabled": true
-							},
-							{
-								"key": "Cookie",
-								"value": "jar.txt",
-								"disabled": true
-							}
-						],
-						"url": {
-							"raw": "{{baseURL}}/court-locations/:code?date=1875-12-04",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"court-locations",
-								":code"
-							],
-							"query": [
-								{
-									"key": "date",
-									"value": "1875-12-04"
-								}
-							],
-							"variable": [
-								{
-									"key": "code",
-									"value": "RCJ001"
-								}
-							]
-						},
-						"description": "### Retrieve National Court House Details\n\nThis endpoint retrieves the details of a national court house based on the specified `id`.\n\n**HTTP Method:** GET  \n**Endpoint:** `{{baseURL}}/national-court-houses/{id}`\n\n#### Path Parameters\n\n- `id` (integer): The unique identifier of the national court house to retrieve.\n    \n\n#### Response\n\n- **Status Code:** 200 OK\n    \n- **Content-Type:** application/json\n    \n\n##### Response Body\n\n``` json\n{\n  \"id\": 0,\n  \"name\": \"\",\n  \"courtType\": \"\",\n  \"startDate\": \"\",\n  \"endDate\": null,\n  \"locationId\": 0,\n  \"psaId\": 0,\n  \"courtLocationCode\": \"\",\n  \"welshName\": \"\",\n  \"orgId\": 0\n}\n\n ```\n\nThis will return the details of the specified national court house, including its name, type, dates, and associated identifiers.\n\nThis endpoint retrieves information about national court houses.\n\n**HTTP Method:** GET  \n**URL:** `{{baseURL}}/national-court-houses?id=2`\n\n#### Request Parameters\n\n- **id** (required): The unique identifier for the national court house.\n    \n\n#### Response\n\n- **Status Code:** 400\n    \n- **Content-Type:** application/json\n    \n- **Response Body:**\n    \n    - `timestamp`: The timestamp of the error.\n        \n    - `status`: The status code of the error.\n        \n    - `error`: A description of the error.\n        \n    - `path`: The path of the request that caused the error.\n        \n\n**Note:** Ensure that the `id` parameter is provided to successfully retrieve the national court house information."
-					},
-					"response": []
-				}
-			],
-			"auth": {
-				"type": "noauth"
-			},
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {},
-						"exec": [
-							""
-						]
-					}
-				},
-				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"packages": {},
-						"requests": {},
-						"exec": [
-							""
-						]
-					}
-				}
-			]
-		},
-		{
-			"name": "User Login",
-			"item": [
-				{
-					"name": "Obtain Token Client_Credentials",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(200);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"access_token\", response.access_token);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "client_credentials",
-									"type": "text"
-								},
-								{
-									"key": "client_id",
-									"value": "{{CLIENT_ID}}",
-									"type": "text"
-								},
-								{
-									"key": "client_secret",
-									"value": "{{CLIENT_SECRET}}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "api://cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
-							"protocol": "https",
-							"host": [
-								"login",
-								"microsoftonline",
-								"com"
-							],
-							"path": [
-								"{{TENANT_ID}}",
-								"oauth2",
-								"v2.0",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Obtain Token password",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(200);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"access_token\", response.access_token);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "client_id",
-									"value": "{{CLIENT_ID}}",
-									"type": "text"
-								},
-								{
-									"key": "client_secret",
-									"value": "{{CLIENT_SECRET}}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default openid",
-									"type": "text"
-								},
-								{
-									"key": "username",
-									"value": "{{USER_NAME_ar-test-1}}",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "{{PASSWORD}}",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
-							"protocol": "https",
-							"host": [
-								"login",
-								"microsoftonline",
-								"com"
-							],
-							"path": [
-								"{{TENANT_ID}}",
-								"oauth2",
-								"v2.0",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Obtain Token password user",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(200);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"access_token_user\", response.access_token);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "client_id",
-									"value": "{{CLIENT_ID_FE}}",
-									"type": "text"
-								},
-								{
-									"key": "client_secret",
-									"value": "{{CLIENT_SECRET_FE}}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "{{SCOPE}}",
-									"type": "text"
-								},
-								{
-									"key": "username",
-									"value": "{{USER_NAME_ar-test-1}}",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "{{PASSWORD}}",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
-							"protocol": "https",
-							"host": [
-								"login",
-								"microsoftonline",
-								"com"
-							],
-							"path": [
-								"{{TENANT_ID}}",
-								"oauth2",
-								"v2.0",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Obtain Token password admin",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(200);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"access_token_admin\", response.access_token);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "client_id",
-									"value": "{{CLIENT_ID_FE}}",
-									"type": "text"
-								},
-								{
-									"key": "client_secret",
-									"value": "{{CLIENT_SECRET_FE}}",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "{{SCOPE}}",
-									"type": "text"
-								},
-								{
-									"key": "username",
-									"value": "{{USER_NAME_ar-test-5}}",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "{{PASSWORD}}",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
-							"protocol": "https",
-							"host": [
-								"login",
-								"microsoftonline",
-								"com"
-							],
-							"path": [
-								"{{TENANT_ID}}",
-								"oauth2",
-								"v2.0",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Obtain Token opal",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.expect(pm.response.code).to.equal(200);\r",
-									"const response = pm.response.json();\r",
-									"pm.environment.set(\"access_token\", response.access_token);"
-								],
-								"type": "text/javascript",
-								"packages": {},
-								"requests": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/x-www-form-urlencoded",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "urlencoded",
-							"urlencoded": [
-								{
-									"key": "grant_type",
-									"value": "password",
-									"type": "text"
-								},
-								{
-									"key": "client_id",
-									"value": "9c1c39e3-1d44-4e88-b3fd-5f7e3b722c45",
-									"type": "text"
-								},
-								{
-									"key": "client_secret",
-									"value": "O6P8Q~iU6Ti6nnGfvaUZQxFQt0ziPou42w0AubzH",
-									"type": "text"
-								},
-								{
-									"key": "scope",
-									"value": "api://9c1c39e3-1d44-4e88-b3fd-5f7e3b722c45/opalinternaluser",
-									"type": "text"
-								},
-								{
-									"key": "username",
-									"value": "opal-test@hmcts.net",
-									"type": "text"
-								},
-								{
-									"key": "password",
-									"value": "OpalFinesService1",
-									"type": "text"
-								}
-							]
-						},
-						"url": {
-							"raw": "https://login.microsoftonline.com/531ff96d-0ae9-462a-8d2d-bec7c0b42082/oauth2/v2.0/token",
-							"protocol": "https",
-							"host": [
-								"login",
-								"microsoftonline",
-								"com"
-							],
-							"path": [
-								"531ff96d-0ae9-462a-8d2d-bec7c0b42082",
-								"oauth2",
-								"v2.0",
-								"token"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Criminal Justice Areas",
-			"item": [
-				{
-					"name": "All Criminal Justice Areas",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/criminal-justice-areas",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"criminal-justice-areas"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Criminal Justice Area/ {id}",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/criminal-justice-areas/09",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"criminal-justice-areas",
-								"09"
-							],
-							"query": [
-								{
-									"key": "",
-									"value": null,
-									"disabled": true
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Result Codes",
-			"item": [
-				{
-					"name": "All Result Codes",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {}
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/result-codes",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"result-codes"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "All Result Code / {id}",
-					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {}
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token_user}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseURL}}/result-codes/{id}",
-							"host": [
-								"{{baseURL}}"
-							],
-							"path": [
-								"result-codes",
-								"{id}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Get the Open API Specification",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{baseURL}}/specs/openapi.json",
-					"host": [
-						"{{baseURL}}"
-					],
-					"path": [
-						"specs",
-						"openapi.json"
-					]
-				}
-			},
-			"response": []
-		}
-	],
-	"event": [
-		{
-			"listen": "prerequest",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
-		},
-		{
-			"listen": "test",
-			"script": {
-				"type": "text/javascript",
-				"packages": {},
-				"exec": [
-					""
-				]
-			}
-		}
-	]
+  "info": {
+    "_postman_id": "7a4749f7-399f-4974-ac5c-ed0f51b311d8",
+    "name": "hmcts-app-reg",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "39744829",
+    "_collection_link": "https://go.postman.co/collection/39744829-7a4749f7-399f-4974-ac5c-ed0f51b311d8?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "OpenApi Spec",
+      "item": [
+        {
+          "name": "https://appreg-api.staging.platform.hmcts.net/openapi.yaml",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "https://appreg-api.staging.platform.hmcts.net/specs/openapi.json",
+              "protocol": "https",
+              "host": [
+                "appreg-api",
+                "staging",
+                "platform",
+                "hmcts",
+                "net"
+              ],
+              "path": [
+                "specs",
+                "openapi.json"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Login",
+      "item": [
+        {
+          "name": "Obtain Token Client_Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "api://cd80c7ad-e5fa-43fa-9489-39d2345e7b47/.default",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtain Token password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{SCOPE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{USER_NAME_ar-test-1}}",
+                  "type": "text",
+                  "uuid": "{{uuid}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{PASSWORD}}",
+                  "type": "text",
+                  "uuid": "{{uuid}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtain Token password user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token_user\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{SCOPE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{USER_NAME_ar-test-1}}",
+                  "type": "text",
+                  "uuid": "{{uuid}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{PASSWORD}}",
+                  "type": "text",
+                  "uuid": "{{uuid}}"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtain Token password admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.expect(pm.response.code).to.equal(200);\r",
+                  "const response = pm.response.json();\r",
+                  "pm.environment.set(\"access_token_admin\", response.access_token);"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "password",
+                  "type": "text"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{CLIENT_ID_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{CLIENT_SECRET_FE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "{{SCOPE}}",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "{{USER_NAME_ar-test-5}}",
+                  "type": "text",
+                  "uuid": "{{uuid}}"
+                },
+                {
+                  "key": "password",
+                  "value": "{{PASSWORD}}",
+                  "type": "text",
+                  "uuid": "51abbeb1-d86f-4d13-a73a-0efeb9383324"
+                }
+              ]
+            },
+            "url": {
+              "raw": "https://login.microsoftonline.com/{{TENANT_ID}}/oauth2/v2.0/token",
+              "protocol": "https",
+              "host": [
+                "login",
+                "microsoftonline",
+                "com"
+              ],
+              "path": [
+                "{{TENANT_ID}}",
+                "oauth2",
+                "v2.0",
+                "token"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Application Code",
+      "item": [
+        {
+          "name": "Application Codes",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/application-codes/:id?date=2016-01-01",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes",
+                ":id"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2016-01-01"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "RE99003"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "All Application Codes",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-codes",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-codes"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Result Codes",
+      "item": [
+        {
+          "name": "All Result Codes",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/result-codes",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "result-codes"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "All Result Code / {code}",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/result-codes/:code?date=2016-01-01",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "result-codes",
+                ":code"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2016-01-01"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "code",
+                  "value": "APPC"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Court Location",
+      "item": [
+        {
+          "name": "All Court Location",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/court-locations",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "court-locations"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "code",
+                  "value": null,
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "0",
+                  "disabled": true
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "name, asc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Generated from cURL: curl -i -b jar.txt -H 'Accept: application/json' http://localhost:4000/national-court-houses"
+          },
+          "response": []
+        },
+        {
+          "name": "200 OK Court Location",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "disabled": true
+              },
+              {
+                "key": "Cookie",
+                "value": "jar.txt",
+                "disabled": true
+              }
+            ],
+            "url": {
+              "raw": "{{baseURL}}/court-locations/:code?date=1875-12-04",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "court-locations",
+                ":code"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "1875-12-04"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "code",
+                  "value": "RCJ001"
+                }
+              ]
+            },
+            "description": "### Retrieve National Court House Details\n\nThis endpoint retrieves the details of a national court house based on the specified `id`.\n\n**HTTP Method:** GET  \n**Endpoint:** `{{baseURL}}/national-court-houses/{id}`\n\n#### Path Parameters\n\n- `id` (integer): The unique identifier of the national court house to retrieve.\n    \n\n#### Response\n\n- **Status Code:** 200 OK\n    \n- **Content-Type:** application/json\n    \n\n##### Response Body\n\n``` json\n{\n  \"id\": 0,\n  \"name\": \"\",\n  \"courtType\": \"\",\n  \"startDate\": \"\",\n  \"endDate\": null,\n  \"locationId\": 0,\n  \"psaId\": 0,\n  \"courtLocationCode\": \"\",\n  \"welshName\": \"\",\n  \"orgId\": 0\n}\n\n ```\n\nThis will return the details of the specified national court house, including its name, type, dates, and associated identifiers.\n\nThis endpoint retrieves information about national court houses.\n\n**HTTP Method:** GET  \n**URL:** `{{baseURL}}/national-court-houses?id=2`\n\n#### Request Parameters\n\n- **id** (required): The unique identifier for the national court house.\n    \n\n#### Response\n\n- **Status Code:** 400\n    \n- **Content-Type:** application/json\n    \n- **Response Body:**\n    \n    - `timestamp`: The timestamp of the error.\n        \n    - `status`: The status code of the error.\n        \n    - `error`: A description of the error.\n        \n    - `path`: The path of the request that caused the error.\n        \n\n**Note:** Ensure that the `id` parameter is provided to successfully retrieve the national court house information."
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "noauth"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {},
+            "exec": [
+              ""
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Criminal Justice Areas",
+      "item": [
+        {
+          "name": "All Criminal Justice Areas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/criminal-justice-areas",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "criminal-justice-areas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criminal Justice Area/ {id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/criminal-justice-areas/:code",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "criminal-justice-areas",
+                ":code"
+              ],
+              "query": [
+                {
+                  "key": "",
+                  "value": null,
+                  "type": "text",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "code",
+                  "value": "09"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Application Lists",
+      "item": [
+        {
+          "name": "application-lists",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-26\",\n  \"time\": \"10:30\",\n  \"description\": \"string\",\n  \"status\": \"OPEN\",\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 0,\n  \"durationMinutes\": 59\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ALL application-lists",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-lists",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists"
+              ],
+              "query": [
+                {
+                  "key": "time",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "courtLocationCode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cjaCode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "description",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "otherLocationDescription",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "size",
+                  "value": "100",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "date",
+                  "value": "2025-11-16",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Application Lists/ {id}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/:listId",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                ":listId"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "asd",
+                  "disabled": true
+                },
+                {
+                  "key": "size",
+                  "value": "20",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "postCode,asc",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "sequenceNumber,asc",
+                  "disabled": true
+                },
+                {
+                  "key": "",
+                  "value": "",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "listId",
+                  "value": "b13c87ac-374e-4ab8-ac72-1148bd0e268d"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Application Lists Print Cont",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-lists/:listId/print",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                ":listId",
+                "print"
+              ],
+              "variable": [
+                {
+                  "key": "listId",
+                  "value": "412df68d-dd7e-47f4-b50e-4f85f0022766"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/application-lists/{listId}",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/:{listId}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                ":{listId}"
+              ],
+              "variable": [
+                {
+                  "key": "{listId}",
+                  "value": "e5caf993-5e27-4779-9ca0-fab3077d313e"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "/application-lists/{listId}",
+          "protocolProfileBehavior": {
+            "disabledSystemHeaders": {}
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-02-26\",\n  \"time\": \"16:00\",\n  \"description\": \"Urgent list\",\n  \"status\": \"CLOSED\",\n  \"otherLocationDescription\": \"Temporary Courtroom at Town Hall\",\n  \"courtLocationCode\": \"\",\n  \"cjaCode\": \"01\",\n  \"durationHours\": 10,\n  \"durationMinutes\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/:{listId}",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                ":{listId}"
+              ],
+              "variable": [
+                {
+                  "key": "{listId}",
+                  "value": "b71700fc-883b-4b7c-9bcd-930182726040"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Application List Entry",
+      "item": [
+        {
+          "name": "application-list-entry",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"listId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"standardApplicantCode\": \"APP001\",\n  \"applicationCode\": \"APP001\",\n  \"applicant\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mr, Mrs\",\n        \"surname\": \"Smith\",\n        \"firstForename\": \"John\",\n        \"secondForename\": \"string\",\n        \"thirdForename\": \"string\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"10 Downing Street\",\n        \"addressLine2\": \"Westminster\",\n        \"addressLine3\": \"London\",\n        \"addressLine4\": \"Greater London\",\n        \"addressLine5\": \"United Kingdom\",\n        \"postcode\": \"SW1A 2AA\",\n        \"phone\": \"01225 123456\",\n        \"mobile\": \"07123456789\",\n        \"email\": \"john-doe@gmail.com\"\n      }\n    },\n    \"organisation\": {\n      \"name\": \"ACME Industries LTD\",\n      \"contactDetails\": {\n        \"addressLine1\": \"10 Downing Street\",\n        \"addressLine2\": \"Westminster\",\n        \"addressLine3\": \"London\",\n        \"addressLine4\": \"Greater London\",\n        \"addressLine5\": \"United Kingdom\",\n        \"postcode\": \"SW1A 2AA\",\n        \"phone\": \"01225 123456\",\n        \"mobile\": \"07123456789\",\n        \"email\": \"john-doe@gmail.com\"\n      }\n    }\n  },\n  \"respondent\": {\n    \"person\": {\n      \"name\": {\n        \"title\": \"Mr, Mrs\",\n        \"surname\": \"Smith\",\n        \"firstForename\": \"John\",\n        \"secondForename\": \"string\",\n        \"thirdForename\": \"string\"\n      },\n      \"contactDetails\": {\n        \"addressLine1\": \"10 Downing Street\",\n        \"addressLine2\": \"Westminster\",\n        \"addressLine3\": \"London\",\n        \"addressLine4\": \"Greater London\",\n        \"addressLine5\": \"United Kingdom\",\n        \"postcode\": \"SW1A 2AA\",\n        \"phone\": \"01225 123456\",\n        \"mobile\": \"07123456789\",\n        \"email\": \"john-doe@gmail.com\"\n      }\n    },\n    \"dateOfBirth\": \"1990-01-01\",\n    \"organisation\": {\n      \"name\": \"ACME Industries LTD\",\n      \"contactDetails\": {\n        \"addressLine1\": \"10 Downing Street\",\n        \"addressLine2\": \"Westminster\",\n        \"addressLine3\": \"London\",\n        \"addressLine4\": \"Greater London\",\n        \"addressLine5\": \"United Kingdom\",\n        \"postcode\": \"SW1A 2AA\",\n        \"phone\": \"01225 123456\",\n        \"mobile\": \"07123456789\",\n        \"email\": \"john-doe@gmail.com\"\n      }\n    }\n  },\n  \"numberOfRespondents\": 0,\n  \"wordingFields\": [\n    \"25 October 2025\",\n    \"London\"\n  ],\n  \"feeStatuses\": [\n    {\n      \"paymentReference\": \"PAY-001\",\n      \"paymentStatus\": \"PAID\",\n      \"statusDate\": \"2025-12-01\"\n    }\n  ],\n  \"hasOffsiteFee\": true,\n  \"caseReference\": \"CASE-001\",\n  \"accountNumber\": \"ACC-001\",\n  \"notes\": \"Time is 10:31, we have convened to talk about Application...\",\n  \"lodgementDate\": \"2025-12-01\",\n  \"officials\": [\n    {\n      \"title\": \"Mr, Mrs\",\n      \"surname\": \"Smith\",\n      \"forename\": \"John\",\n      \"type\": \"MAGISTRATE\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseURL}}/application-lists/:{listId}/entries",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-lists",
+                ":{listId}",
+                "entries"
+              ],
+              "variable": [
+                {
+                  "key": "{listId}",
+                  "value": "c73e2ff4-ae8f-4414-8e6a-84dadc082b53"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "All Application List Entries",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token_user}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseURL}}/application-list-entries?date=abcd",
+              "host": [
+                "{{baseURL}}"
+              ],
+              "path": [
+                "application-list-entries"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "abcd"
+                },
+                {
+                  "key": "courtCode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "otherLocationDescription",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "cjaCode",
+                  "value": "01",
+                  "disabled": true
+                },
+                {
+                  "key": "applicantOrganisation",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "applicantSurname",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "standardApplicantCode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "CLOSED",
+                  "disabled": true
+                },
+                {
+                  "key": "respondentOrganisation",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "respondentSurname",
+                  "value": "TestSurnameRespondent",
+                  "disabled": true
+                },
+                {
+                  "key": "respondentPostcode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "accountReference",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "18",
+                  "disabled": true
+                },
+                {
+                  "key": "size",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token_user}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseURL}}/health",
+          "host": [
+            "{{baseURL}}"
+          ],
+          "path": [
+            "health"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": null,
+              "disabled": true
+            },
+            {
+              "key": "code",
+              "value": null,
+              "disabled": true
+            },
+            {
+              "key": "page",
+              "value": "0",
+              "disabled": true
+            },
+            {
+              "key": "size",
+              "value": "20",
+              "disabled": true
+            },
+            {
+              "key": "sort",
+              "value": "name, asc",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
 }
