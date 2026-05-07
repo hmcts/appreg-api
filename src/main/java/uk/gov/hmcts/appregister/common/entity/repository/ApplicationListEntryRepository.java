@@ -507,6 +507,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
 
     /**
+     * Finds an entry for Uuid. Also returns deleted entries.
+     *
+     * @param entryId The entry id
+     * @return A single optional matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuidIncludingDelete(UUID entryId);
+
+    /**
      * Finds all entities with the given IDs, within the associated list.
      *
      * @param entryId The entry id

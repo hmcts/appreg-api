@@ -20,13 +20,16 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
@@ -126,6 +129,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final Clock clock;
     private final BusinessDateProvider businessDateProvider;
+
+    private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -1206,6 +1211,28 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 "Completed bulk move for {} entries from list {}",
                 existingIds.size(),
                 sourceListId);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteEntry(PayloadForDeleteEntry idToDelete) {
+        deleteApplicationListEntryValidator.validate(
+                idToDelete,
+                (id, success) ->
+                        auditService.processAudit(
+                                new DeleteAuditable(
+                                        BeanUtil.copyBean(success.getApplicationListEntry())),
+                                AppListEntryAuditOperation.DELETE_ENTRY,
+                                req -> {
+                                    success.getApplicationListEntry().setDeleted(true);
+                                    applicationListEntryRepository.save(
+                                            success.getApplicationListEntry());
+                                    Optional<AuditableResult<Void, DeleteAuditable>> ret =
+                                            Optional.empty();
+                                    return ret;
+                                }));
+
+        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**

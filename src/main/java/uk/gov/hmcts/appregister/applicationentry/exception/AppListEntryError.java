@@ -90,9 +90,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     LIST_ENTRY_NOT_FOUND(
             DefaultErrorDetail.create(
-                    HttpStatus.CONFLICT,
-                    "No application list entry was found that belongs to " + " the specified list",
-                    "ALE-18")),
+                    HttpStatus.NOT_FOUND, "No application list entry was found", "ALE-18")),
 
     PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE(
             DefaultErrorDetail.create(
@@ -145,7 +143,13 @@ public enum AppListEntryError implements ErrorCodeEnum {
                     HttpStatus.BAD_REQUEST, "Uploaded file contains no data rows", "ALE-29")),
     BULK_UPLOAD_PROCESSING_FAILED(
             DefaultErrorDetail.create(
-                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30"));
+                    HttpStatus.INTERNAL_SERVER_ERROR, "Bulk upload processing failed", "ALE-30")),
+    DELETION_ALREADY_IN_DELETABLE_STATE(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "The application list is not in a deletable state",
+                    "ALE-31"));
+
     private final DefaultErrorDetail defaultErrorCode;
 
     AppListEntryError(DefaultErrorDetail defaultErrorCode) {
