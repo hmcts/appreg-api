@@ -34,6 +34,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
+    private static final String UNKNOWN_FIELD = "unknown field";
 
     private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
@@ -204,7 +205,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                                                     .getPath()
                                                     .getFirst()
                                                     .getFieldName()
-                                            : "unknown field"));
+                                            : UNKNOWN_FIELD));
         } else {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
@@ -232,7 +233,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
     private String getJsonPath(ValueInstantiationException exception) {
         if (exception.getPath().isEmpty()) {
-            return "unknown field";
+            return UNKNOWN_FIELD;
         }
 
         StringBuilder path = new StringBuilder();
@@ -247,7 +248,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             }
         }
 
-        return path.isEmpty() ? "unknown field" : path.toString();
+        return path.isEmpty() ? UNKNOWN_FIELD : path.toString();
     }
 
     @Override

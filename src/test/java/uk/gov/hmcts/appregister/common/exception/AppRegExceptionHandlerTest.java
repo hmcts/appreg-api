@@ -375,9 +375,7 @@ class AppRegExceptionHandlerTest {
     }
 
     @Test
-    void
-            givenHttpMessageNotReadableEnumExceptionWithAppCode_whenTheExceptionIsThrown_thenAProblemDetailIsaReturned()
-                    throws Exception {
+    void givenHttpMessageNotReadableEnumException_whenThrown_thenProblemDetailIsReturned() {
         String content = "Not Readable Error";
         String body =
                 """

@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,9 +78,7 @@ public class BulkUpdateOfficialsValidator
     }
 
     private Set<UUID> validateEntryIds(BulkUpdateOfficialsPayload payload) {
-        if (payload.data() == null
-                || payload.data().getEntryIds() == null
-                || payload.data().getEntryIds().isEmpty()) {
+        if (payload.data() == null || isNullOrEmpty(payload.data().getEntryIds())) {
             throw new AppRegistryException(
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
@@ -88,7 +87,7 @@ public class BulkUpdateOfficialsValidator
     }
 
     private void validateOfficials(BulkUpdateOfficialsPayload payload) {
-        if (payload.data() == null || payload.data().getOfficials() == null) {
+        if (payload.data() == null || isNull(payload.data().getOfficials())) {
             throw new AppRegistryException(
                     AppListEntryError.OFFICIALS_NOT_PROVIDED, "No officials provided");
         }
@@ -147,5 +146,13 @@ public class BulkUpdateOfficialsValidator
                     "One or more entries were not found in the source list",
                     java.util.Map.of("invalid_entry_ids", missingIds.toString()));
         }
+    }
+
+    private boolean isNullOrEmpty(Collection<?> values) {
+        return values == null || values.isEmpty();
+    }
+
+    private boolean isNull(Object value) {
+        return value == null;
     }
 }

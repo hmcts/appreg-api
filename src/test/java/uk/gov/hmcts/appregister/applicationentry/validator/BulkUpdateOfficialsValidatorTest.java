@@ -2,7 +2,6 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
@@ -59,8 +58,7 @@ class BulkUpdateOfficialsValidatorTest {
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
-        when(applicationListEntryRepository.findByUuidsInSourceList(
-                        eq(listId), eq(Set.of(entryId))))
+        when(applicationListEntryRepository.findByUuidsInSourceList(listId, Set.of(entryId)))
                 .thenReturn(List.of(applicationListEntry));
     }
 
@@ -83,11 +81,9 @@ class BulkUpdateOfficialsValidatorTest {
         UUID missingListId = UUID.randomUUID();
         when(applicationListRepository.findByUuidIncludingDelete(missingListId))
                 .thenReturn(Optional.empty());
+        BulkUpdateOfficialsPayload payload = validPayload(missingListId, entryId);
 
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(validPayload(missingListId, entryId)));
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST);
@@ -96,11 +92,9 @@ class BulkUpdateOfficialsValidatorTest {
     @Test
     void validate_whenApplicationListIsClosed_thenThrowsApplicationListStateIsIncorrect() {
         applicationList.setStatus(Status.CLOSED);
+        BulkUpdateOfficialsPayload payload = validPayload(entryId);
 
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(validPayload(entryId)));
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
@@ -109,11 +103,9 @@ class BulkUpdateOfficialsValidatorTest {
     @Test
     void validate_whenApplicationListIsDeleted_thenThrowsApplicationListStateIsIncorrect() {
         applicationList.setDeleted(true);
+        BulkUpdateOfficialsPayload payload = validPayload(entryId);
 
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () -> validator.validate(validPayload(entryId)));
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode())
                 .isEqualTo(AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT);
@@ -121,115 +113,86 @@ class BulkUpdateOfficialsValidatorTest {
 
     @Test
     void validate_whenEntryIdsAreMissing_thenThrowsEntryNotProvided() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .officials(validOfficials()))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId, new BulkOfficialsUpdateDto().officials(validOfficials()));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_PROVIDED);
     }
 
     @Test
     void validate_whenEntryIdsAreEmpty_thenThrowsEntryNotProvided() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of())
-                                                        .officials(validOfficials()))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of())
+                                .officials(validOfficials()));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_PROVIDED);
     }
 
     @Test
     void validate_whenOfficialsAreMissing_thenThrowsOfficialsNotProvided() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of(entryId)))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId, new BulkOfficialsUpdateDto().entryIds(Set.of(entryId)));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIALS_NOT_PROVIDED);
     }
 
     @Test
     void validate_whenOfficialTypeIsMissing_thenThrowsOfficialTypeRequired() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of(entryId))
-                                                        .officials(
-                                                                Arrays.asList(
-                                                                        null, official(null))))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(Arrays.asList(null, official(null))));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.OFFICIAL_TYPE_REQUIRED);
     }
 
     @Test
     void validate_whenTooManyMagistrates_thenThrowsTooManyMagistrates() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of(entryId))
-                                                        .officials(
-                                                                List.of(
-                                                                        official(
-                                                                                OfficialType
-                                                                                        .MAGISTRATE),
-                                                                        official(
-                                                                                OfficialType
-                                                                                        .MAGISTRATE),
-                                                                        official(
-                                                                                OfficialType
-                                                                                        .MAGISTRATE),
-                                                                        official(
-                                                                                OfficialType
-                                                                                        .MAGISTRATE))))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(
+                                        List.of(
+                                                official(OfficialType.MAGISTRATE),
+                                                official(OfficialType.MAGISTRATE),
+                                                official(OfficialType.MAGISTRATE),
+                                                official(OfficialType.MAGISTRATE))));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.TOO_MANY_MAGISTRATES);
     }
 
     @Test
     void validate_whenTooManyCourtOfficials_thenThrowsTooManyCourtOfficials() {
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of(entryId))
-                                                        .officials(
-                                                                List.of(
-                                                                        official(
-                                                                                OfficialType.CLERK),
-                                                                        official(
-                                                                                OfficialType
-                                                                                        .CLERK))))));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId))
+                                .officials(
+                                        List.of(
+                                                official(OfficialType.CLERK),
+                                                official(OfficialType.CLERK))));
+
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(AppListEntryError.TOO_MANY_COURT_OFFICIALS);
     }
@@ -238,19 +201,16 @@ class BulkUpdateOfficialsValidatorTest {
     void validate_whenSomeEntriesAreNotInSourceList_thenThrowsEntryNotInSourceList() {
         UUID missingEntryId = UUID.randomUUID();
         when(applicationListEntryRepository.findByUuidsInSourceList(
-                        eq(listId), eq(Set.of(entryId, missingEntryId))))
+                        listId, Set.of(entryId, missingEntryId)))
                 .thenReturn(List.of(applicationListEntry));
+        BulkUpdateOfficialsPayload payload =
+                new BulkUpdateOfficialsPayload(
+                        listId,
+                        new BulkOfficialsUpdateDto()
+                                .entryIds(Set.of(entryId, missingEntryId))
+                                .officials(validOfficials()));
 
-        AppRegistryException exception =
-                assertThrows(
-                        AppRegistryException.class,
-                        () ->
-                                validator.validate(
-                                        new BulkUpdateOfficialsPayload(
-                                                listId,
-                                                new BulkOfficialsUpdateDto()
-                                                        .entryIds(Set.of(entryId, missingEntryId))
-                                                        .officials(validOfficials()))));
+        AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST);
     }
@@ -263,6 +223,10 @@ class BulkUpdateOfficialsValidatorTest {
         return new BulkUpdateOfficialsPayload(
                 listId,
                 new BulkOfficialsUpdateDto().entryIds(Set.of(entryId)).officials(validOfficials()));
+    }
+
+    private AppRegistryException validateAndCapture(BulkUpdateOfficialsPayload payload) {
+        return assertThrows(AppRegistryException.class, () -> validator.validate(payload));
     }
 
     private List<Official> validOfficials() {
