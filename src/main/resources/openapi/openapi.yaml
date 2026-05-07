@@ -64,6 +64,7 @@ paths:
   /application-lists/{listId}/print:                                { $ref: './paths/application-lists/printable-application-lists-by-id.yaml'}
   # APPLICATION LIST ENTRIES
   /application-list-entries:                                        { $ref: './paths/application-list-entries/entries.yaml' }
+  /application-list-entries/ids:                                    { $ref: './paths/application-list-entries/entry-ids.yaml' }
   /application-lists/{listId}/entries:                              { $ref: './paths/application-list-entries/application-list-entries.yaml' }
   /application-lists/{listId}/entries/ids:                          { $ref: './paths/application-list-entries/application-list-entry-ids.yaml' }
   /application-lists/{listId}/entries/officials:                    { $ref: './paths/application-list-entries/entries-officials.yaml' }
