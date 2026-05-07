@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.controller;
 
+import jakarta.validation.Validator;
+import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
@@ -11,25 +13,43 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
+import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
+import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
+import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
+import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
+import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
+import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
+import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
+import uk.gov.hmcts.appregister.job.service.JobService;
 
 @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
 @Controller
@@ -39,6 +59,18 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final ApplicationEntryService applicationEntryService;
 
     private final PageableMapper pageableMapper;
+
+    private final AsyncJobService asyncJobService;
+
+    private final JobService jobService;
+
+    private final UserProvider userProvider;
+
+    private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
+
+    private final ApplicationListEntryMapper applicationListEntryMapper;
+
+    private final Validator beanValidator;
 
     public static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
@@ -61,6 +93,16 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                 .varyBy(HttpHeaders.ACCEPT)
                 .contentType(VND_JSON_V1)
                 .body(entryPage);
+    }
+
+    @Override
+    public ResponseEntity<EntryIdsDto> getEntryIds(EntryGetFilterDto filter) {
+        EntryIdsDto entryIds = applicationEntryService.getEntryIds(filter);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(entryIds);
     }
 
     @Override
@@ -143,12 +185,93 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
+    public ResponseEntity<EntryIdsDto> getApplicationListEntryIds(
+            UUID listId, EntryApplicationListGetFilterDto filter) {
+        PayloadGetEntryInList payloadForGet =
+                PayloadGetEntryInList.builder().listId(listId).build();
+
+        EntryIdsDto entryIds =
+                applicationEntryService.getApplicationListEntryIds(payloadForGet, filter);
+
+        log.info("Get Application List Entry IDs for listId: {}", listId);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(entryIds);
+    }
+
+    @Override
     @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<Void> moveApplicationListEntries(
             UUID listId, MoveEntriesDto moveEntriesDto) {
         applicationEntryService.move(listId, moveEntriesDto);
 
         return ResponseEntity.ok().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> replaceApplicationListEntryOfficials(
+            UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(
+            UUID listId, MultipartFile file) {
+
+        log.info("Starting bulk upload for application list: {}", listId);
+
+        if (file == null || file.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_FILE_MISSING,
+                    "Bulk upload file must be provided and not empty");
+        }
+
+        try {
+            JobTypeRequest jobTypeRequest =
+                    JobTypeRequest.builder()
+                            .userName(userProvider.getUserId())
+                            .jobType(JobType.BULK_UPLOAD_ENTRIES)
+                            .build();
+
+            CsvReader<BulkUploadRow> csvReader = new CsvReader<>(file, BulkUploadRow.class);
+
+            TrackJobStatusResponse trackJobStatusResponse =
+                    asyncJobService.startJob(
+                            jobTypeRequest,
+                            csvReader,
+                            new BulkUploadAsyncLifecycle(
+                                    listId,
+                                    applicationEntryService,
+                                    bulkUploadApplicationEntryValidator,
+                                    applicationListEntryMapper,
+                                    beanValidator));
+
+            JobAcknowledgement ack = jobService.getJobAckById(trackJobStatusResponse.getUuid());
+
+            return ResponseEntity.accepted()
+                    .varyBy(HttpHeaders.ACCEPT)
+                    .contentType(VND_JSON_V1)
+                    .header(HttpHeaders.LOCATION, "/jobs/" + trackJobStatusResponse.getUuid())
+                    .body(ack);
+        } catch (IOException e) {
+            log.error("Failed to initialise CSV reader for bulk upload", e);
+
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
+                    "Unable to read uploaded file");
+        }
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteApplicationListEntry(UUID listId, UUID entryId) {
+        PayloadForDeleteEntry payload = new PayloadForDeleteEntry(listId, entryId);
+        applicationEntryService.deleteEntry(payload);
+
+        return ResponseEntity.noContent().build();
     }
 
     /**

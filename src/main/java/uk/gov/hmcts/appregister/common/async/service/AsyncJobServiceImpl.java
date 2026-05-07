@@ -57,7 +57,16 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             JobTypeRequest jobTypeRequest,
             DataReader<T> dataReader,
             AsyncJobLifecycle<T> lifecycle) {
-        return startJob(jobTypeRequest, dataReader, null, lifecycle);
+        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize);
+    }
+
+    @Override
+    public <T> TrackJobStatusResponse startJob(
+            JobTypeRequest jobTypeRequest,
+            DataReader<T> dataReader,
+            AsyncJobLifecycle<T> lifecycle,
+            int pageSize) {
+        return startJob(jobTypeRequest, dataReader, null, lifecycle, pageSize);
     }
 
     @Override
@@ -66,6 +75,15 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             DataReader<T> dataReader,
             PageReader<T> pageImport,
             AsyncJobLifecycle<T> lifecycle) {
+        return startJob(jobRequest, dataReader, pageImport, lifecycle, pageSize);
+    }
+
+    private <T> TrackJobStatusResponse startJob(
+            JobTypeRequest jobRequest,
+            DataReader<T> dataReader,
+            PageReader<T> pageImport,
+            AsyncJobLifecycle<T> lifecycle,
+            int pageSize) {
 
         JobContext jobContext = new JobContext();
 

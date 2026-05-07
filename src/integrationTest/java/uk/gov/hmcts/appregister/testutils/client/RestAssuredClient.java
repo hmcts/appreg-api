@@ -11,6 +11,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.LocalTime;
@@ -321,6 +322,26 @@ public class RestAssuredClient {
         return given().body(object)
                 .header("Authorization", "Bearer " + token.getToken())
                 .header("Content-Type", "application/vnd.hmcts.appreg.v1+json")
+                .post(url)
+                .andReturn();
+    }
+
+    /**
+     * posts a multipart file request against the application.
+     *
+     * @param url The url context
+     * @param token The bearer token
+     * @param controlName The multipart form control name
+     * @param file The file to upload
+     * @param mimeType The file MIME type
+     * @return The specification of the response
+     */
+    public Response executePostRequest(
+            URL url, TokenAndJwksKey token, String controlName, File file, String mimeType) {
+        return given().header("Authorization", "Bearer " + token.getToken())
+                .header(HttpHeaders.ACCEPT, "application/vnd.hmcts.appreg.v1+json")
+                .header("traceparent", DEFAULT_TRACE_ID)
+                .multiPart(controlName, file, mimeType)
                 .post(url)
                 .andReturn();
     }

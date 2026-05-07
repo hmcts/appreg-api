@@ -1,10 +1,12 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +34,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Set<String> WHOLE_NUMBER_FIELDS =
             Set.of("sequenceNumber", "page", "pageNumber", "pageSize", "size");
+    private static final String UNKNOWN_FIELD = "unknown field";
+
+    private static final Set<String> BOOLEAN_FIELDS = Set.of("feeRequired");
 
     @ExceptionHandler(AppRegistryException.class)
     ResponseEntity<ProblemDetail> handleAppRegisterApiException(AppRegistryException exception) {
@@ -153,6 +158,11 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                                         fieldError.getField(),
                                         "Please ensure %s is a whole number"
                                                 .formatted(fieldError.getField()));
+                            } else if (BOOLEAN_FIELDS.contains(fieldError.getField())) {
+                                errors.put(
+                                        fieldError.getField(),
+                                        "Please ensure %s is a valid boolean value"
+                                                .formatted(fieldError.getField()));
                             } else {
                                 errors.put(
                                         fieldError.getField(),
@@ -176,25 +186,69 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
 
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
+        ValueInstantiationException valueInstantiationException =
+                findCause(ex, ValueInstantiationException.class);
 
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.NOT_READABLE_ERROR, ex);
 
         // if we have a date exception use that as it gives us a more specific error message
         if (dateException != null) {
             problemDetail.setDetail(dateException.getMessage());
+        } else if (isEnumInstantiationProblem(valueInstantiationException)) {
+            problemDetail.setDetail(getEnumInstantiationProblemDetail(valueInstantiationException));
         } else if (invalidFormatException != null) {
             problemDetail.setDetail(
                     "Problem setting value for %s please check the correct type is used"
                             .formatted(
-                                    invalidFormatException.getPath().size() > 0
-                                            ? invalidFormatException.getPath().get(0).getFieldName()
-                                            : "unknown field"));
+                                    !invalidFormatException.getPath().isEmpty()
+                                            ? invalidFormatException
+                                                    .getPath()
+                                                    .getFirst()
+                                                    .getFieldName()
+                                            : UNKNOWN_FIELD));
         } else {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
         }
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    private boolean isEnumInstantiationProblem(ValueInstantiationException exception) {
+        return exception != null
+                && exception.getType() != null
+                && exception.getType().getRawClass().isEnum();
+    }
+
+    private String getEnumInstantiationProblemDetail(ValueInstantiationException exception) {
+        Class<?> enumType = exception.getType().getRawClass();
+        String acceptedValues =
+                String.join(
+                        ", ",
+                        Arrays.stream(enumType.getEnumConstants()).map(String::valueOf).toList());
+
+        return "Problem setting value for %s. Accepted values are: %s"
+                .formatted(getJsonPath(exception), acceptedValues);
+    }
+
+    private String getJsonPath(ValueInstantiationException exception) {
+        if (exception.getPath().isEmpty()) {
+            return UNKNOWN_FIELD;
+        }
+
+        StringBuilder path = new StringBuilder();
+        for (var reference : exception.getPath()) {
+            if (reference.getFieldName() != null) {
+                if (!path.isEmpty()) {
+                    path.append(".");
+                }
+                path.append(reference.getFieldName());
+            } else if (reference.getIndex() >= 0) {
+                path.append("[").append(reference.getIndex()).append("]");
+            }
+        }
+
+        return path.isEmpty() ? UNKNOWN_FIELD : path.toString();
     }
 
     @Override

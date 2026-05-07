@@ -28,6 +28,21 @@ public interface AsyncJobService {
             JobTypeRequest jobType, DataReader<T> dataReader, AsyncJobLifecycle<T> lifecycle);
 
     /**
+     * starts the job with a csv stream passed to it.
+     *
+     * @param jobType The job type
+     * @param dataReader The reader to read the data.
+     * @param lifecycle The lifecycle to run the job.
+     * @param pageSize The number of records to read in each page.
+     * @return The job status report response
+     */
+    <T> TrackJobStatusResponse startJob(
+            JobTypeRequest jobType,
+            DataReader<T> dataReader,
+            AsyncJobLifecycle<T> lifecycle,
+            int pageSize);
+
+    /**
      * runs the job with a csv stream passed to it.
      *
      * @param jobType The job type

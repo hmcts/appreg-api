@@ -14,6 +14,7 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
 
     private static final String WEB_CONTEXT = "application-list-entries";
     private static final String CREATE_ENTRY_CONTEXT = "application-lists";
+    private static final String DELETE_ENTRY_CONTEXT = "application-lists/%s/entries/%s";
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -33,6 +34,17 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                                                 + "/entries"))
                         .method(HttpMethod.POST)
                         .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries/ids"))
+                        .method(HttpMethod.GET)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build(),
@@ -74,6 +86,16 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                                 new MoveEntriesDto()
                                         .targetListId(UUID.randomUUID())
                                         .entryIds(Set.of(UUID.randomUUID())))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        DELETE_ENTRY_CONTEXT.formatted(
+                                                UUID.randomUUID(), UUID.randomUUID())))
+                        .method(HttpMethod.DELETE)
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());

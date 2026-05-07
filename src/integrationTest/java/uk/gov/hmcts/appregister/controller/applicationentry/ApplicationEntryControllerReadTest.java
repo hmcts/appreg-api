@@ -1079,6 +1079,163 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
     }
 
     @Test
+    public void
+            testGetApplicationListEntriesWithSpecialCharacterSequenceNumberReturnsWholeNumberMessage()
+                    throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?sequenceNumber=1;--"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"sequenceNumber":"Please ensure sequenceNumber is a whole number"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidRespondentPostcodeReturnsValidationError()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "@£1 1@£"));
+
+        responseSpec.then().statusCode(400);
+        responseSpec
+                .then()
+                .body("errors.respondentPostcode", Matchers.containsString("must match"));
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidFeeRequiredReturnsBooleanMessage()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + UUID.randomUUID()
+                                        + "/entries?feeRequired=maybe"),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+
+        String expectedJson =
+                """
+                {"type":"COMMON-11","title":"Method Error","status":400,"detail":"Validation failed for fields:",
+                "errors":{"feeRequired":"Please ensure feeRequired is a valid boolean value"}}
+                """;
+
+        JSONAssert.assertEquals(expectedJson, responseSpec.asString(), false);
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidApplicationTitleReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "applicationTitle", "Title;--");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidApplicantNameReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "applicantName", "Jane#");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesWithInvalidRespondentNameReturnsValidationError()
+            throws Exception {
+        assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+                "respondentName", "Smith<>");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeHit()
+            throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(list);
+        setRespondentName(matchingEntry, "Mr", "Partial", "Match");
+        matchingEntry.getRnameaddress().setPostcode("SW1A 1AA");
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+
+        ApplicationListEntry nonMatchingEntry = createEntry(list);
+        setRespondentName(nonMatchingEntry, "Ms", "Partial", "Miss");
+        nonMatchingEntry.getRnameaddress().setPostcode("XY9 8ZZ");
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        persistance.save(nonMatchingEntry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "sw1"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByPartialRespondentPostcodeMiss()
+            throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry entry = createEntry(list);
+        setRespondentName(entry, "Mr", "Partial", "Miss");
+        entry.getRnameaddress().setPostcode("SW1A 1AA");
+        entry.setSequenceNumber((short) 1);
+        persistance.save(entry);
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("respondentPostcode", "ZZ9"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(0, page.getContent().size());
+    }
+
+    @Test
     public void testGetApplicationListEntriesFiltersByAnyAppliedResultCode() throws Exception {
         ApplicationList list = createAndSaveList(OPEN);
         ApplicationCode applicationCode = createApplicationCode("APP002", true);
@@ -1107,6 +1264,42 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         Assertions.assertEquals(1, page.getContent().size());
         Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getId());
         assertResultCodes(page.getContent().getFirst(), "RC1", "RC2");
+    }
+
+    @Test
+    public void testGetApplicationListEntriesFiltersByPartialResultCode() throws Exception {
+        ApplicationList list = createAndSaveList(OPEN);
+
+        ApplicationListEntry matchingEntry = createEntry(list);
+        matchingEntry.setApplicationCode(createApplicationCode("APP002", true));
+        matchingEntry.setSequenceNumber((short) 1);
+        matchingEntry = persistance.save(matchingEntry);
+        saveResolutions(matchingEntry, "APPC");
+
+        ApplicationListEntry nonMatchingEntry = createEntry(list);
+        nonMatchingEntry.setApplicationCode(createApplicationCode("APP003", true));
+        nonMatchingEntry.setSequenceNumber((short) 2);
+        nonMatchingEntry = persistance.save(nonMatchingEntry);
+        saveResolutions(nonMatchingEntry, "RC1");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("sequenceNumber,asc"),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list.getUuid() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("resulted", "AP"),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(matchingEntry.getUuid(), page.getContent().getFirst().getId());
+        assertResultCodes(page.getContent().getFirst(), "APPC");
     }
 
     @Test
@@ -1866,6 +2059,23 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         LocalDate.of(1975, 9, 9),
                         LocalDate.of(1990, 1, 1)),
                 respondentDobs);
+    }
+
+    private void assertGetApplicationListEntriesInvalidFilterReturnsValidationError(
+            String fieldName, String fieldValue) throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of(),
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + UUID.randomUUID() + "/entries"),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam(fieldName, fieldValue));
+
+        responseSpec.then().statusCode(400);
+        responseSpec.then().body("errors." + fieldName, Matchers.containsString("must match"));
     }
 
     private StandardApplicant createStandardApplicantPerson(
