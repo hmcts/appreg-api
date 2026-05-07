@@ -1,0 +1,15 @@
+server:
+  address: 127.0.0.1
+
+spring:
+  autoconfigure:
+    exclude:
+    - org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration
+
+app:
+  security:
+    nosecurity:
+      user-id: local:nosecurity
+      email: nosecurity@appreg.local
+      roles:
+      - LOCAL_NO_SECURITY

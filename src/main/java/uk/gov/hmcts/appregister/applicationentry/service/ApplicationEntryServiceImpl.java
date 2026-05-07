@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -19,12 +20,18 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
@@ -53,7 +60,9 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRep
 import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
+import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.PageMapper;
@@ -63,11 +72,14 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResolution
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
@@ -87,9 +99,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final CreateApplicationEntryValidator createApplicationEntryValidator;
 
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
     private final MoveEntriesValidator moveEntriesValidator;
+
+    private final BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     // Services
     private final MatchService matchService;
@@ -118,6 +134,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final Clock clock;
     private final BusinessDateProvider businessDateProvider;
+
+    private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -176,15 +194,75 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
+        EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
+
+        log.debug("Started: Find Application Entry IDs for criteria: {}", safeFilterDto);
+
+        return auditService.processAudit(
+                null,
+                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                req -> {
+                    Status status =
+                            applicationListEntryMapStructMapper.toStatus(safeFilterDto.getStatus());
+
+                    List<UUID> entryIds =
+                            applicationListEntryRepository.searchForGetSummaryIds(
+                                    null,
+                                    safeFilterDto.getDate() != null,
+                                    safeFilterDto.getDate(),
+                                    safeFilterDto.getCourtCode(),
+                                    safeFilterDto.getOtherLocationDescription(),
+                                    safeFilterDto.getCjaCode(),
+                                    safeFilterDto.getApplicantOrganisation(),
+                                    safeFilterDto.getApplicantSurname(),
+                                    null,
+                                    safeFilterDto.getStandardApplicantCode(),
+                                    status,
+                                    safeFilterDto.getRespondentOrganisation(),
+                                    safeFilterDto.getRespondentSurname(),
+                                    null,
+                                    safeFilterDto.getRespondentPostcode(),
+                                    safeFilterDto.getAccountReference(),
+                                    null,
+                                    null,
+                                    null,
+                                    null);
+
+                    EntryIdsDto response = new EntryIdsDto();
+                    response.setIds(entryIds);
+
+                    log.debug(
+                            "Finished: Find Application Entry IDs for criteria: {}", safeFilterDto);
+
+                    AuditableResult<EntryIdsDto, ApplicationListEntry> result =
+                            new AuditableResult<>(
+                                    response,
+                                    applicationListEntryMapStructMapper.toApplicationListEntry(
+                                            safeFilterDto));
+
+                    return Optional.of(result);
+                });
+    }
+
+    @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> createEntry(
             PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, createApplicationEntryValidator, YesOrNo.NO);
+    }
+
+    private MatchResponse<EntryGetDetailDto> createEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
+                    validator,
+            YesOrNo bulkUpload) {
         log.debug("Started: Create Application Entry: {}", entryCreateDto);
         log.debug("Creating application entry inside list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
-                createApplicationEntryValidator.validate(
+                validator.validate(
                         entryCreateDto,
                         (dto, success) -> {
                             return auditService.processAudit(
@@ -211,7 +289,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                                 applicantToSave,
                                                                 respondentToSave,
                                                                 success.getApplicationCode(),
-                                                                success.getApplicationList());
+                                                                success.getApplicationList(),
+                                                                bulkUpload);
 
                                         Long alId = success.getApplicationList().getId();
                                         short seq = allocateNextSequence(alId);
@@ -226,7 +305,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                                 listEntryEntity.getId());
 
                                         List<AppListEntryFeeStatus> statusList =
-                                                createFeeStatus(listEntryEntity, entryCreateDto);
+                                                createFeeStatus(
+                                                        listEntryEntity,
+                                                        entryCreateDto,
+                                                        success,
+                                                        bulkUpload);
 
                                         List<AppListEntryOfficial> officialList =
                                                 createOfficial(listEntryEntity, entryCreateDto);
@@ -257,6 +340,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Finish: Create Application Entry: {}", entryCreateDto);
 
         return getDetailDto;
+    }
+
+    @Override
+    @Transactional
+    public MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto) {
+        return createEntry(entryCreateDto, bulkCreateApplicationEntryValidator, YesOrNo.YES);
     }
 
     @Override
@@ -367,6 +457,29 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return getDetailDto;
     }
 
+    @Override
+    @Transactional
+    public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
+
+        bulkUpdateOfficialsValidator.validate(
+                payload,
+                (req, success) -> {
+                    List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
+                    entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+
+                    for (ApplicationListEntry entry : entries) {
+                        replaceOfficialsForEntry(entry, req.data().getOfficials());
+                    }
+
+                    log.info(
+                            "Completed bulk officials replacement for {} entries in list {}",
+                            entries.size(),
+                            listId);
+                    return null;
+                });
+    }
+
     /**
      * creates the fees for the entry.
      *
@@ -466,35 +579,67 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
      * create all fee statuses and map them to the entry.
      *
      * @param listEntryEntity The list entry entity to add the officials to
-     * @param entryCreateDto The create payload containing the officials
+     * @param entryCreateDto The create payload containing the fee statuses
+     * @param success The successful validation result containing resolved fees
+     * @param bulkUpload The bulk upload indicator for the create path
      * @return The application fees that were created
      */
     private List<AppListEntryFeeStatus> createFeeStatus(
-            ApplicationListEntry listEntryEntity, PayloadForCreate<EntryCreateDto> entryCreateDto) {
+            ApplicationListEntry listEntryEntity,
+            PayloadForCreate<EntryCreateDto> entryCreateDto,
+            CreateApplicationEntryValidationSuccess success,
+            YesOrNo bulkUpload) {
         List<AppListEntryFeeStatus> statusList = new ArrayList<>();
 
-        if (entryCreateDto.getData().getFeeStatuses() != null) {
-            // create the fee statuses and map to entry
-            for (FeeStatus feeStatus : entryCreateDto.getData().getFeeStatuses()) {
+        List<FeeStatus> feeStatuses =
+                entryCreateDto.getData().getFeeStatuses() == null
+                        ? List.of()
+                        : entryCreateDto.getData().getFeeStatuses();
 
-                auditService.processAudit(
-                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
-                        req -> {
-                            AppListEntryFeeStatus createdAppListStatus =
-                                    appListEntryFeeStatusRepository.save(
-                                            applicationListEntryEntityMapper.toFeeStatus(
-                                                    feeStatus, listEntryEntity));
-                            statusList.add(createdAppListStatus);
-                            log.debug(
-                                    "Fee status created and mapped to application "
-                                            + "entry with id: {}",
-                                    createdAppListStatus.getId());
-                            return Optional.of(new AuditableResult<>(null, createdAppListStatus));
-                        });
-            }
+        for (FeeStatus feeStatus : feeStatuses) {
+            AppListEntryFeeStatus appListEntryFeeStatus =
+                    applicationListEntryEntityMapper.toFeeStatus(feeStatus, listEntryEntity);
+            saveFeeStatus(appListEntryFeeStatus, statusList);
+        }
+
+        if (feeStatuses.isEmpty() && shouldCreateInitialBulkUploadFeeStatus(success, bulkUpload)) {
+            saveFeeStatus(createInitialBulkUploadFeeStatus(listEntryEntity), statusList);
         }
 
         return statusList;
+    }
+
+    private boolean shouldCreateInitialBulkUploadFeeStatus(
+            CreateApplicationEntryValidationSuccess success, YesOrNo bulkUpload) {
+        return bulkUpload == YesOrNo.YES
+                && success.getFee() != null
+                && success.getFee().mainFee() != null;
+    }
+
+    private AppListEntryFeeStatus createInitialBulkUploadFeeStatus(
+            ApplicationListEntry listEntryEntity) {
+        AppListEntryFeeStatus feeStatus = new AppListEntryFeeStatus();
+        feeStatus.setAppListEntry(listEntryEntity);
+        feeStatus.setAlefsFeeStatus(FeeStatusType.DUE);
+        feeStatus.setAlefsPaymentReference(null);
+        feeStatus.setAlefsFeeStatusDate(businessDateProvider.currentUkDate());
+        feeStatus.setAlefsStatusCreationDate(OffsetDateTime.now(clock));
+        return feeStatus;
+    }
+
+    private void saveFeeStatus(
+            AppListEntryFeeStatus appListEntryFeeStatus, List<AppListEntryFeeStatus> statusList) {
+        auditService.processAudit(
+                AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY,
+                req -> {
+                    AppListEntryFeeStatus createdAppListStatus =
+                            appListEntryFeeStatusRepository.save(appListEntryFeeStatus);
+                    statusList.add(createdAppListStatus);
+                    log.debug(
+                            "Fee status created and mapped to application entry with id: {}",
+                            createdAppListStatus.getId());
+                    return Optional.of(new AuditableResult<>(null, createdAppListStatus));
+                });
     }
 
     /**
@@ -903,6 +1048,34 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return officialList;
     }
 
+    private void replaceOfficialsForEntry(
+            ApplicationListEntry entry, List<Official> replacementOfficials) {
+        List<AppListEntryOfficial> existingOfficials =
+                appListEntryOfficialRepository.getOfficialByEntryUuid(entry.getUuid());
+
+        for (AppListEntryOfficial existingOfficial : existingOfficials) {
+            auditService.processAudit(
+                    existingOfficial,
+                    AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY,
+                    req -> {
+                        appListEntryOfficialRepository.delete(existingOfficial);
+                        return Optional.empty();
+                    });
+        }
+
+        for (Official official : replacementOfficials) {
+            auditService.processAudit(
+                    AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
+                    req -> {
+                        AppListEntryOfficial createdOfficial =
+                                appListEntryOfficialRepository.save(
+                                        applicationListEntryEntityMapper.toOfficial(
+                                                official, entry));
+                        return Optional.of(new AuditableResult<>(null, createdOfficial));
+                    });
+        }
+    }
+
     @Override
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
@@ -1009,6 +1182,64 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 }));
     }
 
+    @Override
+    public EntryIdsDto getApplicationListEntryIds(
+            PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filterDto) {
+        log.debug(
+                "Started: Getting application list entry ids for list: {}",
+                payloadForGet.getListId());
+
+        EntryApplicationListGetFilterDto normalisedFilterDto = normaliseEntryListFilter(filterDto);
+
+        return getApplicationListEntriesValidator.validate(
+                payloadForGet,
+                (req, success) ->
+                        auditService.processAudit(
+                                null,
+                                AppListEntryAuditOperation.SEARCH_APP_ENTRY_LIST,
+                                (r) -> {
+                                    List<UUID> entryIds =
+                                            applicationListEntryRepository.searchForGetSummaryIds(
+                                                    payloadForGet.getListId(),
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    normalisedFilterDto.getApplicantName(),
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    null,
+                                                    normalisedFilterDto.getRespondentName(),
+                                                    normalisedFilterDto.getRespondentPostcode(),
+                                                    normalisedFilterDto.getAccountReference(),
+                                                    normalisedFilterDto.getApplicationTitle(),
+                                                    normalisedFilterDto.getResulted(),
+                                                    normalisedFilterDto.getFeeRequired(),
+                                                    normalisedFilterDto.getSequenceNumber());
+
+                                    EntryIdsDto response = new EntryIdsDto();
+                                    response.setIds(entryIds);
+
+                                    log.debug(
+                                            "Finished: Getting application list entry ids for list: {}",
+                                            payloadForGet.getListId());
+
+                                    return Optional.of(
+                                            new AuditableResult<>(
+                                                    response,
+                                                    new ApplicationListEntryReadAudit(
+                                                            applicationListEntryMapStructMapper
+                                                                    .toApplicationListEntry(
+                                                                            payloadForGet,
+                                                                            normalisedFilterDto),
+                                                            normalisedFilterDto.getResulted())));
+                                }));
+    }
+
     private EntryApplicationListGetFilterDto normaliseEntryListFilter(
             EntryApplicationListGetFilterDto filterDto) {
         EntryApplicationListGetFilterDto normalisedFilterDto =
@@ -1088,6 +1319,28 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 "Completed bulk move for {} entries from list {}",
                 existingIds.size(),
                 sourceListId);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteEntry(PayloadForDeleteEntry idToDelete) {
+        deleteApplicationListEntryValidator.validate(
+                idToDelete,
+                (id, success) ->
+                        auditService.processAudit(
+                                new DeleteAuditable(
+                                        BeanUtil.copyBean(success.getApplicationListEntry())),
+                                AppListEntryAuditOperation.DELETE_ENTRY,
+                                req -> {
+                                    success.getApplicationListEntry().setDeleted(true);
+                                    applicationListEntryRepository.save(
+                                            success.getApplicationListEntry());
+                                    Optional<AuditableResult<Void, DeleteAuditable>> ret =
+                                            Optional.empty();
+                                    return ret;
+                                }));
+
+        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**

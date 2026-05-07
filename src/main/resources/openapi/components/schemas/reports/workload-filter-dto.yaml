@@ -22,4 +22,4 @@ properties:
     example: "2025-10-31"
 
   location:
-    $ref: '../common/location.yaml'
+    $ref: './legacy-report-location.yaml'

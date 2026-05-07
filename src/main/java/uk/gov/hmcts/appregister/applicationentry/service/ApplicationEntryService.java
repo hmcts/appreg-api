@@ -1,15 +1,18 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
 import java.util.UUID;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
+import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 
@@ -22,6 +25,8 @@ public interface ApplicationEntryService {
      * @return The entry page containing the search results
      */
     EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable);
+
+    EntryIdsDto getEntryIds(EntryGetFilterDto filterDto);
 
     /**
      * Creates an application entry. A fee status record(s) is created for the entry if provided,
@@ -38,6 +43,16 @@ public interface ApplicationEntryService {
     MatchResponse<EntryGetDetailDto> createEntry(PayloadForCreate<EntryCreateDto> entryCreateDto);
 
     /**
+     * Creates an application entry from a bulk upload row. Bulk upload rows do not include fee
+     * status details.
+     *
+     * @param entryCreateDto The entry create dto with an id representing the list
+     * @return The entry get detail inside of a match response which contains an etag
+     */
+    MatchResponse<EntryGetDetailDto> createBulkEntry(
+            PayloadForCreate<EntryCreateDto> entryCreateDto);
+
+    /**
      * Updates an application entry. A fee status record(s) is created for the entry if provided,
      * officials are created if provided as well as applicant and respondents are created if
      * provided. The code works according to the rules prescribed by the defined application code.
@@ -50,6 +65,14 @@ public interface ApplicationEntryService {
      *     Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
+
+    /**
+     * Replaces officials for every supplied entry in one atomic operation.
+     *
+     * @param listId the application list that owns all supplied entries
+     * @param bulkOfficialsUpdateDto the entry ids and replacement officials
+     */
+    void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto);
 
     /**
      * Retrieves an entry representation based on the entry details provided which contains the list
@@ -65,6 +88,9 @@ public interface ApplicationEntryService {
             PagingWrapper pageable,
             EntryApplicationListGetFilterDto filter);
 
+    EntryIdsDto getApplicationListEntryIds(
+            PayloadGetEntryInList payloadForGet, EntryApplicationListGetFilterDto filter);
+
     /**
      * Moves the specified entries from a source Application List to a destination Application List.
      *
@@ -78,4 +104,13 @@ public interface ApplicationEntryService {
      *     or the associated target ApplicationList entity is not found
      */
     void move(UUID listId, MoveEntriesDto moveEntriesDto);
+
+    /**
+     * Soft deletes an application entry.
+     *
+     * @param idToDelete The id to delete. This contains the list if and the entry id.
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException if validation fails,
+     *     or the associated target ApplicationList entity is not found
+     */
+    void deleteEntry(PayloadForDeleteEntry idToDelete);
 }

@@ -2,35 +2,33 @@ package uk.gov.hmcts.appregister.common.health;
 
 import java.util.List;
 import java.util.Map;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
  * A test for developers to assert unimplemented endpoints. Developers need to remove from the list
- * when endpoints are implemented. This class allows developers the ability to eye ball the health
+ * when endpoints are implemented. This class allows developers the ability to eyeball the health
  * status of the implementation and manually declare this by removing from the list.
  */
 public class ImplementedRestfulTest {
     // The unimplemented endpoints. This list should be empty at the point of releasing
     // application register to production.
-    private static List<String> UNIMPLEMENTED_ENDPOINTS =
+    private static final List<String> UNIMPLEMENTED_ENDPOINTS =
             List.of(
-                    "POST /application-lists/{listId}/entries/bulk-import",
-                    "DELETE /application-lists/{listId}/entries/{entryId}",
                     "POST /reports/private-prosecutors-index/jobs",
-                    "POST /reports/activity-audit/jobs",
+                    "POST /reports/workload/jobs",
                     "POST /reports/list-maintenance/jobs",
-                    "POST /reports/search-warrants/jobs",
-                    "POST /reports/duration/jobs",
                     "POST /reports/search-warrants/jobs");
 
     @Test
     public void testShouldNotBeImplemented() throws Exception {
-        Map<String, Object> implemented = new RestImplementedStatusHealthIndicator().status();
+        val implemented = new RestImplementedStatusHealthIndicator().status();
 
-        Assertions.assertTrue(implemented.size() > 0);
+        Assertions.assertFalse(implemented.isEmpty());
+
         // assert against the unimplemented endpoints.
-        for (String endpoint : UNIMPLEMENTED_ENDPOINTS) {
+        for (var endpoint : UNIMPLEMENTED_ENDPOINTS) {
             System.out.println(endpoint);
             Assertions.assertEquals(
                     RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED,
@@ -50,13 +48,9 @@ public class ImplementedRestfulTest {
     }
 
     private int countUnimplementedEndpoints(Map<String, Object> implemented) {
-        int count = 0;
-        for (String endpoint : implemented.keySet()) {
-            if (RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED.equals(
-                    implemented.get(endpoint))) {
-                count++;
-            }
-        }
-        return count;
+        return (int)
+                implemented.values().stream()
+                        .filter(RestImplementedStatusHealthIndicator.NOT_IMPLEMENTED::equals)
+                        .count();
     }
 }

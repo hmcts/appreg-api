@@ -30,4 +30,4 @@ properties:
     minLength: 1
 
   location:
-    $ref: '../common/location.yaml'
+    $ref: './legacy-report-location.yaml'

@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
 import uk.gov.hmcts.appregister.common.enumeration.FeeStatusType;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapperImpl;
@@ -68,7 +69,8 @@ class ApplicationListEntryEntityMapperTest {
                         applicant,
                         respondent,
                         applicationCode,
-                        applicationList);
+                        applicationList,
+                        YesOrNo.YES);
 
         // make the assertion
         Assertions.assertEquals(standardApplicant, applicationListEntry.getStandardApplicant());
@@ -82,6 +84,7 @@ class ApplicationListEntryEntityMapperTest {
                 entryCreateDto.getCaseReference(), applicationListEntry.getCaseReference());
         Assertions.assertEquals(entryCreateDto.getNotes(), applicationListEntry.getNotes());
         Assertions.assertEquals("wording", applicationListEntry.getApplicationListEntryWording());
+        Assertions.assertEquals(YesOrNo.YES.getValue(), applicationListEntry.getBulkUpload());
     }
 
     @Test
