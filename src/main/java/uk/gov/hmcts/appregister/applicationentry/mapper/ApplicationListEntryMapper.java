@@ -750,6 +750,7 @@ public abstract class ApplicationListEntryMapper {
             target = "applicationList.status",
             expression = "java(toStatus(entryGetFilterDto.getStatus()))")
     @Mapping(target = "id", constant = "0L")
+    @Mapping(target = "applicationCode.title", source = "filterDto.applicationTitle")
     @Mapping(target = "applicationCode", ignore = true)
     @Mapping(target = "numberOfBulkRespondents", ignore = true)
     @Mapping(target = "applicationListEntryWording", ignore = true)
