@@ -1188,7 +1188,7 @@
           "response": []
         },
         {
-          "name": "Bulk Result for Application List Copy",
+          "name": "Bulk Result",
           "request": {
             "method": "POST",
             "header": [
