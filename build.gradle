@@ -23,7 +23,7 @@ plugins {
   id 'com.diffplug.spotless' version '8.4.0'
   id 'org.openrewrite.rewrite' version '7.32.2'
   id 'maven-publish'
-  id 'com.github.jk1.dependency-license-report' version '2.9'
+  id 'com.github.jk1.dependency-license-report' version '3.1.2'
 }
 
 /**
