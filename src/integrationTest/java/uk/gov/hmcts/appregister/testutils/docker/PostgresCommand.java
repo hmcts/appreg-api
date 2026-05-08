@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 /**
@@ -18,7 +19,11 @@ public class PostgresCommand implements Command {
     private static final String PASSWORD = "password";
     private static final String DATABASE_NAME = "appreg-db";
 
-    private PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:17-alpine");
+    private static final DockerImageName POSTGRES_IMAGE =
+            DockerImageName.parse("hmctspublic.azurecr.io/imported/postgres:17-alpine")
+                    .asCompatibleSubstituteFor("postgres");
+
+    private PostgreSQLContainer<?> container = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
     {
         container
