@@ -13,7 +13,7 @@ plugins {
   id 'org.springframework.boot' version '4.0.6'
   id 'com.github.ben-manes.versions' version '0.54.0'
   id 'org.sonarqube' version '7.3.0.8198'
-  id 'org.openapi.generator' version '7.3.0'
+  id 'org.openapi.generator' version '7.22.0'
   id 'io.freefair.lombok' version '9.5.0'
   /*
     Applies analysis tools including checkstyle and OWASP Dependency checker.
@@ -31,8 +31,8 @@ plugins {
  */
 tasks.register('bundleOpenApi', GenerateTask) {
   generatorName = 'openapi'
-  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml').asFile.path
-  outputDir = layout.buildDirectory.dir('specmerge').get().asFile.path
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('specmerge')
   inputs.files(fileTree('src/main/resources/openapi'))
 }
 
@@ -54,6 +54,7 @@ def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 checkstyle {
   toolVersion = '13.4.2'
   checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
+  checkstyleMain.exclude '**/org/openapitools/**'
   maxWarnings = 0
 }
 
@@ -356,16 +357,6 @@ def xmls = [
   layout.buildDirectory.file('reports/jacoco/jacocoIntegrationReport/jacocoIntegrationReport.xml').get().asFile
 ]
 
-/*
- * A useful function to run a local SonarQube analysis against a local SonarQube server instance.
- * You can run a local SonarQube server using Docker: docker run -d --name sonarqube -p 9000:9000 sonarqube
- * Once the server is running, you can execute this task using: ./gradlew localSonarqube
- * Default login credentials are admin/admin. You can change these in the properties below.
- */
-tasks.register('localSonarqube', GradleBuild) {
-  dependsOn tasks.named('sonarqube')
-}
-
 sonarqube {
   properties {
     property 'sonar.projectName', 'AppReg :: appreg-api'
@@ -373,11 +364,6 @@ sonarqube {
     property 'sonar.coverage.exclusions', [
       'src/main/java/uk/gov/hmcts/appregister/generated/**/*',
     ]
-    if (gradle.startParameter.taskNames.contains('localSonarqube')) {
-      property 'sonar.host.url', 'http://localhost:9000'
-      property 'sonar.login', System.getenv('SONAR_TOKEN') ?: 'admin'
-    }
-
     property(
       'sonar.coverage.jacoco.xmlReportPaths',
       xmls.collect { it.absolutePath }.join(',')
@@ -414,9 +400,7 @@ dependencyCheck {
     'pmd',
     'integrationTest',
     'functionalTest',
-    'smokeTest',
-    'contractTestRuntimeClasspath',
-    'contractTestCompileClasspath'
+    'smokeTest'
   ]
 }
 
@@ -430,7 +414,6 @@ repositories {
 
 ext {
   log4JVersion = '2.26.0'
-  logbackVersion = '1.5.18'
 }
 
 ext['snakeyaml.version'] = '2.0'
@@ -572,8 +555,8 @@ tasks.named('processResources', Copy) {
 // Generate spring annotated methods inside a generated java package for ease of identification
 tasks.named('openApiGenerate') {
   generatorName = 'spring'
-  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml').asFile.path
-  outputDir = layout.buildDirectory.dir('generated/openapi').get().asFile.path
+  inputSpec = layout.projectDirectory.file('src/main/resources/openapi/openapi.yaml')
+  outputDir = layout.buildDirectory.dir('generated/openapi')
   apiPackage = 'uk.gov.hmcts.appregister.generated.api'
   modelPackage = 'uk.gov.hmcts.appregister.generated.model'
   skipOperationExample = true
@@ -595,6 +578,10 @@ tasks.named('openApiGenerate') {
   ]
   importMappings = [
     LocalTime: 'java.time.LocalTime'
+  ]
+  modelNameMappings = [
+    'entry-get-detail-dto_1': 'EntryGetDetailDto',
+    'entry-page_1'          : 'EntryPage'
   ]
 
   inputs.files(fileTree('src/main/resources/openapi'))

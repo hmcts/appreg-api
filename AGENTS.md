@@ -13,7 +13,6 @@
 - `./gradlew jacocoUnitCoverageVerification`: enforce unit coverage threshold (80% minimum).
 - `./gradlew jacocoIntegrationCoverageVerification`: enforce integration coverage threshold (80% minimum).
 - `./gradlew dependencyCheck`: OWASP dependency vulnerability scan.
-- `./gradlew localSonarqube`: local Sonar analysis (requires local SonarQube and `SONAR_TOKEN`).
 - `./gradlew spotlessApply`: apply Java formatting using configured Spotless rules.
 - `./bin/run-in-docker.sh -h`: show docker helper usage and available flags.
 - `docker compose --profile testing up` or `docker compose --profile functionaltesting up`: start local dependency stack with seeded schemas.
