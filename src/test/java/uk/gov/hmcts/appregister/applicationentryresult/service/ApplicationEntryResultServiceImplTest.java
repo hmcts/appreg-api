@@ -31,12 +31,15 @@ import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEnt
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultDeletionValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationSuccess;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultCreateValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultDeleteValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ListEntryResultGetValidationSuccess;
@@ -67,6 +70,7 @@ import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.template.wording.WordingTemplateSentence;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
@@ -121,6 +125,11 @@ public class ApplicationEntryResultServiceImplTest {
                     businessDateProvider);
 
     @Spy
+    private DummyBulkApplicationEntryResultGetValidator bulkResultEntry =
+            new DummyBulkApplicationEntryResultGetValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
+    @Spy
     private final AuditOperationService auditOperationService = new DummyAuditOperationService();
 
     // A null match provider that returns a null etag
@@ -139,6 +148,7 @@ public class ApplicationEntryResultServiceImplTest {
                         creationValidator,
                         updateValidator,
                         getValidator,
+                        bulkResultEntry,
                         matchService,
                         auditOperationService,
                         List.of(auditOperationLifecycleListener),
@@ -299,6 +309,71 @@ public class ApplicationEntryResultServiceImplTest {
         Assertions.assertEquals("testSort", resultPage.getSort().getOrders().get(0).getProperty());
     }
 
+    @Test
+    void bulkProcessEntries() {
+        // setup the user that all tests will represent
+        when(userProvider.getEmail()).thenReturn("myemail@domain.com");
+
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        ResultCreateDto resultCreateDto =
+                Instancio.of(ResultCreateDto.class).withSettings(settings).create();
+
+        // setup the template to be used
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Date of Hearing");
+        substitution.setValue("My Substituted Value");
+
+        resultCreateDto.setWordingFields(List.of(substitution));
+
+        // setup the validation success
+        ApplicationList applicationList = Mockito.mock(ApplicationList.class);
+        ApplicationListEntry applicationListEntry = Mockito.mock(ApplicationListEntry.class);
+        ResolutionCode resolutionCode = Mockito.mock(ResolutionCode.class);
+
+        ListEntryResultCreateValidationSuccess success =
+                ListEntryResultCreateValidationSuccess.builder()
+                        .applicationList(applicationList)
+                        .applicationListEntry(applicationListEntry)
+                        .resolutionCode(resolutionCode)
+                        .wordingSentence(
+                                WordingTemplateSentence.with(
+                                        "This is a template {TEXT|Date of Hearing|20}"))
+                        .build();
+        creationValidator.setSuccess(success);
+
+        AppListEntryResolution entryToSave = new AppListEntryResolution();
+        entryToSave.setId(23232L);
+        entryToSave.setVersion(2L);
+
+        when(applicationListEntryResultEntityMapper.toApplicationListEntryResult(
+                        resultCreateDto,
+                        "This is a template {My Substituted Value}",
+                        resolutionCode,
+                        applicationListEntry,
+                        "myemail@domain.com"))
+                .thenReturn(entryToSave);
+
+        PayloadForCreateEntryResult<ResultCreateDto> payload =
+                new PayloadForCreateEntryResult<>(
+                        UUID.randomUUID(), UUID.randomUUID(), resultCreateDto);
+
+        when(appListEntryResolutionRepository.save(entryToSave)).thenReturn(entryToSave);
+
+        // setup the response of the call
+        ResultGetDto resultGetDto =
+                Instancio.of(ResultGetDto.class).withSettings(settings).create();
+        when(applicationListEntryResultMapper.toResultGetDto(entryToSave)).thenReturn(resultGetDto);
+
+        BulkApplicationEntryResultCreationSuccess bulkApplicationEntryResultCreationSuccess =
+                new BulkApplicationEntryResultCreationSuccess();
+        bulkApplicationEntryResultCreationSuccess.getResults().add(payload);
+
+        bulkResultEntry.setSuccess(bulkApplicationEntryResultCreationSuccess);
+
+        // make the call
+        service.bulkCreate(PayloadForCreateResults.<BulkResultDto>builder().build());
+    }
+
     @Setter
     static class DummyApplicationEntryResultDeletionValidator
             extends ApplicationEntryResultDeletionValidator {
@@ -455,6 +530,32 @@ public class ApplicationEntryResultServiceImplTest {
         public <R> R validate(
                 PayloadGetEntryResultInList validatable,
                 BiFunction<PayloadGetEntryResultInList, ListEntryResultGetValidationSuccess, R>
+                        validateSuccess) {
+
+            return validateSuccess.apply(validatable, success);
+        }
+    }
+
+    @Setter
+    static class DummyBulkApplicationEntryResultGetValidator
+            extends BulkApplicationEntryResultCreationValidator {
+
+        private BulkApplicationEntryResultCreationSuccess success;
+
+        public DummyBulkApplicationEntryResultGetValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+
+            super(applicationListRepository, applicationListEntryRepository);
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForCreateResults<BulkResultDto> validatable,
+                BiFunction<
+                                PayloadForCreateResults<BulkResultDto>,
+                                BulkApplicationEntryResultCreationSuccess,
+                                R>
                         validateSuccess) {
 
             return validateSuccess.apply(validatable, success);

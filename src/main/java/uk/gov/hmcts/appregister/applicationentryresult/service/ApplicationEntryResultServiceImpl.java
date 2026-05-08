@@ -15,12 +15,14 @@ import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEnt
 import uk.gov.hmcts.appregister.applicationentryresult.mapper.ApplicationListEntryResultMapper;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultDeletionValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultGetValidator;
 import uk.gov.hmcts.appregister.applicationentryresult.validator.ApplicationEntryResultUpdateValidator;
+import uk.gov.hmcts.appregister.applicationentryresult.validator.BulkApplicationEntryResultCreationValidator;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationLifecycleListener;
 import uk.gov.hmcts.appregister.audit.model.AuditableResult;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationService;
@@ -36,6 +38,7 @@ import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryResultWith
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
@@ -55,6 +58,8 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
     private final ApplicationEntryResultCreationValidator creationValidator;
     private final ApplicationEntryResultUpdateValidator updateValidator;
     private final ApplicationEntryResultGetValidator applicationListGetValidator;
+    private final BulkApplicationEntryResultCreationValidator
+            bulkApplicationEntryResultCreationValidator;
 
     // Services
     private final MatchService matchService;
@@ -300,6 +305,23 @@ public class ApplicationEntryResultServiceImpl implements ApplicationEntryResult
                                             new AuditableResult<>(
                                                     resultPage, appListEntryResolution));
                                 }));
+    }
+
+    @Override
+    @Transactional
+    public void bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto) {
+        bulkApplicationEntryResultCreationValidator.validate(
+                bulkResultDto,
+                (validate, success) -> {
+
+                    // loop through each successful validation result and create the entry result
+                    for (PayloadForCreateEntryResult<ResultCreateDto> createValidationSuccesses :
+                            success.getResults()) {
+                        create(createValidationSuccesses);
+                    }
+
+                    return null;
+                });
     }
 
     /**
