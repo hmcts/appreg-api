@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import java.util.UUID;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
@@ -65,6 +66,18 @@ public interface ApplicationEntryService {
      *     Respondent is expected ......
      */
     MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry);
+
+    /**
+     * <<<<<<< HEAD Updates a closed application entry.
+     *
+     * @param updateEntry The entry update data that representing the list data to be update
+     * @return The match response with no data but an etag for concurrency control.
+     * @throws uk.gov.hmcts.appregister.common.exception.AppRegistryException Data is validated
+     *     for:- - The application list found and/or in the correct state - The application code is
+     *     expecting a fee and it is provided - Suitable Applicants is expected - Suitable
+     *     Respondent is expected ......
+     */
+    MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry);
 
     /**
      * Replaces officials for every supplied entry in one atomic operation.

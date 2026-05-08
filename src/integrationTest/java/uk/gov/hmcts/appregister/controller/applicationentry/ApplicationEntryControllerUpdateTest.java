@@ -5,6 +5,7 @@ import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
 import io.restassured.response.Response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,14 +25,18 @@ import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.ApplicationListUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -1336,6 +1341,451 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}",
                 entryUpdateDto.getFeeStatuses());
         Assertions.assertTrue(updatedDto.getOfficials().isEmpty());
+    }
+
+    @Test
+    public void givenASuccessfulUpdateToClosedList_whenAllValueAreToBeUpdate_200Returned()
+            throws Exception {
+        String notesOnCreate = "This is a note on create";
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        (dto -> {
+                            dto.setNumberOfRespondents(null);
+                            dto.setNotes(notesOnCreate);
+
+                            // need an official to close
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        }));
+
+        EntryGetDetailDto applicationListGetDetailDto =
+                responseSpecCreate.as(EntryGetDetailDto.class);
+
+        ResultCreateDto resultCreateDto = Instancio.create(ResultCreateDto.class);
+        resultCreateDto.setWordingFields(List.of());
+        resultCreateDto.setResultCode("CASE");
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        // result the entry
+        Response responseResult =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_CREATE_ENTRY_RESULT.formatted(
+                                        applicationListGetDetailDto.getListId(),
+                                        applicationListGetDetailDto.getId())),
+                        token,
+                        resultCreateDto);
+
+        responseResult.then().statusCode(201);
+
+        // now update to close the list
+        var req =
+                new ApplicationListUpdateDto()
+                        .courtLocationCode("CCC003")
+                        .otherLocationDescription(null)
+                        .cjaCode(null)
+                        .durationHours(2)
+                        .durationMinutes(23)
+                        .date(LocalDate.now())
+                        .time(LocalTime.now())
+                        .description("description")
+                        .status(ApplicationListStatus.CLOSED);
+
+        Response responseSpecPut =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationListGetDetailDto.getListId()),
+                        token,
+                        req);
+        responseSpecPut.then().statusCode(200);
+
+        differenceLogAsserter.clearLogs();
+        differenceLogAsserter.assertNoErrors();
+
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        // update the note
+        String etag = HeaderUtil.getETag(responseSpecCreate);
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        createdDetail.getListId(), createdDetail.getId())),
+                        token,
+                        entryUpdateClosedDto,
+                        etag);
+
+        responseSpecUpdate.then().statusCode(204);
+
+        differenceLogAsserter.assertNoErrors();
+
+        // Assert that notes was appended to via the difference audit log
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_ENTRY,
+                        "notes",
+                        notesOnCreate,
+                        "This is a note on create additional notes",
+                        AppListEntryAuditOperation.UPDATE_CLOSED_APP_ENTRY_LIST.getType().name(),
+                        AppListEntryAuditOperation.UPDATE_CLOSED_APP_ENTRY_LIST.getEventName()));
+
+        // get the app list now that we have updated
+        Response responseGet =
+                getAppEntryDataForAppListId(createdDetail.getListId(), createdDetail.getId());
+        Assertions.assertEquals(409, responseGet.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), responseGet);
+    }
+
+    @Test
+    public void givenASuccessfulUpdateToClosedList_whenListIsOpen_412Returned() throws Exception {
+        String notesOnCreate = "This is a note on create";
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        (dto -> {
+                            dto.setNumberOfRespondents(null);
+                            dto.setNotes(notesOnCreate);
+
+                            // need an official to close
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        }));
+
+        EntryGetDetailDto applicationListGetDetailDto =
+                responseSpecCreate.as(EntryGetDetailDto.class);
+
+        ResultCreateDto resultCreateDto = Instancio.create(ResultCreateDto.class);
+        resultCreateDto.setWordingFields(List.of());
+        resultCreateDto.setResultCode("CASE");
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        // result the entry
+        Response responseResult =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_CREATE_ENTRY_RESULT.formatted(
+                                        applicationListGetDetailDto.getListId(),
+                                        applicationListGetDetailDto.getId())),
+                        token,
+                        resultCreateDto);
+
+        responseResult.then().statusCode(201);
+
+        // now update to close the list
+        var req =
+                new ApplicationListUpdateDto()
+                        .courtLocationCode("CCC003")
+                        .otherLocationDescription(null)
+                        .cjaCode(null)
+                        .durationHours(2)
+                        .durationMinutes(23)
+                        .date(LocalDate.now())
+                        .time(LocalTime.now())
+                        .description("description")
+                        .status(ApplicationListStatus.CLOSED);
+
+        Response responseSpecPut =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationListGetDetailDto.getListId()),
+                        token,
+                        req);
+        responseSpecPut.then().statusCode(200);
+
+        differenceLogAsserter.clearLogs();
+        differenceLogAsserter.assertNoErrors();
+
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        // update the note
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        createdDetail.getListId(), createdDetail.getId())),
+                        token,
+                        entryUpdateClosedDto,
+                        "NOT EXISTS");
+
+        responseSpecUpdate.then().statusCode(412);
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.MATCH_ETAG_FAILURE.getCode(), responseSpecUpdate);
+    }
+
+    @Test
+    public void givenASuccessfulUpdateToClosedList_whenListIsNotExistent_409Returned()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        // update the note
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        UUID.randomUUID(), UUID.randomUUID())),
+                        token,
+                        entryUpdateClosedDto,
+                        "NOT EXISTS");
+
+        responseSpecUpdate.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
+    }
+
+    @Test
+    public void givenASuccessfulUpdateToClosedList_whenEntryIsNotExistent_409Returned()
+            throws Exception {
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        (dto -> {
+                            dto.setNumberOfRespondents(null);
+
+                            // need an official to close
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        }));
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+        EntryGetDetailDto applicationListGetDetailDto =
+                responseSpecCreate.as(EntryGetDetailDto.class);
+
+        // update the note
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        applicationListGetDetailDto.getListId(),
+                                        UUID.randomUUID())),
+                        token,
+                        entryUpdateClosedDto,
+                        "NOT EXISTS");
+
+        responseSpecUpdate.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.ENTRY_DOES_NOT_EXIST.getCode(), responseSpecUpdate);
+    }
+
+    @Test
+    public void givenASuccessfulUpdateToClosedList_whenAppListIsNotClosed_409Returned()
+            throws Exception {
+        String notesOnCreate = "This is a note on create";
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        (dto -> {
+                            dto.setNumberOfRespondents(null);
+                            dto.setNotes(notesOnCreate);
+
+                            // need an official to close
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        }));
+
+        EntryGetDetailDto applicationListGetDetailDto =
+                responseSpecCreate.as(EntryGetDetailDto.class);
+
+        ResultCreateDto resultCreateDto = Instancio.create(ResultCreateDto.class);
+        resultCreateDto.setWordingFields(List.of());
+        resultCreateDto.setResultCode("CASE");
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        // result the entry
+        Response responseResult =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_CREATE_ENTRY_RESULT.formatted(
+                                        applicationListGetDetailDto.getListId(),
+                                        applicationListGetDetailDto.getId())),
+                        token,
+                        resultCreateDto);
+
+        responseResult.then().statusCode(201);
+
+        differenceLogAsserter.clearLogs();
+        differenceLogAsserter.assertNoErrors();
+
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        String etag = HeaderUtil.getETag(responseSpecCreate);
+
+        // update the note
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        createdDetail.getListId(), createdDetail.getId())),
+                        token,
+                        entryUpdateClosedDto,
+                        etag);
+
+        Assertions.assertEquals(409, responseSpecUpdate.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(),
+                responseSpecUpdate);
+    }
+
+    @Test
+    public void
+            givenASuccessfulUpdateToClosedList_whenAppListIsClosedButNotRelatedToEntry_409Returned()
+                    throws Exception {
+
+        String notesOnCreate = "This is a note on create";
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setNumberOfRespondents(null);
+        Response responseSpecCreate =
+                createListEntryWithAllData(
+                        Optional.empty(),
+                        (dto -> {
+                            dto.setNumberOfRespondents(null);
+                            dto.setNotes(notesOnCreate);
+
+                            // need an official to close
+                            Official official = Instancio.create(Official.class);
+                            dto.setOfficials(List.of(official));
+
+                            FeeStatus feeStatus = Instancio.create(FeeStatus.class);
+                            feeStatus.setPaymentStatus(PaymentStatus.PAID);
+                            dto.setFeeStatuses(List.of(feeStatus));
+                        }));
+
+        EntryGetDetailDto applicationListGetDetailDto =
+                responseSpecCreate.as(EntryGetDetailDto.class);
+
+        ResultCreateDto resultCreateDto = Instancio.create(ResultCreateDto.class);
+        resultCreateDto.setWordingFields(List.of());
+        resultCreateDto.setResultCode("CASE");
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        // result the entry
+        Response responseResult =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_CREATE_ENTRY_RESULT.formatted(
+                                        applicationListGetDetailDto.getListId(),
+                                        applicationListGetDetailDto.getId())),
+                        token,
+                        resultCreateDto);
+
+        responseResult.then().statusCode(201);
+
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        // now update to close the list
+        var req =
+                new ApplicationListUpdateDto()
+                        .courtLocationCode("CCC003")
+                        .otherLocationDescription(null)
+                        .cjaCode(null)
+                        .durationHours(2)
+                        .durationMinutes(23)
+                        .date(LocalDate.now())
+                        .time(LocalTime.now())
+                        .description("description")
+                        .status(ApplicationListStatus.CLOSED);
+
+        Response responseSpecPut =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationListGetDetailDto.getListId()),
+                        token,
+                        req);
+        responseSpecPut.then().statusCode(200);
+
+        EntryGetDetailDto createdDetail = responseSpecCreate.as(EntryGetDetailDto.class);
+
+        Response responseSpecCreate2 = createListEntryWithAllData();
+
+        EntryGetDetailDto applicationListGetDetailDto2 =
+                responseSpecCreate2.as(EntryGetDetailDto.class);
+
+        // update the closed list with an entry that does belong to it
+        Response responseSpecPutForClosed =
+                restAssuredClient.executePutRequest(
+                        getLocalUrl(
+                                WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                        createdDetail.getListId(),
+                                        applicationListGetDetailDto2.getId())),
+                        token,
+                        entryUpdateClosedDto);
+
+        Assertions.assertEquals(409, responseSpecPutForClosed.getStatusCode());
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.ENTRY_IS_NOT_WITHIN_LIST.getCode(), responseSpecPutForClosed);
     }
 
     private static Official buildOfficial(

@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
@@ -36,6 +37,7 @@ import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryVa
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
@@ -102,6 +104,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
+
+    private final UpdateClosedApplicationEntryValidator updateClosedApplicationEntryValidator;
 
     private final MoveEntriesValidator moveEntriesValidator;
 
@@ -458,6 +462,47 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     @Override
+    public MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry) {
+
+        return updateClosedApplicationEntryValidator.validate(
+                updateEntry,
+                (ue, success) -> {
+                    // lets check the concurrent match before we process the update
+                    return matchService.matchOnRequest(
+                            () -> {
+                                return auditService.processAudit(
+                                        BeanUtil.copyBean(success.getApplicationEntryId()),
+                                        AppListEntryAuditOperation.UPDATE_CLOSED_APP_ENTRY_LIST,
+                                        req -> {
+                                            success.getApplicationEntryId()
+                                                    .setNotes(
+                                                            success.getApplicationEntryId()
+                                                                            .getNotes()
+                                                                    + " "
+                                                                    + updateEntry
+                                                                            .getData()
+                                                                            .getAdditionalNotes());
+
+                                            // update the notes by appending with the alternative
+                                            // notes
+                                            applicationListEntryRepository.save(
+                                                    success.getApplicationEntryId());
+
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            MatchResponse.of(
+                                                                    null,
+                                                                    getKeyablesForCreateUpdateEtag(
+                                                                            success
+                                                                                    .getApplicationEntryId())),
+                                                            success.getApplicationEntryId()));
+                                        });
+                            },
+                            // return the latest entities for the entry read on the update
+                            getKeyablesForCreateUpdateEtag(success.getApplicationEntryId()));
+                });
+    }
+
     @Transactional
     public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
         var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
