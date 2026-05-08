@@ -53,6 +53,8 @@ def buildNumber = System.getenv('RELEASE_VERSION') ?: 'DEV-SNAPSHOT'
 
 checkstyle {
   toolVersion = '13.4.2'
+  checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
+  maxWarnings = 0
 }
 
 dependencyManagement {
@@ -357,10 +359,9 @@ def xmls = [
 /*
  * A useful function to run a local SonarQube analysis against a local SonarQube server instance.
  * You can run a local SonarQube server using Docker: docker run -d --name sonarqube -p 9000:9000 sonarqube
- * Once the server is running, you can execute this task using: ./gradlew localSonar
+ * Once the server is running, you can execute this task using: ./gradlew localSonarqube
  * Default login credentials are admin/admin. You can change these in the properties below.
  */
-// Register a brand-new task that runs a local analysis
 tasks.register('localSonarqube', GradleBuild) {
   dependsOn tasks.named('sonarqube')
 }
@@ -384,7 +385,6 @@ sonarqube {
   }
 }
 
-// before committing a change, make sure task still works
 dependencyUpdates {
   def isNonStable = { String version ->
     def stableKeyword = ['RELEASE', 'FINAL', 'GA'].any { qualifier -> version.toUpperCase().contains(qualifier) }
@@ -426,7 +426,6 @@ repositories {
   maven {
     url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
   }
-  gradlePluginPortal()
 }
 
 ext {
@@ -488,10 +487,13 @@ dependencies {
   implementation 'commons-io:commons-io:2.22.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:6.6.50.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.3.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.3.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.3.3.Final'
 
   // Lombok
   compileOnly 'org.projectlombok:lombok:1.18.46'
+  compileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
   annotationProcessor 'org.projectlombok:lombok:1.18.46'
 
   // Database
@@ -552,8 +554,6 @@ wrapper {
   distributionType = Wrapper.DistributionType.ALL
 }
 
-// Put this near the top-level of the file (outside any block)
-
 tasks.named('processResources', Copy) {
   dependsOn tasks.named('openApiGenerate')
   dependsOn tasks.named('openapiJarArtefact')
@@ -567,11 +567,6 @@ tasks.named('processResources', Copy) {
     filteringCharset = 'UTF-8'
     filter { String line -> line.replace('@version@', project.version.toString()) }
   }
-}
-
-checkstyle {
-  checkstyleMain.exclude '**/uk/gov/hmcts/appregister/generated/**'
-  maxWarnings = 0
 }
 
 // Generate spring annotated methods inside a generated java package for ease of identification
@@ -645,28 +640,18 @@ publishing {
     }
   }
 
-  // Configuration for the license report plugin
   licenseReport {
-    // Directory where reports will be generated
     outputDir = layout.buildDirectory.dir('reports/dependency-license').get().asFile.toString()
 
-    // Configurations to scan (adjust as needed)
     configurations = ['runtimeClasspath']
 
-    // Renderers define output formats
     renderers = [
       new JsonReportRenderer(),
       new SimpleHtmlReportRenderer()
     ]
 
-    // Optional: filter out dependencies (example)
     filters = [
       new LicenseBundleNormalizer()
-    ]
-
-    // Optional: exclude specific groups/modules
-    excludes = [
-      'com.example:excluded-library'
     ]
   }
 }
