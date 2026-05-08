@@ -383,7 +383,7 @@ public class ApplicationEntryServiceImplTest {
                         eq(null),
                         eq(entryGetFilterDto.getRespondentPostcode()),
                         eq(entryGetFilterDto.getAccountReference()),
-                        eq(null),
+                        eq(entryGetFilterDto.getApplicationTitle()),
                         eq(null),
                         eq(null),
                         eq(null),
