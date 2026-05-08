@@ -9,6 +9,7 @@ import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.filter.log.ResponseLoggingFilter;
+import io.restassured.mapper.ObjectMapperType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.io.File;
@@ -47,6 +48,7 @@ public class RestAssuredClient {
                 RestAssuredConfig.config()
                         .objectMapperConfig(
                                 ObjectMapperConfig.objectMapperConfig()
+                                        .defaultObjectMapperType(ObjectMapperType.JACKSON_2)
                                         .jackson2ObjectMapperFactory(
                                                 (cls, charset) -> objectMapper));
     }

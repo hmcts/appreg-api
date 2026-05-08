@@ -1,9 +1,9 @@
 package uk.gov.hmcts.appregister.common.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;

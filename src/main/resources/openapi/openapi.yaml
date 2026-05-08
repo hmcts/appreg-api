@@ -74,7 +74,8 @@ paths:
   /application-lists/{listId}/entries/closed/{entryId}:             { $ref: './paths/application-list-entries/application-list-closed-entries.yaml' }
 
   # APPLICATION LIST ENTRY RESULTS
-  /application-lists/{listId}/entries/results:                      { $ref: './paths/application-list-entry-results/entries-bulk-result.yaml' }
+  /application-lists/{listId}/entries/results:                      { $ref: './paths/application-list-entry-results/entries-bulk-result-by-id.yaml' }
+  /application-lists/entries/results:                               { $ref: './paths/application-list-entry-results/entries-bulk-result.yaml' }
   /application-lists/{listId}/entries/{entryId}/results:            { $ref: './paths/application-list-entry-results/application-list-entry-results.yaml' }
   /application-lists/{listId}/entries/{entryId}/results/{resultId}: { $ref: './paths/application-list-entry-results/application-list-entry-results-by-id.yaml' }
   # COURT LOCATIONS
