@@ -282,7 +282,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     FROM AppListEntryResolution allResolutions
                                     JOIN allResolutions.resolutionCode anyResolutionCode
                                     WHERE allResolutions.applicationList = ale
-                                    AND anyResolutionCode.resultCode = :resulted
+                                    AND LOWER(anyResolutionCode.resultCode)
+                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
                             )
                     )
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
@@ -383,7 +384,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                                     FROM AppListEntryResolution allResolutions
                                     JOIN allResolutions.resolutionCode anyResolutionCode
                                     WHERE allResolutions.applicationList = ale
-                                    AND anyResolutionCode.resultCode = :resulted
+                                    AND LOWER(anyResolutionCode.resultCode)
+                                            LIKE CONCAT('%', LOWER(cast(:resulted AS string)), '%') ESCAPE '\\'
                             )
                     )
                     AND (al.deleted IS NULL OR al.deleted <> 'Y')
@@ -503,6 +505,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         WHERE ale.uuid = :entryId AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
+
+    /**
+     * Finds an entry for Uuid. Also returns deleted entries.
+     *
+     * @param entryId The entry id
+     * @return A single optional matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuidIncludingDelete(UUID entryId);
 
     /**
      * Finds all entities with the given IDs, within the associated list.

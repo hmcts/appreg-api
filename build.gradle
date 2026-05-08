@@ -13,7 +13,7 @@ plugins {
  */
   id 'uk.gov.hmcts.java' version '0.12.68'
   id 'com.diffplug.spotless' version '8.4.0'
-  id 'org.openrewrite.rewrite' version 'latest.release'
+  id 'org.openrewrite.rewrite' version '7.32.2'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '2.9'
 }
@@ -433,10 +433,11 @@ repositories {
   maven {
     url = uri('https://pkgs.dev.azure.com/hmcts/Artifacts/_packaging/hmcts-lib/maven/v1')
   }
+  gradlePluginPortal()
 }
 
 ext {
-  log4JVersion = "2.25.4"
+  log4JVersion = "2.26.0"
   logbackVersion = "1.5.18"
 }
 

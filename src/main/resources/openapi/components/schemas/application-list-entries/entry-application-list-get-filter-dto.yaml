@@ -52,5 +52,5 @@ properties:
 
   resulted:
     type: string
-    description: The application resolution codes.
+    description: The application resolution code. This can be Partial.
     example: "APPC"
