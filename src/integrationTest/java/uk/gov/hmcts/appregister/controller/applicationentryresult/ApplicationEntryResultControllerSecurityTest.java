@@ -80,6 +80,13 @@ public class ApplicationEntryResultControllerSecurityTest extends AbstractSecuri
                         .method(HttpMethod.POST)
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(getLocalUrl("application-lists/entries/results"))
+                        .payload(bulkResultDto)
+                        .method(HttpMethod.POST)
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
                         .build());
     }
 }

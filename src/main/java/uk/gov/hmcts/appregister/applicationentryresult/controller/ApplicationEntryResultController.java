@@ -62,6 +62,16 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
         return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
     }
 
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> bulkResultEntries(BulkResultDto bulkResultDto) {
+        // call the service to process the bulk result for the list of entries
+        service.bulkCreate(
+                PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build());
+
+        return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
+    }
+
     /**
      * Deletes an Application List Entry Result.
      *
