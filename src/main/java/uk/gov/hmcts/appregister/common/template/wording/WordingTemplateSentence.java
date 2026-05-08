@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.common.template.wording;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
@@ -148,15 +150,20 @@ public class WordingTemplateSentence implements TemplateableSentence {
                 return BraceSubstitutedSentence.withSubstitutedSentence(returnedString);
             }
 
+            // use a linked map for the detail map to maintain the order
+            LinkedHashMap<String, String> detailedMap = new LinkedHashMap<>();
+            detailedMap.put(
+                "valueSize",
+                "null");
+            detailedMap.put(
+                "templateSize",
+                Integer.toString(getTemplatesToBeProcessed()));
+
             // Templates exist but values are null, invalid scenario
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
                     "Substitution values cannot be null when template contains placeholders",
-                    Map.of(
-                            "templateSize",
-                            Integer.toString(getTemplatesToBeProcessed()),
-                            "valueSize",
-                            "null"));
+                    detailedMap);
         }
 
         if ((values.isEmpty()) && contents.isEmpty()) {
@@ -166,12 +173,20 @@ public class WordingTemplateSentence implements TemplateableSentence {
 
         if (values.size() > getTemplatesToBeProcessed()
                 || values.size() < getTemplatesToBeProcessed()) {
+
+            // use a linked map for the detail map to maintain the order
+            LinkedHashMap<String, String> detailedMap = new LinkedHashMap<>();
+            detailedMap.put(
+                "valueSize",
+                Integer.toString(values.size()));
+            detailedMap.put(
+                "templateSize",
+                Integer.toString(getTemplatesToBeProcessed()));
+
             throw new AppRegistryException(
-                    CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
-                    "Number of values exceeds number of templates",
-                    Map.of(
-                            "templateSize", Integer.toString(getTemplatesToBeProcessed()),
-                            "valueSize", Integer.toString(values.size())));
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                "Number of values exceeds number of templates",
+                detailedMap);
         }
 
         // check the reference keys are valid according to the template details
