@@ -576,66 +576,6 @@
       "item": []
     },
     {
-      "name": "application_list_entries",
-      "item": [
-        {
-          "name": "Get Summary",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{APP_REG_HOST}}/application-list-entries?date=2024-04-21&cjaCode=CJ&courtCode=RCJ001&applicantSurname=rn&status=OPEN&respondentOrganisation=ah%20Johnson&respondentPostcode=XY9%208ZZ&accountReference=323232&standardApplicantCode=APP0",
-              "host": [
-                "{{APP_REG_HOST}}"
-              ],
-              "path": [
-                "application-list-entries"
-              ],
-              "query": [
-                {
-                  "key": "date",
-                  "value": "2024-04-21"
-                },
-                {
-                  "key": "cjaCode",
-                  "value": "CJ"
-                },
-                {
-                  "key": "courtCode",
-                  "value": "RCJ001"
-                },
-                {
-                  "key": "applicantSurname",
-                  "value": "rn"
-                },
-                {
-                  "key": "status",
-                  "value": "OPEN"
-                },
-                {
-                  "key": "respondentOrganisation",
-                  "value": "ah%20Johnson"
-                },
-                {
-                  "key": "respondentPostcode",
-                  "value": "XY9%208ZZ"
-                },
-                {
-                  "key": "accountReference",
-                  "value": "323232"
-                },
-                {
-                  "key": "standardApplicantCode",
-                  "value": "APP0"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
       "name": "Standard Applicants",
       "item": [
         {
@@ -982,12 +922,33 @@
           "response": []
         },
         {
-          "name": "Delete Entry",
+
+          "name": "Update Closed",
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"additionalNotes\": \"test\"\r\n}"
+            },
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/closed/{{CREATED_ENTRY_ID}}",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
@@ -995,6 +956,7 @@
                 "application-lists",
                 "{{APP_LIST_ID}}",
                 "entries",
+                "closed",
                 "{{CREATED_ENTRY_ID}}"
               ]
             }
@@ -1002,6 +964,26 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Delete Entry",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+          "host": [
+            "{{APP_REG_HOST}}"
+          ],
+          "path": [
+            "application-lists",
+            "{{APP_LIST_ID}}",
+            "entries",
+            "{{CREATED_ENTRY_ID}}"
+          ]
+        }
+      },
+      "response": []
     },
     {
       "name": "application-list-entry-results",
@@ -1059,12 +1041,14 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.expect(pm.response.code).to.equal(201);",
                   "const response = pm.response.json();",
                   "pm.environment.set(\"CREATED_ENTRY_RESULT_ID\", response.id);"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -1094,7 +1078,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Name of Crown Court\",\r\n      \"value\": \"The Central Criminal Court\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"resultCode\": \"FRO\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Reason text\",\r\n      \"value\": \"Caseworker discretion\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1198,15 +1182,50 @@
               "raw": "{\r\n  \"date\" : [ 2025, 10, 15 ],\r\n  \"time\" : \"10:30\",\r\n  \"description\" : \"Morning list (cja)\",\r\n  \"status\" : \"OPEN\",\r\n  \"courtLocationCode\" : null,\r\n  \"otherLocationDescription\" : \"CJA_CD_DESCRIPTION\",\r\n  \"cjaCode\" : \"CD\",\r\n  \"durationHours\" : 1,\r\n  \"durationMinutes\" : 0\r\n}"
             },
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists//entries/{entryId}/results",
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}/results",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
               "path": [
                 "application-lists",
-                "",
+                "{{APP_LIST_ID}}",
                 "entries",
-                "{entryId}",
+                "{{CREATED_ENTRY_ID}}",
+                "results"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Result",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entryIds\": [\n        \"{{CREATED_ENTRY_ID}}\"\n    ],\n    \"result\": {\n        \"resultCode\": \"RTC\",\n        \"wordingFields\": [\n            {\n                \"key\": \"Date\",\n                \"value\": \"Date\"\n            },\n            {\n                \"key\": \"Courthouse\",\n                \"value\": \"ch\"\n            }\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
                 "results"
               ]
             }

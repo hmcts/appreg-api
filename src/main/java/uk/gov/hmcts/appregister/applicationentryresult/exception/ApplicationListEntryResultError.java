@@ -36,7 +36,17 @@ public enum ApplicationListEntryResultError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "No application list entry result exists that belongs to the specified list and entry",
-                    "ALER-6"));
+                    "ALER-6")),
+    APPLICATION_ENTRY_RESULT_ENTRIES_NOT_IN_LIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "Not all of the application entry is in the list",
+                    "ALER-7")),
+    APPLICATION_ENTRIES_NOT_ALL_EXIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.CONFLICT,
+                    "Not all of the application entries are present",
+                    "ALER-8"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

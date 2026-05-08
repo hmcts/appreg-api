@@ -1,0 +1,12 @@
+type: object
+description: >
+  Request payload to update a closed Application List Entry.
+required:
+  - additionalNotes
+
+properties:
+  additionalNotes:
+    type: string
+    description: The additional notes to add to append to the Application List Entry.
+    example: "Additional notes"
+    minLength: 1

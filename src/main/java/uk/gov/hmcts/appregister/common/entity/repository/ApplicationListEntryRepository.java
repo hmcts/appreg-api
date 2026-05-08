@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
@@ -649,4 +650,39 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Set<UUID> findExistingEntryIdsInSourceList(UUID sourceListId, Set<UUID> requestedIds);
+
+    /**
+     * does the entries belong to the application list.
+     *
+     * @return The
+     */
+    @Query(
+            """
+            SELECT COUNT(ale) > 0
+            FROM ApplicationListEntry ale
+            WHERE ale.uuid IN :entryIds
+              AND ale.applicationList.uuid = :listId
+            AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            AND (ale.applicationList.deleted IS NULL OR
+            ale.applicationList.deleted <> 'Y')
+        """)
+    boolean doesApplicationEntryBelongToApplicationList(List<UUID> entryIds, UUID listId);
+
+    /**
+     * gets the application list for the entries.
+     *
+     * @param entryIds The entry ids
+     * @return The application list ids for the applicable entries
+     */
+    @Query(
+            """
+            SELECT new uk.gov.hmcts.appregister.common
+                    .entity.model.EntryToList(ale.uuid, ale.applicationList.uuid)
+            FROM ApplicationListEntry ale
+            WHERE ale.uuid IN :entryIds
+            AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            AND (ale.applicationList.deleted IS NULL OR
+            ale.applicationList.deleted <> 'Y')
+        """)
+    List<EntryToList> findApplicationListForAllEntries(List<UUID> entryIds);
 }
