@@ -20,11 +20,10 @@ public class PostgresCommand implements Command {
     private static final String DATABASE_NAME = "appreg-db";
 
     private static final DockerImageName POSTGRES_IMAGE =
-        DockerImageName.parse("hmctspublic.azurecr.io/imported/postgres:17-alpine")
-            .asCompatibleSubstituteFor("postgres");
+            DockerImageName.parse("hmctspublic.azurecr.io/imported/postgres:17-alpine")
+                    .asCompatibleSubstituteFor("postgres");
 
-    private PostgreSQLContainer<?> container = new PostgreSQLContainer<>(
-        POSTGRES_IMAGE);
+    private PostgreSQLContainer<?> container = new PostgreSQLContainer<>(POSTGRES_IMAGE);
 
     {
         container
