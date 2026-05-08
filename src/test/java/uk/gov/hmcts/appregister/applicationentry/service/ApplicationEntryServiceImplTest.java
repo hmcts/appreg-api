@@ -48,6 +48,7 @@ import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEnti
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
@@ -59,8 +60,10 @@ import uk.gov.hmcts.appregister.applicationentry.validator.DeleteEntryValidation
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetEntryValidationSuccess;
+import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryClosedValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.applicationlist.audit.AppListAuditOperation;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
@@ -131,6 +134,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
@@ -243,6 +247,11 @@ public class ApplicationEntryServiceImplTest {
                     applicationListEntryRepository);
 
     @Spy
+    private DummyUpdateClosedEntriesValidator updateClosedEntriesValidator =
+            new DummyUpdateClosedEntriesValidator(
+                    applicationListRepository, applicationListEntryRepository);
+
+    @Spy
     private GetApplicationEntryValidator getEntryValidator =
             new DummyGetApplicationEntryValidator(
                     applicationListRepository, applicationListEntryRepository);
@@ -277,6 +286,7 @@ public class ApplicationEntryServiceImplTest {
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
                         updateApplicationEntryValidator,
+                        updateClosedEntriesValidator,
                         moveEntriesValidator,
                         bulkUpdateOfficialsValidator,
                         matchService,
@@ -310,6 +320,7 @@ public class ApplicationEntryServiceImplTest {
                         createApplicationEntryValidator,
                         bulkCreateApplicationEntryValidator,
                         updateApplicationEntryValidator,
+                        updateClosedEntriesValidator,
                         moveEntriesValidator,
                         bulkUpdateOfficialsValidator,
                         matchService,
@@ -1865,6 +1876,41 @@ public class ApplicationEntryServiceImplTest {
     }
 
     @Test
+    void testUpdateClosedListWithAppend() throws Exception {
+        // setup payload with a note to be applied
+        EntryUpdateClosedDto entryUpdateClosedDto = new EntryUpdateClosedDto();
+        entryUpdateClosedDto.setAdditionalNotes("additional notes");
+
+        ApplicationListEntry applicationListEntry = new ApplicationListEntry();
+
+        // set the initial note that already exists
+        String note = "note";
+        applicationListEntry.setNotes(note);
+        applicationListEntry.setId(1000L);
+        applicationListEntry.setVersion(232L);
+
+        // dummy the success of the validator
+        updateClosedEntriesValidator.setSuccess(
+                new UpdateApplicationEntryClosedValidationSuccess(
+                        new ApplicationList(), applicationListEntry));
+
+        ArgumentCaptor<ApplicationListEntry> captorEntry =
+                ArgumentCaptor.forClass(ApplicationListEntry.class);
+
+        PayloadForUpdateClosedEntry payload =
+                new PayloadForUpdateClosedEntry(
+                        entryUpdateClosedDto, UUID.randomUUID(), UUID.randomUUID());
+
+        // run test
+        service.updateClosedEntry(payload);
+
+        // now verify what has happened
+        verify(applicationListEntryRepository).save(captorEntry.capture());
+        Assertions.assertEquals(
+                note + " " + entryUpdateClosedDto.getAdditionalNotes(),
+                captorEntry.getValue().getNotes());
+    }
+
     void deleteEntrySuccess() {
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
 
@@ -2054,6 +2100,33 @@ public class ApplicationEntryServiceImplTest {
         public <R> R validate(
                 MoveEntriesPayload payload,
                 java.util.function.BiFunction<MoveEntriesPayload, MoveEntriesValidationSuccess, R>
+                        createSupplier) {
+
+            return createSupplier.apply(payload, success);
+        }
+    }
+
+    static class DummyUpdateClosedEntriesValidator extends UpdateClosedApplicationEntryValidator {
+
+        private UpdateApplicationEntryClosedValidationSuccess success;
+
+        public DummyUpdateClosedEntriesValidator(
+                ApplicationListRepository applicationListRepository,
+                ApplicationListEntryRepository applicationListEntryRepository) {
+            super(applicationListEntryRepository, applicationListRepository);
+        }
+
+        public void setSuccess(UpdateApplicationEntryClosedValidationSuccess success) {
+            this.success = success;
+        }
+
+        @Override
+        public <R> R validate(
+                PayloadForUpdateClosedEntry payload,
+                java.util.function.BiFunction<
+                                PayloadForUpdateClosedEntry,
+                                UpdateApplicationEntryClosedValidationSuccess,
+                                R>
                         createSupplier) {
 
             return createSupplier.apply(payload, success);

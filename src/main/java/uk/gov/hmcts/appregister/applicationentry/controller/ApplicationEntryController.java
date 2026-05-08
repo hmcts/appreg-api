@@ -21,6 +21,7 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
@@ -45,6 +46,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -211,14 +213,6 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
-    public ResponseEntity<Void> replaceApplicationListEntryOfficials(
-            UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
-        applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
-
-        return ResponseEntity.noContent().build();
-    }
-
-    @Override
     public ResponseEntity<JobAcknowledgement> bulkUploadApplicationListEntries(
             UUID listId, MultipartFile file) {
 
@@ -267,9 +261,32 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     }
 
     @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> updateClosedApplicationListEntry(
+            UUID listId, UUID entryId, EntryUpdateClosedDto entryUpdateClosedDto) {
+        PayloadForUpdateClosedEntry entryUpdateClosedDtoWithIds =
+                new PayloadForUpdateClosedEntry(entryUpdateClosedDto, listId, entryId);
+
+        MatchResponse<Void> matchResponse =
+                applicationEntryService.updateClosedEntry(entryUpdateClosedDtoWithIds);
+        return ResponseEntity.noContent()
+                .varyBy(HttpHeaders.ACCEPT)
+                .eTag(matchResponse.getEtag())
+                .build();
+    }
+
+    @Override
     public ResponseEntity<Void> deleteApplicationListEntry(UUID listId, UUID entryId) {
         PayloadForDeleteEntry payload = new PayloadForDeleteEntry(listId, entryId);
         applicationEntryService.deleteEntry(payload);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> replaceApplicationListEntryOfficials(
+            UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
 
         return ResponseEntity.noContent().build();
     }

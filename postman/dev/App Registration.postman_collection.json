@@ -922,12 +922,33 @@
           "response": []
         },
         {
-          "name": "Delete Entry",
+
+          "name": "Update Closed",
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"additionalNotes\": \"test\"\r\n}"
+            },
             "url": {
-              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/closed/{{CREATED_ENTRY_ID}}",
               "host": [
                 "{{APP_REG_HOST}}"
               ],
@@ -935,6 +956,7 @@
                 "application-lists",
                 "{{APP_LIST_ID}}",
                 "entries",
+                "closed",
                 "{{CREATED_ENTRY_ID}}"
               ]
             }
@@ -942,6 +964,26 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Delete Entry",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/{{CREATED_ENTRY_ID}}",
+          "host": [
+            "{{APP_REG_HOST}}"
+          ],
+          "path": [
+            "application-lists",
+            "{{APP_LIST_ID}}",
+            "entries",
+            "{{CREATED_ENTRY_ID}}"
+          ]
+        }
+      },
+      "response": []
     },
     {
       "name": "application-list-entry-results",
@@ -999,12 +1041,14 @@
             {
               "listen": "test",
               "script": {
-                "type": "text/javascript",
                 "exec": [
                   "pm.expect(pm.response.code).to.equal(201);",
                   "const response = pm.response.json();",
                   "pm.environment.set(\"CREATED_ENTRY_RESULT_ID\", response.id);"
-                ]
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -1034,7 +1078,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"resultCode\": \"APPC\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Name of Crown Court\",\r\n      \"value\": \"The Central Criminal Court\"\r\n    }\r\n  ]\r\n}",
+              "raw": "{\r\n  \"resultCode\": \"FRO\",\r\n  \"wordingFields\": [\r\n    {\r\n      \"key\": \"Reason text\",\r\n      \"value\": \"Caseworker discretion\"\r\n    }\r\n  ]\r\n}",
               "options": {
                 "raw": {
                   "language": "json"
