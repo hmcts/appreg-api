@@ -173,7 +173,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     filterDto.getRespondentPostcode(),
                                     filterDto.getAccountReference(),
-                                    null,
+                                    filterDto.getApplicationTitle(),
                                     null,
                                     null,
                                     null,
@@ -228,7 +228,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     safeFilterDto.getRespondentPostcode(),
                                     safeFilterDto.getAccountReference(),
-                                    null,
+                                    safeFilterDto.getApplicationTitle(),
                                     null,
                                     null,
                                     null);
