@@ -224,7 +224,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     safeFilterDto.getRespondentPostcode(),
                                     safeFilterDto.getAccountReference(),
-                                    null,
+                                    safeFilterDto.getApplicationTitle(),
                                     null,
                                     null,
                                     null);
