@@ -67,8 +67,8 @@ public class SortableField {
      * @param lookup function to map API field names to SortableFieldsEnum
      * @return The string mapping the sortable field in the format "entityField,direction"
      */
-    public <T extends SortableOperationEnum> List<String> toSortStringUsingSortableOperation(
-            Function<String, T> lookup) {
+    public List<String> toSortStringUsingSortableOperation(
+            Function<String, ? extends SortableOperationEnum> lookup) {
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField == null) {
             throw new AppRegistryException(
@@ -85,7 +85,7 @@ public class SortableField {
      * @param lookup function to map API field names to SortableFieldsEnum
      * @return The tie breaker
      */
-    public <T extends SortableOperationEnum> String toTieBreaker(Function<String, T> lookup) {
+    public String toTieBreaker(Function<String, ? extends SortableOperationEnum> lookup) {
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField.getTieBreaker() != null) {
             return sortableField.getTieBreaker() + SORT_DELIMITER + direction;
@@ -93,8 +93,7 @@ public class SortableField {
         return null;
     }
 
-    private <T extends SortableOperationEnum> List<String> getSortParts(
-            Function<String, T> lookup) {
+    private List<String> getSortParts(Function<String, ? extends SortableOperationEnum> lookup) {
         List<String> sortPartsLst = new ArrayList<>();
         for (String sort : lookup.apply(field).getEntityValue()) {
             if (direction != null) {

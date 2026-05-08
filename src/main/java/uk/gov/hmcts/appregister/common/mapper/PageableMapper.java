@@ -39,13 +39,13 @@ public class PageableMapper {
      * @param defaultDirection The default direction to sort if no sort is specified
      * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
      */
-    public <T extends SortableOperationEnum> PagingWrapper from(
+    public PagingWrapper from(
             Integer page,
             Integer size,
             List<String> sort,
-            T defaultSortProperty,
+            SortableOperationEnum defaultSortProperty,
             Sort.Direction defaultDirection,
-            Function<String, T> findSortFieldEnum) {
+            Function<String, ? extends SortableOperationEnum> findSortFieldEnum) {
 
         // TODO: This is the one line that needs removing
         // if we want to support multiple sort values
@@ -81,9 +81,9 @@ public class PageableMapper {
                                             + defaultDirection.name())
                             .getFirst();
 
-            mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+            mappedSorts.addAll(toSortStrings(defaultSortProperty, sortableField.getDirection()));
             sortableFields.add(sortableField);
-            tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
+            tieBreaker = toTieBreaker(defaultSortProperty, sortableField.getDirection());
         }
 
         // if we have a tie breaker then add it to the end of the sort list
@@ -98,6 +98,27 @@ public class PageableMapper {
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
+    }
+
+    private List<String> toSortStrings(
+            SortableOperationEnum sortableOperation, String requestedDirection) {
+        List<String> sortParts = new ArrayList<>();
+        for (String sort : sortableOperation.getEntityValue()) {
+            if (requestedDirection != null) {
+                sortParts.add(sort + "," + requestedDirection);
+            } else {
+                sortParts.add(sort);
+            }
+        }
+        return sortParts;
+    }
+
+    private String toTieBreaker(
+            SortableOperationEnum sortableOperation, String requestedDirection) {
+        if (sortableOperation.getTieBreaker() != null) {
+            return sortableOperation.getTieBreaker() + "," + requestedDirection;
+        }
+        return null;
     }
 
     /**

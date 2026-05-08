@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryDefaultSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
@@ -85,7 +86,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         page,
                         size,
                         sort,
-                        ApplicationEntrySortFieldEnum.CODE,
+                        ApplicationEntryDefaultSortFieldEnum.CODE,
                         Sort.Direction.ASC,
                         ApplicationEntrySortFieldEnum::getEntityValue);
 

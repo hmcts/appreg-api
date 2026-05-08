@@ -41,6 +41,7 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.ResolutionCode;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
@@ -113,6 +114,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
     @Autowired protected ApplicationListRepository applicationListRepository;
     @Autowired protected ApplicationListEntryRepository applicationListEntryRepository;
     @Autowired protected AppListEntryFeeRepository appListEntryFeeRepository;
+    @Autowired protected AppListEntryResolutionRepository appListEntryResolutionRepository;
     @Autowired protected ApplicationCodeRepository applicationCodeRepository;
 
     protected static final LocalDate TEST_DATE = LocalDate.of(2025, 10, 15);
@@ -874,6 +876,27 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                     applicationListEntryRepository.findById(currentEntry.getId()).orElseThrow();
             saveResolution(currentEntry, resultCode);
         }
+    }
+
+    public void addResolution(ApplicationListEntry entry, String resultCode) {
+        ResolutionCode resolutionCode = new ResolutionCode();
+        resolutionCode.setResultCode(resultCode);
+        resolutionCode.setTitle(resultCode + " title");
+        resolutionCode.setWording(resultCode + " wording");
+        resolutionCode.setLegislation("Test legislation");
+        resolutionCode.setStartDate(LocalDate.now());
+        resolutionCode.setChangedBy(1L);
+        resolutionCode.setChangedDate(OffsetDateTime.now());
+        resolutionCode = persistance.save(resolutionCode);
+
+        AppListEntryResolution entryResolution = new AppListEntryResolution();
+        entryResolution.setApplicationList(
+                applicationListEntryRepository.findById(entry.getId()).orElseThrow());
+        entryResolution.setResolutionCode(resolutionCode);
+        entryResolution.setResolutionWording(resultCode + " wording");
+        entryResolution.setResolutionOfficer("Test officer");
+
+        appListEntryResolutionRepository.saveAndFlush(entryResolution);
     }
 
     public Response executeGetEntries(UUID listUuid, int size, int page)
