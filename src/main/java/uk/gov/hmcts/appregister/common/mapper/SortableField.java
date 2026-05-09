@@ -62,13 +62,12 @@ public class SortableField {
     }
 
     /**
-     * Maps the sortable field to the associated entity field using a lookup function..
+     * Resolves the sortable field to the associated entity sort plan using a lookup function.
      *
      * @param lookup function to map API field names to SortableFieldsEnum
-     * @return The string mapping the sortable field in the format "entityField,direction"
+     * @return The resolved sort plan
      */
-    public List<String> toSortStringUsingSortableOperation(
-            Function<String, ? extends SortableOperationEnum> lookup) {
+    public SortPlan toSortPlan(Function<String, ? extends SortableOperationEnum> lookup) {
         SortableOperationEnum sortableField = lookup.apply(this.field);
         if (sortableField == null) {
             throw new AppRegistryException(
@@ -76,33 +75,7 @@ public class SortableField {
                     "Sort property '%s' is not allowed.".formatted(this.field));
         }
 
-        return getSortParts(lookup);
-    }
-
-    /**
-     * Maps this entry to the tie breaker field.
-     *
-     * @param lookup function to map API field names to SortableFieldsEnum
-     * @return The tie breaker
-     */
-    public String toTieBreaker(Function<String, ? extends SortableOperationEnum> lookup) {
-        SortableOperationEnum sortableField = lookup.apply(this.field);
-        if (sortableField.getTieBreaker() != null) {
-            return sortableField.getTieBreaker() + SORT_DELIMITER + direction;
-        }
-        return null;
-    }
-
-    private List<String> getSortParts(Function<String, ? extends SortableOperationEnum> lookup) {
-        List<String> sortPartsLst = new ArrayList<>();
-        for (String sort : lookup.apply(field).getEntityValue()) {
-            if (direction != null) {
-                sortPartsLst.add(sort + SORT_DELIMITER + direction);
-            } else {
-                sortPartsLst.add(sort);
-            }
-        }
-        return sortPartsLst;
+        return SortPlan.from(sortableField, direction);
     }
 
     private static String checkDirection(String[] sortParts, String apiField) {

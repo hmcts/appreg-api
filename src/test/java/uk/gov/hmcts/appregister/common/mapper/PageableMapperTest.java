@@ -4,6 +4,8 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryDefaultSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationlist.api.ApplicationListEntriesSummarySortFieldEnum;
 import uk.gov.hmcts.appregister.common.api.SortableOperationEnum;
@@ -219,9 +221,10 @@ class PageableMapperTest {
                         null,
                         null,
                         List.of(),
-                        InternalDefaultSortField.INTERNAL_ONLY,
-                        Sort.Direction.ASC,
-                        TestSortableOperationEnum::getEntityValue);
+                        new SortConfig(
+                                InternalDefaultSortField.INTERNAL_ONLY,
+                                TestSortableOperationEnum::getEntityValue),
+                        Sort.Direction.ASC);
 
         Assertions.assertEquals(
                 InternalDefaultSortField.INTERNAL_ONLY.getEntityValue()[0],
@@ -243,6 +246,43 @@ class PageableMapperTest {
                                         InternalDefaultSortField.INTERNAL_ONLY,
                                         Sort.Direction.ASC,
                                         TestSortableOperationEnum::getEntityValue));
+        Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());
+    }
+
+    @Test
+    void testPageableUsingSortConfig() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.from(
+                        null,
+                        null,
+                        List.of(),
+                        ApplicationEntrySortConfig.SEARCH,
+                        Sort.Direction.ASC);
+
+        Assertions.assertEquals(
+                ApplicationEntryDefaultSortFieldEnum.CODE.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                ApplicationEntryDefaultSortFieldEnum.CODE.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(1).getProperty());
+
+        AppRegistryException ex =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                appPageable.from(
+                                        null,
+                                        null,
+                                        List.of(
+                                                ApplicationEntryDefaultSortFieldEnum.CODE
+                                                                .getApiValue()
+                                                        + ",asc"),
+                                        ApplicationEntrySortConfig.SEARCH,
+                                        Sort.Direction.ASC));
         Assertions.assertEquals(CommonAppError.SORT_NOT_SUITABLE, ex.getCode());
     }
 
