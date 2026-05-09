@@ -505,8 +505,8 @@ public class ApplicationListControllerSearchTest extends AbstractApplicationList
                         Optional.of(1),
                         Optional.of(0),
                         List.of(
-                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue(),
-                                ApplicationEntrySortFieldEnum.RESPONDENT.getApiValue()),
+                                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getApiValue(),
+                                ApplicationEntrySortFieldEnum.LOCATION.getApiValue()),
                         getLocalUrl(WEB_CONTEXT),
                         userToken);
 

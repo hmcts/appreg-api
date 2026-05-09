@@ -81,14 +81,3 @@ properties:
     example: "Smith vs Jones"
     maxLength: 500
 
-  applicantName:
-    type: string
-    description: The applicant display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
-    example: "John Turner"
-    maxLength: 300
-
-  respondentName:
-    type: string
-    description: The respondent display name. For people this uses the format "firstForename surname"; for organisations this uses the organisation name. This can be Partial.
-    example: "Sarah Johnson"
-    maxLength: 300

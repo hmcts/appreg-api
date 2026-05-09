@@ -381,8 +381,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         EntryPage page = responseSpec.as(EntryPage.class);
         PagingAssertionUtil.assertPageDetails(page, 20, 0, 1, TOTAL_APP_ENTRY_COUNT);
 
-        EntryGetSummaryDto entryGetSummaryDto =
-                findEntryByApplicationTitle(page, "Certified genuine copy document");
+        EntryGetSummaryDto entryGetSummaryDto = page.getContent().get(0);
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
@@ -417,34 +416,42 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
 
-        entryGetSummaryDto = findEntryByApplicationTitle(page, "Appeal to Crown Court");
+        entryGetSummaryDto = page.getContent().get(4);
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
+                .isEqualTo("Legal Aid Board");
         assertThat(
                         entryGetSummaryDto
                                 .getRespondent()
-                                .getPerson()
+                                .getOrganisation()
                                 .getContactDetails()
                                 .getAddressLine1())
-                .isEqualTo("Flat 4, 22 Hillside");
-        assertThat(entryGetSummaryDto.getRespondent().getPerson().getContactDetails().getPostcode())
-                .isEqualTo("SN12 1ZZ");
+                .isEqualTo("100 Legal Street");
+        assertThat(
+                        entryGetSummaryDto
+                                .getRespondent()
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getEmail()
+                                .get())
+                .isEqualTo("info@legalaid.example.com");
+        assertThat(
+                        entryGetSummaryDto
+                                .getRespondent()
+                                .getOrganisation()
+                                .getContactDetails()
+                                .getPostcode())
+                .isEqualTo("BA15 1LA");
 
-        assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Appeal to Crown Court");
+        assertThat(entryGetSummaryDto.getApplicationTitle())
+                .isEqualTo("Request for Certificate of Refusal to State a Case (Civil)");
         assertThat(entryGetSummaryDto.getLegislation())
-                .isEqualTo("Section 108 Magistrates' Courts Act 1980");
+                .isEqualTo("Section 111 Magistrates' Courts Act 1980");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
         assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2025-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
-    }
-
-    private EntryGetSummaryDto findEntryByApplicationTitle(
-            EntryPage page, String applicationTitle) {
-        return page.getContent().stream()
-                .filter(entry -> applicationTitle.equals(entry.getApplicationTitle()))
-                .findFirst()
-                .orElseThrow();
     }
 
     private void assertAuditRow(
@@ -766,7 +773,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                         Optional.of(10),
                         Optional.of(0),
                         List.of(
-                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                ApplicationEntrySortFieldEnum.LEGISLATION.getApiValue()
                                         + ","
                                         + "desc"),
                         getLocalUrl(WEB_CONTEXT),
@@ -849,7 +856,7 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .get())
                 .isEqualTo("01234567890");
 
-        assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.OPEN);
+        assertThat(entryGetSummaryDto.getStatus()).isEqualTo(ApplicationListStatus.CLOSED);
         assertThat(entryGetSummaryDto.getRespondent().getOrganisation().getName())
                 .isEqualTo("Sarah Johnson");
         assertThat(
@@ -875,10 +882,12 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .getPostcode())
                 .isEqualTo("XY9 8ZZ");
 
-        assertThat(entryGetSummaryDto.getApplicationTitle()).isEqualTo("Copy documents");
-        assertThat(entryGetSummaryDto.getLegislation()).isEqualTo("");
+        assertThat(entryGetSummaryDto.getApplicationTitle())
+                .isEqualTo("Issue of liability order summons -council tax (bulk)");
+        assertThat(entryGetSummaryDto.getLegislation())
+                .isEqualTo("Regulation 34 Council Tax (Admin and Enforcement) Regulations 1992");
         assertThat(entryGetSummaryDto.getId()).isNotNull();
-        assertThat(entryGetSummaryDto.getIsFeeRequired()).isTrue();
+        assertThat(entryGetSummaryDto.getIsFeeRequired()).isFalse();
         assertThat(entryGetSummaryDto.getDate()).isEqualTo(LocalDate.parse("2024-04-21"));
         assertThat(entryGetSummaryDto.getListId()).isNotNull();
     }

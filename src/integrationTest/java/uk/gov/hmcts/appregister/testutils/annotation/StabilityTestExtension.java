@@ -3,7 +3,6 @@ package uk.gov.hmcts.appregister.testutils.annotation;
 import static org.junit.platform.commons.support.AnnotationSupport.isAnnotated;
 
 import java.lang.reflect.Method;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.hibernate.AssertionFailure;
@@ -24,18 +23,6 @@ import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
  * the class to ensure a minimum level of stability across the service.
  */
 public class StabilityTestExtension implements TestTemplateInvocationContextProvider {
-    static final String STABILITY_RUNS_ENV = "STABILITY_RUNS";
-
-    private final Function<String, String> environmentLookup;
-
-    public StabilityTestExtension() {
-        this(System::getenv);
-    }
-
-    StabilityTestExtension(Function<String, String> environmentLookup) {
-        this.environmentLookup = environmentLookup;
-    }
-
     @Override
     public boolean supportsTestTemplate(ExtensionContext context) {
         return isAnnotated(context.getTestMethod(), StabilityTest.class);
@@ -44,11 +31,10 @@ public class StabilityTestExtension implements TestTemplateInvocationContextProv
     @Override
     public Stream<TestTemplateInvocationContext> provideTestTemplateInvocationContexts(
             ExtensionContext context) {
-        Integer overrideTimes = getOverrideTimes();
-        int times = overrideTimes != null ? overrideTimes : getTimesToRepeat(context);
+        int times = getTimesToRepeat(context);
 
         // check that the number of times we execute is at least the default
-        if (overrideTimes == null && times < StabilityTest.DEFAULT_TIMES) {
+        if (times < StabilityTest.DEFAULT_TIMES) {
             throw new AssertionFailure(
                     "To ensure stability we need to run at least %s times"
                             .formatted(StabilityTest.DEFAULT_TIMES));
@@ -79,26 +65,5 @@ public class StabilityTestExtension implements TestTemplateInvocationContextProv
             ann = method.getAnnotation(StabilityTest.class);
         }
         return ann.times();
-    }
-
-    private Integer getOverrideTimes() {
-        String override = environmentLookup.apply(STABILITY_RUNS_ENV);
-        if (override == null || override.isBlank()) {
-            return null;
-        }
-
-        try {
-            int times = Integer.parseInt(override.trim());
-            if (times < 1) {
-                throw new AssertionFailure(
-                        "Environment variable %s must be greater than zero."
-                                .formatted(STABILITY_RUNS_ENV));
-            }
-            return times;
-        } catch (NumberFormatException ex) {
-            throw new AssertionFailure(
-                    "Environment variable %s must be a whole number."
-                            .formatted(STABILITY_RUNS_ENV));
-        }
     }
 }

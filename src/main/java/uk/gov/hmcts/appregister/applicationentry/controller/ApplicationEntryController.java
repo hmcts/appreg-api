@@ -15,7 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
@@ -81,7 +82,12 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
             EntryGetFilterDto filter, Integer page, Integer size, List<String> sort) {
         PagingWrapper pageInfo =
                 pageableMapper.from(
-                        page, size, sort, ApplicationEntrySortConfig.SEARCH, Sort.Direction.ASC);
+                        page,
+                        size,
+                        sort,
+                        ApplicationEntrySortFieldEnum.CODE,
+                        Sort.Direction.ASC,
+                        ApplicationEntrySortFieldEnum::getEntityValue);
 
         EntryPage entryPage = applicationEntryService.search(filter, pageInfo);
 
@@ -165,8 +171,9 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         pageNumber,
                         pageSize,
                         sort,
-                        ApplicationEntrySortConfig.BY_LIST_ID,
-                        Sort.Direction.ASC);
+                        ApplicationEntryByListIdSortFieldEnum.SEQUENCE_NUMBER,
+                        Sort.Direction.ASC,
+                        ApplicationEntryByListIdSortFieldEnum::getEntityValue);
 
         EntryPage entryResponse =
                 applicationEntryService.getApplicationListEntries(payloadForGet, pageInfo, filter);
