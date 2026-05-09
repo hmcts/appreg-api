@@ -1198,6 +1198,40 @@
           "response": []
         },
         {
+          "name": "Bulk Result for Application List",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"entryIds\": [\n        \"{{CREATED_ENTRY_ID}}\"\n    ],\n    \"result\": {\n        \"resultCode\": \"RTC\",\n        \"wordingFields\": [\n            {\n                \"key\": \"Date\",\n                \"value\": \"Date\"\n            },\n            {\n                \"key\": \"Courthouse\",\n                \"value\": \"ch\"\n            }\n        ]\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/entries/results",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "entries",
+                "results"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Bulk Result",
           "request": {
             "method": "POST",
@@ -1467,6 +1501,14 @@
             "token"
           ]
         }
+      },
+      "response": []
+    },
+    {
+      "name": "New Request",
+      "request": {
+        "method": "GET",
+        "header": []
       },
       "response": []
     }

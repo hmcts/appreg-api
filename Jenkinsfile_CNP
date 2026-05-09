@@ -72,6 +72,7 @@ withPipeline(type, product, component) {
   env.SKIP_TESTS = params.SKIP_TESTS
   env.SKIP_SONAR = params.SKIP_SONAR
   env.FAIL_FAST = params.FAIL_FAST
+  env.TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX = 'hmctspublic.azurecr.io/imported/'
 
   echo "SKIP_TESTS: ${env.SKIP_TESTS}"
   echo "SKIP_SONAR: ${env.SKIP_SONAR}"
