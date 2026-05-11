@@ -16,12 +16,19 @@ java:
       disabled: false
 
 # Launch the database that this PR will be working against
+#postgresql:
+#  enabled: true
+#  flexibleserver: "appreg-dev"
+#  setup:
+#    databases:
+#      - name: "pr-${CHANGE_ID}-appreg"
 postgresql:
   enabled: true
   flexibleserver: "appreg-dev"
   setup:
     databases:
-      - name: "pr-${CHANGE_ID}-appreg"
+      pr-${CHANGE_ID}-appreg:
+        name: "pr-${CHANGE_ID}-appreg"
 
 # This is needed if want to launch the portal along side this pr
 appreg-frontend:
