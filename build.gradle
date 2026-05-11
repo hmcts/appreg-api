@@ -6,6 +6,8 @@ import com.github.benmanes.gradle.versions.updates.resolutionstrategy.ComponentS
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.springframework.boot.gradle.tasks.run.BootRun
 
+// Change to force build.
+
 plugins {
   id 'application'
   id 'jacoco'
