@@ -428,7 +428,6 @@ dependencies {
   implementation 'io.micrometer:micrometer-tracing-bridge-brave'
 
   // Allows us to use Jackson 2 until we can successfully migrate to Jackson 3.
-
   implementation 'org.springframework.cloud:spring-cloud-starter'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
   implementation 'org.openapitools:jackson-databind-nullable:0.2.10'
