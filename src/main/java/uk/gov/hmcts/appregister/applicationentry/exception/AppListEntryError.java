@@ -168,7 +168,11 @@ public enum AppListEntryError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "The application list is not in a deletable state",
-                    "ALE-33"));
+                    "ALE-33")),
+
+    STATUS_DATE_CANNOT_BE_IN_FUTURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Status date cannot be in the future", "ALE-34"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

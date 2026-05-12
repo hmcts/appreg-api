@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.notNull;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.PAID;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -54,7 +55,7 @@ import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class UpdateApplicationEntryValidatorTest {
-    private static final LocalDate TODAY_UK = LocalDate.of(2025, 10, 7);
+    private static final LocalDate TODAY_UK = LocalDate.now();
 
     @Mock private ApplicationListRepository applicationListRepository;
 
@@ -109,6 +110,7 @@ public class UpdateApplicationEntryValidatorTest {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         entryUpdateDto = Instancio.of(EntryUpdateDto.class).withSettings(settings).create();
         entryUpdateDto.setOfficials(CreateEntryDtoUtil.validOfficials());
+        sanitiseFeeStatusDates(entryUpdateDto.getFeeStatuses());
 
         appListUuid = UUID.randomUUID();
         appListEntryUuid = UUID.randomUUID();
@@ -130,6 +132,16 @@ public class UpdateApplicationEntryValidatorTest {
         when(applicationListEntryRepository.findByEntryUuidWithinListUuid(
                         eq(appListUuid), eq(appListEntryUuid)))
                 .thenReturn(Optional.of(new ApplicationListEntry()));
+    }
+
+    private static void sanitiseFeeStatusDates(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null) {
+            return;
+        }
+
+        feeStatuses.stream()
+                .filter(feeStatus -> feeStatus != null && feeStatus.getStatusDate() != null)
+                .forEach(feeStatus -> feeStatus.setStatusDate(TODAY_UK));
     }
 
     @Test
@@ -508,6 +520,31 @@ public class UpdateApplicationEntryValidatorTest {
                 AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE
                         .getCode()
                         .getAppCode(),
+                appRegistryException.getCode().getCode().getAppCode());
+    }
+
+    @Test
+    void testStatusDateCannotBeInFuture() {
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.getRespondent().setOrganisation(null);
+
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PAID);
+        feeStatus.setStatusDate(TODAY_UK.plusDays(1));
+
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        PayloadForUpdateEntry payload =
+                new PayloadForUpdateEntry(entryUpdateDto, appListUuid, appListEntryUuid);
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> updateApplicationEntryValidator.validate(payload));
+
+        Assertions.assertEquals(
+                AppListEntryError.STATUS_DATE_CANNOT_BE_IN_FUTURE.getCode().getAppCode(),
                 appRegistryException.getCode().getCode().getAppCode());
     }
 

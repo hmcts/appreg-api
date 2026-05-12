@@ -428,13 +428,12 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
      * @param validatable The validatable payload
      */
     private FeePair validateFee(ApplicationCode applicationCode, T validatable) {
-        FeePair feeToReturn = null;
-
         // gets the fee statuses from the payload or an empty list if none provided
         List<FeeStatus> feeStatuses =
                 getFeeStatuses(validatable) == null ? List.of() : getFeeStatuses(validatable);
 
         validatePaymentReferenceNotAllowedWhenDue(feeStatuses, validatable);
+        validateStatusDateIsNotInFuture(feeStatuses);
 
         // check that the fee status payload make sense according to the application code
         YesOrNo yesOrNo = applicationCode.getFeeDue();
@@ -454,12 +453,10 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            FeePair fees = feeService.resolveFeePair(applicationCode.getFeeReference());
-
-            feeToReturn = fees;
+            return feeService.resolveFeePair(applicationCode.getFeeReference());
         }
 
-        return feeToReturn;
+        return null;
     }
 
     protected boolean isFeeStatusRequired(ApplicationCode applicationCode, T validatable) {
@@ -494,6 +491,26 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
                         AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
                         "Payment reference must not be provided when fee status is DUE for code %s"
                                 .formatted(getApplicationCode(validatable)));
+            }
+        }
+    }
+
+    /** Validates that fee status dates are today or in the past. */
+    private void validateStatusDateIsNotInFuture(List<FeeStatus> feeStatuses) {
+        if (feeStatuses == null || feeStatuses.isEmpty()) {
+            return;
+        }
+
+        LocalDate today = currentBusinessDate();
+        for (FeeStatus feeStatus : feeStatuses) {
+            if (feeStatus == null || feeStatus.getStatusDate() == null) {
+                continue;
+            }
+
+            if (feeStatus.getStatusDate().isAfter(today)) {
+                throw new AppRegistryException(
+                        AppListEntryError.STATUS_DATE_CANNOT_BE_IN_FUTURE,
+                        "Status date cannot be after today's date");
             }
         }
     }
