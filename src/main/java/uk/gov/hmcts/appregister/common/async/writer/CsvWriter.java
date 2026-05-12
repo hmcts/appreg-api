@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.async.writer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.opencsv.bean.HeaderNameBaseMappingStrategy;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
@@ -52,6 +53,7 @@ public class CsvWriter<T extends CsvPojo> implements PageWriter<T> {
     }
 
     @Override
+    @JsonIgnore
     public InputStream getInputStream() throws IOException {
         return new FileInputStream(file);
     }
