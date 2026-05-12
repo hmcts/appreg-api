@@ -23,7 +23,8 @@ get:
       description: |
         Sort order. A single value is currently supported. Format: `property,(asc|desc)`.
         Supported properties are date, applicantName, respondentName, applicationTitle,
-        feeRequired, resulted, and status.
+        feeRequired, resulted, isResulted, and status. resulted sorts by the result code;
+        isResulted sorts by whether the entry has been resulted.
       style: form
       explode: true
       schema:
