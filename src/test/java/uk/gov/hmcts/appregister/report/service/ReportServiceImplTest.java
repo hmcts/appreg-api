@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.report.service;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -30,6 +31,7 @@ import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
@@ -41,9 +43,11 @@ import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
+import uk.gov.hmcts.appregister.report.exception.ReportError;
 import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
+import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
@@ -52,6 +56,7 @@ class ReportServiceImplTest {
     @Mock private JobMapper jobMapper;
     @Mock private NamedParameterJdbcTemplate jdbcTemplate;
     @Mock private ReportJobAuditService reportJobAuditService;
+    @Mock private ReportLocationValidator reportLocationValidator;
 
     @Test
     void givenActivityAuditFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
@@ -80,7 +85,8 @@ class ReportServiceImplTest {
                         jobMapper,
                         jdbcTemplate,
                         reportJobAuditService,
-                        new ReportFilterNormaliser());
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         ActivityAuditFilterDto filter =
@@ -136,7 +142,8 @@ class ReportServiceImplTest {
                         jobMapper,
                         jdbcTemplate,
                         reportJobAuditService,
-                        new ReportFilterNormaliser());
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         FeesReportFilterDto filter =
@@ -159,6 +166,38 @@ class ReportServiceImplTest {
         } finally {
             closeLifecycle(lifecycle);
         }
+    }
+
+    @Test
+    void givenFeesLocationValidationFails_whenCreatingReport_thenDoesNotStartJob() {
+        LegacyReportLocation location = new LegacyReportLocation().cjaCode("XX");
+        FeesReportFilterDto filter =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(location);
+        AppRegistryException exception =
+                new AppRegistryException(
+                        ReportError.CJA_NOT_FOUND, "No Criminal Justice Areas found for code 'XX'");
+        doThrow(exception).when(reportLocationValidator).validate(location);
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
+
+        AppRegistryException actual =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.createFeesReport(filter));
+
+        Assertions.assertSame(exception, actual);
+        Mockito.verify(reportLocationValidator).validate(location);
+        Mockito.verifyNoInteractions(asyncJobService);
     }
 
     @Test
@@ -187,7 +226,8 @@ class ReportServiceImplTest {
                         jobMapper,
                         jdbcTemplate,
                         reportJobAuditService,
-                        new ReportFilterNormaliser());
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
@@ -211,6 +251,38 @@ class ReportServiceImplTest {
         } finally {
             closeLifecycle(lifecycle);
         }
+    }
+
+    @Test
+    void givenDurationLocationValidationFails_whenCreatingReport_thenDoesNotStartJob() {
+        LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
+        DurationFilterDto filter =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(location);
+        AppRegistryException exception =
+                new AppRegistryException(
+                        ReportError.COURT_NOT_FOUND, "No court found for code 'BADCRT'");
+        doThrow(exception).when(reportLocationValidator).validate(location);
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
+
+        AppRegistryException actual =
+                Assertions.assertThrows(
+                        AppRegistryException.class, () -> service.createDurationReport(filter));
+
+        Assertions.assertSame(exception, actual);
+        Mockito.verify(reportLocationValidator).validate(location);
+        Mockito.verifyNoInteractions(asyncJobService);
     }
 
     @ParameterizedTest
@@ -238,7 +310,8 @@ class ReportServiceImplTest {
                         jobMapper,
                         jdbcTemplate,
                         reportJobAuditService,
-                        new ReportFilterNormaliser());
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
         DurationFilterDto filter =
