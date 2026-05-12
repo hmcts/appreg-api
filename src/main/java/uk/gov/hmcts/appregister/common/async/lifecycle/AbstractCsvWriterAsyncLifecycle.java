@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.async.lifecycle;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import uk.gov.hmcts.appregister.common.async.model.CsvPojo;
@@ -52,7 +53,9 @@ public abstract class AbstractCsvWriterAsyncLifecycle<T, R extends CsvPojo>
     @Override
     public void completed(AsyncJobLifecycleEvent<T> event) throws IOException {
         try (csvWriter) {
-            event.getResponse().write(csvWriter.getInputStream());
+            try (InputStream inputStream = csvWriter.getInputStream()) {
+                event.getResponse().write(inputStream);
+            }
         }
     }
 
