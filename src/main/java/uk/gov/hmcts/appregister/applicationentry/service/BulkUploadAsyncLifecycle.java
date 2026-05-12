@@ -13,11 +13,13 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
@@ -29,10 +31,13 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 @RequiredArgsConstructor
 public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow> {
     private static final int FIRST_DATA_ROW_NUMBER = 2;
+    private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
+    private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
 
     private final UUID listId;
     private final ApplicationEntryService applicationEntryService;
     private final BulkUploadApplicationEntryValidator validator;
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
 
@@ -61,9 +66,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
         for (BulkUploadRow row : rows) {
+            EntryCreateDto dto = mapper.toEntryCreateDto(row);
             List<BulkUploadError> rowErrors = new ArrayList<>();
             rowErrors.addAll(validator.validateRow(rowNumber, row));
-            rowErrors.addAll(validateMappedDto(rowNumber, row));
+            rowErrors.addAll(validateMappedDto(rowNumber, dto));
+
+            if (rowErrors.isEmpty()) {
+                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
+            }
 
             if (!rowErrors.isEmpty()) {
 
@@ -88,13 +98,33 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Bulk upload validation passed");
     }
 
-    private List<BulkUploadError> validateMappedDto(int rowNumber, BulkUploadRow row) {
-        EntryCreateDto dto = mapper.toEntryCreateDto(row);
-
+    private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
         return beanValidator.validate(dto).stream()
+                .filter(BulkUploadAsyncLifecycle::isNotWordingFieldViolation)
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> toBulkUploadError(rowNumber, violation))
                 .toList();
+    }
+
+    private List<BulkUploadError> validateBusinessRules(int rowNumber, EntryCreateDto dto) {
+        try {
+            bulkCreateApplicationEntryValidator.validate(
+                    PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
+                    (validatable, result) -> null);
+            return List.of();
+        } catch (AppRegistryException exception) {
+            return List.of(
+                    new BulkUploadError(
+                            rowNumber,
+                            locationForBusinessRule(exception),
+                            null,
+                            exception.getMessage()));
+        }
+    }
+
+    private static boolean isNotWordingFieldViolation(
+            ConstraintViolation<EntryCreateDto> violation) {
+        return !violation.getPropertyPath().toString().startsWith("wordingFields");
     }
 
     private static BulkUploadError toBulkUploadError(
@@ -109,6 +139,55 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static String rejectedValue(ConstraintViolation<?> violation) {
         Object invalidValue = violation.getInvalidValue();
         return invalidValue == null ? null : invalidValue.toString();
+    }
+
+    private static String locationForBusinessRule(AppRegistryException exception) {
+        if (isWordingError(exception)) {
+            return APPLICATION_TEXT_COLUMNS;
+        }
+
+        if (exception.getCode() == AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST
+                || exception.getCode()
+                        == AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON) {
+            return "APPLICANT_CODE";
+        }
+
+        if (exception.getCode() == AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST) {
+            return "APPLICATION_CODE";
+        }
+
+        if (exception.getCode() == AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE) {
+            return "ACCOUNT_NUMBER";
+        }
+
+        if (isRespondentError(exception)) {
+            return RESPONDENT_COLUMNS;
+        }
+
+        if (exception.getCode() == AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST
+                || exception.getCode() == AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT) {
+            return "APPLICATION_LIST";
+        }
+
+        return "BULK_UPLOAD_ROW";
+    }
+
+    private static boolean isWordingError(AppRegistryException exception) {
+        return exception.getCode() == CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH
+                || exception.getCode() == CommonAppError.WORDING_LENGTH_FAILURE
+                || exception.getCode() == CommonAppError.WORDING_DATA_TYPE_FAILURE;
+    }
+
+    private static boolean isRespondentError(AppRegistryException exception) {
+        return exception.getCode()
+                        == AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON
+                || exception.getCode() == AppListEntryError.RESPONDENT_REQUIRED
+                || exception.getCode() == AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED
+                || exception.getCode()
+                        == AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
+                || exception.getCode()
+                        == AppListEntryError
+                                .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE;
     }
 
     private void logValidationFailure(JobContext context, BulkUploadError error) {
