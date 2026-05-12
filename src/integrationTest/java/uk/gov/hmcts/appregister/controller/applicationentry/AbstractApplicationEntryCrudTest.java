@@ -508,6 +508,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
 
         if (consumeBeforeCommit != null) {
             consumeBeforeCommit.accept(entryCreateDto);
+            CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
         }
 
         String surnameToLookup = Instancio.gen().string().get();

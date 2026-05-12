@@ -352,6 +352,34 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
     }
 
     @Test
+    public void givenInvalidUpdate_whenFeeStatusDateIsInFuture_400Returned() throws Exception {
+
+        FeeStatus feeStatus = new FeeStatus();
+        feeStatus.setPaymentStatus(PaymentStatus.PAID);
+        feeStatus.setStatusDate(LocalDate.now().plusDays(1));
+
+        EntryUpdateDto entryUpdateDto = getCorrectUpdateDataDto();
+        entryUpdateDto.setFeeStatuses(List.of(feeStatus));
+
+        Response responseSpecCreate = createListEntryWithAllData();
+
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpecUpdate =
+                restAssuredClient.executePutRequest(
+                        HeaderUtil.getLocation(responseSpecCreate),
+                        tokenGenerator.fetchTokenForRole(),
+                        entryUpdateDto);
+
+        responseSpecUpdate.then().statusCode(400);
+        ProblemDetail problemDetail = responseSpecUpdate.as(ProblemDetail.class);
+
+        Assertions.assertEquals(
+                AppListEntryError.STATUS_DATE_CANNOT_BE_IN_FUTURE.getCode().getType().get(),
+                problemDetail.getType());
+    }
+
+    @Test
     public void givenAFailureUpdate_whenWordingTemplateFieldsLengthNotAcceptable_400Returned()
             throws Exception {
 
