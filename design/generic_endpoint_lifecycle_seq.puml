@@ -1,0 +1,110 @@
+@startuml
+
+title Generic AppReg endpoint lifecycle
+
+actor Client
+participant "Generated API interface\n(@Valid request DTO)" as GeneratedApi
+participant Controller
+participant "PageableMapper\n(optional)" as PageableMapper
+participant Service
+participant "Domain Validator\n(optional)" as Validator
+participant AuditOperationServiceImpl as Audit
+participant "AuditOperationLifecycleListener(s)" as AuditListeners
+database Repository
+participant Mapper
+participant AppRegExceptionHandler as ExceptionHandler
+
+Client -> GeneratedApi : HTTP request\nJSON body / path / query params
+activate GeneratedApi
+
+GeneratedApi -> GeneratedApi : deserialize request\nand run Bean Validation
+
+alt generated validation fails
+    GeneratedApi -> ExceptionHandler : MethodArgumentNotValidException /\nHttpMessageNotReadableException
+    activate ExceptionHandler
+    ExceptionHandler --> Client : 400 ProblemDetail\nfield/type errors
+    deactivate ExceptionHandler
+    deactivate GeneratedApi
+else request shape is valid
+    GeneratedApi -> Controller : invoke implemented endpoint method
+    activate Controller
+
+    opt endpoint has pagination or sorting
+        Controller -> PageableMapper : from(page, size, sort,\ndefault sort)
+        activate PageableMapper
+        PageableMapper --> Controller : PagingWrapper
+        deactivate PageableMapper
+    end
+
+    Controller -> Service : service operation(request, helpers)
+    activate Service
+
+    Service -> Audit : processAudit(oldValue?, operation, execution, listeners)
+    activate Audit
+    Audit -> AuditListeners : StartEvent
+    activate AuditListeners
+    AuditListeners --> Audit
+    deactivate AuditListeners
+
+    Audit -> Service : execute callback
+
+    opt endpoint has business/reference validation
+        Service -> Validator : validate(request/filter/payload)
+        activate Validator
+        Validator -> Repository : lookup reference / aggregate state
+        activate Repository
+        Repository --> Validator : records
+        deactivate Repository
+
+        alt business validation fails
+            Validator --> Audit : throws AppRegistryException
+            deactivate Validator
+            Audit -> AuditListeners : FailEvent
+            activate AuditListeners
+            AuditListeners --> Audit
+            deactivate AuditListeners
+            Audit --> Service : rethrow exception
+            deactivate Audit
+            Service --> Controller : exception
+            deactivate Service
+            Controller --> GeneratedApi : exception
+            deactivate Controller
+            GeneratedApi -> ExceptionHandler : AppRegistryException
+            activate ExceptionHandler
+            ExceptionHandler --> Client : ProblemDetail\n(status from error code)
+            deactivate ExceptionHandler
+            deactivate GeneratedApi
+        else validation succeeds
+            Validator --> Service : validated context\n(optional resolved entities)
+            deactivate Validator
+        end
+    end
+
+    Service -> Repository : read/write domain data
+    activate Repository
+    Repository --> Service : entity/projection/page/job
+    deactivate Repository
+
+    Service -> Mapper : map entity/projection to DTO\nor create audit payload
+    activate Mapper
+    Mapper --> Service : response DTO / AuditableResult
+    deactivate Mapper
+
+    Service --> Audit : Optional<AuditableResult>
+    Audit -> Audit : check audit operation shape\n(create/update/delete/read)
+    Audit -> AuditListeners : CompleteEvent
+    activate AuditListeners
+    AuditListeners --> Audit
+    deactivate AuditListeners
+    Audit --> Service : response DTO
+    deactivate Audit
+
+    Service --> Controller : response DTO
+    deactivate Service
+    Controller --> GeneratedApi : ResponseEntity
+    deactivate Controller
+    GeneratedApi --> Client : 2xx response
+    deactivate GeneratedApi
+end
+
+@enduml
