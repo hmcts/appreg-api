@@ -10,6 +10,10 @@ import uk.gov.hmcts.appregister.common.exception.ErrorDetail;
  */
 public class ProblemAssertUtil {
 
+    private static String normalizeLineEndings(String value) {
+        return value == null ? null : value.replace("\r\n", "\n");
+    }
+
     /**
      * Asserts an expected problem details response on an actual response.
      * actualResponseSpecification the actual response
@@ -29,9 +33,13 @@ public class ProblemAssertUtil {
                 expectedErrorDetail.getHttpCode().value(), problemDetail.getStatus());
 
         if (expectedMessage == null) {
-            Assertions.assertEquals(expectedErrorDetail.getMessage(), problemDetail.getDetail());
+            Assertions.assertEquals(
+                    normalizeLineEndings(expectedErrorDetail.getMessage()),
+                    normalizeLineEndings(problemDetail.getDetail()));
         } else {
-            Assertions.assertEquals(expectedMessage, problemDetail.getDetail());
+            Assertions.assertEquals(
+                    normalizeLineEndings(expectedMessage),
+                    normalizeLineEndings(problemDetail.getDetail()));
         }
     }
 
