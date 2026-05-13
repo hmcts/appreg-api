@@ -437,26 +437,22 @@ public abstract class AbstractApplicationEntryValidator<T, O> implements Validat
         validatePaymentReferenceNotAllowedWhenDue(feeStatuses, validatable);
 
         // check that the fee status payload make sense according to the application code
-        YesOrNo yesOrNo = applicationCode.getFeeDue();
         if (isFeeStatusRequired(applicationCode, validatable) && feeStatuses.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_REQUIRED,
                     "Fee required for code %s".formatted(getApplicationCode(validatable)));
         }
-        // ARCPOC - 1264 - this validation will be handled in the front end to persist fee status
-        // data.
-        //        } else if (yesOrNo == YesOrNo.NO && !feeStatuses.isEmpty()) {
-        //            throw new AppRegistryException(
-        //                    AppListEntryError.FEE_NOT_REQUIRED,
-        //                    "Fee is provided but not required for code %s"
-        //                            .formatted(getApplicationCode(validatable)));
-        //        }
 
         // if the fee is required but it cant be found then error
         if (applicationCode.getFeeDue() == YesOrNo.YES) {
-            FeePair fees = feeService.resolveFeePair(applicationCode.getFeeReference());
-
-            feeToReturn = fees;
+            feeToReturn =
+                    feeService.resolveFeePair(
+                            applicationCode.getFeeReference(), getLodgementDate(validatable));
+            // this is to hide the offsite fee if the flag is not set, as we only want to return the
+            // main fee to the frontend if the offsite fee is not required.
+            if (getHasOffsiteFee(validatable) == Boolean.FALSE && feeToReturn != null) {
+                feeToReturn = new FeePair(feeToReturn.mainFee(), null);
+            }
         }
 
         return feeToReturn;
