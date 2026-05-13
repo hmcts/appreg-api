@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.courtlocation.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -59,11 +60,13 @@ public interface CourtLocationMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "courtLocationCode", source = "code")
     @Mapping(target = "startDate", source = "date")
+    @BeanMapping(ignoreByDefault = true)
     NationalCourtHouse toEntity(String code, LocalDate date);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "courtLocationCode", source = "code", defaultValue = "")
     @Mapping(target = "name", source = "name", defaultValue = "")
+    @BeanMapping(ignoreByDefault = true)
     NationalCourtHouse toEntity(CodeAndName code);
 
     /**

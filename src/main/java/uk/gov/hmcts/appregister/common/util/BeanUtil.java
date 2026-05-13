@@ -15,6 +15,7 @@ public class BeanUtil {
      * @return The bean copy
      */
     // CHECKSTYLE:OFF
+    @SuppressWarnings("unchecked")
     public static <T> T copyBean(T beanToCopy) {
         T before = null;
         if (beanToCopy != null) {

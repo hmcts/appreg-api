@@ -49,7 +49,6 @@ public abstract class BasePostgresIntegrationTest {
 
     @BeforeEach
     public void beforeEachTest() {
-        reset.resetSequences();
         reset.resetDbData();
     }
 

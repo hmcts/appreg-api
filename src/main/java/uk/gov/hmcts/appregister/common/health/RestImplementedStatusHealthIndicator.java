@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Component
 @Endpoint(id = "rest-implementation-status")
 @Slf4j
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class RestImplementedStatusHealthIndicator {
 
     // markers for implemented and not implemented endpoints
