@@ -1,0 +1,53 @@
+name: Codex PR Review Feedback
+
+on:
+  pull_request_review:
+    types: [submitted]
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  codex-review-feedback:
+    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      GH_TOKEN: ${{ github.token }}
+      CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Verify runner toolchain and Codex auth
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Run Codex on review feedback
+        id: codex
+        env:
+          PROMPT_PATH: ${{ runner.temp }}/codex-review-feedback-prompt.md
+        run: ./.github/scripts/codex-pr-review-feedback.sh
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          {
+            echo "## Codex PR Review Feedback"
+            echo
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo "- Pull request: ${{ steps.codex.outputs.pr_number }}"
+            echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
+            echo "- Commit: ${{ steps.codex.outputs.commit_sha }}"
+          } >>"$GITHUB_STEP_SUMMARY"

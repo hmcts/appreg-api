@@ -206,7 +206,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.uuid as listId,
                     ac.title AS applicationTitle,
                     ale.sequenceNumber as sequenceNumber,
-                    rc.resultCode as resulted
+                    rc.resultCode as resulted,
+                    CASE WHEN aler.id IS NULL THEN false ELSE true END as isResulted
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
