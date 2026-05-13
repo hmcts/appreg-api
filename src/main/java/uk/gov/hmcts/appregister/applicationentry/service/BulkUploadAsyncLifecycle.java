@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +14,14 @@ import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
@@ -29,10 +33,48 @@ import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 @RequiredArgsConstructor
 public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow> {
     private static final int FIRST_DATA_ROW_NUMBER = 2;
+    private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
+    private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
+    private static final String BULK_UPLOAD_ROW = "BULK_UPLOAD_ROW";
+    private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
+            Map.ofEntries(
+                    Map.entry(
+                            CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                            APPLICATION_TEXT_COLUMNS),
+                    Map.entry(CommonAppError.WORDING_LENGTH_FAILURE, APPLICATION_TEXT_COLUMNS),
+                    Map.entry(CommonAppError.WORDING_DATA_TYPE_FAILURE, APPLICATION_TEXT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST, "APPLICANT_CODE"),
+                    Map.entry(
+                            AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                            "APPLICANT_CODE"),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "APPLICATION_CODE"),
+                    Map.entry(
+                            AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                            "ACCOUNT_NUMBER"),
+                    Map.entry(
+                            AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(AppListEntryError.RESPONDENT_REQUIRED, RESPONDENT_COLUMNS),
+                    Map.entry(AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED, RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError
+                                    .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, "APPLICATION_LIST"),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                            "APPLICATION_LIST"));
 
     private final UUID listId;
     private final ApplicationEntryService applicationEntryService;
     private final BulkUploadApplicationEntryValidator validator;
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
     private final ApplicationListEntryMapper mapper;
     private final Validator beanValidator;
 
@@ -61,9 +103,14 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         int rowNumber = FIRST_DATA_ROW_NUMBER;
 
         for (BulkUploadRow row : rows) {
+            EntryCreateDto dto = mapper.toEntryCreateDto(row);
             List<BulkUploadError> rowErrors = new ArrayList<>();
             rowErrors.addAll(validator.validateRow(rowNumber, row));
-            rowErrors.addAll(validateMappedDto(rowNumber, row));
+            rowErrors.addAll(validateMappedDto(rowNumber, dto));
+
+            if (rowErrors.isEmpty()) {
+                rowErrors.addAll(validateBusinessRules(rowNumber, dto));
+            }
 
             if (!rowErrors.isEmpty()) {
 
@@ -88,13 +135,33 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
         log.info("Bulk upload validation passed");
     }
 
-    private List<BulkUploadError> validateMappedDto(int rowNumber, BulkUploadRow row) {
-        EntryCreateDto dto = mapper.toEntryCreateDto(row);
-
+    private List<BulkUploadError> validateMappedDto(int rowNumber, EntryCreateDto dto) {
         return beanValidator.validate(dto).stream()
+                .filter(BulkUploadAsyncLifecycle::isNotWordingFieldViolation)
                 .sorted(Comparator.comparing(violation -> violation.getPropertyPath().toString()))
                 .map(violation -> toBulkUploadError(rowNumber, violation))
                 .toList();
+    }
+
+    private List<BulkUploadError> validateBusinessRules(int rowNumber, EntryCreateDto dto) {
+        try {
+            bulkCreateApplicationEntryValidator.validate(
+                    PayloadForCreate.<EntryCreateDto>builder().id(listId).data(dto).build(),
+                    (validatable, result) -> null);
+            return List.of();
+        } catch (AppRegistryException exception) {
+            return List.of(
+                    new BulkUploadError(
+                            rowNumber,
+                            locationForBusinessRule(exception),
+                            null,
+                            exception.getMessage()));
+        }
+    }
+
+    private static boolean isNotWordingFieldViolation(
+            ConstraintViolation<EntryCreateDto> violation) {
+        return !violation.getPropertyPath().toString().startsWith("wordingFields");
     }
 
     private static BulkUploadError toBulkUploadError(
@@ -109,6 +176,10 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static String rejectedValue(ConstraintViolation<?> violation) {
         Object invalidValue = violation.getInvalidValue();
         return invalidValue == null ? null : invalidValue.toString();
+    }
+
+    private static String locationForBusinessRule(AppRegistryException exception) {
+        return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
     }
 
     private void logValidationFailure(JobContext context, BulkUploadError error) {
