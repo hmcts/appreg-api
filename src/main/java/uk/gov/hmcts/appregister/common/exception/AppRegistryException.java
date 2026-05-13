@@ -10,9 +10,11 @@ import lombok.Getter;
 @Getter
 public class AppRegistryException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     private final transient ErrorCodeEnum code;
 
-    private Map<String, String> details = new HashMap<>();
+    private HashMap<String, String> details = new HashMap<>();
 
     /**
      * Construct exception.
@@ -48,6 +50,6 @@ public class AppRegistryException extends RuntimeException {
     public AppRegistryException(ErrorCodeEnum code, String detail, Map<String, String> details) {
         super(detail, null);
         this.code = code;
-        this.details = details;
+        this.details = new HashMap<>(details);
     }
 }

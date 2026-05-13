@@ -2,6 +2,8 @@ package uk.gov.hmcts.appregister.common.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -11,6 +13,11 @@ import java.util.UUID;
 public class AppRegTempFileUtil {
 
     public static final String TEMP_FILE_EXTENSION = "appregtmp";
+
+    private static final Path TEMP_DIRECTORY =
+            Path.of(
+                    System.getProperty("java.io.tmpdir"),
+                    "appreg-" + ProcessHandle.current().pid());
 
     private AppRegTempFileUtil() {
         // Utility class
@@ -32,8 +39,12 @@ public class AppRegTempFileUtil {
      * @return The temp file
      */
     public static File generateTempFile(String prefix) throws IOException {
+        Files.createDirectories(TEMP_DIRECTORY);
+
         return File.createTempFile(
-                prefix + "-" + UUID.randomUUID(), "." + TEMP_FILE_EXTENSION); // NOSONAR
+                prefix + "-" + UUID.randomUUID(),
+                "." + TEMP_FILE_EXTENSION,
+                TEMP_DIRECTORY.toFile()); // NOSONAR
         // - we want to use the default temp directory as this is guaranteed to be writable
         // and will be cleaned up by the system.
     }
@@ -55,7 +66,12 @@ public class AppRegTempFileUtil {
      * @return The temp files that exist
      */
     public static File[] getTempFilesThatExist() {
-        return new File(System.getProperty("java.io.tmpdir"))
+        if (!Files.isDirectory(TEMP_DIRECTORY)) {
+            return new File[0];
+        }
+
+        return TEMP_DIRECTORY
+                .toFile()
                 .listFiles(file -> file.getName().endsWith(TEMP_FILE_EXTENSION));
     }
 }

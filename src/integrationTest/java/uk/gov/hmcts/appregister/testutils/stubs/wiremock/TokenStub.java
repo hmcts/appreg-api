@@ -15,6 +15,15 @@ public class TokenStub {
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
     protected String jwksUri;
 
+    private boolean jwksKeysStubbed;
+
+    public synchronized void stubExternalJwksKeysOnce(String keys) {
+        if (!jwksKeysStubbed) {
+            stubExternalJwksKeys(keys);
+            jwksKeysStubbed = true;
+        }
+    }
+
     @SuppressWarnings("checkstyle:linelength")
     public void stubExternalJwksKeys(String keys) {
         String path = URI.create(jwksUri).getPath();

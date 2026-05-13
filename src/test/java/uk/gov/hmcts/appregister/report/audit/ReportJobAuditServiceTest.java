@@ -37,7 +37,7 @@ class ReportJobAuditServiceTest {
         ArgumentCaptor<ReportJobAudit> oldAuditCaptor =
                 ArgumentCaptor.forClass(ReportJobAudit.class);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
-                executionCaptor = ArgumentCaptor.forClass(Function.class);
+                executionCaptor = executionCaptor();
 
         Mockito.doReturn(null)
                 .when(auditService)
@@ -74,7 +74,7 @@ class ReportJobAuditServiceTest {
         ArgumentCaptor<ReportJobAudit> oldAuditCaptor =
                 ArgumentCaptor.forClass(ReportJobAudit.class);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
-                executionCaptor = ArgumentCaptor.forClass(Function.class);
+                executionCaptor = executionCaptor();
 
         Mockito.doReturn(null)
                 .when(auditService)
@@ -101,7 +101,7 @@ class ReportJobAuditServiceTest {
         ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
         JobStatusResponse job = reportJob(JobType.DURATION_REPORT);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
-                executionCaptor = ArgumentCaptor.forClass(Function.class);
+                executionCaptor = executionCaptor();
 
         Mockito.doReturn(null)
                 .when(auditService)
@@ -131,7 +131,7 @@ class ReportJobAuditServiceTest {
         ReportJobAuditService service = new ReportJobAuditService(auditService, List.of());
         JobStatusResponse job = reportJob(JobType.DURATION_REPORT);
         ArgumentCaptor<Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
-                executionCaptor = ArgumentCaptor.forClass(Function.class);
+                executionCaptor = executionCaptor();
 
         Mockito.doReturn(null)
                 .when(auditService)
@@ -187,5 +187,12 @@ class ReportJobAuditServiceTest {
 
     private AuditableData status(JobStatus1 status) {
         return new AuditableData("report_jobs", "status", status.toString());
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private ArgumentCaptor<
+                    Function<BaseAuditEvent, Optional<AuditableResult<Object, ReportJobAudit>>>>
+            executionCaptor() {
+        return ArgumentCaptor.forClass((Class) Function.class);
     }
 }

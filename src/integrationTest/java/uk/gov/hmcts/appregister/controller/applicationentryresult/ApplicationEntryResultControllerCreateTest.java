@@ -683,7 +683,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the app entry
         Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
-        ProblemAssertUtil.assertEquals(
+        ProblemAssertUtil.assertEqualsIgnoringDetailLineOrder(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode(),
                 "valueSize=1\n" + "templateSize=2\n",
                 resp);
@@ -1002,7 +1002,7 @@ public class ApplicationEntryResultControllerCreateTest
 
         // create the app entry
         Response resp = createBulkResult(token, bulkResultDto);
-        ProblemAssertUtil.assertEquals(
+        ProblemAssertUtil.assertEqualsIgnoringDetailLineOrder(
                 CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode(),
                 "valueSize=1\n" + "templateSize=2\n",
                 resp);
