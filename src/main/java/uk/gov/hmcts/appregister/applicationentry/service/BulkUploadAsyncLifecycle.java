@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycle;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.common.exception.ErrorCodeEnum;
 import uk.gov.hmcts.appregister.common.model.PayloadForCreate;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 
@@ -33,6 +35,41 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     private static final int FIRST_DATA_ROW_NUMBER = 2;
     private static final String APPLICATION_TEXT_COLUMNS = "APPLICATION_TEXT";
     private static final String RESPONDENT_COLUMNS = "RESP_NAME_ORG/RESP_FORENAME1/RESP_SURNAME";
+    private static final String BULK_UPLOAD_ROW = "BULK_UPLOAD_ROW";
+    private static final Map<ErrorCodeEnum, String> BUSINESS_RULE_LOCATIONS =
+            Map.ofEntries(
+                    Map.entry(
+                            CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                            APPLICATION_TEXT_COLUMNS),
+                    Map.entry(CommonAppError.WORDING_LENGTH_FAILURE, APPLICATION_TEXT_COLUMNS),
+                    Map.entry(CommonAppError.WORDING_DATA_TYPE_FAILURE, APPLICATION_TEXT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST, "APPLICANT_CODE"),
+                    Map.entry(
+                            AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                            "APPLICANT_CODE"),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST, "APPLICATION_CODE"),
+                    Map.entry(
+                            AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE,
+                            "ACCOUNT_NUMBER"),
+                    Map.entry(
+                            AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(AppListEntryError.RESPONDENT_REQUIRED, RESPONDENT_COLUMNS),
+                    Map.entry(AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED, RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError
+                                    .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE,
+                            RESPONDENT_COLUMNS),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST, "APPLICATION_LIST"),
+                    Map.entry(
+                            AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT,
+                            "APPLICATION_LIST"));
 
     private final UUID listId;
     private final ApplicationEntryService applicationEntryService;
@@ -142,52 +179,7 @@ public class BulkUploadAsyncLifecycle implements AsyncJobLifecycle<BulkUploadRow
     }
 
     private static String locationForBusinessRule(AppRegistryException exception) {
-        if (isWordingError(exception)) {
-            return APPLICATION_TEXT_COLUMNS;
-        }
-
-        if (exception.getCode() == AppListEntryError.STANDARD_APPLICANT_DOES_NOT_EXIST
-                || exception.getCode()
-                        == AppListEntryError.APPLICANT_CAN_ONLY_BE_ORGANISATION_OR_PERSON) {
-            return "APPLICANT_CODE";
-        }
-
-        if (exception.getCode() == AppListEntryError.APPLICATION_CODE_DOES_NOT_EXIST) {
-            return "APPLICATION_CODE";
-        }
-
-        if (exception.getCode() == AppListEntryError.ACCOUNT_NUMBER_REQUIRED_FOR_APPLICATION_CODE) {
-            return "ACCOUNT_NUMBER";
-        }
-
-        if (isRespondentError(exception)) {
-            return RESPONDENT_COLUMNS;
-        }
-
-        if (exception.getCode() == AppListEntryError.APPLICATION_LIST_DOES_NOT_EXIST
-                || exception.getCode() == AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT) {
-            return "APPLICATION_LIST";
-        }
-
-        return "BULK_UPLOAD_ROW";
-    }
-
-    private static boolean isWordingError(AppRegistryException exception) {
-        return exception.getCode() == CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH
-                || exception.getCode() == CommonAppError.WORDING_LENGTH_FAILURE
-                || exception.getCode() == CommonAppError.WORDING_DATA_TYPE_FAILURE;
-    }
-
-    private static boolean isRespondentError(AppRegistryException exception) {
-        return exception.getCode()
-                        == AppListEntryError.RESPONDENT_CAN_ONLY_BE_ORGANISATION_OR_PERSON
-                || exception.getCode() == AppListEntryError.RESPONDENT_REQUIRED
-                || exception.getCode() == AppListEntryError.BULK_RESPONDENT_NOT_EXPECTED
-                || exception.getCode()
-                        == AppListEntryError.RESPONDENT_OR_NUMBER_OF_RESPONDENTS_REQUIRED
-                || exception.getCode()
-                        == AppListEntryError
-                                .BULK_RESPONDENT_NUMBER_AND_RESPONDENT_MUTUALLY_EXCLUSIVE;
+        return BUSINESS_RULE_LOCATIONS.getOrDefault(exception.getCode(), BULK_UPLOAD_ROW);
     }
 
     private void logValidationFailure(JobContext context, BulkUploadError error) {
