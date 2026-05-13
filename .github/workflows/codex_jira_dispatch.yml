@@ -1,0 +1,87 @@
+name: Codex Jira Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      issueKey:
+        description: Jira issue key
+        required: true
+        type: string
+      summary:
+        description: Jira issue summary
+        required: true
+        type: string
+      description:
+        description: Jira issue description
+        required: true
+        type: string
+      status:
+        description: Jira issue status
+        required: true
+        type: string
+      assignee:
+        description: Jira assignee
+        required: true
+        type: string
+      issueUrl:
+        description: Jira issue URL
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  codex-dispatch:
+    runs-on: codex-pilot-azure-aks
+    timeout-minutes: 120
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      ISSUE_KEY: ${{ inputs.issueKey }}
+      ISSUE_SUMMARY: ${{ inputs.summary }}
+      ISSUE_DESCRIPTION: ${{ inputs.description }}
+      ISSUE_STATUS: ${{ inputs.status }}
+      ISSUE_ASSIGNEE: ${{ inputs.assignee }}
+      ISSUE_URL: ${{ inputs.issueUrl }}
+      GH_TOKEN: ${{ github.token }}
+      CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL || 'https://justice-ai-coe.atlassian.net' }}
+      JIRA_TARGET_STATUS: ${{ vars.JIRA_TARGET_STATUS || 'Dev Review' }}
+      JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Verify runner toolchain and Codex auth
+        run: ./.github/scripts/codex-runner-preflight.sh
+
+      - name: Run Codex and open pull request
+        id: codex
+        env:
+          PAYLOAD_PATH: build/codex/jira-ticket.json
+          PROMPT_PATH: ${{ runner.temp }}/codex-prompt.md
+          PR_BODY_PATH: ${{ runner.temp }}/codex-pr-body.md
+        run: ./.github/scripts/codex-jira-implement.sh
+
+      - name: Write workflow summary
+        if: always()
+        run: |
+          {
+            echo "## Codex Jira Dispatch"
+            echo
+            echo "- Issue: $ISSUE_KEY"
+            echo "- Summary: $ISSUE_SUMMARY"
+            echo "- Status: $ISSUE_STATUS"
+            echo "- Assignee: $ISSUE_ASSIGNEE"
+            echo "- URL: $ISSUE_URL"
+            echo "- Payload file: build/codex/jira-ticket.json"
+            echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
+            echo "- Pull request: ${{ steps.codex.outputs.pr_url }}"
+          } >>"$GITHUB_STEP_SUMMARY"
