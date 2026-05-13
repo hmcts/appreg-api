@@ -2,10 +2,12 @@ package uk.gov.hmcts.appregister.applicationentryresult.service;
 
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
@@ -53,4 +55,11 @@ public interface ApplicationEntryResultService {
      */
     ResultPage search(
             PayloadGetEntryResultInList payloadGetEntryResultInList, PagingWrapper pageable);
+
+    /**
+     * bulk results a group of entries within a list with a result code.
+     *
+     * @param bulkResultDto The bulk result dto.
+     */
+    void bulkCreate(PayloadForCreateResults<BulkResultDto> bulkResultDto);
 }

@@ -16,7 +16,6 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.ProblemDetail;
 import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -25,9 +24,9 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
+import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.SortableField;
-import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationCodePage;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -720,6 +719,86 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
+    public void givenSupportedSortKeys_whenGetApplicationEntries_thenSortBeforePaging()
+            throws Exception {
+        String uniqueToken = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String accountReferencePrefix = "SORT-" + uniqueToken + "-";
+        SortFixture fixture = createGlobalSortFixture(uniqueToken, accountReferencePrefix);
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.DATE,
+                fixture.dateOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.APPLICANT,
+                fixture.applicantOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.RESPONDENT,
+                fixture.respondentOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.APPLICATION_TITLE,
+                fixture.applicationTitleOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.FEE_REQUIRED,
+                fixture.feeRequiredOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.RESULTED,
+                fixture.resultedOrder());
+        assertPagedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                ApplicationEntrySortFieldEnum.STATUS,
+                fixture.statusOrder());
+    }
+
+    @StabilityTest
+    public void givenResultedAndUnresultedEntries_whenGetApplicationEntriesSortedByIsResulted()
+            throws Exception {
+        String uniqueToken = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        String accountReferencePrefix = "ISR-" + uniqueToken + "-";
+        String applicationCodePrefix = "IR" + uniqueToken.substring(0, 5).toUpperCase();
+        ApplicationList list = createAndSaveList(Status.OPEN);
+
+        ApplicationListEntry unresulted =
+                createEntryForIsResultedSort(
+                        list, applicationCodePrefix + "A", accountReferencePrefix + "A");
+        ApplicationListEntry resultedOne =
+                createEntryForIsResultedSort(
+                        list, applicationCodePrefix + "B", accountReferencePrefix + "B");
+        ApplicationListEntry resultedTwo =
+                createEntryForIsResultedSort(
+                        list, applicationCodePrefix + "C", accountReferencePrefix + "C");
+
+        addResolution(resultedOne, "IR1");
+        addResolution(resultedTwo, "IR2");
+
+        TokenGenerator tokenGenerator = createAdminToken();
+
+        assertIsResultedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                SortableField.getSortStringForAsc(ApplicationEntrySortFieldEnum.IS_RESULTED),
+                List.of(unresulted.getUuid(), resultedOne.getUuid(), resultedTwo.getUuid()));
+        assertIsResultedSortOrder(
+                tokenGenerator,
+                accountReferencePrefix,
+                SortableField.getSortStringForDesc(ApplicationEntrySortFieldEnum.IS_RESULTED),
+                List.of(resultedTwo.getUuid(), resultedOne.getUuid(), unresulted.getUuid()));
+    }
+
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPageNumberBeyondResultBoundary_thenReturn200()
                     throws Exception {
@@ -765,6 +844,22 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
     }
 
     @StabilityTest
+    public void givenCourtCodeSort_whenGetApplicationEntries_thenReturn400() throws Exception {
+        var tokenGenerator = createAdminToken();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(1),
+                        Optional.of(0),
+                        List.of("courtCode,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseSpec.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(CommonAppError.SORT_NOT_SUITABLE.getCode(), responseSpec);
+    }
+
+    @StabilityTest
     public void
             givenValidRequest_whenGetApplicationEntriesWithPagingInvalidPageNumber_thenReturn400()
                     throws Exception {
@@ -781,6 +876,164 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
 
         responseSpec.then().statusCode(400);
     }
+
+    private SortFixture createGlobalSortFixture(String uniqueToken, String accountReferencePrefix) {
+        String applicationCodePrefix = "S" + uniqueToken.substring(0, 5).toUpperCase();
+        ApplicationListEntry alpha =
+                createSortableEntry(
+                        Status.CLOSED,
+                        LocalDate.of(2024, 1, 3),
+                        accountReferencePrefix + "A",
+                        applicationCodePrefix + "A",
+                        "Gamma Application",
+                        YesOrNo.YES,
+                        "Alice",
+                        "Zebra",
+                        "Carol",
+                        "Able",
+                        "M");
+        ApplicationListEntry bravo =
+                createSortableEntry(
+                        Status.OPEN,
+                        LocalDate.of(2024, 1, 1),
+                        accountReferencePrefix + "B",
+                        applicationCodePrefix + "B",
+                        "Alpha Application",
+                        YesOrNo.NO,
+                        "Bob",
+                        "Yellow",
+                        "Alice",
+                        "Baker",
+                        "A");
+        ApplicationListEntry charlie =
+                createSortableEntry(
+                        Status.OPEN,
+                        LocalDate.of(2024, 1, 2),
+                        accountReferencePrefix + "C",
+                        applicationCodePrefix + "C",
+                        "Beta Application",
+                        YesOrNo.YES,
+                        "Carol",
+                        "Xavier",
+                        "Bob",
+                        "Cable",
+                        "Z");
+
+        return new SortFixture(
+                List.of(bravo.getUuid(), charlie.getUuid(), alpha.getUuid()),
+                List.of(alpha.getUuid(), bravo.getUuid(), charlie.getUuid()),
+                List.of(bravo.getUuid(), charlie.getUuid(), alpha.getUuid()),
+                List.of(bravo.getUuid(), charlie.getUuid(), alpha.getUuid()),
+                List.of(bravo.getUuid(), alpha.getUuid(), charlie.getUuid()),
+                List.of(bravo.getUuid(), alpha.getUuid(), charlie.getUuid()),
+                List.of(alpha.getUuid(), bravo.getUuid(), charlie.getUuid()));
+    }
+
+    private ApplicationListEntry createSortableEntry(
+            Status status,
+            LocalDate date,
+            String accountReference,
+            String applicationCodeValue,
+            String applicationTitle,
+            YesOrNo feeRequired,
+            String applicantForename,
+            String applicantSurname,
+            String respondentForename,
+            String respondentSurname,
+            String resultCode) {
+        ApplicationList list = createAndSaveList(status);
+        list.setDate(date);
+        persistance.save(list);
+
+        ApplicationCode applicationCode = createApplicationCode(applicationCodeValue, true);
+        applicationCode.setTitle(applicationTitle);
+        applicationCode.setFeeDue(feeRequired);
+        applicationCode.setApplicationListEntryList(null);
+        applicationCode = persistance.save(applicationCode);
+        applicationCode.setApplicationListEntryList(null);
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber(accountReference);
+        setApplicantName(entry, "Mx", applicantForename, applicantSurname);
+        setRespondentName(entry, "Mx", respondentForename, respondentSurname);
+        entry.getAnamedaddress().setName(null);
+        entry.getRnameaddress().setName(null);
+        persistance.save(entry.getAnamedaddress());
+        persistance.save(entry.getRnameaddress());
+        entry = persistance.save(entry);
+        addResolution(entry, resultCode);
+
+        return entry;
+    }
+
+    private ApplicationListEntry createEntryForIsResultedSort(
+            ApplicationList list, String applicationCodeValue, String accountReference) {
+        ApplicationCode applicationCode = createApplicationCode(applicationCodeValue, true);
+        applicationCode.setApplicationListEntryList(null);
+
+        ApplicationListEntry entry = createEntry(list);
+        entry.setApplicationCode(applicationCode);
+        entry.setAccountNumber(accountReference);
+        return persistance.save(entry);
+    }
+
+    private void assertIsResultedSortOrder(
+            TokenGenerator tokenGenerator,
+            String accountReferencePrefix,
+            String sort,
+            List<UUID> expectedOrder)
+            throws Exception {
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(3),
+                        Optional.of(0),
+                        List.of(sort),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        rs -> rs.queryParam("accountReference", accountReferencePrefix),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        EntryPage page = responseSpec.as(EntryPage.class);
+        PagingAssertionUtil.assertPageDetails(page, 3, 0, 1, 3);
+        Assertions.assertEquals(
+                expectedOrder, page.getContent().stream().map(EntryGetSummaryDto::getId).toList());
+    }
+
+    private void assertPagedSortOrder(
+            TokenGenerator tokenGenerator,
+            String accountReferencePrefix,
+            ApplicationEntrySortFieldEnum sortField,
+            List<UUID> expectedOrder)
+            throws Exception {
+        for (int pageNumber = 0; pageNumber < expectedOrder.size(); pageNumber++) {
+            Response responseSpec =
+                    restAssuredClient.executeGetRequestWithPaging(
+                            Optional.of(1),
+                            Optional.of(pageNumber),
+                            List.of(SortableField.getSortStringForAsc(sortField)),
+                            getLocalUrl(WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            rs -> rs.queryParam("accountReference", accountReferencePrefix),
+                            new OpenApiPageMetaData());
+
+            responseSpec.then().statusCode(200);
+            EntryPage page = responseSpec.as(EntryPage.class);
+            PagingAssertionUtil.assertPageDetails(page, 1, pageNumber, 3, 3);
+            Assertions.assertEquals(
+                    expectedOrder.get(pageNumber), page.getContent().getFirst().getId());
+        }
+    }
+
+    private record SortFixture(
+            List<UUID> dateOrder,
+            List<UUID> applicantOrder,
+            List<UUID> respondentOrder,
+            List<UUID> applicationTitleOrder,
+            List<UUID> feeRequiredOrder,
+            List<UUID> resultedOrder,
+            List<UUID> statusOrder) {}
 
     @StabilityTest
     public void
@@ -809,17 +1062,14 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
                         Optional.of(maxPageSize),
                         Optional.of(0),
                         List.of(
-                                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getApiValue(),
-                                ApplicationEntrySortFieldEnum.LOCATION.getApiValue()),
+                                ApplicationEntrySortFieldEnum.APPLICATION_TITLE.getApiValue()
+                                        + ",asc",
+                                ApplicationEntrySortFieldEnum.APPLICANT.getApiValue() + ",asc"),
                         getLocalUrl(WEB_CONTEXT),
                         tokenGenerator.fetchTokenForRole());
 
         // assert the response
         responseSpec.then().statusCode(400);
-        ProblemDetail problemDetail = responseSpec.as(ProblemDetail.class);
-        Assertions.assertEquals(
-                CommonAppError.MULTIPLE_SORT_NOT_SUPPORTED.getCode().getType().get(),
-                problemDetail.getType());
     }
 
     @Test
@@ -903,92 +1153,6 @@ public class ApplicationEntryControllerSearchTest extends AbstractApplicationEnt
         EntryPage page = responseSpec.as(EntryPage.class);
 
         Assertions.assertNull(page.getContent());
-    }
-
-    @StabilityTest
-    public void givenValidRequest_whenSortAccountNumber_thenReturn200() throws Exception {
-        // set up the data
-        ApplicationList applicationList = createAndSaveList(Status.OPEN);
-
-        ApplicationListEntry applicationListEntry = createEntry(applicationList);
-        applicationListEntry.setAccountNumber("z - a account number");
-        persistance.save(applicationListEntry);
-
-        ApplicationListEntry applicationListEntry1 = createEntry(applicationList);
-        applicationListEntry1.setAccountNumber("z - c account number");
-        persistance.save(applicationListEntry1);
-
-        ApplicationListEntry applicationListEntry2 = createEntry(applicationList);
-        applicationListEntry2.setAccountNumber("z - b account number");
-        persistance.save(applicationListEntry2);
-
-        // create the token
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        // execute the functionality
-        int pageSize = 5;
-        int pageNumber = 0;
-        Response responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(pageSize),
-                        Optional.of(pageNumber),
-                        List.of(
-                                SortableField.getSortStringForDesc(
-                                        ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE)),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole());
-
-        // assert the response
-        responseSpec.then().statusCode(200);
-        EntryPage page = responseSpec.as(EntryPage.class);
-
-        // make sure the order response marries with the request data
-        Assertions.assertEquals(1, page.getSort().getOrders().size());
-        Assertions.assertEquals(
-                SortOrdersInner.DirectionEnum.DESC,
-                page.getSort().getOrders().get(0).getDirection());
-
-        // make sure we only return defaulted externalised api sort data
-        Assertions.assertEquals(
-                ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE.getApiValue(),
-                page.getSort().getOrders().get(0).getProperty());
-
-        // make sure the order is correct for the account number sort
-        Assertions.assertEquals(applicationListEntry1.getUuid(), page.getContent().get(0).getId());
-        Assertions.assertEquals(applicationListEntry2.getUuid(), page.getContent().get(1).getId());
-        Assertions.assertEquals(applicationListEntry.getUuid(), page.getContent().get(2).getId());
-
-        applicationListEntry = createEntry(applicationList);
-        applicationListEntry.setAccountNumber("111111 - z");
-        persistance.save(applicationListEntry);
-
-        applicationListEntry1 = createEntry(applicationList);
-        applicationListEntry1.setAccountNumber("111111 - c");
-        persistance.save(applicationListEntry1);
-
-        applicationListEntry2 = createEntry(applicationList);
-        applicationListEntry2.setAccountNumber("111111 - b");
-        persistance.save(applicationListEntry2);
-
-        // execute the functionality with the opposite sort direction
-        responseSpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(pageSize),
-                        Optional.of(pageNumber),
-                        List.of(
-                                SortableField.getSortStringForAsc(
-                                        ApplicationEntrySortFieldEnum.ACCOUNT_REFERENCE)),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole());
-
-        responseSpec.then().statusCode(200);
-        page = responseSpec.as(EntryPage.class);
-
-        // make sure the order is correct for the account number sort
-        Assertions.assertEquals(applicationListEntry2.getUuid(), page.getContent().get(0).getId());
-        Assertions.assertEquals(applicationListEntry1.getUuid(), page.getContent().get(1).getId());
-        Assertions.assertEquals(applicationListEntry.getUuid(), page.getContent().get(2).getId());
     }
 
     @Test

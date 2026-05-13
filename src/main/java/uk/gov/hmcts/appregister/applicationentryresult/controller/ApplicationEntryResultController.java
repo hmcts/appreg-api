@@ -16,6 +16,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentryresult.api.ApplicationEntryResultSortFieldEnum;
 import uk.gov.hmcts.appregister.applicationentryresult.model.ListEntryResultDeleteArgs;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateEntryResult;
+import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForCreateResults;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadForUpdateEntryResult;
 import uk.gov.hmcts.appregister.applicationentryresult.model.PayloadGetEntryResultInList;
 import uk.gov.hmcts.appregister.applicationentryresult.service.ApplicationEntryResultService;
@@ -24,6 +25,7 @@ import uk.gov.hmcts.appregister.common.mapper.PageableMapper;
 import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntryResultsApi;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
@@ -45,6 +47,30 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
 
     public static final MediaType VND_JSON_V1 =
             MediaType.parseMediaType("application/vnd.hmcts.appreg.v1+json");
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> bulkResultApplicationListEntries(
+            UUID listId, BulkResultDto bulkResultDto) {
+        // call the service to process the bulk result for the list of entries
+        service.bulkCreate(
+                PayloadForCreateResults.<BulkResultDto>builder()
+                        .payload(bulkResultDto)
+                        .listId(listId)
+                        .build());
+
+        return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> bulkResultEntries(BulkResultDto bulkResultDto) {
+        // call the service to process the bulk result for the list of entries
+        service.bulkCreate(
+                PayloadForCreateResults.<BulkResultDto>builder().payload(bulkResultDto).build());
+
+        return ResponseEntity.noContent().varyBy(HttpHeaders.ACCEPT).build();
+    }
 
     /**
      * Deletes an Application List Entry Result.

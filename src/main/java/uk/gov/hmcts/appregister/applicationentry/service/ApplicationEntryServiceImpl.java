@@ -20,17 +20,24 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryMoveAudit;
 import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadAudit;
+import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.DeleteApplicationListEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.GetApplicationListEntriesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.UpdateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.UpdateClosedApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
 import uk.gov.hmcts.appregister.applicationlist.model.MoveEntriesPayload;
 import uk.gov.hmcts.appregister.applicationlist.validator.MoveEntriesValidator;
@@ -68,6 +75,7 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -97,7 +105,11 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
     private final UpdateApplicationEntryValidator updateApplicationEntryValidator;
 
+    private final UpdateClosedApplicationEntryValidator updateClosedApplicationEntryValidator;
+
     private final MoveEntriesValidator moveEntriesValidator;
+
+    private final BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     // Services
     private final MatchService matchService;
@@ -127,6 +139,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final Clock clock;
     private final BusinessDateProvider businessDateProvider;
 
+    private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
+
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         log.debug(
@@ -151,15 +165,15 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     filterDto.getCjaCode(),
                                     filterDto.getApplicantOrganisation(),
                                     filterDto.getApplicantSurname(),
-                                    null,
+                                    filterDto.getApplicantName(),
                                     filterDto.getStandardApplicantCode(),
                                     status,
                                     filterDto.getRespondentOrganisation(),
                                     filterDto.getRespondentSurname(),
-                                    null,
+                                    filterDto.getRespondentName(),
                                     filterDto.getRespondentPostcode(),
                                     filterDto.getAccountReference(),
-                                    null,
+                                    filterDto.getApplicationTitle(),
                                     null,
                                     null,
                                     null,
@@ -214,7 +228,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     null,
                                     safeFilterDto.getRespondentPostcode(),
                                     safeFilterDto.getAccountReference(),
-                                    null,
+                                    safeFilterDto.getApplicationTitle(),
                                     null,
                                     null,
                                     null);
@@ -445,6 +459,70 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         log.debug("Finish: Update Application Entry: {}", updateEntry);
 
         return getDetailDto;
+    }
+
+    @Override
+    public MatchResponse<Void> updateClosedEntry(PayloadForUpdateClosedEntry updateEntry) {
+
+        return updateClosedApplicationEntryValidator.validate(
+                updateEntry,
+                (ue, success) -> {
+                    // lets check the concurrent match before we process the update
+                    return matchService.matchOnRequest(
+                            () -> {
+                                return auditService.processAudit(
+                                        BeanUtil.copyBean(success.getApplicationEntryId()),
+                                        AppListEntryAuditOperation.UPDATE_CLOSED_APP_ENTRY_LIST,
+                                        req -> {
+                                            success.getApplicationEntryId()
+                                                    .setNotes(
+                                                            success.getApplicationEntryId()
+                                                                            .getNotes()
+                                                                    + " "
+                                                                    + updateEntry
+                                                                            .getData()
+                                                                            .getAdditionalNotes());
+
+                                            // update the notes by appending with the alternative
+                                            // notes
+                                            applicationListEntryRepository.save(
+                                                    success.getApplicationEntryId());
+
+                                            return Optional.of(
+                                                    new AuditableResult<>(
+                                                            MatchResponse.of(
+                                                                    null,
+                                                                    getKeyablesForCreateUpdateEtag(
+                                                                            success
+                                                                                    .getApplicationEntryId())),
+                                                            success.getApplicationEntryId()));
+                                        });
+                            },
+                            // return the latest entities for the entry read on the update
+                            getKeyablesForCreateUpdateEtag(success.getApplicationEntryId()));
+                });
+    }
+
+    @Transactional
+    public void replaceOfficials(UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        var payload = new BulkUpdateOfficialsPayload(listId, bulkOfficialsUpdateDto);
+
+        bulkUpdateOfficialsValidator.validate(
+                payload,
+                (req, success) -> {
+                    List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
+                    entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+
+                    for (ApplicationListEntry entry : entries) {
+                        replaceOfficialsForEntry(entry, req.data().getOfficials());
+                    }
+
+                    log.info(
+                            "Completed bulk officials replacement for {} entries in list {}",
+                            entries.size(),
+                            listId);
+                    return null;
+                });
     }
 
     /**
@@ -1015,6 +1093,34 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         return officialList;
     }
 
+    private void replaceOfficialsForEntry(
+            ApplicationListEntry entry, List<Official> replacementOfficials) {
+        List<AppListEntryOfficial> existingOfficials =
+                appListEntryOfficialRepository.getOfficialByEntryUuid(entry.getUuid());
+
+        for (AppListEntryOfficial existingOfficial : existingOfficials) {
+            auditService.processAudit(
+                    existingOfficial,
+                    AppListEntryAuditOperation.DELETE_OFFICIAL_ENTRY,
+                    req -> {
+                        appListEntryOfficialRepository.delete(existingOfficial);
+                        return Optional.empty();
+                    });
+        }
+
+        for (Official official : replacementOfficials) {
+            auditService.processAudit(
+                    AppListEntryAuditOperation.CREATE_OFFICIAL_ENTRY,
+                    req -> {
+                        AppListEntryOfficial createdOfficial =
+                                appListEntryOfficialRepository.save(
+                                        applicationListEntryEntityMapper.toOfficial(
+                                                official, entry));
+                        return Optional.of(new AuditableResult<>(null, createdOfficial));
+                    });
+        }
+    }
+
     @Override
     public MatchResponse<EntryGetDetailDto> getApplicationListEntryDetail(
             PayloadGetEntryInList entry) {
@@ -1258,6 +1364,28 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                 "Completed bulk move for {} entries from list {}",
                 existingIds.size(),
                 sourceListId);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteEntry(PayloadForDeleteEntry idToDelete) {
+        deleteApplicationListEntryValidator.validate(
+                idToDelete,
+                (id, success) ->
+                        auditService.processAudit(
+                                new DeleteAuditable(
+                                        BeanUtil.copyBean(success.getApplicationListEntry())),
+                                AppListEntryAuditOperation.DELETE_ENTRY,
+                                req -> {
+                                    success.getApplicationListEntry().setDeleted(true);
+                                    applicationListEntryRepository.save(
+                                            success.getApplicationListEntry());
+                                    Optional<AuditableResult<Void, DeleteAuditable>> ret =
+                                            Optional.empty();
+                                    return ret;
+                                }));
+
+        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
     }
 
     /**

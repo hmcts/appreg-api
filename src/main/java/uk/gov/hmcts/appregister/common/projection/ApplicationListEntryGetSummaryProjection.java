@@ -59,5 +59,7 @@ public interface ApplicationListEntryGetSummaryProjection {
 
     Integer getSequenceNumber();
 
+    Boolean getIsResulted();
+
     List<ResolutionCode> getResolutionCodes();
 }

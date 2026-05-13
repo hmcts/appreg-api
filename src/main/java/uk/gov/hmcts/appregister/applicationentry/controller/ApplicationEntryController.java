@@ -15,15 +15,17 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntryByListIdSortFieldEnum;
-import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortFieldEnum;
+import uk.gov.hmcts.appregister.applicationentry.api.ApplicationEntrySortConfig;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
+import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
@@ -37,12 +39,14 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryIdsDto;
 import uk.gov.hmcts.appregister.generated.model.EntryPage;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
@@ -66,6 +70,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
 
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
 
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
     private final ApplicationListEntryMapper applicationListEntryMapper;
 
     private final Validator beanValidator;
@@ -78,12 +84,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
             EntryGetFilterDto filter, Integer page, Integer size, List<String> sort) {
         PagingWrapper pageInfo =
                 pageableMapper.from(
-                        page,
-                        size,
-                        sort,
-                        ApplicationEntrySortFieldEnum.CODE,
-                        Sort.Direction.ASC,
-                        ApplicationEntrySortFieldEnum::getEntityValue);
+                        page, size, sort, ApplicationEntrySortConfig.SEARCH, Sort.Direction.ASC);
 
         EntryPage entryPage = applicationEntryService.search(filter, pageInfo);
 
@@ -167,9 +168,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                         pageNumber,
                         pageSize,
                         sort,
-                        ApplicationEntryByListIdSortFieldEnum.SEQUENCE_NUMBER,
-                        Sort.Direction.ASC,
-                        ApplicationEntryByListIdSortFieldEnum::getEntityValue);
+                        ApplicationEntrySortConfig.BY_LIST_ID,
+                        Sort.Direction.ASC);
 
         EntryPage entryResponse =
                 applicationEntryService.getApplicationListEntries(payloadForGet, pageInfo, filter);
@@ -237,6 +237,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                     listId,
                                     applicationEntryService,
                                     bulkUploadApplicationEntryValidator,
+                                    bulkCreateApplicationEntryValidator,
                                     applicationListEntryMapper,
                                     beanValidator));
 
@@ -254,6 +255,37 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                     AppListEntryError.BULK_UPLOAD_INVALID_FILE_FORMAT,
                     "Unable to read uploaded file");
         }
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<Void> updateClosedApplicationListEntry(
+            UUID listId, UUID entryId, EntryUpdateClosedDto entryUpdateClosedDto) {
+        PayloadForUpdateClosedEntry entryUpdateClosedDtoWithIds =
+                new PayloadForUpdateClosedEntry(entryUpdateClosedDto, listId, entryId);
+
+        MatchResponse<Void> matchResponse =
+                applicationEntryService.updateClosedEntry(entryUpdateClosedDtoWithIds);
+        return ResponseEntity.noContent()
+                .varyBy(HttpHeaders.ACCEPT)
+                .eTag(matchResponse.getEtag())
+                .build();
+    }
+
+    @Override
+    public ResponseEntity<Void> deleteApplicationListEntry(UUID listId, UUID entryId) {
+        PayloadForDeleteEntry payload = new PayloadForDeleteEntry(listId, entryId);
+        applicationEntryService.deleteEntry(payload);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    public ResponseEntity<Void> replaceApplicationListEntryOfficials(
+            UUID listId, BulkOfficialsUpdateDto bulkOfficialsUpdateDto) {
+        applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
+
+        return ResponseEntity.noContent().build();
     }
 
     /**

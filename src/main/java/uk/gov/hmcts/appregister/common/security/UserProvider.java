@@ -57,7 +57,7 @@ public class UserProvider {
     }
 
     /**
-     * gets the token from thread local using {@link} SecurityContextHolder}.
+     * Gets the token from thread local using {@link SecurityContextHolder}.
      *
      * @return The jwt or an exception is thrown if null
      */

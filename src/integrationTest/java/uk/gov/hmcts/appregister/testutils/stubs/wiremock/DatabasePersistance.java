@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.testutils.stubs.wiremock;
 
+import jakarta.persistence.EntityManager;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,8 @@ public class DatabasePersistance {
     @Autowired private ResolutionCodeRepository resolutionCodeRepository;
 
     @Autowired private AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+
+    @Autowired private EntityManager entityManager;
 
     public ApplicationCode save(ApplicationCode data) {
 
@@ -178,5 +181,9 @@ public class DatabasePersistance {
 
     public AppListEntrySequenceMapping save(AppListEntrySequenceMapping data) {
         return appListEntrySequenceMappingRepository.saveAndFlush(data);
+    }
+
+    public void refresh(Object object) {
+        entityManager.refresh(object);
     }
 }

@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
@@ -14,6 +15,9 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
 
     private static final String WEB_CONTEXT = "application-list-entries";
     private static final String CREATE_ENTRY_CONTEXT = "application-lists";
+    protected static final String WEB_CONTEXT_UPDATE_CLOSED_ENTRY =
+            "application-lists/%s/entries/closed/%s";
+    private static final String DELETE_ENTRY_CONTEXT = "application-lists/%s/entries/%s";
 
     @Override
     protected Stream<RestEndpointDescription> getDescriptions() throws Exception {
@@ -85,6 +89,24 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                                 new MoveEntriesDto()
                                         .targetListId(UUID.randomUUID())
                                         .entryIds(Set.of(UUID.randomUUID())))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        DELETE_ENTRY_CONTEXT.formatted(
+                                                UUID.randomUUID(), UUID.randomUUID())))
+                        .method(HttpMethod.DELETE)
+                        .payload(CreateEntryDtoUtil.getCorrectCreateEntryDto())
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        WEB_CONTEXT_UPDATE_CLOSED_ENTRY.formatted(
+                                                UUID.randomUUID(), UUID.randomUUID())))
+                        .method(HttpMethod.PUT)
+                        .payload(new EntryUpdateClosedDto().additionalNotes("note"))
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());

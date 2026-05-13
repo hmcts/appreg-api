@@ -35,17 +35,42 @@ public class PageableMapper {
      * @param size The page size
      * @param sort Each entry will contain a property and optionally a direction separated by a
      *     comma
+     * @param sortConfig The sort policy containing the default internal sort and external lookup
+     * @param defaultDirection The default direction to sort if no sort is specified
+     */
+    public PagingWrapper from(
+            Integer page,
+            Integer size,
+            List<String> sort,
+            SortConfig sortConfig,
+            Sort.Direction defaultDirection) {
+        return from(
+                page,
+                size,
+                sort,
+                sortConfig.defaultSort(),
+                defaultDirection,
+                sortConfig.externalLookup());
+    }
+
+    /**
+     * map from a set of values to a spring pageable.
+     *
+     * @param page The page number (0 based)
+     * @param size The page size
+     * @param sort Each entry will contain a property and optionally a direction separated by a
+     *     comma
      * @param defaultSortProperty The default property to sort on if no sort is specified
      * @param defaultDirection The default direction to sort if no sort is specified
      * @param findSortFieldEnum A mapper to the internal (entity) sortable field enum
      */
-    public <T extends SortableOperationEnum> PagingWrapper from(
+    public PagingWrapper from(
             Integer page,
             Integer size,
             List<String> sort,
-            T defaultSortProperty,
+            SortableOperationEnum defaultSortProperty,
             Sort.Direction defaultDirection,
-            Function<String, T> findSortFieldEnum) {
+            Function<String, ? extends SortableOperationEnum> findSortFieldEnum) {
 
         // TODO: This is the one line that needs removing
         // if we want to support multiple sort values
@@ -58,7 +83,6 @@ public class PageableMapper {
 
         List<SortableField> sortableFields = null;
 
-        String tieBreaker = null;
         List<String> mappedSorts = new ArrayList<>();
 
         // process the sorts or default the sort
@@ -67,10 +91,9 @@ public class PageableMapper {
             sortableFields = SortableField.of(sort.toArray(new String[0]));
 
             for (SortableField sortableField : sortableFields) {
-                mappedSorts.addAll(
-                        sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
-
-                tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
+                SortPlan sortPlan = sortableField.toSortPlan(findSortFieldEnum);
+                mappedSorts.addAll(sortPlan.sortStrings());
+                addTieBreaker(mappedSorts, sortPlan.tieBreaker());
             }
         } else {
             sortableFields = new ArrayList<>();
@@ -81,14 +104,10 @@ public class PageableMapper {
                                             + defaultDirection.name())
                             .getFirst();
 
-            mappedSorts.addAll(sortableField.toSortStringUsingSortableOperation(findSortFieldEnum));
+            SortPlan sortPlan = SortPlan.from(defaultSortProperty, sortableField.getDirection());
+            mappedSorts.addAll(sortPlan.sortStrings());
             sortableFields.add(sortableField);
-            tieBreaker = sortableField.toTieBreaker(findSortFieldEnum);
-        }
-
-        // if we have a tie breaker then add it to the end of the sort list
-        if (tieBreaker != null) {
-            mappedSorts.add(tieBreaker);
+            addTieBreaker(mappedSorts, sortPlan.tieBreaker());
         }
 
         // apply disambiguation
@@ -98,6 +117,12 @@ public class PageableMapper {
         int s = (size == null || size < 1) ? defaultPageSize : size; // pick your default
 
         return PagingWrapper.of(sortableFields, PageRequest.of(p, s, sortSpec));
+    }
+
+    private void addTieBreaker(List<String> mappedSorts, String tieBreaker) {
+        if (tieBreaker != null) {
+            mappedSorts.add(tieBreaker);
+        }
     }
 
     /**

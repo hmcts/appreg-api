@@ -183,6 +183,11 @@ public class CreateEntryDtoUtil {
             if (fs != null && fs.getPaymentStatus() == DUE) {
                 fs.setPaymentReference(null);
             }
+            if (fs != null
+                    && fs.getStatusDate() != null
+                    && fs.getStatusDate().isAfter(LocalDate.now())) {
+                fs.setStatusDate(LocalDate.now());
+            }
         }
     }
 

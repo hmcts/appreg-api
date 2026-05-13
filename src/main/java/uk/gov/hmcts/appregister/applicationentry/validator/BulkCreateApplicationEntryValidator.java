@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.applicationentry.validator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationfee.service.ApplicationFeeService;
 import uk.gov.hmcts.appregister.common.entity.ApplicationCode;
@@ -71,6 +72,10 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
         List<TemplateSubstitution> supplied =
                 suppliedWordingFields == null ? List.of() : suppliedWordingFields;
 
+        if (requiredWordingFields.isEmpty()) {
+            return List.of();
+        }
+
         if (supplied.size() < requiredWordingFields.size()) {
             throw new AppRegistryException(
                     CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
@@ -85,10 +90,25 @@ public class BulkCreateApplicationEntryValidator extends CreateApplicationEntryV
 
         return IntStream.range(0, requiredWordingFields.size())
                 .mapToObj(
-                        index ->
-                                new TemplateSubstitution(
-                                        requiredWordingFields.get(index).getKey(),
-                                        supplied.get(index).getValue()))
+                        index -> {
+                            TemplateSubstitution suppliedField = supplied.get(index);
+                            String suppliedValue =
+                                    suppliedField == null ? null : suppliedField.getValue();
+                            if (StringUtils.isBlank(suppliedValue)) {
+                                throw new AppRegistryException(
+                                        CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                                        "APPLICATION_TEXT%s is required for code %s"
+                                                .formatted(index + 1, code.getCode()),
+                                        Map.of(
+                                                "templateSize",
+                                                Integer.toString(requiredWordingFields.size()),
+                                                "valueSize",
+                                                Integer.toString(supplied.size())));
+                            }
+
+                            return new TemplateSubstitution(
+                                    requiredWordingFields.get(index).getKey(), suppliedValue);
+                        })
                 .toList();
     }
 }

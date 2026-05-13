@@ -9,6 +9,7 @@ import static uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil.assertEq
 import io.restassured.response.Response;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
@@ -20,8 +21,13 @@ import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultA
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryResolution;
 import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
+import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
+import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
+import uk.gov.hmcts.appregister.generated.model.ResultPage;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 
 public class ApplicationEntryResultControllerCreateTest
@@ -335,5 +341,670 @@ public class ApplicationEntryResultControllerCreateTest
                 older.getId(),
                 chosenResolutionCodeId,
                 "Should not choose the older ResolutionCode");
+    }
+
+    private static final String RTC_CODE = "RTC";
+
+    @Test
+    public void
+            givenAValidBulkResultRequest_whenACallIsMadeWithAListAndTwoEntries_thenSuccessNoContentResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
+
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        // get the information that we should have created
+        Response response = getEntryResult(token, list.getUuid(), entry.getUuid(), 1, 0);
+
+        // now assert the result has been applied against the first entry for the result code
+        ResultPage page = response.as(ResultPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
+        Assertions.assertEquals(
+                2,
+                page.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());
+        // assert the template detail
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                page.getContent().getFirst().getWording());
+
+        // get and assert the second entry
+        Response response1 = getEntryResult(token, list.getUuid(), entry2.getUuid(), 1, 0);
+
+        // now assert the result has been applied against the entry for the result code
+        ResultPage page1 = response1.as(ResultPage.class);
+        Assertions.assertEquals(1, page1.getContent().size());
+        Assertions.assertEquals(entry2.getUuid(), page1.getContent().getFirst().getEntryId());
+        Assertions.assertEquals(
+                2,
+                page1.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());
+        // assert the template detail
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                page1.getContent().getFirst().getWording());
+
+        val createdResolution =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(
+                                page.getContent().get(0).getId(),
+                                page.getContent().get(0).getEntryId())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Created AppListEntryResolution could not be reloaded"));
+
+        val createdResolution1 =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(
+                                page1.getContent().get(0).getId(),
+                                page1.getContent().get(0).getEntryId())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Created AppListEntryResolution could not be reloaded"));
+
+        // The resolution row itself should record its generated identifier on create.
+        val resultIdAuditRow =
+                dataAuditRepository
+                        .findDataAuditForTableAndColumnAndNewValue(
+                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                                "aler_id",
+                                createdResolution.getId().toString())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resultIdAuditRow.getEventName());
+
+        dataAuditRepository
+                .findDataAuditForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "aler_id",
+                        createdResolution1.getId().toString())
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resultIdAuditRow.getEventName());
+
+        // The owning entry id is stored through the foreign key column ale_ale_id.
+        val entryIdAuditRow =
+                dataAuditRepository
+                        .findDataAuditForTableAndColumnAndNewValue(
+                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                                "ale_ale_id",
+                                createdResolution.getApplicationList().getId().toString())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                entryIdAuditRow.getEventName());
+
+        // The owning entry id is stored through the foreign key column ale_ale_id.
+        dataAuditRepository
+                .findDataAuditForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "ale_ale_id",
+                        createdResolution1.getApplicationList().getId().toString())
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                entryIdAuditRow.getEventName());
+
+        // The selected resolution code should be recorded via the rc_rc_id join column.
+        val resolutionCodeAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "rc_rc_id",
+                        createdResolution.getResolutionCode().getId().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow.get(1).getEventName());
+
+        val resolutionCodeAuditRow1 =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "rc_rc_id",
+                        createdResolution1.getResolutionCode().getId().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow1.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow1.get(1).getEventName());
+
+        // The substituted wording is stored directly on the resolution row.
+        val wordingAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        createdResolution.getResolutionWording());
+
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                wordingAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                wordingAuditRow.get(1).getEventName());
+
+        // The service stamps the acting user into the officer column on create.
+        val officerAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_officer",
+                        "email");
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                officerAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                officerAuditRow.get(1).getEventName());
+
+        // Version is database-backed and should be written alongside the other create audit rows.
+        val versionAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        createdResolution.getVersion().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                versionAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                versionAuditRow.get(1).getEventName());
+    }
+
+    @Test
+    public void
+            givenAValidBulkResultRequest_whenACallIsMadeWithAListThatDoesNotExist_thenFailureConflictResponse()
+                    throws Exception {
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(Set.of(UUID.randomUUID(), UUID.randomUUID()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(UUID.randomUUID(), token, bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_LIST_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    public void
+            givenAValidBulkResultRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+
+        // add an entry that does not exist
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    public void
+            givenAValidBulkResultRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode("NOTEXIST");
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    public void
+            givenAValidBulkResultRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+
+        // add an entry that does not exist
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(List.of(new TemplateSubstitution("Date", "Date")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(list.getUuid(), token, bulkResultDto);
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode(),
+                "valueSize=1\n" + "templateSize=2\n",
+                resp);
+    }
+
+    @Test
+    public void
+            givenAValidBulkResultWithNoListRequest_whenACallIsMadeWithTwoEntries_thenSuccessNoContentResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(token, bulkResultDto);
+
+        resp.then().statusCode(HttpStatus.NO_CONTENT.value());
+
+        // get the information that we should have created
+        Response response = getEntryResult(token, list.getUuid(), entry.getUuid(), 1, 0);
+
+        // now assert the result has been applied against the first entry for the result code
+        ResultPage page = response.as(ResultPage.class);
+        Assertions.assertEquals(1, page.getContent().size());
+        Assertions.assertEquals(entry.getUuid(), page.getContent().getFirst().getEntryId());
+        Assertions.assertEquals(
+                2,
+                page.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());
+        // assert the template detail
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                page.getContent().getFirst().getWording());
+
+        // get and assert the second entry
+        Response response1 = getEntryResult(token, list.getUuid(), entry2.getUuid(), 1, 0);
+
+        // now assert the result has been applied against the entry for the result code
+        ResultPage page1 = response1.as(ResultPage.class);
+        Assertions.assertEquals(1, page1.getContent().size());
+        Assertions.assertEquals(entry2.getUuid(), page1.getContent().getFirst().getEntryId());
+        Assertions.assertEquals(
+                2,
+                page1.getContent().getFirst().getWording().getSubstitutionKeyConstraints().size());
+        // assert the template detail
+        TemplateAssertion.assertTemplateWithValues(
+                "Referred for full court hearing on {{Date}} at {{Courthouse}}.",
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")),
+                page1.getContent().getFirst().getWording());
+
+        val createdResolution =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(
+                                page.getContent().get(0).getId(),
+                                page.getContent().get(0).getEntryId())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Created AppListEntryResolution could not be reloaded"));
+
+        val createdResolution1 =
+                appListEntryResolutionRepository
+                        .findByUuidAndApplicationList_Uuid(
+                                page1.getContent().get(0).getId(),
+                                page1.getContent().get(0).getEntryId())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Created AppListEntryResolution could not be reloaded"));
+
+        // The resolution row itself should record its generated identifier on create.
+        val resultIdAuditRow =
+                dataAuditRepository
+                        .findDataAuditForTableAndColumnAndNewValue(
+                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                                "aler_id",
+                                createdResolution.getId().toString())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resultIdAuditRow.getEventName());
+
+        dataAuditRepository
+                .findDataAuditForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "aler_id",
+                        createdResolution1.getId().toString())
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Expected an app_list_entry_resolutions.aler_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resultIdAuditRow.getEventName());
+
+        // The owning entry id is stored through the foreign key column ale_ale_id.
+        val entryIdAuditRow =
+                dataAuditRepository
+                        .findDataAuditForTableAndColumnAndNewValue(
+                                TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                                "ale_ale_id",
+                                createdResolution.getApplicationList().getId().toString())
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                entryIdAuditRow.getEventName());
+
+        // The owning entry id is stored through the foreign key column ale_ale_id.
+        dataAuditRepository
+                .findDataAuditForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "ale_ale_id",
+                        createdResolution1.getApplicationList().getId().toString())
+                .orElseThrow(
+                        () ->
+                                new AssertionError(
+                                        "Expected an app_list_entry_resolutions.ale_ale_id create audit row"));
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                entryIdAuditRow.getEventName());
+
+        // The selected resolution code should be recorded via the rc_rc_id join column.
+        val resolutionCodeAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "rc_rc_id",
+                        createdResolution.getResolutionCode().getId().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow.get(1).getEventName());
+
+        val resolutionCodeAuditRow1 =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "rc_rc_id",
+                        createdResolution1.getResolutionCode().getId().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow1.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                resolutionCodeAuditRow1.get(1).getEventName());
+
+        // The substituted wording is stored directly on the resolution row.
+        val wordingAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_wording",
+                        createdResolution.getResolutionWording());
+
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                wordingAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                wordingAuditRow.get(1).getEventName());
+
+        // The service stamps the acting user into the officer column on create.
+        val officerAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "al_entry_resolution_officer",
+                        "email");
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                officerAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                officerAuditRow.get(1).getEventName());
+
+        // Version is database-backed and should be written alongside the other create audit rows.
+        val versionAuditRow =
+                dataAuditRepository.findDataAuditListForTableAndColumnAndNewValue(
+                        TableNames.APPLICATION_LIST_ENTRY_RESOLUTIONS,
+                        "version",
+                        createdResolution.getVersion().toString());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                versionAuditRow.get(0).getEventName());
+        Assertions.assertEquals(
+                AppListEntryResultAuditOperation.CREATE_APP_LIST_ENTRY_RESULT.getEventName(),
+                versionAuditRow.get(1).getEventName());
+    }
+
+    @Test
+    public void
+            givenBulkResultWithNoListRequest_whenACallIsMadeWithAEntryThatDoesNotExist_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+
+        // add an entry that does not exist
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid(), UUID.randomUUID()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(token, bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.APPLICATION_ENTRIES_NOT_ALL_EXIST.getCode(), resp);
+    }
+
+    @Test
+    public void
+            givenBulkResultWithNoListRequest_whenACallIsMadeWithToANonExistentResultCode_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode("NOTEXIST");
+        createDto.setWordingFields(
+                List.of(
+                        new TemplateSubstitution("Date", "Date"),
+                        new TemplateSubstitution("Courthouse", "ch")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(token, bulkResultDto);
+
+        ProblemAssertUtil.assertEquals(
+                ApplicationListEntryResultError.RESOLUTION_CODE_DOES_NOT_EXIST.getCode(), resp);
+    }
+
+    @Test
+    public void
+            givenBulkResultWithNoListRequest_whenACallIsMadeWithIncorrectTemplateValues_thenFailureConflictResponse()
+                    throws Exception {
+        val list = createAndSaveList(OPEN);
+        val entry = createEntry(list);
+
+        // save the data
+        persistance.save(entry);
+
+        val entry2 = createEntry(list);
+
+        persistance.save(entry2);
+
+        // create the payload to result 2 entries against the list
+        BulkResultDto bulkResultDto = new BulkResultDto();
+
+        // add an entry that does not exist
+        bulkResultDto.setEntryIds(Set.of(entry.getUuid(), entry2.getUuid()));
+
+        ResultCreateDto createDto = new ResultCreateDto();
+        createDto.setResultCode(RTC_CODE);
+        createDto.setWordingFields(List.of(new TemplateSubstitution("Date", "Date")));
+        bulkResultDto.setResult(createDto);
+
+        val token = getToken();
+
+        // create the app entry
+        Response resp = createBulkResult(token, bulkResultDto);
+        ProblemAssertUtil.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH.getCode(),
+                "valueSize=1\n" + "templateSize=2\n",
+                resp);
     }
 }

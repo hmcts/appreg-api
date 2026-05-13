@@ -85,6 +85,12 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew spotlessApply
   ```
 
+- **Codex/local PR pipeline check**
+  ```bash
+  ./bin/codex-local-pipeline.sh fast
+  ```
+  Use `./bin/codex-local-pipeline.sh full` when Docker/Testcontainers-backed verification is needed.
+
 - **Enable P6Spy SQL logging**
   Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only
   `nosecurity` and `p6spy` Spring profiles without including them in the normal release build.
@@ -96,31 +102,15 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew bootRunLocalDev -PspringProfiles=nosecurity,p6spy,functional
   ```
 
-## Running Sonarqube locally
-
-1. Ensure you have Docker installed and running
-
-`docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community`
-
-2. Access Sonarqube at http://localhost:9000 (default credentials: admin/admin)
-
-3. Navigate to the administrative section of the SonarQube dashboard and create a token
-
-4. Define an environment variable in your shell called SONAR_TOKEN with the value of the token you created
-
-5. Now run gradle task
-
-`gradlew localSonarqube`
-
 ## Jacoco Coverage
 
 Run the following gradle command to determine coverage for unit tests:-
 
-`gradlew localSonarqube`
+`gradlew jacocoUnitCoverageVerification`
 
 Run the following gradle command to determine coverage for integration tests:-
 
-`gradlew jacocoUnitCoverageVerification`
+`gradlew jacocoIntegrationCoverageVerification`
 
 The html reports reside under build/reports/jacoco/
 

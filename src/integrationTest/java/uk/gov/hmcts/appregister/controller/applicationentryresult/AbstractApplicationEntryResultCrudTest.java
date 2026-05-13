@@ -117,6 +117,18 @@ public abstract class AbstractApplicationEntryResultCrudTest extends BaseIntegra
                 body);
     }
 
+    protected Response createBulkResult(UUID listId, TokenAndJwksKey token, Object body)
+            throws MalformedURLException {
+        return restAssuredClient.executePostRequest(
+                getLocalUrl(WEB_CONTEXT + "/" + listId + "/entries/results"), token, body);
+    }
+
+    protected Response createBulkResult(TokenAndJwksKey token, Object body)
+            throws MalformedURLException {
+        return restAssuredClient.executePostRequest(
+                getLocalUrl(WEB_CONTEXT + "/entries/results"), token, body);
+    }
+
     protected Response updateResult(
             UUID listId,
             UUID entryId,

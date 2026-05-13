@@ -1,14 +1,7 @@
-parameters:
-  - in: path
-    name: listId
-    required: true
-    schema: { type: string, format: uuid }
-    description: ID of the Application List that owns the entries to be resulted.
-    example: "9f7b2a35-57ac-4a1c-9c41-83b6c8157af4"
 post:
-  operationId: bulkResultApplicationListEntries
+  operationId: bulkResultEntries
   tags: [ application-list-entry-results ]
-  summary: Create the same Result for multiple entries in an Application List.
+  summary: Create the same Result for multiple entries across application lists.
   description: >
     Atomically creates a **separate Result** for each specified entry in the **source**
     list (path `listId`), using the same Result payload for all entries. If any entry

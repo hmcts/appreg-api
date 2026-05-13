@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.entity.ApplicationList;
 import uk.gov.hmcts.appregister.common.entity.ApplicationListEntry;
 import uk.gov.hmcts.appregister.common.entity.aspect.LikeParam;
 import uk.gov.hmcts.appregister.common.entity.base.EntryCount;
+import uk.gov.hmcts.appregister.common.entity.model.EntryToList;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryGetSummaryProjection;
 import uk.gov.hmcts.appregister.common.projection.ApplicationListEntryPrintProjection;
@@ -205,7 +206,8 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
                     al.uuid as listId,
                     ac.title AS applicationTitle,
                     ale.sequenceNumber as sequenceNumber,
-                    rc as resulted
+                    rc.resultCode as resulted,
+                    CASE WHEN aler.id IS NULL THEN false ELSE true END as isResulted
                 from ApplicationListEntry ale
                 LEFT JOIN ale.anamedaddress ana
                 LEFT JOIN ale.standardApplicant sa
@@ -507,6 +509,20 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
     Optional<ApplicationListEntry> findByUuid(UUID entryId);
 
     /**
+     * Finds an entry for Uuid. Also returns deleted entries.
+     *
+     * @param entryId The entry id
+     * @return A single optional matching application entry
+     */
+    @Query(
+            """
+        SELECT ale
+        FROM ApplicationListEntry ale
+        WHERE ale.uuid = :entryId
+        """)
+    Optional<ApplicationListEntry> findByUuidIncludingDelete(UUID entryId);
+
+    /**
      * Finds all entities with the given IDs, within the associated list.
      *
      * @param entryId The entry id
@@ -635,4 +651,39 @@ public interface ApplicationListEntryRepository extends JpaRepository<Applicatio
         AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
         """)
     Set<UUID> findExistingEntryIdsInSourceList(UUID sourceListId, Set<UUID> requestedIds);
+
+    /**
+     * does the entries belong to the application list.
+     *
+     * @return The
+     */
+    @Query(
+            """
+            SELECT COUNT(ale) > 0
+            FROM ApplicationListEntry ale
+            WHERE ale.uuid IN :entryIds
+              AND ale.applicationList.uuid = :listId
+            AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            AND (ale.applicationList.deleted IS NULL OR
+            ale.applicationList.deleted <> 'Y')
+        """)
+    boolean doesApplicationEntryBelongToApplicationList(List<UUID> entryIds, UUID listId);
+
+    /**
+     * gets the application list for the entries.
+     *
+     * @param entryIds The entry ids
+     * @return The application list ids for the applicable entries
+     */
+    @Query(
+            """
+            SELECT new uk.gov.hmcts.appregister.common
+                    .entity.model.EntryToList(ale.uuid, ale.applicationList.uuid)
+            FROM ApplicationListEntry ale
+            WHERE ale.uuid IN :entryIds
+            AND (ale.deleted IS NULL OR ale.deleted <> 'Y')
+            AND (ale.applicationList.deleted IS NULL OR
+            ale.applicationList.deleted <> 'Y')
+        """)
+    List<EntryToList> findApplicationListForAllEntries(List<UUID> entryIds);
 }
