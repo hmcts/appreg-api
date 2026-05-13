@@ -750,6 +750,42 @@ public class CreateApplicationEntryValidatorTest {
                 appRegistryException.getCode());
     }
 
+    @Test
+    void testValidateMainFeeNoOffsiteFee() {
+        entryCreateDto = CreateEntryDtoUtil.getCorrectCreateEntryDto();
+        entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setHasOffsiteFee(Boolean.FALSE);
+
+        applicationCode.setFeeDue(YesOrNo.YES);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+
+        entryCreateDto.setFeeStatuses(List.of(new FeeStatus()));
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+
+        when(applicationCodeRepository.findByCodeAndDate(
+                        eq(entryCreateDto.getApplicationCode()), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        when(feeService.resolveFeePair(Mockito.notNull(), Mockito.notNull()))
+                .thenReturn(new FeePair(fee, null));
+        when(feeService.resolveFeePair(Mockito.notNull())).thenReturn(new FeePair(fee, null));
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        PayloadForCreate<EntryCreateDto> payload =
+                PayloadForCreate.<EntryCreateDto>builder()
+                        .id(appListUuid)
+                        .data(entryCreateDto)
+                        .build();
+
+        // validate the payload
+        createApplicationEntryValidator.validate(payload);
+    }
+
     private static Official official(OfficialType officialType, String suffix) {
         Official official = new Official();
         official.setTitle("Mr");
