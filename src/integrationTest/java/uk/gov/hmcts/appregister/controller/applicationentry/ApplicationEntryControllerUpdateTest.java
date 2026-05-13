@@ -1041,6 +1041,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 .setEmail(JsonNullable.of(null));
 
         entryUpdateDto.getRespondent().setOrganisation(null);
+        entryUpdateDto.getRespondent().getPerson().getName().setLastName("RespondentUpdated");
         entryUpdateDto.getRespondent().getPerson().getName().setSurname("RespondentUpdated");
 
         val updatedOfficial = new Official();
@@ -1077,6 +1078,7 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
                 .getContactDetails()
                 .setEmail(JsonNullable.of(null));
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentOriginal");
         entryCreateDto.getRespondent().getPerson().getName().setSurname("RespondentOriginal");
 
         val originalOfficial = new Official();
@@ -1148,11 +1150,11 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         val createdRespondentAuditRow =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "surname", "RespondentUpdated")
+                                TableNames.NAME_ADDRESS, "last_name", "RespondentUpdated")
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected a created name_address.surname respondent audit row"));
+                                                "Expected a created name_address.last_name respondent audit row"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_RESPONDENT.getEventName(),
                 createdRespondentAuditRow.getEventName());
@@ -1160,11 +1162,11 @@ public class ApplicationEntryControllerUpdateTest extends AbstractApplicationEnt
         val deletedRespondentAuditRow =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndOldValue(
-                                TableNames.NAME_ADDRESS, "surname", "RespondentOriginal")
+                                TableNames.NAME_ADDRESS, "last_name", "RespondentOriginal")
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected a deleted name_address.surname respondent audit row"));
+                                                "Expected a deleted name_address.last_name respondent audit row"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.DELETE_RESPONDENT.getEventName(),
                 deletedRespondentAuditRow.getEventName());

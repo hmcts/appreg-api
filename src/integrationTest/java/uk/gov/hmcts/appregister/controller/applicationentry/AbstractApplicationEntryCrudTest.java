@@ -48,12 +48,14 @@ import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListReposito
 import uk.gov.hmcts.appregister.common.enumeration.NameAddressCodeType;
 import uk.gov.hmcts.appregister.common.enumeration.Status;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.data.AppListEntryTestData;
 import uk.gov.hmcts.appregister.data.AppListTestData;
 import uk.gov.hmcts.appregister.data.ApplicationCodeTestData;
 import uk.gov.hmcts.appregister.data.FeeTestData;
+import uk.gov.hmcts.appregister.generated.model.Applicant;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
@@ -65,6 +67,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Official;
+import uk.gov.hmcts.appregister.generated.model.Respondent;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -287,6 +290,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             TokenGenerator tokenGenerator, EntryCreateDto entryCreateDto, String uniqueSurname)
             throws Exception {
 
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(uniqueSurname);
         entryCreateDto.getApplicant().getPerson().getName().setSurname(uniqueSurname);
 
         Response responseSpecCreate =
@@ -366,12 +370,14 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryCreateDto.getApplicant() != null) {
+            normaliseLegacyNameFields(entryCreateDto.getApplicant());
             Assertions.assertEquals(entryCreateDto.getApplicant(), response.getApplicant());
         } else if (entryCreateDto.getStandardApplicantCode() != null) {
             Assertions.assertNotNull(response.getStandardApplicantCode());
         }
 
         if (entryCreateDto.getRespondent() != null) {
+            normaliseLegacyNameFields(entryCreateDto.getRespondent());
             Assertions.assertEquals(entryCreateDto.getRespondent(), response.getRespondent());
         }
 
@@ -420,6 +426,49 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         }
     }
 
+    private void normaliseLegacyNameFields(Applicant applicant) {
+        if (applicant == null || applicant.getPerson() == null) {
+            return;
+        }
+
+        normaliseLegacyNameFields(applicant.getPerson().getName());
+    }
+
+    private void normaliseLegacyNameFields(Respondent respondent) {
+        if (respondent == null || respondent.getPerson() == null) {
+            return;
+        }
+
+        normaliseLegacyNameFields(respondent.getPerson().getName());
+    }
+
+    private void normaliseLegacyNameFields(FullName name) {
+        if (name == null) {
+            return;
+        }
+
+        String firstName = firstNonNull(name.getFirstName(), name.getFirstForename());
+        String middleName =
+                firstNonNull(
+                        name.getMiddleName().orElse(null),
+                        ApplicantMapper.combineMiddleName(
+                                name.getSecondForename().orElse(null),
+                                name.getThirdForename().orElse(null)));
+        String lastName = firstNonNull(name.getLastName(), name.getSurname());
+
+        name.setFirstName(firstName);
+        name.setMiddleName(JsonNullable.of(middleName));
+        name.setLastName(lastName);
+        name.setFirstForename(firstName);
+        name.setSecondForename(JsonNullable.of(middleName));
+        name.setThirdForename(JsonNullable.of(null));
+        name.setSurname(lastName);
+    }
+
+    private String firstNonNull(String first, String second) {
+        return first == null ? second : first;
+    }
+
     protected void validateEntryUpdateResponse(
             EntryUpdateDto entryUpdateDto,
             EntryGetDetailDto response,
@@ -431,12 +480,14 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 response.getOfficials() == null ? List.of() : response.getOfficials();
 
         if (entryUpdateDto.getApplicant() != null) {
+            normaliseLegacyNameFields(entryUpdateDto.getApplicant());
             Assertions.assertEquals(entryUpdateDto.getApplicant(), response.getApplicant());
         } else if (entryUpdateDto.getStandardApplicantCode() != null) {
             Assertions.assertNotNull(response.getStandardApplicantCode());
         }
 
         if (entryUpdateDto.getRespondent() != null) {
+            normaliseLegacyNameFields(entryUpdateDto.getRespondent());
             Assertions.assertEquals(entryUpdateDto.getRespondent(), response.getRespondent());
         }
 
@@ -512,6 +563,7 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
         }
 
         String surnameToLookup = Instancio.gen().string().get();
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
         ApplicationListCreateDto applicationListCreateDto =
                 Instancio.create(ApplicationListCreateDto.class);
