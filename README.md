@@ -85,6 +85,12 @@ If the file is missing, create a new Run/Debug configuration in IntelliJ:
   ./gradlew spotlessApply
   ```
 
+- **Codex/local PR pipeline check**
+  ```bash
+  ./bin/codex-local-pipeline.sh fast
+  ```
+  Use `./bin/codex-local-pipeline.sh full` when Docker/Testcontainers-backed verification is needed.
+
 - **Enable P6Spy SQL logging**
   Run the local-only SQL debug task. This adds P6Spy to the local runtime and enables the local-only
   `nosecurity` and `p6spy` Spring profiles without including them in the normal release build.
