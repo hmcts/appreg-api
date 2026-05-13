@@ -14,6 +14,7 @@ public enum ApplicationEntrySortFieldEnum implements SortableOperationEnum {
     APPLICATION_TITLE("applicationTitle", "id", "applicationTitle"),
     FEE_REQUIRED("feeRequired", "id", "feeRequired"),
     RESULTED("resulted", "id", "resulted"),
+    IS_RESULTED("isResulted", "id", "isResulted"),
     STATUS("status", "id", "status");
 
     private final String apiValue;

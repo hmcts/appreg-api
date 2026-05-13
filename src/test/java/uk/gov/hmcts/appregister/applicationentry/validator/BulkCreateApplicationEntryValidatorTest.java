@@ -175,6 +175,38 @@ class BulkCreateApplicationEntryValidatorTest {
     }
 
     @Test
+    void testSkipsApplicationTextForWordingTemplateWithoutPlaceholders() {
+        applicationCode.setCode("AD99001");
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setWording("Request to copy documents");
+
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setWordingFields(
+                List.of(new TemplateSubstitution(null, ""), new TemplateSubstitution(null, "")));
+
+        when(applicationCodeRepository.findByCodeAndDate(eq("AD99001"), notNull()))
+                .thenReturn(List.of(applicationCode));
+
+        CreateApplicationEntryValidationSuccess success =
+                validator.validate(payload(), (validatable, result) -> result);
+
+        Assertions.assertTrue(entryCreateDto.getWordingFields().isEmpty());
+        Assertions.assertEquals(
+                "Request to copy documents",
+                success.getWordingSentence()
+                        .substitute(entryCreateDto.getWordingFields())
+                        .getSubstitutedString());
+    }
+
+    @Test
     void testRequiresEnoughApplicationTextForWordingTemplatePlaceholders() {
         applicationCode.setFeeDue(YesOrNo.NO);
         applicationCode.setRequiresRespondent(YesOrNo.NO);
@@ -190,6 +222,30 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
         entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "one")));
+
+        AppRegistryException appRegistryException =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validate(payload(), (validatable, result) -> result));
+
+        Assertions.assertEquals(
+                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH, appRegistryException.getCode());
+    }
+
+    @Test
+    void testRequiresNonBlankApplicationTextForWordingTemplatePlaceholders() {
+        applicationCode.setFeeDue(YesOrNo.NO);
+        applicationCode.setRequiresRespondent(YesOrNo.NO);
+        applicationCode.setBulkRespondentAllowed(YesOrNo.NO);
+        applicationCode.setWording("Test template {TEXT|Applicant officer|10}");
+
+        entryCreateDto.setApplicant(null);
+        entryCreateDto.setStandardApplicantCode("APP001");
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setFeeStatuses(null);
+        entryCreateDto.setNumberOfRespondents(null);
+        entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setWordingFields(List.of(new TemplateSubstitution(null, "")));
 
         AppRegistryException appRegistryException =
                 Assertions.assertThrows(

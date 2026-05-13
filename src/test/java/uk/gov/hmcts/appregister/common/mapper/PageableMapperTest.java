@@ -287,6 +287,37 @@ class PageableMapperTest {
     }
 
     @Test
+    void testPageableUsingApplicationEntryIsResultedSort() {
+        PageableMapper appPageable = new PageableMapper();
+        appPageable.setMaxPageSize(10);
+        appPageable.setDefaultPageSize(23);
+
+        PagingWrapper pageable =
+                appPageable.from(
+                        null,
+                        null,
+                        List.of(ApplicationEntrySortFieldEnum.IS_RESULTED.getApiValue() + ",desc"),
+                        ApplicationEntrySortConfig.SEARCH,
+                        Sort.Direction.ASC);
+
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.IS_RESULTED.getEntityValue()[0],
+                pageable.getPageable().getSort().get().findFirst().get().getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().findFirst().get().getDirection());
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.IS_RESULTED.getTieBreaker(),
+                pageable.getPageable().getSort().get().toList().get(1).getProperty());
+        Assertions.assertEquals(
+                Sort.Direction.DESC,
+                pageable.getPageable().getSort().get().toList().get(1).getDirection());
+        Assertions.assertEquals(
+                ApplicationEntrySortFieldEnum.IS_RESULTED.getApiValue(),
+                pageable.getSortStrings().getFirst().getField());
+    }
+
+    @Test
     void testPageableWithoutTieBreaker() {
         PageableMapper appPageable = new PageableMapper();
         appPageable.setMaxPageSize(10);

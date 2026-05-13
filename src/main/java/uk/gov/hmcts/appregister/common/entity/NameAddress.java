@@ -82,7 +82,23 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
 
     @Column(name = "surname")
     @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
+    // Phase 2: remove this deprecated legacy compatibility column usage after clients migrate.
     private String surname;
+
+    @Column(name = "first_name")
+    @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
+    private String firstName;
+
+    @Column(name = "middle_name")
+    @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE})
+    private String middleName;
+
+    @Column(name = "last_name")
+    @Size(max = 100)
+    @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
+    private String lastName;
 
     @Column(name = "address_l1")
     @Size(max = 35)

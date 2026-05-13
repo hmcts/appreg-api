@@ -428,7 +428,6 @@ dependencies {
   implementation 'io.micrometer:micrometer-tracing-bridge-brave'
 
   // Allows us to use Jackson 2 until we can successfully migrate to Jackson 3.
-
   implementation 'org.springframework.cloud:spring-cloud-starter'
   implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
   implementation 'org.openapitools:jackson-databind-nullable:0.2.10'
@@ -446,11 +445,11 @@ dependencies {
 
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
-  implementation 'io.swagger.core.v3:swagger-annotations:2.2.49'
+  implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
 
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.21.3'
 
-  implementation 'org.flywaydb:flyway-database-postgresql:12.6.0'
+  implementation 'org.flywaydb:flyway-database-postgresql:12.6.1'
 
   implementation 'org.springframework.boot:spring-boot-starter-validation'
 
@@ -470,9 +469,9 @@ dependencies {
   implementation 'commons-io:commons-io:2.22.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.3.3.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.3.3.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.3.3.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.3.4.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.3.4.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.3.4.Final'
 
   // Lombok
   compileOnly 'org.projectlombok:lombok:1.18.46'

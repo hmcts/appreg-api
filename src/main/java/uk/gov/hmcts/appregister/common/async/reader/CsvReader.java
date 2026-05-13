@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.async.reader;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.exceptionhandler.CsvExceptionHandler;
@@ -115,6 +116,7 @@ public class CsvReader<T extends CsvPojo> implements DataReader<T> {
      *
      * @return The input stream.
      */
+    @JsonIgnore
     public InputStream getInputStream() throws IOException {
         return new FileInputStream(source);
     }
