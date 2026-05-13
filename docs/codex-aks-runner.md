@@ -13,6 +13,8 @@ Jira Automation
   -> Jira issue transitions to Dev Review
 ```
 
+The flow is not tied to one Jira board. Each board needs its own Automation rule that sends the same webhook payload fields, and the target Jira transition must exist in that board's workflow.
+
 ## Workflows
 
 - `.github/workflows/codex_runner_smoke.yml`: validates the AKS runner can start, authenticate Codex, create a branch, commit, and push.
