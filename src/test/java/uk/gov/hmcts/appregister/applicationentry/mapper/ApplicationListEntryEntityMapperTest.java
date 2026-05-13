@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.OfficialType;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.Respondent;
 
+@SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryEntityMapperTest {
 
     private ApplicationListEntryEntityMapper mapper;

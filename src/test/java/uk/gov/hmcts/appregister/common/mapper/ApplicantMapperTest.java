@@ -12,6 +12,7 @@ import uk.gov.hmcts.appregister.generated.model.ContactDetails;
 import uk.gov.hmcts.appregister.generated.model.FullName;
 import uk.gov.hmcts.appregister.generated.model.Person;
 
+@SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicantMapperTest {
 
     private final ApplicantMapper mapper = new ApplicantMapperImpl();

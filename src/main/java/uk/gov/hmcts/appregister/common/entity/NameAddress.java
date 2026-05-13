@@ -82,7 +82,7 @@ public class NameAddress extends BaseChangeableEntity implements Accountable, Ke
 
     @Column(name = "surname")
     @Audit(action = {CrudEnum.CREATE, CrudEnum.DELETE, CrudEnum.READ})
-    // TODO(ARCPOC-1341 Phase 2): remove legacy compatibility column usage after clients migrate.
+    // Phase 2: remove this deprecated legacy compatibility column usage after clients migrate.
     private String surname;
 
     @Column(name = "first_name")

@@ -72,6 +72,7 @@ public abstract class ApplicantMapper {
      * @param applicant The standard applicant name and address
      * @return The full name
      */
+    @SuppressWarnings({"deprecation", "java:S1874"})
     public FullName toFullName(NameAddress applicant) {
         String firstName = firstNonBlank(applicant.getFirstName(), applicant.getForename1());
         String middleName =
@@ -85,7 +86,7 @@ public abstract class ApplicantMapper {
         fullName.setFirstName(firstName);
         fullName.setMiddleName(JsonNullable.of(middleName));
         fullName.setLastName(lastName);
-        // TODO(ARCPOC-1341 Phase 2): drop legacy echo fields once callers consume canonical names.
+        // Phase 2: drop the deprecated legacy echo fields once callers consume canonical names.
         fullName.setFirstForename(firstName);
         fullName.setSecondForename(JsonNullable.of(middleName));
         fullName.setThirdForename(JsonNullable.of(null));
@@ -123,29 +124,26 @@ public abstract class ApplicantMapper {
         String middleName = middleName(name);
         String lastName = lastName(name);
 
-        nameAddress.setTitle(name == null ? null : name.getTitle());
+        nameAddress.setTitle(name.getTitle());
         nameAddress.setFirstName(firstName);
         nameAddress.setMiddleName(middleName);
         nameAddress.setLastName(lastName);
-        // TODO(ARCPOC-1341 Phase 2): stop backfilling legacy person-name columns from canonical
-        // input.
+        // Phase 2: stop backfilling the deprecated legacy person-name columns from canonical input.
         nameAddress.setForename1(firstName);
         nameAddress.setForename2(middleName);
         nameAddress.setForename3(null);
         nameAddress.setSurname(lastName);
 
         ContactDetails contactDetails = person.getContactDetails();
-        if (contactDetails != null) {
-            nameAddress.setAddress1(contactDetails.getAddressLine1());
-            nameAddress.setAddress2(map(contactDetails.getAddressLine2()));
-            nameAddress.setAddress3(map(contactDetails.getAddressLine3()));
-            nameAddress.setAddress4(map(contactDetails.getAddressLine4()));
-            nameAddress.setAddress5(map(contactDetails.getAddressLine5()));
-            nameAddress.setPostcode(contactDetails.getPostcode());
-            nameAddress.setTelephoneNumber(map(contactDetails.getPhone()));
-            nameAddress.setMobileNumber(map(contactDetails.getMobile()));
-            nameAddress.setEmailAddress(map(contactDetails.getEmail()));
-        }
+        nameAddress.setAddress1(contactDetails.getAddressLine1());
+        nameAddress.setAddress2(map(contactDetails.getAddressLine2()));
+        nameAddress.setAddress3(map(contactDetails.getAddressLine3()));
+        nameAddress.setAddress4(map(contactDetails.getAddressLine4()));
+        nameAddress.setAddress5(map(contactDetails.getAddressLine5()));
+        nameAddress.setPostcode(contactDetails.getPostcode());
+        nameAddress.setTelephoneNumber(map(contactDetails.getPhone()));
+        nameAddress.setMobileNumber(map(contactDetails.getMobile()));
+        nameAddress.setEmailAddress(map(contactDetails.getEmail()));
 
         return nameAddress;
     }
@@ -320,6 +318,7 @@ public abstract class ApplicantMapper {
         return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     public String firstName(FullName name) {
         if (name == null) {
             return null;
@@ -327,17 +326,18 @@ public abstract class ApplicantMapper {
         return firstNonBlank(name.getFirstName(), name.getFirstForename());
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     public String middleName(FullName name) {
         if (name == null) {
             return null;
         }
-        // TODO(ARCPOC-1341 Phase 2): remove legacy fallback once all inbound payloads use
-        // middleName.
+        // Phase 2: remove the deprecated legacy fallback once all inbound payloads use middleName.
         return firstNonBlank(
                 map(name.getMiddleName()),
                 combineMiddleName(map(name.getSecondForename()), map(name.getThirdForename())));
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     public String lastName(FullName name) {
         if (name == null) {
             return null;

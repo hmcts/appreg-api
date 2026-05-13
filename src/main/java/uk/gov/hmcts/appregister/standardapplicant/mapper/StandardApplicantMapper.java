@@ -141,6 +141,7 @@ public abstract class StandardApplicantMapper {
         return applicant;
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     private static FullName getFullName(StandardApplicant standardApplicant) {
         String middleName =
                 ApplicantMapper.combineMiddleName(
@@ -153,8 +154,7 @@ public abstract class StandardApplicantMapper {
         name.setMiddleName(
                 middleName == null ? JsonNullable.of(null) : JsonNullable.of(middleName));
         name.setLastName(standardApplicant.getApplicantSurname());
-        // TODO(ARCPOC-1341 Phase 2): remove legacy standard-applicant name echoes after FE
-        // migration.
+        // Phase 2: remove the deprecated legacy standard-applicant name echoes after FE migration.
         name.setFirstForename(standardApplicant.getApplicantForename1());
         name.setSecondForename(
                 middleName == null ? JsonNullable.undefined() : JsonNullable.of(middleName));

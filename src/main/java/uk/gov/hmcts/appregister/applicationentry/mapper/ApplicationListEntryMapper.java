@@ -137,6 +137,7 @@ public abstract class ApplicationListEntryMapper {
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
     @Mapping(target = "officials", ignore = true)
+    @SuppressWarnings("java:S1874")
     public abstract EntryGetPrintDto toPrintDto(
             ApplicationListEntryPrintProjection printProjection);
 
@@ -861,6 +862,7 @@ public abstract class ApplicationListEntryMapper {
         return contactDetails;
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     private Respondent toBulkUploadRespondent(BulkUploadRow row) {
         Respondent respondent = new Respondent();
 
@@ -882,7 +884,7 @@ public abstract class ApplicationListEntryMapper {
                             ApplicantMapper.combineMiddleName(
                                     row.getRespondentForename2(), row.getRespondentForename3())));
             name.setLastName(row.getRespondentSurname());
-            // TODO(ARCPOC-1341 Phase 2): remove legacy respondent name fields from bulk-upload DTO
+            // Phase 2: remove the deprecated legacy respondent name fields from bulk-upload DTO
             // output.
             name.setFirstForename(row.getRespondentForename1());
             name.setSecondForename(
@@ -952,6 +954,7 @@ public abstract class ApplicationListEntryMapper {
         }
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     private void truncateFullName(FullName name) {
         if (name == null) {
             return;
@@ -961,7 +964,8 @@ public abstract class ApplicationListEntryMapper {
         name.setFirstName(StringUtils.left(name.getFirstName(), 100));
         name.setMiddleName(truncate(name.getMiddleName(), 100));
         name.setLastName(StringUtils.left(name.getLastName(), 100));
-        // TODO(ARCPOC-1341 Phase 2): remove legacy truncation once deprecated name fields are gone.
+        // Phase 2: remove the deprecated legacy truncation once those compatibility fields are
+        // gone.
         name.setFirstForename(StringUtils.left(name.getFirstForename(), 100));
         name.setSecondForename(truncate(name.getSecondForename(), 100));
         name.setThirdForename(truncate(name.getThirdForename(), 100));

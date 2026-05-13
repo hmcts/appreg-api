@@ -111,6 +111,7 @@ import uk.gov.hmcts.appregister.generated.model.TemplateConstraint;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 import uk.gov.hmcts.appregister.util.ApplicationListEntrySummaryProjectionBuilder;
 
+@SuppressWarnings({"deprecation", "java:S1874"})
 class ApplicationListEntryMapperTest {
 
     private ApplicationListEntryMapper mapper;
