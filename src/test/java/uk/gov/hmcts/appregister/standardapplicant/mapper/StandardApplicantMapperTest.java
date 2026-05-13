@@ -41,16 +41,35 @@ public class StandardApplicantMapperTest {
                         .getPerson()
                         .getName()
                         .getFirstForename());
-        Assertions.assertNotNull(
-                standardApplicant.getApplicantForename2(),
+        Assertions.assertEquals(
+                standardApplicant.getApplicantForename1(),
+                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getFirstName());
+        Assertions.assertEquals(
+                "%s %s"
+                        .formatted(
+                                standardApplicant.getApplicantForename2(),
+                                standardApplicant.getApplicantForename3()),
+                standardApplicantGetDetailDto
+                        .getApplicant()
+                        .getPerson()
+                        .getName()
+                        .getMiddleName()
+                        .get());
+        Assertions.assertEquals(
+                standardApplicant.getApplicantSurname(),
+                standardApplicantGetDetailDto.getApplicant().getPerson().getName().getLastName());
+        Assertions.assertEquals(
+                "%s %s"
+                        .formatted(
+                                standardApplicant.getApplicantForename2(),
+                                standardApplicant.getApplicantForename3()),
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()
                         .getName()
                         .getSecondForename()
                         .get());
-        Assertions.assertNotNull(
-                standardApplicant.getApplicantForename3(),
+        Assertions.assertNull(
                 standardApplicantGetDetailDto
                         .getApplicant()
                         .getPerson()

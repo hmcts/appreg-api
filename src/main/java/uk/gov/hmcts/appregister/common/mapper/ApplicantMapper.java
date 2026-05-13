@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.common.mapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -72,12 +73,23 @@ public abstract class ApplicantMapper {
      * @return The full name
      */
     public FullName toFullName(NameAddress applicant) {
+        String firstName = firstNonBlank(applicant.getFirstName(), applicant.getForename1());
+        String middleName =
+                firstNonBlank(
+                        applicant.getMiddleName(),
+                        combineMiddleName(applicant.getForename2(), applicant.getForename3()));
+        String lastName = firstNonBlank(applicant.getLastName(), applicant.getSurname());
+
         FullName fullName = new FullName();
         fullName.setTitle(applicant.getTitle());
-        fullName.setFirstForename(applicant.getForename1());
-        fullName.setSecondForename(JsonNullable.of(applicant.getForename2()));
-        fullName.setThirdForename(JsonNullable.of(applicant.getForename3()));
-        fullName.setSurname(applicant.getSurname());
+        fullName.setFirstName(firstName);
+        fullName.setMiddleName(JsonNullable.of(middleName));
+        fullName.setLastName(lastName);
+        // TODO(ARCPOC-1341 Phase 2): drop legacy echo fields once callers consume canonical names.
+        fullName.setFirstForename(firstName);
+        fullName.setSecondForename(JsonNullable.of(middleName));
+        fullName.setThirdForename(JsonNullable.of(null));
+        fullName.setSurname(lastName);
         return fullName;
     }
 
@@ -103,28 +115,40 @@ public abstract class ApplicantMapper {
         return contactDetails;
     }
 
-    @Mapping(target = "title", source = "person.name.title")
-    @Mapping(target = "surname", source = "person.name.surname")
-    @Mapping(target = "forename1", source = "person.name.firstForename")
-    @Mapping(target = "forename2", source = "person.name.secondForename")
-    @Mapping(target = "forename3", source = "person.name.thirdForename")
-    @Mapping(target = "address1", source = "person.contactDetails.addressLine1")
-    @Mapping(target = "address2", source = "person.contactDetails.addressLine2")
-    @Mapping(target = "address3", source = "person.contactDetails.addressLine3")
-    @Mapping(target = "address4", source = "person.contactDetails.addressLine4")
-    @Mapping(target = "address5", source = "person.contactDetails.addressLine5")
-    @Mapping(target = "postcode", source = "person.contactDetails.postcode")
-    @Mapping(target = "telephoneNumber", source = "person.contactDetails.phone")
-    @Mapping(target = "mobileNumber", source = "person.contactDetails.mobile")
-    @Mapping(target = "emailAddress", source = "person.contactDetails.email")
-    @Mapping(target = "dateOfBirth", ignore = true)
-    @Mapping(target = "dmsId", ignore = true)
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "userName", ignore = true)
-    @Mapping(target = "code", ignore = true)
-    @Mapping(target = "version", ignore = true)
-    @Mapping(target = "name", ignore = true)
-    abstract NameAddress toPerson(Person person);
+    NameAddress toPerson(Person person) {
+        NameAddress nameAddress = new NameAddress();
+        FullName name = person.getName();
+
+        String firstName = firstName(name);
+        String middleName = middleName(name);
+        String lastName = lastName(name);
+
+        nameAddress.setTitle(name == null ? null : name.getTitle());
+        nameAddress.setFirstName(firstName);
+        nameAddress.setMiddleName(middleName);
+        nameAddress.setLastName(lastName);
+        // TODO(ARCPOC-1341 Phase 2): stop backfilling legacy person-name columns from canonical
+        // input.
+        nameAddress.setForename1(firstName);
+        nameAddress.setForename2(middleName);
+        nameAddress.setForename3(null);
+        nameAddress.setSurname(lastName);
+
+        ContactDetails contactDetails = person.getContactDetails();
+        if (contactDetails != null) {
+            nameAddress.setAddress1(contactDetails.getAddressLine1());
+            nameAddress.setAddress2(map(contactDetails.getAddressLine2()));
+            nameAddress.setAddress3(map(contactDetails.getAddressLine3()));
+            nameAddress.setAddress4(map(contactDetails.getAddressLine4()));
+            nameAddress.setAddress5(map(contactDetails.getAddressLine5()));
+            nameAddress.setPostcode(contactDetails.getPostcode());
+            nameAddress.setTelephoneNumber(map(contactDetails.getPhone()));
+            nameAddress.setMobileNumber(map(contactDetails.getMobile()));
+            nameAddress.setEmailAddress(map(contactDetails.getEmail()));
+        }
+
+        return nameAddress;
+    }
 
     @Mapping(target = "name", source = "organisation.name")
     @Mapping(target = "address1", source = "organisation.contactDetails.addressLine1")
@@ -147,6 +171,9 @@ public abstract class ApplicantMapper {
     @Mapping(target = "forename1", ignore = true)
     @Mapping(target = "forename2", ignore = true)
     @Mapping(target = "forename3", ignore = true)
+    @Mapping(target = "firstName", ignore = true)
+    @Mapping(target = "middleName", ignore = true)
+    @Mapping(target = "lastName", ignore = true)
     abstract NameAddress toOrganisation(Organisation organisation);
 
     /**
@@ -207,6 +234,13 @@ public abstract class ApplicantMapper {
     @Mapping(target = "forename2", source = "applicantForename2")
     @Mapping(target = "forename3", source = "applicantForename3")
     @Mapping(target = "surname", source = "applicantSurname")
+    @Mapping(target = "firstName", source = "applicantForename1")
+    @Mapping(
+            target = "middleName",
+            expression =
+                    "java(combineMiddleName(standardApplicant.getApplicantForename2(), "
+                            + "standardApplicant.getApplicantForename3()))")
+    @Mapping(target = "lastName", source = "applicantSurname")
     @Mapping(target = "address1", source = "addressLine1")
     @Mapping(target = "address2", source = "addressLine2")
     @Mapping(target = "address3", source = "addressLine3")
@@ -255,7 +289,10 @@ public abstract class ApplicantMapper {
     public String getNameForNameAddress(NameAddress nameAddress) {
         String name = "";
         if (nameAddress != null && nameAddress.getName() == null) {
-            name = formatPersonName(nameAddress.getForename1(), nameAddress.getSurname());
+            name =
+                    formatPersonName(
+                            firstNonBlank(nameAddress.getFirstName(), nameAddress.getForename1()),
+                            firstNonBlank(nameAddress.getLastName(), nameAddress.getSurname()));
         } else if (nameAddress != null) {
             name = nameAddress.getName();
         }
@@ -276,10 +313,48 @@ public abstract class ApplicantMapper {
     }
 
     public String map(JsonNullable<String> str) {
-        return str.isPresent() ? str.get() : null;
+        return str != null && str.isPresent() ? str.get() : null;
     }
 
     public JsonNullable<String> map(String string) {
         return (string != null) ? JsonNullable.of(string) : JsonNullable.of(null);
+    }
+
+    public String firstName(FullName name) {
+        if (name == null) {
+            return null;
+        }
+        return firstNonBlank(name.getFirstName(), name.getFirstForename());
+    }
+
+    public String middleName(FullName name) {
+        if (name == null) {
+            return null;
+        }
+        // TODO(ARCPOC-1341 Phase 2): remove legacy fallback once all inbound payloads use
+        // middleName.
+        return firstNonBlank(
+                map(name.getMiddleName()),
+                combineMiddleName(map(name.getSecondForename()), map(name.getThirdForename())));
+    }
+
+    public String lastName(FullName name) {
+        if (name == null) {
+            return null;
+        }
+        return firstNonBlank(name.getLastName(), name.getSurname());
+    }
+
+    public static String combineMiddleName(String secondForename, String thirdForename) {
+        return StringUtils.trimToNull(
+                String.join(
+                        " ",
+                        StringUtils.defaultString(StringUtils.trimToNull(secondForename)),
+                        StringUtils.defaultString(StringUtils.trimToNull(thirdForename))));
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        String value = StringUtils.trimToNull(primary);
+        return value != null ? value : StringUtils.trimToNull(fallback);
     }
 }
