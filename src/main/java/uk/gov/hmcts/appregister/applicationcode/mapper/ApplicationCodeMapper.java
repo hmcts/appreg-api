@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.applicationcode.mapper;
 
 import java.time.LocalDate;
 import lombok.Setter;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -156,10 +157,12 @@ public abstract class ApplicationCodeMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "code")
     @Mapping(target = "title", source = "title")
+    @BeanMapping(ignoreByDefault = true)
     public abstract ApplicationCode toEntity(CodeAndTitle record);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "code", source = "payloadForGet.code")
     @Mapping(target = "startDate", source = "payloadForGet.date")
+    @BeanMapping(ignoreByDefault = true)
     public abstract ApplicationCode toEntity(PayloadForGet payloadForGet);
 }

@@ -38,7 +38,7 @@ public class JpaReaderTest extends AbstractAsyncTest {
         JobContext jobContext = mock(JobContext.class);
 
         // setup the page data callback
-        PageReader<ApplicationCode> pageRead = Mockito.mock(PageReader.class);
+        PageReader<ApplicationCode> pageRead = mockPageReader();
 
         // gets the lust of paged data
         PageImpl<ApplicationCode> page = new PageImpl<>(List.of(code));
@@ -46,10 +46,13 @@ public class JpaReaderTest extends AbstractAsyncTest {
         PageImpl<ApplicationCode> page2 = new PageImpl<>(List.of());
 
         // setup the page data supplier callback
-        Function<Pageable, Page<ApplicationCode>> supplier = mock(Function.class);
+        Function<Pageable, Page<ApplicationCode>> supplier = mockPageSupplier();
 
         // mock the supplier callback
-        when(supplier.apply(pageableArgumentCaptor.capture())).thenReturn(page, page1, page2);
+        when(supplier.apply(pageableArgumentCaptor.capture()))
+                .thenReturn(page)
+                .thenReturn(page1)
+                .thenReturn(page2);
 
         // run the test
         try (JpaDataReader<ApplicationCode> applicationCodeJpaDataReader =
@@ -77,5 +80,15 @@ public class JpaReaderTest extends AbstractAsyncTest {
             Assertions.assertEquals(
                     code1, applicationCodeArgumentCaptor.getAllValues().get(1).get(0));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private PageReader<ApplicationCode> mockPageReader() {
+        return Mockito.mock(PageReader.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Function<Pageable, Page<ApplicationCode>> mockPageSupplier() {
+        return mock(Function.class);
     }
 }

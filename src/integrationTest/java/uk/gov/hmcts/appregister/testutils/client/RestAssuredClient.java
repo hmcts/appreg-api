@@ -32,17 +32,10 @@ public class RestAssuredClient {
 
     public static final String DEFAULT_TRACE = "00-" + DEFAULT_TRACE_ID + "-7b3f6a2c9e4d1a8f-01";
 
-    // Initialize RestAssured configuration
-    {
-        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+    private static final ObjectMapper OBJECT_MAPPER = createObjectMapper();
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        JavaTimeModule timeModule = new JavaTimeModule();
-
-        // Setup the serializer and deserializer for LocalTime with format "HH:mm"
-        timeModule.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
-        objectMapper.registerModule(timeModule);
-        objectMapper.registerModule(new JsonNullableModule());
+    static {
+        RestAssured.replaceFiltersWith(new RequestLoggingFilter(), new ResponseLoggingFilter());
 
         RestAssured.config =
                 RestAssuredConfig.config()
@@ -50,7 +43,17 @@ public class RestAssuredClient {
                                 ObjectMapperConfig.objectMapperConfig()
                                         .defaultObjectMapperType(ObjectMapperType.JACKSON_2)
                                         .jackson2ObjectMapperFactory(
-                                                (cls, charset) -> objectMapper));
+                                                (cls, charset) -> OBJECT_MAPPER));
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        var objectMapper = new ObjectMapper();
+        var timeModule = new JavaTimeModule();
+
+        timeModule.addSerializer(LocalTime.class, new StrictLocalTimeSerializer());
+        objectMapper.registerModule(timeModule);
+        objectMapper.registerModule(new JsonNullableModule());
+        return objectMapper;
     }
 
     /**

@@ -17,6 +17,7 @@ import uk.gov.hmcts.appregister.common.serializer.StrictLocalTimeSerializer;
  * development cycle.
  */
 @Deprecated
+@SuppressWarnings("removal")
 @Configuration
 @RequiredArgsConstructor
 public class JacksonConfig {
