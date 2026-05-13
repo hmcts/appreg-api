@@ -218,4 +218,7 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   } >>"${GITHUB_OUTPUT}"
 fi
 
-python3 .github/scripts/jira-transition-issue.py --pr-url "${pr_url}"
+python3 .github/scripts/notify-jira-automation.py \
+  --pr-url "${pr_url}" \
+  --branch-name "${branch_name}" \
+  --commit-sha "$(git rev-parse HEAD)"

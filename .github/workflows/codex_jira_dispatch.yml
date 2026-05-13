@@ -46,10 +46,8 @@ jobs:
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
       CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
-      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL || 'https://justice-ai-coe.atlassian.net' }}
-      JIRA_TARGET_STATUS: ${{ vars.JIRA_TARGET_STATUS || 'Dev Review' }}
-      JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
+      CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
