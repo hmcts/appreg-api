@@ -16,7 +16,6 @@ public class ImplementedRestfulTest {
     // application register to production.
     private static final List<String> UNIMPLEMENTED_ENDPOINTS =
             List.of(
-                    "POST /reports/private-prosecutors-index/jobs",
                     "POST /reports/workload/jobs",
                     "POST /reports/list-maintenance/jobs",
                     "POST /reports/search-warrants/jobs");

@@ -124,6 +124,11 @@ class ActivityAuditReportDataReader implements DataReader<ActivityAuditReportRow
                                     ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT
                                             .getEventName(),
                                     ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT
+                                            .getEventName(),
+                                    ReportAuditOperation
+                                            .CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT
                                             .getEventName())),
                     Map.entry(
                             ActivityType.REPORT_DOWNLOADED,

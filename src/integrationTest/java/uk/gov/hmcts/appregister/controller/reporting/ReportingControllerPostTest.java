@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -33,6 +34,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
     private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
+    private static final String PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT =
+            "reports/private-prosecutors-index/jobs";
     private static final String JOB_WEB_CONTEXT = "jobs/%s";
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
 
@@ -404,6 +407,185 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void givenValidPrivateProsecutorsIndexRequest_whenCreatingReport_thenCsvCanBeDownloaded()
+            throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 11);
+        insertPrivateProsecutorsIndexApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .applicantSurname("Legacy")
+                        .respondentOrganisationName("Respondent Org")
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "dateFrom",
+                "2026-04-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "dateTo",
+                "2026-04-28");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "applicantSurname",
+                "Legacy");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "respondentOrganisationName",
+                "Respondent Org");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "cjaCode",
+                "CD");
+        assertOnlyReportParametersAuditedFor(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("11/04/2026"));
+            Assertions.assertTrue(report.contains("XCD999 - Private Court"));
+            Assertions.assertTrue(report.contains("Private Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+            Assertions.assertTrue(report.contains("Legacy"));
+            Assertions.assertTrue(report.contains("Private"));
+            Assertions.assertTrue(report.contains("Respondent Org Ltd"));
+            Assertions.assertTrue(report.contains("Private wording"));
+            Assertions.assertTrue(report.contains("PIZ"));
+            Assertions.assertTrue(report.contains("PIA"));
+            Assertions.assertTrue(report.contains("Private notes"));
+            Assertions.assertFalse(report.contains("{wording}"));
+        }
+    }
+
+    @Test
+    public void
+            givenValidPrivateProsecutorsIndexRequestForStandardApplicant_whenCreatingReport_thenCsvCanBeDownloaded()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 12);
+        insertPrivateProsecutorsIndexStandardApplicantApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .standardApplicantName("Standards")
+                        .respondentOrganisationName("Standard Respondent")
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "standardApplicantName",
+                "Standards");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "respondentOrganisationName",
+                "Standard Respondent");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "cjaCode",
+                "CD");
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("12/04/2026"));
+            Assertions.assertTrue(report.contains("XCD998 - Standard Private Court"));
+            Assertions.assertTrue(report.contains("Private Standards Body"));
+            Assertions.assertTrue(report.contains("Standard Respondent Ltd"));
+            Assertions.assertTrue(report.contains("Standard private wording"));
+            Assertions.assertTrue(report.contains("PIS"));
+            Assertions.assertTrue(report.contains("Standard private notes"));
+            Assertions.assertTrue(report.contains("CD,,,Private Standards Body,"));
+        }
+    }
+
+    @Test
     public void givenUnknownCjaCode_whenCreatingDurationReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -615,6 +797,423 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 durationHours,
                 durationMinutes,
                 cjaId);
+    }
+
+    private void insertPrivateProsecutorsIndexApplication(LocalDate listDate) {
+        long applicantId = insertNameAddressRow(null, "Private", "Legacy", "Applicant Street");
+        long respondentId =
+                insertNameAddressRow("Respondent Org Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD999",
+                        "Private Hall",
+                        "Private prosecution integration list",
+                        "Private Court",
+                        3);
+        long entryId =
+                insertApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        applicantId,
+                        respondentId,
+                        "Private {wording}",
+                        "Private notes",
+                        listDate);
+        long highResolutionCodeId = insertResolutionCode("PIZ");
+        long lowResolutionCodeId = insertResolutionCode("PIA");
+        insertApplicationListEntryResolution(entryId, highResolutionCodeId);
+        insertApplicationListEntryResolution(entryId, lowResolutionCodeId);
+    }
+
+    private void insertPrivateProsecutorsIndexStandardApplicantApplication(LocalDate listDate) {
+        long standardApplicantId = insertStandardApplicantRow("Private Standards Body");
+        long respondentId =
+                insertNameAddressRow("Standard Respondent Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD998",
+                        "Standard Private Hall",
+                        "Private prosecution standard applicant integration list",
+                        "Standard Private Court",
+                        3);
+        long entryId =
+                insertStandardApplicantApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        standardApplicantId,
+                        respondentId,
+                        "Standard private {wording}",
+                        "Standard private notes",
+                        listDate);
+        long resolutionCodeId = insertResolutionCode("PIS");
+        insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
+    private long insertNameAddressRow(
+            String name, String firstName, String surname, String addressLine1) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.name_address (
+                    na_id,
+                    name,
+                    forename_1,
+                    surname,
+                    address_l1,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.na_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING na_id
+                """,
+                        schema, schema),
+                Long.class,
+                name,
+                firstName,
+                surname,
+                addressLine1);
+    }
+
+    private long insertStandardApplicantRow(String name) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.standard_applicants (
+                    sa_id,
+                    standard_applicant_code,
+                    standard_applicant_start_date,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    name,
+                    address_l1
+                )
+                VALUES (
+                    nextval('%s.sa_seq'),
+                    ?,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    ?,
+                    'Standard applicant street'
+                )
+                RETURNING sa_id
+                """,
+                        schema, schema),
+                Long.class,
+                "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
+                name);
+    }
+
+    private long insertApplicationListRowReturningId(
+            String status,
+            LocalDate listDate,
+            String courthouseCode,
+            String otherCourthouse,
+            String listDescription,
+            String courthouseName,
+            int cjaId) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_lists (
+                    al_id,
+                    application_list_status,
+                    application_list_date,
+                    application_list_time,
+                    courthouse_code,
+                    other_courthouse,
+                    list_description,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    courthouse_name,
+                    cja_cja_id
+                )
+                VALUES (
+                    nextval('%s.al_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    ?,
+                    ?
+                )
+                RETURNING al_id
+                """,
+                        schema, schema),
+                Long.class,
+                status,
+                listDate,
+                listDate.atTime(10, 0),
+                courthouseCode,
+                otherCourthouse,
+                listDescription,
+                courthouseName,
+                cjaId);
+    }
+
+    private long insertApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long applicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_list_entries (
+                    ale_id,
+                    al_al_id,
+                    ac_ac_id,
+                    a_na_id,
+                    r_na_id,
+                    application_list_entry_wording,
+                    entry_rescheduled,
+                    notes,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    sequence_number,
+                    lodgement_date
+                )
+                VALUES (
+                    nextval('%s.ale_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'N',
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    1,
+                    ?
+                )
+                RETURNING ale_id
+                """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                applicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long insertStandardApplicantApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long standardApplicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_list_entries (
+                    ale_id,
+                    al_al_id,
+                    ac_ac_id,
+                    sa_sa_id,
+                    r_na_id,
+                    application_list_entry_wording,
+                    entry_rescheduled,
+                    notes,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    sequence_number,
+                    lodgement_date
+                )
+                VALUES (
+                    nextval('%s.ale_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'N',
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    1,
+                    ?
+                )
+                RETURNING ale_id
+                """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                standardApplicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long applicationCodeIdOrInsert(String applicationCode) {
+        List<Long> applicationCodeIds =
+                jdbcTemplate.queryForList(
+                        String.format(
+                                """
+                SELECT ac_id
+                FROM %s.application_codes
+                WHERE application_code = ?
+                ORDER BY ac_id DESC
+                LIMIT 1
+                """,
+                                schema),
+                        Long.class,
+                        applicationCode);
+        if (!applicationCodeIds.isEmpty()) {
+            return applicationCodeIds.getFirst();
+        }
+
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_codes (
+                    ac_id,
+                    application_code,
+                    application_code_title,
+                    application_code_wording,
+                    application_legislation,
+                    fee_due,
+                    application_code_respondent,
+                    application_code_start_date,
+                    bulk_respondent_allowed,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.ac_seq'),
+                    ?,
+                    'Application for a private prosecution summons',
+                    'Application for private prosecution {TEXT|Summarise offence title(s)|250}',
+                    'Section 1 Magistrates Courts Act 1980',
+                    'N',
+                    'Y',
+                    DATE '2020-01-01',
+                    'N',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING ac_id
+                """,
+                        schema, schema),
+                Long.class,
+                applicationCode);
+    }
+
+    private long insertResolutionCode(String resolutionCode) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.resolution_codes (
+                    rc_id,
+                    resolution_code,
+                    resolution_code_title,
+                    resolution_code_wording,
+                    resolution_code_start_date,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.rc_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING rc_id
+                """,
+                        schema, schema),
+                Long.class,
+                resolutionCode,
+                resolutionCode + " title",
+                resolutionCode + " wording");
+    }
+
+    private void insertApplicationListEntryResolution(long entryId, long resolutionCodeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.app_list_entry_resolutions (
+                    aler_id,
+                    rc_rc_id,
+                    ale_ale_id,
+                    al_entry_resolution_wording,
+                    al_entry_resolution_officer,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.aler_seq'),
+                    ?,
+                    ?,
+                    'Resolution wording',
+                    'Resolution officer',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema, schema),
+                resolutionCodeId,
+                entryId);
     }
 
     private void assertReportParameterAuditRow(
