@@ -19,5 +19,5 @@ properties:
   statusDate:
     type: string
     format: date
-    description: The date when the payment status was updated.
+    description: The date when the payment status was updated. Must be today's date or a past date.
     example: "2025-12-01"

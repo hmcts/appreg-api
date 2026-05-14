@@ -18,6 +18,7 @@ import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
+import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class ReportServiceImpl implements ReportService {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ReportJobAuditService reportJobAuditService;
     private final ReportFilterNormaliser reportFilterNormaliser;
+    private final ReportLocationValidator reportLocationValidator;
 
     @Value("${spring.jpa.properties.hibernate.default_schema}")
     private String schema;
@@ -67,6 +69,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportJobCreation createFeesReport(FeesReportFilterDto filter) {
         FeesReportFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
         FeesReportLifecycle lifecycle;
         try {
             lifecycle = new FeesReportLifecycle();
@@ -95,6 +98,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportJobCreation createDurationReport(DurationFilterDto filter) {
         DurationFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
         DurationReportLifecycle lifecycle;
         try {
             lifecycle = new DurationReportLifecycle();

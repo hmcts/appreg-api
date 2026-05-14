@@ -1,4 +1,9 @@
 spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
   security:
     oauth2:
       resourceserver:
@@ -7,9 +12,14 @@ spring:
 
 logging:
   level:
-    org.springframework.security: TRACE
-    org.springframework.*: DEBUG
-    root: debug
+    root: INFO
+    WireMock: WARN
+    org.eclipse.jetty: WARN
+    org.springframework: WARN
+    org.springframework.security: WARN
+    org.wiremock: WARN
+    uk.gov.hmcts.appregister.audit.listener.DataAuditLogger: DEBUG
+    uk.gov.hmcts.appregister.audit.listener.diff.ReflectiveAuditor: DEBUG
 appreg:
   audit:
     diff:

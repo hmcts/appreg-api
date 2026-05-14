@@ -8,6 +8,9 @@ import java.io.IOException;
  * uk.gov.hmcts.appregister.common.async.JobContext#logFailure(String)}
  */
 public class JobException extends IOException {
+
+    private static final long serialVersionUID = 1L;
+
     public JobException(String message, Throwable cause) {
         super(message, cause);
     }

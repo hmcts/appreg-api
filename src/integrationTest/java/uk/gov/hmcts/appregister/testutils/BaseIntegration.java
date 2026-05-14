@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import uk.gov.hmcts.appregister.audit.listener.AuditOperationSlf4jLogger;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.testutils.client.RestAssuredClient;
-import uk.gov.hmcts.appregister.testutils.docker.PostgresCommand;
 import uk.gov.hmcts.appregister.testutils.stubs.wiremock.TokenStub;
 import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
@@ -23,20 +22,18 @@ import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 @Slf4j
 public class BaseIntegration extends BasePostgresIntegrationTest {
 
+    private static final ObjectMapper SHARED_OBJECT_MAPPER = createObjectMapper();
+    private static final String GLOBAL_JWKS_KEY = TokenGenerator.builder().build().getGlobalKey();
+
     @Autowired protected TokenStub tokenStub;
 
     @Autowired protected RestAssuredClient restAssuredClient;
-
-    @Value("${wiremock.server.port}")
-    protected String wiremockPort;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
     protected String issuer;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.audiences[0]}")
     protected String audience;
-
-    protected static PostgresCommand postgresCommand = new PostgresCommand();
 
     protected LogCaptor logCaptor;
 
@@ -46,19 +43,14 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
     /** An activity log asserter. */
     protected ActivityAuditLogAsserter activityAuditLogAsserter;
 
-    @Value("${wiremock.server.port}")
-    protected String token;
-
     /** A mapper that can be used to convert objects to json strings. */
     protected ObjectMapper mapper;
 
     @BeforeEach
     void setup() {
         try {
-            log.info("Wiremock Port: " + wiremockPort);
-
             // populate the jkws keys endpoint with a global public key
-            tokenStub.stubExternalJwksKeys(TokenGenerator.builder().build().getGlobalKey());
+            tokenStub.stubExternalJwksKeysOnce(GLOBAL_JWKS_KEY);
         } catch (Exception e) {
             log.error("Error setting up wiremock", e);
         }
@@ -67,9 +59,14 @@ public class BaseIntegration extends BasePostgresIntegrationTest {
         activityAuditLogAsserter = new ActivityAuditLogAsserter();
         logCaptor.clearLogs();
         differenceLogAsserter.clearLogs();
-        mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.registerModule(new JsonNullableModule());
+        mapper = SHARED_OBJECT_MAPPER;
+    }
+
+    private static ObjectMapper createObjectMapper() {
+        var objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.registerModule(new JsonNullableModule());
+        return objectMapper;
     }
 
     /**

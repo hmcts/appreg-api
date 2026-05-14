@@ -25,6 +25,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
@@ -70,6 +71,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final UserProvider userProvider;
 
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
+
+    private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     private final ApplicationListEntryMapper applicationListEntryMapper;
 
@@ -236,6 +239,7 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
                                     listId,
                                     applicationEntryService,
                                     bulkUploadApplicationEntryValidator,
+                                    bulkCreateApplicationEntryValidator,
                                     applicationListEntryMapper,
                                     beanValidator));
 

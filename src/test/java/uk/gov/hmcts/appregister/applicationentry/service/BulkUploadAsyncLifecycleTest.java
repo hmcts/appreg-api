@@ -2,12 +2,16 @@ package uk.gov.hmcts.appregister.applicationentry.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import jakarta.validation.Validation;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,10 +20,12 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapperImpl;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUploadRow;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.lifecycle.AsyncJobLifecycleEvent;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.common.mapper.ApplicantMapperImpl;
 import uk.gov.hmcts.appregister.common.mapper.OfficialMapper;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
@@ -28,6 +34,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 class BulkUploadAsyncLifecycleTest {
 
     private BulkUploadAsyncLifecycle lifecycle;
+    private BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
 
     @BeforeEach
     void setUp() {
@@ -35,11 +42,14 @@ class BulkUploadAsyncLifecycleTest {
         mapper.setApplicantMapper(new ApplicantMapperImpl());
         mapper.setOfficialMapper(new OfficialMapper());
 
+        bulkCreateApplicationEntryValidator = mock(BulkCreateApplicationEntryValidator.class);
+
         lifecycle =
                 new BulkUploadAsyncLifecycle(
                         UUID.randomUUID(),
                         mock(ApplicationEntryService.class),
                         new BulkUploadApplicationEntryValidator(),
+                        bulkCreateApplicationEntryValidator,
                         mapper,
                         Validation.buildDefaultValidatorFactory().getValidator());
     }
@@ -84,6 +94,7 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.validating(event(row, context));
 
         assertThat(context.hasFailure()).isFalse();
+        verify(bulkCreateApplicationEntryValidator).validate(any(), any());
     }
 
     @Test
@@ -100,6 +111,45 @@ class BulkUploadAsyncLifecycleTest {
         lifecycle.validating(event(row, context));
 
         assertThat(context.hasFailure()).isFalse();
+    }
+
+    @Test
+    void givenBlankApplicationText_whenValidating_thenDefersToCodeAwareValidation()
+            throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        var applicationTexts = new ArrayListValuedHashMap<String, String>();
+        applicationTexts.put("APPLICATION_TEXT1", "");
+        applicationTexts.put("APPLICATION_TEXT2", "");
+        row.setApplicationTexts(applicationTexts);
+        JobContext context = new JobContext();
+
+        lifecycle.validating(event(row, context));
+
+        assertThat(context.hasFailure()).isFalse();
+        verify(bulkCreateApplicationEntryValidator).validate(any(), any());
+    }
+
+    @Test
+    void givenCodeAwareValidationFailure_whenValidating_thenLogsRowFailure() throws IOException {
+        BulkUploadRow row = validOrganisationRow();
+        doThrow(
+                        new AppRegistryException(
+                                CommonAppError.WORDING_SUBSTITUTE_SIZE_MISMATCH,
+                                "APPLICATION_TEXT1 is required for code AP99001"))
+                .when(bulkCreateApplicationEntryValidator)
+                .validate(any(), any());
+        JobContext context = new JobContext();
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> lifecycle.validating(event(row, context)));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.BULK_UPLOAD_ROW_VALIDATION_FAILED);
+        assertThat(context.getValidationFailureMessages())
+                .containsExactly(
+                        "Row 2 [APPLICATION_TEXT]: APPLICATION_TEXT1 is required for code AP99001");
     }
 
     private static AsyncJobLifecycleEvent<BulkUploadRow> event(

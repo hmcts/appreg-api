@@ -185,9 +185,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .applicantName("Smith")
                         .location(
                                 new LegacyReportLocation()
-                                        .courtLocationCode("LOC123")
+                                        .courtLocationCode("CCC003")
                                         .otherLocationDescription("Town Hall")
-                                        .cjaCode("52"));
+                                        .cjaCode("CD"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -203,13 +203,13 @@ public class ReportingControllerPostTest extends BaseIntegration {
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "applicantName", "Smith");
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "courtLocationCode", "LOC123");
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "courtLocationCode", "CCC003");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
                 "otherLocationDescription",
                 "Town Hall");
         assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "cjaCode", "52");
+                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "cjaCode", "CD");
         assertOnlyReportParametersAuditedFor(ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT);
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
@@ -246,6 +246,78 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
             Assertions.assertTrue(report.contains("Fees Report"));
         }
+    }
+
+    @Test
+    public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("QX"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(
+                createResponse.asString().contains("Criminal Justice Area not found"));
+    }
+
+    @Test
+    public void givenUnknownCourtCode_whenCreatingFeesReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+    }
+
+    @Test
+    public void givenDuplicateCjaCode_whenCreatingFeesReport_thenConflictIsReturned()
+            throws Exception {
+        insertDuplicateCjaRows("Z1");
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("Z1"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(409);
+        Assertions.assertTrue(
+                createResponse
+                        .asString()
+                        .contains(
+                                "Multiple Criminal Justice Areas found when only one was expected"));
     }
 
     @Test
@@ -331,6 +403,78 @@ public class ReportingControllerPostTest extends BaseIntegration {
         }
     }
 
+    @Test
+    public void givenUnknownCjaCode_whenCreatingDurationReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        DurationFilterDto request =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("QX"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(DURATION_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(
+                createResponse.asString().contains("Criminal Justice Area not found"));
+    }
+
+    @Test
+    public void givenUnknownCourtCode_whenCreatingDurationReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        DurationFilterDto request =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(DURATION_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+    }
+
+    @Test
+    public void givenDuplicateCjaCode_whenCreatingDurationReport_thenConflictIsReturned()
+            throws Exception {
+        insertDuplicateCjaRows("Z2");
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        DurationFilterDto request =
+                new DurationFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("Z2"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(DURATION_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(409);
+        Assertions.assertTrue(
+                createResponse
+                        .asString()
+                        .contains(
+                                "Multiple Criminal Justice Areas found when only one was expected"));
+    }
+
     private void insertDataAuditRow(
             String eventName,
             String tableName,
@@ -394,6 +538,22 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createdDate,
                 eventName,
                 userName);
+    }
+
+    private void insertDuplicateCjaRows(String code) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.criminal_justice_area (cja_id, cja_code, cja_description)
+                VALUES
+                    (nextval('%s.cja_seq'), ?, ?),
+                    (nextval('%s.cja_seq'), ?, ?)
+                """,
+                        schema, schema, schema),
+                code,
+                "Duplicate CJA 1",
+                code,
+                "Duplicate CJA 2");
     }
 
     private void insertApplicationListRow(

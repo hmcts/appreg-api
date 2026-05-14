@@ -149,68 +149,77 @@ public class AsyncJobServiceImpl implements AsyncJobService {
             // set the authentication on the thread local of this thread.
             SecurityContextHolder.setContext(authentication);
 
-            // run the runnable inside of a database transaction
-            transactionalUnitOfWork.inTransaction(
-                    () -> {
-                        try (dataReader) {
-                            fireEventAndChangeState(
-                                    jobStatusResponse,
-                                    null,
-                                    JobStatus1.RECEIVED,
-                                    lifecycle,
-                                    jobContext);
-
-                            dataReader.readData(
-                                    position,
-                                    (data, ctxt) -> {
-
-                                        // validate the read page of data
-                                        fireEventAndChangeState(
-                                                jobStatusResponse,
-                                                data,
-                                                JobStatus1.VALIDATING,
-                                                lifecycle,
-                                                jobContext);
-
-                                        // if we dont have a page read callback then do not call.
-                                        if (pageRead != null) {
-                                            // process the data
-                                            pageRead.readData(data, jobContext);
-                                        }
-
-                                        // if a failure has been detected then stop processing and
-                                        // just ensure that
-                                        // validation is captured for all. We do not support partial
-                                        // fails at this point in time
-                                        if (!jobContext.hasFailure()) {
-                                            // process the state with the read data
-                                            fireEventAndChangeState(
-                                                    jobStatusResponse,
-                                                    data,
-                                                    JobStatus1.PROCESSING,
-                                                    lifecycle,
-                                                    jobContext);
-                                        }
-                                    },
-                                    jobContext);
-
-                            // if a failure was detected then fail else complete the job
-                            if (jobContext.hasFailure()) {
-                                throw new JobException(
-                                        "Failed to process job: "
-                                                + jobStatusResponse.getJobId().getId());
-                            } else {
+            try {
+                // run the runnable inside of a database transaction
+                transactionalUnitOfWork.inTransaction(
+                        () -> {
+                            try {
                                 fireEventAndChangeState(
                                         jobStatusResponse,
                                         null,
-                                        JobStatus1.COMPLETED,
+                                        JobStatus1.RECEIVED,
                                         lifecycle,
                                         jobContext);
+
+                                dataReader.readData(
+                                        position,
+                                        (data, ctxt) -> {
+
+                                            // validate the read page of data
+                                            fireEventAndChangeState(
+                                                    jobStatusResponse,
+                                                    data,
+                                                    JobStatus1.VALIDATING,
+                                                    lifecycle,
+                                                    jobContext);
+
+                                            // if we dont have a page read callback then do not
+                                            // call.
+                                            if (pageRead != null) {
+                                                // process the data
+                                                pageRead.readData(data, jobContext);
+                                            }
+
+                                            // if a failure has been detected then stop processing
+                                            // and just ensure that
+                                            // validation is captured for all. We do not support
+                                            // partial fails at this point in time
+                                            if (!jobContext.hasFailure()) {
+                                                // process the state with the read data
+                                                fireEventAndChangeState(
+                                                        jobStatusResponse,
+                                                        data,
+                                                        JobStatus1.PROCESSING,
+                                                        lifecycle,
+                                                        jobContext);
+                                            }
+                                        },
+                                        jobContext);
+
+                                // if a failure was detected then fail else complete the job
+                                if (jobContext.hasFailure()) {
+                                    throw new JobException(
+                                            "Failed to process job: "
+                                                    + jobStatusResponse.getJobId().getId());
+                                } else {
+                                    fireEventAndChangeState(
+                                            jobStatusResponse,
+                                            null,
+                                            JobStatus1.COMPLETED,
+                                            lifecycle,
+                                            jobContext);
+                                }
+                            } catch (Exception t) {
+                                processError(t);
                             }
-                        } catch (Exception t) {
-                            processError(t);
-                        }
-                    });
+                        });
+            } finally {
+                try {
+                    dataReader.close();
+                } catch (IOException e) {
+                    log.warn("Failed to clean up async job data reader", e);
+                }
+            }
         }
 
         private void processError(Throwable t) {

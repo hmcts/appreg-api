@@ -28,6 +28,7 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
+import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobServiceImpl;
@@ -53,7 +54,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         UUID jobId = UUID.randomUUID();
 
         // setup the callback
-        AsyncJobLifecycle<PersonCsvPojo> lifecycle = Mockito.mock(AsyncJobLifecycle.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -90,7 +91,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
             // capture each event in a list so we can asserr
             ArgumentCaptor<AsyncJobLifecycleEvent<PersonCsvPojo>> lifecycleEventArgumentCaptor =
-                    ArgumentCaptor.forClass(AsyncJobLifecycleEvent.class);
+                    lifecycleEventCaptor();
             verify(lifecycle, times(8))
                     .lifeCycleEventPerformed(lifecycleEventArgumentCaptor.capture());
 
@@ -159,6 +160,35 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         }
 
         Assertions.assertThrows(IOException.class, () -> csvReader.getInputStream());
+    }
+
+    @Test
+    public void testAsyncCloseFailureDoesNotFailJob() throws Exception {
+        asyncJobServiceImpl.setPageSize(1);
+
+        String userId = "userId";
+        UUID jobId = UUID.randomUUID();
+        JobIdRequest jobIdRequest = JobIdRequest.builder().id(jobId).userName(userId).build();
+
+        @SuppressWarnings("unchecked")
+        DataReader<PersonCsvPojo> dataReader = Mockito.mock(DataReader.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
+
+        when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
+        Mockito.doThrow(new IOException("close failed")).when(dataReader).close();
+
+        JobTypeRequest jobRequest =
+                JobTypeRequest.builder().jobType(JobType.DURATION_REPORT).userName(userId).build();
+
+        TrackJobStatusResponse trackJobStatusResponse =
+                asyncJobServiceImpl.startJob(jobRequest, dataReader, lifecycle);
+
+        trackJobStatusResponse.getFuture().get();
+
+        verify(dataReader, times(1)).close();
+        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.RECEIVED);
+        verify(persistence, times(1)).setJobStatus(jobIdRequest, JobStatus1.COMPLETED);
+        verify(persistence, times(0)).setJobStatus(jobIdRequest, JobStatus1.FAILED);
     }
 
     @Test
@@ -385,7 +415,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         UUID jobId = UUID.randomUUID();
 
         // setup the callback
-        AsyncJobLifecycle<PersonCsvPojo> lifecycle = Mockito.mock(AsyncJobLifecycle.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -469,6 +499,16 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
             }
         }
         return reader;
+    }
+
+    @SuppressWarnings("unchecked")
+    private AsyncJobLifecycle<PersonCsvPojo> mockLifecycle() {
+        return Mockito.mock(AsyncJobLifecycle.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<AsyncJobLifecycleEvent<PersonCsvPojo>> lifecycleEventCaptor() {
+        return ArgumentCaptor.forClass(AsyncJobLifecycleEvent.class);
     }
 
     class DataPageReader implements PageReader<PersonCsvPojo> {
