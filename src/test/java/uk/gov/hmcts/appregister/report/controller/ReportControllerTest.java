@@ -39,10 +39,12 @@ import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.ListMaintenanceReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
@@ -171,6 +173,45 @@ class ReportControllerTest {
         controller.createDurationReport(filter);
 
         verify(reportService).createDurationReport(filter);
+        Assertions.assertTrue(
+                auditedParameters
+                        .get()
+                        .extractAuditData(CrudEnum.READ)
+                        .contains(
+                                new AuditableData("report_parameters", "dateFrom", "2018-05-01")));
+        Assertions.assertTrue(
+                auditedParameters
+                        .get()
+                        .extractAuditData(CrudEnum.READ)
+                        .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
+        assertReportJobAudit(auditedParameters.get(), acknowledgement);
+    }
+
+    @Test
+    void givenListMaintenanceDatesAreReversed_whenCreatingReport_thenAuditsNormalisedDates() {
+        JobAcknowledgement acknowledgement = acknowledgement(JobType.LIST_MAINTENANCE_REPORT);
+        AtomicReference<Auditable> auditedParameters = new AtomicReference<>();
+
+        ListMaintenanceFilterDto filter =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1));
+        ListMaintenanceFilterDto normalisedFilter =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31));
+
+        when(reportService.createListMaintenanceReport(filter))
+                .thenReturn(
+                        new ReportJobCreation(
+                                acknowledgement,
+                                ListMaintenanceReportParameterAudit.from(normalisedFilter)));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, auditedParameters);
+
+        controller.createListMaintenanceReport(filter);
+
+        verify(reportService).createListMaintenanceReport(filter);
         Assertions.assertTrue(
                 auditedParameters
                         .get()

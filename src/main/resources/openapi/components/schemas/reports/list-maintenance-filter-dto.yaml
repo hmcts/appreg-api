@@ -28,6 +28,7 @@ properties:
     example: "morning session"
     maxLength: 200
     minLength: 1
+    pattern: '.*\S.*'
 
   location:
     $ref: './legacy-report-location.yaml'

@@ -37,6 +37,7 @@ properties:
     example: "STD-00123"
     maxLength: 10
     minLength: 1
+    pattern: '.*\S.*'
 
   applicantName:
     type: string
@@ -44,6 +45,7 @@ properties:
     example: "john smith"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   applicantOrganisation:
     type: string
@@ -51,6 +53,7 @@ properties:
     example: "acme"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   location:
     $ref: './legacy-report-location.yaml'
