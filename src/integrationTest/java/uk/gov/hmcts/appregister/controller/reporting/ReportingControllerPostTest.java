@@ -815,6 +815,32 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                 "Multiple Criminal Justice Areas found when only one was expected"));
     }
 
+    @Test
+    public void
+            givenWhitespaceOnlyListMaintenanceFilters_whenCreatingReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .listDescription(" ")
+                        .location(new LegacyReportLocation().cjaCode(" "));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Validation failed for fields:"));
+        Assertions.assertTrue(createResponse.asString().contains("listDescription"));
+        Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
+    }
+
     private String createAndDownloadListMaintenanceReport(ListMaintenanceFilterDto request)
             throws Exception {
         TokenAndJwksKey token =
