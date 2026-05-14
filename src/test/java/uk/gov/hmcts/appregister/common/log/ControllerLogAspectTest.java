@@ -25,13 +25,12 @@ public class ControllerLogAspectTest {
         Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
         Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
 
-        Mockito.when(signature.getDeclaringType())
-                .thenReturn((Class) ControllerLogAspectTest.class);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
         Mockito.when(signature.getName()).thenReturn("testMethod");
 
         // call the aspect method
-        ResponseEntity result =
-                (ResponseEntity) controllerLogAspect.logDuration(customProceedingJoinPoint);
+        ResponseEntity<?> result =
+                (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
 
         // assert the log messages are correct and the result is correct
         Assertions.assertEquals("Test Result", result.getBody());
@@ -56,8 +55,7 @@ public class ControllerLogAspectTest {
         Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
         Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
 
-        Mockito.when(signature.getDeclaringType())
-                .thenReturn((Class) ControllerLogAspectTest.class);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
         Mockito.when(signature.getName()).thenReturn("testMethod");
 
         // call the aspect method

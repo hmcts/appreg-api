@@ -1,75 +1,32 @@
 package uk.gov.hmcts.appregister.testutils;
 
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLCATION_LISTS_ENTRY_FEE_ID;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLCATION_LISTS_ENTRY_OFFICIAL;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_CODES;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LISTS;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LISTS_ENTRY;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LISTS_FEE_STATUS;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.ASYNC_JOBS;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.FEE;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.RESOLUTION_CODES;
+import static uk.gov.hmcts.appregister.common.entity.TableNames.STANDARD_APPLICANTS;
+
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryFeeStatusRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryOfficialRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.AppListEntryResolutionRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.AppListEntrySequenceMappingRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListEntryRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationListRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ApplicationRegisterRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.AsyncJobRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.FeeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.NameAddressRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.ResolutionCodeRepository;
-import uk.gov.hmcts.appregister.common.entity.repository.StandardApplicantRepository;
 
 /**
  * A global persistence class that knows how to persist objects. Specifically ones that have been
  * created using the {@link uk.gov.hmcts.appregister.testutils.data.Persistable}
  */
 @Component
-@RequiredArgsConstructor
 public class DatabaseReset {
-    private final EntityManagerFactory entityManagerFactory;
-
-    @Autowired private final NameAddressRepository nameAddressRepository;
-
-    @Autowired private final AppListEntryFeeRepository appListEntryFeeRepository;
-
-    @Autowired private final AppListEntryOfficialRepository appListEntryOfficialRepository;
-
-    @Autowired private final AppListEntryFeeStatusRepository appListEntryFeeStatusRepository;
-
-    @Autowired private final ApplicationCodeRepository applicationCodeRepository;
-
-    @Autowired private final ApplicationListRepository applicationListRepository;
-
-    @Autowired private final ApplicationListEntryRepository applicationListEntryRepository;
-
-    @Autowired private final ResolutionCodeRepository resolutionCodeRepository;
-
-    @Autowired private final AppListEntryResolutionRepository appListEntryResolutionRepository;
-
-    @Autowired private final CriminalJusticeAreaRepository criminalJusticeAreaRepository;
-
-    @Autowired private final DataAuditRepository dataAuditRepository;
-
-    @Autowired private final FeeRepository feeRepository;
-
-    @Autowired private final ApplicationRegisterRepository applicationRegisterRepository;
-
-    @Autowired private final StandardApplicantRepository standardApplicantRepository;
-
-    @Autowired private final NationalCourtHouseRepository nationalCourtHouseRepository;
-
-    @Autowired private final AsyncJobRepository asyncJonRepository;
-
-    @Autowired
-    private final AppListEntrySequenceMappingRepository appListEntrySequenceMappingRepository;
+    @PersistenceContext private EntityManager entityManager;
 
     @Value("${spring.sql.init.schema-locations}")
     private String sqlInitSchema;
@@ -84,78 +41,66 @@ public class DatabaseReset {
     public void resetDbData() {
         resetSequences();
 
-        appListEntryFeeRepository.deleteAll();
-
-        appListEntryFeeStatusRepository.deleteAll(
-                appListEntryFeeStatusRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        appListEntryOfficialRepository.deleteAll(
-                appListEntryOfficialRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        applicationRegisterRepository.deleteAll(
-                applicationRegisterRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        appListEntryResolutionRepository.deleteAll(
-                appListEntryResolutionRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        feeRepository.deleteAll(feeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        resolutionCodeRepository.deleteAll(
-                resolutionCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        applicationListEntryRepository.deleteAll(
-                applicationListEntryRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        appListEntrySequenceMappingRepository.deleteAll(
-                appListEntrySequenceMappingRepository.findByAlIdGreaterThanEqual(
-                        SEQUENCE_START_VALUE));
-
-        nameAddressRepository.deleteAll(
-                nameAddressRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        applicationCodeRepository.deleteAll(
-                applicationCodeRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        applicationListRepository.deleteAll(
-                applicationListRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        criminalJusticeAreaRepository.deleteAll(
-                criminalJusticeAreaRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        nationalCourtHouseRepository.deleteAll(
-                nationalCourtHouseRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        standardApplicantRepository.deleteAll(
-                standardApplicantRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        asyncJonRepository.deleteAll(
-                asyncJonRepository.findByIdGreaterThanEqual(SEQUENCE_START_VALUE));
-
-        dataAuditRepository.deleteAll();
+        deleteAll(APPLCATION_LISTS_ENTRY_FEE_ID);
+        deleteByIdGreaterThanOrEqual(APPLICATION_LISTS_FEE_STATUS, "alefs_id");
+        deleteByIdGreaterThanOrEqual(APPLCATION_LISTS_ENTRY_OFFICIAL, "aleo_id");
+        deleteByIdGreaterThanOrEqual("application_register", "ar_id");
+        deleteByIdGreaterThanOrEqual("app_list_entry_resolutions", "aler_id");
+        deleteByIdGreaterThanOrEqual(FEE, "fee_id");
+        deleteByIdGreaterThanOrEqual(RESOLUTION_CODES, "rc_id");
+        deleteByIdGreaterThanOrEqual(APPLICATION_LISTS_ENTRY, "ale_id");
+        deleteByIdGreaterThanOrEqual(APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING, "al_id");
+        deleteByIdGreaterThanOrEqual("name_address", "na_id");
+        deleteByIdGreaterThanOrEqual(APPLICATION_CODES, "ac_id");
+        deleteByIdGreaterThanOrEqual(APPLICATION_LISTS, "al_id");
+        deleteByIdGreaterThanOrEqual("criminal_justice_area", "cja_id");
+        deleteByIdGreaterThanOrEqual("national_court_houses", "nch_id");
+        deleteByIdGreaterThanOrEqual(STANDARD_APPLICANTS, "sa_id");
+        deleteByIdGreaterThanOrEqual(ASYNC_JOBS, "aj_id");
+        deleteAll("data_audit");
     }
 
     @Transactional
     public void resetSequences() {
-        try (EntityManager em = entityManagerFactory.createEntityManager()) {
-            em.getTransaction().begin();
-            final Query query =
-                    em.createNativeQuery(
-                            "SELECT sequence_name FROM information_schema.sequences "
-                                    + "WHERE sequence_schema = '"
+        final Query query =
+                entityManager.createNativeQuery(
+                        "SELECT sequence_name FROM information_schema.sequences "
+                                + "WHERE sequence_schema = '"
+                                + sqlInitSchema
+                                + "'");
+        final List<?> sequences = query.getResultList();
+        for (Object seqName : sequences) {
+            entityManager
+                    .createNativeQuery(
+                            "ALTER SEQUENCE "
                                     + sqlInitSchema
-                                    + "'");
-            final List<?> sequences = query.getResultList();
-            for (Object seqName : sequences) {
-                em.createNativeQuery(
-                                "ALTER SEQUENCE "
-                                        + sqlInitSchema
-                                        + "."
-                                        + seqName
-                                        + " RESTART WITH "
-                                        + SEQUENCE_START_VALUE)
-                        .executeUpdate();
-            }
-            em.getTransaction().commit();
+                                    + "."
+                                    + seqName
+                                    + " RESTART WITH "
+                                    + SEQUENCE_START_VALUE)
+                    .executeUpdate();
         }
+    }
+
+    private void deleteByIdGreaterThanOrEqual(String tableName, String idColumn) {
+        entityManager
+                .createNativeQuery(
+                        "DELETE FROM "
+                                + qualifiedTableName(tableName)
+                                + " WHERE "
+                                + idColumn
+                                + " >= "
+                                + SEQUENCE_START_VALUE)
+                .executeUpdate();
+    }
+
+    private void deleteAll(String tableName) {
+        entityManager
+                .createNativeQuery("DELETE FROM " + qualifiedTableName(tableName))
+                .executeUpdate();
+    }
+
+    private String qualifiedTableName(String tableName) {
+        return sqlInitSchema + "." + tableName;
     }
 }

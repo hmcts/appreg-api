@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.testutils;
 
-import static org.apache.commons.lang3.RandomStringUtils.random;
 import static org.awaitility.Awaitility.await;
 
 import io.restassured.response.Response;
@@ -11,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hibernate.AssertionFailure;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
@@ -73,7 +73,7 @@ public final class AwaitilityUtil {
             Callable<Boolean> callable, Duration duration) {
         WaitingResult waitingResult = new WaitingResult(callable);
 
-        var awaitAlias = random(4);
+        var awaitAlias = RandomStringUtils.insecure().nextAlphanumeric(4);
         await(awaitAlias)
                 .atMost(duration)
                 .with()
@@ -87,7 +87,7 @@ public final class AwaitilityUtil {
     }
 
     public static void waitForMaxWithOneSecondPoll(Runnable runnable, Duration duration) {
-        var awaitAlias = random(4);
+        var awaitAlias = RandomStringUtils.insecure().nextAlphanumeric(4);
         await(awaitAlias)
                 .atMost(duration)
                 .with()
