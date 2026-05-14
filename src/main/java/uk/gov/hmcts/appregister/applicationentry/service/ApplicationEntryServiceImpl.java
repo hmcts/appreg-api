@@ -23,12 +23,14 @@ import uk.gov.hmcts.appregister.applicationentry.audit.ApplicationListEntryReadA
 import uk.gov.hmcts.appregister.applicationentry.audit.model.DeleteAuditable;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryEntityMapper;
 import uk.gov.hmcts.appregister.applicationentry.mapper.ApplicationListEntryMapper;
+import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateFeesPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForDeleteEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
@@ -75,7 +77,9 @@ import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.common.util.BeanUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.common.validator.Validator;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -110,6 +114,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final MoveEntriesValidator moveEntriesValidator;
 
     private final BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
+
+    private final BulkUpdateFeesValidator bulkUpdateFeesValidator;
 
     // Services
     private final MatchService matchService;
@@ -522,6 +528,28 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                             entries.size(),
                             listId);
                     return null;
+                });
+    }
+
+    @Override
+    @Transactional
+    public BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto) {
+        var payload = new BulkUpdateFeesPayload(listId, bulkFeesUpdateDto);
+
+        return bulkUpdateFeesValidator.validate(
+                payload,
+                (req, success) -> {
+                    int updatedCount = success.getEntries().size();
+
+                    log.info(
+                            "Validated bulk fee update for {} entries in list {}",
+                            updatedCount,
+                            listId);
+
+                    return new BulkUpdateResponseDto()
+                            .totalCount(req.data().getEntryIds().size())
+                            .updatedCount(updatedCount)
+                            .status(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
                 });
     }
 

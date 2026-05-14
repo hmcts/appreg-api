@@ -38,7 +38,9 @@ import uk.gov.hmcts.appregister.common.security.RoleNames;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 import uk.gov.hmcts.appregister.generated.api.ApplicationListEntriesApi;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -282,6 +284,19 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         applicationEntryService.replaceOfficials(listId, bulkOfficialsUpdateDto);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
+    public ResponseEntity<BulkUpdateResponseDto> bulkUpdateApplicationListEntryFees(
+            UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto) {
+        BulkUpdateResponseDto response =
+                applicationEntryService.bulkUpdateFees(listId, bulkFeesUpdateDto);
+
+        return ResponseEntity.ok()
+                .varyBy(HttpHeaders.ACCEPT)
+                .contentType(VND_JSON_V1)
+                .body(response);
     }
 
     /**

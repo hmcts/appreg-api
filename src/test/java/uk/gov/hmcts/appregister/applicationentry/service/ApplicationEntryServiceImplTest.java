@@ -52,6 +52,7 @@ import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateClosedEnt
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadGetEntryInList;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateFeesValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUpdateOfficialsValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidationSuccess;
 import uk.gov.hmcts.appregister.applicationentry.validator.CreateApplicationEntryValidator;
@@ -126,7 +127,10 @@ import uk.gov.hmcts.appregister.data.FeeTestData;
 import uk.gov.hmcts.appregister.data.NameAddressTestData;
 import uk.gov.hmcts.appregister.data.StandardApplicantTestData;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListStatus;
+import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
 import uk.gov.hmcts.appregister.generated.model.EntryApplicationListGetFilterDto;
 import uk.gov.hmcts.appregister.generated.model.EntryCreateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
@@ -139,6 +143,7 @@ import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
 import uk.gov.hmcts.appregister.generated.model.Official;
 import uk.gov.hmcts.appregister.generated.model.OfficialType;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
@@ -230,6 +235,8 @@ public class ApplicationEntryServiceImplTest {
 
     private BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
+    private BulkUpdateFeesValidator bulkUpdateFeesValidator;
+
     @Spy
     private final ApplicationListEntryEntityMapper entryEntityMapper =
             new ApplicationListEntryEntityMapperImpl();
@@ -273,6 +280,11 @@ public class ApplicationEntryServiceImplTest {
         bulkUpdateOfficialsValidator =
                 new BulkUpdateOfficialsValidator(
                         applicationListRepository, applicationListEntryRepository);
+        bulkUpdateFeesValidator =
+                new BulkUpdateFeesValidator(
+                        applicationListRepository,
+                        applicationListEntryRepository,
+                        businessDateProvider);
 
         Fee fee = new FeeTestData().someComplete();
         fee.setId(-1L);
@@ -289,6 +301,7 @@ public class ApplicationEntryServiceImplTest {
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
                         bulkUpdateOfficialsValidator,
+                        bulkUpdateFeesValidator,
                         matchService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
@@ -323,6 +336,7 @@ public class ApplicationEntryServiceImplTest {
                         updateClosedEntriesValidator,
                         moveEntriesValidator,
                         bulkUpdateOfficialsValidator,
+                        bulkUpdateFeesValidator,
                         matchService,
                         auditOperationService,
                         appListEntryFeeStatusRepository,
@@ -1629,6 +1643,44 @@ public class ApplicationEntryServiceImplTest {
         verify(applicationListEntryRepository, times(1))
                 .findByUuidsInSourceList(eq(sourceListId), anySet());
         verify(applicationListEntryRepository, times(0)).save(any(ApplicationListEntry.class));
+    }
+
+    @Test
+    void bulkUpdateFees_returnsSucceededResponseForValidatedEntries() {
+        val listId = UUID.randomUUID();
+
+        val applicationList = new ApplicationList();
+        applicationList.setId(10L);
+        applicationList.setUuid(listId);
+        applicationList.setStatus(Status.OPEN);
+
+        val entryId = UUID.randomUUID();
+        val entry = new ApplicationListEntry();
+        entry.setId(101L);
+        entry.setUuid(entryId);
+        entry.setSequenceNumber((short) 1);
+        entry.setApplicationList(applicationList);
+
+        val feeDetails = new BulkFeeDetailsDto();
+        feeDetails.setPaymentStatus(PaymentStatus.PAID);
+        feeDetails.setStatusDate(LocalDate.of(2025, 10, 7));
+        feeDetails.setPaymentReference("PAY-001");
+        feeDetails.setHasOffsiteFee(false);
+
+        val dto = new BulkFeesUpdateDto();
+        dto.setEntryIds(Set.of(entryId));
+        dto.setFeeDetails(feeDetails);
+
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.of(applicationList));
+        when(applicationListEntryRepository.findByUuidsInSourceList(eq(listId), anySet()))
+                .thenReturn(List.of(entry));
+
+        BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
+
+        Assertions.assertEquals(1, response.getTotalCount());
+        Assertions.assertEquals(1, response.getUpdatedCount());
+        Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
     }
 
     @Test
