@@ -102,6 +102,7 @@ class BulkCreateApplicationEntryValidatorTest {
         fee.setOffsite(true);
 
         when(feeService.resolveFeePair(notNull())).thenReturn(new FeePair(null, fee));
+        when(feeService.resolveFeePair(notNull(), notNull())).thenReturn(new FeePair(null, fee));
 
         validator =
                 new BulkCreateApplicationEntryValidator(
@@ -124,6 +125,7 @@ class BulkCreateApplicationEntryValidatorTest {
         entryCreateDto.setFeeStatuses(null);
         entryCreateDto.setNumberOfRespondents(null);
         entryCreateDto.setLodgementDate(TODAY_UK.minusDays(1));
+        entryCreateDto.setHasOffsiteFee(true);
 
         CreateApplicationEntryValidationSuccess success =
                 validator.validate(payload(), (validatable, result) -> result);

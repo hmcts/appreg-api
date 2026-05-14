@@ -13,11 +13,13 @@ import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.ListMaintenanceReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.PrivateProsecutorsIndexReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
@@ -124,6 +126,36 @@ public class ReportServiceImpl implements ReportService {
         JobAcknowledgement acknowledgement = jobMapper.toDto(response);
         return new ReportJobCreation(
                 acknowledgement, DurationReportParameterAudit.from(normalisedFilter));
+    }
+
+    @Override
+    public ReportJobCreation createListMaintenanceReport(ListMaintenanceFilterDto filter) {
+        ListMaintenanceFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
+        ListMaintenanceReportLifecycle lifecycle;
+        try {
+            lifecycle = new ListMaintenanceReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Unable to create list maintenance report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.LIST_MAINTENANCE_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new ListMaintenanceReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
+                        reportPageSize);
+
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, ListMaintenanceReportParameterAudit.from(normalisedFilter));
     }
 
     @Override

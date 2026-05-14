@@ -31,6 +31,7 @@ properties:
     description: Exact username to audit.
     example: "jsmith"
     minLength: 1
+    pattern: '.*\S.*'
 
   activityTypes:
     type: array

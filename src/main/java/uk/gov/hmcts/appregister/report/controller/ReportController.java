@@ -29,6 +29,7 @@ import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
+import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
@@ -104,6 +105,29 @@ public class ReportController implements ReportsApi {
                         unused -> {
                             ReportJobCreation reportJobCreation =
                                     reportService.createDurationReport(durationFilterDto);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        return accepted(acknowledgement);
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> createListMaintenanceReport(
+            ListMaintenanceFilterDto listMaintenanceFilterDto) {
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createListMaintenanceReport(
+                                            listMaintenanceFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
