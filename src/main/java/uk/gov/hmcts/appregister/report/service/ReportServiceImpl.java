@@ -19,6 +19,7 @@ import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
+import uk.gov.hmcts.appregister.report.audit.WorkloadReportParameterAudit;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @Service

@@ -13,7 +13,7 @@ import java.util.List;
 
 @Builder
 @Getter
-public class WorkloadParameterAudit implements Auditable {
+public class WorkloadReportParameterAudit implements Auditable {
     public static final String TABLE_NAME = "report_parameters";
 
     private final LocalDate dateFrom;
@@ -48,9 +48,9 @@ public class WorkloadParameterAudit implements Auditable {
         }
     }
 
-     public static WorkloadParameterAudit from(uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto filter) {
+     public static WorkloadReportParameterAudit from(uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto filter) {
         LegacyReportLocation location = filter.getLocation();
-        return WorkloadParameterAudit.builder()
+        return WorkloadReportParameterAudit.builder()
                 .dateFrom(filter.getDateFrom())
                 .dateTo(filter.getDateTo())
                 .courtLocationCode(location != null ? filter.getLocation().getCourtLocationCode() : null)
