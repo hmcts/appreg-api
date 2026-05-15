@@ -1111,8 +1111,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         if (success.getFee() != null
                 && success.getFee().offsiteFee() != null
                 && updateEntry.getData() != null
-                && (updateEntry.getData().getHasOffsiteFee() != null)
-                && (updateEntry.getData().getHasOffsiteFee())) {
+                && (updateEntry.getData().getHasOffsiteFee() != null)) {
             Optional<AppListEntryFeeId> appListEntryOffsiteFeeId =
                     appListEntryFeeRepository.getEntryFeesForFee(
                             success.getApplicationEntryId().getId(),

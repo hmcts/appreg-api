@@ -1,9 +1,11 @@
 package uk.gov.hmcts.appregister.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import uk.gov.hmcts.appregister.applicationentry.model.PayloadForUpdateEntry;
 import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService;
 import uk.gov.hmcts.appregister.common.concurrency.MatchResponse;
+import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeId;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryFeeStatus;
 import uk.gov.hmcts.appregister.common.entity.AppListEntryOfficial;
 import uk.gov.hmcts.appregister.common.entity.ApplicationList;
@@ -89,7 +92,107 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
     }
 
     @Test
-    public void createEntryNoRespondentWithOffsiteFee() {
+    public void createEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
+        entryCreateDto.setLodgementDate(LocalDate.parse("2016-01-01"));
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryCreateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setWordingFields(null);
+        entryCreateDto.setHasOffsiteFee(true);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        MatchResponse<EntryGetDetailDto> response;
+
+        // run the test
+        response =
+                unitOfWork.inTransaction(
+                        () -> {
+                            ApplicationList applicationList =
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
+
+                            // because of the random order of tests, this can fail so need to
+                            // make sure the application list is in a valid state
+                            applicationList.setStatus(Status.OPEN);
+                            applicationList.setDeleted(false);
+                            applicationListRepository.save(applicationList);
+                            applicationListRepository.flush();
+
+                            PayloadForCreate<EntryCreateDto> payloadForCreate =
+                                    PayloadForCreate.<EntryCreateDto>builder()
+                                            .id(applicationList.getUuid())
+                                            .data(entryCreateDto)
+                                            .build();
+                            return applicationEntryService.createEntry(payloadForCreate);
+                        });
+
+        // make the assertions
+        unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    List<ApplicationListEntry> entries =
+                            applicationListEntryRepository.findByApplicationListId(
+                                    applicationList.getId());
+
+                    // gets the last added entry
+                    ApplicationListEntry applicationListEntry = entries.getLast();
+
+                    // validate the database based on the request data and the response
+                    // based on the database contents
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
+                            applicationListEntry,
+                            response.getPayload(),
+                            "Request to copy documents",
+                            "Request to copy documents",
+                            List.of(),
+                            2);
+
+                    Fee offsiteFee = null;
+                    for (AppListEntryFeeId entryFeeId : applicationListEntry.getEntryFeeIds()) {
+                        Optional<Fee> fee = feeRepository.findById(entryFeeId.getFeeId());
+                        if (fee.isPresent() && fee.get().isOffsite()) {
+                            offsiteFee = fee.get();
+                            break;
+                        }
+                    }
+
+                    assertThat(offsiteFee).isNotNull();
+
+                    // check the fee record for the offsite fee
+                    assertThat(offsiteFee.getStartDate())
+                            .isBeforeOrEqualTo(applicationListEntry.getLodgementDate());
+                    if (offsiteFee.getEndDate() != null) {
+                        assertThat(offsiteFee.getEndDate())
+                                .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
+                    }
+                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("70.00"));
+                });
+    }
+
+    @Test
+    public void createEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
@@ -165,16 +268,35 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             "Request to copy documents",
                             List.of(),
                             2);
+
+                    Fee offsiteFee = null;
+                    for (AppListEntryFeeId entryFeeId : applicationListEntry.getEntryFeeIds()) {
+                        Optional<Fee> fee = feeRepository.findById(entryFeeId.getFeeId());
+                        if (fee.isPresent() && fee.get().isOffsite()) {
+                            offsiteFee = fee.get();
+                            break;
+                        }
+                    }
+
+                    assertThat(offsiteFee).isNotNull();
+
+                    // check the fee record for the offsite fee
+                    assertThat(offsiteFee.getStartDate())
+                            .isBeforeOrEqualTo(applicationListEntry.getLodgementDate());
+                    if (offsiteFee.getEndDate() != null) {
+                        assertThat(offsiteFee.getEndDate())
+                                .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
+                    }
+                    assertThat(offsiteFee.getAmount()).isEqualTo(new BigDecimal("155.00"));
                 });
     }
 
     @Test
-    public void createEntryNoRespondentWithFee() {
+    public void createEntryNoRespondentWithFeeLodgementDateInThePast() {
 
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
-        entryCreateDto.setLodgementDate(LocalDate.now());
         entryCreateDto.getApplicant().setOrganisation(null);
         entryCreateDto
                 .getApplicant()
@@ -183,6 +305,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 .setSecondForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.setLodgementDate(LocalDate.parse("2015-01-01"));
 
         entryCreateDto.setNumberOfRespondents(null);
 
@@ -247,6 +370,111 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                             1);
 
                     Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
+
+                    Optional<Fee> fee =
+                            feeRepository.findById(
+                                    applicationListEntry.getEntryFeeIds().getFirst().getFeeId());
+                    Assertions.assertTrue(fee.isPresent());
+                    assertThat(fee.get().getStartDate())
+                            .isBeforeOrEqualTo(applicationListEntry.getLodgementDate());
+                    if (fee.get().getEndDate() != null) {
+                        assertThat(fee.get().getEndDate())
+                                .isAfterOrEqualTo(applicationListEntry.getLodgementDate());
+                    }
+                    assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("50.00"));
+                });
+    }
+
+    @Test
+    public void createEntryNoRespondentWithFeeLodgementDateToday() {
+
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+        final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
+        entryCreateDto.getApplicant().setOrganisation(null);
+        entryCreateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryCreateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+        entryCreateDto.setLodgementDate(LocalDate.now());
+
+        entryCreateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryCreateDto.setRespondent(null);
+        entryCreateDto.setApplicationCode("AD99001");
+        entryCreateDto.setStandardApplicantCode(null);
+        entryCreateDto.setWordingFields(null);
+        entryCreateDto.setHasOffsiteFee(false);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
+
+        MatchResponse<EntryGetDetailDto> response;
+
+        // run the test
+        response =
+                unitOfWork.inTransaction(
+                        () -> {
+                            ApplicationList applicationList =
+                                    applicationListRepository
+                                            .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                            .getFirst();
+
+                            // because of the random order of tests, this can fail so need to
+                            // make sure the application list is in a valid state
+                            applicationList.setStatus(Status.OPEN);
+                            applicationList.setDeleted(false);
+                            applicationListRepository.save(applicationList);
+                            applicationListRepository.flush();
+
+                            PayloadForCreate<EntryCreateDto> payloadForCreate =
+                                    PayloadForCreate.<EntryCreateDto>builder()
+                                            .id(applicationList.getUuid())
+                                            .data(entryCreateDto)
+                                            .build();
+                            return applicationEntryService.createEntry(payloadForCreate);
+                        });
+
+        // make the assertions
+        unitOfWork.inTransaction(
+                () -> {
+                    ApplicationList applicationList =
+                            applicationListRepository
+                                    .findAll(Sort.by(Sort.Direction.ASC, "id"))
+                                    .getFirst();
+                    List<ApplicationListEntry> entries =
+                            applicationListEntryRepository.findByApplicationListId(
+                                    applicationList.getId());
+
+                    // gets the last added entry
+                    ApplicationListEntry applicationListEntry = entries.getLast();
+
+                    // validate the database based on the request data and the response
+                    // based on the database contents
+                    applicationListEntryAssertion.validateEntityAndResponseForEntryCreation(
+                            new ApplicationListEntryWrapperDto(entryCreateDto),
+                            applicationListEntry,
+                            response.getPayload(),
+                            "Request to copy documents",
+                            "Request to copy documents",
+                            List.of(),
+                            1);
+
+                    Assertions.assertEquals(1, applicationListEntry.getEntryFeeIds().size());
+
+                    Optional<Fee> fee =
+                            feeRepository.findById(
+                                    applicationListEntry.getEntryFeeIds().getFirst().getFeeId());
+                    Assertions.assertTrue(fee.isPresent());
+                    assertThat(fee.get().getStartDate())
+                            .isBeforeOrEqualTo(applicationListEntry.getLodgementDate());
+
+                    // to make sure it's the current fee and not a historic fee
+                    Assertions.assertNull(fee.get().getEndDate());
+                    assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("200.00"));
                 });
     }
 
@@ -608,7 +836,7 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
 
     @Test
     @Transactional
-    public void updateEntryNoRespondentWithOffsiteFee() {
+    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateToday() {
         // create the create entry payload
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -720,6 +948,140 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
                 List.of(),
                 List.of(),
                 2);
+    }
+
+    @Test
+    @Transactional
+    public void updateEntryNoRespondentWithOffsiteFeeLodgementDateInThePast() {
+        // create the create entry payload
+        Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
+
+        // build the payload
+        EntryUpdateDto entryUpdateDto = createEntryUpdateDto(settings);
+        entryUpdateDto.getApplicant().setOrganisation(null);
+        entryUpdateDto
+                .getApplicant()
+                .getPerson()
+                .getName()
+                .setSecondForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
+        entryUpdateDto.getApplicant().getPerson().getContactDetails().setPostcode("AA1 1AA");
+
+        entryUpdateDto.setNumberOfRespondents(null);
+
+        // no respondent for this code
+        entryUpdateDto.setRespondent(null);
+        entryUpdateDto.setApplicationCode("AD99001");
+        entryUpdateDto.setStandardApplicantCode(null);
+        entryUpdateDto.setWordingFields(null);
+        entryUpdateDto.setHasOffsiteFee(true);
+
+        CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryUpdateDto.getFeeStatuses());
+
+        UUID uuid =
+                createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
+                        LocalDate.parse("2016-01-01"));
+
+        Optional<ApplicationListEntry> applicationListEntry =
+                applicationListEntryRepository.findByUuid(uuid);
+
+        List<AppListEntryFeeStatus> feeStatuses =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        List<AppListEntryOfficial> feeOfficial =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // execute the test
+        PayloadForUpdateEntry payloadForCreate =
+                new PayloadForUpdateEntry(
+                        entryUpdateDto,
+                        applicationListEntry.get().getApplicationList().getUuid(),
+                        applicationListEntry.get().getUuid());
+
+        // get the existing applicant and respondent for later comparison
+        NameAddress respondentBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getRnameaddress());
+        NameAddress applicantBeforeUpdate =
+                BeanUtil.copyBean(applicationListEntry.get().getAnamedaddress());
+
+        // get the ids of the status and officials
+        final List<Long> feeStatusBeforeUpdate =
+                feeStatuses.stream().map(fs -> fs.getId()).toList();
+        final List<Long> feeOfficialBeforeUpdate =
+                feeOfficial.stream().map(fs -> fs.getId()).toList();
+
+        MatchResponse<EntryGetDetailDto> update =
+                applicationEntryService.updateEntry(payloadForCreate);
+
+        // assert that the update was successful
+        Assertions.assertNotNull(update.getEtag());
+
+        final List<AppListEntryFeeStatus> feeStatusesUpdated =
+                appListEntryFeeStatusRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        final List<AppListEntryOfficial> feeOfficialUpdated =
+                applicationListEntryOfficialRepository.findByAppListEntryId(
+                        applicationListEntry.get().getId());
+
+        // assert that old name does not exist
+        Assertions.assertNotNull(respondentBeforeUpdate);
+        Assertions.assertNotNull(applicantBeforeUpdate);
+
+        entityManager.clear();
+
+        Assertions.assertTrue(
+                nameAddressRepository.findById(respondentBeforeUpdate.getId()).isEmpty());
+        Assertions.assertTrue(
+                nameAddressRepository.findById(applicantBeforeUpdate.getId()).isEmpty());
+
+        // make sure we do not recognise the officials that existing before
+        Assertions.assertEquals(
+                update.getPayload().getOfficials().size(), feeOfficialUpdated.size());
+        for (Long id : feeOfficialBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeOfficialUpdated.stream().anyMatch(fo -> fo.getId().equals(id)),
+                    "Found official with id " + id + " that should have been deleted");
+        }
+
+        // make sure we have replaced the old status fees
+        Assertions.assertEquals(
+                entryUpdateDto.getFeeStatuses().size(),
+                update.getPayload().getFeeStatuses().size());
+        for (Long id : feeStatusBeforeUpdate) {
+            Assertions.assertFalse(
+                    feeStatusesUpdated.stream().anyMatch(fs -> fs.getId().equals(id)),
+                    "Found fee status with id " + id + " that should have been replaced");
+        }
+
+        applicationListEntry = applicationListEntryRepository.findByUuid(uuid);
+        applicationListEntryAssertion.validateEntityAndResponseForEntryUpdate(
+                new ApplicationListEntryWrapperDto(entryUpdateDto, LocalDate.parse("2016-01-01")),
+                applicationListEntry.get(),
+                update.getPayload(),
+                "Request to copy documents",
+                "Request to copy documents",
+                List.of(),
+                List.of(),
+                2);
+
+        // validate that the fee records have not changed except for the offsite fee being added
+        for (AppListEntryFeeId entryFeeID : applicationListEntry.get().getEntryFeeIds()) {
+            Optional<Fee> fee = feeRepository.findById(entryFeeID.getFeeId());
+            Assertions.assertTrue(fee.isPresent());
+            assertThat(applicationListEntry.get().getLodgementDate())
+                    .isAfterOrEqualTo(fee.get().getStartDate());
+            assertThat(applicationListEntry.get().getLodgementDate())
+                    .isBeforeOrEqualTo(fee.get().getEndDate());
+
+            if (fee.get().isOffsite()) {
+                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("70.00"));
+            } else {
+                assertThat(fee.get().getAmount()).isEqualTo(new BigDecimal("50.00"));
+            }
+        }
     }
 
     @Test
@@ -1451,12 +1813,17 @@ public class ApplicationEntryServiceImplTest extends BaseIntegration {
      * @return The UUID of the created entry
      */
     private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest() {
+        return createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(LocalDate.now());
+    }
+
+    private UUID createEntryWithBulkRespondentAndApplicantWithFeeStatusesForTest(
+            LocalDate lodgementDate) {
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
         final EntryCreateDto entryCreateDto = createEntryCreateDto(settings);
         entryCreateDto.setOfficials(limitOfficials(entryCreateDto.getOfficials()));
         entryCreateDto.getApplicant().setOrganisation(null);
-        entryCreateDto.setLodgementDate(LocalDate.now());
+        entryCreateDto.setLodgementDate(lodgementDate);
 
         entryCreateDto
                 .getApplicant()

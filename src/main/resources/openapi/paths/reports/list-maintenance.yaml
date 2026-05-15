@@ -1,10 +1,11 @@
 post:
   operationId: createListMaintenanceReport
   tags: [reports]
-  summary: Generate a List Maintenance report of open lists older than a specified date.
+  summary: Generate a List Maintenance report of open application lists by date range.
   description: >
-    Creates an asynchronous job to produce a CSV report of all open application lists
-    that are older than the specified date.
+    Creates an asynchronous job to produce a CSV report of open application lists
+    matching the specified inclusive date range, optional list description,
+    and optional legacy location filters.
     Returns an acknowledgement containing the job ID that can be used to track progress and download the report once complete.
   requestBody:
     required: true

@@ -18,7 +18,6 @@ public class ImplementedRestfulTest {
             List.of(
                     "POST /reports/private-prosecutors-index/jobs",
                     "POST /reports/workload/jobs",
-                    "POST /reports/list-maintenance/jobs",
                     "POST /reports/search-warrants/jobs");
 
     @Test

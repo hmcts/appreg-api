@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 
 class ReportFilterNormaliserTest {
     private final ReportFilterNormaliser normaliser = new ReportFilterNormaliser();
@@ -46,6 +47,20 @@ class ReportFilterNormaliserTest {
                         .dateTo(LocalDate.of(2018, 5, 1));
 
         DurationFilterDto normalisedFilter = normaliser.normalise(filter);
+
+        Assertions.assertSame(filter, normalisedFilter);
+        Assertions.assertEquals(LocalDate.of(2018, 5, 1), normalisedFilter.getDateFrom());
+        Assertions.assertEquals(LocalDate.of(2018, 5, 31), normalisedFilter.getDateTo());
+    }
+
+    @Test
+    void givenListMaintenanceDateRangeIsReversed_whenNormalised_thenDatesAreSwapped() {
+        ListMaintenanceFilterDto filter =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1));
+
+        ListMaintenanceFilterDto normalisedFilter = normaliser.normalise(filter);
 
         Assertions.assertSame(filter, normalisedFilter);
         Assertions.assertEquals(LocalDate.of(2018, 5, 1), normalisedFilter.getDateFrom());

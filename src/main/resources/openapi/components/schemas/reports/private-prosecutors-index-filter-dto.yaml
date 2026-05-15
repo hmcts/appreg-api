@@ -32,6 +32,7 @@ properties:
     example: "Smith"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   applicantFirstName:
     type: string
@@ -39,6 +40,7 @@ properties:
     example: "John"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   applicantOrganisationName:
     type: string
@@ -46,6 +48,7 @@ properties:
     example: "Acme Corp"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   standardApplicantName:
     type: string
@@ -53,6 +56,7 @@ properties:
     example: "Crown Prosecution Service"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   respondentSurname:
     type: string
@@ -60,6 +64,7 @@ properties:
     example: "Doe"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   respondentFirstName:
     type: string
@@ -67,6 +72,7 @@ properties:
     example: "Jane"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
 
   respondentOrganisationName:
     type: string
@@ -74,3 +80,4 @@ properties:
     example: "XYZ Ltd"
     maxLength: 100
     minLength: 1
+    pattern: '.*\S.*'
