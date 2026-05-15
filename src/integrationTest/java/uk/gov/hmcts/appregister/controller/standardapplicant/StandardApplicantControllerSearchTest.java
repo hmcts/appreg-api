@@ -386,6 +386,44 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     }
 
     @Test
+    public void givenReversedDateRange_whenGetAllStandardApplicants_thenDatesAreNormalised()
+            throws Exception {
+        String code = "SAREV001";
+        LocalDate activeDate = LocalDate.now();
+        LocalDate rangeStart = activeDate.minusDays(5);
+        LocalDate rangeEnd = activeDate.plusDays(6);
+        saveStandardApplicant(
+                code, "Reversed Range Applicant", activeDate.minusDays(1), activeDate.plusDays(5));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of(code),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(rangeEnd),
+                                Optional.of(rangeStart)),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        Assertions.assertEquals(1, response.getContent().size());
+        Assertions.assertEquals(code, response.getContent().getFirst().getCode());
+        Assertions.assertEquals(
+                "Reversed Range Applicant",
+                response.getContent().getFirst().getApplicant().getOrganisation().getName());
+    }
+
+    @Test
     @StabilityTest
     public void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
         // create the token
