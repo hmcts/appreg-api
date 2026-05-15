@@ -389,11 +389,9 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
     public void givenReversedDateRange_whenGetAllStandardApplicants_thenDatesAreNormalised()
             throws Exception {
         String code = "SAREV001";
-        LocalDate activeDate = LocalDate.now();
-        LocalDate rangeStart = activeDate.minusDays(5);
-        LocalDate rangeEnd = activeDate.plusDays(6);
-        saveStandardApplicant(
-                code, "Reversed Range Applicant", activeDate.minusDays(1), activeDate.plusDays(5));
+        LocalDate rangeStart = LocalDate.of(2024, 5, 6);
+        LocalDate rangeEnd = LocalDate.of(2025, 11, 6);
+        saveStandardApplicant(code, "Reversed Range Applicant", rangeEnd, null);
 
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -420,6 +418,45 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
         Assertions.assertEquals(code, response.getContent().getFirst().getCode());
         Assertions.assertEquals(
                 "Reversed Range Applicant",
+                response.getContent().getFirst().getApplicant().getOrganisation().getName());
+    }
+
+    @Test
+    public void
+            givenHistoricalDateRange_whenGetAllStandardApplicants_thenPastOverlappingApplicantIsReturned()
+                    throws Exception {
+        String code = "SAHIST001";
+        saveStandardApplicant(
+                code,
+                "Historical Range Applicant",
+                LocalDate.of(2025, 11, 6),
+                LocalDate.of(2025, 11, 20));
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        Response responseSpec =
+                restAssuredClient.executeGetRequestWithPaging(
+                        Optional.of(10),
+                        Optional.of(0),
+                        List.of("name,asc"),
+                        getLocalUrl(WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        new StandardApplicantRequestFilter(
+                                Optional.of(code),
+                                Optional.empty(),
+                                Optional.empty(),
+                                Optional.of(LocalDate.of(2024, 5, 6)),
+                                Optional.of(LocalDate.of(2025, 11, 6))),
+                        new OpenApiPageMetaData());
+
+        responseSpec.then().statusCode(200);
+        StandardApplicantPage response = responseSpec.as(StandardApplicantPage.class);
+
+        Assertions.assertEquals(1, response.getContent().size());
+        Assertions.assertEquals(code, response.getContent().getFirst().getCode());
+        Assertions.assertEquals(
+                "Historical Range Applicant",
                 response.getContent().getFirst().getApplicant().getOrganisation().getName());
     }
 
