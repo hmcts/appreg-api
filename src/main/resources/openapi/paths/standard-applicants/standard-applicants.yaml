@@ -31,14 +31,14 @@ get:
       example: "1 High Street"
     - in: query
       name: from
-      description: Filter by from date.
+      description: Filter by from date. If supplied after `to`, the API normalises the range before searching.
       schema:
         type: string
         format: date
       example: "2026-04-01"
     - in: query
       name: to
-      description: Filter by to date.
+      description: Filter by to date. If supplied before `from`, the API normalises the range before searching.
       schema:
         type: string
         format: date

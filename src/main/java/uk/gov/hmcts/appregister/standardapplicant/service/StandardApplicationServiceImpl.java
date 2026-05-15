@@ -63,6 +63,15 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                     // Use today's date to ensure we only return Result Codes that are currently
                     // active.
                     var todayUk = LocalDate.now(clock.withZone(ukZone));
+                    var normalisedFrom = from;
+                    var normalisedTo = to;
+
+                    if (normalisedFrom != null
+                            && normalisedTo != null
+                            && normalisedFrom.isAfter(normalisedTo)) {
+                        normalisedFrom = to;
+                        normalisedTo = from;
+                    }
 
                     // breaks name into individual and/or organisation parts
                     final Page<StandardApplicantEnrichedProjection> standardApplicantsList =
@@ -70,8 +79,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                                     code,
                                     name,
                                     addressLine1,
-                                    from,
-                                    to,
+                                    normalisedFrom,
+                                    normalisedTo,
                                     todayUk,
                                     pageable.getPageable());
 
@@ -89,7 +98,8 @@ public class StandardApplicationServiceImpl implements StandardApplicantService 
                             name,
                             pageable);
 
-                    CodeAndName record = new CodeAndName(code, name, addressLine1, from, to);
+                    CodeAndName record =
+                            new CodeAndName(code, name, addressLine1, normalisedFrom, normalisedTo);
                     AuditableResult<StandardApplicantPage, StandardApplicant> result =
                             new AuditableResult<>(newPage, mapper.toEntity(record));
 
