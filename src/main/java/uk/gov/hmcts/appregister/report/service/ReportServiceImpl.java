@@ -152,7 +152,7 @@ public class ReportServiceImpl implements ReportService {
 
         JobAcknowledgement acknowledgement = jobMapper.toDto(response);
         return new ReportJobCreation(
-            acknowledgement, WorkloadReportParameterAudit.from(normalisedFilter));
+                acknowledgement, WorkloadReportParameterAudit.from(normalisedFilter));
     }
 
     private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {

@@ -1,15 +1,14 @@
 package uk.gov.hmcts.appregister.report.service;
 
-import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 
 class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
     private static final DateTimeFormatter LIST_DATE_FORMAT =
-        DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private static final String[] HEADERS = {
         "List Date",
@@ -29,7 +28,7 @@ class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
     };
 
     WorkloadReportLifecycle() throws IOException {
-        super("workload-report", "Workload Report", headers);
+        super("workload-report", "Workload Report", HEADERS);
     }
 
     @Override
@@ -48,7 +47,7 @@ class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
             Objects.toString(row.getJp1()),
             Objects.toString(row.getJp2()),
             Objects.toString(row.getJp3()),
-        Objects.toString(row.getOfficial())
+            Objects.toString(row.getOfficial())
         };
     }
 

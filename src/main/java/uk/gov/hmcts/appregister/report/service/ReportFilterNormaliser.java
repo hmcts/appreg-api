@@ -44,6 +44,7 @@ public class ReportFilterNormaliser {
 
         return filter;
     }
+
     public WorkloadFilterDto normalise(WorkloadFilterDto filter) {
         LocalDate dateFrom = filter.getDateFrom();
         LocalDate dateTo = filter.getDateTo();
