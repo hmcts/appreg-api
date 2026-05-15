@@ -35,19 +35,19 @@ class WorkloadReportLifecycle extends ReportCsvLifecycle<WorkloadReportRow> {
     protected String[] toCsvRow(WorkloadReportRow row) {
         return new String[] {
             formatListDate(row.getListDate()),
-            Objects.toString(row.getListCourtHouseName()),
-            Objects.toString(row.getListOtherLocation()),
-            Objects.toString(row.getCjaCode()),
-            Objects.toString(row.getListDescription()),
-            Objects.toString(row.getStandardApplicantCode()),
-            Objects.toString(row.getApplicantNameSurname()),
-            Objects.toString(row.getApplicationCode()),
-            Objects.toString(row.getApplicationCodeTitle()),
-            Objects.toString(row.getResults()),
-            Objects.toString(row.getJp1()),
-            Objects.toString(row.getJp2()),
-            Objects.toString(row.getJp3()),
-            Objects.toString(row.getOfficial())
+            Objects.toString(row.getListCourtHouseName(), ""),
+            Objects.toString(row.getListOtherLocation(), ""),
+            Objects.toString(row.getCjaCode(), ""),
+            Objects.toString(row.getListDescription(), ""),
+            Objects.toString(row.getStandardApplicantCode(), ""),
+            Objects.toString(row.getApplicantNameSurname(), ""),
+            Objects.toString(row.getApplicationCode(), ""),
+            Objects.toString(row.getApplicationCodeTitle(), ""),
+            Objects.toString(row.getResults(), ""),
+            Objects.toString(row.getJp1(), ""),
+            Objects.toString(row.getJp2(), ""),
+            Objects.toString(row.getJp3(), ""),
+            Objects.toString(row.getOfficial(), "")
         };
     }
 
