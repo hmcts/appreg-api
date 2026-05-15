@@ -6,8 +6,10 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import uk.gov.hmcts.appregister.common.async.JobContext;
+import uk.gov.hmcts.appregister.common.async.reader.DataReader;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
+import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
@@ -15,10 +17,11 @@ import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDate;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.List;
 
-public class WorkloadReportDataReader implements DataReader<{
+public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     private static final String REPORT_QUERY =
         """
             WITH applicants AS (
@@ -170,6 +173,7 @@ public class WorkloadReportDataReader implements DataReader<{
             		AND :courthouseName IS NULL)
             ORDER BY
             	list_date DESC
+            LIMIT :limit
         """;
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
@@ -212,12 +216,14 @@ public class WorkloadReportDataReader implements DataReader<{
             .addValue("dateTo", filterDto.getDateTo())
             .addValue("courthouseName", filterDto.getLocation().getCourtLocationCode())
             .addValue("otherLocation", filterDto.getLocation().getOtherLocationDescription())
-            .addValue("cjaCode", filterDto.getLocation().getCjaCode());
+            .addValue("cjaCode", filterDto.getLocation().getCjaCode())
+            .addValue("limit", cursor.pageSize(), Types.INTEGER);
+        return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
 
     private static class WorkloadReportReadCursor {
         private final int pageSize;
-        private FeesReportRow lastRow;
+        private WorkloadReportRow lastRow;
 
         WorkloadReportReadCursor(int pageSize) {
             this.pageSize = pageSize;

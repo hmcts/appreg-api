@@ -13,6 +13,7 @@ import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
@@ -122,6 +123,35 @@ public class ReportServiceImpl implements ReportService {
         JobAcknowledgement acknowledgement = jobMapper.toDto(response);
         return new ReportJobCreation(
                 acknowledgement, DurationReportParameterAudit.from(normalisedFilter));
+    }
+
+    @Override
+    public ReportJobCreation createWorkloadReport(WorkloadFilterDto filter) {
+        WorkloadFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
+        WorkloadReportLifecycle lifecycle;
+        try {
+            lifecycle = new WorkloadReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create workload report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.WORKLOAD_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new WorkloadReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
+                        reportPageSize);
+
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+            acknowledgement, WorkloadReportParameterAudit.from(normalisedFilter));
     }
 
     private <T> AuditedReportLifecycle<T> audited(ReportCsvLifecycle<T> lifecycle) {
