@@ -42,6 +42,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
+import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
@@ -49,6 +50,7 @@ import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 import uk.gov.hmcts.appregister.report.model.ListMaintenanceReportRow;
+import uk.gov.hmcts.appregister.report.model.SearchWarrantsReportRow;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @ExtendWith(MockitoExtension.class)
@@ -200,6 +202,64 @@ class ReportServiceImplTest {
         Assertions.assertSame(exception, actual);
         Mockito.verify(reportLocationValidator).validate(location);
         Mockito.verifyNoInteractions(asyncJobService);
+    }
+
+    @Test
+    void givenSearchWarrantsFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
+            throws IOException {
+        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        TrackJobStatusResponse jobResponse = createJobResponse(JobType.SEARCH_WARRANTS_REPORT);
+        AtomicReference<SearchWarrantsReportDataReader> dataReader = new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<SearchWarrantsReportRow>> lifecycle =
+                new AtomicReference<>();
+
+        when(userProvider.getUserId()).thenReturn("user-id");
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
+                .thenAnswer(
+                        invocation -> {
+                            dataReader.set(invocation.getArgument(1));
+                            lifecycle.set(invocation.getArgument(2));
+                            return jobResponse;
+                        });
+        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
+        SearchWarrantsReportFilterDto filter =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(expectedDateTo)
+                        .dateTo(expectedDateFrom);
+
+        try {
+            ReportJobCreation result = service.createSearchWarrantsReport(filter);
+
+            SearchWarrantsReportFilterDto readerFilter =
+                    (SearchWarrantsReportFilterDto)
+                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
+            Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            Mockito.verify(asyncJobService)
+                    .startJob(
+                            Mockito.argThat(
+                                    request ->
+                                            request.getJobType() == JobType.SEARCH_WARRANTS_REPORT),
+                            Mockito.same(dataReader.get()),
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
+        } finally {
+            closeLifecycle(lifecycle);
+        }
     }
 
     @Test

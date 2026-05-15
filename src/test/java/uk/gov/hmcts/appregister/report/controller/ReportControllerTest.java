@@ -40,12 +40,14 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
+import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ListMaintenanceReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
+import uk.gov.hmcts.appregister.report.audit.SearchWarrantsReportParameterAudit;
 import uk.gov.hmcts.appregister.report.service.ReportJobCreation;
 import uk.gov.hmcts.appregister.report.service.ReportService;
 
@@ -134,6 +136,45 @@ class ReportControllerTest {
         controller.createFeesReport(filter);
 
         verify(reportService).createFeesReport(filter);
+        Assertions.assertTrue(
+                auditedParameters
+                        .get()
+                        .extractAuditData(CrudEnum.READ)
+                        .contains(
+                                new AuditableData("report_parameters", "dateFrom", "2018-05-01")));
+        Assertions.assertTrue(
+                auditedParameters
+                        .get()
+                        .extractAuditData(CrudEnum.READ)
+                        .contains(new AuditableData("report_parameters", "dateTo", "2018-05-31")));
+        assertReportJobAudit(auditedParameters.get(), acknowledgement);
+    }
+
+    @Test
+    void givenSearchWarrantsDatesAreReversed_whenCreatingReport_thenAuditsNormalisedDates() {
+        JobAcknowledgement acknowledgement = acknowledgement(JobType.SEARCH_WARRANTS_REPORT);
+        AtomicReference<Auditable> auditedParameters = new AtomicReference<>();
+
+        SearchWarrantsReportFilterDto filter =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1));
+        SearchWarrantsReportFilterDto normalisedFilter =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31));
+
+        when(reportService.createSearchWarrantsReport(filter))
+                .thenReturn(
+                        new ReportJobCreation(
+                                acknowledgement,
+                                SearchWarrantsReportParameterAudit.from(normalisedFilter)));
+        runAuditAndCaptureParameters(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT, auditedParameters);
+
+        controller.createSearchWarrantsReport(filter);
+
+        verify(reportService).createSearchWarrantsReport(filter);
         Assertions.assertTrue(
                 auditedParameters
                         .get()
