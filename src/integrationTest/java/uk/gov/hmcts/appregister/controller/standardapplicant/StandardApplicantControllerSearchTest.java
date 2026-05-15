@@ -460,7 +460,6 @@ public class StandardApplicantControllerSearchTest extends AbstractSecurityContr
                 response.getContent().getFirst().getApplicant().getOrganisation().getName());
     }
 
-    @Test
     @StabilityTest
     public void givenValidRequest_whenGetAllStandardApplicant_thenReturn200() throws Exception {
         // create the token
