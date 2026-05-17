@@ -115,7 +115,7 @@ public class WorkloadReportDataReaderTest {
         MapSqlParameterSource parameters = parameterSources.getFirst();
         Assertions.assertNull(parameters.getValue("cjaCode"));
         Assertions.assertNull(parameters.getValue("otherLocation"));
-        Assertions.assertNull(parameters.getValue("courthouseName"));
+        Assertions.assertNull(parameters.getValue("courthouseCode"));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class WorkloadReportDataReaderTest {
         Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherLocation"));
-        Assertions.assertEquals("B01IX00", parameters.getValue("courthouseName"));
+        Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
         Assertions.assertEquals(1, parameters.getValue("limit"));
         Assertions.assertEquals(expectedCursor, parameters.getValue("hasCursor"));
 
@@ -180,7 +180,7 @@ public class WorkloadReportDataReaderTest {
         String normalisedQuery = query.replaceAll("\\s+", " ");
         Assertions.assertTrue(
                 normalisedQuery.contains(
-                        "UPPER(list_other_location) "
+                        "UPPER(al.other_courthouse) "
                                 + "LIKE '%' || UPPER(:otherLocation) || '%'"));
         Assertions.assertTrue(
                 normalisedQuery.contains(
@@ -188,7 +188,7 @@ public class WorkloadReportDataReaderTest {
         Assertions.assertTrue(normalisedQuery.contains("cja_code LIKE '%' || :cjaCode || '%'"));
         Assertions.assertTrue(normalisedQuery.contains("AND :otherLocation IS NULL"));
         Assertions.assertTrue(normalisedQuery.contains("AND :cjaCode IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseName IS NULL"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
     }
 
     private ResultSet resultSet() throws Exception {
