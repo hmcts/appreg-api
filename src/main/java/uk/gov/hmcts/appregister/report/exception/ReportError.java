@@ -15,14 +15,16 @@ public enum ReportError implements ErrorCodeEnum {
                     HttpStatus.CONFLICT,
                     "Multiple Criminal Justice Areas found when only one was expected",
                     "RPT-3")),
-    COURT_SUPPLIED_WITH_OTHER_LOCATION_OR_CJA(DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Court location code cannot be combined with other location filters",
-            "RPT-4")),
-    OTHER_LOCATION_SUPPLIED_WITHOUT_CJA(DefaultErrorDetail.create(
-            HttpStatus.BAD_REQUEST,
-            "Other location description cannot be combined with CJA code",
-            "RPT-5"));
+    COURT_SUPPLIED_WITH_OTHER_LOCATION_OR_CJA(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Court location code cannot be combined with other location filters",
+                    "RPT-4")),
+    OTHER_LOCATION_SUPPLIED_WITHOUT_CJA(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "Other location description cannot be combined with CJA code",
+                    "RPT-5"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

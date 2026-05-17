@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -194,7 +193,9 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
             PageReader<WorkloadReportRow> pageReader,
             JobContext jobContext)
             throws IOException {
-        jdbcTemplate.getJdbcTemplate().execute("SET LOCAL search_path TO \"" + schema + "\""); //NOSONAR
+        jdbcTemplate
+                .getJdbcTemplate()
+                .execute("SET LOCAL search_path TO \"" + schema + "\""); // NOSONAR
         WorkloadReportReadCursor cursor = new WorkloadReportReadCursor(position.getPageSize());
         List<WorkloadReportRow> rows = readPage(cursor);
 
@@ -218,19 +219,26 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                 new MapSqlParameterSource()
                         .addValue("dateFrom", filterDto.getDateFrom(), Types.DATE)
                         .addValue("dateTo", filterDto.getDateTo(), Types.DATE)
-                        .addValue("courthouseCode", filterDto.getLocation() != null ?
-                            filterDto.getLocation().getCourtLocationCode() : null, Types.VARCHAR)
+                        .addValue(
+                                "courthouseCode",
+                                filterDto.getLocation() != null
+                                        ? filterDto.getLocation().getCourtLocationCode()
+                                        : null,
+                                Types.VARCHAR)
                         .addValue(
                                 "otherLocation",
-                                filterDto.getLocation() != null ?
-                                    filterDto.getLocation().getOtherLocationDescription() : null, Types.VARCHAR)
-                        .addValue("cjaCode", filterDto.getLocation() != null ?
-                            filterDto.getLocation().getCjaCode() : null, Types.VARCHAR)
-                        .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
+                                filterDto.getLocation() != null
+                                        ? filterDto.getLocation().getOtherLocationDescription()
+                                        : null,
+                                Types.VARCHAR)
                         .addValue(
-                            "lastListDate",
-                            cursor.lastListDate(),
-                            Types.DATE)
+                                "cjaCode",
+                                filterDto.getLocation() != null
+                                        ? filterDto.getLocation().getCjaCode()
+                                        : null,
+                                Types.VARCHAR)
+                        .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
+                        .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
                         .addValue("limit", cursor.pageSize(), Types.INTEGER);
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }

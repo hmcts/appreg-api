@@ -1,5 +1,18 @@
 package uk.gov.hmcts.appregister.report.service;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.ResultSet;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
@@ -7,27 +20,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-
 import uk.gov.hmcts.appregister.common.async.JobContext;
 import uk.gov.hmcts.appregister.common.async.reader.PageReader;
 import uk.gov.hmcts.appregister.common.async.reader.ReadPagePosition;
-import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.model.WorkloadReportRow;
-
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class WorkloadReportDataReaderTest {
     @Test
@@ -37,32 +35,33 @@ public class WorkloadReportDataReaderTest {
         JobContext jobContext = mock(JobContext.class);
         List<List<WorkloadReportRow>> pages = new ArrayList<>();
         PageReader<WorkloadReportRow> pageReader =
-            (rows, context) -> {
-                Assertions.assertSame(jobContext, context);
-                pages.add(rows);
-            };
+                (rows, context) -> {
+                    Assertions.assertSame(jobContext, context);
+                    pages.add(rows);
+                };
         List<MapSqlParameterSource> parameterSources = new ArrayList<>();
         List<String> queries = new ArrayList<>();
         AtomicInteger queryCount = new AtomicInteger();
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
-            anyString(),
-            any(MapSqlParameterSource.class),
-            ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
-            .thenAnswer(
-                invocation -> {
-                    queries.add(invocation.getArgument(0));
-                    parameterSources.add(invocation.getArgument(1));
-                    RowMapper<WorkloadReportRow> rowMapper = invocation.getArgument(2);
-                    if (queryCount.getAndIncrement() == 0) {
-                        return List.of(rowMapper.mapRow(resultSet(), 0));
-                    }
-                    return List.of();
-                });
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            queries.add(invocation.getArgument(0));
+                            parameterSources.add(invocation.getArgument(1));
+                            RowMapper<WorkloadReportRow> rowMapper = invocation.getArgument(2);
+                            if (queryCount.getAndIncrement() == 0) {
+                                return List.of(rowMapper.mapRow(resultSet(), 0));
+                            }
+                            return List.of();
+                        });
 
         WorkloadFilterDto filter = filter();
-        WorkloadReportDataReader reader = new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
+        WorkloadReportDataReader reader =
+                new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
 
         reader.readData(new ReadPagePosition(1, 5), pageReader, jobContext);
 
@@ -92,23 +91,24 @@ public class WorkloadReportDataReaderTest {
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
-            anyString(),
-            any(MapSqlParameterSource.class),
-            ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
-            .thenAnswer(
-                invocation -> {
-                    queries.add(invocation.getArgument(0));
-                    parameterSources.add(invocation.getArgument(1));
-                    return List.of();
-                });
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            queries.add(invocation.getArgument(0));
+                            parameterSources.add(invocation.getArgument(1));
+                            return List.of();
+                        });
 
         WorkloadFilterDto filter =
-            new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2018, 5, 1))
-                .dateTo(LocalDate.of(2018, 5, 31));
-        WorkloadReportDataReader reader = new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31));
+        WorkloadReportDataReader reader =
+                new WorkloadReportDataReader(jdbcTemplate, filter, "appreg");
         PageReader<WorkloadReportRow> pageReader =
-            (rows, context) -> Assertions.fail("No rows expected");
+                (rows, context) -> Assertions.fail("No rows expected");
 
         reader.readData(new ReadPagePosition(25, 5), pageReader, mock(JobContext.class));
 
@@ -126,22 +126,23 @@ public class WorkloadReportDataReaderTest {
 
         when(jdbcTemplate.getJdbcTemplate()).thenReturn(rawJdbcTemplate);
         when(jdbcTemplate.query(
-            anyString(),
-            any(MapSqlParameterSource.class),
-            ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
-            .thenAnswer(
-                invocation -> {
-                    parameterSources.add(invocation.getArgument(1));
-                    RowMapper<WorkloadReportRow> rowMapper = invocation.getArgument(2);
-                    return List.of(rowMapper.mapRow(resultSet(), 0));
-                });
+                        anyString(),
+                        any(MapSqlParameterSource.class),
+                        ArgumentMatchers.<RowMapper<WorkloadReportRow>>any()))
+                .thenAnswer(
+                        invocation -> {
+                            parameterSources.add(invocation.getArgument(1));
+                            RowMapper<WorkloadReportRow> rowMapper = invocation.getArgument(2);
+                            return List.of(rowMapper.mapRow(resultSet(), 0));
+                        });
 
-        WorkloadReportDataReader reader = new WorkloadReportDataReader(jdbcTemplate, filter(), "appreg");
+        WorkloadReportDataReader reader =
+                new WorkloadReportDataReader(jdbcTemplate, filter(), "appreg");
 
         reader.readData(
-            new ReadPagePosition(25, 0),
-            (rows, context) -> Assertions.assertEquals(1, rows.size()),
-            mock(JobContext.class));
+                new ReadPagePosition(25, 0),
+                (rows, context) -> Assertions.assertEquals(1, rows.size()),
+                mock(JobContext.class));
 
         Assertions.assertEquals(1, parameterSources.size());
         Assertions.assertEquals(25, parameterSources.getFirst().getValue("limit"));
@@ -165,51 +166,34 @@ public class WorkloadReportDataReaderTest {
 
     private WorkloadFilterDto filter() {
         LegacyReportLocation location =
-            new LegacyReportLocation()
-                .cjaCode("01")
-                .otherLocationDescription("Other court")
-                .courtLocationCode("B01IX00");
+                new LegacyReportLocation()
+                        .cjaCode("01")
+                        .otherLocationDescription("Other court")
+                        .courtLocationCode("B01IX00");
         return new WorkloadFilterDto()
-            .dateFrom(LocalDate.of(2018, 5, 1))
-            .dateTo(LocalDate.of(2018, 5, 31))
-            .location(location);
+                .dateFrom(LocalDate.of(2018, 5, 1))
+                .dateTo(LocalDate.of(2018, 5, 31))
+                .location(location);
     }
 
     private void assertLegacyWorkloadsQueryShape(String query) {
         String normalisedQuery = query.replaceAll("\\s+", " ");
         Assertions.assertTrue(
-            normalisedQuery.contains(
-                "UPPER(list_other_location) "
-                    + "LIKE '%' || UPPER(:otherLocation) || '%'"));
+                normalisedQuery.contains(
+                        "UPPER(list_other_location) "
+                                + "LIKE '%' || UPPER(:otherLocation) || '%'"));
         Assertions.assertTrue(
-            normalisedQuery.contains(
-                "UPPER(courthouse_name) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
-        Assertions.assertTrue(
-            normalisedQuery.contains(
-                "cja_code LIKE '%' || :cjaCode || '%'"
-            )
-        );
-        Assertions.assertTrue(
-            normalisedQuery.contains(
-                "AND :otherLocation IS NULL"
-            )
-        );
-        Assertions.assertTrue(
-            normalisedQuery.contains(
-                "AND :cjaCode IS NULL"
-            )
-        );
-        Assertions.assertTrue(
-            normalisedQuery.contains(
-                "AND :courthouseName IS NULL"
-            )
-        );
+                normalisedQuery.contains(
+                        "UPPER(courthouse_name) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
+        Assertions.assertTrue(normalisedQuery.contains("cja_code LIKE '%' || :cjaCode || '%'"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :otherLocation IS NULL"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :cjaCode IS NULL"));
+        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseName IS NULL"));
     }
 
     private ResultSet resultSet() throws Exception {
         ResultSet resultSet = mock(ResultSet.class);
-        when(resultSet.getDate("list_date"))
-            .thenReturn(Date.valueOf("2018-05-18"));
+        when(resultSet.getDate("list_date")).thenReturn(Date.valueOf("2018-05-18"));
         when(resultSet.getString("courthouse_name")).thenReturn("B01IX00 - Test Court");
         when(resultSet.getString("list_other_location")).thenReturn("Other court");
         when(resultSet.getString("applicant_name")).thenReturn("British Gas");

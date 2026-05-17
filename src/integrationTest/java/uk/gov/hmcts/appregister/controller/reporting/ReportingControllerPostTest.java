@@ -225,7 +225,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                     getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
                                     tokenGenerator.fetchTokenForRole());
 
-                    if (jobResponse.statusCode() != 200)    {
+                    if (jobResponse.statusCode() != 200) {
                         return false;
                     }
 
@@ -478,51 +478,55 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenValidWorkloadReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
-        throws Exception {
-            TokenGenerator tokenGenerator =
-                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+    public void
+            givenValidWorkloadReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
-            WorkloadFilterDto request =
-                    new WorkloadFilterDto()
-                            .dateFrom(LocalDate.of(2026, 4, 1))
-                            .dateTo(LocalDate.of(2026, 4, 28));
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28));
 
-            Response createResponse =
-                    restAssuredClient.executePostRequest(
-                            getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                            tokenGenerator.fetchTokenForRole(),
-                            request);
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
 
-            createResponse.then().statusCode(202);
+        createResponse.then().statusCode(202);
 
         assertReportParameterAuditRow(
-            ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateFrom", "2026-04-01");
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateFrom", "2026-04-01");
         assertReportParameterAuditRow(
-            ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
         Assertions.assertNotNull(createdJob.getId());
         Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
 
-        AwaitilityUtil.waitForMaxWithOneSecondPoll( () -> {
-            Response response = restAssuredClient.executeGetRequest(
-                getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
-                tokenGenerator.fetchTokenForRole());
-            if (response.statusCode() != 200) {
-                return false;
-            }
-            JobAcknowledgement job = response.as(JobAcknowledgement.class);
-            Assertions.assertEquals(createdJob.getId(), job.getId());
-            Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-            return job.getStatus() == JobStatus1.COMPLETED;
-        }, Duration.ofSeconds(30));
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
 
         Response downloadResponse =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
 
         downloadResponse.then().statusCode(200);
         downloadResponse.then().contentType("text/csv");
@@ -533,35 +537,37 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
-        throws Exception {
+    public void
+            givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         LegacyReportLocation location = new LegacyReportLocation();
         location.setOtherLocationDescription("Some other location");
         location.setCjaCode(null);
 
         WorkloadFilterDto request =
-            new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2026, 4, 1))
-                .dateTo(LocalDate.of(2026, 4, 28))
-                .location(location);
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
 
         Response createResponse =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                request);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
 
         createResponse.then().statusCode(400);
     }
 
     @Test
-    public void givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
-        throws Exception {
+    public void
+            givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         LegacyReportLocation location = new LegacyReportLocation();
         location.setOtherLocationDescription(null);
@@ -569,25 +575,26 @@ public class ReportingControllerPostTest extends BaseIntegration {
         location.setCourtLocationCode("TEST123");
 
         WorkloadFilterDto request =
-            new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2026, 4, 1))
-                .dateTo(LocalDate.of(2026, 4, 28))
-                .location(location);
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
 
         Response createResponse =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                request);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
 
         createResponse.then().statusCode(400);
     }
 
     @Test
-    public void givenCourtProvidedWithOtherLocationFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
-        throws Exception {
+    public void
+            givenCourtProvidedWithOtherLocationFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
         TokenGenerator tokenGenerator =
-            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
 
         LegacyReportLocation location = new LegacyReportLocation();
         location.setOtherLocationDescription("test");
@@ -595,20 +602,19 @@ public class ReportingControllerPostTest extends BaseIntegration {
         location.setCourtLocationCode("TEST123");
 
         WorkloadFilterDto request =
-            new WorkloadFilterDto()
-                .dateFrom(LocalDate.of(2026, 4, 1))
-                .dateTo(LocalDate.of(2026, 4, 28))
-                .location(location);
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
 
         Response createResponse =
-            restAssuredClient.executePostRequest(
-                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                tokenGenerator.fetchTokenForRole(),
-                request);
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
 
         createResponse.then().statusCode(400);
     }
-
 
     private void insertDataAuditRow(
             String eventName,
