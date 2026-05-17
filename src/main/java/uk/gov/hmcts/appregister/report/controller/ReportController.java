@@ -98,6 +98,7 @@ public class ReportController implements ReportsApi {
     @Override
     public ResponseEntity<JobAcknowledgement> createWorkloadReport(
             WorkloadFilterDto workloadFilterDto) {
+
         JobAcknowledgement acknowledgement =
                 auditService.processAudit(
                         ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT,

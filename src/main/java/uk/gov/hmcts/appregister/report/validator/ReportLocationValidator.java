@@ -28,6 +28,26 @@ public class ReportLocationValidator {
         validateCourtLocationCode(location.getCourtLocationCode());
     }
 
+    public void validateWorkloadReport(LegacyReportLocation location) {
+        if (location == null) {
+            return;
+        }
+
+        if(location.getCourtLocationCode() != null && (location.getCjaCode() != null || location.getOtherLocationDescription() != null)) {
+            throw new AppRegistryException(
+                    ReportError.COURT_SUPPLIED_WITH_OTHER_LOCATION_OR_CJA,
+                    "Court location code cannot be combined with other location filters for workload report");
+        }
+
+        if(location.getOtherLocationDescription() != null && location.getCjaCode() == null) {
+            throw new AppRegistryException(
+                    ReportError.OTHER_LOCATION_SUPPLIED_WITHOUT_CJA,
+                    "Other location description cannot be combined with CJA code for workload report");
+        }
+
+        validate(location);
+    }
+
     private void validateCjaCode(String cjaCode) {
         if (!StringUtils.hasText(cjaCode)) {
             return;

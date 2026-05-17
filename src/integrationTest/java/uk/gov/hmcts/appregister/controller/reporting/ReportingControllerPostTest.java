@@ -24,6 +24,7 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -33,6 +34,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
     private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
+    private static final String WORKLOAD_REPORT_WEB_CONTEXT = "reports/workload/jobs";
     private static final String JOB_WEB_CONTEXT = "jobs/%s";
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
 
@@ -223,7 +225,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                                     getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
                                     tokenGenerator.fetchTokenForRole());
 
-                    if (jobResponse.statusCode() != 200) {
+                    if (jobResponse.statusCode() != 200)    {
                         return false;
                     }
 
@@ -474,6 +476,139 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .contains(
                                 "Multiple Criminal Justice Areas found when only one was expected"));
     }
+
+    @Test
+    public void givenValidWorkloadReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+        throws Exception {
+            TokenGenerator tokenGenerator =
+                    getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+            WorkloadFilterDto request =
+                    new WorkloadFilterDto()
+                            .dateFrom(LocalDate.of(2026, 4, 1))
+                            .dateTo(LocalDate.of(2026, 4, 28));
+
+            Response createResponse =
+                    restAssuredClient.executePostRequest(
+                            getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                            tokenGenerator.fetchTokenForRole(),
+                            request);
+
+            createResponse.then().statusCode(202);
+
+        assertReportParameterAuditRow(
+            ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateFrom", "2026-04-01");
+        assertReportParameterAuditRow(
+            ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll( () -> {
+            Response response = restAssuredClient.executeGetRequest(
+                getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                tokenGenerator.fetchTokenForRole());
+            if (response.statusCode() != 200) {
+                return false;
+            }
+            JobAcknowledgement job = response.as(JobAcknowledgement.class);
+            Assertions.assertEquals(createdJob.getId(), job.getId());
+            Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+            return job.getStatus() == JobStatus1.COMPLETED;
+        }, Duration.ofSeconds(30));
+
+        Response downloadResponse =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+        }
+    }
+
+    @Test
+    public void givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+        throws Exception {
+        TokenGenerator tokenGenerator =
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription("Some other location");
+        location.setCjaCode(null);
+
+        WorkloadFilterDto request =
+            new WorkloadFilterDto()
+                .dateFrom(LocalDate.of(2026, 4, 1))
+                .dateTo(LocalDate.of(2026, 4, 28))
+                .location(location);
+
+        Response createResponse =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                request);
+
+        createResponse.then().statusCode(400);
+    }
+
+    @Test
+    public void givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+        throws Exception {
+        TokenGenerator tokenGenerator =
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription(null);
+        location.setCjaCode("01");
+        location.setCourtLocationCode("TEST123");
+
+        WorkloadFilterDto request =
+            new WorkloadFilterDto()
+                .dateFrom(LocalDate.of(2026, 4, 1))
+                .dateTo(LocalDate.of(2026, 4, 28))
+                .location(location);
+
+        Response createResponse =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                request);
+
+        createResponse.then().statusCode(400);
+    }
+
+    @Test
+    public void givenCourtProvidedWithOtherLocationFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+        throws Exception {
+        TokenGenerator tokenGenerator =
+            getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription("test");
+        location.setCjaCode(null);
+        location.setCourtLocationCode("TEST123");
+
+        WorkloadFilterDto request =
+            new WorkloadFilterDto()
+                .dateFrom(LocalDate.of(2026, 4, 1))
+                .dateTo(LocalDate.of(2026, 4, 28))
+                .location(location);
+
+        Response createResponse =
+            restAssuredClient.executePostRequest(
+                getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                tokenGenerator.fetchTokenForRole(),
+                request);
+
+        createResponse.then().statusCode(400);
+    }
+
 
     private void insertDataAuditRow(
             String eventName,

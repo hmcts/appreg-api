@@ -21,158 +21,158 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     private static final String REPORT_QUERY =
             """
             WITH applicants AS (
-            SELECT
-                na_id AS id,
-                   code,
-                   name,
-                   title,
-                   forename_1,
-                   forename_2,
-                   forename_3,
-                   surname,
-                   address_l1,
-                   address_l2,
-                   address_l3,
-                   address_l4,
-                   address_l5,
-                   postcode,
-                   email_address,
-                   telephone_number,
-                   mobile_number,
-                   FALSE AS is_standard_applicant
-            FROM
-                name_address na
-            UNION ALL
-            SELECT
-                sa_id AS id,
-                   standard_applicant_code,
-                   name,
-                   title,
-                   forename_1,
-                   forename_2,
-                   forename_3,
-                   surname,
-                   address_l1,
-                   address_l2,
-                   address_l3,
-                   address_l4,
-                   address_l5,
-                   postcode,
-                   email_address,
-                   telephone_number,
-                   mobile_number,
-                   TRUE AS is_standard_applicant
-            FROM
-                standard_applicants sa)
+                        SELECT
+                            na_id AS id,
+                               code,
+                               name,
+                               title,
+                               forename_1,
+                               forename_2,
+                               forename_3,
+                               surname,
+                               address_l1,
+                               address_l2,
+                               address_l3,
+                               address_l4,
+                               address_l5,
+                               postcode,
+                               email_address,
+                               telephone_number,
+                               mobile_number,
+                               FALSE AS is_standard_applicant
+                        FROM
+                            name_address na
+                        UNION ALL
+                        SELECT
+                            sa_id AS id,
+                               standard_applicant_code,
+                               name,
+                               title,
+                               forename_1,
+                               forename_2,
+                               forename_3,
+                               surname,
+                               address_l1,
+                               address_l2,
+                               address_l3,
+                               address_l4,
+                               address_l5,
+                               postcode,
+                               email_address,
+                               telephone_number,
+                               mobile_number,
+                               TRUE AS is_standard_applicant
+                        FROM
+                            standard_applicants sa)
 
-            SELECT
-                al.application_list_date AS list_date,
-                   CASE
-                    WHEN al.courthouse_code IS NOT NULL
-                        THEN al.courthouse_code || ' - ' || al.courthouse_name
-                END AS courthouse_name,
-                   al.other_courthouse AS list_other_location,
-                   cja.cja_code AS cja_code,
-                   al.list_description AS list_description,
-                   CASE
-                    WHEN a.is_standard_applicant = TRUE THEN
-                    a.code
-                    ELSE
-                    NULL
-                END AS standard_applicant_code,
-                   CASE
-                    WHEN a.name IS NOT NULL THEN
-                    a.name
-                    ELSE
-                    CONCAT(a.forename_1, ' ', a.forename_2, ' ', a.forename_3, ' ', a.surname)
-                END AS applicant_name,
-                   ac.application_code AS application_code,
-                   ac.application_code_title AS appplication_code_title,
-                   string_agg(rc.resolution_code, ',') AS resolution_codes,
-                   CASE
-                    WHEN ale.sequence_number = 1
-                    AND aleo.official_type = 'M' THEN
-                    CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
-                END AS JP1,
-                   CASE
-                    WHEN ale.sequence_number = 2
-                    AND aleo.official_type = 'M' THEN
-                    CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
-                END AS JP2,
-                   CASE
-                    WHEN ale.sequence_number = 3
-                    AND aleo.official_type = 'M' THEN
-                    CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
-                END AS JP3,
-                   CASE
-                    WHEN aleo.official_type = 'C' THEN
-                    CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
-                END AS official
-            FROM
-                applicants a
-            JOIN application_list_entries ale
-            JOIN application_lists al ON
-                al.al_id = ale.al_al_id
-            JOIN application_codes ac ON
-                ac.ac_id = ale.ac_ac_id
-            LEFT OUTER JOIN criminal_justice_area cja ON
-                cja.cja_id = al.cja_cja_id
-            ON
-                (a.is_standard_applicant = FALSE
-                    AND ale.a_na_id = a.id)
-                OR (a.is_standard_applicant = FALSE
-                    AND ale.sa_sa_id = a.id)
-            LEFT OUTER JOIN app_list_entry_resolutions aler ON
-                aler.ale_ale_id = ale.ale_id
-            LEFT OUTER JOIN resolution_codes rc ON
-                rc.rc_id = aler.rc_rc_id
-            LEFT OUTER JOIN app_list_entry_official aleo ON
-                aleo.ale_ale_id = ale.ale_id
-            WHERE
-                al.application_list_status = 'CLOSED'
-            GROUP BY
-                rc.resolution_code,
-                al.application_list_date,
-                al.courthouse_name,
-                al.courthouse_code,
-                al.other_courthouse,
-                cja.cja_code,
-                al.list_description,
-                a.is_standard_applicant,
-                a.code,
-                a.name,
-                a.forename_1,
-                a.forename_2,
-                a.forename_3,
-                a.surname,
-                ac.application_code,
-                ac.application_code_title,
-                ale.sequence_number,
-                aleo.official_type,
-                aleo.title,
-                aleo.forename,
-                aleo.surname
-            WHERE
-                AND al.application_list_date >= :dateFrom
-                AND al.application_list_date < (:dateTo + INTERVAL '1 day')
-                AND :courthouseName IS NULL
-                OR ((UPPER(courthouse_name) LIKE '%' || UPPER(:courthouseCode) || '%')
-                    AND :otherLocation IS NULL
-                    AND :cjaCode IS NULL)
-                AND :otherLocation IS NULL
-                OR ((UPPER(list_other_location) LIKE '%' || UPPER(:otherLocation) || '%')
-                    AND (cja_code LIKE '%' || :cjaCode || '%')
-                        AND courthouse_name IS NULL)
-                AND :cjaCode IS NULL
-                OR ((cja_code LIKE '%' || :cjaCode || '%')
-                    AND :otherLocation IS NULL
-                    AND :courthouseName IS NULL)
-                and :hasCursor IS FALSE
-                OR al.application_list_date < :lastListDate
-                OR (al.application_list_date = :lastListDate)
-            ORDER BY
-                list_date DESC
-            LIMIT :limit
+                        SELECT
+                            al.application_list_date AS list_date,
+                               CASE
+                                WHEN al.courthouse_code IS NOT NULL
+                                    THEN al.courthouse_code || ' - ' || al.courthouse_name
+                            END AS courthouse_name,
+                               al.other_courthouse AS list_other_location,
+                               cja.cja_code AS cja_code,
+                               al.list_description AS list_description,
+                               CASE
+                                WHEN a.is_standard_applicant = TRUE THEN
+                                a.code
+                                ELSE
+                                NULL
+                            END AS standard_applicant_code,
+                               CASE
+                                WHEN a.name IS NOT NULL THEN
+                                a.name
+                                ELSE
+                                CONCAT(a.forename_1, ' ', a.forename_2, ' ', a.forename_3, ' ', a.surname)
+                            END AS applicant_name,
+                               ac.application_code AS application_code,
+                               ac.application_code_title AS application_code_title,
+                               string_agg(rc.resolution_code, ',') AS resolution_codes,
+                               CASE
+                                WHEN ale.sequence_number = 1
+                                AND aleo.official_type = 'M' THEN
+                                CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
+                            END AS JP1,
+                               CASE
+                                WHEN ale.sequence_number = 2
+                                AND aleo.official_type = 'M' THEN
+                                CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
+                            END AS JP2,
+                               CASE
+                                WHEN ale.sequence_number = 3
+                                AND aleo.official_type = 'M' THEN
+                                CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
+                            END AS JP3,
+                               CASE
+                                WHEN aleo.official_type = 'C' THEN
+                                CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname)
+                            END AS official
+                        FROM
+                            applicants a
+                        JOIN application_list_entries ale
+                        JOIN application_lists al ON
+                            al.al_id = ale.al_al_id
+                        JOIN application_codes ac ON
+                            ac.ac_id = ale.ac_ac_id
+                        LEFT OUTER JOIN criminal_justice_area cja ON
+                            cja.cja_id = al.cja_cja_id
+                        ON
+                            (a.is_standard_applicant = FALSE
+                                AND ale.a_na_id = a.id)
+                            OR (a.is_standard_applicant = FALSE
+                                AND ale.sa_sa_id = a.id)
+                        LEFT OUTER JOIN app_list_entry_resolutions aler ON
+                            aler.ale_ale_id = ale.ale_id
+                        LEFT OUTER JOIN resolution_codes rc ON
+                            rc.rc_id = aler.rc_rc_id
+                        LEFT OUTER JOIN app_list_entry_official aleo ON
+                            aleo.ale_ale_id = ale.ale_id
+                        WHERE
+                            al.application_list_status = 'CLOSED'
+                            AND al.application_list_date >= :dateFrom
+                            AND al.application_list_date < (:dateTo + INTERVAL '1 day')
+                            AND(:courthouseCode IS NULL
+                            OR ((UPPER(courthouse_name) LIKE '%' || UPPER(:courthouseCode) || '%')
+                                AND :otherLocation IS NULL
+                                AND :cjaCode IS NULL))
+                            AND(:otherLocation IS NULL
+                            OR ((UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
+                                AND (cja_code LIKE '%' || :cjaCode || '%')
+                                    AND :courthouseCode IS NULL))
+                            AND( :cjaCode IS NULL
+                            OR ((cja_code LIKE '%' || :cjaCode || '%')
+                                AND :otherLocation IS NULL
+                                AND :courthouseCode IS NULL))
+                            AND(:hasCursor IS FALSE
+                            OR :lastListDate IS NULL
+                            OR al.application_list_date < :lastListDate
+                            OR (al.application_list_date = :lastListDate))
+                        GROUP BY
+                            rc.resolution_code,
+                            al.application_list_date,
+                            al.courthouse_name,
+                            al.courthouse_code,
+                            al.other_courthouse,
+                            cja.cja_code,
+                            al.list_description,
+                            a.is_standard_applicant,
+                            a.code,
+                            a.name,
+                            a.forename_1,
+                            a.forename_2,
+                            a.forename_3,
+                            a.surname,
+                            ac.application_code,
+                            ac.application_code_title,
+                            ale.sequence_number,
+                            aleo.official_type,
+                            aleo.title,
+                            aleo.forename,
+                            aleo.surname
+                        ORDER BY
+                            list_date DESC
+                        LIMIT :limit
         """;
 
     private static final RowMapper<WorkloadReportRow> ROW_MAPPER = new WorkloadReportRowMapper();
@@ -216,16 +216,16 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
     private List<WorkloadReportRow> readPage(WorkloadReportReadCursor cursor) {
         MapSqlParameterSource parameters =
                 new MapSqlParameterSource()
-                        .addValue("dateFrom", filterDto.getDateFrom())
-                        .addValue("dateTo", filterDto.getDateTo())
-                        .addValue("courthouseName", filterDto.getLocation() != null ?
-                            filterDto.getLocation().getCourtLocationCode() : null)
+                        .addValue("dateFrom", filterDto.getDateFrom(), Types.DATE)
+                        .addValue("dateTo", filterDto.getDateTo(), Types.DATE)
+                        .addValue("courthouseCode", filterDto.getLocation() != null ?
+                            filterDto.getLocation().getCourtLocationCode() : null, Types.VARCHAR)
                         .addValue(
                                 "otherLocation",
                                 filterDto.getLocation() != null ?
-                                    filterDto.getLocation().getOtherLocationDescription() : null)
+                                    filterDto.getLocation().getOtherLocationDescription() : null, Types.VARCHAR)
                         .addValue("cjaCode", filterDto.getLocation() != null ?
-                            filterDto.getLocation().getCjaCode() : null)
+                            filterDto.getLocation().getCjaCode() : null, Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue(
                             "lastListDate",
