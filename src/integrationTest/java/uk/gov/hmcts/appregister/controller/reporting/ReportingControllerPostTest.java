@@ -256,6 +256,60 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void
+            givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 18);
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Singlefield", "ARC person fee wording");
+        insertFeesReportApplication(
+                listDate,
+                "Arc Organisation Applicant Ltd",
+                null,
+                null,
+                "ARC organisation fee wording");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .applicantName("Singlefield");
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("ArcPerson Singlefield"));
+        Assertions.assertFalse(report.contains("Arc Organisation Applicant Ltd"));
+    }
+
+    @Test
+    public void
+            givenFeesReportApplicantNameMatchesOrganisation_whenCreatingReport_thenCsvIncludesEntry()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 19);
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Unmatched", "ARC person fee wording");
+        insertFeesReportApplication(
+                listDate,
+                "Arc Organisation Singlefield Ltd",
+                null,
+                null,
+                "ARC organisation fee wording");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .applicantName("Organisation Singlefield");
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("Arc Organisation Singlefield Ltd"));
+        Assertions.assertFalse(report.contains("ArcPerson Unmatched"));
+    }
+
+    @Test
     public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -1489,6 +1543,187 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         listDate);
         long resolutionCodeId = insertResolutionCode("PIS");
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
+    private String createFeesReportAndDownload(FeesReportFilterDto request) throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.FEES_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.FEES_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording) {
+        long applicantId =
+                insertNameAddressRow(
+                        applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD997",
+                        "Fees Hall",
+                        "Fees report integration list",
+                        "Fees Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertApplicationListEntryRow(
+                        listId,
+                        insertFeesApplicationCodeRow(),
+                        applicantId,
+                        applicantId,
+                        wording,
+                        "Fees notes",
+                        listDate);
+        long feeId = insertFeeRow();
+        insertApplicationListEntryFee(entryId, feeId);
+    }
+
+    private long insertFeesApplicationCodeRow() {
+        Long applicationCodeId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
+        String applicationCode = "FR" + Math.floorMod(applicationCodeId, 1_000_000L);
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.application_codes (
+                    ac_id,
+                    application_code,
+                    application_code_title,
+                    application_code_wording,
+                    fee_due,
+                    application_code_respondent,
+                    application_code_start_date,
+                    bulk_respondent_allowed,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    ?,
+                    ?,
+                    'Fees Report Code',
+                    'Fees report wording',
+                    'Y',
+                    'N',
+                    DATE '2020-01-01',
+                    'N',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema),
+                applicationCodeId,
+                applicationCode);
+        return applicationCodeId;
+    }
+
+    private long insertFeeRow() {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.fee (
+                    fee_id,
+                    fee_reference,
+                    fee_description,
+                    fee_value,
+                    fee_start_date,
+                    fee_version,
+                    fee_changed_by,
+                    fee_changed_date,
+                    fee_user_name,
+                    is_offsite
+                )
+                VALUES (
+                    nextval('%s.fee_seq'),
+                    ?,
+                    'Fees report integration fee',
+                    10.00,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    false
+                )
+                RETURNING fee_id
+                """,
+                        schema, schema),
+                Long.class,
+                "FR" + Math.floorMod(System.nanoTime(), 1_000_000_000L));
+    }
+
+    private void insertApplicationListEntryFee(long entryId, long feeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.app_list_entry_fee_id (
+                    ale_ale_id,
+                    fee_fee_id,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema),
+                entryId,
+                feeId);
     }
 
     private long insertNameAddressRow(
