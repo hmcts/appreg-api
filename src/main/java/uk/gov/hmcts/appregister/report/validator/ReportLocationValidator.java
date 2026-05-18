@@ -24,15 +24,6 @@ public class ReportLocationValidator {
             return;
         }
 
-        validateCjaCode(location.getCjaCode());
-        validateCourtLocationCode(location.getCourtLocationCode());
-    }
-
-    public void validateWorkloadReport(LegacyReportLocation location) {
-        if (location == null) {
-            return;
-        }
-
         if (location.getCourtLocationCode() != null
                 && (location.getCjaCode() != null
                         || location.getOtherLocationDescription() != null)) {
@@ -47,7 +38,8 @@ public class ReportLocationValidator {
                     "Other location description cannot be combined with CJA code for workload report");
         }
 
-        validate(location);
+        validateCjaCode(location.getCjaCode());
+        validateCourtLocationCode(location.getCourtLocationCode());
     }
 
     private void validateCjaCode(String cjaCode) {
