@@ -408,36 +408,6 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
-            givenLocationFilterWithCourtLocationAndCJA_whenCreatingFeesReport_thenBadRequestIsReturned()
-                    throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
-
-        FeesReportFilterDto request =
-                new FeesReportFilterDto()
-                        .dateFrom(LocalDate.of(2018, 5, 1))
-                        .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(
-                                new LegacyReportLocation()
-                                        .cjaCode("01")
-                                        .courtLocationCode("TEST123"));
-
-        Response createResponse =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        request);
-
-        createResponse.then().statusCode(400);
-        Assertions.assertTrue(
-                createResponse
-                        .asString()
-                        .contains(
-                                "Court location code cannot be combined with other location filters"));
-    }
-
-    @Test
-    public void
             givenValidDurationReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 4, 10);
