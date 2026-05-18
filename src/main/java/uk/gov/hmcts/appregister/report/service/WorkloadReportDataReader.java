@@ -266,6 +266,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
         @Override
         public WorkloadReportRow mapRow(ResultSet rs, int rowNum) throws SQLException {
             return WorkloadReportRow.builder()
+                    .lastApplicationListEntryId(rs.getLong("ale_id"))
                     .applicationCode(rs.getString("application_code"))
                     .applicationCodeTitle(rs.getString("application_code_title"))
                     .applicantNameSurname(rs.getString("applicant_name"))
