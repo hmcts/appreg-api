@@ -2,19 +2,16 @@ type: object
 title: LegacyReportLocation
 description: >
   Location filters for legacy MIS reports. Blank fields will be rejected,
-  nulls should be used instead. When no cjaCode is supplied,
-  courtLocationCode and otherLocationDescription are case-insensitive contains
-  matches and can be combined. A cjaCode-only filter includes rows explicitly
-  stored against that CJA and court rows whose court code maps to that CJA.
-  A cjaCode with otherLocationDescription and no courtLocationCode matches
-  explicit CJA other-location rows. Other location combinations are accepted
-  for legacy compatibility and may return no rows.
+  nulls should be used instead. When provided, use either courtLocationCode
+  on its own, or both cjaCode and otherLocationDescription together.
+  courtLocationCode is mutually exclusive with cjaCode and
+  otherLocationDescription.
 
 properties:
 
   courtLocationCode:
       type: string
-      description: Court location code (case-insensitive contains match when no cjaCode is supplied).
+      description: Court location code (case-insensitive contains match).
       example: "LOC123"
       maxLength: 10
       minLength: 1
@@ -31,8 +28,8 @@ properties:
   cjaCode:
       type: string
       description: >
-        Criminal Justice Area code. A cjaCode-only filter also includes court
-        rows whose court code maps to this CJA.
+        Criminal Justice Area code. Must be supplied with
+        otherLocationDescription.
       example: "52"
       maxLength: 2
       minLength: 1

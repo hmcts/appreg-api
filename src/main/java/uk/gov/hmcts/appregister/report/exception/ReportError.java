@@ -24,7 +24,10 @@ public enum ReportError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Other location description cannot be combined with CJA code",
-                    "RPT-5"));
+                    "RPT-5")),
+    INVALID_LOCATION_COMBINATION(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Invalid report location combination", "RPT-6"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
