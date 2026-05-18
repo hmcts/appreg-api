@@ -137,6 +137,12 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                         AND :courthouseCode IS NULL
                     )
                 )
+                AND (
+                    :hasCursor = FALSE
+                    OR c.list_date < :lastListDate
+                    OR (c.list_date = :lastListDate
+                        AND c.ale_id < :lastApplicationListEntryId)
+                )
             ORDER BY c.list_date DESC, c.ale_id DESC
             LIMIT :limit
             """;
