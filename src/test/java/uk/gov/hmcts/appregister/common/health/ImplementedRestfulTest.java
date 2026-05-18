@@ -15,10 +15,7 @@ public class ImplementedRestfulTest {
     // The unimplemented endpoints. This list should be empty at the point of releasing
     // application register to production.
     private static final List<String> UNIMPLEMENTED_ENDPOINTS =
-            List.of(
-                    "POST /reports/private-prosecutors-index/jobs",
-                    "POST /reports/workload/jobs",
-                    "POST /reports/search-warrants/jobs");
+            List.of("POST /reports/workload/jobs", "POST /reports/search-warrants/jobs");
 
     @Test
     public void testShouldNotBeImplemented() throws Exception {
