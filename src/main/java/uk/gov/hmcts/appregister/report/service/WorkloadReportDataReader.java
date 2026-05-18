@@ -29,15 +29,6 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                forename_2,
                                forename_3,
                                surname,
-                               address_l1,
-                               address_l2,
-                               address_l3,
-                               address_l4,
-                               address_l5,
-                               postcode,
-                               email_address,
-                               telephone_number,
-                               mobile_number,
                                FALSE AS is_standard_applicant
                         FROM
                             name_address na
@@ -51,15 +42,6 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                forename_2,
                                forename_3,
                                surname,
-                               address_l1,
-                               address_l2,
-                               address_l3,
-                               address_l4,
-                               address_l5,
-                               postcode,
-                               email_address,
-                               telephone_number,
-                               mobile_number,
                                TRUE AS is_standard_applicant
                         FROM
                             standard_applicants sa)
