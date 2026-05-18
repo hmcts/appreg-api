@@ -160,7 +160,6 @@ class FeesReportDataReaderTest {
         Assertions.assertEquals(LocalDate.of(2018, 5, 31), parameters.getValue("dateTo"));
         Assertions.assertEquals("STD1", parameters.getValue("standardApplicantCode"));
         Assertions.assertEquals("John Smith", parameters.getValue("applicantName"));
-        Assertions.assertEquals("British Gas", parameters.getValue("applicantOrganisation"));
         Assertions.assertEquals("01", parameters.getValue("cjaCode"));
         Assertions.assertEquals("Other court", parameters.getValue("otherCourthouse"));
         Assertions.assertEquals("B01IX00", parameters.getValue("courthouseCode"));
@@ -187,7 +186,6 @@ class FeesReportDataReaderTest {
                 .dateTo(LocalDate.of(2018, 5, 31))
                 .standardApplicantCode("STD1")
                 .applicantName("John Smith")
-                .applicantOrganisation("British Gas")
                 .location(location);
     }
 
@@ -211,6 +209,17 @@ class FeesReportDataReaderTest {
                 normalisedQuery.contains(
                         "UPPER(sa.standard_applicant_code) "
                                 + "LIKE '%' || UPPER(:standardApplicantCode) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "UPPER(b.applicant_display_name) "
+                                + "LIKE '%' || UPPER(:applicantName) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "OR UPPER(b.name) LIKE '%' || UPPER(:applicantName) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains(
+                        "OR UPPER(b.surname) LIKE '%' || UPPER(:applicantName) || '%'"));
+        Assertions.assertEquals(-1, normalisedQuery.indexOf(":applicantOrganisation"));
         Assertions.assertTrue(
                 normalisedQuery.contains(
                         "UPPER(b.other_courthouse) "

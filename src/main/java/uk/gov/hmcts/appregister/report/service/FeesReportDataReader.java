@@ -93,10 +93,8 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                         :applicantName IS NULL
                         OR UPPER(b.applicant_display_name)
                             LIKE '%' || UPPER(:applicantName) || '%'
-                    )
-                    AND (
-                        :applicantOrganisation IS NULL
-                        OR UPPER(b.name) LIKE '%' || UPPER(:applicantOrganisation) || '%'
+                        OR UPPER(b.name) LIKE '%' || UPPER(:applicantName) || '%'
+                        OR UPPER(b.surname) LIKE '%' || UPPER(:applicantName) || '%'
                     )
                     -- Maintains legacy MIS Fees report AR5-7 location semantics.
                     AND (
@@ -273,10 +271,6 @@ class FeesReportDataReader implements DataReader<FeesReportRow> {
                                 filter.getStandardApplicantCode(),
                                 Types.VARCHAR)
                         .addValue("applicantName", filter.getApplicantName(), Types.VARCHAR)
-                        .addValue(
-                                "applicantOrganisation",
-                                filter.getApplicantOrganisation(),
-                                Types.VARCHAR)
                         .addValue(
                                 "cjaCode",
                                 getLocationValue(LegacyReportLocation::getCjaCode),

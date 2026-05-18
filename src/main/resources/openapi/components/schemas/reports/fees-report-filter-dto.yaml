@@ -41,16 +41,8 @@ properties:
 
   applicantName:
     type: string
-    description: Applicant display name (case-insensitive contains match). For people this is searched as "{forename} {surname}".
+    description: Applicant name, surname, or organisation name (case-insensitive contains match).
     example: "john smith"
-    maxLength: 100
-    minLength: 1
-    pattern: '.*\S.*'
-
-  applicantOrganisation:
-    type: string
-    description: Applicant organisation name (case-insensitive contains match).
-    example: "acme"
     maxLength: 100
     minLength: 1
     pattern: '.*\S.*'
