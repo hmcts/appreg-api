@@ -42,19 +42,75 @@ class ReportLocationValidatorTest {
     }
 
     @Test
-    void givenExistingCjaAndCourt_whenValidating_thenSucceeds() {
-        final LegacyReportLocation location =
-                new LegacyReportLocation().cjaCode("52").courtLocationCode("LOC123");
-        when(criminalJusticeAreaRepository.findByCode("52"))
-                .thenReturn(List.of(new CriminalJusticeArea()));
+    void givenValidCourt_whenValidating_thenNoErrors() {
+        LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("LOC123");
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(courtHouseRepository.findActiveCourts("LOC123", TODAY_UK))
                 .thenReturn(List.of(new NationalCourtHouse()));
 
         assertDoesNotThrow(() -> validator.validate(location));
 
-        verify(criminalJusticeAreaRepository).findByCode("52");
         verify(courtHouseRepository).findActiveCourts("LOC123", TODAY_UK);
+    }
+
+    @Test
+    void givenValidCja_whenValidating_thenNoErrors() {
+        LegacyReportLocation location = new LegacyReportLocation().cjaCode("52");
+        when(criminalJusticeAreaRepository.findByCode("52"))
+                .thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
+        verify(criminalJusticeAreaRepository).findByCode("52");
+        verifyNoInteractions(courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenValidOtherLocationWithCJA_whenValidating_thenNoErrors() {
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Somewhere").cjaCode("52");
+        when(criminalJusticeAreaRepository.findByCode("52"))
+                .thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
+        verify(criminalJusticeAreaRepository).findByCode("52");
+        verifyNoInteractions(courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenValidOtherLocationWithoutCJA_whenValidating_thenThrowsError() {
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Somewhere");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+        assertEquals(ReportError.OTHER_LOCATION_SUPPLIED_WITHOUT_CJA, exception.getCode());
+
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenValidCourt_withOtherLocation_whenValidating_thenThrowsError() {
+        LegacyReportLocation location =
+                new LegacyReportLocation()
+                        .courtLocationCode("LOC123")
+                        .otherLocationDescription("Somewhere");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+        assertEquals(ReportError.COURT_SUPPLIED_WITH_OTHER_LOCATION_OR_CJA, exception.getCode());
+    }
+
+    @Test
+    void givenExistingCjaAndCourt_whenValidating_thenErrors() {
+        final LegacyReportLocation location =
+                new LegacyReportLocation().cjaCode("52").courtLocationCode("LOC123");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+        assertEquals(ReportError.COURT_SUPPLIED_WITH_OTHER_LOCATION_OR_CJA, exception.getCode());
     }
 
     @Test

@@ -192,11 +192,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1))
                         .applicantName("Smith")
-                        .location(
-                                new LegacyReportLocation()
-                                        .courtLocationCode("CCC003")
-                                        .otherLocationDescription("Town Hall")
-                                        .cjaCode("CD"));
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -213,12 +209,6 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "applicantName", "Smith");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "courtLocationCode", "CCC003");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
-                "otherLocationDescription",
-                "Town Hall");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "cjaCode", "CD");
         assertOnlyReportParametersAuditedFor(ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT);
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);

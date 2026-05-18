@@ -133,7 +133,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportJobCreation createWorkloadReport(WorkloadFilterDto filter) {
         WorkloadFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
-        reportLocationValidator.validateWorkloadReport(normalisedFilter.getLocation());
+        reportLocationValidator.validate(normalisedFilter.getLocation());
         WorkloadReportLifecycle lifecycle;
         try {
             lifecycle = new WorkloadReportLifecycle();
