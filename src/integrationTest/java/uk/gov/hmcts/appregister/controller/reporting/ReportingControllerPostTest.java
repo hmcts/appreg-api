@@ -190,11 +190,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1))
                         .applicantName("Smith")
-                        .location(
-                                new LegacyReportLocation()
-                                        .courtLocationCode("CCC003")
-                                        .otherLocationDescription("Town Hall")
-                                        .cjaCode("CD"));
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -211,12 +207,6 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "applicantName", "Smith");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "courtLocationCode", "CCC003");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT,
-                "otherLocationDescription",
-                "Town Hall");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT, "cjaCode", "CD");
         assertOnlyReportParametersAuditedFor(ReportAuditOperation.CREATE_FEES_REPORT_AUDIT_EVENT);
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
@@ -319,7 +309,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("QX"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("QX")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -330,6 +323,33 @@ public class ReportingControllerPostTest extends BaseIntegration {
         createResponse.then().statusCode(400);
         Assertions.assertTrue(
                 createResponse.asString().contains("Criminal Justice Area not found"));
+    }
+
+    @Test
+    public void givenCourtAndCjaLocation_whenCreatingFeesReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(
+                                new LegacyReportLocation()
+                                        .courtLocationCode("CCC003")
+                                        .cjaCode("CD")
+                                        .otherLocationDescription("Town Hall"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(
+                createResponse.asString().contains("Invalid report location combination"));
     }
 
     @Test
@@ -365,7 +385,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new FeesReportFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("Z1"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("Z1")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -404,7 +427,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2026, 4, 1))
                         .dateTo(LocalDate.of(2026, 4, 28))
-                        .location(new LegacyReportLocation().cjaCode("CD"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("CD")
+                                        .otherLocationDescription("County Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -419,6 +445,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT, "cjaCode", "CD");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT,
+                "otherLocationDescription",
+                "County Hall");
         assertOnlyReportParametersAuditedFor(
                 ReportAuditOperation.CREATE_DURATION_REPORT_AUDIT_EVENT);
 
@@ -474,7 +504,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("QX"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("QX")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -520,7 +553,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new DurationFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("Z2"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("Z2")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -551,7 +587,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2026, 4, 28))
                         .applicantSurname("Legacy")
                         .respondentOrganisationName("Respondent Org")
-                        .location(new LegacyReportLocation().cjaCode("CD"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("CD")
+                                        .otherLocationDescription("Private Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -580,6 +619,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "cjaCode",
                 "CD");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "otherLocationDescription",
+                "Private Hall");
         assertOnlyReportParametersAuditedFor(
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT);
 
@@ -648,7 +691,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateTo(LocalDate.of(2026, 4, 28))
                         .standardApplicantName("Standards")
                         .respondentOrganisationName("Standard Respondent")
-                        .location(new LegacyReportLocation().cjaCode("CD"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("CD")
+                                        .otherLocationDescription("Standard Private Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -669,6 +715,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
                 "cjaCode",
                 "CD");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "otherLocationDescription",
+                "Standard Private Hall");
 
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
         Assertions.assertNotNull(createdJob.getId());
@@ -848,7 +898,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .dateFrom(LocalDate.of(2026, 4, 30))
                         .dateTo(LocalDate.of(2026, 4, 1))
                         .listDescription("MAINTENANCE")
-                        .location(new LegacyReportLocation().cjaCode("CD"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("CD")
+                                        .otherLocationDescription("County Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -871,6 +924,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 "MAINTENANCE");
         assertReportParameterAuditRow(
                 ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, "cjaCode", "CD");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
+                "otherLocationDescription",
+                "County Hall");
         assertOnlyReportParametersAuditedFor(
                 ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT);
 
@@ -1075,7 +1132,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new ListMaintenanceFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("QX"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("QX")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(
@@ -1121,7 +1181,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new ListMaintenanceFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 1))
                         .dateTo(LocalDate.of(2018, 5, 31))
-                        .location(new LegacyReportLocation().cjaCode("Z3"));
+                        .location(
+                                new LegacyReportLocation()
+                                        .cjaCode("Z3")
+                                        .otherLocationDescription("Town Hall"));
 
         Response createResponse =
                 restAssuredClient.executePostRequest(

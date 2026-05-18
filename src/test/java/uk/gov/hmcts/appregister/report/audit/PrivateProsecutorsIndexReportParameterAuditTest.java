@@ -25,7 +25,6 @@ class PrivateProsecutorsIndexReportParameterAuditTest {
                         .respondentOrganisationName("Widgets")
                         .location(
                                 new LegacyReportLocation()
-                                        .courtLocationCode("B01IX00")
                                         .otherLocationDescription("Other court")
                                         .cjaCode("01"));
 
@@ -45,7 +44,6 @@ class PrivateProsecutorsIndexReportParameterAuditTest {
                         new AuditableData("report_parameters", "respondentFirstName", "Jane"),
                         new AuditableData(
                                 "report_parameters", "respondentOrganisationName", "Widgets"),
-                        new AuditableData("report_parameters", "courtLocationCode", "B01IX00"),
                         new AuditableData(
                                 "report_parameters", "otherLocationDescription", "Other court"),
                         new AuditableData("report_parameters", "cjaCode", "01")),

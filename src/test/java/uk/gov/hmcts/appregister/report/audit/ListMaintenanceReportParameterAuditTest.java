@@ -19,7 +19,6 @@ class ListMaintenanceReportParameterAuditTest {
                         .listDescription("Morning")
                         .location(
                                 new LegacyReportLocation()
-                                        .courtLocationCode("B01IX00")
                                         .otherLocationDescription("Other court")
                                         .cjaCode("01"));
 
@@ -32,7 +31,6 @@ class ListMaintenanceReportParameterAuditTest {
                         new AuditableData("report_parameters", "dateFrom", "2026-04-01"),
                         new AuditableData("report_parameters", "dateTo", "2026-04-30"),
                         new AuditableData("report_parameters", "listDescription", "Morning"),
-                        new AuditableData("report_parameters", "courtLocationCode", "B01IX00"),
                         new AuditableData(
                                 "report_parameters", "otherLocationDescription", "Other court"),
                         new AuditableData("report_parameters", "cjaCode", "01")),

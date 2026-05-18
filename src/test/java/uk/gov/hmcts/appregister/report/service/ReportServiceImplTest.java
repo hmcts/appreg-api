@@ -475,8 +475,8 @@ class ReportServiceImplTest {
     }
 
     @ParameterizedTest
-    @MethodSource("legacyDurationLocations")
-    void givenLegacyDurationLocationCombination_whenCreatingReport_thenStartsJob(
+    @MethodSource("validDurationLocations")
+    void givenValidDurationLocationCombination_whenCreatingReport_thenStartsJob(
             LegacyReportLocation location) throws IOException {
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
@@ -527,17 +527,11 @@ class ReportServiceImplTest {
         }
     }
 
-    private static Stream<Arguments> legacyDurationLocations() {
+    private static Stream<Arguments> validDurationLocations() {
         return Stream.of(
-                Arguments.of(new LegacyReportLocation().otherLocationDescription("Town Hall")),
+                Arguments.of(new LegacyReportLocation().courtLocationCode("B01IX00")),
                 Arguments.of(
                         new LegacyReportLocation()
-                                .courtLocationCode("B01IX00")
-                                .otherLocationDescription("Town Hall")),
-                Arguments.of(new LegacyReportLocation().courtLocationCode("B01IX00").cjaCode("01")),
-                Arguments.of(
-                        new LegacyReportLocation()
-                                .courtLocationCode("B01IX00")
                                 .otherLocationDescription("Town Hall")
                                 .cjaCode("01")));
     }
