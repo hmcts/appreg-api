@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.resultcode.mapper;
 
 import java.time.LocalDate;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -52,11 +53,13 @@ public abstract class ResultCodeMapper {
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "resultCode", source = "code")
     @Mapping(target = "startDate", source = "date")
+    @BeanMapping(ignoreByDefault = true)
     public abstract ResolutionCode toEntity(String code, LocalDate date);
 
     @Mapping(target = "id", constant = "0L")
     @Mapping(target = "resultCode", source = "code")
     @Mapping(target = "title", source = "title")
+    @BeanMapping(ignoreByDefault = true)
     public abstract ResolutionCode toEntity(CodeAndTitle record);
 
     JsonNullable<LocalDate> map(LocalDate value) {

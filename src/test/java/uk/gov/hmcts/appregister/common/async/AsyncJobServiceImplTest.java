@@ -54,7 +54,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         UUID jobId = UUID.randomUUID();
 
         // setup the callback
-        AsyncJobLifecycle<PersonCsvPojo> lifecycle = Mockito.mock(AsyncJobLifecycle.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -91,7 +91,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
             // capture each event in a list so we can asserr
             ArgumentCaptor<AsyncJobLifecycleEvent<PersonCsvPojo>> lifecycleEventArgumentCaptor =
-                    ArgumentCaptor.forClass(AsyncJobLifecycleEvent.class);
+                    lifecycleEventCaptor();
             verify(lifecycle, times(8))
                     .lifeCycleEventPerformed(lifecycleEventArgumentCaptor.capture());
 
@@ -172,7 +172,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
 
         @SuppressWarnings("unchecked")
         DataReader<PersonCsvPojo> dataReader = Mockito.mock(DataReader.class);
-        AsyncJobLifecycle<PersonCsvPojo> lifecycle = Mockito.mock(AsyncJobLifecycle.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         when(persistence.startJob(Mockito.notNull())).thenReturn(jobIdRequest);
         Mockito.doThrow(new IOException("close failed")).when(dataReader).close();
@@ -415,7 +415,7 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
         UUID jobId = UUID.randomUUID();
 
         // setup the callback
-        AsyncJobLifecycle<PersonCsvPojo> lifecycle = Mockito.mock(AsyncJobLifecycle.class);
+        AsyncJobLifecycle<PersonCsvPojo> lifecycle = mockLifecycle();
 
         // setup the reader for the csv file
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -499,6 +499,16 @@ public class AsyncJobServiceImplTest extends AbstractAsyncTest {
             }
         }
         return reader;
+    }
+
+    @SuppressWarnings("unchecked")
+    private AsyncJobLifecycle<PersonCsvPojo> mockLifecycle() {
+        return Mockito.mock(AsyncJobLifecycle.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<AsyncJobLifecycleEvent<PersonCsvPojo>> lifecycleEventCaptor() {
+        return ArgumentCaptor.forClass(AsyncJobLifecycleEvent.class);
     }
 
     class DataPageReader implements PageReader<PersonCsvPojo> {

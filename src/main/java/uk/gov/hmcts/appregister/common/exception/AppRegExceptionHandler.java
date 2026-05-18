@@ -106,7 +106,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
 
         // add the failure specifics to the problem detail properties
-        for (ConstraintViolation fieldError : ex.getConstraintViolations()) {
+        for (ConstraintViolation<?> fieldError : ex.getConstraintViolations()) {
             problemDetail.setDetail(
                     problemDetail.getDetail()
                             + fieldError.getPropertyPath()

@@ -24,10 +24,13 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
+import uk.gov.hmcts.appregister.testutils.token.TokenAndJwksKey;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ReportingControllerPostTest extends BaseIntegration {
@@ -35,6 +38,10 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
     private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
     private static final String WORKLOAD_REPORT_WEB_CONTEXT = "reports/workload/jobs";
+    private static final String LIST_MAINTENANCE_REPORT_WEB_CONTEXT =
+            "reports/list-maintenance/jobs";
+    private static final String PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT =
+            "reports/private-prosecutors-index/jobs";
     private static final String JOB_WEB_CONTEXT = "jobs/%s";
     private static final String DOWNLOAD_WEB_CONTEXT = "reports/jobs/%s/download";
 
@@ -248,6 +255,60 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
             Assertions.assertTrue(report.contains("Fees Report"));
         }
+    }
+
+    @Test
+    public void
+            givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 18);
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Singlefield", "ARC person fee wording");
+        insertFeesReportApplication(
+                listDate,
+                "Arc Organisation Applicant Ltd",
+                null,
+                null,
+                "ARC organisation fee wording");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .applicantName("Singlefield");
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("ArcPerson Singlefield"));
+        Assertions.assertFalse(report.contains("Arc Organisation Applicant Ltd"));
+    }
+
+    @Test
+    public void
+            givenFeesReportApplicantNameMatchesOrganisation_whenCreatingReport_thenCsvIncludesEntry()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 19);
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Unmatched", "ARC person fee wording");
+        insertFeesReportApplication(
+                listDate,
+                "Arc Organisation Singlefield Ltd",
+                null,
+                null,
+                "ARC organisation fee wording");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .applicantName("Organisation Singlefield");
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("Arc Organisation Singlefield Ltd"));
+        Assertions.assertFalse(report.contains("ArcPerson Unmatched"));
     }
 
     @Test
@@ -616,6 +677,677 @@ public class ReportingControllerPostTest extends BaseIntegration {
         createResponse.then().statusCode(400);
     }
 
+    @Test
+    public void givenValidPrivateProsecutorsIndexRequest_whenCreatingReport_thenCsvCanBeDownloaded()
+            throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 11);
+        insertPrivateProsecutorsIndexApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .applicantSurname("Legacy")
+                        .respondentOrganisationName("Respondent Org")
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "dateFrom",
+                "2026-04-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "dateTo",
+                "2026-04-28");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "applicantSurname",
+                "Legacy");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "respondentOrganisationName",
+                "Respondent Org");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "cjaCode",
+                "CD");
+        assertOnlyReportParametersAuditedFor(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("11/04/2026"));
+            Assertions.assertTrue(report.contains("XCD999 - Private Court"));
+            Assertions.assertTrue(report.contains("Private Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+            Assertions.assertTrue(report.contains("Legacy"));
+            Assertions.assertTrue(report.contains("Private"));
+            Assertions.assertTrue(report.contains("Respondent Org Ltd"));
+            Assertions.assertTrue(report.contains("Private wording"));
+            Assertions.assertTrue(report.contains("PIZ"));
+            Assertions.assertTrue(report.contains("PIA"));
+            Assertions.assertTrue(report.contains("Private notes"));
+            Assertions.assertFalse(report.contains("{wording}"));
+        }
+    }
+
+    @Test
+    public void
+            givenValidPrivateProsecutorsIndexRequestForStandardApplicant_whenCreatingReport_thenCsvCanBeDownloaded()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 12);
+        insertPrivateProsecutorsIndexStandardApplicantApplication(listDate);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .standardApplicantName("Standards")
+                        .respondentOrganisationName("Standard Respondent")
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "standardApplicantName",
+                "Standards");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "respondentOrganisationName",
+                "Standard Respondent");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "cjaCode",
+                "CD");
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(
+                            JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertTrue(report.contains("12/04/2026"));
+            Assertions.assertTrue(report.contains("XCD998 - Standard Private Court"));
+            Assertions.assertTrue(report.contains("Private Standards Body"));
+            Assertions.assertTrue(report.contains("Standard Respondent Ltd"));
+            Assertions.assertTrue(report.contains("Standard private wording"));
+            Assertions.assertTrue(report.contains("PIS"));
+            Assertions.assertTrue(report.contains("Standard private notes"));
+            Assertions.assertTrue(report.contains("CD,,,Private Standards Body,"));
+        }
+    }
+
+    @Test
+    public void
+            givenWhitespaceOnlyPrivateProsecutorsIndexFilters_whenCreatingReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .applicantSurname(" ")
+                        .respondentFirstName(" ")
+                        .location(new LegacyReportLocation().cjaCode(" "));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Validation failed for fields:"));
+        Assertions.assertTrue(createResponse.asString().contains("applicantSurname"));
+        Assertions.assertTrue(createResponse.asString().contains("respondentFirstName"));
+        Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
+    }
+
+    @Test
+    public void
+            givenPrivateProsecutorsIndexFilterContainsInternalWhitespace_whenCreatingReport_thenCsvCanBeDownloaded()
+                    throws Exception {
+        TokenAndJwksKey token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        PrivateProsecutorsIndexFilterDto request =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .applicantSurname("x y");
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                "applicantSurname",
+                "x y");
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    return jobResponse.as(JobAcknowledgement.class).getStatus()
+                            == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Private Prosecution Index Report"));
+            Assertions.assertEquals(2, report.lines().count());
+        }
+    }
+
+    @Test
+    public void
+            givenValidListMaintenanceReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 4, 11);
+        Long matchingListId =
+                insertApplicationListRowReturningId(
+                        "OPEN",
+                        listDate,
+                        "XCD123",
+                        "County Hall",
+                        "List maintenance integration",
+                        "Maintenance Court",
+                        0,
+                        0,
+                        3);
+        insertApplicationListEntryRows(matchingListId, 2, "N");
+        insertApplicationListEntryRows(matchingListId, 1, "Y");
+        insertApplicationListRow(
+                "CLOSED",
+                listDate,
+                "XCD123",
+                "County Hall",
+                "Closed maintenance list",
+                "Maintenance Court",
+                0,
+                0,
+                3);
+        insertApplicationListRow(
+                "OPEN",
+                listDate,
+                "XCD123",
+                "County Hall",
+                "Unmatched report list",
+                "Maintenance Court",
+                0,
+                0,
+                3);
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 30))
+                        .dateTo(LocalDate.of(2026, 4, 1))
+                        .listDescription("MAINTENANCE")
+                        .location(new LegacyReportLocation().cjaCode("CD"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
+                "dateFrom",
+                "2026-04-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
+                "dateTo",
+                "2026-04-30");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT,
+                "listDescription",
+                "MAINTENANCE");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT, "cjaCode", "CD");
+        assertOnlyReportParametersAuditedFor(
+                ReportAuditOperation.CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("List Maintenance Report"));
+            Assertions.assertTrue(
+                    report.contains(
+                            "List Date,List Court House Name,List Other Location,CJA Code,"
+                                    + "List Description,List Status,No Of Application Entries"));
+            Assertions.assertTrue(report.contains("11/04/2026"));
+            Assertions.assertTrue(report.contains("XCD123 - Maintenance Court"));
+            Assertions.assertTrue(report.contains("County Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+            Assertions.assertTrue(report.contains("List maintenance integration,OPEN,2"));
+            Assertions.assertFalse(report.contains("Closed maintenance list"));
+            Assertions.assertFalse(report.contains("Unmatched report list"));
+        }
+    }
+
+    @Test
+    public void
+            givenListMaintenanceRowsOnDateBounds_whenNoLocationFilter_thenBothBoundsAreIncluded()
+                    throws Exception {
+        String description = "LM boundary report";
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 1),
+                "AAA001",
+                null,
+                description,
+                "Boundary Start Court",
+                0,
+                0,
+                3);
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 30),
+                "AAA002",
+                null,
+                description,
+                "Boundary End Court",
+                0,
+                0,
+                3);
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 7, 1),
+                "AAA003",
+                null,
+                description,
+                "Outside Boundary Court",
+                0,
+                0,
+                3);
+
+        String report =
+                createAndDownloadListMaintenanceReport(
+                        new ListMaintenanceFilterDto()
+                                .dateFrom(LocalDate.of(2026, 6, 1))
+                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .listDescription(description));
+
+        Assertions.assertTrue(report.contains("01/06/2026,AAA001 - Boundary Start Court"));
+        Assertions.assertTrue(report.contains("30/06/2026,AAA002 - Boundary End Court"));
+        Assertions.assertFalse(report.contains("Outside Boundary Court"));
+    }
+
+    @Test
+    public void givenCourtFilter_whenCreatingListMaintenanceReport_thenOnlyMatchingCourtIsReturned()
+            throws Exception {
+        String description = "LM court filter report";
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 15),
+                "CCC003",
+                null,
+                description,
+                "Cardiff Crown Court",
+                0,
+                0,
+                3);
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 15),
+                "BCC006",
+                null,
+                description,
+                "Bristol Crown Court",
+                0,
+                0,
+                3);
+
+        String report =
+                createAndDownloadListMaintenanceReport(
+                        new ListMaintenanceFilterDto()
+                                .dateFrom(LocalDate.of(2026, 6, 1))
+                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .listDescription(description)
+                                .location(new LegacyReportLocation().courtLocationCode("CCC003")));
+
+        Assertions.assertTrue(report.contains("CCC003 - Cardiff Crown Court"));
+        Assertions.assertFalse(report.contains("BCC006 - Bristol Crown Court"));
+    }
+
+    @Test
+    public void
+            givenOtherLocationAndCjaFilter_whenCreatingListMaintenanceReport_thenOnlyMatchingRowIsReturned()
+                    throws Exception {
+        String description = "LM other location report";
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 15),
+                null,
+                "Village Hall",
+                description,
+                null,
+                0,
+                0,
+                3);
+        insertApplicationListRow(
+                "OPEN",
+                LocalDate.of(2026, 6, 15),
+                null,
+                "Village Hall",
+                description,
+                null,
+                0,
+                0,
+                4);
+
+        String report =
+                createAndDownloadListMaintenanceReport(
+                        new ListMaintenanceFilterDto()
+                                .dateFrom(LocalDate.of(2026, 6, 1))
+                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .listDescription(description)
+                                .location(
+                                        new LegacyReportLocation()
+                                                .cjaCode("CD")
+                                                .otherLocationDescription("village")));
+
+        Assertions.assertTrue(report.contains("Village Hall,CD," + description));
+        Assertions.assertFalse(report.contains("Village Hall,CE," + description));
+    }
+
+    @Test
+    public void givenNoMatchingRows_whenCreatingListMaintenanceReport_thenEmptyCsvIsReturned()
+            throws Exception {
+        String report =
+                createAndDownloadListMaintenanceReport(
+                        new ListMaintenanceFilterDto()
+                                .dateFrom(LocalDate.of(2026, 6, 1))
+                                .dateTo(LocalDate.of(2026, 6, 30))
+                                .listDescription("LM no matching report rows"));
+
+        Assertions.assertTrue(report.contains("List Maintenance Report"));
+        Assertions.assertTrue(
+                report.contains(
+                        "List Date,List Court House Name,List Other Location,CJA Code,"
+                                + "List Description,List Status,No Of Application Entries"));
+        Assertions.assertEquals(2, report.lines().count());
+    }
+
+    @Test
+    public void givenUnknownCjaCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("QX"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(
+                createResponse.asString().contains("Criminal Justice Area not found"));
+    }
+
+    @Test
+    public void givenUnknownCourtCode_whenCreatingListMaintenanceReport_thenBadRequestIsReturned()
+            throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().courtLocationCode("ZZ999"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Court not found"));
+    }
+
+    @Test
+    public void givenDuplicateCjaCode_whenCreatingListMaintenanceReport_thenConflictIsReturned()
+            throws Exception {
+        insertDuplicateCjaRows("Z3");
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(new LegacyReportLocation().cjaCode("Z3"));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(409);
+        Assertions.assertTrue(
+                createResponse
+                        .asString()
+                        .contains(
+                                "Multiple Criminal Justice Areas found when only one was expected"));
+    }
+
+    @Test
+    public void
+            givenWhitespaceOnlyListMaintenanceFilters_whenCreatingReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        ListMaintenanceFilterDto request =
+                new ListMaintenanceFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .listDescription(" ")
+                        .location(new LegacyReportLocation().cjaCode(" "));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+        Assertions.assertTrue(createResponse.asString().contains("Validation failed for fields:"));
+        Assertions.assertTrue(createResponse.asString().contains("listDescription"));
+        Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
+    }
+
+    private String createAndDownloadListMaintenanceReport(ListMaintenanceFilterDto request)
+            throws Exception {
+        TokenAndJwksKey token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    return jobResponse.as(JobAcknowledgement.class).getStatus()
+                            == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
     private void insertDataAuditRow(
             String eventName,
             String tableName,
@@ -707,6 +1439,33 @@ public class ReportingControllerPostTest extends BaseIntegration {
             int durationHours,
             int durationMinutes,
             int cjaId) {
+        Long listId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.al_seq')", schema), Long.class);
+        insertApplicationListRow(
+                listId,
+                status,
+                listDate,
+                courthouseCode,
+                otherCourthouse,
+                listDescription,
+                courthouseName,
+                durationHours,
+                durationMinutes,
+                cjaId);
+    }
+
+    private void insertApplicationListRow(
+            Long listId,
+            String status,
+            LocalDate listDate,
+            String courthouseCode,
+            String otherCourthouse,
+            String listDescription,
+            String courthouseName,
+            int durationHours,
+            int durationMinutes,
+            int cjaId) {
         jdbcTemplate.update(
                 String.format(
                         """
@@ -728,7 +1487,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                     cja_cja_id
                 )
                 VALUES (
-                    nextval('%s.al_seq'),
+                    ?,
                     ?,
                     ?,
                     ?,
@@ -745,7 +1504,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                     ?
                 )
                 """,
-                        schema, schema),
+                        schema),
+                listId,
                 status,
                 listDate,
                 listDate.atTime(10, 0),
@@ -756,6 +1516,663 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 durationHours,
                 durationMinutes,
                 cjaId);
+    }
+
+    private Long insertApplicationListRowReturningId(
+            String status,
+            LocalDate listDate,
+            String courthouseCode,
+            String otherCourthouse,
+            String listDescription,
+            String courthouseName,
+            int durationHours,
+            int durationMinutes,
+            int cjaId) {
+        Long listId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.al_seq')", schema), Long.class);
+        insertApplicationListRow(
+                listId,
+                status,
+                listDate,
+                courthouseCode,
+                otherCourthouse,
+                listDescription,
+                courthouseName,
+                durationHours,
+                durationMinutes,
+                cjaId);
+        return listId;
+    }
+
+    private void insertApplicationListEntryRows(Long applicationListId, int count, String deleted) {
+        Long applicationCodeId = insertApplicationCodeRow();
+        for (int index = 0; index < count; index++) {
+            jdbcTemplate.update(
+                    String.format(
+                            """
+                    INSERT INTO %s.application_list_entries (
+                        ale_id,
+                        al_al_id,
+                        ac_ac_id,
+                        application_list_entry_wording,
+                        entry_rescheduled,
+                        version,
+                        changed_by,
+                        changed_date,
+                        sequence_number,
+                        lodgement_date,
+                        is_deleted
+                    )
+                    VALUES (
+                        nextval('%s.ale_seq'),
+                        ?,
+                        ?,
+                        ?,
+                        'N',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        ?,
+                        CURRENT_TIMESTAMP,
+                        ?
+                    )
+                    """,
+                            schema, schema),
+                    applicationListId,
+                    applicationCodeId,
+                    "List maintenance entry " + index,
+                    index + 1,
+                    deleted);
+        }
+    }
+
+    private Long insertApplicationCodeRow() {
+        Long applicationCodeId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
+        String applicationCode = "LM" + Math.floorMod(applicationCodeId, 100_000_000);
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.application_codes (
+                    ac_id,
+                    application_code,
+                    application_code_title,
+                    application_code_wording,
+                    fee_due,
+                    application_code_respondent,
+                    application_code_start_date,
+                    bulk_respondent_allowed,
+                    version,
+                    changed_by,
+                    changed_date
+                )
+                VALUES (
+                    ?,
+                    ?,
+                    'List Maintenance Code',
+                    'List Maintenance Wording',
+                    'N',
+                    'N',
+                    CURRENT_TIMESTAMP,
+                    'N',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP
+                )
+                """,
+                        schema),
+                applicationCodeId,
+                applicationCode);
+        return applicationCodeId;
+    }
+
+    private void insertPrivateProsecutorsIndexApplication(LocalDate listDate) {
+        long applicantId = insertNameAddressRow(null, "Private", "Legacy", "Applicant Street");
+        long respondentId =
+                insertNameAddressRow("Respondent Org Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD999",
+                        "Private Hall",
+                        "Private prosecution integration list",
+                        "Private Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        applicantId,
+                        respondentId,
+                        "Private {wording}",
+                        "Private notes",
+                        listDate);
+        long highResolutionCodeId = insertResolutionCode("PIZ");
+        long lowResolutionCodeId = insertResolutionCode("PIA");
+        insertApplicationListEntryResolution(entryId, highResolutionCodeId);
+        insertApplicationListEntryResolution(entryId, lowResolutionCodeId);
+    }
+
+    private void insertPrivateProsecutorsIndexStandardApplicantApplication(LocalDate listDate) {
+        long standardApplicantId = insertStandardApplicantRow("Private Standards Body");
+        long respondentId =
+                insertNameAddressRow("Standard Respondent Ltd", null, null, "Respondent Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD998",
+                        "Standard Private Hall",
+                        "Private prosecution standard applicant integration list",
+                        "Standard Private Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertStandardApplicantApplicationListEntryRow(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        standardApplicantId,
+                        respondentId,
+                        "Standard private {wording}",
+                        "Standard private notes",
+                        listDate);
+        long resolutionCodeId = insertResolutionCode("PIS");
+        insertApplicationListEntryResolution(entryId, resolutionCodeId);
+    }
+
+    private String createFeesReportAndDownload(FeesReportFilterDto request) throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        TokenAndJwksKey token = tokenGenerator.fetchTokenForRole();
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(FEES_REPORT_WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.FEES_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.FEES_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording) {
+        long applicantId =
+                insertNameAddressRow(
+                        applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD997",
+                        "Fees Hall",
+                        "Fees report integration list",
+                        "Fees Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertApplicationListEntryRow(
+                        listId,
+                        insertFeesApplicationCodeRow(),
+                        applicantId,
+                        applicantId,
+                        wording,
+                        "Fees notes",
+                        listDate);
+        long feeId = insertFeeRow();
+        insertApplicationListEntryFee(entryId, feeId);
+    }
+
+    private long insertFeesApplicationCodeRow() {
+        Long applicationCodeId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
+        String applicationCode = "FR" + Math.floorMod(applicationCodeId, 1_000_000L);
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.application_codes (
+                    ac_id,
+                    application_code,
+                    application_code_title,
+                    application_code_wording,
+                    fee_due,
+                    application_code_respondent,
+                    application_code_start_date,
+                    bulk_respondent_allowed,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    ?,
+                    ?,
+                    'Fees Report Code',
+                    'Fees report wording',
+                    'Y',
+                    'N',
+                    DATE '2020-01-01',
+                    'N',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema),
+                applicationCodeId,
+                applicationCode);
+        return applicationCodeId;
+    }
+
+    private long insertFeeRow() {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.fee (
+                    fee_id,
+                    fee_reference,
+                    fee_description,
+                    fee_value,
+                    fee_start_date,
+                    fee_version,
+                    fee_changed_by,
+                    fee_changed_date,
+                    fee_user_name,
+                    is_offsite
+                )
+                VALUES (
+                    nextval('%s.fee_seq'),
+                    ?,
+                    'Fees report integration fee',
+                    10.00,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    false
+                )
+                RETURNING fee_id
+                """,
+                        schema, schema),
+                Long.class,
+                "FR" + Math.floorMod(System.nanoTime(), 1_000_000_000L));
+    }
+
+    private void insertApplicationListEntryFee(long entryId, long feeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.app_list_entry_fee_id (
+                    ale_ale_id,
+                    fee_fee_id,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema),
+                entryId,
+                feeId);
+    }
+
+    private long insertNameAddressRow(
+            String name, String firstName, String surname, String addressLine1) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.name_address (
+                    na_id,
+                    name,
+                    forename_1,
+                    surname,
+                    address_l1,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.na_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING na_id
+                """,
+                        schema, schema),
+                Long.class,
+                name,
+                firstName,
+                surname,
+                addressLine1);
+    }
+
+    private long insertStandardApplicantRow(String name) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.standard_applicants (
+                    sa_id,
+                    standard_applicant_code,
+                    standard_applicant_start_date,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    name,
+                    address_l1
+                )
+                VALUES (
+                    nextval('%s.sa_seq'),
+                    ?,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    ?,
+                    'Standard applicant street'
+                )
+                RETURNING sa_id
+                """,
+                        schema, schema),
+                Long.class,
+                "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
+                name);
+    }
+
+    private long insertApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long applicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_list_entries (
+                    ale_id,
+                    al_al_id,
+                    ac_ac_id,
+                    a_na_id,
+                    r_na_id,
+                    application_list_entry_wording,
+                    entry_rescheduled,
+                    notes,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    sequence_number,
+                    lodgement_date
+                )
+                VALUES (
+                    nextval('%s.ale_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'N',
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    1,
+                    ?
+                )
+                RETURNING ale_id
+                """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                applicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long insertStandardApplicantApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long standardApplicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_list_entries (
+                    ale_id,
+                    al_al_id,
+                    ac_ac_id,
+                    sa_sa_id,
+                    r_na_id,
+                    application_list_entry_wording,
+                    entry_rescheduled,
+                    notes,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name,
+                    sequence_number,
+                    lodgement_date
+                )
+                VALUES (
+                    nextval('%s.ale_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    'N',
+                    ?,
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test',
+                    1,
+                    ?
+                )
+                RETURNING ale_id
+                """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                standardApplicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long applicationCodeIdOrInsert(String applicationCode) {
+        List<Long> applicationCodeIds =
+                jdbcTemplate.queryForList(
+                        String.format(
+                                """
+                SELECT ac_id
+                FROM %s.application_codes
+                WHERE application_code = ?
+                ORDER BY ac_id DESC
+                LIMIT 1
+                """,
+                                schema),
+                        Long.class,
+                        applicationCode);
+        if (!applicationCodeIds.isEmpty()) {
+            return applicationCodeIds.getFirst();
+        }
+
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.application_codes (
+                    ac_id,
+                    application_code,
+                    application_code_title,
+                    application_code_wording,
+                    application_legislation,
+                    fee_due,
+                    application_code_respondent,
+                    application_code_start_date,
+                    bulk_respondent_allowed,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.ac_seq'),
+                    ?,
+                    'Application for a private prosecution summons',
+                    'Application for private prosecution {TEXT|Summarise offence title(s)|250}',
+                    'Section 1 Magistrates Courts Act 1980',
+                    'N',
+                    'Y',
+                    DATE '2020-01-01',
+                    'N',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING ac_id
+                """,
+                        schema, schema),
+                Long.class,
+                applicationCode);
+    }
+
+    private long insertResolutionCode(String resolutionCode) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                INSERT INTO %s.resolution_codes (
+                    rc_id,
+                    resolution_code,
+                    resolution_code_title,
+                    resolution_code_wording,
+                    resolution_code_start_date,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.rc_seq'),
+                    ?,
+                    ?,
+                    ?,
+                    DATE '2020-01-01',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                RETURNING rc_id
+                """,
+                        schema, schema),
+                Long.class,
+                resolutionCode,
+                resolutionCode + " title",
+                resolutionCode + " wording");
+    }
+
+    private void insertApplicationListEntryResolution(long entryId, long resolutionCodeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                INSERT INTO %s.app_list_entry_resolutions (
+                    aler_id,
+                    rc_rc_id,
+                    ale_ale_id,
+                    al_entry_resolution_wording,
+                    al_entry_resolution_officer,
+                    version,
+                    changed_by,
+                    changed_date,
+                    user_name
+                )
+                VALUES (
+                    nextval('%s.aler_seq'),
+                    ?,
+                    ?,
+                    'Resolution wording',
+                    'Resolution officer',
+                    1,
+                    0,
+                    CURRENT_TIMESTAMP,
+                    'report-integration-test'
+                )
+                """,
+                        schema, schema),
+                resolutionCodeId,
+                entryId);
     }
 
     private void assertReportParameterAuditRow(

@@ -5,7 +5,7 @@ post:
   description: >
     Creates an asynchronous job to produce a CSV report listing all applications
     to commence a private prosecution recorded under code MX99010,
-    filtered by date range and court location.
+    filtered by date range and legacy report location semantics.
     Returns an acknowledgement containing the job ID that can be used to track progress
     and download the report once complete.
   requestBody:

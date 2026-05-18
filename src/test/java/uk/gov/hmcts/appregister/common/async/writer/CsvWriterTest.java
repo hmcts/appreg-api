@@ -49,7 +49,7 @@ public class CsvWriterTest extends AbstractAsyncTest {
 
             readPagePosition = new ReadPagePosition(1, 0);
             try (CsvReader<PersonCsvPojo> reader =
-                    new CsvReader(writer.getInputStream(), PersonCsvPojo.class)) {
+                    new CsvReader<>(writer.getInputStream(), PersonCsvPojo.class)) {
                 reader.readData(readPagePosition, (e, context) -> output.addAll(e), null);
 
                 Assertions.assertEquals(3, output.size());

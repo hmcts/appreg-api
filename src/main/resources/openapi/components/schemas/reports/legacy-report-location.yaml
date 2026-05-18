@@ -18,6 +18,7 @@ properties:
       example: "LOC123"
       maxLength: 10
       minLength: 1
+      pattern: '.*\S.*'
 
   otherLocationDescription:
       type: string
@@ -25,6 +26,7 @@ properties:
       example: "town hall"
       maxLength: 200
       minLength: 1
+      pattern: '.*\S.*'
 
   cjaCode:
       type: string
@@ -34,3 +36,4 @@ properties:
       example: "52"
       maxLength: 2
       minLength: 1
+      pattern: '.*\S.*'

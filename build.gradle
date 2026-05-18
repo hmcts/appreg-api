@@ -19,8 +19,8 @@ plugins {
     Applies analysis tools including checkstyle and OWASP Dependency checker.
     See https://github.com/hmcts/gradle-java-plugin
  */
-  id 'uk.gov.hmcts.java' version '0.12.68'
-  id 'com.diffplug.spotless' version '8.4.0'
+  id 'uk.gov.hmcts.java' version '0.12.70'
+  id 'com.diffplug.spotless' version '8.5.0'
   id 'org.openrewrite.rewrite' version '7.32.2'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.2'
@@ -104,9 +104,9 @@ rewrite {
 
 tasks.withType(JavaCompile).configureEach {
   options.warnings = true
-  options.deprecation = true
+  options.deprecation = false
   options.compilerArgs.removeAll(['-Werror'])
-  options.compilerArgs += ['-Xlint:unchecked', '-Xlint:all', '-Xdiags:verbose']
+  options.compilerArgs += ['-Xlint:all,-deprecation', '-Xdiags:verbose']
 }
 
 // https://github.com/gradle/gradle/issues/16791
@@ -443,6 +443,7 @@ dependencies {
 
   implementation 'org.springframework.boot:spring-boot-starter-flyway'
 
+  compileOnly 'jakarta.enterprise:jakarta.enterprise.cdi-api:4.1.0'
   implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
 
   implementation 'io.swagger.core.v3:swagger-annotations:2.2.50'
@@ -537,17 +538,19 @@ wrapper {
 }
 
 tasks.named('processResources', Copy) {
+  def artifactVersion = project.version.toString()
+
   dependsOn tasks.named('openApiGenerate')
   dependsOn tasks.named('openapiJarArtefact')
   dependsOn tasks.named('flywayArtefact')
   dependsOn tasks.named('bundleOpenApi')
   dependsOn tasks.named('copySpecIntoMainResources')
 
-  inputs.property('version', project.version.toString())
+  inputs.property('version', artifactVersion)
 
   filesMatching('openapi/openapi.yaml') {
     filteringCharset = 'UTF-8'
-    filter { String line -> line.replace('@version@', project.version.toString()) }
+    filter { String line -> line.replace('@version@', artifactVersion) }
   }
 }
 
@@ -569,7 +572,7 @@ tasks.named('openApiGenerate') {
     useSpringBoot3                      : 'true',
     containerDefaultToNull              : 'true',
     generatedConstructorWithRequiredArgs: 'false',
-    additionalModelTypeAnnotations      : '@lombok.AllArgsConstructor;@lombok.NoArgsConstructor',
+    additionalModelTypeAnnotations      : '@lombok.AllArgsConstructor;@lombok.NoArgsConstructor;@SuppressWarnings("deprecation")',
     openApiNullable                     : 'true'
   ]
   typeMappings = [

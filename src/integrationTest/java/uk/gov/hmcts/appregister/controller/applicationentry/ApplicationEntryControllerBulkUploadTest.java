@@ -284,8 +284,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                         personRespondent(
                                 "Ms",
                                 "Beatrice",
-                                "Anne",
-                                "Louise",
+                                "Anne Louise",
+                                null,
                                 "Baxter",
                                 "2 Beta Road",
                                 "Floor 2",
@@ -307,8 +307,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                         personRespondent(
                                 "Dr",
                                 "Caleb",
-                                "Morgan",
-                                "Rae",
+                                "Morgan Rae",
+                                null,
                                 "Carter",
                                 "3 Gamma Avenue",
                                 "Unit 3",
@@ -348,8 +348,8 @@ public class ApplicationEntryControllerBulkUploadTest extends AbstractApplicatio
                         personRespondent(
                                 "Mrs",
                                 "Evelyn",
-                                "Priya",
-                                "Noor",
+                                "Priya Noor",
+                                null,
                                 "Edwards",
                                 "5 Epsilon Close",
                                 "Room 5",

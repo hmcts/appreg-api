@@ -528,9 +528,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .getName()
                                 .getSecondForename()
                                 .get())
-                .isEqualTo("Francis");
+                .isEqualTo("Francis Michael");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
-                .isEqualTo("Michael");
+                .isNull();
 
         assertThat(
                         entryGetSummaryDto
@@ -653,9 +653,9 @@ public class ApplicationEntryControllerReadTest extends AbstractApplicationEntry
                                 .getName()
                                 .getSecondForename()
                                 .get())
-                .isEqualTo("Francis");
+                .isEqualTo("Francis Michael");
         assertThat(entryGetSummaryDto.getApplicant().getPerson().getName().getThirdForename().get())
-                .isEqualTo("Michael");
+                .isNull();
 
         assertThat(
                         entryGetSummaryDto

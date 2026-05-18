@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.testutils.util;
 import org.junit.jupiter.api.Assertions;
 import uk.gov.hmcts.appregister.common.entity.NameAddress;
 import uk.gov.hmcts.appregister.common.entity.StandardApplicant;
+import uk.gov.hmcts.appregister.common.mapper.ApplicantMapper;
 import uk.gov.hmcts.appregister.generated.model.Organisation;
 import uk.gov.hmcts.appregister.generated.model.Person;
 
@@ -55,17 +56,26 @@ public class ApplicantAssertion {
     public static void validatePerson(Person applicant, NameAddress applicationListEntry) {
         Assertions.assertNull(applicationListEntry.getName());
 
+        String expectedFirstName =
+                firstNonNull(
+                        applicant.getName().getFirstName(), applicant.getName().getFirstForename());
+        String expectedMiddleName =
+                firstNonNull(
+                        applicant.getName().getMiddleName().orElse(null),
+                        ApplicantMapper.combineMiddleName(
+                                applicant.getName().getSecondForename().orElse(null),
+                                applicant.getName().getThirdForename().orElse(null)));
+        String expectedLastName =
+                firstNonNull(applicant.getName().getLastName(), applicant.getName().getSurname());
+
         // assert applicant
-        Assertions.assertEquals(
-                applicant.getName().getSurname(), applicationListEntry.getSurname());
-        Assertions.assertEquals(
-                applicant.getName().getThirdForename().orElse(null),
-                applicationListEntry.getForename3());
-        Assertions.assertEquals(
-                applicant.getName().getFirstForename(), applicationListEntry.getForename1());
-        Assertions.assertEquals(
-                applicant.getName().getSecondForename().orElse(null),
-                applicationListEntry.getForename2());
+        Assertions.assertEquals(expectedLastName, applicationListEntry.getSurname());
+        Assertions.assertNull(applicationListEntry.getForename3());
+        Assertions.assertEquals(expectedFirstName, applicationListEntry.getForename1());
+        Assertions.assertEquals(expectedMiddleName, applicationListEntry.getForename2());
+        Assertions.assertEquals(expectedFirstName, applicationListEntry.getFirstName());
+        Assertions.assertEquals(expectedMiddleName, applicationListEntry.getMiddleName());
+        Assertions.assertEquals(expectedLastName, applicationListEntry.getLastName());
         Assertions.assertEquals(
                 applicant.getContactDetails().getPostcode(), applicationListEntry.getPostcode());
         Assertions.assertEquals(
@@ -92,6 +102,10 @@ public class ApplicantAssertion {
         Assertions.assertEquals(
                 applicant.getContactDetails().getEmail().orElse(null),
                 applicationListEntry.getEmailAddress());
+    }
+
+    private static String firstNonNull(String first, String second) {
+        return first != null ? first : second;
     }
 
     public static void validateOrganisation(

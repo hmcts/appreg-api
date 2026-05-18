@@ -93,20 +93,51 @@ public abstract class ApplicationListEntryMapper {
 
     @Mapping(target = "id", source = "uuid")
     @Mapping(target = "applicant.person.name.title", source = "applicantTitle")
+    @Mapping(target = "applicant.person.name.firstName", source = "applicantForename1")
+    @Mapping(
+            target = "applicant.person.name.middleName",
+            expression =
+                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
+                            + "applicationListEntryPrintProjection.getApplicantForename2(), "
+                            + "applicationListEntryPrintProjection.getApplicantForename3())))")
+    @Mapping(target = "applicant.person.name.lastName", source = "applicantSurname")
     @Mapping(target = "applicant.person.name.surname", source = "applicantSurname")
     @Mapping(target = "applicant.person.name.firstForename", source = "applicantForename1")
-    @Mapping(target = "applicant.person.name.secondForename", source = "applicantForename2")
-    @Mapping(target = "applicant.person.name.thirdForename", source = "applicantForename3")
+    @Mapping(
+            target = "applicant.person.name.secondForename",
+            expression =
+                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
+                            + "applicationListEntryPrintProjection.getApplicantForename2(), "
+                            + "applicationListEntryPrintProjection.getApplicantForename3())))")
+    @Mapping(
+            target = "applicant.person.name.thirdForename",
+            expression = "java(map((String) null))")
     @Mapping(target = "applicant.organisation.name", source = "applicantName")
     @Mapping(target = "respondent.person.name.title", source = "respondentTitle")
+    @Mapping(target = "respondent.person.name.firstName", source = "respondentForename1")
+    @Mapping(
+            target = "respondent.person.name.middleName",
+            expression =
+                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
+                            + "applicationListEntryPrintProjection.getRespondentForename2(), "
+                            + "applicationListEntryPrintProjection.getRespondentForename3())))")
+    @Mapping(target = "respondent.person.name.lastName", source = "respondentSurname")
     @Mapping(target = "respondent.person.name.surname", source = "respondentSurname")
     @Mapping(target = "respondent.person.name.firstForename", source = "respondentForename1")
-    @Mapping(target = "respondent.person.name.secondForename", source = "respondentForename2")
-    @Mapping(target = "respondent.person.name.thirdForename", source = "respondentForename3")
+    @Mapping(
+            target = "respondent.person.name.secondForename",
+            expression =
+                    "java(map(uk.gov.hmcts.appregister.common.mapper.ApplicantMapper.combineMiddleName("
+                            + "applicationListEntryPrintProjection.getRespondentForename2(), "
+                            + "applicationListEntryPrintProjection.getRespondentForename3())))")
+    @Mapping(
+            target = "respondent.person.name.thirdForename",
+            expression = "java(map((String) null))")
     @Mapping(target = "respondent.person.dateOfBirth", source = "respondentDateOfBirth")
     @Mapping(target = "respondent.organisation.name", source = "respondentName")
     @Mapping(target = "resultWordings", ignore = true)
     @Mapping(target = "officials", ignore = true)
+    @SuppressWarnings("java:S1874")
     public abstract EntryGetPrintDto toPrintDto(
             ApplicationListEntryPrintProjection printProjection);
 
@@ -831,6 +862,7 @@ public abstract class ApplicationListEntryMapper {
         return contactDetails;
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     private Respondent toBulkUploadRespondent(BulkUploadRow row) {
         Respondent respondent = new Respondent();
 
@@ -846,9 +878,20 @@ public abstract class ApplicationListEntryMapper {
         } else {
             FullName name = new FullName();
             name.setTitle(row.getRespondentTitle());
+            name.setFirstName(row.getRespondentForename1());
+            name.setMiddleName(
+                    map(
+                            ApplicantMapper.combineMiddleName(
+                                    row.getRespondentForename2(), row.getRespondentForename3())));
+            name.setLastName(row.getRespondentSurname());
+            // Phase 2: remove the deprecated legacy respondent name fields from bulk-upload DTO
+            // output.
             name.setFirstForename(row.getRespondentForename1());
-            name.setSecondForename(map(row.getRespondentForename2()));
-            name.setThirdForename(map(row.getRespondentForename3()));
+            name.setSecondForename(
+                    map(
+                            ApplicantMapper.combineMiddleName(
+                                    row.getRespondentForename2(), row.getRespondentForename3())));
+            name.setThirdForename(JsonNullable.of(null));
             name.setSurname(row.getRespondentSurname());
 
             RespondentPerson person = new RespondentPerson();
@@ -911,12 +954,18 @@ public abstract class ApplicationListEntryMapper {
         }
     }
 
+    @SuppressWarnings({"deprecation", "java:S1874"})
     private void truncateFullName(FullName name) {
         if (name == null) {
             return;
         }
 
         name.setTitle(StringUtils.left(name.getTitle(), 100));
+        name.setFirstName(StringUtils.left(name.getFirstName(), 100));
+        name.setMiddleName(truncate(name.getMiddleName(), 100));
+        name.setLastName(StringUtils.left(name.getLastName(), 100));
+        // Phase 2: remove the deprecated legacy truncation once those compatibility fields are
+        // gone.
         name.setFirstForename(StringUtils.left(name.getFirstForename(), 100));
         name.setSecondForename(truncate(name.getSecondForename(), 100));
         name.setThirdForename(truncate(name.getThirdForename(), 100));

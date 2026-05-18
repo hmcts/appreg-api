@@ -24,8 +24,6 @@ public class FeesReportParameterAudit implements Auditable {
 
     private final String applicantName;
 
-    private final String applicantOrganisation;
-
     private final String courtLocationCode;
 
     private final String otherLocationDescription;
@@ -44,7 +42,6 @@ public class FeesReportParameterAudit implements Auditable {
         add(parameters, "dateTo", dateTo);
         add(parameters, "standardApplicantCode", standardApplicantCode);
         add(parameters, "applicantName", applicantName);
-        add(parameters, "applicantOrganisation", applicantOrganisation);
         add(parameters, "courtLocationCode", courtLocationCode);
         add(parameters, "otherLocationDescription", otherLocationDescription);
         add(parameters, "cjaCode", cjaCode);
@@ -58,7 +55,6 @@ public class FeesReportParameterAudit implements Auditable {
                 .dateTo(filter.getDateTo())
                 .standardApplicantCode(filter.getStandardApplicantCode())
                 .applicantName(filter.getApplicantName())
-                .applicantOrganisation(filter.getApplicantOrganisation())
                 .courtLocationCode(location != null ? location.getCourtLocationCode() : null)
                 .otherLocationDescription(
                         location != null ? location.getOtherLocationDescription() : null)

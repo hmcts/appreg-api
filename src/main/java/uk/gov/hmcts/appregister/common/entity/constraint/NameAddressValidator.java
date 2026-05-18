@@ -10,7 +10,6 @@ import uk.gov.hmcts.appregister.common.entity.NameAddress;
  */
 public class NameAddressValidator implements ConstraintValidator<ValidNameAddress, NameAddress> {
 
-    @SuppressWarnings("checkstyle:NeedBraces")
     @Override
     public boolean isValid(NameAddress nameAddress, ConstraintValidatorContext context) {
         if (nameAddress.getName() != null
@@ -18,8 +17,13 @@ public class NameAddressValidator implements ConstraintValidator<ValidNameAddres
                 && nameAddress.getForename1() == null
                 && nameAddress.getForename2() == null
                 && nameAddress.getForename3() == null
-                && nameAddress.getSurname() == null) {
+                && nameAddress.getSurname() == null
+                && nameAddress.getFirstName() == null
+                && nameAddress.getMiddleName() == null
+                && nameAddress.getLastName() == null) {
             return true;
-        } else return nameAddress.getName() == null;
+        } else {
+            return nameAddress.getName() == null;
+        }
     }
 }

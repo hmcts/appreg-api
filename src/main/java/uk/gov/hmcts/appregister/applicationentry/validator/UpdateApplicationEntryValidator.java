@@ -166,6 +166,8 @@ public class UpdateApplicationEntryValidator
 
     @Override
     protected LocalDate getLodgementDate(PayloadForUpdateEntry validatable) {
-        return null;
+        Optional<ApplicationListEntry> ale =
+                applicationListEntryRepository.findByUuid(validatable.getEntryId());
+        return ale.map(ApplicationListEntry::getLodgementDate).orElse(null);
     }
 }

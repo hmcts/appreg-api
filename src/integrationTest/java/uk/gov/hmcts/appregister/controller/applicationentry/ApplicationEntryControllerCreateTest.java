@@ -427,6 +427,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.setStandardApplicantCode("APP001");
 
         String surnameToLookup = Instancio.gen().string().get();
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
         entryCreateDto.getApplicant().getPerson().getName().setThirdForename(JsonNullable.of(null));
         entryCreateDto
@@ -883,6 +884,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         entryCreateDto.setApplicationCode("MS99007");
         entryCreateDto.setStandardApplicantCode(null);
         String surnameToLookup = UUID.randomUUID().toString();
+        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
         entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
 
         TemplateSubstitution substitution = new TemplateSubstitution();
@@ -2002,10 +2004,14 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Arrange: create two entries in the same open list
         EntryCreateDto dto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        dto1.getApplicant().getPerson().getName().setSurname("SEQ-" + UUID.randomUUID());
+        String firstSurname = "SEQ-" + UUID.randomUUID();
+        dto1.getApplicant().getPerson().getName().setLastName(firstSurname);
+        dto1.getApplicant().getPerson().getName().setSurname(firstSurname);
 
         EntryCreateDto dto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        dto2.getApplicant().getPerson().getName().setSurname("SEQ-" + UUID.randomUUID());
+        String secondSurname = "SEQ-" + UUID.randomUUID();
+        dto2.getApplicant().getPerson().getName().setLastName(secondSurname);
+        dto2.getApplicant().getPerson().getName().setSurname(secondSurname);
 
         SuccessCreateEntryResponse created1 =
                 createEntryWithUniqueSurname(
@@ -2051,7 +2057,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Create entry in list 1
         EntryCreateDto dto1 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        dto1.getApplicant().getPerson().getName().setSurname("SEQ-L1-" + UUID.randomUUID());
+        String firstListSurname = "SEQ-L1-" + UUID.randomUUID();
+        dto1.getApplicant().getPerson().getName().setLastName(firstListSurname);
+        dto1.getApplicant().getPerson().getName().setSurname(firstListSurname);
         TokenGenerator tokenGenerator = createAdminToken();
         Response r1 =
                 restAssuredClient.executePostRequest(
@@ -2063,7 +2071,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
 
         // Create entry in list 2
         EntryCreateDto dto2 = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        dto2.getApplicant().getPerson().getName().setSurname("SEQ-L2-" + UUID.randomUUID());
+        String secondListSurname = "SEQ-L2-" + UUID.randomUUID();
+        dto2.getApplicant().getPerson().getName().setLastName(secondListSurname);
+        dto2.getApplicant().getPerson().getName().setSurname(secondListSurname);
         Response r2 =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + list2.getUuid() + "/entries"),
@@ -2106,7 +2116,9 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
         UUID listUuid = createdList.getId();
 
         EntryCreateDto entryReq = CreateEntryDtoUtil.getCorrectCreateEntryDto();
-        entryReq.getApplicant().getPerson().getName().setSurname("SEQ-FIRST-" + UUID.randomUUID());
+        String entrySurname = "SEQ-FIRST-" + UUID.randomUUID();
+        entryReq.getApplicant().getPerson().getName().setLastName(entrySurname);
+        entryReq.getApplicant().getPerson().getName().setSurname(entrySurname);
 
         Response createEntryResp =
                 restAssuredClient.executePostRequest(
@@ -2464,6 +2476,7 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 .setEmail(JsonNullable.of("applicant.audit@test.com"));
 
         entryCreateDto.getRespondent().setOrganisation(null);
+        entryCreateDto.getRespondent().getPerson().getName().setLastName("RespondentAudit");
         entryCreateDto.getRespondent().getPerson().getName().setSurname("RespondentAudit");
         entryCreateDto.getRespondent().getPerson().getContactDetails().setPostcode("RS1 1RS");
 
@@ -2512,15 +2525,16 @@ public class ApplicationEntryControllerCreateTest extends AbstractApplicationEnt
                 AppListEntryAuditOperation.CREATE_APPLICANT.getEventName(),
                 applicantAuditRow.getEventName());
 
-        // Respondent surname is also stored through NAME_ADDRESS and should be audited separately.
+        // Respondent last name is also stored through NAME_ADDRESS and should be audited
+        // separately.
         val respondentAuditRow =
                 dataAuditRepository
                         .findDataAuditForTableAndColumnAndNewValue(
-                                TableNames.NAME_ADDRESS, "surname", "RespondentAudit")
+                                TableNames.NAME_ADDRESS, "last_name", "RespondentAudit")
                         .orElseThrow(
                                 () ->
                                         new AssertionError(
-                                                "Expected a name_address.surname respondent audit row"));
+                                                "Expected a name_address.last_name respondent audit row"));
         Assertions.assertEquals(
                 AppListEntryAuditOperation.CREATE_RESPONDENT.getEventName(),
                 respondentAuditRow.getEventName());

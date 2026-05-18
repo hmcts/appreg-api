@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.generated.model.Respondent;
 public class ApplicationListEntryWrapperDto {
     private EntryCreateDto entryCreateDto;
     private EntryUpdateDto entryUpdateDto;
+    private LocalDate lodgementDate = LocalDate.now();
 
     public ApplicationListEntryWrapperDto(EntryCreateDto entryCreateDto) {
         this.entryCreateDto = entryCreateDto;
@@ -23,6 +24,13 @@ public class ApplicationListEntryWrapperDto {
 
     public ApplicationListEntryWrapperDto(EntryUpdateDto entryUpdateDto) {
         this.entryUpdateDto = entryUpdateDto;
+    }
+
+    // this is used when we want to test the update entry with a different lodgement date,
+    // as the update entry does not have a lodgement date field
+    public ApplicationListEntryWrapperDto(EntryUpdateDto entryUpdateDto, LocalDate lodgementDate) {
+        this.entryUpdateDto = entryUpdateDto;
+        this.lodgementDate = lodgementDate;
     }
 
     public String getStandardApplicantCode() {
@@ -101,7 +109,7 @@ public class ApplicationListEntryWrapperDto {
         if (entryCreateDto != null && entryCreateDto.getLodgementDate() != null) {
             return entryCreateDto.getLodgementDate();
         }
-        return LocalDate.now();
+        return lodgementDate;
     }
 
     public List<Official> getOfficials() {

@@ -13,6 +13,8 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class AppListEntryFeeCompositeId implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private Long appListEntryId;
 
     private Long feeId;
