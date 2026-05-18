@@ -156,7 +156,8 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                             aleo.forename,
                             aleo.surname
                         ORDER BY
-                            list_date DESC
+                            list_date DESC,
+                            ale.ale_id DESC
                         LIMIT :limit
         """;
 
