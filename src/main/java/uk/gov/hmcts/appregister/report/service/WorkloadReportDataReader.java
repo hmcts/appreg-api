@@ -45,8 +45,8 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                TRUE AS is_standard_applicant
                         FROM
                             standard_applicants sa)
-
                         SELECT
+                            ale.ale_id,
                             al.application_list_date AS list_date,
                                CASE
                                 WHEN al.courthouse_code IS NOT NULL
@@ -101,7 +101,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                         ON
                             (a.is_standard_applicant = FALSE
                                 AND ale.a_na_id = a.id)
-                            OR (a.is_standard_applicant = FALSE
+                            OR (a.is_standard_applicant = TRUE
                                 AND ale.sa_sa_id = a.id)
                         LEFT OUTER JOIN app_list_entry_resolutions aler ON
                             aler.ale_ale_id = ale.ale_id
@@ -111,6 +111,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                             aleo.ale_ale_id = ale.ale_id
                         WHERE
                             al.application_list_status = 'CLOSED'
+                            AND al.is_deleted = 'N'
                             AND al.application_list_date >= :dateFrom
                             AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                             AND(:courthouseCode IS NULL
@@ -128,8 +129,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                             AND(:hasCursor IS FALSE
                             OR :lastListDate IS NULL
                             OR al.application_list_date < :lastListDate
-                            OR (al.application_list_date = :lastListDate))
+                            OR (al.application_list_date = :lastListDate
+                                    AND ale.ale_id < :lastApplicationListEntryId))
                         GROUP BY
+                            ale.ale_id,
                             rc.resolution_code,
                             al.application_list_date,
                             al.courthouse_name,
@@ -221,6 +224,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                 Types.VARCHAR)
                         .addValue("hasCursor", cursor.hasLastRow(), Types.BOOLEAN)
                         .addValue("lastListDate", cursor.lastListDate(), Types.DATE)
+                        .addValue(
+                                "lastApplicationListEntryId",
+                                cursor.lastApplicationListEntryId(),
+                                Types.BIGINT)
                         .addValue("limit", cursor.pageSize(), Types.INTEGER);
         return jdbcTemplate.query(REPORT_QUERY, parameters, ROW_MAPPER);
     }
@@ -248,6 +255,10 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
         LocalDate lastListDate() {
             return hasLastRow() ? lastRow.getListDate() : null;
         }
+
+        Long lastApplicationListEntryId() {
+            return hasLastRow() ? lastRow.getLastApplicationListEntryId() : null;
+        }
     }
 
     private static class WorkloadReportRowMapper implements RowMapper<WorkloadReportRow> {
@@ -262,6 +273,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     .listDate(rs.getDate("list_date").toLocalDate())
                     .listOtherLocation(rs.getString("list_other_location"))
                     .listDescription(rs.getString("list_description"))
+                    .standardApplicantCode("standard_applicant_code")
                     .official(rs.getString("official"))
                     .jp1(rs.getString("jp1"))
                     .jp2(rs.getString("jp2"))

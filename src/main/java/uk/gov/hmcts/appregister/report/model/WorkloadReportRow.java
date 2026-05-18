@@ -7,6 +7,7 @@ import lombok.Value;
 @Value
 @Builder
 public class WorkloadReportRow {
+    Long lastApplicationListEntryId;
     LocalDate listDate;
     String listCourtHouseName;
     String listOtherLocation;
