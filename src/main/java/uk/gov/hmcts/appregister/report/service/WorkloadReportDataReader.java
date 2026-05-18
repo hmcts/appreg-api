@@ -112,6 +112,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                         WHERE
                             al.application_list_status = 'CLOSED'
                             AND al.is_deleted = 'N'
+                            AND ale.is_deleted = 'N'
                             AND al.application_list_date >= :dateFrom
                             AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                             AND(:courthouseCode IS NULL
@@ -273,7 +274,7 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     .listDate(rs.getDate("list_date").toLocalDate())
                     .listOtherLocation(rs.getString("list_other_location"))
                     .listDescription(rs.getString("list_description"))
-                    .standardApplicantCode("standard_applicant_code")
+                    .standardApplicantCode(rs.getString("standard_applicant_code"))
                     .official(rs.getString("official"))
                     .jp1(rs.getString("jp1"))
                     .jp2(rs.getString("jp2"))
