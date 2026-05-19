@@ -295,6 +295,75 @@ public class StandardApplicantServiceTest {
         Assertions.assertEquals(to, audited.getApplicantEndDate());
     }
 
+    @Test
+    void testGetAll_normalisesReversedDateRangeBeforeSearchAndAudit() {
+        when(clock.instant()).thenReturn(Instant.now().plus(1, ChronoUnit.DAYS));
+        when(clock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(clock.withZone(org.mockito.ArgumentMatchers.eq(ukZone))).thenReturn(clock);
+
+        val code = "APP001";
+        val name = "John Doe";
+        val addressLine1 = "123 Main Street";
+        val requestedFrom = LocalDate.of(2026, 12, 31);
+        val requestedTo = LocalDate.of(2026, 4, 1);
+        val pageable = PageRequest.of(0, 2);
+
+        val applicant = mock(StandardApplicant.class);
+        val projection = mock(StandardApplicantEnrichedProjection.class);
+
+        when(applicant.getApplicantCode()).thenReturn(code);
+        when(applicant.getName()).thenReturn(name);
+        when(applicant.getApplicantStartDate()).thenReturn(requestedTo);
+        when(applicant.getApplicantEndDate()).thenReturn(requestedFrom);
+        when(projection.getStandardApplicant()).thenReturn(applicant);
+        when(projection.getEffectiveName()).thenReturn(name);
+        when(repository.search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(requestedTo),
+                        eq(requestedFrom),
+                        isNotNull(),
+                        eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(projection), pageable, 1));
+
+        val listener = new CapturingAuditListener();
+        val localService =
+                new StandardApplicationServiceImpl(
+                        repository,
+                        standardApplicantMapper,
+                        clock,
+                        ukZone,
+                        pageMapper,
+                        validator,
+                        new AuditOperationServiceImpl(new ObjectMapper(), List.of(listener)),
+                        List.of(listener),
+                        new ApplicantMapperImpl());
+
+        localService.findAll(
+                code,
+                name,
+                addressLine1,
+                requestedFrom,
+                requestedTo,
+                PagingWrapper.of(List.of(), pageable));
+
+        verify(repository)
+                .search(
+                        eq(code),
+                        eq(name),
+                        eq(addressLine1),
+                        eq(requestedTo),
+                        eq(requestedFrom),
+                        isNotNull(),
+                        eq(pageable));
+
+        Assertions.assertNotNull(listener.getCompleteEvent());
+        val audited = (StandardApplicant) listener.getCompleteEvent().getNewValue();
+        Assertions.assertEquals(requestedTo, audited.getApplicantStartDate());
+        Assertions.assertEquals(requestedFrom, audited.getApplicantEndDate());
+    }
+
     private static final class CapturingAuditListener implements AuditOperationLifecycleListener {
         private CompleteEvent completeEvent;
 

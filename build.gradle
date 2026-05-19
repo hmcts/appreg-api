@@ -20,7 +20,7 @@ plugins {
     See https://github.com/hmcts/gradle-java-plugin
  */
   id 'uk.gov.hmcts.java' version '0.12.70'
-  id 'com.diffplug.spotless' version '8.5.0'
+  id 'com.diffplug.spotless' version '8.5.1'
   id 'org.openrewrite.rewrite' version '7.32.2'
   id 'maven-publish'
   id 'com.github.jk1.dependency-license-report' version '3.1.2'
@@ -61,7 +61,7 @@ checkstyle {
 dependencyManagement {
   imports {
     mavenBom "org.springframework.cloud:spring-cloud-dependencies:${releaseTrainVersion}"
-    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.27.0'
+    mavenBom 'io.opentelemetry.instrumentation:opentelemetry-instrumentation-bom:2.28.0'
   }
 }
 
@@ -249,23 +249,12 @@ tasks.register('bootRunLocalDev', BootRun) {
   systemProperty 'spring.profiles.active', activeProfiles.get()
 }
 
-def commonJacocoExclusionsIntegration = [
+def commonCoverageExclusions = [
   '**/uk/gov/hmcts/appregister/generated/**/*.class'
 ]
 
-def commonJacocoExclusionsUnit = [
-  '**/uk/gov/hmcts/appregister/**/dto/**/*.class',
-  '**/uk/gov/hmcts/appregister/generated/**/*.class',
-  '**/uk/gov/hmcts/appregister/**/api/*.class',
-  '**/uk/gov/hmcts/appregister/**/audit/*.class',
-
-  // These are packages in which I do not envisage tests. These would be tested more appropriately in
-  // integration tests or other types of tests
-  '**/uk/gov/hmcts/appregister/**/controller/*.class',
-  '**/uk/gov/hmcts/appregister/**/dao/*.class',
-  '**/uk/gov/hmcts/appregister/**/config/*.class',
-  '**/uk/gov/hmcts/appregister/**/entity/*.class',
-  '**/uk/gov/hmcts/appregister/**/entity/repository/*.class',
+def sonarCoverageExclusions = [
+  'src/main/java/uk/gov/hmcts/appregister/generated/**/*',
 ]
 
 tasks.register('jacocoUnitReport', JacocoReport) {
@@ -279,7 +268,7 @@ tasks.register('jacocoUnitReport', JacocoReport) {
 
   classDirectories.setFrom(
     files(sourceSets.main.output).asFileTree.matching {
-      exclude(commonJacocoExclusionsUnit)
+      exclude(commonCoverageExclusions)
     }
   )
 }
@@ -300,7 +289,7 @@ tasks.register('jacocoUnitCoverageVerification', JacocoCoverageVerification) {
 
   classDirectories.setFrom(
     files(sourceSets.main.output).asFileTree.matching {
-      exclude(commonJacocoExclusionsUnit)
+      exclude(commonCoverageExclusions)
     }
   )
 }
@@ -316,7 +305,7 @@ tasks.register('jacocoIntegrationReport', JacocoReport) {
 
   classDirectories.setFrom(
     files(sourceSets.main.output).asFileTree.matching {
-      exclude(commonJacocoExclusionsIntegration)
+      exclude(commonCoverageExclusions)
     }
   )
 }
@@ -337,7 +326,7 @@ tasks.register('jacocoIntegrationCoverageVerification', JacocoCoverageVerificati
 
   classDirectories.setFrom(
     files(sourceSets.main.output).asFileTree.matching {
-      exclude(commonJacocoExclusionsIntegration)
+      exclude(commonCoverageExclusions)
     }
   )
 }
@@ -361,9 +350,7 @@ sonarqube {
   properties {
     property 'sonar.projectName', 'AppReg :: appreg-api'
     property 'sonar.projectKey', 'uk.gov.hmcts.appreg:appreg-api'
-    property 'sonar.coverage.exclusions', [
-      'src/main/java/uk/gov/hmcts/appregister/generated/**/*',
-    ]
+    property 'sonar.coverage.exclusions', sonarCoverageExclusions
     property(
       'sonar.coverage.jacoco.xmlReportPaths',
       xmls.collect { it.absolutePath }.join(',')
@@ -470,9 +457,9 @@ dependencies {
   implementation 'commons-io:commons-io:2.22.0'
 
   // A hibernate library that generates column constants
-  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.3.4.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.3.4.Final'
-  annotationProcessor 'org.hibernate.orm:hibernate-core:7.3.4.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-jpamodelgen:7.3.5.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-processor:7.3.5.Final'
+  annotationProcessor 'org.hibernate.orm:hibernate-core:7.3.5.Final'
 
   // Lombok
   compileOnly 'org.projectlombok:lombok:1.18.46'

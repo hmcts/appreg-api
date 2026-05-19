@@ -31,6 +31,7 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
@@ -151,6 +152,29 @@ public class ReportController implements ReportsApi {
                             ReportJobCreation reportJobCreation =
                                     reportService.createListMaintenanceReport(
                                             listMaintenanceFilterDto);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        return accepted(acknowledgement);
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> createPrivateProsecutorsIndexReport(
+            PrivateProsecutorsIndexFilterDto privateProsecutorsIndexFilterDto) {
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createPrivateProsecutorsIndexReport(
+                                            privateProsecutorsIndexFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
