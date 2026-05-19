@@ -191,7 +191,7 @@ class FeesReportDataReaderTest {
                 .location(location);
     }
 
-    private void assertKeysetPredicateRunsBeforeFeeCtes(String query) {a
+    private void assertKeysetPredicateRunsBeforeFeeCtes(String query) {
         int cursorPredicateIndex = query.indexOf(":hasCursor IS FALSE");
         int latestFeeStatusIndex = query.indexOf("latest_fee_status AS");
         int finalSelectIndex = query.indexOf("fa.application_list_date AS list_date");
