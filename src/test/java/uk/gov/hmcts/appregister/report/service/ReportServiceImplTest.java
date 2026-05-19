@@ -42,6 +42,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
@@ -49,6 +50,7 @@ import uk.gov.hmcts.appregister.report.model.ActivityAuditReportRow;
 import uk.gov.hmcts.appregister.report.model.DurationReportRow;
 import uk.gov.hmcts.appregister.report.model.FeesReportRow;
 import uk.gov.hmcts.appregister.report.model.ListMaintenanceReportRow;
+import uk.gov.hmcts.appregister.report.model.PrivateProsecutorsIndexReportRow;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @ExtendWith(MockitoExtension.class)
@@ -345,6 +347,68 @@ class ReportServiceImplTest {
     }
 
     @Test
+    void givenPrivateProsecutorsIndexFilter_whenCreatingReport_thenStartsJobWithReportPageSize()
+            throws IOException {
+        final LocalDate expectedDateFrom = LocalDate.of(2018, 5, 1);
+        final LocalDate expectedDateTo = LocalDate.of(2018, 5, 31);
+        TrackJobStatusResponse jobResponse =
+                createJobResponse(JobType.PRIVATE_PROSECUTORS_INDEX_REPORT);
+        AtomicReference<PrivateProsecutorsIndexReportDataReader> dataReader =
+                new AtomicReference<>();
+        AtomicReference<AsyncJobLifecycle<PrivateProsecutorsIndexReportRow>> lifecycle =
+                new AtomicReference<>();
+
+        when(userProvider.getUserId()).thenReturn("user-id");
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
+                .thenAnswer(
+                        invocation -> {
+                            dataReader.set(invocation.getArgument(1));
+                            lifecycle.set(invocation.getArgument(2));
+                            return jobResponse;
+                        });
+        when(jobMapper.toDto(jobResponse)).thenReturn(new JobAcknowledgement());
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
+        PrivateProsecutorsIndexFilterDto filter =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(expectedDateTo)
+                        .dateTo(expectedDateFrom)
+                        .applicantSurname("Smith");
+
+        try {
+            ReportJobCreation result = service.createPrivateProsecutorsIndexReport(filter);
+
+            PrivateProsecutorsIndexFilterDto readerFilter =
+                    (PrivateProsecutorsIndexFilterDto)
+                            ReflectionTestUtils.getField(dataReader.get(), "filter");
+            Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
+            Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            Mockito.verify(asyncJobService)
+                    .startJob(
+                            Mockito.argThat(
+                                    request ->
+                                            request.getJobType()
+                                                    == JobType.PRIVATE_PROSECUTORS_INDEX_REPORT),
+                            Mockito.same(dataReader.get()),
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
+        } finally {
+            closeLifecycle(lifecycle);
+        }
+    }
+
+    @Test
     void givenListMaintenanceLocationValidationFails_whenCreatingReport_thenDoesNotStartJob() {
         LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
         ListMaintenanceFilterDto filter =
@@ -377,9 +441,42 @@ class ReportServiceImplTest {
         Mockito.verifyNoInteractions(asyncJobService);
     }
 
+    @Test
+    void givenPrivateProsecutorsLocationValidationFails_whenCreatingReport_thenDoesNotStartJob() {
+        LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("BADCRT");
+        PrivateProsecutorsIndexFilterDto filter =
+                new PrivateProsecutorsIndexFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 1))
+                        .dateTo(LocalDate.of(2018, 5, 31))
+                        .location(location);
+        AppRegistryException exception =
+                new AppRegistryException(
+                        ReportError.COURT_NOT_FOUND, "No court found for code 'BADCRT'");
+        doThrow(exception).when(reportLocationValidator).validate(location);
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        reportLocationValidator);
+
+        AppRegistryException actual =
+                Assertions.assertThrows(
+                        AppRegistryException.class,
+                        () -> service.createPrivateProsecutorsIndexReport(filter));
+
+        Assertions.assertSame(exception, actual);
+        Mockito.verify(reportLocationValidator).validate(location);
+        Mockito.verifyNoInteractions(asyncJobService);
+    }
+
     @ParameterizedTest
-    @MethodSource("legacyDurationLocations")
-    void givenLegacyDurationLocationCombination_whenCreatingReport_thenStartsJob(
+    @MethodSource("validDurationLocations")
+    void givenValidDurationLocationCombination_whenCreatingReport_thenStartsJob(
             LegacyReportLocation location) throws IOException {
         TrackJobStatusResponse jobResponse = createJobResponse(JobType.DURATION_REPORT);
         AtomicReference<DurationReportDataReader> dataReader = new AtomicReference<>();
@@ -430,17 +527,11 @@ class ReportServiceImplTest {
         }
     }
 
-    private static Stream<Arguments> legacyDurationLocations() {
+    private static Stream<Arguments> validDurationLocations() {
         return Stream.of(
-                Arguments.of(new LegacyReportLocation().otherLocationDescription("Town Hall")),
+                Arguments.of(new LegacyReportLocation().courtLocationCode("B01IX00")),
                 Arguments.of(
                         new LegacyReportLocation()
-                                .courtLocationCode("B01IX00")
-                                .otherLocationDescription("Town Hall")),
-                Arguments.of(new LegacyReportLocation().courtLocationCode("B01IX00").cjaCode("01")),
-                Arguments.of(
-                        new LegacyReportLocation()
-                                .courtLocationCode("B01IX00")
                                 .otherLocationDescription("Town Hall")
                                 .cjaCode("01")));
     }

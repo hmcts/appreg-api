@@ -8,21 +8,31 @@ import lombok.Getter;
 import uk.gov.hmcts.appregister.audit.listener.diff.Auditable;
 import uk.gov.hmcts.appregister.audit.listener.diff.AuditableData;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
-import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
+import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 
 @Builder
 @Getter
-public class FeesReportParameterAudit implements Auditable {
+public class PrivateProsecutorsIndexReportParameterAudit implements Auditable {
     private static final String TABLE_NAME = "report_parameters";
 
     private final LocalDate dateFrom;
 
     private final LocalDate dateTo;
 
-    private final String standardApplicantCode;
+    private final String applicantSurname;
 
-    private final String applicantName;
+    private final String applicantFirstName;
+
+    private final String applicantOrganisationName;
+
+    private final String standardApplicantName;
+
+    private final String respondentSurname;
+
+    private final String respondentFirstName;
+
+    private final String respondentOrganisationName;
 
     private final String courtLocationCode;
 
@@ -40,21 +50,32 @@ public class FeesReportParameterAudit implements Auditable {
         List<AuditableData> parameters = new ArrayList<>();
         add(parameters, "dateFrom", dateFrom);
         add(parameters, "dateTo", dateTo);
-        add(parameters, "standardApplicantCode", standardApplicantCode);
-        add(parameters, "applicantName", applicantName);
+        add(parameters, "applicantSurname", applicantSurname);
+        add(parameters, "applicantFirstName", applicantFirstName);
+        add(parameters, "applicantOrganisationName", applicantOrganisationName);
+        add(parameters, "standardApplicantName", standardApplicantName);
+        add(parameters, "respondentSurname", respondentSurname);
+        add(parameters, "respondentFirstName", respondentFirstName);
+        add(parameters, "respondentOrganisationName", respondentOrganisationName);
         add(parameters, "courtLocationCode", courtLocationCode);
         add(parameters, "otherLocationDescription", otherLocationDescription);
         add(parameters, "cjaCode", cjaCode);
         return parameters;
     }
 
-    public static FeesReportParameterAudit from(FeesReportFilterDto filter) {
+    public static PrivateProsecutorsIndexReportParameterAudit from(
+            PrivateProsecutorsIndexFilterDto filter) {
         LegacyReportLocation location = filter.getLocation();
-        return FeesReportParameterAudit.builder()
+        return PrivateProsecutorsIndexReportParameterAudit.builder()
                 .dateFrom(filter.getDateFrom())
                 .dateTo(filter.getDateTo())
-                .standardApplicantCode(filter.getStandardApplicantCode())
-                .applicantName(filter.getApplicantName())
+                .applicantSurname(filter.getApplicantSurname())
+                .applicantFirstName(filter.getApplicantFirstName())
+                .applicantOrganisationName(filter.getApplicantOrganisationName())
+                .standardApplicantName(filter.getStandardApplicantName())
+                .respondentSurname(filter.getRespondentSurname())
+                .respondentFirstName(filter.getRespondentFirstName())
+                .respondentOrganisationName(filter.getRespondentOrganisationName())
                 .courtLocationCode(location != null ? location.getCourtLocationCode() : null)
                 .otherLocationDescription(
                         location != null ? location.getOtherLocationDescription() : null)
