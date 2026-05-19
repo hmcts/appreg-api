@@ -181,8 +181,15 @@ class SearchWarrantsReportDataReaderTest {
     }
 
     private void assertKeysetPredicateRunsBeforeSearchWarrantsCtes(String query) {
-        String normalisedQuery = query.replaceAll("\\s+", " ");
         int cursorPredicateIndex = query.indexOf(":hasCursor IS FALSE");
+        int latestReplaceIndex =
+                query.indexOf("REPLACE(REPLACE(ale.application_list_entry_wording");
+        int finalSelectIndex = query.indexOf("c.ale_id");
+
+        Assertions.assertTrue(cursorPredicateIndex > -1);
+        Assertions.assertTrue(latestReplaceIndex > -1);
+        Assertions.assertTrue(finalSelectIndex > -1);
+        Assertions.assertTrue(query.contains("FROM application_lists al"));
     }
 
     private void assertLegacySearchWarrantsQueryShape(String query) {

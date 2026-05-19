@@ -138,7 +138,7 @@ class SearchWarrantsReportDataReader implements DataReader<SearchWarrantsReportR
                     )
                 )
                 AND (
-                    :hasCursor = FALSE
+                    :hasCursor IS FALSE
                     OR c.list_date < :lastListDate
                     OR (c.list_date = :lastListDate
                         AND c.ale_id < :lastApplicationListEntryId)
