@@ -17,7 +17,10 @@ public enum ReportError implements ErrorCodeEnum {
                     "RPT-3")),
     INVALID_LOCATION_COMBINATION(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Invalid report location combination", "RPT-4"));
+                    HttpStatus.BAD_REQUEST,
+                    "Either 'courtLocation' must be provided, or both 'criminalJusticeArea'"
+                            + " and 'otherLocationDescription' must be supplied.",
+                    "RPT-4"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
