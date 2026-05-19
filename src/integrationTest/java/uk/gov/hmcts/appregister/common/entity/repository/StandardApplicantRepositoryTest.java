@@ -284,6 +284,87 @@ public class StandardApplicantRepositoryTest extends BaseRepositoryTest {
     }
 
     @Test
+    public void testSearchDateRangeUsesOverlapSemanticsForOpenEndedApplicants() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    StandardApplicant matching = new StandardApplicantTestData().someComplete();
+                    matching.setApplicantCode("APP902");
+                    matching.setName("Window Match");
+                    matching.setApplicantStartDate(LocalDate.of(2025, 11, 6));
+                    matching.setApplicantEndDate(null);
+
+                    repository.save(matching);
+
+                    StandardApplicant nonMatching = new StandardApplicantTestData().someComplete();
+                    nonMatching.setApplicantCode("APP903");
+                    nonMatching.setName("Window Miss");
+                    nonMatching.setApplicantStartDate(LocalDate.of(2025, 11, 7));
+                    nonMatching.setApplicantEndDate(null);
+
+                    repository.save(nonMatching);
+
+                    Page<StandardApplicantEnrichedProjection> results =
+                            repository.search(
+                                    null,
+                                    null,
+                                    null,
+                                    LocalDate.of(2024, 5, 6),
+                                    LocalDate.of(2025, 11, 6),
+                                    LocalDate.of(2026, 5, 15),
+                                    PageRequest.of(0, 10));
+
+                    assertThat(results.getContent())
+                            .extracting(
+                                    projection ->
+                                            projection.getStandardApplicant().getApplicantCode())
+                            .contains("APP902")
+                            .doesNotContain("APP903");
+                });
+    }
+
+    @Test
+    public void testSearchWithoutDateRangeStillRestrictsResultsToActiveDate() throws Exception {
+        transactionalUnitOfWork.inTransaction(
+                () -> {
+                    StandardApplicant activeApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    activeApplicant.setApplicantCode("APP904");
+                    activeApplicant.setName("Still Active");
+                    activeApplicant.setApplicantStartDate(LocalDate.of(2025, 1, 1));
+                    activeApplicant.setApplicantEndDate(null);
+
+                    repository.save(activeApplicant);
+
+                    StandardApplicant pastApplicant =
+                            new StandardApplicantTestData().someComplete();
+                    pastApplicant.setApplicantCode("APP905");
+                    pastApplicant.setName("Historical Only");
+                    pastApplicant.setApplicantStartDate(LocalDate.of(2024, 1, 1));
+                    pastApplicant.setApplicantEndDate(LocalDate.of(2024, 12, 31));
+
+                    repository.save(pastApplicant);
+
+                    LocalDate activeDate = LocalDate.of(2026, 5, 15);
+                    Page<StandardApplicantEnrichedProjection> results =
+                            repository.search(
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    activeDate,
+                                    PageRequest.of(0, 20));
+
+                    assertThat(results.getContent())
+                            .extracting(
+                                    projection ->
+                                            projection.getStandardApplicant().getApplicantCode())
+                            .contains("APP904")
+                            .doesNotContain("APP905");
+                });
+    }
+
+    @Test
     public void testSearchSortsPersonByForenameThenSurnameIgnoringTitle() throws Exception {
         transactionalUnitOfWork.inTransaction(
                 () -> {

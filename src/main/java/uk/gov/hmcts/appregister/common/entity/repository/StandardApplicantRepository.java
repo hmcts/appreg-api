@@ -60,9 +60,9 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
      * @param code optional partial code filter (case-insensitive)
      * @param name optional partial applicant display-name filter (case-insensitive)
      * @param addressLine1 optional partial address line 1 filter (case-insensitive)
-     * @param from optional start date range filter
-     * @param to optional end date range filter
-     * @param active date to evaluate "active" on
+     * @param from optional start date overlap filter
+     * @param to optional end date overlap filter
+     * @param active date to evaluate "active" on when no date range is supplied
      * @param pageable paging/sorting
      * @return page of matching entities
      */
@@ -84,10 +84,30 @@ public interface StandardApplicantRepository extends JpaRepository<StandardAppli
                 ) AS effectiveName
         FROM StandardApplicant c
         WHERE (:code IS NULL OR LOWER(c.applicantCode) LIKE CONCAT('%', LOWER(CAST(:code AS string)), '%')  ESCAPE '\\')
-          AND (c.applicantStartDate <= :active)
-          AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :active)
-          AND (CAST(:from AS date) IS NULL OR c.applicantStartDate >= :from)
-          AND (CAST(:to AS date) IS NULL OR c.applicantEndDate <= :to)
+          AND (
+              (
+                  CAST(:from AS date) IS NULL
+                  AND CAST(:to AS date) IS NULL
+                  AND c.applicantStartDate <= :active
+                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :active)
+              )
+              OR (
+                  CAST(:from AS date) IS NOT NULL
+                  AND CAST(:to AS date) IS NOT NULL
+                  AND c.applicantStartDate <= :to
+                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :from)
+              )
+              OR (
+                  CAST(:from AS date) IS NOT NULL
+                  AND CAST(:to AS date) IS NULL
+                  AND (c.applicantEndDate IS NULL OR c.applicantEndDate >= :from)
+              )
+              OR (
+                  CAST(:from AS date) IS NULL
+                  AND CAST(:to AS date) IS NOT NULL
+                  AND c.applicantStartDate <= :to
+              )
+          )
           AND (
               :addressLine1 IS NULL
               OR LOWER(c.addressLine1) LIKE CONCAT(

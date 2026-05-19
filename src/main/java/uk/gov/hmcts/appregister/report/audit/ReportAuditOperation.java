@@ -13,6 +13,8 @@ public enum ReportAuditOperation implements AuditOperation {
     CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT("Create Search Warrants Report", CrudEnum.CREATE),
     CREATE_DURATION_REPORT_AUDIT_EVENT("Create Duration Report", CrudEnum.CREATE),
     CREATE_LIST_MAINTENANCE_REPORT_AUDIT_EVENT("Create List Maintenance Report", CrudEnum.CREATE),
+    CREATE_PRIVATE_PROSECUTORS_INDEX_REPORT_AUDIT_EVENT(
+            "Create Private Prosecutors Index Report", CrudEnum.CREATE),
     REPORT_JOB_STATUS_TRANSITION_AUDIT_EVENT("Report Job Status Transition", CrudEnum.UPDATE),
     DOWNLOAD_REPORT_AUDIT_EVENT("Download Report", CrudEnum.READ);
 

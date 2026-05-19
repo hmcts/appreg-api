@@ -42,24 +42,76 @@ class ReportLocationValidatorTest {
     }
 
     @Test
-    void givenExistingCjaAndCourt_whenValidating_thenSucceeds() {
+    void givenExistingCjaAndOtherLocation_whenValidating_thenSucceeds() {
         final LegacyReportLocation location =
-                new LegacyReportLocation().cjaCode("52").courtLocationCode("LOC123");
+                new LegacyReportLocation().cjaCode("52").otherLocationDescription("Town Hall");
         when(criminalJusticeAreaRepository.findByCode("52"))
                 .thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
+        verify(criminalJusticeAreaRepository).findByCode("52");
+        verifyNoInteractions(courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenCourtAndCjaLocation_whenValidating_thenThrowsInvalidCombinationError() {
+        LegacyReportLocation location =
+                new LegacyReportLocation()
+                        .courtLocationCode("LOC123")
+                        .cjaCode("52")
+                        .otherLocationDescription("Town Hall");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+
+        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenCjaWithoutOtherLocation_whenValidating_thenThrowsInvalidCombinationError() {
+        LegacyReportLocation location = new LegacyReportLocation().cjaCode("52");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+
+        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenOtherLocationWithoutCja_whenValidating_thenThrowsInvalidCombinationError() {
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Town Hall");
+
+        AppRegistryException exception =
+                assertThrows(AppRegistryException.class, () -> validator.validate(location));
+
+        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenCourtOnly_whenValidating_thenSucceeds() {
+        LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("LOC123");
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);
         when(courtHouseRepository.findActiveCourts("LOC123", TODAY_UK))
                 .thenReturn(List.of(new NationalCourtHouse()));
 
         assertDoesNotThrow(() -> validator.validate(location));
 
-        verify(criminalJusticeAreaRepository).findByCode("52");
         verify(courtHouseRepository).findActiveCourts("LOC123", TODAY_UK);
+        verifyNoInteractions(criminalJusticeAreaRepository);
     }
 
     @Test
     void givenMissingCja_whenValidating_thenThrowsBadRequestCjaError() {
-        LegacyReportLocation location = new LegacyReportLocation().cjaCode("XX");
+        LegacyReportLocation location =
+                new LegacyReportLocation().cjaCode("XX").otherLocationDescription("Town Hall");
         when(criminalJusticeAreaRepository.findByCode("XX")).thenReturn(List.of());
 
         AppRegistryException exception =
@@ -72,7 +124,8 @@ class ReportLocationValidatorTest {
 
     @Test
     void givenDuplicateCja_whenValidating_thenThrowsConflictCjaError() {
-        LegacyReportLocation location = new LegacyReportLocation().cjaCode("ZZ");
+        LegacyReportLocation location =
+                new LegacyReportLocation().cjaCode("ZZ").otherLocationDescription("Town Hall");
         when(criminalJusticeAreaRepository.findByCode("ZZ"))
                 .thenReturn(List.of(new CriminalJusticeArea(), new CriminalJusticeArea()));
 
