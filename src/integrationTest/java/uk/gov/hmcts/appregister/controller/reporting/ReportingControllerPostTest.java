@@ -715,6 +715,82 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+            throws Exception {
+
+        val listId = insertApplicationListRowReturningId(
+                "CLOSED",
+                LocalDate.of(2026, 4, 16),
+                "TH",
+                "Town Hall",
+                "Workload Report - CJA Code Only",
+                "Workload Court",0,0,3);
+
+        val entryId = insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1);
+        insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
+        insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
+        insertOfficial(entryId, "M", "Mr", "Test", "Workload");
+        insertOfficial(entryId, "C", "Mr", "T", "Jones");
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription(null);
+        location.setCjaCode("CD");
+        location.setCourtLocationCode(null);
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 16))
+                        .dateTo(LocalDate.of(2026, 4, 16))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+            () -> {
+                Response response =
+                    restAssuredClient.executeGetRequest(
+                        getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+                if (response.statusCode() != 200) {
+                    return false;
+                }
+                JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                Assertions.assertEquals(createdJob.getId(), job.getId());
+                Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+                return job.getStatus() == JobStatus1.COMPLETED;
+            },
+            Duration.ofSeconds(30));
+
+        Response downloadResponse =
+            restAssuredClient.executeGetRequest(
+                getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+            Assertions.assertTrue(report.contains("Town Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+        }
+    }
+
+    @Test
     public void
             givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
                     throws Exception {
