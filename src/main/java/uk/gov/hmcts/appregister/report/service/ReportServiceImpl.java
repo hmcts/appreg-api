@@ -15,8 +15,8 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
-import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
@@ -24,8 +24,8 @@ import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ListMaintenanceReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.PrivateProsecutorsIndexReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
-import uk.gov.hmcts.appregister.report.audit.WorkloadReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.SearchWarrantsReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.WorkloadReportParameterAudit;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @Service
