@@ -351,7 +351,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         createResponse.then().statusCode(400);
         Assertions.assertTrue(
-                createResponse.asString().contains("Invalid report location combination"));
+                createResponse
+                        .asString()
+                        .contains(
+                                "Either 'courtLocation' must be provided, or both "
+                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
+                                        + "must be supplied."));
     }
 
     @Test
