@@ -184,11 +184,10 @@ public class WorkloadReportDataReaderTest {
                                 + "LIKE '%' || UPPER(:otherLocation) || '%'"));
         Assertions.assertTrue(
                 normalisedQuery.contains(
-                        "UPPER(courthouse_name) " + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
-        Assertions.assertTrue(normalisedQuery.contains("cja_code LIKE '%' || :cjaCode || '%'"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :otherLocation IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :cjaCode IS NULL"));
-        Assertions.assertTrue(normalisedQuery.contains("AND :courthouseCode IS NULL"));
+                        "UPPER(al.courthouse_code) "
+                                + "LIKE '%' || UPPER(:courthouseCode) || '%'"));
+        Assertions.assertTrue(
+                normalisedQuery.contains("UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%'"));
     }
 
     private ResultSet resultSet() throws Exception {

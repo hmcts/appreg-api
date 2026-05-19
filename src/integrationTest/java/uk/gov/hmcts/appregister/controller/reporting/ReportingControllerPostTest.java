@@ -639,18 +639,24 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenValidWorkloadReportWithOtherLocationFilter_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
-            throws Exception {
+    public void
+            givenValidWorkloadReportWithOtherLocationFilter_whenCreatingReport_thenJobIsMadeAndReportCanBeDownloaded()
+                    throws Exception {
 
-        val listId = insertApplicationListRowReturningId(
-                "CLOSED",
-                LocalDate.of(2026, 4, 15),
-                "TH",
-                "Town Hall",
-                "Workload Report - Other Location",
-                "Workload Court",0,0,3);
+        val listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        LocalDate.of(2026, 4, 15),
+                        "TH",
+                        "Town Hall",
+                        "Workload Report - Other Location",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
 
-        val entryId = insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1);
+        val entryId =
+                insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1);
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -715,18 +721,24 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
-    public void givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
-            throws Exception {
+    public void
+            givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
 
-        val listId = insertApplicationListRowReturningId(
-                "CLOSED",
-                LocalDate.of(2026, 4, 16),
-                "TH",
-                "Town Hall",
-                "Workload Report - CJA Code Only",
-                "Workload Court",0,0,3);
+        val listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        LocalDate.of(2026, 4, 16),
+                        "TH",
+                        "Town Hall",
+                        "Workload Report - CJA Code Only",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
 
-        val entryId = insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1);
+        val entryId =
+                insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1);
         insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
         insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
         insertOfficial(entryId, "M", "Mr", "Test", "Workload");
@@ -759,26 +771,26 @@ public class ReportingControllerPostTest extends BaseIntegration {
         Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
 
         AwaitilityUtil.waitForMaxWithOneSecondPoll(
-            () -> {
-                Response response =
-                    restAssuredClient.executeGetRequest(
-                        getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
-                        tokenGenerator.fetchTokenForRole());
-                if (response.statusCode() != 200) {
-                    return false;
-                }
-                JobAcknowledgement job = response.as(JobAcknowledgement.class);
-                Assertions.assertEquals(createdJob.getId(), job.getId());
-                Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
 
-                return job.getStatus() == JobStatus1.COMPLETED;
-            },
-            Duration.ofSeconds(30));
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
 
         Response downloadResponse =
-            restAssuredClient.executeGetRequest(
-                getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
-                tokenGenerator.fetchTokenForRole());
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
 
         downloadResponse.then().statusCode(200);
         downloadResponse.then().contentType("text/csv");
