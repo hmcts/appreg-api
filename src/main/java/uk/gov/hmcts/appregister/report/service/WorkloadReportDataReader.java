@@ -117,17 +117,11 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     AND al.application_list_date >= :dateFrom
                     AND al.application_list_date < (:dateTo + INTERVAL '1 day')
                     AND(:courthouseCode IS NULL
-                        OR ((UPPER(courthouse_name) LIKE '%' || UPPER(:courthouseCode) || '%')
-                            AND :otherLocation IS NULL
-                            AND :cjaCode IS NULL))
+                        OR UPPER(al.courthouse_code) LIKE '%' || UPPER(:courthouseCode) || '%')
                     AND(:otherLocation IS NULL
-                        OR ((UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
-                            AND (cja_code LIKE '%' || :cjaCode || '%')
-                                AND :courthouseCode IS NULL))
+                        OR UPPER(al.other_courthouse) LIKE '%' || UPPER(:otherLocation) || '%')
                     AND( :cjaCode IS NULL
-                        OR ((cja_code LIKE '%' || :cjaCode || '%')
-                            AND :otherLocation IS NULL
-                            AND :courthouseCode IS NULL))
+                        OR UPPER(cja.cja_code) LIKE '%' || UPPER(:cjaCode) || '%')
                     AND(:hasCursor IS FALSE
                         OR :lastListDate IS NULL
                         OR al.application_list_date < :lastListDate
