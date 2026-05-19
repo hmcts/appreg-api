@@ -55,6 +55,18 @@ class ReportLocationValidatorTest {
     }
 
     @Test
+    void givenExistingCjaOnly_whenValidating_thenSucceeds() {
+        final LegacyReportLocation location = new LegacyReportLocation().cjaCode("52");
+        when(criminalJusticeAreaRepository.findByCode("52"))
+                .thenReturn(List.of(new CriminalJusticeArea()));
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
+        verify(criminalJusticeAreaRepository).findByCode("52");
+        verifyNoInteractions(courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
     void givenCourtAndCjaLocation_whenValidating_thenThrowsInvalidCombinationError() {
         LegacyReportLocation location =
                 new LegacyReportLocation()
