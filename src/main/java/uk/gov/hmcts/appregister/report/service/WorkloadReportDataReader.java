@@ -45,24 +45,24 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                     TRUE AS is_standard_applicant
                 FROM
                     standard_applicants sa),
-                                            officials_agg AS (
-                SELECT
-                    aleo.ale_ale_id,
-                    MAX(CASE WHEN aleo.official_type = 'M' AND ale.sequence_number = 1
-                        THEN CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname) END) AS JP1,
-                    MAX(CASE WHEN aleo.official_type = 'M' AND ale.sequence_number = 2
-                        THEN CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname) END) AS JP2,
-                    MAX(CASE WHEN aleo.official_type = 'M' AND ale.sequence_number = 3
-                        THEN CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname) END) AS JP3,
-                    MAX(CASE WHEN aleo.official_type = 'C'
-                        THEN CONCAT(aleo.title, ' ', aleo.forename, ' ', aleo.surname) END) AS official
-                FROM
-                    app_list_entry_official aleo
-                JOIN application_list_entries ale ON
-                    ale.ale_id = aleo.ale_ale_id
-                GROUP BY
-                    aleo.ale_ale_id
-                )
+                   officials_agg AS (
+                       SELECT
+                           ale_ale_id,
+                           MAX(CASE WHEN official_type = 'M' AND rn = 1
+                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP1,
+                           MAX(CASE WHEN official_type = 'M' AND rn = 2
+                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP2,
+                           MAX(CASE WHEN official_type = 'M' AND rn = 3
+                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS JP3,
+                           MAX(CASE WHEN official_type = 'C'
+                               THEN CONCAT(title, ' ', forename, ' ', surname) END) AS official
+                       FROM (
+                           SELECT *,
+                                  ROW_NUMBER() OVER (PARTITION BY ale_ale_id, official_type ORDER BY aleo_id) AS rn
+                           FROM app_list_entry_official
+                       ) ranked
+                       GROUP BY ale_ale_id
+                   )
                 SELECT
                     ale.ale_id,
                     al.application_list_date AS list_date,
