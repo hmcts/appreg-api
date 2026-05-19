@@ -58,7 +58,8 @@ public class WorkloadReportDataReader implements DataReader<WorkloadReportRow> {
                                THEN CONCAT(title, ' ', forename, ' ', surname) END) AS official
                        FROM (
                            SELECT *,
-                                  ROW_NUMBER() OVER (PARTITION BY ale_ale_id, official_type ORDER BY aleo_id) AS rn
+                                  ROW_NUMBER() OVER
+                                  (PARTITION BY ale_ale_id, official_type ORDER BY official_type DESC) AS rn
                            FROM app_list_entry_official
                        ) ranked
                        GROUP BY ale_ale_id
