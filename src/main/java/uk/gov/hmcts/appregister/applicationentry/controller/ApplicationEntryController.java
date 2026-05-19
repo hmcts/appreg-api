@@ -27,6 +27,7 @@ import uk.gov.hmcts.appregister.applicationentry.service.ApplicationEntryService
 import uk.gov.hmcts.appregister.applicationentry.service.BulkUploadAsyncLifecycle;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkCreateApplicationEntryValidator;
 import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadApplicationEntryValidator;
+import uk.gov.hmcts.appregister.applicationentry.validator.BulkUploadCsvFormatValidator;
 import uk.gov.hmcts.appregister.common.async.model.JobTypeRequest;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.reader.CsvReader;
@@ -71,6 +72,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
     private final BulkUploadApplicationEntryValidator bulkUploadApplicationEntryValidator;
 
     private final BulkCreateApplicationEntryValidator bulkCreateApplicationEntryValidator;
+
+    private final BulkUploadCsvFormatValidator bulkUploadCsvFormatValidator;
 
     private final ApplicationListEntryMapper applicationListEntryMapper;
 
@@ -221,6 +224,8 @@ public class ApplicationEntryController implements ApplicationListEntriesApi {
         }
 
         try {
+            bulkUploadCsvFormatValidator.validate(file);
+
             JobTypeRequest jobTypeRequest =
                     JobTypeRequest.builder()
                             .userName(userProvider.getUserId())
