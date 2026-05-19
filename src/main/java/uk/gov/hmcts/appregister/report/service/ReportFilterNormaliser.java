@@ -6,8 +6,8 @@ import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
 import uk.gov.hmcts.appregister.generated.model.FeesReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
-import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 
 @Component
 public class ReportFilterNormaliser {
