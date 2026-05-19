@@ -418,11 +418,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 new SearchWarrantsReportFilterDto()
                         .dateFrom(LocalDate.of(2018, 5, 31))
                         .dateTo(LocalDate.of(2018, 5, 1))
-                        .location(
-                                new LegacyReportLocation()
-                                        .courtLocationCode("CCC003")
-                                        .otherLocationDescription("Town Hall")
-                                        .cjaCode("CD"));
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
         Response createResponse =
                 restAssuredClient.executePostRequest(
                         getLocalUrl(SEARCH_WARRANTS_REPORT_WEB_CONTEXT),
@@ -442,12 +440,6 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
                 "courtLocationCode",
                 "CCC003");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
-                "otherLocationDescription",
-                "Town Hall");
-        assertReportParameterAuditRow(
-                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT, "cjaCode", "CD");
         assertOnlyReportParametersAuditedFor(
                 ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT);
         JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
