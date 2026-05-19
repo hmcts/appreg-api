@@ -11,7 +11,7 @@ post:
     content:
       application/vnd.hmcts.appreg.v1+json:
         schema:
-          $ref: "../../components/schemas/reports/search-warrants-filter-dto.yaml"
+          $ref: "../../components/schemas/reports/search-warrants-report-filter-dto.yaml"
   responses:
     "202":
       description: Report job accepted for asynchronous processing.
