@@ -26,6 +26,7 @@ import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -34,6 +35,7 @@ import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 
 public class ReportingControllerPostTest extends BaseIntegration {
     private static final String FEES_REPORT_WEB_CONTEXT = "reports/fees/jobs";
+    private static final String SEARCH_WARRANTS_REPORT_WEB_CONTEXT = "reports/search-warrants/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
     private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
     private static final String LIST_MAINTENANCE_REPORT_WEB_CONTEXT =
@@ -407,6 +409,76 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .asString()
                         .contains(
                                 "Multiple Criminal Justice Areas found when only one was expected"));
+    }
+
+    @Test
+    public void
+            givenValidSearchWarrantsReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        SearchWarrantsReportFilterDto request =
+                new SearchWarrantsReportFilterDto()
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .dateFrom(LocalDate.of(2018, 5, 31))
+                        .dateTo(LocalDate.of(2018, 5, 1))
+                        .location(new LegacyReportLocation().courtLocationCode("CCC003"));
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(SEARCH_WARRANTS_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
+                "dateFrom",
+                "2018-05-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
+                "dateTo",
+                "2018-05-31");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT,
+                "courtLocationCode",
+                "CCC003");
+        assertOnlyReportParametersAuditedFor(
+                ReportAuditOperation.CREATE_SEARCH_WARRANTS_REPORT_AUDIT_EVENT);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.SEARCH_WARRANTS_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    JobAcknowledgement job = jobResponse.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.SEARCH_WARRANTS_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Search Warrants Report"));
+        }
     }
 
     @Test
