@@ -14,7 +14,7 @@ public enum ReportError implements ErrorCodeEnum {
             DefaultErrorDetail.create(
                     HttpStatus.CONFLICT,
                     "Multiple Criminal Justice Areas found when only one was expected",
-                    "RPT-3")),  
+                    "RPT-3")),
     INVALID_LOCATION_COMBINATION(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
