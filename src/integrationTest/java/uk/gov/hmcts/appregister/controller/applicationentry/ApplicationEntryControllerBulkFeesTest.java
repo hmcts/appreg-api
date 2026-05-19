@@ -9,8 +9,10 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
@@ -18,6 +20,7 @@ import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
 import uk.gov.hmcts.appregister.generated.model.FeeStatus;
 import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
 
 class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCrudTest {
@@ -46,6 +49,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         null,
                         false);
 
+        differenceLogAsserter.clearLogs();
+
         Response response =
                 bulkUpdateFees(
                         tokenGenerator,
@@ -57,6 +62,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertThat(responseDto.getTotalCount()).isEqualTo(2);
         assertThat(responseDto.getUpdatedCount()).isEqualTo(2);
         assertThat(responseDto.getStatus()).isEqualTo(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+        assertSuccessfulBulkUpdateAudited();
 
         assertFeeDetails(
                 getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
@@ -85,6 +91,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         false);
         UUID missingEntryId = UUID.randomUUID();
 
+        differenceLogAsserter.clearLogs();
+
         Response response =
                 bulkUpdateFees(
                         tokenGenerator,
@@ -96,6 +104,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         assertThat(problemDetail.getType().toString())
                 .isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST.getCode().getAppCode());
         assertThat(problemDetail.getDetail()).contains(missingEntryId.toString());
+        assertNoBulkFeeAuditWritten();
         assertFeeDetails(
                 getEntry(tokenGenerator, entry.getListId(), entry.getId()),
                 PaymentStatus.PAID,
@@ -118,6 +127,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         EntryGetDetailDto otherListEntry =
                 createEntry(Optional.empty(), PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null, false);
 
+        differenceLogAsserter.clearLogs();
+
         Response response =
                 bulkUpdateFees(
                         tokenGenerator,
@@ -134,6 +145,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 .isEqualTo(
                         "One or more application list entries do not belong to the application list");
         assertThat(problemDetail.getDetail()).contains(otherListEntry.getId().toString());
+        assertNoBulkFeeAuditWritten();
         assertFeeDetails(
                 getEntry(tokenGenerator, sourceEntry.getListId(), sourceEntry.getId()),
                 PaymentStatus.PAID,
@@ -182,6 +194,8 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                         UPDATED_PAYMENT_REFERENCE,
                         true);
 
+        differenceLogAsserter.clearLogs();
+
         Response response =
                 bulkUpdateFees(
                         tokenGenerator,
@@ -193,6 +207,7 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
         response.then().statusCode(400);
         ProblemAssertUtil.assertEquals(
                 AppListEntryError.FEE_STATUS_DATE_CANNOT_BE_IN_FUTURE.getCode(), response);
+        assertNoBulkFeeAuditWritten();
         assertFeeDetails(
                 getEntry(tokenGenerator, entry.getListId(), entry.getId()),
                 PaymentStatus.PAID,
@@ -228,6 +243,40 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/fees"),
                 tokenGenerator.fetchTokenForRole(),
                 dto);
+    }
+
+    private void assertSuccessfulBulkUpdateAudited() {
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                        "alefs_fee_status",
+                        "PAID",
+                        null,
+                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName()));
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                        "alefs_fee_status",
+                        null,
+                        "REMITTED",
+                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName()));
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLCATION_LISTS_ENTRY_FEE_ID,
+                        "fee_fee_id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getEventName()));
+    }
+
+    private void assertNoBulkFeeAuditWritten() {
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0, true);
+        differenceLogAsserter.assertDiffCount(0, false);
     }
 
     private EntryGetDetailDto getEntry(TokenGenerator tokenGenerator, UUID listId, UUID entryId)

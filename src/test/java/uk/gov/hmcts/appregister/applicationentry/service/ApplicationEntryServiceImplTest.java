@@ -14,6 +14,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
@@ -152,6 +153,14 @@ import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 @MockitoSettings(strictness = Strictness.LENIENT)
 public class ApplicationEntryServiceImplTest {
 
+    private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
+            "appregister.application_entry.bulk_fee_update.requests";
+    private static final String BULK_FEE_UPDATE_ENTRIES_METRIC =
+            "appregister.application_entry.bulk_fee_update.entries";
+    private static final String BULK_FEE_UPDATE_DURATION_METRIC =
+            "appregister.application_entry.bulk_fee_update.duration";
+    private static final String METRIC_STATUS_TAG = "status";
+
     @Mock private FeeRepository feeRepository;
 
     @Mock private ApplicationListRepository applicationListRepository;
@@ -236,6 +245,7 @@ public class ApplicationEntryServiceImplTest {
     private BulkUpdateOfficialsValidator bulkUpdateOfficialsValidator;
 
     private BulkUpdateFeesValidator bulkUpdateFeesValidator;
+    private SimpleMeterRegistry meterRegistry;
 
     @Spy
     private final ApplicationListEntryEntityMapper entryEntityMapper =
@@ -285,6 +295,7 @@ public class ApplicationEntryServiceImplTest {
                         applicationListRepository,
                         applicationListEntryRepository,
                         businessDateProvider);
+        meterRegistry = new SimpleMeterRegistry();
 
         Fee fee = new FeeTestData().someComplete();
         fee.setId(-1L);
@@ -318,7 +329,8 @@ public class ApplicationEntryServiceImplTest {
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
-                        deleteEntryValidator);
+                        deleteEntryValidator,
+                        meterRegistry);
     }
 
     @Test
@@ -353,7 +365,8 @@ public class ApplicationEntryServiceImplTest {
                         getApplicationListEntriesValidator,
                         clock,
                         businessDateProvider,
-                        deleteEntryValidator);
+                        deleteEntryValidator,
+                        meterRegistry);
 
         Settings settings = Settings.create().set(Keys.BEAN_VALIDATION_ENABLED, true);
 
@@ -1706,6 +1719,67 @@ public class ApplicationEntryServiceImplTest {
         Assertions.assertEquals(2, response.getTotalCount());
         Assertions.assertEquals(2, response.getUpdatedCount());
         Assertions.assertEquals(BulkUpdateResponseDto.StatusEnum.SUCCEEDED, response.getStatus());
+        Assertions.assertEquals(
+                1.0,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_REQUESTS_METRIC)
+                        .tag(METRIC_STATUS_TAG, "succeeded")
+                        .counter()
+                        .count());
+        Assertions.assertEquals(
+                1L,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_DURATION_METRIC)
+                        .tag(METRIC_STATUS_TAG, "succeeded")
+                        .timer()
+                        .count());
+        Assertions.assertEquals(
+                1L,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_ENTRIES_METRIC)
+                        .tag(METRIC_STATUS_TAG, "succeeded")
+                        .summary()
+                        .count());
+        Assertions.assertEquals(
+                2.0,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_ENTRIES_METRIC)
+                        .tag(METRIC_STATUS_TAG, "succeeded")
+                        .summary()
+                        .totalAmount());
+    }
+
+    @Test
+    void bulkUpdateFees_recordsFailedMetricWhenValidationFails() {
+        val listId = UUID.randomUUID();
+        val dto = bulkFeesUpdateDto(Set.of(UUID.randomUUID()), PaymentStatus.PAID, false);
+
+        when(applicationListRepository.findByUuidIncludingDelete(listId))
+                .thenReturn(Optional.empty());
+
+        Assertions.assertThrows(
+                AppRegistryException.class, () -> service.bulkUpdateFees(listId, dto));
+
+        Assertions.assertEquals(
+                1.0,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_REQUESTS_METRIC)
+                        .tag(METRIC_STATUS_TAG, "failed")
+                        .counter()
+                        .count());
+        Assertions.assertEquals(
+                1L,
+                meterRegistry
+                        .get(BULK_FEE_UPDATE_DURATION_METRIC)
+                        .tag(METRIC_STATUS_TAG, "failed")
+                        .timer()
+                        .count());
+        Assertions.assertNull(
+                meterRegistry
+                        .find(BULK_FEE_UPDATE_ENTRIES_METRIC)
+                        .tag(METRIC_STATUS_TAG, "failed")
+                        .summary());
+        verify(appListEntryFeeStatusRepository, times(0)).save(any(AppListEntryFeeStatus.class));
     }
 
     @Test

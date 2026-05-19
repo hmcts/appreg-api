@@ -1,8 +1,10 @@
 package uk.gov.hmcts.appregister.applicationentry.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -99,6 +101,16 @@ import uk.gov.hmcts.appregister.generated.model.ResultCodeGetSummaryDto;
 @Slf4j
 public class ApplicationEntryServiceImpl implements ApplicationEntryService {
 
+    private static final String BULK_FEE_UPDATE_REQUESTS_METRIC =
+            "appregister.application_entry.bulk_fee_update.requests";
+    private static final String BULK_FEE_UPDATE_ENTRIES_METRIC =
+            "appregister.application_entry.bulk_fee_update.entries";
+    private static final String BULK_FEE_UPDATE_DURATION_METRIC =
+            "appregister.application_entry.bulk_fee_update.duration";
+    private static final String METRIC_STATUS_TAG = "status";
+    private static final String METRIC_SUCCEEDED = "succeeded";
+    private static final String METRIC_FAILED = "failed";
+
     private final ApplicationListEntryRepository applicationListEntryRepository;
 
     private final FeeRepository feeRepository;
@@ -148,6 +160,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     private final BusinessDateProvider businessDateProvider;
 
     private final DeleteApplicationListEntryValidator deleteApplicationListEntryValidator;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
@@ -537,29 +550,82 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Transactional
     public BulkUpdateResponseDto bulkUpdateFees(UUID listId, BulkFeesUpdateDto bulkFeesUpdateDto) {
         var payload = new BulkUpdateFeesPayload(listId, bulkFeesUpdateDto);
+        int requestedCount = requestedBulkFeeUpdateCount(bulkFeesUpdateDto);
+        long startNanos = System.nanoTime();
 
-        return bulkUpdateFeesValidator.validate(
-                payload,
-                (req, success) -> {
-                    List<ApplicationListEntry> entries = new ArrayList<>(success.getEntries());
-                    entries.sort(Comparator.comparing(ApplicationListEntry::getSequenceNumber));
+        log.info("Starting bulk fee update listId={} requestedCount={}", listId, requestedCount);
 
-                    for (ApplicationListEntry entry : entries) {
-                        replaceFeeDetailsForEntry(entry, req.data().getFeeDetails());
-                    }
+        try {
+            BulkUpdateResponseDto response =
+                    bulkUpdateFeesValidator.validate(
+                            payload,
+                            (req, success) -> {
+                                List<ApplicationListEntry> entries =
+                                        new ArrayList<>(success.getEntries());
+                                entries.sort(
+                                        Comparator.comparing(
+                                                ApplicationListEntry::getSequenceNumber));
 
-                    int updatedCount = entries.size();
+                                for (ApplicationListEntry entry : entries) {
+                                    replaceFeeDetailsForEntry(entry, req.data().getFeeDetails());
+                                }
 
-                    log.info(
-                            "Completed bulk fee update for {} entries in list {}",
-                            updatedCount,
-                            listId);
+                                int updatedCount = entries.size();
 
-                    return new BulkUpdateResponseDto()
-                            .totalCount(req.data().getEntryIds().size())
-                            .updatedCount(updatedCount)
-                            .status(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
-                });
+                                return new BulkUpdateResponseDto()
+                                        .totalCount(req.data().getEntryIds().size())
+                                        .updatedCount(updatedCount)
+                                        .status(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+                            });
+
+            long durationNanos = System.nanoTime() - startNanos;
+            recordBulkFeeUpdateMetrics(
+                    METRIC_SUCCEEDED, response.getUpdatedCount(), Duration.ofNanos(durationNanos));
+            log.info(
+                    "Completed bulk fee update listId={} requestedCount={} updatedCount={} status={} durationMs={}",
+                    listId,
+                    requestedCount,
+                    response.getUpdatedCount(),
+                    response.getStatus(),
+                    Duration.ofNanos(durationNanos).toMillis());
+
+            return response;
+        } catch (RuntimeException exception) {
+            long durationNanos = System.nanoTime() - startNanos;
+            recordBulkFeeUpdateMetrics(METRIC_FAILED, null, Duration.ofNanos(durationNanos));
+            log.warn(
+                    "Failed bulk fee update listId={} requestedCount={} status=FAILED errorType={} durationMs={}",
+                    listId,
+                    requestedCount,
+                    exception.getClass().getSimpleName(),
+                    Duration.ofNanos(durationNanos).toMillis());
+
+            throw exception;
+        }
+    }
+
+    private int requestedBulkFeeUpdateCount(BulkFeesUpdateDto bulkFeesUpdateDto) {
+        if (bulkFeesUpdateDto == null || bulkFeesUpdateDto.getEntryIds() == null) {
+            return 0;
+        }
+
+        return bulkFeesUpdateDto.getEntryIds().size();
+    }
+
+    private void recordBulkFeeUpdateMetrics(
+            String status, Integer updatedCount, Duration duration) {
+        meterRegistry
+                .counter(BULK_FEE_UPDATE_REQUESTS_METRIC, METRIC_STATUS_TAG, status)
+                .increment();
+        meterRegistry
+                .timer(BULK_FEE_UPDATE_DURATION_METRIC, METRIC_STATUS_TAG, status)
+                .record(duration);
+
+        if (METRIC_SUCCEEDED.equals(status) && updatedCount != null) {
+            meterRegistry
+                    .summary(BULK_FEE_UPDATE_ENTRIES_METRIC, METRIC_STATUS_TAG, status)
+                    .record(updatedCount);
+        }
     }
 
     private void replaceFeeDetailsForEntry(
