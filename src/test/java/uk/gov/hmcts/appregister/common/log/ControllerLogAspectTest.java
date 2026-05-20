@@ -20,6 +20,7 @@ public class ControllerLogAspectTest {
     @BeforeEach
     void beforeEach() {
         controllerAspectLog.clearLogs();
+        controllerAspectLog.setLogLevelToDebug();
         abstractAspectLog.clearLogs();
     }
 
@@ -104,6 +105,30 @@ public class ControllerLogAspectTest {
 
         Assertions.assertSame(exception, thrown);
         Assertions.assertTrue(abstractAspectLog.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void logControllerWhenDebugDisabledDoesNotLogDebugMessages() throws Throwable {
+        controllerAspectLog.setLogLevelToInfo();
+
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ResponseEntity<String> responseEntity = ResponseEntity.ok("Test Result");
+        responseEntity.getHeaders().add("Content-Type", "application/vnd.hmcts.appreg.v1+json");
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
+        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        ResponseEntity<?> result =
+                (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
+
+        Assertions.assertEquals("Test Result", result.getBody());
+        Assertions.assertTrue(controllerAspectLog.getDebugLogs().isEmpty());
     }
 
     @Test

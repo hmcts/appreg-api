@@ -3,6 +3,7 @@ package uk.gov.hmcts.appregister.common.exception;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -538,6 +539,97 @@ class AppRegExceptionHandlerTest {
                                                         + " arguments: code=size must be between 0"
                                                         + " and 10")));
         Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenEmptyHandlerMethodValidationException_whenHandled_thenGenericWarnIsLogged()
+            throws NoSuchMethodException {
+        MethodValidationResult validationResult = Mockito.mock(MethodValidationResult.class);
+        Mockito.when(validationResult.getParameterValidationResults()).thenReturn(List.of());
+        Mockito.when(validationResult.getCrossParameterValidationResults()).thenReturn(List.of());
+
+        HandlerMethodValidationException exception =
+                new HandlerMethodValidationException(validationResult);
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHandlerMethodValidationException(
+                        exception, null, HttpStatus.BAD_REQUEST, null);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Validation failed for handler method"
+                                                        + " arguments")));
+    }
+
+    @Test
+    void
+            givenBlankParameterNameAndCodeOnlyError_whenFormattingValidationMessage_thenUnknownFieldIsUsed()
+                    throws Exception {
+        Method method =
+                AppRegExceptionHandler.class.getDeclaredMethod(
+                        "formatValidationMessage",
+                        String.class,
+                        org.springframework.context.MessageSourceResolvable.class);
+        method.setAccessible(true);
+
+        String formatted =
+                (String)
+                        method.invoke(
+                                exceptionHandler,
+                                " ",
+                                new DefaultMessageSourceResolvable(
+                                        new String[] {"size must be less than or equal to 100"},
+                                        null,
+                                        null));
+
+        Assertions.assertEquals("unknown field=size must be less than or equal to 100", formatted);
+    }
+
+    @Test
+    void
+            givenResolvableWithoutMessageOrCodes_whenFormattingValidationMessage_thenToStringFallbackIsUsed()
+                    throws Exception {
+        Method method =
+                AppRegExceptionHandler.class.getDeclaredMethod(
+                        "formatValidationMessage",
+                        String.class,
+                        org.springframework.context.MessageSourceResolvable.class);
+        method.setAccessible(true);
+
+        String formatted =
+                (String)
+                        method.invoke(
+                                exceptionHandler,
+                                null,
+                                new DefaultMessageSourceResolvable(null, null, null) {
+                                    @Override
+                                    public String toString() {
+                                        return "fallback-text";
+                                    }
+                                });
+
+        Assertions.assertEquals("unknown field=fallback-text", formatted);
+    }
+
+    @Test
+    void givenNonNullStatus_whenResolvingStatusCode_thenExplicitStatusIsUsed() throws Exception {
+        Method method =
+                AppRegExceptionHandler.class.getDeclaredMethod(
+                        "resolveStatusCode", HttpStatusCode.class, ProblemDetail.class);
+        method.setAccessible(true);
+
+        int status =
+                (int)
+                        method.invoke(
+                                exceptionHandler,
+                                HttpStatus.UNPROCESSABLE_ENTITY,
+                                ProblemDetail.forStatus(HttpStatus.BAD_REQUEST));
+
+        Assertions.assertEquals(HttpStatus.UNPROCESSABLE_ENTITY.value(), status);
     }
 
     @Test
