@@ -10,12 +10,14 @@ properties:
   totalCount:
     type: integer
     format: int32
+    minimum: 0
     description: Total number of records requested for update.
     example: 2
 
   updatedCount:
     type: integer
     format: int32
+    minimum: 0
     description: Number of records updated.
     example: 2
 
