@@ -2,6 +2,7 @@ package uk.gov.hmcts.appregister.admin.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +29,8 @@ import uk.gov.hmcts.appregister.common.entity.DatabaseJob;
 import uk.gov.hmcts.appregister.common.entity.repository.DatabaseJobRepository;
 import uk.gov.hmcts.appregister.common.entity.repository.RetentionPolicyConfigurationRepository;
 import uk.gov.hmcts.appregister.common.enumeration.YesOrNo;
+import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
+import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 import uk.gov.hmcts.appregister.generated.model.AdminJobType;
 import uk.gov.hmcts.appregister.generated.model.JobRetentionPolicy;
 
@@ -134,6 +137,49 @@ public class DatabaseJobsServiceImplTest {
 
         assertNotNull(retentionPolicy);
         assertEquals(Integer.valueOf(1825), retentionPolicy.getRetentionPeriodDays());
+    }
+
+    @Test
+    public void testGetDatabaseJobRetentionPeriodByName_whenMissingConfig_throwsException() {
+        when(retentionPolicyConfigurationRepository.findConfigValueByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS"))
+                .thenReturn(java.util.Optional.empty());
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.getDatabaseJobRetentionPeriodByName(
+                                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB));
+
+        assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+        assertEquals(
+                "Retention configuration RETENTION_PERIOD_DAYS was not found for"
+                        + " administrative job APPLICATION_LISTS_DATABASE_JOB",
+                exception.getMessage());
+    }
+
+    @Test
+    public void testUpdateDatabaseJobRetentionPeriodByName_whenNoRowUpdated_throwsException() {
+        when(retentionPolicyConfigurationRepository.updateConfigValueByJobNameAndConfigKey(
+                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB.getValue(),
+                        "RETENTION_PERIOD_DAYS",
+                        "365"))
+                .thenReturn(0);
+
+        var exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () ->
+                                service.updateDatabaseJobRetentionPeriodByName(
+                                        AdminJobType.APPLICATION_LISTS_DATABASE_JOB, 365));
+
+        assertEquals(CommonAppError.INTERNAL_SERVER_ERROR, exception.getCode());
+        assertEquals(
+                "Retention configuration RETENTION_PERIOD_DAYS was not found for"
+                        + " administrative job APPLICATION_LISTS_DATABASE_JOB",
+                exception.getMessage());
     }
 
     @Test
