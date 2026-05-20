@@ -25,6 +25,10 @@ public class ControllerLogAspect extends AbstractOperationDurationAspect {
                     // the duration in the after callback only
                 },
                 (name, duration, result) -> {
+                    if (!log.isDebugEnabled()) {
+                        return;
+                    }
+
                     log.debug("Duration of {} operation {} ms", name, duration);
                     if (result != null) {
 

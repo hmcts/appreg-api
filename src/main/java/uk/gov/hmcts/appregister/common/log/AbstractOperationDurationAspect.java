@@ -1,11 +1,17 @@
 package uk.gov.hmcts.appregister.common.log;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.MDC;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.method.MethodValidationException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.common.util.ObfuscationUtil;
 import uk.gov.hmcts.appregister.common.util.PagingWrapper;
 
@@ -54,11 +60,22 @@ public class AbstractOperationDurationAspect {
 
             return result;
         } catch (Throwable t) {
-            log.error("Exception occurred during execution", t);
+            if (!isExpectedRequestValidationException(t)) {
+                log.error("Exception occurred during execution", t);
+            }
             throw t;
         } finally {
             MDC.remove(OPERATION);
         }
+    }
+
+    private boolean isExpectedRequestValidationException(Throwable throwable) {
+        return throwable instanceof ConstraintViolationException
+                || throwable instanceof MethodArgumentTypeMismatchException
+                || throwable instanceof MissingServletRequestParameterException
+                || throwable instanceof HttpMessageNotReadableException
+                || throwable instanceof HandlerMethodValidationException
+                || throwable instanceof MethodValidationException;
     }
 
     /**

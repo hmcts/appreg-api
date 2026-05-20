@@ -10,7 +10,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.gov.hmcts.appregister.applicationentryresult.api.ApplicationEntryResultSortFieldEnum;
@@ -35,7 +34,6 @@ import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
  * REST controller for managing Application List Entry Results.
  */
 @RestController
-@Validated
 @RequiredArgsConstructor
 @Slf4j
 public class ApplicationEntryResultController implements ApplicationListEntryResultsApi {
