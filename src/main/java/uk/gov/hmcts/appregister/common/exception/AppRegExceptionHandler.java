@@ -176,7 +176,8 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                         });
 
         problemDetail.setProperty("errors", errors);
-        logExpectedClientError(status.value(), summariseBindingErrors(errors));
+        logExpectedClientError(
+                resolveStatusCode(status, problemDetail), summariseBindingErrors(errors));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -233,7 +234,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
         }
-        logExpectedClientError(status.value(), problemDetail.getDetail());
+        logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -284,7 +285,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.PARAMETER_REQUIRED, ex);
         problemDetail.setDetail(
                 "Required request parameter '" + ex.getParameterName() + "' is missing");
-        logExpectedClientError(status.value(), problemDetail.getDetail());
+        logExpectedClientError(resolveStatusCode(status, problemDetail), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -348,13 +349,27 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     private String formatValidationMessage(String parameterName, MessageSourceResolvable error) {
         String safeParameterName =
                 parameterName != null && !parameterName.isBlank() ? parameterName : UNKNOWN_FIELD;
-        String message =
-                error.getDefaultMessage() != null ? error.getDefaultMessage() : error.toString();
+        String message = error.getDefaultMessage();
+        if ((message == null || message.isBlank())
+                && error.getCodes() != null
+                && error.getCodes().length > 0) {
+            message = error.getCodes()[0];
+        }
+        if (message == null || message.isBlank()) {
+            message = error.toString();
+        }
         return safeParameterName + "=" + message;
     }
 
     private void logExpectedClientError(int responseCode, String detail) {
         log.warn("[{}]: {}", responseCode, detail);
+    }
+
+    private int resolveStatusCode(HttpStatusCode status, ProblemDetail problemDetail) {
+        if (status != null) {
+            return status.value();
+        }
+        return problemDetail.getStatus();
     }
 
     @ExceptionHandler(AccessDeniedException.class)
