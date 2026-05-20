@@ -52,9 +52,8 @@ public class DataAuditLoggerTest {
 
     @InjectMocks private DataAuditLogger dataAuditLogger;
 
-    private ArgumentCaptor<DataAudit> auditCaptor = ArgumentCaptor.forClass(DataAudit.class);
-
-    private static final String EMAIL_FOR_LOGGED_IN_USER = "test@hmcts.com";
+    @SuppressWarnings("unchecked")
+    private ArgumentCaptor<List<DataAudit>> auditListCaptor = ArgumentCaptor.forClass(List.class);
 
     @Test
     public void testStartOperationTest() {
@@ -63,7 +62,7 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(startEvent);
 
-        verify(dataAuditRepository, never()).save(any());
+        verify(dataAuditRepository, never()).saveAll(any());
     }
 
     @Test
@@ -78,7 +77,7 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, never()).save(any());
+        verify(dataAuditRepository, never()).saveAll(any());
     }
 
     /** This is a programmatic error as both new and old audit values should NEVER be null. */
@@ -153,7 +152,7 @@ public class DataAuditLoggerTest {
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
         // repo was not called as this is a get operation
-        verify(dataAuditRepository, never()).save(any());
+        verify(dataAuditRepository, never()).saveAll(any());
     }
 
     @Test
@@ -180,10 +179,9 @@ public class DataAuditLoggerTest {
                                 new AuditableData(tableName, field1, newValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(2)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
 
-        DataAudit dataAudit = auditCaptor.getAllValues().get(0);
+        DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
         Assertions.assertEquals(field, dataAudit.getColumnName());
         Assertions.assertEquals(newValue, dataAudit.getNewValue());
@@ -193,7 +191,7 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals("No Correlation Id Found", dataAudit.getLink());
         Assertions.assertNull(dataAudit.getCreatedUser());
 
-        DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
+        DataAudit dataAudit1 = auditListCaptor.getValue().get(1);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field1, dataAudit1.getColumnName());
         Assertions.assertEquals(newValue2, dataAudit1.getNewValue());
@@ -219,7 +217,7 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, never()).save(any());
+        verify(dataAuditRepository, never()).saveAll(any());
     }
 
     @Test
@@ -238,9 +236,10 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).save(auditCaptor.capture());
-        Assertions.assertEquals("value", auditCaptor.getValue().getNewValue());
-        Assertions.assertEquals(CrudEnum.READ, auditCaptor.getValue().getUpdateType());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        Assertions.assertEquals("value", auditListCaptor.getValue().getFirst().getNewValue());
+        Assertions.assertEquals(
+                CrudEnum.READ, auditListCaptor.getValue().getFirst().getUpdateType());
     }
 
     @Test
@@ -257,9 +256,10 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        verify(dataAuditRepository, times(1)).save(auditCaptor.capture());
-        Assertions.assertEquals("", auditCaptor.getValue().getNewValue());
-        Assertions.assertEquals(CrudEnum.CREATE, auditCaptor.getValue().getUpdateType());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
+        Assertions.assertEquals("", auditListCaptor.getValue().getFirst().getNewValue());
+        Assertions.assertEquals(
+                CrudEnum.CREATE, auditListCaptor.getValue().getFirst().getUpdateType());
     }
 
     @Test
@@ -275,7 +275,7 @@ public class DataAuditLoggerTest {
                 .thenReturn(
                         List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "value")));
         // Simulate the repository being unavailable at the point audit rows are written.
-        when(dataAuditRepository.save(any(DataAudit.class)))
+        when(dataAuditRepository.saveAll(any()))
                 .thenThrow(new RuntimeException("audit persistence failed"));
 
         val auditOperationService = new AuditOperationServiceImpl(new ObjectMapper(), List.of());
@@ -294,7 +294,7 @@ public class DataAuditLoggerTest {
                                         listener));
 
         Assertions.assertEquals("business-result", result);
-        verify(dataAuditRepository, times(1)).save(any(DataAudit.class));
+        verify(dataAuditRepository, times(1)).saveAll(any());
         // The logger should preserve the exact failed field name without logging the field value.
         val failureLog =
                 logCaptor.getErrorLogs().stream()
@@ -353,10 +353,9 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(3)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
 
-        DataAudit dataAudit = auditCaptor.getAllValues().get(0);
+        DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
         Assertions.assertEquals(field, dataAudit.getColumnName());
         Assertions.assertEquals(newValue, dataAudit.getNewValue());
@@ -364,7 +363,7 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit.getUpdateType());
 
-        DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
+        DataAudit dataAudit1 = auditListCaptor.getValue().get(1);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field1, dataAudit1.getColumnName());
         Assertions.assertEquals(newValue1, dataAudit1.getNewValue());
@@ -372,7 +371,7 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit1.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit1.getUpdateType());
 
-        DataAudit dataAudit3 = auditCaptor.getAllValues().get(2);
+        DataAudit dataAudit3 = auditListCaptor.getValue().get(2);
         Assertions.assertEquals(id, dataAudit3.getRelatedKey());
         Assertions.assertEquals(field2, dataAudit3.getColumnName());
         Assertions.assertEquals(newValue2, dataAudit3.getNewValue());
@@ -425,10 +424,9 @@ public class DataAuditLoggerTest {
 
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(3)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
 
-        DataAudit dataAudit = auditCaptor.getAllValues().get(0);
+        DataAudit dataAudit = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit.getRelatedKey());
         Assertions.assertEquals(field, dataAudit.getColumnName());
         Assertions.assertEquals(newValue, dataAudit.getOldValue());
@@ -436,7 +434,7 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit.getUpdateType());
 
-        DataAudit dataAudit1 = auditCaptor.getAllValues().get(1);
+        DataAudit dataAudit1 = auditListCaptor.getValue().get(1);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field1, dataAudit1.getColumnName());
         Assertions.assertEquals(newValue1, dataAudit1.getOldValue());
@@ -444,7 +442,7 @@ public class DataAuditLoggerTest {
         Assertions.assertEquals(TableNames.APPLICATION_CODES, dataAudit1.getTableName());
         Assertions.assertEquals(CrudEnum.UPDATE, dataAudit1.getUpdateType());
 
-        DataAudit dataAudit3 = auditCaptor.getAllValues().get(2);
+        DataAudit dataAudit3 = auditListCaptor.getValue().get(2);
         Assertions.assertEquals(id, dataAudit3.getRelatedKey());
         Assertions.assertEquals(field2, dataAudit3.getColumnName());
         Assertions.assertEquals(newValue2, dataAudit3.getOldValue());
@@ -482,11 +480,10 @@ public class DataAuditLoggerTest {
                                 new AuditableData(tableName, field1, oldValue2)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(2)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
         verify(auditDifferentiator, times(1)).extractAuditData(any(), any());
 
-        DataAudit dataAudit1 = auditCaptor.getAllValues().get(0);
+        DataAudit dataAudit1 = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field, dataAudit1.getColumnName());
         Assertions.assertEquals(DataAuditLogger.EMPTY_VALUE, dataAudit1.getNewValue());
@@ -533,11 +530,10 @@ public class DataAuditLoggerTest {
                 .thenReturn(List.of(new AuditableData(tableName, field1, oldValue)));
         new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
 
-        // repo was not called as this is a get operation
-        verify(dataAuditRepository, times(1)).save(auditCaptor.capture());
+        verify(dataAuditRepository, times(1)).saveAll(auditListCaptor.capture());
         verify(auditDifferentiator, never()).extractAuditData(any(), any());
 
-        DataAudit dataAudit1 = auditCaptor.getAllValues().get(0);
+        DataAudit dataAudit1 = auditListCaptor.getValue().get(0);
         Assertions.assertEquals(id, dataAudit1.getRelatedKey());
         Assertions.assertEquals(field1, dataAudit1.getColumnName());
         Assertions.assertEquals(newValue, dataAudit1.getNewValue());

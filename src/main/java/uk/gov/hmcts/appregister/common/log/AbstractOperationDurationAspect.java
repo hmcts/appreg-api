@@ -64,9 +64,7 @@ public class AbstractOperationDurationAspect {
 
             return result;
         } catch (Throwable t) {
-            if (isExpectedRequestValidationException(t)) {
-                log.debug("Expected request validation exception occurred during execution", t);
-            } else {
+            if (!isExpectedRequestValidationException(t)) {
                 log.error("Exception occurred during execution", t);
             }
             throw t;
@@ -77,6 +75,15 @@ public class AbstractOperationDurationAspect {
                 MDC.remove(OPERATION);
             }
         }
+    }
+
+    private boolean isExpectedRequestValidationException(Throwable throwable) {
+        return throwable instanceof ConstraintViolationException
+                || throwable instanceof MethodArgumentTypeMismatchException
+                || throwable instanceof MissingServletRequestParameterException
+                || throwable instanceof HttpMessageNotReadableException
+                || throwable instanceof HandlerMethodValidationException
+                || throwable instanceof MethodValidationException;
     }
 
     /**
@@ -126,15 +133,6 @@ public class AbstractOperationDurationAspect {
                 || obj instanceof Number
                 || obj instanceof Boolean
                 || obj instanceof Character;
-    }
-
-    private boolean isExpectedRequestValidationException(Throwable throwable) {
-        return throwable instanceof ConstraintViolationException
-                || throwable instanceof MethodArgumentTypeMismatchException
-                || throwable instanceof MissingServletRequestParameterException
-                || throwable instanceof HttpMessageNotReadableException
-                || throwable instanceof HandlerMethodValidationException
-                || throwable instanceof MethodValidationException;
     }
 
     /**

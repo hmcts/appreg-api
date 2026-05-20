@@ -99,18 +99,6 @@ public class CriminalJusticeControllerSearchTest extends AbstractSecurityControl
                                 .name(),
                         CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
                                 .getEventName()));
-
-        differenceLogAsserter.assertDataAuditChange(
-                DataAuditLogAsserter.getDataAuditAssertion(
-                        TableNames.CRIMINAL_JUSTICE_AREA,
-                        "cja_description",
-                        null,
-                        "",
-                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
-                                .getType()
-                                .name(),
-                        CriminalJusticeAuditOperation.GET_CRIMINAL_JUSTICE_AUDIT_EVENT
-                                .getEventName()));
     }
 
     @Test

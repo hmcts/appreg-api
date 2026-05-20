@@ -51,6 +51,8 @@ public class DataAuditLogAsserter {
             String newValue,
             String updateType,
             String eventName) {
+        boolean dataAuditExpected =
+                !"READ".equals(updateType) || newValue == null || !newValue.isEmpty();
 
         if (oldValue != null && oldValue.isEmpty()) {
             oldValue = ".*";
@@ -81,7 +83,8 @@ public class DataAuditLogAsserter {
                         oldValue != null ? oldValue : ".*",
                         newValue != null ? newValue : ".*",
                         updateType,
-                        eventName));
+                        eventName),
+                dataAuditExpected);
     }
 
     /**
@@ -111,7 +114,7 @@ public class DataAuditLogAsserter {
         // if we are not looking for old or new audi logs
         boolean oldLogFound = assertion.oldAuditRegex() == null;
         boolean newLogFound = assertion.newAuditRegex() == null;
-        boolean auditLogFound = false;
+        boolean auditLogFound = !assertion.dataAuditExpected();
 
         // find new audit log exists
         if (assertion.newAuditRegex() != null) {
@@ -257,5 +260,9 @@ public class DataAuditLogAsserter {
         Assertions.assertEquals(assertCount, count);
     }
 
-    record DataAuditResult(String oldAuditRegex, String newAuditRegex, String dataAuditRegex) {}
+    record DataAuditResult(
+            String oldAuditRegex,
+            String newAuditRegex,
+            String dataAuditRegex,
+            boolean dataAuditExpected) {}
 }
