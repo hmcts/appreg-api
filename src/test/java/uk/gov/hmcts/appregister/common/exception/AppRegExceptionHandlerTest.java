@@ -4,16 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import nl.altindag.log.LogCaptor;
 import org.hibernate.validator.internal.engine.ConstraintViolationImpl;
 import org.hibernate.validator.internal.engine.path.PathImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -23,16 +27,24 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.MethodValidationResult;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
+    private LogCaptor logCaptor;
 
     @BeforeEach
     void beforeEach() {
         exceptionHandler = new AppRegExceptionHandler();
+        logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
+        logCaptor.clearLogs();
     }
 
     @Test
@@ -127,6 +139,39 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.CONSTRAINT_ERROR.getCode().getType().get(),
                 problemDetail.getBody().getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: " + customMessage)));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenMethodArgumentTypeMismatch_whenHandled_thenWarnIsLoggedWithoutError() {
+        MethodArgumentTypeMismatchException exception =
+                new MethodArgumentTypeMismatchException(
+                        "01-01-2026",
+                        LocalDate.class,
+                        "date",
+                        null,
+                        new DateTimeParseException(
+                                "Text '01-01-2026' could not be parsed at index 0",
+                                "01-01-2026",
+                                0));
+
+        ResponseEntity<ProblemDetail> problemDetail = exceptionHandler.mismatchType(exception);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertEquals(
+                "Problem with value 01-01-2026 for parameter date",
+                problemDetail.getBody().getDetail());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Problem with value 01-01-2026 for"
+                                                        + " parameter date")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -180,6 +225,10 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.METHOD_ARGUMENT_INVALID_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: Validation failed for fields:")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -340,6 +389,10 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: " + content)));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -372,6 +425,10 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(log -> log.contains("[400]: " + dateExContent)));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -411,6 +468,76 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(
                 CommonAppError.NOT_READABLE_ERROR.getCode().getType().get(),
                 ((ProblemDetail) problemDetail.getBody()).getType());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Problem setting value for officials[0].type."
+                                                        + " Accepted values are: MAGISTRATE,"
+                                                        + " CLERK")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenMissingRequestParameter_whenHandled_thenWarnIsLoggedWithoutError() {
+        MissingServletRequestParameterException exception =
+                new MissingServletRequestParameterException("date", "LocalDate");
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleMissingServletRequestParameter(exception, null, null, null);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Required request parameter 'date' is"
+                                                        + " missing")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void givenHandlerMethodValidationException_whenHandled_thenWarnIsLoggedWithoutError()
+            throws NoSuchMethodException {
+        MethodParameter methodParameter =
+                new MethodParameter(
+                        AppRegExceptionHandlerTest.class.getDeclaredMethod(
+                                "sampleValidationMethod", String.class),
+                        0);
+
+        ParameterValidationResult validationResult =
+                new ParameterValidationResult(
+                        methodParameter,
+                        "ABCDEFGHIJK",
+                        List.of(
+                                new DefaultMessageSourceResolvable(
+                                        "size must be between 0 and 10")),
+                        null,
+                        null,
+                        null,
+                        (error, sourceType) -> null);
+
+        HandlerMethodValidationException exception =
+                new HandlerMethodValidationException(
+                        MethodValidationResult.create(
+                                this, methodParameter.getMethod(), List.of(validationResult)));
+
+        ResponseEntity<Object> problemDetail =
+                exceptionHandler.handleHandlerMethodValidationException(
+                        exception, null, HttpStatus.BAD_REQUEST, null);
+
+        Assertions.assertEquals(HttpStatus.BAD_REQUEST, problemDetail.getStatusCode());
+        Assertions.assertTrue(
+                logCaptor.getWarnLogs().stream()
+                        .anyMatch(
+                                log ->
+                                        log.contains(
+                                                "[400]: Validation failed for handler method"
+                                                        + " arguments: code=size must be between 0"
+                                                        + " and 10")));
+        Assertions.assertTrue(logCaptor.getErrorLogs().isEmpty());
     }
 
     @Test
@@ -445,5 +572,10 @@ class AppRegExceptionHandlerTest {
         Assertions.assertEquals(500, problemDetail.getBody().getStatus());
         Assertions.assertEquals(
                 "An unexpected error occurred", problemDetail.getBody().getDetail());
+    }
+
+    @SuppressWarnings("unused")
+    private void sampleValidationMethod(String code) {
+        // used to create a MethodParameter with a stable name for validation tests
     }
 }

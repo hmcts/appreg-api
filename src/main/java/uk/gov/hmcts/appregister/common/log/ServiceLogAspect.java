@@ -19,8 +19,16 @@ public class ServiceLogAspect extends AbstractOperationDurationAspect {
     @Around("(within(uk.gov.hmcts.appregister..service..*))")
     public Object logDuration(ProceedingJoinPoint pjp) throws Throwable {
         return invokeOperationMDC(
-                operation -> log.debug("Start: Executing {}", getLogStringForInputs(pjp)),
+                operation -> {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Start: Executing {}", getLogStringForInputs(pjp));
+                    }
+                },
                 (name, duration, result) -> {
+                    if (!log.isDebugEnabled()) {
+                        return;
+                    }
+
                     log.debug("Duration of {} operation {} ms", name, duration);
 
                     if (result != null

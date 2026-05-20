@@ -1,9 +1,12 @@
 package uk.gov.hmcts.appregister.common.log;
 
+import jakarta.validation.ConstraintViolationException;
+import java.util.Set;
 import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
@@ -11,6 +14,14 @@ import org.springframework.http.ResponseEntity;
 public class ControllerLogAspectTest {
 
     private final LogCaptor controllerAspectLog = LogCaptor.forClass(ControllerLogAspect.class);
+    private final LogCaptor abstractAspectLog =
+            LogCaptor.forClass(AbstractOperationDurationAspect.class);
+
+    @BeforeEach
+    void beforeEach() {
+        controllerAspectLog.clearLogs();
+        abstractAspectLog.clearLogs();
+    }
 
     @Test
     void logController() throws Throwable {
@@ -71,5 +82,49 @@ public class ControllerLogAspectTest {
         Assertions.assertEquals(
                 "Finish: Executed and returned null", controllerAspectLog.getDebugLogs().get(1));
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+    }
+
+    @Test
+    void logControllerExpectedValidationExceptionWithoutErrorStackTrace() throws Throwable {
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ConstraintViolationException exception =
+                new ConstraintViolationException("validation failed", Set.of());
+        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        ConstraintViolationException thrown =
+                Assertions.assertThrows(
+                        ConstraintViolationException.class,
+                        () -> controllerLogAspect.logDuration(customProceedingJoinPoint));
+
+        Assertions.assertSame(exception, thrown);
+        Assertions.assertTrue(abstractAspectLog.getErrorLogs().isEmpty());
+    }
+
+    @Test
+    void logControllerUnexpectedExceptionStillLogsError() throws Throwable {
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        RuntimeException exception = new RuntimeException("boom");
+        Mockito.when(customProceedingJoinPoint.proceed()).thenThrow(exception);
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        RuntimeException thrown =
+                Assertions.assertThrows(
+                        RuntimeException.class,
+                        () -> controllerLogAspect.logDuration(customProceedingJoinPoint));
+
+        Assertions.assertSame(exception, thrown);
+        Assertions.assertEquals(
+                "Exception occurred during execution", abstractAspectLog.getErrorLogs().getFirst());
     }
 }

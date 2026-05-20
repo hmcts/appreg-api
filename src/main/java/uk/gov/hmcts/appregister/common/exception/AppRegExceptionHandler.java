@@ -12,7 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -21,11 +23,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.MethodValidationException;
+import org.springframework.validation.method.MethodValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
@@ -100,7 +105,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     @SuppressWarnings({"java:S2259", "java:S1185"})
     protected ResponseEntity<ProblemDetail> handleConstraintViolationException(
             ConstraintViolationException ex) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.CONSTRAINT_ERROR, ex);
 
         problemDetail.setDetail("Constraints failed for fields:" + System.lineSeparator());
@@ -115,18 +119,19 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
         }
 
         problemDetail.setDetail((ex.getMessage() != null ? ex.getMessage() : ""));
+        logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ProblemDetail> mismatchType(MethodArgumentTypeMismatchException ex) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.TYPE_MISMATCH_ERROR, ex);
 
         // Add a custom detail message by extracting the relevant information from the exception
         problemDetail.setDetail(
                 "Problem with value " + ex.getValue() + " for parameter " + ex.getName());
+        logExpectedClientError(problemDetail.getStatus(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -137,7 +142,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
         ProblemDetail problemDetail =
                 getDetailFromEnum(CommonAppError.METHOD_ARGUMENT_INVALID_ERROR, ex);
 
@@ -172,8 +176,29 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
                         });
 
         problemDetail.setProperty("errors", errors);
+        logExpectedClientError(status.value(), summariseBindingErrors(errors));
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        logExpectedClientError(status.value(), summariseMethodValidation(ex));
+        return super.handleHandlerMethodValidationException(ex, headers, status, request);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodValidationException(
+            MethodValidationException ex,
+            HttpHeaders headers,
+            HttpStatus status,
+            WebRequest request) {
+        logExpectedClientError(status.value(), summariseMethodValidation(ex));
+        return super.handleMethodValidationException(ex, headers, status, request);
     }
 
     @Override
@@ -182,8 +207,6 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
-
         DateTimeParseException dateException = findCause(ex, DateTimeParseException.class);
         InvalidFormatException invalidFormatException = findCause(ex, InvalidFormatException.class);
         ValueInstantiationException valueInstantiationException =
@@ -210,6 +233,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             problemDetail.setDetail(
                     "Type conversion problem. Something in the payload is not correct");
         }
+        logExpectedClientError(status.value(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -257,11 +281,10 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             HttpHeaders headers,
             HttpStatusCode status,
             WebRequest request) {
-        log.error("An exception occurred", ex);
-
         ProblemDetail problemDetail = getDetailFromEnum(CommonAppError.PARAMETER_REQUIRED, ex);
         problemDetail.setDetail(
                 "Required request parameter '" + ex.getParameterName() + "' is missing");
+        logExpectedClientError(status.value(), problemDetail.getDetail());
 
         return new ResponseEntity<>(problemDetail, HttpStatus.valueOf(problemDetail.getStatus()));
     }
@@ -282,6 +305,56 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
             current = current.getCause();
         }
         return null;
+    }
+
+    private String summariseBindingErrors(Map<String, Object> errors) {
+        return "Validation failed for fields: "
+                + errors.entrySet().stream()
+                        .map(entry -> entry.getKey() + "=" + entry.getValue())
+                        .collect(Collectors.joining("; "));
+    }
+
+    private String summariseMethodValidation(MethodValidationResult validationResult) {
+        String parameterErrors =
+                validationResult.getParameterValidationResults().stream()
+                        .flatMap(
+                                result ->
+                                        result.getResolvableErrors().stream()
+                                                .map(
+                                                        error ->
+                                                                formatValidationMessage(
+                                                                        result.getMethodParameter()
+                                                                                .getParameterName(),
+                                                                        error)))
+                        .collect(Collectors.joining("; "));
+
+        String crossParameterErrors =
+                validationResult.getCrossParameterValidationResults().stream()
+                        .map(error -> formatValidationMessage("method", error))
+                        .collect(Collectors.joining("; "));
+
+        String combined =
+                Arrays.stream(new String[] {parameterErrors, crossParameterErrors})
+                        .filter(value -> value != null && !value.isBlank())
+                        .collect(Collectors.joining("; "));
+
+        if (combined.isBlank()) {
+            return "Validation failed for handler method arguments";
+        }
+
+        return "Validation failed for handler method arguments: " + combined;
+    }
+
+    private String formatValidationMessage(String parameterName, MessageSourceResolvable error) {
+        String safeParameterName =
+                parameterName != null && !parameterName.isBlank() ? parameterName : UNKNOWN_FIELD;
+        String message =
+                error.getDefaultMessage() != null ? error.getDefaultMessage() : error.toString();
+        return safeParameterName + "=" + message;
+    }
+
+    private void logExpectedClientError(int responseCode, String detail) {
+        log.warn("[{}]: {}", responseCode, detail);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
