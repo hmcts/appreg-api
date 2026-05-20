@@ -63,11 +63,11 @@ public class AdminAPIServiceImpl implements AdminAPIService {
                                 () ->
                                         new AppRegistryException(
                                                 CommonAppError.INTERNAL_SERVER_ERROR,
-                                                "Retention configuration %s was not found for"
-                                                        + " administrative job %s"
-                                                                .formatted(
-                                                                        RETENTION_PERIOD_DAYS,
-                                                                        jobName.getValue())));
+                                                ("Retention configuration %s was not found for"
+                                                                + " administrative job %s")
+                                                        .formatted(
+                                                                RETENTION_PERIOD_DAYS,
+                                                                jobName.getValue())));
 
         return new JobRetentionPolicy().retentionPeriodDays(Integer.valueOf(retentionPeriodDays));
     }
