@@ -15,6 +15,8 @@ import uk.gov.hmcts.appregister.generated.model.JobAcknowledgement;
 import uk.gov.hmcts.appregister.generated.model.JobType;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
+import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ActivityAuditReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.DurationReportParameterAudit;
@@ -22,6 +24,8 @@ import uk.gov.hmcts.appregister.report.audit.FeesReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ListMaintenanceReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.PrivateProsecutorsIndexReportParameterAudit;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
+import uk.gov.hmcts.appregister.report.audit.SearchWarrantsReportParameterAudit;
+import uk.gov.hmcts.appregister.report.audit.WorkloadReportParameterAudit;
 import uk.gov.hmcts.appregister.report.validator.ReportLocationValidator;
 
 @Service
@@ -100,6 +104,37 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public ReportJobCreation createSearchWarrantsReport(SearchWarrantsReportFilterDto filter) {
+        SearchWarrantsReportFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
+        SearchWarrantsReportLifecycle lifecycle;
+
+        try {
+            lifecycle = new SearchWarrantsReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "Unable to create search warrant report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.SEARCH_WARRANTS_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new SearchWarrantsReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
+                        reportPageSize);
+
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, SearchWarrantsReportParameterAudit.from(normalisedFilter));
+    }
+
+    @Override
     public ReportJobCreation createDurationReport(DurationFilterDto filter) {
         DurationFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
         reportLocationValidator.validate(normalisedFilter.getLocation());
@@ -126,6 +161,35 @@ public class ReportServiceImpl implements ReportService {
         JobAcknowledgement acknowledgement = jobMapper.toDto(response);
         return new ReportJobCreation(
                 acknowledgement, DurationReportParameterAudit.from(normalisedFilter));
+    }
+
+    @Override
+    public ReportJobCreation createWorkloadReport(WorkloadFilterDto filter) {
+        WorkloadFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
+        reportLocationValidator.validate(normalisedFilter.getLocation());
+        WorkloadReportLifecycle lifecycle;
+        try {
+            lifecycle = new WorkloadReportLifecycle();
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create workload report output file", e);
+        }
+
+        var jobRequest =
+                JobTypeRequest.builder()
+                        .jobType(JobType.WORKLOAD_REPORT)
+                        .userName(userProvider.getUserId())
+                        .build();
+
+        var response =
+                asyncJobService.startJob(
+                        jobRequest,
+                        new WorkloadReportDataReader(jdbcTemplate, normalisedFilter, schema),
+                        audited(lifecycle),
+                        reportPageSize);
+
+        JobAcknowledgement acknowledgement = jobMapper.toDto(response);
+        return new ReportJobCreation(
+                acknowledgement, WorkloadReportParameterAudit.from(normalisedFilter));
     }
 
     @Override

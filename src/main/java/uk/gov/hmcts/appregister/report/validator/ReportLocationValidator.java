@@ -36,8 +36,9 @@ public class ReportLocationValidator {
         boolean hasNoLocation = !hasCourt && !hasCja && !hasOtherLocation;
         boolean hasCourtOnly = hasCourt && !hasCja && !hasOtherLocation;
         boolean hasCjaAndOtherLocation = !hasCourt && hasCja && hasOtherLocation;
+        boolean hasCjaOnly = !hasCourt && hasCja && !hasOtherLocation;
 
-        if (!(hasNoLocation || hasCourtOnly || hasCjaAndOtherLocation)) {
+        if (!(hasNoLocation || hasCourtOnly || hasCjaAndOtherLocation || hasCjaOnly)) {
             throw new AppRegistryException(
                     ReportError.INVALID_LOCATION_COMBINATION,
                     "Provide either 'courtLocationCode' or both 'cjaCode' and "
