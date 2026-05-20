@@ -16,6 +16,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
@@ -198,6 +199,10 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             setNewAndOldAuditValues(
                     audit, diff, getCorrespondingData(diff, secondaryList), event, primaryOld);
 
+            if (shouldSkipAuditPersistence(event, audit)) {
+                continue;
+            }
+
             try {
                 // save the audit record
                 dataAuditRepository.save(audit);
@@ -209,6 +214,11 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
                         e);
             }
         }
+    }
+
+    private boolean shouldSkipAuditPersistence(CompleteEvent event, DataAudit audit) {
+        return event.getRequestAction().getType() == CrudEnum.READ
+                && EMPTY_VALUE.equals(audit.getNewValue());
     }
 
     /**
