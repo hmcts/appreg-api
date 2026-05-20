@@ -205,6 +205,64 @@ public class DataAuditLoggerTest {
     }
 
     @Test
+    public void testReadAuditSkipsEmptyStringNewValue() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        newCode.setId(123L);
+
+        StartEvent startEvent =
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.READ, newCode))
+                .thenReturn(List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "")));
+
+        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+
+        verify(dataAuditRepository, never()).save(any());
+    }
+
+    @Test
+    public void testReadAuditPersistsNonEmptyNewValue() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        newCode.setId(123L);
+
+        StartEvent startEvent =
+                new StartEvent(AppCodeAuditOperation.GET_APPLICATION_CODES_AUDIT_EVENT, "ID", null);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.READ, newCode))
+                .thenReturn(
+                        List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "value")));
+
+        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+
+        verify(dataAuditRepository, times(1)).save(auditCaptor.capture());
+        Assertions.assertEquals("value", auditCaptor.getValue().getNewValue());
+        Assertions.assertEquals(CrudEnum.READ, auditCaptor.getValue().getUpdateType());
+    }
+
+    @Test
+    public void testCreateAuditStillPersistsEmptyStringNewValue() {
+        ApplicationCodeTestData testData = new ApplicationCodeTestData();
+        ApplicationCode newCode = testData.someComplete();
+        newCode.setId(123L);
+
+        StartEvent startEvent = new StartEvent(AppListAuditOperation.CREATE_APP_LIST, "ID", null);
+        CompleteEvent auditRequest = new CompleteEvent(startEvent, null, newCode);
+
+        when(auditDifferentiator.extractAuditData(CrudEnum.CREATE, newCode))
+                .thenReturn(List.of(new AuditableData(TableNames.APPLICATION_CODES, "field", "")));
+
+        new DataAuditLogger(auditDifferentiator, dataAuditRepository).eventPerformed(auditRequest);
+
+        verify(dataAuditRepository, times(1)).save(auditCaptor.capture());
+        Assertions.assertEquals("", auditCaptor.getValue().getNewValue());
+        Assertions.assertEquals(CrudEnum.CREATE, auditCaptor.getValue().getUpdateType());
+    }
+
+    @Test
     public void testAuditSaveFailureDoesNotEscapeOnCompleteEvent() {
         val testData = new ApplicationCodeTestData();
         val newCode = testData.someComplete();
