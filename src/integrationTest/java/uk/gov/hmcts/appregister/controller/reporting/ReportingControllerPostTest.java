@@ -1,13 +1,18 @@
 package uk.gov.hmcts.appregister.controller.reporting;
 
+import com.opencsv.CSVReader;
 import io.restassured.response.Response;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.testutils.AwaitilityUtil;
 import uk.gov.hmcts.appregister.testutils.BaseIntegration;
@@ -38,6 +44,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
     private static final String SEARCH_WARRANTS_REPORT_WEB_CONTEXT = "reports/search-warrants/jobs";
     private static final String ACTIVITY_AUDIT_REPORT_WEB_CONTEXT = "reports/activity-audit/jobs";
     private static final String DURATION_REPORT_WEB_CONTEXT = "reports/duration/jobs";
+    private static final String WORKLOAD_REPORT_WEB_CONTEXT = "reports/workload/jobs";
     private static final String LIST_MAINTENANCE_REPORT_WEB_CONTEXT =
             "reports/list-maintenance/jobs";
     private static final String PRIVATE_PROSECUTORS_INDEX_REPORT_WEB_CONTEXT =
@@ -351,7 +358,12 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
         createResponse.then().statusCode(400);
         Assertions.assertTrue(
-                createResponse.asString().contains("Invalid report location combination"));
+                createResponse
+                        .asString()
+                        .contains(
+                                "Either 'courtLocation' must be provided, or both "
+                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
+                                        + "must be supplied."));
     }
 
     @Test
@@ -642,6 +654,409 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         .asString()
                         .contains(
                                 "Multiple Criminal Justice Areas found when only one was expected"));
+    }
+
+    @Test
+    public void
+            givenValidWorkloadReportRequest_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28));
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateFrom", "2026-04-01");
+        assertReportParameterAuditRow(
+                ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT, "dateTo", "2026-04-28");
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+        }
+    }
+
+    @Test
+    public void
+            givenValidWorkloadReportWithOtherLocationFilter_whenCreatingReport_thenJobIsMadeAndReportCanBeDownloaded()
+                    throws Exception {
+
+        val listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        LocalDate.of(2026, 4, 15),
+                        "TH",
+                        "Town Hall",
+                        "Workload Report - Other Location",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
+
+        val entryId =
+                insertEntry(LocalDate.of(2026, 4, 15), listId, "Workload Report Applicant", 1);
+        insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
+        insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
+        insertOfficial(entryId, "M", "Mr", "Test", "Workload");
+        insertOfficial(entryId, "C", "Mr", "T", "Jones");
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription("Town Hall");
+        location.setCjaCode("CD");
+        location.setCourtLocationCode(null);
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 15))
+                        .dateTo(LocalDate.of(2026, 4, 15))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+            Assertions.assertTrue(report.contains("Town Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+        }
+    }
+
+    @Test
+    public void
+            givenValidWorkloadReportWithJustCJACode_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
+                    throws Exception {
+
+        val listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        LocalDate.of(2026, 4, 16),
+                        "TH",
+                        "Town Hall",
+                        "Workload Report - CJA Code Only",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
+
+        val entryId =
+                insertEntry(LocalDate.of(2026, 4, 16), listId, "Workload Report Applicant", 1);
+        insertOfficial(entryId, "M", "Mr", "Workload", "Magistrate");
+        insertOfficial(entryId, "M", "Mrs", "Magistrate", "Workload");
+        insertOfficial(entryId, "M", "Mr", "Test", "Workload");
+        insertOfficial(entryId, "C", "Mr", "T", "Jones");
+
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription(null);
+        location.setCjaCode("CD");
+        location.setCourtLocationCode(null);
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 16))
+                        .dateTo(LocalDate.of(2026, 4, 16))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(202);
+
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response response =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    tokenGenerator.fetchTokenForRole());
+                    if (response.statusCode() != 200) {
+                        return false;
+                    }
+                    JobAcknowledgement job = response.as(JobAcknowledgement.class);
+                    Assertions.assertEquals(createdJob.getId(), job.getId());
+                    Assertions.assertEquals(JobType.WORKLOAD_REPORT, job.getType());
+
+                    return job.getStatus() == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())),
+                        tokenGenerator.fetchTokenForRole());
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            String report = new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+            Assertions.assertTrue(report.contains("Workload Report"));
+            Assertions.assertTrue(report.contains("Town Hall"));
+            Assertions.assertTrue(report.contains("CD"));
+        }
+    }
+
+    @Test
+    public void
+            givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription("Some other location");
+        location.setCjaCode(null);
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+    }
+
+    @Test
+    // Shows that magistrate columns should be based on official order, not list entry sequence.
+    public void
+            givenSingleMagistrateOnSecondListEntry_whenCreatingWorkloadReport_thenMagistrateAppearsInFirstColumn()
+                    throws Exception {
+        val listDate = LocalDate.of(2026, 9, 1); // fixes report date
+        val applicantName = "Workload Second Entry Applicant"; // identifies target row
+        val listId =
+                insertApplicationList(
+                        listDate, "WLD001", "Workload multi resolution list", "Workload Court");
+        val entryId = insertEntry(listDate, listId, applicantName, 2); // creates second list entry
+        insertOfficial(entryId, "M", "Mr", "Solo", "Magistrate"); // adds one magistrate
+
+        val row =
+                workloadRow(
+                        createAndDownloadWorkloadReport(
+                                new WorkloadFilterDto().dateFrom(listDate).dateTo(listDate)),
+                        applicantName); // reads CSV row
+
+        Assertions.assertEquals("Mr Solo Magistrate", row.get("JP1")); // expects first magistrate
+        Assertions.assertEquals("", row.get("JP2")); // expects no second magistrate
+        Assertions.assertEquals("", row.get("JP3")); // expects no third magistrate
+    }
+
+    @Test
+    // Shows that multiple magistrates on the same entry should use separate columns.
+    public void
+            givenMultipleMagistratesOnSameEntry_whenCreatingWorkloadReport_thenEachMagistrateAppearsInSeparateColumn()
+                    throws Exception {
+        val listDate = LocalDate.of(2026, 9, 2); // fixes report date
+        val applicantName = "Workload Multiple Magistrates Applicant";
+        val appListId =
+                insertApplicationList(
+                        listDate,
+                        "WLD002",
+                        "Workload Court",
+                        applicantName); // creates list// identifies target row
+        val entryId =
+                insertApplicationListEntry(
+                        appListId,
+                        insertApplicationCodeRow(),
+                        insertNameAddress(
+                                "Workload Multiple Magistrates Applicant", null, null, "Test Road"),
+                        insertNameAddress("", "Test", "Respondent", "Test Road"),
+                        listDate); // creates first list entry
+        insertOfficial(entryId, "M", "Mr", "First", "Magistrate"); // adds first magistrate
+        insertOfficial(entryId, "M", "Mr", "Second", "Magistrate"); // adds second magistrate
+
+        val row =
+                workloadRow(
+                        createAndDownloadWorkloadReport(
+                                new WorkloadFilterDto().dateFrom(listDate).dateTo(listDate)),
+                        applicantName); // reads CSV row
+
+        Assertions.assertEquals("Mr First Magistrate", row.get("JP1")); // expects first magistrate
+        Assertions.assertEquals(
+                "Mr Second Magistrate", row.get("JP2")); // expects second magistrate
+        Assertions.assertEquals("", row.get("JP3")); // expects no third magistrate
+    }
+
+    @Test
+    public void
+            givenCourtProvidedWithCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription(null);
+        location.setCjaCode("01");
+        location.setCourtLocationCode("TEST123");
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+    }
+
+    @Test
+    public void
+            givenCourtProvidedWithOtherLocationFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+                    throws Exception {
+        TokenGenerator tokenGenerator =
+                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+
+        LegacyReportLocation location = new LegacyReportLocation();
+        location.setOtherLocationDescription("test");
+        location.setCjaCode(null);
+        location.setCourtLocationCode("TEST123");
+
+        WorkloadFilterDto request =
+                new WorkloadFilterDto()
+                        .dateFrom(LocalDate.of(2026, 4, 1))
+                        .dateTo(LocalDate.of(2026, 4, 28))
+                        .location(location);
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
+                        tokenGenerator.fetchTokenForRole(),
+                        request);
+
+        createResponse.then().statusCode(400);
+    }
+
+    @Test
+    public void
+            givenWorkloadEntryHasMultipleResolutionsAndOfficials_whenCreatingReport_thenSingleCsvRowContainsAllData()
+                    throws Exception {
+        val listDate = LocalDate.of(2026, 8, 17);
+        val applicantName = "Workload Multi Resolution Applicant";
+        val applicantId = insertNameAddress(applicantName, null, null, "Workload Street");
+        val respondentId =
+                insertNameAddress("Workload Respondent", null, null, "Respondent Street");
+        val listId =
+                insertApplicationList(
+                        listDate, "WLD001", "Workload multi resolution list", "Workload Court");
+        val entryId =
+                insertApplicationListEntry(
+                        listId,
+                        applicationCodeIdOrInsert("MX99010"),
+                        applicantId,
+                        respondentId,
+                        listDate);
+
+        insertResolutionCodesAndResult(entryId, "WRA");
+        insertResolutionCodesAndResult(entryId, "WRB");
+        // Resolutions and officials are both one-to-many joins; the report should still emit
+        // one workload row per application list entry.
+        insertOfficial(entryId, "M", "Mr", "Jill", "Magistrate");
+        insertOfficial(entryId, "C", "Mr", "Casey", "Clerk");
+
+        val report =
+                createAndDownloadWorkloadReport(
+                        new WorkloadFilterDto().dateFrom(listDate).dateTo(listDate));
+        val applicantRows = report.lines().filter(line -> line.contains(applicantName)).toList();
+
+        Assertions.assertEquals(1, applicantRows.size()); // asserts one row per entry
+        Assertions.assertTrue(applicantRows.getFirst().contains("WRA")); // includes first result
+        Assertions.assertTrue(applicantRows.getFirst().contains("WRB")); // includes second result
+        Assertions.assertTrue(applicantRows.getFirst().contains("Jill Magistrate")); // includes JP
+        Assertions.assertTrue(
+                applicantRows.getFirst().contains("Casey Clerk")); // includes official
     }
 
     @Test
@@ -1298,50 +1713,6 @@ public class ReportingControllerPostTest extends BaseIntegration {
         Assertions.assertTrue(createResponse.asString().contains("location.cjaCode"));
     }
 
-    private String createAndDownloadListMaintenanceReport(ListMaintenanceFilterDto request)
-            throws Exception {
-        TokenAndJwksKey token =
-                getATokenWithValidCredentials()
-                        .roles(List.of(RoleEnum.ADMIN))
-                        .build()
-                        .fetchTokenForRole();
-
-        Response createResponse =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT), token, request);
-
-        createResponse.then().statusCode(202);
-        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
-        Assertions.assertNotNull(createdJob.getId());
-        Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, createdJob.getType());
-
-        AwaitilityUtil.waitForMaxWithOneSecondPoll(
-                () -> {
-                    Response jobResponse =
-                            restAssuredClient.executeGetRequest(
-                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
-                                    token);
-
-                    if (jobResponse.statusCode() != 200) {
-                        return false;
-                    }
-
-                    return jobResponse.as(JobAcknowledgement.class).getStatus()
-                            == JobStatus1.COMPLETED;
-                },
-                Duration.ofSeconds(30));
-
-        Response downloadResponse =
-                restAssuredClient.executeGetRequest(
-                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
-
-        downloadResponse.then().statusCode(200);
-        downloadResponse.then().contentType("text/csv");
-        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
-            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
     private void insertDataAuditRow(
             String eventName,
             String tableName,
@@ -1353,49 +1724,49 @@ public class ReportingControllerPostTest extends BaseIntegration {
         jdbcTemplate.update(
                 String.format(
                         """
-                INSERT INTO %s.data_audit (
-                    data_id,
-                    schema_name,
-                    table_name,
-                    column_name,
-                    old_value,
-                    new_value,
-                    user_id,
-                    link,
-                    created_date,
-                    old_clob_value,
-                    new_clob_value,
-                    related_key,
-                    update_type,
-                    data_type,
-                    case_id,
-                    related_items_identifier,
-                    related_items_identifier_index,
-                    event_name,
-                    user_name
-                )
-                VALUES (
-                    nextval('%s.add_dataaudit_event'),
-                    'appreg',
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    NULL,
-                    ?,
-                    NULL,
-                    NULL,
-                    NULL,
-                    'S',
-                    NULL,
-                    NULL,
-                    NULL,
-                    NULL,
-                    ?,
-                    ?
-                )
-                """,
+                    INSERT INTO %s.data_audit (
+                        data_id,
+                        schema_name,
+                        table_name,
+                        column_name,
+                        old_value,
+                        new_value,
+                        user_id,
+                        link,
+                        created_date,
+                        old_clob_value,
+                        new_clob_value,
+                        related_key,
+                        update_type,
+                        data_type,
+                        case_id,
+                        related_items_identifier,
+                        related_items_identifier_index,
+                        event_name,
+                        user_name
+                    )
+                    VALUES (
+                        nextval('%s.add_dataaudit_event'),
+                        'appreg',
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        NULL,
+                        ?,
+                        NULL,
+                        NULL,
+                        NULL,
+                        'S',
+                        NULL,
+                        NULL,
+                        NULL,
+                        NULL,
+                        ?,
+                        ?
+                    )
+                    """,
                         schema, schema),
                 tableName,
                 columnName,
@@ -1411,11 +1782,11 @@ public class ReportingControllerPostTest extends BaseIntegration {
         jdbcTemplate.update(
                 String.format(
                         """
-                INSERT INTO %s.criminal_justice_area (cja_id, cja_code, cja_description)
-                VALUES
-                    (nextval('%s.cja_seq'), ?, ?),
-                    (nextval('%s.cja_seq'), ?, ?)
-                """,
+                    INSERT INTO %s.criminal_justice_area (cja_id, cja_code, cja_description)
+                    VALUES
+                        (nextval('%s.cja_seq'), ?, ?),
+                        (nextval('%s.cja_seq'), ?, ?)
+                    """,
                         schema, schema, schema),
                 code,
                 "Duplicate CJA 1",
@@ -1463,41 +1834,41 @@ public class ReportingControllerPostTest extends BaseIntegration {
         jdbcTemplate.update(
                 String.format(
                         """
-                INSERT INTO %s.application_lists (
-                    al_id,
-                    application_list_status,
-                    application_list_date,
-                    application_list_time,
-                    courthouse_code,
-                    other_courthouse,
-                    list_description,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name,
-                    courthouse_name,
-                    duration_hour,
-                    duration_minute,
-                    cja_cja_id
-                )
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test',
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
-                """,
+                    INSERT INTO %s.application_lists (
+                        al_id,
+                        application_list_status,
+                        application_list_date,
+                        application_list_time,
+                        courthouse_code,
+                        other_courthouse,
+                        list_description,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name,
+                        courthouse_name,
+                        duration_hour,
+                        duration_minute,
+                        cja_cja_id
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test',
+                        ?,
+                        ?,
+                        ?,
+                        ?
+                    )
+                    """,
                         schema),
                 listId,
                 status,
@@ -1545,33 +1916,33 @@ public class ReportingControllerPostTest extends BaseIntegration {
             jdbcTemplate.update(
                     String.format(
                             """
-                    INSERT INTO %s.application_list_entries (
-                        ale_id,
-                        al_al_id,
-                        ac_ac_id,
-                        application_list_entry_wording,
-                        entry_rescheduled,
-                        version,
-                        changed_by,
-                        changed_date,
-                        sequence_number,
-                        lodgement_date,
-                        is_deleted
-                    )
-                    VALUES (
-                        nextval('%s.ale_seq'),
-                        ?,
-                        ?,
-                        ?,
-                        'N',
-                        1,
-                        0,
-                        CURRENT_TIMESTAMP,
-                        ?,
-                        CURRENT_TIMESTAMP,
-                        ?
-                    )
-                    """,
+                        INSERT INTO %s.application_list_entries (
+                            ale_id,
+                            al_al_id,
+                            ac_ac_id,
+                            application_list_entry_wording,
+                            entry_rescheduled,
+                            version,
+                            changed_by,
+                            changed_date,
+                            sequence_number,
+                            lodgement_date,
+                            is_deleted
+                        )
+                        VALUES (
+                            nextval('%s.ale_seq'),
+                            ?,
+                            ?,
+                            ?,
+                            'N',
+                            1,
+                            0,
+                            CURRENT_TIMESTAMP,
+                            ?,
+                            CURRENT_TIMESTAMP,
+                            ?
+                        )
+                        """,
                             schema, schema),
                     applicationListId,
                     applicationCodeId,
@@ -1589,33 +1960,33 @@ public class ReportingControllerPostTest extends BaseIntegration {
         jdbcTemplate.update(
                 String.format(
                         """
-                INSERT INTO %s.application_codes (
-                    ac_id,
-                    application_code,
-                    application_code_title,
-                    application_code_wording,
-                    fee_due,
-                    application_code_respondent,
-                    application_code_start_date,
-                    bulk_respondent_allowed,
-                    version,
-                    changed_by,
-                    changed_date
-                )
-                VALUES (
-                    ?,
-                    ?,
-                    'List Maintenance Code',
-                    'List Maintenance Wording',
-                    'N',
-                    'N',
-                    CURRENT_TIMESTAMP,
-                    'N',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP
-                )
-                """,
+                    INSERT INTO %s.application_codes (
+                        ac_id,
+                        application_code,
+                        application_code_title,
+                        application_code_wording,
+                        fee_due,
+                        application_code_respondent,
+                        application_code_start_date,
+                        bulk_respondent_allowed,
+                        version,
+                        changed_by,
+                        changed_date
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        'List Maintenance Code',
+                        'List Maintenance Wording',
+                        'N',
+                        'N',
+                        CURRENT_TIMESTAMP,
+                        'N',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP
+                    )
+                    """,
                         schema),
                 applicationCodeId,
                 applicationCode);
@@ -1680,6 +2051,748 @@ public class ReportingControllerPostTest extends BaseIntegration {
         insertApplicationListEntryResolution(entryId, resolutionCodeId);
     }
 
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording) {
+        long applicantId =
+                insertNameAddressRow(
+                        applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
+        long listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "XCD997",
+                        "Fees Hall",
+                        "Fees report integration list",
+                        "Fees Court",
+                        0,
+                        0,
+                        3);
+        long entryId =
+                insertApplicationListEntryRow(
+                        listId,
+                        insertFeesApplicationCodeRow(),
+                        applicantId,
+                        applicantId,
+                        wording,
+                        "Fees notes",
+                        listDate);
+        long feeId = insertFeeRow();
+        insertApplicationListEntryFee(entryId, feeId);
+    }
+
+    private long insertFeesApplicationCodeRow() {
+        Long applicationCodeId =
+                jdbcTemplate.queryForObject(
+                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
+        String applicationCode = "FR" + Math.floorMod(applicationCodeId, 1_000_000L);
+        jdbcTemplate.update(
+                String.format(
+                        """
+                    INSERT INTO %s.application_codes (
+                        ac_id,
+                        application_code,
+                        application_code_title,
+                        application_code_wording,
+                        fee_due,
+                        application_code_respondent,
+                        application_code_start_date,
+                        bulk_respondent_allowed,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        'Fees Report Code',
+                        'Fees report wording',
+                        'Y',
+                        'N',
+                        DATE '2020-01-01',
+                        'N',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    """,
+                        schema),
+                applicationCodeId,
+                applicationCode);
+        return applicationCodeId;
+    }
+
+    private long insertFeeRow() {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.fee (
+                        fee_id,
+                        fee_reference,
+                        fee_description,
+                        fee_value,
+                        fee_start_date,
+                        fee_version,
+                        fee_changed_by,
+                        fee_changed_date,
+                        fee_user_name,
+                        is_offsite
+                    )
+                    VALUES (
+                        nextval('%s.fee_seq'),
+                        ?,
+                        'Fees report integration fee',
+                        10.00,
+                        DATE '2020-01-01',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test',
+                        false
+                    )
+                    RETURNING fee_id
+                    """,
+                        schema, schema),
+                Long.class,
+                "FR" + Math.floorMod(System.nanoTime(), 1_000_000_000L));
+    }
+
+    private void insertApplicationListEntryFee(long entryId, long feeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                    INSERT INTO %s.app_list_entry_fee_id (
+                        ale_ale_id,
+                        fee_fee_id,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        ?,
+                        ?,
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    """,
+                        schema),
+                entryId,
+                feeId);
+    }
+
+    private long insertNameAddressRow(
+            String name, String firstName, String surname, String addressLine1) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.name_address (
+                        na_id,
+                        name,
+                        forename_1,
+                        surname,
+                        address_l1,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        nextval('%s.na_seq'),
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    RETURNING na_id
+                    """,
+                        schema, schema),
+                Long.class,
+                name,
+                firstName,
+                surname,
+                addressLine1);
+    }
+
+    private long insertStandardApplicantRow(String name) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.standard_applicants (
+                        sa_id,
+                        standard_applicant_code,
+                        standard_applicant_start_date,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name,
+                        name,
+                        address_l1
+                    )
+                    VALUES (
+                        nextval('%s.sa_seq'),
+                        ?,
+                        DATE '2020-01-01',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test',
+                        ?,
+                        'Standard applicant street'
+                    )
+                    RETURNING sa_id
+                    """,
+                        schema, schema),
+                Long.class,
+                "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
+                name);
+    }
+
+    private long applicationCodeIdOrInsert(String applicationCode) {
+        List<Long> applicationCodeIds =
+                jdbcTemplate.queryForList(
+                        String.format(
+                                """
+                        SELECT ac_id
+                        FROM %s.application_codes
+                        WHERE application_code = ?
+                        ORDER BY ac_id DESC
+                        LIMIT 1
+                        """,
+                                schema),
+                        Long.class,
+                        applicationCode);
+        if (!applicationCodeIds.isEmpty()) {
+            return applicationCodeIds.getFirst();
+        }
+
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.application_codes (
+                        ac_id,
+                        application_code,
+                        application_code_title,
+                        application_code_wording,
+                        application_legislation,
+                        fee_due,
+                        application_code_respondent,
+                        application_code_start_date,
+                        bulk_respondent_allowed,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        nextval('%s.ac_seq'),
+                        ?,
+                        'Application for a private prosecution summons',
+                        'Application for private prosecution {TEXT|Summarise offence title(s)|250}',
+                        'Section 1 Magistrates Courts Act 1980',
+                        'N',
+                        'Y',
+                        DATE '2020-01-01',
+                        'N',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    RETURNING ac_id
+                    """,
+                        schema, schema),
+                Long.class,
+                applicationCode);
+    }
+
+    private long insertResolutionCode(String resolutionCode) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.resolution_codes (
+                        rc_id,
+                        resolution_code,
+                        resolution_code_title,
+                        resolution_code_wording,
+                        resolution_code_start_date,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        nextval('%s.rc_seq'),
+                        ?,
+                        ?,
+                        ?,
+                        DATE '2020-01-01',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    RETURNING rc_id
+                    """,
+                        schema, schema),
+                Long.class,
+                resolutionCode,
+                resolutionCode + " title",
+                resolutionCode + " wording");
+    }
+
+    private void insertApplicationListEntryResolution(long entryId, long resolutionCodeId) {
+        jdbcTemplate.update(
+                String.format(
+                        """
+                    INSERT INTO %s.app_list_entry_resolutions (
+                        aler_id,
+                        rc_rc_id,
+                        ale_ale_id,
+                        al_entry_resolution_wording,
+                        al_entry_resolution_officer,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name
+                    )
+                    VALUES (
+                        nextval('%s.aler_seq'),
+                        ?,
+                        ?,
+                        'Resolution wording',
+                        'Resolution officer',
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test'
+                    )
+                    """,
+                        schema, schema),
+                resolutionCodeId,
+                entryId);
+    }
+
+    private long insertApplicationList(
+            LocalDate listDate, String courtCode, String description, String courtName) {
+        return jdbcTemplate.queryForObject(
+                """
+                INSERT INTO %s.application_lists (
+                    al_id, application_list_status, application_list_date, application_list_time,
+                    courthouse_code, list_description, version, changed_by, changed_date,
+                    user_name, courthouse_name, duration_hour, duration_minute, cja_cja_id
+                ) VALUES (
+                    nextval('%s.al_seq'), 'CLOSED', ?, ?, ?, ?, 1, 0, CURRENT_TIMESTAMP,
+                    'report-integration-test', ?, 0, 0, 3
+                )
+                RETURNING al_id
+                """
+                        .formatted(schema, schema),
+                Long.class,
+                listDate,
+                listDate.atTime(10, 0),
+                courtCode,
+                description,
+                courtName);
+    }
+
+    private long insertNameAddress(String name, String firstName, String surname, String address) {
+        return jdbcTemplate.queryForObject(
+                """
+                INSERT INTO %s.name_address (
+                    na_id, name, forename_1, surname, address_l1, version, changed_by,
+                    changed_date, user_name
+                ) VALUES (nextval('%s.na_seq'), ?, ?, ?, ?, 1, 0, CURRENT_TIMESTAMP, 'report-integration-test')
+                RETURNING na_id
+                """
+                        .formatted(schema, schema),
+                Long.class,
+                name,
+                firstName,
+                surname,
+                address);
+    }
+
+    private void insertResolutionCodesAndResult(long entryId, String resultCode) {
+        val resultId =
+                jdbcTemplate.queryForObject(
+                        """
+                    INSERT INTO %s.resolution_codes (
+                        rc_id, resolution_code, resolution_code_title, resolution_code_wording,
+                        resolution_code_start_date, version, changed_by, changed_date, user_name
+                    ) VALUES (
+                        nextval('%s.rc_seq'), ?, ?, ?, DATE '2020-01-01', 1, 0,
+                        CURRENT_TIMESTAMP, 'report-integration-test'
+                    )
+                    RETURNING rc_id
+                    """
+                                .formatted(schema, schema),
+                        Long.class,
+                        resultCode,
+                        resultCode + " title",
+                        resultCode + " wording");
+        jdbcTemplate.update(
+                """
+                INSERT INTO %s.app_list_entry_resolutions (
+                    aler_id, rc_rc_id, ale_ale_id, al_entry_resolution_wording,
+                    al_entry_resolution_officer, version, changed_by, changed_date, user_name
+                ) VALUES (
+                    nextval('%s.aler_seq'), ?, ?, 'Resolution wording', 'Resolution officer',
+                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test'
+                )
+                """
+                        .formatted(schema, schema),
+                resultId,
+                entryId);
+    }
+
+    private void insertOfficial(
+            long entryId, String type, String title, String forename, String surname) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO %s.app_list_entry_official (
+                    aleo_id, ale_ale_id, title, forename, surname, official_type, changed_by,
+                    changed_date, user_name
+                ) VALUES (
+                    nextval('%s.aleo_seq'), ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, 'report-integration-test'
+                )
+                """
+                        .formatted(schema, schema),
+                entryId,
+                title,
+                forename,
+                surname,
+                type);
+    }
+
+    private void assertReportParameterAuditRow(
+            ReportAuditOperation operation, String columnName, String value) {
+        DataAudit persistedAuditRow =
+                reportAuditRows(operation).stream()
+                        .filter(row -> columnName.equals(row.getColumnName()))
+                        .filter(row -> value.equals(row.getNewValue()))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Expected a %s report parameter audit row for %s"
+                                                        .formatted(
+                                                                operation.getEventName(),
+                                                                columnName)));
+
+        Assertions.assertEquals("", persistedAuditRow.getOldValue());
+        Assertions.assertEquals(operation.getType(), persistedAuditRow.getUpdateType());
+        Assertions.assertEquals("report_parameters", persistedAuditRow.getTableName());
+    }
+
+    private void assertOnlyReportParametersAuditedFor(ReportAuditOperation operation) {
+        Assertions.assertTrue(
+                reportAuditRows(operation).stream()
+                        .map(DataAudit::getTableName)
+                        .allMatch(
+                                tableName ->
+                                        "report_parameters".equals(tableName)
+                                                || "report_jobs".equals(tableName)));
+    }
+
+    private long insertApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long applicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.application_list_entries (
+                        ale_id,
+                        al_al_id,
+                        ac_ac_id,
+                        a_na_id,
+                        r_na_id,
+                        application_list_entry_wording,
+                        entry_rescheduled,
+                        notes,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name,
+                        sequence_number,
+                        lodgement_date
+                    )
+                    VALUES (
+                        nextval('%s.ale_seq'),
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        'N',
+                        ?,
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test',
+                        1,
+                        ?
+                    )
+                    RETURNING ale_id
+                    """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                applicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long insertStandardApplicantApplicationListEntryRow(
+            long listId,
+            long applicationCodeId,
+            long standardApplicantId,
+            long respondentId,
+            String wording,
+            String notes,
+            LocalDate lodgementDate) {
+        return jdbcTemplate.queryForObject(
+                String.format(
+                        """
+                    INSERT INTO %s.application_list_entries (
+                        ale_id,
+                        al_al_id,
+                        ac_ac_id,
+                        sa_sa_id,
+                        r_na_id,
+                        application_list_entry_wording,
+                        entry_rescheduled,
+                        notes,
+                        version,
+                        changed_by,
+                        changed_date,
+                        user_name,
+                        sequence_number,
+                        lodgement_date
+                    )
+                    VALUES (
+                        nextval('%s.ale_seq'),
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        'N',
+                        ?,
+                        1,
+                        0,
+                        CURRENT_TIMESTAMP,
+                        'report-integration-test',
+                        1,
+                        ?
+                    )
+                    RETURNING ale_id
+                    """,
+                        schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                standardApplicantId,
+                respondentId,
+                wording,
+                notes,
+                lodgementDate.atStartOfDay());
+    }
+
+    private long insertApplicationListEntry(
+            long listId,
+            long applicationCodeId,
+            long applicantId,
+            long respondentId,
+            LocalDate date) {
+        return jdbcTemplate.queryForObject(
+                """
+                INSERT INTO %s.application_list_entries (
+                    ale_id, al_al_id, ac_ac_id, a_na_id, r_na_id, application_list_entry_wording,
+                    entry_rescheduled, notes, version, changed_by, changed_date, user_name,
+                    sequence_number, lodgement_date
+                ) VALUES (
+                    nextval('%s.ale_seq'), ?, ?, ?, ?, 'Workload wording', 'N', 'Workload notes',
+                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test', 1, ?
+                )
+                RETURNING ale_id
+                """
+                        .formatted(schema, schema),
+                Long.class,
+                listId,
+                applicationCodeId,
+                applicantId,
+                respondentId,
+                date.atStartOfDay());
+    }
+
+    private long insertEntry(
+            LocalDate listDate, long appListId, String applicantName, int sequenceNumber) {
+        val applicantId = insertNameAddress(applicantName, null, null, "Applicant Street");
+        val respondentId =
+                insertNameAddress(
+                        null, "Respondent " + applicantName, "Surname", "Respondent Street");
+        return jdbcTemplate.queryForObject(
+                """
+                INSERT INTO %s.application_list_entries (
+                    ale_id, al_al_id, ac_ac_id, a_na_id, r_na_id, application_list_entry_wording,
+                    entry_rescheduled, notes, version, changed_by, changed_date, user_name,
+                    sequence_number, lodgement_date
+                ) VALUES (
+                    nextval('%s.ale_seq'), ?, ?, ?, ?, 'Workload wording', 'N', 'Workload notes',
+                    1, 0, CURRENT_TIMESTAMP, 'report-integration-test', ?, ?
+                )
+                RETURNING ale_id
+                """
+                        .formatted(schema, schema),
+                Long.class,
+                appListId,
+                insertApplicationCodeRow(),
+                applicantId,
+                respondentId,
+                sequenceNumber,
+                listDate.atStartOfDay());
+    }
+
+    private String createAndDownloadWorkloadReport(WorkloadFilterDto request) throws Exception {
+        val token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+        val createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT), token, request);
+        createResponse.then().statusCode(202);
+
+        val createdJob = createResponse.as(JobAcknowledgement.class);
+
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.WORKLOAD_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    val jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+                    return jobResponse.statusCode() == 200
+                            && jobResponse.as(JobAcknowledgement.class).getStatus()
+                                    == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        val downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (var responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private String createAndDownloadListMaintenanceReport(ListMaintenanceFilterDto request)
+            throws Exception {
+        TokenAndJwksKey token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.ADMIN))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response createResponse =
+                restAssuredClient.executePostRequest(
+                        getLocalUrl(LIST_MAINTENANCE_REPORT_WEB_CONTEXT), token, request);
+
+        createResponse.then().statusCode(202);
+        JobAcknowledgement createdJob = createResponse.as(JobAcknowledgement.class);
+        Assertions.assertNotNull(createdJob.getId());
+        Assertions.assertEquals(JobType.LIST_MAINTENANCE_REPORT, createdJob.getType());
+
+        AwaitilityUtil.waitForMaxWithOneSecondPoll(
+                () -> {
+                    Response jobResponse =
+                            restAssuredClient.executeGetRequest(
+                                    getLocalUrl(JOB_WEB_CONTEXT.formatted(createdJob.getId())),
+                                    token);
+
+                    if (jobResponse.statusCode() != 200) {
+                        return false;
+                    }
+
+                    return jobResponse.as(JobAcknowledgement.class).getStatus()
+                            == JobStatus1.COMPLETED;
+                },
+                Duration.ofSeconds(30));
+
+        Response downloadResponse =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(DOWNLOAD_WEB_CONTEXT.formatted(createdJob.getId())), token);
+
+        downloadResponse.then().statusCode(200);
+        downloadResponse.then().contentType("text/csv");
+        try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
+            return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private Map<String, String> workloadRow(String report, String applicantName) throws Exception {
+        try (val reader = new CSVReader(new StringReader(report))) {
+            val rows = reader.readAll();
+            for (int i = 0; i < rows.size(); i++) {
+                if (rows.get(i).length > 0 && "List Date".equals(rows.get(i)[0])) {
+                    return firstMatchingRow(
+                            rows.get(i), rows.subList(i + 1, rows.size()), applicantName);
+                }
+            }
+        }
+        throw new AssertionError("Workload CSV header row not found");
+    }
+
+    private Map<String, String> firstMatchingRow(
+            String[] headers, List<String[]> rows, String applicantName) {
+        for (val row : rows) {
+            val values = valuesByHeader(headers, row);
+            if (applicantName.equals(values.get("Applicant Name/Surname"))) {
+                return values;
+            }
+        }
+        throw new AssertionError("Workload row not found for " + applicantName);
+    }
+
+    private Map<String, String> valuesByHeader(String[] headers, String[] row) {
+        val values = new HashMap<String, String>();
+        for (int i = 0; i < headers.length; i++) {
+            values.put(headers[i], i < row.length ? row[i] : "");
+        }
+        return values;
+    }
+
+    private Collection<DataAudit> reportAuditRows(ReportAuditOperation operation) {
+        return dataAuditRepository.findAll().stream()
+                .filter(row -> operation.getEventName().equals(row.getEventName()))
+                .toList();
+    }
+
     private String createFeesReportAndDownload(FeesReportFilterDto request) throws Exception {
         TokenGenerator tokenGenerator =
                 getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
@@ -1722,486 +2835,5 @@ public class ReportingControllerPostTest extends BaseIntegration {
         try (InputStream responseStream = downloadResponse.getBody().asInputStream()) {
             return new String(responseStream.readAllBytes(), StandardCharsets.UTF_8);
         }
-    }
-
-    private void insertFeesReportApplication(
-            LocalDate listDate,
-            String applicantOrganisation,
-            String applicantForename,
-            String applicantSurname,
-            String wording) {
-        long applicantId =
-                insertNameAddressRow(
-                        applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
-        long listId =
-                insertApplicationListRowReturningId(
-                        "CLOSED",
-                        listDate,
-                        "XCD997",
-                        "Fees Hall",
-                        "Fees report integration list",
-                        "Fees Court",
-                        0,
-                        0,
-                        3);
-        long entryId =
-                insertApplicationListEntryRow(
-                        listId,
-                        insertFeesApplicationCodeRow(),
-                        applicantId,
-                        applicantId,
-                        wording,
-                        "Fees notes",
-                        listDate);
-        long feeId = insertFeeRow();
-        insertApplicationListEntryFee(entryId, feeId);
-    }
-
-    private long insertFeesApplicationCodeRow() {
-        Long applicationCodeId =
-                jdbcTemplate.queryForObject(
-                        String.format("SELECT nextval('%s.ac_seq')", schema), Long.class);
-        String applicationCode = "FR" + Math.floorMod(applicationCodeId, 1_000_000L);
-        jdbcTemplate.update(
-                String.format(
-                        """
-                INSERT INTO %s.application_codes (
-                    ac_id,
-                    application_code,
-                    application_code_title,
-                    application_code_wording,
-                    fee_due,
-                    application_code_respondent,
-                    application_code_start_date,
-                    bulk_respondent_allowed,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    ?,
-                    ?,
-                    'Fees Report Code',
-                    'Fees report wording',
-                    'Y',
-                    'N',
-                    DATE '2020-01-01',
-                    'N',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                """,
-                        schema),
-                applicationCodeId,
-                applicationCode);
-        return applicationCodeId;
-    }
-
-    private long insertFeeRow() {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.fee (
-                    fee_id,
-                    fee_reference,
-                    fee_description,
-                    fee_value,
-                    fee_start_date,
-                    fee_version,
-                    fee_changed_by,
-                    fee_changed_date,
-                    fee_user_name,
-                    is_offsite
-                )
-                VALUES (
-                    nextval('%s.fee_seq'),
-                    ?,
-                    'Fees report integration fee',
-                    10.00,
-                    DATE '2020-01-01',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test',
-                    false
-                )
-                RETURNING fee_id
-                """,
-                        schema, schema),
-                Long.class,
-                "FR" + Math.floorMod(System.nanoTime(), 1_000_000_000L));
-    }
-
-    private void insertApplicationListEntryFee(long entryId, long feeId) {
-        jdbcTemplate.update(
-                String.format(
-                        """
-                INSERT INTO %s.app_list_entry_fee_id (
-                    ale_ale_id,
-                    fee_fee_id,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    ?,
-                    ?,
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                """,
-                        schema),
-                entryId,
-                feeId);
-    }
-
-    private long insertNameAddressRow(
-            String name, String firstName, String surname, String addressLine1) {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.name_address (
-                    na_id,
-                    name,
-                    forename_1,
-                    surname,
-                    address_l1,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    nextval('%s.na_seq'),
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                RETURNING na_id
-                """,
-                        schema, schema),
-                Long.class,
-                name,
-                firstName,
-                surname,
-                addressLine1);
-    }
-
-    private long insertStandardApplicantRow(String name) {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.standard_applicants (
-                    sa_id,
-                    standard_applicant_code,
-                    standard_applicant_start_date,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name,
-                    name,
-                    address_l1
-                )
-                VALUES (
-                    nextval('%s.sa_seq'),
-                    ?,
-                    DATE '2020-01-01',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test',
-                    ?,
-                    'Standard applicant street'
-                )
-                RETURNING sa_id
-                """,
-                        schema, schema),
-                Long.class,
-                "STD" + Math.floorMod(System.nanoTime(), 1_000_000L),
-                name);
-    }
-
-    private long insertApplicationListEntryRow(
-            long listId,
-            long applicationCodeId,
-            long applicantId,
-            long respondentId,
-            String wording,
-            String notes,
-            LocalDate lodgementDate) {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.application_list_entries (
-                    ale_id,
-                    al_al_id,
-                    ac_ac_id,
-                    a_na_id,
-                    r_na_id,
-                    application_list_entry_wording,
-                    entry_rescheduled,
-                    notes,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name,
-                    sequence_number,
-                    lodgement_date
-                )
-                VALUES (
-                    nextval('%s.ale_seq'),
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    'N',
-                    ?,
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test',
-                    1,
-                    ?
-                )
-                RETURNING ale_id
-                """,
-                        schema, schema),
-                Long.class,
-                listId,
-                applicationCodeId,
-                applicantId,
-                respondentId,
-                wording,
-                notes,
-                lodgementDate.atStartOfDay());
-    }
-
-    private long insertStandardApplicantApplicationListEntryRow(
-            long listId,
-            long applicationCodeId,
-            long standardApplicantId,
-            long respondentId,
-            String wording,
-            String notes,
-            LocalDate lodgementDate) {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.application_list_entries (
-                    ale_id,
-                    al_al_id,
-                    ac_ac_id,
-                    sa_sa_id,
-                    r_na_id,
-                    application_list_entry_wording,
-                    entry_rescheduled,
-                    notes,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name,
-                    sequence_number,
-                    lodgement_date
-                )
-                VALUES (
-                    nextval('%s.ale_seq'),
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    'N',
-                    ?,
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test',
-                    1,
-                    ?
-                )
-                RETURNING ale_id
-                """,
-                        schema, schema),
-                Long.class,
-                listId,
-                applicationCodeId,
-                standardApplicantId,
-                respondentId,
-                wording,
-                notes,
-                lodgementDate.atStartOfDay());
-    }
-
-    private long applicationCodeIdOrInsert(String applicationCode) {
-        List<Long> applicationCodeIds =
-                jdbcTemplate.queryForList(
-                        String.format(
-                                """
-                SELECT ac_id
-                FROM %s.application_codes
-                WHERE application_code = ?
-                ORDER BY ac_id DESC
-                LIMIT 1
-                """,
-                                schema),
-                        Long.class,
-                        applicationCode);
-        if (!applicationCodeIds.isEmpty()) {
-            return applicationCodeIds.getFirst();
-        }
-
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.application_codes (
-                    ac_id,
-                    application_code,
-                    application_code_title,
-                    application_code_wording,
-                    application_legislation,
-                    fee_due,
-                    application_code_respondent,
-                    application_code_start_date,
-                    bulk_respondent_allowed,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    nextval('%s.ac_seq'),
-                    ?,
-                    'Application for a private prosecution summons',
-                    'Application for private prosecution {TEXT|Summarise offence title(s)|250}',
-                    'Section 1 Magistrates Courts Act 1980',
-                    'N',
-                    'Y',
-                    DATE '2020-01-01',
-                    'N',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                RETURNING ac_id
-                """,
-                        schema, schema),
-                Long.class,
-                applicationCode);
-    }
-
-    private long insertResolutionCode(String resolutionCode) {
-        return jdbcTemplate.queryForObject(
-                String.format(
-                        """
-                INSERT INTO %s.resolution_codes (
-                    rc_id,
-                    resolution_code,
-                    resolution_code_title,
-                    resolution_code_wording,
-                    resolution_code_start_date,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    nextval('%s.rc_seq'),
-                    ?,
-                    ?,
-                    ?,
-                    DATE '2020-01-01',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                RETURNING rc_id
-                """,
-                        schema, schema),
-                Long.class,
-                resolutionCode,
-                resolutionCode + " title",
-                resolutionCode + " wording");
-    }
-
-    private void insertApplicationListEntryResolution(long entryId, long resolutionCodeId) {
-        jdbcTemplate.update(
-                String.format(
-                        """
-                INSERT INTO %s.app_list_entry_resolutions (
-                    aler_id,
-                    rc_rc_id,
-                    ale_ale_id,
-                    al_entry_resolution_wording,
-                    al_entry_resolution_officer,
-                    version,
-                    changed_by,
-                    changed_date,
-                    user_name
-                )
-                VALUES (
-                    nextval('%s.aler_seq'),
-                    ?,
-                    ?,
-                    'Resolution wording',
-                    'Resolution officer',
-                    1,
-                    0,
-                    CURRENT_TIMESTAMP,
-                    'report-integration-test'
-                )
-                """,
-                        schema, schema),
-                resolutionCodeId,
-                entryId);
-    }
-
-    private void assertReportParameterAuditRow(
-            ReportAuditOperation operation, String columnName, String value) {
-        DataAudit persistedAuditRow =
-                reportAuditRows(operation).stream()
-                        .filter(row -> columnName.equals(row.getColumnName()))
-                        .filter(row -> value.equals(row.getNewValue()))
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AssertionError(
-                                                "Expected a %s report parameter audit row for %s"
-                                                        .formatted(
-                                                                operation.getEventName(),
-                                                                columnName)));
-
-        Assertions.assertEquals("", persistedAuditRow.getOldValue());
-        Assertions.assertEquals(operation.getType(), persistedAuditRow.getUpdateType());
-        Assertions.assertEquals("report_parameters", persistedAuditRow.getTableName());
-    }
-
-    private void assertOnlyReportParametersAuditedFor(ReportAuditOperation operation) {
-        Assertions.assertTrue(
-                reportAuditRows(operation).stream()
-                        .map(DataAudit::getTableName)
-                        .allMatch(
-                                tableName ->
-                                        "report_parameters".equals(tableName)
-                                                || "report_jobs".equals(tableName)));
-    }
-
-    private Collection<DataAudit> reportAuditRows(ReportAuditOperation operation) {
-        return dataAuditRepository.findAll().stream()
-                .filter(row -> operation.getEventName().equals(row.getEventName()))
-                .toList();
     }
 }

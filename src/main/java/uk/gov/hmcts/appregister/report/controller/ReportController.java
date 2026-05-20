@@ -32,6 +32,7 @@ import uk.gov.hmcts.appregister.generated.model.JobStatus1;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.service.JobService;
 import uk.gov.hmcts.appregister.report.audit.ReportAuditOperation;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAudit;
@@ -84,6 +85,29 @@ public class ReportController implements ReportsApi {
                         unused -> {
                             ReportJobCreation reportJobCreation =
                                     reportService.createFeesReport(feesReportFilterDto);
+                            return Optional.of(
+                                    new AuditableResult<>(
+                                            reportJobCreation.acknowledgement(),
+                                            ReportJobAudit.created(
+                                                    reportJobCreation.acknowledgement(),
+                                                    userProvider.getUserId(),
+                                                    reportJobCreation.reportParameters())));
+                        },
+                        auditLifecycleListeners.toArray(new AuditOperationLifecycleListener[0]));
+
+        return accepted(acknowledgement);
+    }
+
+    @Override
+    public ResponseEntity<JobAcknowledgement> createWorkloadReport(
+            WorkloadFilterDto workloadFilterDto) {
+
+        JobAcknowledgement acknowledgement =
+                auditService.processAudit(
+                        ReportAuditOperation.CREATE_WORKLOAD_REPORT_AUDIT_EVENT,
+                        unused -> {
+                            ReportJobCreation reportJobCreation =
+                                    reportService.createWorkloadReport(workloadFilterDto);
                             return Optional.of(
                                     new AuditableResult<>(
                                             reportJobCreation.acknowledgement(),
