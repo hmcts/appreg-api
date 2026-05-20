@@ -166,6 +166,7 @@ public class ApplicationEntryResultController implements ApplicationListEntryRes
     }
 
     @Override
+    @PreAuthorize(RoleNames.USER_ROLE_OR_ADMIN_ROLE_RESTRICTION)
     public ResponseEntity<ResultPage> getApplicationListEntryResults(
             UUID listId, UUID entryId, Integer pageNumber, Integer pageSize) {
         PagingWrapper pagingWrapper =

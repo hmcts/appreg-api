@@ -54,6 +54,24 @@ public class ApplicationEntryResultControllerSecurityTest extends AbstractSecuri
                                                 + listId
                                                 + "/entries/"
                                                 + entryId
+                                                + "/results"))
+                        .method(HttpMethod.GET)
+                        .payload(
+                                Map.of(
+                                        "resultCode",
+                                        "SOME_CODE",
+                                        "resolutionWording",
+                                        "Some wording"))
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        "application-lists/"
+                                                + listId
+                                                + "/entries/"
+                                                + entryId
                                                 + "/results/"
                                                 + resultId))
                         .method(HttpMethod.DELETE)

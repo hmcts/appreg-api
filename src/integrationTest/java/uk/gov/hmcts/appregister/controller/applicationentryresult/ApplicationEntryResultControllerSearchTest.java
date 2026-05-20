@@ -4,7 +4,9 @@ import io.restassured.response.Response;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import uk.gov.hmcts.appregister.applicationentryresult.audit.AppListEntryResultAuditOperation;
 import uk.gov.hmcts.appregister.applicationentryresult.exception.ApplicationListEntryResultError;
 import uk.gov.hmcts.appregister.audit.event.OperationStatus;
@@ -327,5 +329,35 @@ public class ApplicationEntryResultControllerSearchTest
         ProblemAssertUtil.assertEquals(
                 ApplicationListEntryResultError.APPLICATION_ENTRY_DOES_NOT_EXIST.getCode(),
                 actualResponse);
+    }
+
+    @Test
+    @DisplayName("GET /application-lists/{listId}/entries/{entryId}/results: 403 when no role")
+    void givenNoRole_whenGetEntryResults_then403() throws Exception {
+        var context = givenExistingEntry();
+
+        var token = getATokenWithValidCredentials().build().fetchTokenForRole();
+
+        Response resp =
+                getEntryResult(token, context.list().getUuid(), context.entry().getUuid(), 10, 0);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
+    }
+
+    @Test
+    @DisplayName("GET /application-lists/{listId}/entries/{entryId}/results: 403 when wrong role")
+    void givenWrongRole_whenGetEntryResults_then403() throws Exception {
+        var context = givenExistingEntry();
+
+        var token =
+                getATokenWithValidCredentials()
+                        .roles(List.of(RoleEnum.NONE))
+                        .build()
+                        .fetchTokenForRole();
+
+        Response resp =
+                getEntryResult(token, context.list().getUuid(), context.entry().getUuid(), 10, 0);
+
+        resp.then().statusCode(HttpStatus.FORBIDDEN.value());
     }
 }
