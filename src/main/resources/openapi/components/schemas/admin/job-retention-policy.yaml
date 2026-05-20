@@ -1,0 +1,9 @@
+type: object
+description: Retention policy configuration for an administrative background job.
+additionalProperties: false
+properties:
+  retentionPeriodDays:
+    type: integer
+    minimum: 1
+    description: Number of days to retain closed application lists before deletion.
+    example: 1825

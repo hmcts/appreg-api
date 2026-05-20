@@ -30,6 +30,30 @@ public class AdminControllerSecurityTest extends AbstractSecurityControllerTest 
                                                 + AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name()
                                                 + "?enable=true"))
                         .method(HttpMethod.PUT)
+                        .payload("")
+                        .successRole(RoleEnum.ADMIN)
+                        .invalidRole(RoleEnum.USER)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        AbstractAdminAPICrudTest.WEB_CONTEXT
+                                                + "/"
+                                                + AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name()
+                                                + "/retention-policy"))
+                        .method(HttpMethod.GET)
+                        .successRole(RoleEnum.ADMIN)
+                        .invalidRole(RoleEnum.USER)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
+                                        AbstractAdminAPICrudTest.WEB_CONTEXT
+                                                + "/"
+                                                + AdminJobType.APPLICATION_LISTS_DATABASE_JOB.name()
+                                                + "/retention-policy?retentionPeriodDays=365"))
+                        .method(HttpMethod.PUT)
+                        .payload("")
                         .successRole(RoleEnum.ADMIN)
                         .invalidRole(RoleEnum.USER)
                         .build());

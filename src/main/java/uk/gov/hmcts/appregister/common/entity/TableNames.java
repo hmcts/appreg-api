@@ -25,5 +25,7 @@ public class TableNames {
     public static final String APPLICATION_LIST_ENTRY_RESOLUTIONS = "app_list_entry_resolutions";
     public static final String APPLICATION_LIST_ENTRY_SEQUENCE_MAPPING = "al_ale_sequence_mapping";
     public static final String DATABASE_JOBS = "database_jobs";
+    public static final String RETENTION_POLICY = "retention_policy";
+    public static final String RETENTION_POLICY_CONFIGURATION = "retention_policy_configuration";
     public static final String ASYNC_JOBS = "asynch_jobs";
 }

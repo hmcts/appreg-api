@@ -1319,24 +1319,45 @@
               "response": []
             },
             {
-              "name": "Disable Application List Expired Job",
+              "name": "Get Application List Expired Job Retention Period",
               "request": {
-                "method": "PUT",
+                "method": "GET",
                 "header": [],
                 "url": {
-                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB?enable=false",
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB/retention-policy",
                   "host": [
                     "{{APP_REG_HOST}}"
                   ],
                   "path": [
                     "admin",
                     "jobs",
-                    "APPLICATION_LISTS_DATABASE_JOB"
+                    "APPLICATION_LISTS_DATABASE_JOB",
+                    "retention-policy"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Application List Expired Job Retention Period",
+              "request": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "{{APP_REG_HOST}}/admin/jobs/APPLICATION_LISTS_DATABASE_JOB/retention-policy?retentionPeriodDays=365",
+                  "host": [
+                    "{{APP_REG_HOST}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "jobs",
+                    "APPLICATION_LISTS_DATABASE_JOB",
+                    "retention-policy"
                   ],
                   "query": [
                     {
-                      "key": "enable",
-                      "value": "false"
+                      "key": "retentionPeriodDays",
+                      "value": "365"
                     }
                   ]
                 }
