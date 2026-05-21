@@ -254,10 +254,6 @@ class BulkUpdateFeesValidatorTest {
         return validPayload(listId, Set.of(entryIds), validFeeDetails());
     }
 
-    private BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {
-        return validPayload(listId, Set.of(entryId), validFeeDetails());
-    }
-
     private BulkUpdateFeesPayload validPayload(UUID entryId, BulkFeeDetailsDto feeDetails) {
         return validPayload(listId, Set.of(entryId), feeDetails);
     }
@@ -266,6 +262,10 @@ class BulkUpdateFeesValidatorTest {
             UUID listId, Set<UUID> entryIds, BulkFeeDetailsDto feeDetails) {
         return new BulkUpdateFeesPayload(
                 listId, new BulkFeesUpdateDto().entryIds(entryIds).feeDetails(feeDetails));
+    }
+
+    private BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {
+        return validPayload(listId, Set.of(entryId), validFeeDetails());
     }
 
     private Set<UUID> entryIds(int count) {

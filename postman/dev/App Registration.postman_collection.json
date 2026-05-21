@@ -922,6 +922,56 @@
           "response": []
         },
         {
+          "name": "Bulk Update Entry Fees",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/vnd.hmcts.appreg.v1+json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"entryIds\": [\r\n    \"{{CREATED_ENTRY_ID}}\"\r\n  ],\r\n  \"feeDetails\": {\r\n    \"paymentStatus\": \"PAID\",\r\n    \"statusDate\": \"2025-10-07\",\r\n    \"paymentReference\": \"POSTMAN-BULK-FEE-001\",\r\n    \"hasOffsiteFee\": false\r\n  }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{APP_REG_HOST}}/application-lists/{{APP_LIST_ID}}/entries/fees",
+              "host": [
+                "{{APP_REG_HOST}}"
+              ],
+              "path": [
+                "application-lists",
+                "{{APP_LIST_ID}}",
+                "entries",
+                "fees"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
 
           "name": "Update Closed",
           "request": {

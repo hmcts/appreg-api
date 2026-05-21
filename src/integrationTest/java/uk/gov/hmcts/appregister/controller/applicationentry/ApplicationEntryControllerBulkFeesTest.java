@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
 import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -216,6 +217,36 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                 false);
     }
 
+    @Test
+    void givenTooManyEntryIds_whenBulkUpdateFees_thenReturns400AndDoesNotUpdateEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        validBulkFeesUpdateDto(entryIdsIncluding(entry.getId(), 501)));
+
+        response.then().statusCode(400);
+        assertNoBulkFeeAuditWritten();
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+    }
+
     private EntryGetDetailDto createEntry(
             Optional<UUID> listId,
             PaymentStatus paymentStatus,
@@ -298,6 +329,17 @@ class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCru
                                 UPDATED_STATUS_DATE,
                                 UPDATED_PAYMENT_REFERENCE,
                                 true));
+    }
+
+    private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
+        Set<UUID> entryIds = new LinkedHashSet<>();
+        entryIds.add(entryId);
+
+        for (long index = 1; entryIds.size() < totalCount; index++) {
+            entryIds.add(new UUID(0L, index));
+        }
+
+        return entryIds;
     }
 
     private BulkFeeDetailsDto feeDetails(

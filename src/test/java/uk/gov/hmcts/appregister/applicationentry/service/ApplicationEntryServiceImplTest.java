@@ -1667,7 +1667,7 @@ public class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
 
         val entryId1 = UUID.randomUUID();
-        val entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
+        final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
         val existingStatus1 = new AppListEntryFeeStatus();
         existingStatus1.setId(201L);
 
@@ -1676,7 +1676,7 @@ public class ApplicationEntryServiceImplTest {
         val existingStatus2 = new AppListEntryFeeStatus();
         existingStatus2.setId(202L);
 
-        val dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, false);
+        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, false);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1692,7 +1692,7 @@ public class ApplicationEntryServiceImplTest {
                 .thenReturn(List.of());
         stubFeeStatusSave();
 
-        BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
+        final BulkUpdateResponseDto response = service.bulkUpdateFees(listId, dto);
 
         ArgumentCaptor<AppListEntryFeeStatus> statusCaptor =
                 ArgumentCaptor.forClass(AppListEntryFeeStatus.class);
@@ -1801,7 +1801,7 @@ public class ApplicationEntryServiceImplTest {
                         .toList();
         Set<UUID> entryIds =
                 entries.stream().map(ApplicationListEntry::getUuid).collect(Collectors.toSet());
-        val dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, false);
+        final var dto = bulkFeesUpdateDto(entryIds, PaymentStatus.PAID, false);
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
                 .thenReturn(Optional.of(applicationList));
@@ -1828,8 +1828,8 @@ public class ApplicationEntryServiceImplTest {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
-        val entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        val dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, true);
+        final var entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
+        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, true);
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -1861,10 +1861,10 @@ public class ApplicationEntryServiceImplTest {
         val listId = UUID.randomUUID();
         val applicationList = openApplicationList(listId);
         val entryId1 = UUID.randomUUID();
-        val entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
+        final var entry1 = applicationListEntry(applicationList, entryId1, 101L, (short) 2);
         val entryId2 = UUID.randomUUID();
-        val entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
-        val dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, true);
+        final var entry2 = applicationListEntry(applicationList, entryId2, 102L, (short) 1);
+        final var dto = bulkFeesUpdateDto(Set.of(entryId1, entryId2), PaymentStatus.PAID, true);
         val offsiteFee = new Fee();
         offsiteFee.setId(301L);
         offsiteFee.setOffsite(true);
@@ -1904,7 +1904,7 @@ public class ApplicationEntryServiceImplTest {
         val applicationList = openApplicationList(listId);
         val entryId = UUID.randomUUID();
         val entry = applicationListEntry(applicationList, entryId, 101L, (short) 1);
-        val dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, false);
+        final var dto = bulkFeesUpdateDto(Set.of(entryId), PaymentStatus.PAID, false);
         val existingOffsiteMapping = new AppListEntryFeeId();
         existingOffsiteMapping.setAppListEntryId(entry.getId());
         existingOffsiteMapping.setFeeId(301L);
