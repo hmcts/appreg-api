@@ -250,6 +250,19 @@ class BulkUpdateFeesValidatorTest {
                 .contains(otherListEntryId.toString());
     }
 
+    @Test
+    void
+            validate_whenPaymentStatusIsDueAndPaymentReferenceProvided_thenThrowsPaymentReferenceNotAllowed() {
+        BulkFeeDetailsDto feeDetails = validFeeDetails();
+        feeDetails.setPaymentStatus(PaymentStatus.DUE);
+        feeDetails.setPaymentReference("PAY-123");
+
+        AppRegistryException exception = validateAndCapture(validPayload(entryId, feeDetails));
+
+        assertThat(exception.getCode())
+                .isEqualTo(AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE);
+    }
+
     private BulkUpdateFeesPayload validPayload(UUID... entryIds) {
         return validPayload(listId, Set.of(entryIds), validFeeDetails());
     }

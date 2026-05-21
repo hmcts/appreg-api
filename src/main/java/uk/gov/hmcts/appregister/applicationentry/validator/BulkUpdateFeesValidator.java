@@ -1,5 +1,7 @@
 package uk.gov.hmcts.appregister.applicationentry.validator;
 
+import static uk.gov.hmcts.appregister.generated.model.PaymentStatus.DUE;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -127,6 +129,12 @@ public class BulkUpdateFeesValidator
                     AppListEntryError.FEE_STATUS_DATE_REQUIRED, "statusDate must be provided");
         }
 
+        if (feeDetails.getPaymentStatus() == DUE && isPaymentReferenceProvided(feeDetails)) {
+            throw new AppRegistryException(
+                    AppListEntryError.PAYMENT_REFERENCE_NOT_ALLOWED_WHEN_PAYMENT_DUE,
+                    "Payment reference must not be provided when fee status is DUE");
+        }
+
         if (feeDetails.getStatusDate().isAfter(businessDateProvider.currentUkDate())) {
             throw new AppRegistryException(
                     AppListEntryError.FEE_STATUS_DATE_CANNOT_BE_IN_FUTURE,
@@ -145,6 +153,11 @@ public class BulkUpdateFeesValidator
             throw new AppRegistryException(
                     AppListEntryError.OFFSITE_FEE_REQUIRED, "hasOffsiteFee must be provided");
         }
+    }
+
+    private boolean isPaymentReferenceProvided(BulkFeeDetailsDto feeDetails) {
+        return feeDetails.getPaymentReference() != null
+                && !feeDetails.getPaymentReference().trim().isEmpty();
     }
 
     private void validateAllEntriesBelongToList(
