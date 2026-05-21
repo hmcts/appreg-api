@@ -1,0 +1,378 @@
+package uk.gov.hmcts.appregister.controller.applicationentry;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import io.restassured.response.Response;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import org.junit.jupiter.api.Test;
+import org.springframework.http.ProblemDetail;
+import uk.gov.hmcts.appregister.applicationentry.audit.AppListEntryAuditOperation;
+import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
+import uk.gov.hmcts.appregister.applicationlist.exception.ApplicationListError;
+import uk.gov.hmcts.appregister.common.entity.TableNames;
+import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
+import uk.gov.hmcts.appregister.generated.model.BulkUpdateResponseDto;
+import uk.gov.hmcts.appregister.generated.model.EntryGetDetailDto;
+import uk.gov.hmcts.appregister.generated.model.FeeStatus;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
+import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
+import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
+import uk.gov.hmcts.appregister.testutils.util.ProblemAssertUtil;
+
+class ApplicationEntryControllerBulkFeesTest extends AbstractApplicationEntryCrudTest {
+
+    private static final LocalDate ORIGINAL_STATUS_DATE = LocalDate.of(2025, 1, 10);
+    private static final LocalDate UPDATED_STATUS_DATE = LocalDate.of(2025, 10, 7);
+    private static final String ORIGINAL_PAYMENT_REFERENCE = "PAY-ORIGINAL";
+    private static final String UPDATED_PAYMENT_REFERENCE = "PAY-UPDATED";
+
+    @Test
+    void givenValidEntries_whenBulkUpdateFees_thenFeeDetailsAreReplacedForEveryEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto firstEntry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        EntryGetDetailDto secondEntry =
+                createEntry(
+                        Optional.of(firstEntry.getListId()),
+                        PaymentStatus.DUE,
+                        ORIGINAL_STATUS_DATE,
+                        null,
+                        false);
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        firstEntry.getListId(),
+                        validBulkFeesUpdateDto(Set.of(firstEntry.getId(), secondEntry.getId())));
+
+        response.then().statusCode(200);
+        BulkUpdateResponseDto responseDto = response.as(BulkUpdateResponseDto.class);
+        assertThat(responseDto.getTotalCount()).isEqualTo(2);
+        assertThat(responseDto.getUpdatedCount()).isEqualTo(2);
+        assertThat(responseDto.getStatus()).isEqualTo(BulkUpdateResponseDto.StatusEnum.SUCCEEDED);
+        assertSuccessfulBulkUpdateAudited();
+
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), firstEntry.getId()),
+                PaymentStatus.REMITTED,
+                UPDATED_STATUS_DATE,
+                UPDATED_PAYMENT_REFERENCE,
+                true);
+        assertFeeDetails(
+                getEntry(tokenGenerator, firstEntry.getListId(), secondEntry.getId()),
+                PaymentStatus.REMITTED,
+                UPDATED_STATUS_DATE,
+                UPDATED_PAYMENT_REFERENCE,
+                true);
+    }
+
+    @Test
+    void givenMissingEntry_whenBulkUpdateFees_thenReturns400AndDoesNotUpdateAnyEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        UUID missingEntryId = UUID.randomUUID();
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        validBulkFeesUpdateDto(Set.of(entry.getId(), missingEntryId)));
+
+        response.then().statusCode(400);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(ApplicationListError.ENTRY_NOT_IN_SOURCE_LIST.getCode().getAppCode());
+        assertThat(problemDetail.getDetail()).contains(missingEntryId.toString());
+        assertNoBulkFeeAuditWritten();
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+    }
+
+    @Test
+    void givenEntryFromAnotherList_whenBulkUpdateFees_thenReturns403AndDoesNotUpdateAnyEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto sourceEntry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        EntryGetDetailDto otherListEntry =
+                createEntry(Optional.empty(), PaymentStatus.DUE, ORIGINAL_STATUS_DATE, null, false);
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        sourceEntry.getListId(),
+                        validBulkFeesUpdateDto(
+                                Set.of(sourceEntry.getId(), otherListEntry.getId())));
+
+        response.then().statusCode(403);
+        ProblemDetail problemDetail = response.as(ProblemDetail.class);
+        assertThat(problemDetail.getType().toString())
+                .isEqualTo(AppListEntryError.ENTRY_NOT_ACCESSIBLE_FOR_LIST.getCode().getAppCode());
+        assertThat(problemDetail.getStatus()).isEqualTo(403);
+        assertThat(problemDetail.getTitle())
+                .isEqualTo(
+                        "One or more application list entries do not belong to the application list");
+        assertThat(problemDetail.getDetail()).contains(otherListEntry.getId().toString());
+        assertNoBulkFeeAuditWritten();
+        assertFeeDetails(
+                getEntry(tokenGenerator, sourceEntry.getListId(), sourceEntry.getId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+        assertFeeDetails(
+                getEntry(tokenGenerator, otherListEntry.getListId(), otherListEntry.getId()),
+                PaymentStatus.DUE,
+                ORIGINAL_STATUS_DATE,
+                null,
+                false);
+    }
+
+    @Test
+    void givenClosedApplicationList_whenBulkUpdateFees_thenReturns409() throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        UUID closedListId = getClosedApplicationListId();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        closedListId,
+                        validBulkFeesUpdateDto(Set.of(UUID.randomUUID())));
+
+        response.then().statusCode(409);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.APPLICATION_LIST_STATE_IS_INCORRECT.getCode(), response);
+    }
+
+    @Test
+    void givenInvalidFeeDetails_whenBulkUpdateFees_thenReturns400AndDoesNotUpdateEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+        BulkFeeDetailsDto feeDetails =
+                feeDetails(
+                        PaymentStatus.REMITTED,
+                        LocalDate.now().plusDays(1),
+                        UPDATED_PAYMENT_REFERENCE,
+                        true);
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        new BulkFeesUpdateDto()
+                                .entryIds(Set.of(entry.getId()))
+                                .feeDetails(feeDetails));
+
+        response.then().statusCode(400);
+        ProblemAssertUtil.assertEquals(
+                AppListEntryError.FEE_STATUS_DATE_CANNOT_BE_IN_FUTURE.getCode(), response);
+        assertNoBulkFeeAuditWritten();
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+    }
+
+    @Test
+    void givenTooManyEntryIds_whenBulkUpdateFees_thenReturns400AndDoesNotUpdateEntry()
+            throws Exception {
+        TokenGenerator tokenGenerator = createAdminToken();
+        EntryGetDetailDto entry =
+                createEntry(
+                        Optional.empty(),
+                        PaymentStatus.PAID,
+                        ORIGINAL_STATUS_DATE,
+                        ORIGINAL_PAYMENT_REFERENCE,
+                        false);
+
+        differenceLogAsserter.clearLogs();
+
+        Response response =
+                bulkUpdateFees(
+                        tokenGenerator,
+                        entry.getListId(),
+                        validBulkFeesUpdateDto(entryIdsIncluding(entry.getId(), 501)));
+
+        response.then().statusCode(400);
+        assertNoBulkFeeAuditWritten();
+        assertFeeDetails(
+                getEntry(tokenGenerator, entry.getListId(), entry.getId()),
+                PaymentStatus.PAID,
+                ORIGINAL_STATUS_DATE,
+                ORIGINAL_PAYMENT_REFERENCE,
+                false);
+    }
+
+    private EntryGetDetailDto createEntry(
+            Optional<UUID> listId,
+            PaymentStatus paymentStatus,
+            LocalDate statusDate,
+            String paymentReference,
+            boolean hasOffsiteFee)
+            throws Exception {
+        Response response =
+                createListEntryWithAllData(
+                        listId,
+                        dto -> {
+                            dto.setFeeStatuses(
+                                    java.util.List.of(
+                                            feeStatus(
+                                                    paymentStatus, statusDate, paymentReference)));
+                            dto.setHasOffsiteFee(hasOffsiteFee);
+                        });
+        response.then().statusCode(201);
+        return response.as(EntryGetDetailDto.class);
+    }
+
+    private Response bulkUpdateFees(
+            TokenGenerator tokenGenerator, UUID listId, BulkFeesUpdateDto dto) throws Exception {
+        return restAssuredClient.executePutRequest(
+                getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/fees"),
+                tokenGenerator.fetchTokenForRole(),
+                dto);
+    }
+
+    private void assertSuccessfulBulkUpdateAudited() {
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                        "alefs_fee_status",
+                        "PAID",
+                        null,
+                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.DELETE_FEE_STATUS_ENTRY.getEventName()));
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLICATION_LISTS_FEE_STATUS,
+                        "alefs_fee_status",
+                        null,
+                        "REMITTED",
+                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.CREATE_FEE_STATUS_ENTRY.getEventName()));
+        differenceLogAsserter.assertDataAuditChange(
+                DataAuditLogAsserter.getDataAuditAssertion(
+                        TableNames.APPLCATION_LISTS_ENTRY_FEE_ID,
+                        "fee_fee_id",
+                        null,
+                        "",
+                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getType().name(),
+                        AppListEntryAuditOperation.CREATE_FEE_ENTRY.getEventName()));
+    }
+
+    private void assertNoBulkFeeAuditWritten() {
+        differenceLogAsserter.assertNoErrors();
+        differenceLogAsserter.assertDiffCount(0, true);
+        differenceLogAsserter.assertDiffCount(0, false);
+    }
+
+    private EntryGetDetailDto getEntry(TokenGenerator tokenGenerator, UUID listId, UUID entryId)
+            throws Exception {
+        Response response =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(CREATE_ENTRY_CONTEXT + "/" + listId + "/entries/" + entryId),
+                        tokenGenerator.fetchTokenForRole());
+        response.then().statusCode(200);
+        return response.as(EntryGetDetailDto.class);
+    }
+
+    private BulkFeesUpdateDto validBulkFeesUpdateDto(Set<UUID> entryIds) {
+        return new BulkFeesUpdateDto()
+                .entryIds(entryIds)
+                .feeDetails(
+                        feeDetails(
+                                PaymentStatus.REMITTED,
+                                UPDATED_STATUS_DATE,
+                                UPDATED_PAYMENT_REFERENCE,
+                                true));
+    }
+
+    private Set<UUID> entryIdsIncluding(UUID entryId, int totalCount) {
+        Set<UUID> entryIds = new LinkedHashSet<>();
+        entryIds.add(entryId);
+
+        for (long index = 1; entryIds.size() < totalCount; index++) {
+            entryIds.add(new UUID(0L, index));
+        }
+
+        return entryIds;
+    }
+
+    private BulkFeeDetailsDto feeDetails(
+            PaymentStatus paymentStatus,
+            LocalDate statusDate,
+            String paymentReference,
+            boolean hasOffsiteFee) {
+        return new BulkFeeDetailsDto()
+                .paymentStatus(paymentStatus)
+                .statusDate(statusDate)
+                .paymentReference(paymentReference)
+                .hasOffsiteFee(hasOffsiteFee);
+    }
+
+    private FeeStatus feeStatus(
+            PaymentStatus paymentStatus, LocalDate statusDate, String paymentReference) {
+        return new FeeStatus()
+                .paymentStatus(paymentStatus)
+                .statusDate(statusDate)
+                .paymentReference(paymentReference);
+    }
+
+    private void assertFeeDetails(
+            EntryGetDetailDto entry,
+            PaymentStatus expectedStatus,
+            LocalDate expectedStatusDate,
+            String expectedPaymentReference,
+            boolean expectedHasOffsiteFee) {
+        assertThat(entry.getFeeStatuses()).hasSize(1);
+        FeeStatus feeStatus = entry.getFeeStatuses().getFirst();
+        assertThat(feeStatus.getPaymentStatus()).isEqualTo(expectedStatus);
+        assertThat(feeStatus.getStatusDate()).isEqualTo(expectedStatusDate);
+        assertThat(feeStatus.getPaymentReference()).isEqualTo(expectedPaymentReference);
+        assertThat(entry.getHasOffsiteFee()).isEqualTo(expectedHasOffsiteFee);
+    }
+}

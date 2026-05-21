@@ -1,12 +1,16 @@
 package uk.gov.hmcts.appregister.controller.applicationentry;
 
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
+import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
+import uk.gov.hmcts.appregister.generated.model.BulkFeesUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.EntryUpdateClosedDto;
 import uk.gov.hmcts.appregister.generated.model.MoveEntriesDto;
+import uk.gov.hmcts.appregister.generated.model.PaymentStatus;
 import uk.gov.hmcts.appregister.testutils.controller.AbstractSecurityControllerTest;
 import uk.gov.hmcts.appregister.testutils.controller.RestEndpointDescription;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
@@ -95,6 +99,18 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                 RestEndpointDescription.builder()
                         .url(
                                 getLocalUrl(
+                                        CREATE_ENTRY_CONTEXT
+                                                + "/"
+                                                + UUID.randomUUID()
+                                                + "/entries/fees"))
+                        .method(HttpMethod.PUT)
+                        .payload(validBulkFeesUpdateDto())
+                        .successRole(RoleEnum.USER)
+                        .successRole(RoleEnum.ADMIN)
+                        .build(),
+                RestEndpointDescription.builder()
+                        .url(
+                                getLocalUrl(
                                         DELETE_ENTRY_CONTEXT.formatted(
                                                 UUID.randomUUID(), UUID.randomUUID())))
                         .method(HttpMethod.DELETE)
@@ -110,5 +126,16 @@ public class ApplicationEntryControllerSecurityTest extends AbstractSecurityCont
                         .successRole(RoleEnum.USER)
                         .successRole(RoleEnum.ADMIN)
                         .build());
+    }
+
+    private BulkFeesUpdateDto validBulkFeesUpdateDto() {
+        return new BulkFeesUpdateDto()
+                .entryIds(Set.of(UUID.randomUUID()))
+                .feeDetails(
+                        new BulkFeeDetailsDto()
+                                .paymentStatus(PaymentStatus.PAID)
+                                .statusDate(LocalDate.now())
+                                .paymentReference("PAY-001")
+                                .hasOffsiteFee(false));
     }
 }

@@ -13,7 +13,7 @@ public enum AppListEntryAuditOperation implements AuditOperation {
     UPDATE_CLOSED_APP_ENTRY_LIST("Update Closed Entry Application List", CrudEnum.UPDATE),
     CREATE_OFFICIAL_ENTRY("Create Official", CrudEnum.CREATE),
     DELETE_OFFICIAL_ENTRY("Delete Official", CrudEnum.DELETE),
-    CREATE_FEE_STATUS_ENTRY("Create Fee Status Official", CrudEnum.CREATE),
+    CREATE_FEE_STATUS_ENTRY("Create Fee Status", CrudEnum.CREATE),
     DELETE_FEE_STATUS_ENTRY("Delete Fee Status", CrudEnum.DELETE),
     CREATE_FEE_ENTRY("Create Fee to Entry", CrudEnum.CREATE),
     DELETE_FEE_ENTRY("Delete Fee to Entry", CrudEnum.DELETE),

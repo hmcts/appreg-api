@@ -172,7 +172,39 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     STATUS_DATE_CANNOT_BE_IN_FUTURE(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Status date cannot be in the future", "ALE-34"));
+                    HttpStatus.BAD_REQUEST, "Status date cannot be in the future", "ALE-34")),
+
+    ENTRY_NOT_ACCESSIBLE_FOR_LIST(
+            DefaultErrorDetail.create(
+                    HttpStatus.FORBIDDEN,
+                    "One or more application list entries do not belong to the application list",
+                    "ALE-35")),
+
+    FEE_DETAILS_NOT_PROVIDED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "Fee details must be provided", "ALE-36")),
+
+    FEE_PAYMENT_STATUS_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "paymentStatus must be provided", "ALE-37")),
+
+    FEE_STATUS_DATE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "statusDate must be provided", "ALE-38")),
+
+    FEE_STATUS_DATE_CANNOT_BE_IN_FUTURE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "statusDate cannot be in the future", "ALE-39")),
+
+    PAYMENT_REFERENCE_TOO_LONG(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST,
+                    "paymentReference must not be longer than 100 characters",
+                    "ALE-40")),
+
+    OFFSITE_FEE_REQUIRED(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41"));
 
     private final DefaultErrorDetail defaultErrorCode;
 
