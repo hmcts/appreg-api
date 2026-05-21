@@ -204,13 +204,7 @@ public enum AppListEntryError implements ErrorCodeEnum {
 
     OFFSITE_FEE_REQUIRED(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41")),
-
-    BULK_FEE_UPDATE_TOO_MANY_ENTRIES(
-            DefaultErrorDetail.create(
-                    HttpStatus.PAYLOAD_TOO_LARGE,
-                    "Bulk fee update cannot include more than 500 entries",
-                    "ALE-42"));
+                    HttpStatus.BAD_REQUEST, "hasOffsiteFee must be provided", "ALE-41"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

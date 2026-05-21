@@ -10,8 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,8 +65,7 @@ class BulkUpdateFeesValidatorTest {
                 new BulkUpdateFeesValidator(
                         applicationListRepository,
                         applicationListEntryRepository,
-                        businessDateProvider,
-                        500);
+                        businessDateProvider);
 
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY);
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -135,17 +132,6 @@ class BulkUpdateFeesValidatorTest {
         AppRegistryException exception = validateAndCapture(payload);
 
         assertThat(exception.getCode()).isEqualTo(ApplicationListError.ENTRY_NOT_PROVIDED);
-    }
-
-    @Test
-    void validate_whenEntryIdsExceedLimit_thenThrowsTooManyEntries() {
-        BulkUpdateFeesPayload payload = validPayload(listId, entryIds(501), validFeeDetails());
-
-        AppRegistryException exception = validateAndCapture(payload);
-
-        assertThat(exception.getCode())
-                .isEqualTo(AppListEntryError.BULK_FEE_UPDATE_TOO_MANY_ENTRIES);
-        assertThat(exception.getDetails()).containsEntry("max_entry_ids", "500");
     }
 
     @Test
@@ -279,12 +265,6 @@ class BulkUpdateFeesValidatorTest {
 
     private BulkUpdateFeesPayload validPayloadForList(UUID listId, UUID entryId) {
         return validPayload(listId, Set.of(entryId), validFeeDetails());
-    }
-
-    private Set<UUID> entryIds(int count) {
-        return IntStream.range(0, count)
-                .mapToObj(index -> UUID.randomUUID())
-                .collect(Collectors.toSet());
     }
 
     private AppRegistryException validateAndCapture(BulkUpdateFeesPayload payload) {

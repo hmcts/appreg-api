@@ -36,5 +36,4 @@ put:
     "401": { $ref: "../../components/responses/unauthorized-error.yaml" }
     "403": { $ref: "../../components/responses/forbidden-error.yaml" }
     "409": { $ref: "../../components/responses/conflict-error.yaml" }
-    "413": { $ref: "../../components/responses/payload-too-large-error.yaml" }
     "500": { $ref: "../../components/responses/internal-server-error.yaml" }

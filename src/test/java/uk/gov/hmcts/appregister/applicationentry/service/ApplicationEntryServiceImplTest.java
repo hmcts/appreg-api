@@ -296,8 +296,7 @@ public class ApplicationEntryServiceImplTest {
                 new BulkUpdateFeesValidator(
                         applicationListRepository,
                         applicationListEntryRepository,
-                        businessDateProvider,
-                        500);
+                        businessDateProvider);
         meterRegistry = new SimpleMeterRegistry();
 
         Fee fee = new FeeTestData().someComplete();
