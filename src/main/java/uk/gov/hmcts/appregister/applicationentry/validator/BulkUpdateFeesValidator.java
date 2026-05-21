@@ -107,6 +107,7 @@ public class BulkUpdateFeesValidator
         return requestedIds;
     }
 
+    @SuppressWarnings("java:S2583")
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {
         if (payload.data() == null || payload.data().getFeeDetails() == null) {
             throw new AppRegistryException(
