@@ -90,8 +90,10 @@ appreg:
   audit:
     diff:
       enable-complex-diff: true
+  bulk-update:
+    fees:
+      max-entry-ids: 500
   job:
     page-size: 10
   report:
     page-size: 500
-

@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateFeesPayload;
@@ -26,7 +26,6 @@ import uk.gov.hmcts.appregister.common.validator.Validator;
 import uk.gov.hmcts.appregister.generated.model.BulkFeeDetailsDto;
 
 @Component
-@RequiredArgsConstructor
 public class BulkUpdateFeesValidator
         implements Validator<BulkUpdateFeesPayload, BulkUpdateFeesValidationSuccess> {
 
@@ -35,6 +34,18 @@ public class BulkUpdateFeesValidator
     private final ApplicationListRepository applicationListRepository;
     private final ApplicationListEntryRepository applicationListEntryRepository;
     private final BusinessDateProvider businessDateProvider;
+    private final int maxEntryIds;
+
+    public BulkUpdateFeesValidator(
+            ApplicationListRepository applicationListRepository,
+            ApplicationListEntryRepository applicationListEntryRepository,
+            BusinessDateProvider businessDateProvider,
+            @Value("${appreg.bulk-update.fees.max-entry-ids:500}") int maxEntryIds) {
+        this.applicationListRepository = applicationListRepository;
+        this.applicationListEntryRepository = applicationListEntryRepository;
+        this.businessDateProvider = businessDateProvider;
+        this.maxEntryIds = maxEntryIds;
+    }
 
     @Override
     public void validate(BulkUpdateFeesPayload payload) {
@@ -85,7 +96,15 @@ public class BulkUpdateFeesValidator
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        return new HashSet<>(payload.data().getEntryIds());
+        Set<UUID> requestedIds = new HashSet<>(payload.data().getEntryIds());
+        if (requestedIds.size() > maxEntryIds) {
+            throw new AppRegistryException(
+                    AppListEntryError.BULK_FEE_UPDATE_TOO_MANY_ENTRIES,
+                    "Bulk fee update cannot include more than %s entries".formatted(maxEntryIds),
+                    Map.of("max_entry_ids", String.valueOf(maxEntryIds)));
+        }
+
+        return requestedIds;
     }
 
     private void validateFeeDetails(BulkUpdateFeesPayload payload) {

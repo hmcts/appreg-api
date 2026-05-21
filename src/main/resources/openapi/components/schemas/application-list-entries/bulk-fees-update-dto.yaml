@@ -10,6 +10,7 @@ properties:
     type: array
     description: Array of entry IDs whose fee details should be updated. All must belong to the list in the path.
     minItems: 1
+    maxItems: 500
     uniqueItems: true
     items:
       type: string

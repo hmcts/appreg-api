@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -565,9 +566,13 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                 entries.sort(
                                         Comparator.comparing(
                                                 ApplicationListEntry::getSequenceNumber));
+                                Supplier<Fee> offsiteFeeSupplier =
+                                        offsiteFeeSupplier(
+                                                req.data().getFeeDetails().getHasOffsiteFee());
 
                                 for (ApplicationListEntry entry : entries) {
-                                    replaceFeeDetailsForEntry(entry, req.data().getFeeDetails());
+                                    replaceFeeDetailsForEntry(
+                                            entry, req.data().getFeeDetails(), offsiteFeeSupplier);
                                 }
 
                                 int updatedCount = entries.size();
@@ -629,10 +634,12 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     }
 
     private void replaceFeeDetailsForEntry(
-            ApplicationListEntry entry, BulkFeeDetailsDto feeDetails) {
+            ApplicationListEntry entry,
+            BulkFeeDetailsDto feeDetails,
+            Supplier<Fee> offsiteFeeSupplier) {
         deleteFeeStatusesForEntry(entry.getUuid());
         saveFeeStatus(createBulkFeeStatus(entry, feeDetails), new ArrayList<>());
-        updateOffsiteFeeMapping(entry, feeDetails.getHasOffsiteFee());
+        updateOffsiteFeeMapping(entry, feeDetails.getHasOffsiteFee(), offsiteFeeSupplier);
     }
 
     /**
@@ -828,7 +835,36 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
         }
     }
 
-    private void updateOffsiteFeeMapping(ApplicationListEntry entry, boolean hasOffsiteFee) {
+    private Supplier<Fee> offsiteFeeSupplier(boolean hasOffsiteFee) {
+        if (!hasOffsiteFee) {
+            return () -> null;
+        }
+
+        return new Supplier<>() {
+            private Fee offsiteFee;
+
+            @Override
+            public Fee get() {
+                if (offsiteFee == null) {
+                    offsiteFee = resolveActiveOffsiteFee();
+                }
+                return offsiteFee;
+            }
+        };
+    }
+
+    private Fee resolveActiveOffsiteFee() {
+        return feeRepository.findOffsite(businessDateProvider.currentUkDate()).stream()
+                .findFirst()
+                .orElseThrow(
+                        () ->
+                                new AppRegistryException(
+                                        AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
+                                        "Offsite fee does not exist"));
+    }
+
+    private void updateOffsiteFeeMapping(
+            ApplicationListEntry entry, boolean hasOffsiteFee, Supplier<Fee> offsiteFeeSupplier) {
         List<AppListEntryFeeId> existingOffsiteMappings =
                 appListEntryFeeRepository.getOffsiteEntryFeesForEntry(entry.getId());
 
@@ -841,14 +877,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             return;
         }
 
-        Fee offsiteFee =
-                feeRepository.findOffsite(businessDateProvider.currentUkDate()).stream()
-                        .findFirst()
-                        .orElseThrow(
-                                () ->
-                                        new AppRegistryException(
-                                                AppListEntryError.FEE_OFFSITE_NOT_SUITABLE,
-                                                "Offsite fee does not exist"));
+        Fee offsiteFee = offsiteFeeSupplier.get();
 
         auditService.processAudit(
                 AppListEntryAuditOperation.CREATE_FEE_ENTRY,
