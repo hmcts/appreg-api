@@ -34,6 +34,10 @@ public class ObfuscationUtil {
         maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
         maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
 
+        mapper.setConfig(
+                mapper.getSerializationConfig()
+                        .with(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_OPTIONALS));
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.registerModule(maskingModule);
         mapper.registerModule(new JsonNullableModule());
         mapper.registerModule(new JavaTimeModule());

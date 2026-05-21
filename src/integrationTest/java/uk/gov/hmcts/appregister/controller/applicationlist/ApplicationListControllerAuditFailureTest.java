@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
-import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
 import uk.gov.hmcts.appregister.common.security.RoleEnum;
 import uk.gov.hmcts.appregister.generated.model.ApplicationListCreateDto;
@@ -46,7 +45,7 @@ class ApplicationListControllerAuditFailureTest extends AbstractApplicationListC
         val auditFailureLog = LogCaptor.forClass(AuditOperationServiceImpl.class);
         auditFailureLog.clearLogs();
 
-        when(dataAuditRepository.save(any(DataAudit.class)))
+        when(dataAuditRepository.saveAll(any()))
                 .thenThrow(new RuntimeException("audit persistence failed"));
 
         val createResponse =
@@ -62,7 +61,7 @@ class ApplicationListControllerAuditFailureTest extends AbstractApplicationListC
         assertThat(fetched.getDescription()).isEqualTo(req.getDescription());
         assertThat(fetched.getCourtCode()).isEqualTo(VALID_COURT_CODE);
 
-        verify(dataAuditRepository, atLeastOnce()).save(any(DataAudit.class));
+        verify(dataAuditRepository, atLeastOnce()).saveAll(any());
         assertThat(auditFailureLog.getErrorLogs())
                 .anyMatch(log -> log.contains("Audit listener failure suppressed."));
     }

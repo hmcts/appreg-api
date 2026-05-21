@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 public class ControllerLogAspectTest {
@@ -83,6 +84,34 @@ public class ControllerLogAspectTest {
         Assertions.assertEquals(
                 "Finish: Executed and returned null", controllerAspectLog.getDebugLogs().get(1));
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
+    }
+
+    @Test
+    void logControllerJsonResponseWithContentTypeParameters() throws Throwable {
+        ControllerLogAspect controllerLogAspect = new ControllerLogAspect();
+        Signature signature = Mockito.mock(Signature.class);
+
+        ResponseEntity<String> responseEntity =
+                ResponseEntity.ok()
+                        .header(
+                                HttpHeaders.CONTENT_TYPE,
+                                "application/vnd.hmcts.appreg.v1+json;charset=UTF-8")
+                        .body("Test Result");
+
+        ProceedingJoinPoint customProceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        Mockito.when(customProceedingJoinPoint.proceed()).thenReturn(responseEntity);
+        Mockito.when(customProceedingJoinPoint.getArgs()).thenReturn(new Object[] {"arg1", "arg2"});
+        Mockito.when(customProceedingJoinPoint.getSignature()).thenReturn(signature);
+        Mockito.when(signature.getDeclaringType()).thenReturn(ControllerLogAspectTest.class);
+        Mockito.when(signature.getName()).thenReturn("testMethod");
+
+        ResponseEntity<?> result =
+                (ResponseEntity<?>) controllerLogAspect.logDuration(customProceedingJoinPoint);
+
+        Assertions.assertEquals("Test Result", result.getBody());
+        Assertions.assertEquals(
+                "Finish: Executed and returned \"Test Result\"",
+                controllerAspectLog.getDebugLogs().get(1));
     }
 
     @Test

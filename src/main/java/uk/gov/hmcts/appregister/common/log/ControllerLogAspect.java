@@ -1,10 +1,10 @@
 package uk.gov.hmcts.appregister.common.log;
 
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class ControllerLogAspect extends AbstractOperationDurationAspect {
-    private static final String JSON_CONTENT_TYPE = "application/vnd.hmcts.appreg.v1+json";
+    private static final MediaType JSON_CONTENT_TYPE =
+            MediaType.valueOf("application/vnd.hmcts.appreg.v1+json");
 
     @Around("(within(uk.gov.hmcts.appregister..controller..*))")
     public Object logDuration(ProceedingJoinPoint pjp) throws Throwable {
@@ -34,10 +35,11 @@ public class ControllerLogAspect extends AbstractOperationDurationAspect {
 
                         // check the response type and mime header
                         if (result instanceof ResponseEntity) {
-                            List<String> headers =
-                                    ((ResponseEntity<?>) result).getHeaders().get("Content-Type");
-
-                            boolean isJson = headers != null && headers.contains(JSON_CONTENT_TYPE);
+                            MediaType contentType =
+                                    ((ResponseEntity<?>) result).getHeaders().getContentType();
+                            boolean isJson =
+                                    contentType != null
+                                            && contentType.isCompatibleWith(JSON_CONTENT_TYPE);
 
                             // we only log content if json
                             if (isJson) {

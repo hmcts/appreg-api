@@ -1,5 +1,6 @@
 package uk.gov.hmcts.appregister.audit.listener;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import uk.gov.hmcts.appregister.audit.service.AuditOperationServiceImpl;
 import uk.gov.hmcts.appregister.common.entity.DataAudit;
 import uk.gov.hmcts.appregister.common.entity.base.Keyable;
 import uk.gov.hmcts.appregister.common.entity.repository.DataAuditRepository;
+import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.exception.CommonAppError;
 
@@ -181,6 +183,8 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             List<AuditableData> primaryList,
             List<AuditableData> secondaryList,
             boolean primaryOld) {
+        List<DataAudit> auditsToPersist = new ArrayList<>();
+
         for (var i = 0; i < primaryList.size(); i++) {
             val diff = primaryList.get(i);
             val audit = new DataAudit();
@@ -198,17 +202,32 @@ public class DataAuditLogger extends AuditOperationLifecycleListenerAdapter {
             setNewAndOldAuditValues(
                     audit, diff, getCorrespondingData(diff, secondaryList), event, primaryOld);
 
-            try {
-                // save the audit record
-                dataAuditRepository.save(audit);
-                log.debug("Saved data audit entity: {}", audit);
-            } catch (RuntimeException e) {
-                throw new RuntimeException(
-                        "Failed to persist audit field %s on table %s"
-                                .formatted(diff.getFieldName(), diff.getTableName()),
-                        e);
+            if (shouldSkipAuditPersistence(event, audit)) {
+                continue;
             }
+
+            auditsToPersist.add(audit);
         }
+
+        if (auditsToPersist.isEmpty()) {
+            return;
+        }
+
+        try {
+            dataAuditRepository.saveAll(auditsToPersist);
+            auditsToPersist.forEach(audit -> log.debug("Saved data audit entity: {}", audit));
+        } catch (RuntimeException e) {
+            val firstAudit = auditsToPersist.getFirst();
+            throw new RuntimeException(
+                    "Failed to persist audit field %s on table %s"
+                            .formatted(firstAudit.getColumnName(), firstAudit.getTableName()),
+                    e);
+        }
+    }
+
+    private boolean shouldSkipAuditPersistence(CompleteEvent event, DataAudit audit) {
+        return event.getRequestAction().getType() == CrudEnum.READ
+                && EMPTY_VALUE.equals(audit.getNewValue());
     }
 
     /**
