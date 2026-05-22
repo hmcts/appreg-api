@@ -1,6 +1,7 @@
 package uk.gov.hmcts.appregister.common.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.lang.reflect.Method;
@@ -35,6 +36,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import uk.gov.hmcts.appregister.applicationcode.exception.ApplicationCodeError;
+import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
@@ -43,7 +45,8 @@ class AppRegExceptionHandlerTest {
 
     @BeforeEach
     void beforeEach() {
-        exceptionHandler = new AppRegExceptionHandler();
+        exceptionHandler =
+                new AppRegExceptionHandler(Mockito.mock(SecurityEndpointFailureLogger.class));
         logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
         logCaptor.clearLogs();
     }
@@ -640,7 +643,8 @@ class AppRegExceptionHandlerTest {
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
-                exceptionHandler.handleAccessDenied(exception);
+                exceptionHandler.handleAccessDenied(
+                        exception, Mockito.mock(HttpServletRequest.class));
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(403), problemDetail.getStatusCode());

@@ -17,6 +17,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import uk.gov.hmcts.appregister.common.log.SecurityEndpointFailureLogger;
 
 /**
  * Configuration for securing the API using Spring Security and JWTs.
@@ -34,7 +35,10 @@ public class SecurityConfig {
      */
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http, JwtAuthenticationConverter jwtAuthConverter) throws Exception {
+            HttpSecurity http,
+            JwtAuthenticationConverter jwtAuthConverter,
+            SecurityEndpointFailureLogger securityEndpointFailureLogger)
+            throws Exception {
 
         http.authorizeHttpRequests(
                         auth ->
@@ -50,9 +54,26 @@ public class SecurityConfig {
                         oauth ->
                                 oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthConverter))
                                         .authenticationEntryPoint(
-                                                (req, res, ex) -> res.sendError(ERR_AUTH_REQUIRED)))
+                                                (req, res, ex) -> {
+                                                    securityEndpointFailureLogger.logFailure(
+                                                            req,
+                                                            ERR_AUTH_REQUIRED,
+                                                            SecurityEndpointFailureLogger
+                                                                    .AUTHENTICATION_FAILURE,
+                                                            ex);
+                                                    res.sendError(ERR_AUTH_REQUIRED);
+                                                }))
                 .exceptionHandling(
-                        e -> e.accessDeniedHandler((req, res, ex) -> res.sendError(ERR_FORBIDDEN)));
+                        e ->
+                                e.accessDeniedHandler(
+                                        (req, res, ex) -> {
+                                            securityEndpointFailureLogger.logFailure(
+                                                    req,
+                                                    ERR_FORBIDDEN,
+                                                    SecurityEndpointFailureLogger.ACCESS_DENIED,
+                                                    ex);
+                                            res.sendError(ERR_FORBIDDEN);
+                                        }));
 
         return http.build();
     }
