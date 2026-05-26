@@ -74,6 +74,7 @@ import uk.gov.hmcts.appregister.generated.model.BulkResultDto;
 import uk.gov.hmcts.appregister.generated.model.ResultCreateDto;
 import uk.gov.hmcts.appregister.generated.model.ResultGetDto;
 import uk.gov.hmcts.appregister.generated.model.ResultPage;
+import uk.gov.hmcts.appregister.generated.model.ResultUpdateDto;
 import uk.gov.hmcts.appregister.generated.model.TemplateSubstitution;
 
 @ExtendWith(MockitoExtension.class)
@@ -560,5 +561,65 @@ public class ApplicationEntryResultServiceImplTest {
 
             return validateSuccess.apply(validatable, success);
         }
+    }
+
+    @Test
+    void update_validArgs_returnsUpdatedEntryResult() {
+        when(userProvider.getEmail()).thenReturn("myemail@domain.com");
+
+        ResultUpdateDto data = new ResultUpdateDto();
+        TemplateSubstitution substitution = new TemplateSubstitution();
+        substitution.setKey("Date of Hearing");
+        substitution.setValue("2024-01-01");
+        data.setWordingFields(List.of(substitution));
+
+        UUID listId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        UUID resultId = UUID.randomUUID();
+
+        PayloadForUpdateEntryResult payload =
+                new PayloadForUpdateEntryResult(data, listId, entryId, resultId);
+
+        ApplicationList applicationList = mock(ApplicationList.class);
+        ApplicationListEntry entry = mock(ApplicationListEntry.class);
+        ResolutionCode resolutionCode = mock(ResolutionCode.class);
+
+        AppListEntryResolution existing = new AppListEntryResolution();
+        existing.setId(123L);
+        existing.setVersion(2L);
+
+        ListEntryResultUpdateValidationSuccess success =
+                new ListEntryResultUpdateValidationSuccess(
+                        WordingTemplateSentence.with(
+                                "This is a template {TEXT|Date of Hearing|20}"),
+                        resolutionCode,
+                        applicationList,
+                        entry,
+                        existing);
+        updateValidator.setSuccess(success);
+
+        when(appListEntryResolutionRepository.save(existing)).thenReturn(existing);
+
+        ResultGetDto dto = new ResultGetDto();
+        dto.setId(resultId);
+        when(applicationListEntryResultMapper.toResultGetDto(existing)).thenReturn(dto);
+
+        MatchResponse<ResultGetDto> response = service.update(payload);
+
+        Assertions.assertNotNull(response);
+        Assertions.assertNotNull(response.getEtag());
+        Assertions.assertEquals(dto, response.getPayload());
+
+        verify(applicationListEntryResultEntityMapper)
+                .toApplicationListEntryResult(
+                        data,
+                        "This is a template {2024-01-01}",
+                        resolutionCode,
+                        entry,
+                        "myemail@domain.com",
+                        existing);
+        verify(appListEntryResolutionRepository).save(existing);
+        verify(entityManager).flush();
+        verify(entityManager).refresh(existing);
     }
 }
