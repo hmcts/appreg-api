@@ -52,10 +52,13 @@ jobs:
 
     steps:
       - name: Checkout default branch
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.repository.default_branch }}
+        run: |
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git config --local "http.https://github.com/.extraheader" \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git fetch --prune --no-tags origin "${DEFAULT_BRANCH}"
+          git checkout -B "${DEFAULT_BRANCH}" FETCH_HEAD
 
       - name: Verify runner toolchain and Codex auth
         run: ./.github/scripts/codex-runner-preflight.sh
