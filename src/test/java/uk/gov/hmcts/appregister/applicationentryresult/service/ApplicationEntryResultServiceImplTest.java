@@ -573,9 +573,9 @@ public class ApplicationEntryResultServiceImplTest {
         substitution.setValue("2024-01-01");
         data.setWordingFields(List.of(substitution));
 
-        UUID listId = UUID.randomUUID();
-        UUID entryId = UUID.randomUUID();
-        UUID resultId = UUID.randomUUID();
+        final UUID listId = UUID.randomUUID();
+        final UUID entryId = UUID.randomUUID();
+        final UUID resultId = UUID.randomUUID();
 
         ApplicationList applicationList = mock(ApplicationList.class);
         ApplicationListEntry entry = mock(ApplicationListEntry.class);
