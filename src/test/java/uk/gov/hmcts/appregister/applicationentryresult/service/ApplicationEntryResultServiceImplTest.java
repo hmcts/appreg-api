@@ -577,9 +577,6 @@ public class ApplicationEntryResultServiceImplTest {
         UUID entryId = UUID.randomUUID();
         UUID resultId = UUID.randomUUID();
 
-        PayloadForUpdateEntryResult payload =
-                new PayloadForUpdateEntryResult(data, listId, entryId, resultId);
-
         ApplicationList applicationList = mock(ApplicationList.class);
         ApplicationListEntry entry = mock(ApplicationListEntry.class);
         ResolutionCode resolutionCode = mock(ResolutionCode.class);
@@ -603,6 +600,9 @@ public class ApplicationEntryResultServiceImplTest {
         ResultGetDto dto = new ResultGetDto();
         dto.setId(resultId);
         when(applicationListEntryResultMapper.toResultGetDto(existing)).thenReturn(dto);
+
+        final PayloadForUpdateEntryResult payload =
+                new PayloadForUpdateEntryResult(data, listId, entryId, resultId);
 
         MatchResponse<ResultGetDto> response = service.update(payload);
 
