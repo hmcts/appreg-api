@@ -7,15 +7,25 @@ on:
 jobs:
   check-directory-change:
     runs-on: ubuntu-latest
+    env:
+      GIT_AUTH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN || github.token }}
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v6
+        run: |
+          git init .
+          git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git config --local "http.https://github.com/.extraheader" \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GIT_AUTH_TOKEN" | base64 | tr -d '\n')"
+          git fetch --no-tags --prune --depth=1 origin \
+            "refs/pull/${{ github.event.pull_request.number }}/merge"
+          git checkout --detach FETCH_HEAD
 
       - name: Check for changes under restricted directory
         id: check_changes
         run: |
           # Get a list of changed files compared to base
-          git fetch origin ${{ github.event.pull_request.base.ref }}
+          git fetch --no-tags --prune --depth=1 origin \
+            "+refs/heads/${{ github.event.pull_request.base.ref }}:refs/remotes/origin/${{ github.event.pull_request.base.ref }}"
           CHANGED_FILES=$(git diff  --name-status origin/${{ github.event.pull_request.base.ref }} HEAD)
 
           echo "Changed files:"
