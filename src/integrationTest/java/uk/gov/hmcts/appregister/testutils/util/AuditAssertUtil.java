@@ -64,8 +64,7 @@ public class AuditAssertUtil {
             String event, String action, OperationStatus operationStatus, String actualLogMessage) {
         Assertions.assertTrue(
                 Pattern.matches(
-                        ("%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*"
-                                        + "\\R-p_messagestatus=%s\\R-p_messagecontent=.*")
+                        ("%s\\s*-p_requestaction=%s\\R-p_messageuuid=.*" + "\\R-p_messagestatus=%s")
                                 .formatted(event, action, operationStatus.getStatus()),
                         actualLogMessage));
     }

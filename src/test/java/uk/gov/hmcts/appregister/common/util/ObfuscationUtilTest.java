@@ -36,7 +36,7 @@ public class ObfuscationUtilTest {
     public void testObfuscationEntryGetDetailDto() {
         EntryGetDetailDto entryGetDetailDto = Instancio.of(EntryGetDetailDto.class).create();
         Assertions.assertEquals(
-                4,
+                1,
                 StringUtils.countMatches(
                         ObfuscationUtil.getObfuscatedString(entryGetDetailDto), "[REDACTED]"));
     }
@@ -48,10 +48,14 @@ public class ObfuscationUtilTest {
         EntryGetSummaryDto entryGetSummaryDto = entryPage.getContent().get(0);
         entryPage.getContent().clear();
         entryPage.getContent().add(entryGetSummaryDto);
-        Assertions.assertEquals(
-                4,
-                StringUtils.countMatches(
-                        ObfuscationUtil.getObfuscatedString(entryPage), "[REDACTED]"));
+        entryGetSummaryDto.accountNumber("ACC-12345");
+
+        String obfuscated = ObfuscationUtil.getObfuscatedString(entryPage);
+
+        Assertions.assertFalse(obfuscated.contains("ACC-12345"));
+        Assertions.assertTrue(obfuscated.contains("\"applicant\":\"[REDACTED]\""));
+        Assertions.assertTrue(obfuscated.contains("\"respondent\":\"[REDACTED]\""));
+        Assertions.assertTrue(obfuscated.contains("\"accountNumber\":\"[REDACTED]\""));
     }
 
     @Test

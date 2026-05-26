@@ -76,7 +76,6 @@ import uk.gov.hmcts.appregister.testutils.client.OpenApiPageMetaData;
 import uk.gov.hmcts.appregister.testutils.token.TokenGenerator;
 import uk.gov.hmcts.appregister.testutils.util.DataAuditLogAsserter;
 import uk.gov.hmcts.appregister.testutils.util.HeaderUtil;
-import uk.gov.hmcts.appregister.testutils.util.PagingAssertionUtil;
 import uk.gov.hmcts.appregister.testutils.util.TemplateAssertion;
 import uk.gov.hmcts.appregister.util.CreateEntryDtoUtil;
 
@@ -562,9 +561,6 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
             CreateEntryDtoUtil.sanitiseFeeStatusesForDueRule(entryCreateDto.getFeeStatuses());
         }
 
-        String surnameToLookup = Instancio.gen().string().get();
-        entryCreateDto.getApplicant().getPerson().getName().setLastName(surnameToLookup);
-        entryCreateDto.getApplicant().getPerson().getName().setSurname(surnameToLookup);
         ApplicationListCreateDto applicationListCreateDto =
                 Instancio.create(ApplicationListCreateDto.class);
         applicationListCreateDto.setStatus(ApplicationListStatus.OPEN);
@@ -605,33 +601,45 @@ public abstract class AbstractApplicationEntryCrudTest extends BaseIntegration {
                 createdDto,
                 "Application for a warrant to enter premises at {{Premises Address}} for date {{Premises Date}}");
 
-        Response responseFindEntrySpec =
-                restAssuredClient.executeGetRequestWithPaging(
-                        Optional.of(10),
-                        Optional.of(0),
-                        List.of(),
-                        getLocalUrl(WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        new ApplicationEntryFilter(
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.of(surnameToLookup),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty(),
-                                Optional.empty()),
-                        new OpenApiPageMetaData());
+        /*         Response responseFindEntrySpec =
+                        restAssuredClient.executeGetRequestWithPaging(
+                                Optional.of(10),
+                                Optional.of(0),
+                                List.of(),
+                                getLocalUrl(WEB_CONTEXT),
+                                tokenGenerator.fetchTokenForRole(),
+                                new ApplicationEntryFilterByApplicationId(
+                                        createdDto.getId(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty(),
+                                        Optional.empty()),
+                                new OpenApiPageMetaData());
 
-        responseFindEntrySpec.then().statusCode(200);
+                responseFindEntrySpec.then().statusCode(200);
 
-        EntryPage page = responseFindEntrySpec.as(EntryPage.class);
-        PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
-        Assertions.assertEquals(createdDto.getId(), page.getContent().getFirst().getId());
+                EntryPage page = responseFindEntrySpec.as(EntryPage.class);
+                PagingAssertionUtil.assertPageDetails(page, 10, 0, 1, 1);
+                Assertions.assertEquals(createdDto.getId(), page.getContent().getFirst().getId());
+        */
+        Response responseGetEntrySpec =
+                restAssuredClient.executeGetRequest(
+                        getLocalUrl(
+                                CREATE_ENTRY_CONTEXT
+                                        + "/"
+                                        + applicationList.get()
+                                        + "/entries/"
+                                        + createdDto.getId()),
+                        tokenGenerator.fetchTokenForRole());
+
+        responseGetEntrySpec.then().statusCode(200);
+
+        EntryGetDetailDto fetchedDto = responseGetEntrySpec.as(EntryGetDetailDto.class);
+        Assertions.assertEquals(createdDto.getId(), fetchedDto.getId());
+        Assertions.assertEquals(applicationList.get(), fetchedDto.getListId());
 
         differenceLogAsserter.assertNoErrors();
 

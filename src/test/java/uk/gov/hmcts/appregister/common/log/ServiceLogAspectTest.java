@@ -1,6 +1,5 @@
 package uk.gov.hmcts.appregister.common.log;
 
-import java.util.regex.Pattern;
 import nl.altindag.log.LogCaptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
@@ -14,6 +13,7 @@ public class ServiceLogAspectTest {
 
     @Test
     void logService() throws Throwable {
+        serviceAspectLog.clearLogs();
         ServiceLogAspect serviceLogAspect = new ServiceLogAspect();
         Signature signature = Mockito.mock(Signature.class);
 
@@ -30,25 +30,22 @@ public class ServiceLogAspectTest {
 
         // assert the log messages are correct and the result is correct
         Assertions.assertEquals("Test Result", result);
-
-        Assertions.assertTrue(
-                Pattern.matches(
-                        ".*Start: Executing Mock for Signature, .* with arguments: \\[arg1, arg2\\].*",
-                        serviceAspectLog.getDebugLogs().get(0)));
+        Assertions.assertEquals(
+                "Start: Executing ServiceLogAspectTest.testMethod",
+                serviceAspectLog.getDebugLogs().get(0));
         Assertions.assertTrue(
                 serviceAspectLog
                         .getDebugLogs()
                         .get(1)
-                        .startsWith("Duration of ServiceLogAspectTest.testMethod"));
-        Assertions.assertEquals(
-                "Finish: Executed and returned \"Test Result\"",
-                serviceAspectLog.getDebugLogs().get(2));
+                        .startsWith("Finish: Executed ServiceLogAspectTest.testMethod in "));
+        Assertions.assertTrue(serviceAspectLog.getDebugLogs().get(1).endsWith(" ms"));
 
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
     }
 
     @Test
     void logServiceNoResult() throws Throwable {
+        serviceAspectLog.clearLogs();
         ServiceLogAspect serviceLogAspect = new ServiceLogAspect();
         Signature signature = Mockito.mock(Signature.class);
 
@@ -65,19 +62,15 @@ public class ServiceLogAspectTest {
 
         // assert the log messages are correct and the result is correct
         Assertions.assertNull(result);
-
-        Assertions.assertTrue(
-                Pattern.matches(
-                        ".*Start: Executing Mock for Signature, .* with arguments: \\[arg1, arg2\\].*",
-                        serviceAspectLog.getDebugLogs().get(0)));
+        Assertions.assertEquals(
+                "Start: Executing ServiceLogAspectTest.testMethod",
+                serviceAspectLog.getDebugLogs().get(0));
         Assertions.assertTrue(
                 serviceAspectLog
                         .getDebugLogs()
                         .get(1)
-                        .startsWith("Duration of ServiceLogAspectTest.testMethod"));
-        Assertions.assertEquals(
-                "Finish: Executed and returned null or Closeable object",
-                serviceAspectLog.getDebugLogs().get(2));
+                        .startsWith("Finish: Executed ServiceLogAspectTest.testMethod in "));
+        Assertions.assertTrue(serviceAspectLog.getDebugLogs().get(1).endsWith(" ms"));
 
         Mockito.verify(customProceedingJoinPoint, Mockito.times(1)).proceed();
     }

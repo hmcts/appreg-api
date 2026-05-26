@@ -144,9 +144,9 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Override
     public EntryPage search(EntryGetFilterDto filterDto, PagingWrapper pageable) {
         log.debug(
-                "Started: Find Application Entry for criteria: {} with paging: {}",
-                filterDto,
-                pageable);
+                "Started find application entries page={} size={}",
+                pageable.getPageable().getPageNumber(),
+                pageable.getPageable().getPageSize());
 
         return auditService.processAudit(
                 null,
@@ -183,9 +183,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     EntryPage newPage = buildEntryPage(resultPage, pageable);
 
                     log.debug(
-                            "Finished: Find Application Entry for criteria: {} with paging: {}",
-                            filterDto,
-                            pageable);
+                            "Finished find application entries page={} size={} results={}",
+                            pageable.getPageable().getPageNumber(),
+                            pageable.getPageable().getPageSize(),
+                            newPage.getElementsOnPage());
 
                     AuditableResult<EntryPage, ApplicationListEntry> result =
                             new AuditableResult<>(
@@ -201,7 +202,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     public EntryIdsDto getEntryIds(EntryGetFilterDto filterDto) {
         EntryGetFilterDto safeFilterDto = filterDto == null ? new EntryGetFilterDto() : filterDto;
 
-        log.debug("Started: Find Application Entry IDs for criteria: {}", safeFilterDto);
+        log.debug("Started find application entry ids");
 
         return auditService.processAudit(
                 null,
@@ -236,8 +237,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                     EntryIdsDto response = new EntryIdsDto();
                     response.setIds(entryIds);
 
-                    log.debug(
-                            "Finished: Find Application Entry IDs for criteria: {}", safeFilterDto);
+                    log.debug("Finished find application entry ids count={}", entryIds.size());
 
                     AuditableResult<EntryIdsDto, ApplicationListEntry> result =
                             new AuditableResult<>(
@@ -261,8 +261,7 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
             Validator<PayloadForCreate<EntryCreateDto>, CreateApplicationEntryValidationSuccess>
                     validator,
             YesOrNo bulkUpload) {
-        log.debug("Started: Create Application Entry: {}", entryCreateDto);
-        log.debug("Creating application entry inside list {}", entryCreateDto.getId());
+        log.debug("Started create application entry for list {}", entryCreateDto.getId());
 
         // creates the entity and return the etag for matching
         MatchResponse<EntryGetDetailDto> getDetailDto =
@@ -341,7 +340,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     });
                         });
 
-        log.debug("Finish: Create Application Entry: {}", entryCreateDto);
+        log.debug(
+                "Finished create application entry for list {} entry {}",
+                entryCreateDto.getId(),
+                getDetailDto.getPayload().getId());
 
         return getDetailDto;
     }
@@ -356,9 +358,8 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
     @Override
     @Transactional
     public MatchResponse<EntryGetDetailDto> updateEntry(PayloadForUpdateEntry updateEntry) {
-        log.debug("Started: Update Application Entry: {}", updateEntry);
         log.debug(
-                "Updating application entry with id: {} in list {}",
+                "Started update application entry {} in list {}",
                 updateEntry.getEntryId(),
                 updateEntry.getId());
 
@@ -456,7 +457,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                             success.getApplicationEntryId()));
                         });
 
-        log.debug("Finish: Update Application Entry: {}", updateEntry);
+        log.debug(
+                "Finished update application entry {} in list {}",
+                updateEntry.getEntryId(),
+                updateEntry.getId());
 
         return getDetailDto;
     }
@@ -1384,7 +1388,10 @@ public class ApplicationEntryServiceImpl implements ApplicationEntryService {
                                     return ret;
                                 }));
 
-        log.debug("Finish: Deleted Application List with id: {}", idToDelete);
+        log.debug(
+                "Finished delete application entry {} in list {}",
+                idToDelete.getEntryId(),
+                idToDelete.getId());
     }
 
     /**
