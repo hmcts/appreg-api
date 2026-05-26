@@ -33,10 +33,9 @@ import uk.gov.hmcts.appregister.generated.model.ResultPage;
 public class ObfuscationUtil {
     private static final String REDACTED = "[REDACTED]";
 
-    static final ObjectMapper mapper = new ObjectMapper();
+    static final ObjectMapper mapper = createObjectMapper();
 
-    // register all of the serializers to the object mapper
-    static {
+    private static ObjectMapper createObjectMapper() {
         SimpleModule maskingModule = new SimpleModule();
 
         maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
@@ -59,9 +58,17 @@ public class ObfuscationUtil {
         maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
         maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
 
-        mapper.registerModule(maskingModule);
-        mapper.registerModule(new JsonNullableModule());
-        mapper.registerModule(new JavaTimeModule());
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setConfig(
+                objectMapper
+                        .getSerializationConfig()
+                        .with(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_OPTIONALS));
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.registerModule(maskingModule);
+        objectMapper.registerModule(new JsonNullableModule());
+        objectMapper.registerModule(new JavaTimeModule());
+
+        return objectMapper;
     }
 
     /**
@@ -76,45 +83,11 @@ public class ObfuscationUtil {
      */
     public static String getObfuscatedString(Object o) {
         try {
-            SimpleModule maskingModule = new SimpleModule();
-
-            maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
-            maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
-            maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
-            maskingModule.addSerializer(
-                    EntryGetDetailDto.class, new EntryGetDetailDtoSensitiveSerializer());
-            maskingModule.addSerializer(
-                    EntryGetPrintDto.class, new EntryGetPrintDtoSensitiveSerializer());
-            maskingModule.addSerializer(
-                    EntryCreateDto.class, new EntryCreateDtoSensitiveSerializer());
-            maskingModule.addSerializer(
-                    EntryGetSummaryDto.class, new EntryGetSummaryDtoSensitiveSerializer());
-            maskingModule.addSerializer(EntryPage.class, new EntryPageSensitiveSerializer());
-            maskingModule.addSerializer(
-                    ApplicationListEntrySummary.class,
-                    new ApplicationListEntrySummarySensitiveSerializer());
-            maskingModule.addSerializer(
-                    ApplicationListGetDetailDto.class,
-                    new ApplicationListGetDetailDtoSensitiveSerializer());
-            maskingModule.addSerializer(ResultGetDto.class, new ResultGetDtoSensitiveSerializer());
-            maskingModule.addSerializer(ResultPage.class, new ResultPageSensitiveSerializer());
-
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.setConfig(
-                    mapper.getSerializationConfig()
-                            .with(MapperFeature.REQUIRE_HANDLERS_FOR_JAVA8_OPTIONALS));
-            mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-
-            mapper.registerModule(maskingModule);
-            mapper.registerModule(new JsonNullableModule());
-            mapper.registerModule(new JavaTimeModule());
-
             return mapper.writeValueAsString(o);
         } catch (JsonProcessingException jsonProcessingException) {
             log.error(jsonProcessingException.getMessage(), jsonProcessingException);
+            return "Can't obfuscate object";
         }
-
-        return "Can't obfuscate object";
     }
 
     /** Serializer to redact Person PII data. */
