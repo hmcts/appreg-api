@@ -18,8 +18,8 @@ jobs:
         run: |
           git init .
           git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
-          git config --local "http.https://github.com/.extraheader" \
-            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GIT_AUTH_TOKEN" | base64 | tr -d '\n')"
+          git config --local credential.helper \
+            '!f() { test "$1" = get && echo username=x-access-token && echo "password=$GIT_AUTH_TOKEN"; }; f'
           git fetch --no-tags --prune --depth=1 origin \
             "refs/pull/${{ github.event.pull_request.number }}/merge"
           git checkout --detach FETCH_HEAD
