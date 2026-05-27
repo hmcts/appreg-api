@@ -26,7 +26,7 @@ Environment:
   OPENAI_API_KEY               Used by codex mode if present; otherwise existing
                               Codex CLI login is used.
   GRADLE_FAST_TASKS            Space-separated Gradle tasks for fast mode.
-                              Default: clean test.
+                              Default: clean spotlessJavaCheck test.
   REQUIRE_DOCKER               Set true to require Docker outside full mode.
 EOF
 }
@@ -198,7 +198,7 @@ if [[ "${mode}" == "full" ]]; then
     jacocoIntegrationCoverageVerification
   )
 else
-  read -r -a gradle_fast_tasks <<<"${GRADLE_FAST_TASKS:-clean test}"
+  read -r -a gradle_fast_tasks <<<"${GRADLE_FAST_TASKS:-clean spotlessJavaCheck test}"
   gradle_args=(--no-daemon "${gradle_fast_tasks[@]}")
 fi
 
