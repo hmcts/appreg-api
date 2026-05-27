@@ -309,6 +309,42 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void
+            givenFeesReportOtherLocationOnlyFilter_whenCreatingReport_thenCsvIncludesMatchingEntry()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 20);
+        insertFeesReportApplication(
+                listDate,
+                "Arc Other Location Target Ltd",
+                null,
+                null,
+                "ARC target other location fee wording",
+                "Target Fees Hall");
+        insertFeesReportApplication(
+                listDate,
+                "Arc Other Location Hidden Ltd",
+                null,
+                null,
+                "ARC hidden other location fee wording",
+                "Hidden Fees Hall");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .location(
+                                new LegacyReportLocation().otherLocationDescription("target fees"));
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("Target Fees Hall"));
+        Assertions.assertTrue(report.contains("Arc Other Location Target Ltd"));
+        Assertions.assertFalse(report.contains("Hidden Fees Hall"));
+        Assertions.assertFalse(report.contains("Arc Other Location Hidden Ltd"));
+    }
+
+    @Test
     public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -361,9 +397,9 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createResponse
                         .asString()
                         .contains(
-                                "Either 'courtLocation' must be provided, or both "
-                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
-                                        + "must be supplied."));
+                                "'courtLocationCode' must be supplied on its own; 'cjaCode' and "
+                                        + "'otherLocationDescription' can be supplied independently "
+                                        + "or together."));
     }
 
     @Test
@@ -881,28 +917,35 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
-            givenOtherLocationProvidedMissingCJAFilter_whenCreatingWorkloadReport_thenBadRequestIsReturned()
+            givenValidWorkloadReportWithJustOtherLocation_whenCreatingReport_thenJobIsCreatedAndReportCanBeDownloaded()
                     throws Exception {
-        TokenGenerator tokenGenerator =
-                getATokenWithValidCredentials().roles(List.of(RoleEnum.ADMIN)).build();
+        val listDate = LocalDate.of(2026, 4, 17);
+        val applicantName = "Workload Other Location Only Applicant";
+        val listId =
+                insertApplicationListRowReturningId(
+                        "CLOSED",
+                        listDate,
+                        "TH",
+                        "Town Hall",
+                        "Workload Report - Other Location Only",
+                        "Workload Court",
+                        0,
+                        0,
+                        3);
+        insertEntry(listDate, listId, applicantName, 1);
 
-        LegacyReportLocation location = new LegacyReportLocation();
-        location.setOtherLocationDescription("Some other location");
-        location.setCjaCode(null);
+        val report =
+                createAndDownloadWorkloadReport(
+                        new WorkloadFilterDto()
+                                .dateFrom(listDate)
+                                .dateTo(listDate)
+                                .location(
+                                        new LegacyReportLocation()
+                                                .otherLocationDescription("Town Hall")));
 
-        WorkloadFilterDto request =
-                new WorkloadFilterDto()
-                        .dateFrom(LocalDate.of(2026, 4, 1))
-                        .dateTo(LocalDate.of(2026, 4, 28))
-                        .location(location);
-
-        Response createResponse =
-                restAssuredClient.executePostRequest(
-                        getLocalUrl(WORKLOAD_REPORT_WEB_CONTEXT),
-                        tokenGenerator.fetchTokenForRole(),
-                        request);
-
-        createResponse.then().statusCode(400);
+        Assertions.assertTrue(report.contains("Workload Report"));
+        Assertions.assertTrue(report.contains("Town Hall"));
+        Assertions.assertTrue(report.contains(applicantName));
     }
 
     @Test
@@ -2057,6 +2100,22 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String applicantForename,
             String applicantSurname,
             String wording) {
+        insertFeesReportApplication(
+                listDate,
+                applicantOrganisation,
+                applicantForename,
+                applicantSurname,
+                wording,
+                "Fees Hall");
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording,
+            String otherCourthouse) {
         long applicantId =
                 insertNameAddressRow(
                         applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
@@ -2065,7 +2124,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         "CLOSED",
                         listDate,
                         "XCD997",
-                        "Fees Hall",
+                        otherCourthouse,
                         "Fees report integration list",
                         "Fees Court",
                         0,
