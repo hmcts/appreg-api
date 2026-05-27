@@ -77,7 +77,7 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportJobCreation createFeesReport(FeesReportFilterDto filter) {
         FeesReportFilterDto normalisedFilter = reportFilterNormaliser.normalise(filter);
-        reportLocationValidator.validate(normalisedFilter.getLocation());
+        reportLocationValidator.validateAllowingOtherLocationOnly(normalisedFilter.getLocation());
         FeesReportLifecycle lifecycle;
         try {
             lifecycle = new FeesReportLifecycle();

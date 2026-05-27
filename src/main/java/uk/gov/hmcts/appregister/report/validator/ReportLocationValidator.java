@@ -20,15 +20,24 @@ public class ReportLocationValidator {
     private final BusinessDateProvider businessDateProvider;
 
     public void validate(LegacyReportLocation location) {
+        validate(location, false);
+    }
+
+    public void validateAllowingOtherLocationOnly(LegacyReportLocation location) {
+        validate(location, true);
+    }
+
+    private void validate(LegacyReportLocation location, boolean allowOtherLocationOnly) {
         if (location == null) {
             return;
         }
-        validateLocationCombination(location);
+        validateLocationCombination(location, allowOtherLocationOnly);
         validateCjaCode(location.getCjaCode());
         validateCourtLocationCode(location.getCourtLocationCode());
     }
 
-    private void validateLocationCombination(LegacyReportLocation location) {
+    private void validateLocationCombination(
+            LegacyReportLocation location, boolean allowOtherLocationOnly) {
         boolean hasCourt = StringUtils.hasText(location.getCourtLocationCode());
         boolean hasCja = StringUtils.hasText(location.getCjaCode());
         boolean hasOtherLocation = StringUtils.hasText(location.getOtherLocationDescription());
@@ -37,13 +46,30 @@ public class ReportLocationValidator {
         boolean hasCourtOnly = hasCourt && !hasCja && !hasOtherLocation;
         boolean hasCjaAndOtherLocation = !hasCourt && hasCja && hasOtherLocation;
         boolean hasCjaOnly = !hasCourt && hasCja && !hasOtherLocation;
+        boolean hasOtherLocationOnly = !hasCourt && !hasCja && hasOtherLocation;
 
-        if (!(hasNoLocation || hasCourtOnly || hasCjaAndOtherLocation || hasCjaOnly)) {
+        boolean validLocationCombination =
+                hasNoLocation
+                        || hasCourtOnly
+                        || hasCjaAndOtherLocation
+                        || hasCjaOnly
+                        || (allowOtherLocationOnly && hasOtherLocationOnly);
+
+        if (!validLocationCombination) {
             throw new AppRegistryException(
                     ReportError.INVALID_LOCATION_COMBINATION,
-                    "Provide either 'courtLocationCode' or both 'cjaCode' and "
-                            + "'otherLocationDescription'.");
+                    locationCombinationErrorMessage(allowOtherLocationOnly));
         }
+    }
+
+    private String locationCombinationErrorMessage(boolean allowOtherLocationOnly) {
+        if (allowOtherLocationOnly) {
+            return "Provide 'courtLocationCode', 'cjaCode', 'otherLocationDescription', "
+                    + "or both 'cjaCode' and 'otherLocationDescription'.";
+        }
+
+        return "Provide 'courtLocationCode', 'cjaCode', or both 'cjaCode' and "
+                + "'otherLocationDescription'.";
     }
 
     private void validateCjaCode(String cjaCode) {

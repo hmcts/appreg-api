@@ -96,6 +96,34 @@ class ReportLocationValidatorTest {
     }
 
     @Test
+    void givenOtherLocationWithoutCja_whenValidatingFeesLocation_thenSucceeds() {
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Town Hall");
+
+        assertDoesNotThrow(() -> validator.validateAllowingOtherLocationOnly(location));
+
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenCourtAndOtherLocation_whenValidatingFeesLocation_thenThrowsInvalidCombinationError() {
+        LegacyReportLocation location =
+                new LegacyReportLocation()
+                        .courtLocationCode("LOC123")
+                        .otherLocationDescription("Town Hall");
+
+        AppRegistryException exception =
+                assertThrows(
+                        AppRegistryException.class,
+                        () -> validator.validateAllowingOtherLocationOnly(location));
+
+        assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
     void givenCourtOnly_whenValidating_thenSucceeds() {
         LegacyReportLocation location = new LegacyReportLocation().courtLocationCode("LOC123");
         when(businessDateProvider.currentUkDate()).thenReturn(TODAY_UK);

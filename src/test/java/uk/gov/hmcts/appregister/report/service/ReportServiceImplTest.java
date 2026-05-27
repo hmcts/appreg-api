@@ -152,8 +152,13 @@ class ReportServiceImplTest {
                         reportLocationValidator);
         ReflectionTestUtils.setField(service, "schema", "appreg");
         ReflectionTestUtils.setField(service, "reportPageSize", 500);
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Town Hall");
         FeesReportFilterDto filter =
-                new FeesReportFilterDto().dateFrom(expectedDateTo).dateTo(expectedDateFrom);
+                new FeesReportFilterDto()
+                        .dateFrom(expectedDateTo)
+                        .dateTo(expectedDateFrom)
+                        .location(location);
 
         try {
             ReportJobCreation result = service.createFeesReport(filter);
@@ -162,7 +167,9 @@ class ReportServiceImplTest {
                     (FeesReportFilterDto) ReflectionTestUtils.getField(dataReader.get(), "filter");
             Assertions.assertEquals(expectedDateFrom, readerFilter.getDateFrom());
             Assertions.assertEquals(expectedDateTo, readerFilter.getDateTo());
+            Assertions.assertSame(location, readerFilter.getLocation());
             assertAuditDateRange(result.reportParameters(), expectedDateFrom, expectedDateTo);
+            Mockito.verify(reportLocationValidator).validateAllowingOtherLocationOnly(location);
             Mockito.verify(asyncJobService)
                     .startJob(
                             Mockito.argThat(request -> request.getJobType() == JobType.FEES_REPORT),
@@ -185,7 +192,7 @@ class ReportServiceImplTest {
         AppRegistryException exception =
                 new AppRegistryException(
                         ReportError.CJA_NOT_FOUND, "No Criminal Justice Areas found for code 'XX'");
-        doThrow(exception).when(reportLocationValidator).validate(location);
+        doThrow(exception).when(reportLocationValidator).validateAllowingOtherLocationOnly(location);
 
         ReportServiceImpl service =
                 new ReportServiceImpl(
@@ -202,7 +209,7 @@ class ReportServiceImplTest {
                         AppRegistryException.class, () -> service.createFeesReport(filter));
 
         Assertions.assertSame(exception, actual);
-        Mockito.verify(reportLocationValidator).validate(location);
+        Mockito.verify(reportLocationValidator).validateAllowingOtherLocationOnly(location);
         Mockito.verifyNoInteractions(asyncJobService);
     }
 
