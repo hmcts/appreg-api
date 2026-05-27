@@ -256,6 +256,41 @@ public class ReportingControllerPostTest extends BaseIntegration {
 
     @Test
     public void
+            givenOtherLocationOnlyFilter_whenCreatingFeesReport_thenOnlyMatchingRowsAreReturned()
+                    throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 9, 17);
+        insertFeesReportApplication(
+                listDate,
+                "ARCPOC-1403 Target Applicant Ltd",
+                null,
+                null,
+                "ARCPOC-1403 Target Hall",
+                "ARCPOC-1403 target fee wording");
+        insertFeesReportApplication(
+                listDate,
+                "ARCPOC-1403 Miss Applicant Ltd",
+                null,
+                null,
+                "ARCPOC-1403 Miss Hall",
+                "ARCPOC-1403 miss fee wording");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .location(
+                                new LegacyReportLocation()
+                                        .otherLocationDescription("target hall"));
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("ARCPOC-1403 Target Applicant Ltd"));
+        Assertions.assertFalse(report.contains("ARCPOC-1403 Miss Applicant Ltd"));
+    }
+
+    @Test
+    public void
             givenFeesReportApplicantNameMatchesPersonSurname_whenCreatingReport_thenCsvIncludesEntry()
                     throws Exception {
         LocalDate listDate = LocalDate.of(2026, 5, 18);
@@ -361,9 +396,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createResponse
                         .asString()
                         .contains(
-                                "Either 'courtLocation' must be provided, or both "
-                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
-                                        + "must be supplied."));
+                                "When 'courtLocationCode' is supplied, 'cjaCode' and "
+                                        + "'otherLocationDescription' must not be supplied."));
     }
 
     @Test
@@ -2057,6 +2091,22 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String applicantForename,
             String applicantSurname,
             String wording) {
+        insertFeesReportApplication(
+                listDate,
+                applicantOrganisation,
+                applicantForename,
+                applicantSurname,
+                "Fees Hall",
+                wording);
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String otherCourthouse,
+            String wording) {
         long applicantId =
                 insertNameAddressRow(
                         applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
@@ -2065,7 +2115,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         "CLOSED",
                         listDate,
                         "XCD997",
-                        "Fees Hall",
+                        otherCourthouse,
                         "Fees report integration list",
                         "Fees Court",
                         0,
