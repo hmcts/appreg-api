@@ -161,6 +161,11 @@ sed -n '1,200p' "${final_message_path}"
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
 
+if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
+  echo "Applying Spotless formatting before verification"
+  ./gradlew --no-daemon spotlessApply
+fi
+
 echo "Git status after Codex:"
 git status --short --untracked-files=normal
 

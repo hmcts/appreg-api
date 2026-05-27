@@ -265,6 +265,11 @@ fi
 echo "Codex final message:"
 sed -n '1,200p' "${final_message_path}"
 
+if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
+  echo "Applying Spotless formatting before verification"
+  ./gradlew --no-daemon spotlessApply
+fi
+
 if [[ -z "$(git status --short --untracked-files=normal)" ]]; then
   {
     echo "Codex reviewed this feedback but did not produce any committable changes."
