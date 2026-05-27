@@ -67,7 +67,7 @@ class ReportLocationValidatorTest {
     }
 
     @Test
-    void givenCourtAndCjaLocation_whenValidating_thenThrowsInvalidCombinationError() {
+    void givenCourtCjaAndOtherLocation_whenValidating_thenThrowsInvalidCombinationError() {
         LegacyReportLocation location =
                 new LegacyReportLocation()
                         .courtLocationCode("LOC123")
@@ -83,14 +83,27 @@ class ReportLocationValidatorTest {
     }
 
     @Test
-    void givenOtherLocationWithoutCja_whenValidating_thenThrowsInvalidCombinationError() {
+    void givenCourtAndOtherLocation_whenValidating_thenThrowsInvalidCombinationError() {
         LegacyReportLocation location =
-                new LegacyReportLocation().otherLocationDescription("Town Hall");
+                new LegacyReportLocation()
+                        .courtLocationCode("LOC123")
+                        .otherLocationDescription("Town Hall");
 
         AppRegistryException exception =
                 assertThrows(AppRegistryException.class, () -> validator.validate(location));
 
         assertEquals(ReportError.INVALID_LOCATION_COMBINATION, exception.getCode());
+        verifyNoInteractions(
+                criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+    }
+
+    @Test
+    void givenOtherLocationWithoutCja_whenValidating_thenSucceedsWithoutReferenceDataLookup() {
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Town Hall");
+
+        assertDoesNotThrow(() -> validator.validate(location));
+
         verifyNoInteractions(
                 criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
     }

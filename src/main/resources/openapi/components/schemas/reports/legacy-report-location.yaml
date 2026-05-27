@@ -2,10 +2,9 @@ type: object
 title: LegacyReportLocation
 description: >
   Location filters for legacy MIS reports. Blank fields will be rejected,
-  nulls should be used instead. When provided, use either courtLocationCode
-  on its own, or both cjaCode and otherLocationDescription together.
-  courtLocationCode is mutually exclusive with cjaCode and
-  otherLocationDescription.
+  nulls should be used instead. courtLocationCode can be used on its own
+  and must not be combined with cjaCode or otherLocationDescription. cjaCode
+  and otherLocationDescription can be supplied independently or together.
 
 properties:
 
@@ -28,7 +27,7 @@ properties:
   cjaCode:
       type: string
       description: >
-        Criminal Justice Area code. Must be supplied with
+        Criminal Justice Area code. Can be supplied independently or with
         otherLocationDescription.
       example: "52"
       maxLength: 2
