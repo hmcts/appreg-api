@@ -324,14 +324,6 @@ git push origin "${HEAD_REF}"
 } >"${comment_body_path}"
 gh pr comment "${PR_NUMBER}" --body-file "${comment_body_path}"
 
-reviewer="${CODEX_REVIEWER:-}"
-reviewer="${reviewer#@}"
-if [[ -n "${reviewer}" ]]; then
-  gh pr edit "${PR_NUMBER}" --add-reviewer "${reviewer}" || {
-    echo "::warning::Unable to request review from ${reviewer}"
-  }
-fi
-
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
     echo "pr_number=${PR_NUMBER}"
