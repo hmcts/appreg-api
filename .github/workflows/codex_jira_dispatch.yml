@@ -46,7 +46,6 @@ jobs:
       ISSUE_ASSIGNEE: ${{ inputs.assignee }}
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
-      CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
       CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}

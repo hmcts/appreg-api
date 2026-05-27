@@ -28,8 +28,6 @@ payload_path="${PAYLOAD_PATH}"
 prompt_path="${PROMPT_PATH}"
 final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
-reviewer="${CODEX_REVIEWER:-}"
-reviewer="${reviewer#@}"
 
 mkdir -p \
   "${artifact_dir}" \
@@ -62,10 +60,6 @@ payload = {
     "assignee": os.environ.get("ISSUE_ASSIGNEE", ""),
     "issueUrl": os.environ["ISSUE_URL"],
 }
-reviewer = os.environ.get("CODEX_REVIEWER", "").strip().lstrip("@")
-review_request = (
-    f"\nReview requested from @{reviewer}.\n" if reviewer else ""
-)
 
 payload_path = Path(os.environ["PAYLOAD_PATH"])
 payload_path.parent.mkdir(parents=True, exist_ok=True)
@@ -133,7 +127,6 @@ The Codex workflow is configured to run the most relevant targeted verification 
 - [ ] README and other documentation has been updated / added (if needed)
 - [ ] tests have been updated / new tests has been added (if needed)
 - [ ] Does this PR introduce a breaking change
-{review_request}
 """
 
 pr_body_path = Path(os.environ["PR_BODY_PATH"])
@@ -227,12 +220,6 @@ if [[ -z "${pr_url}" ]]; then
 fi
 
 echo "Opened pull request: ${pr_url}"
-
-if [[ -n "${reviewer}" ]]; then
-  gh pr edit "${pr_url}" --add-reviewer "${reviewer}" || {
-    echo "::warning::Unable to request review from ${reviewer}"
-  }
-fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
