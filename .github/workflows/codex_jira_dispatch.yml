@@ -31,6 +31,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   codex-dispatch:
@@ -44,7 +45,7 @@ jobs:
       ISSUE_STATUS: ${{ inputs.status }}
       ISSUE_ASSIGNEE: ${{ inputs.assignee }}
       ISSUE_URL: ${{ inputs.issueUrl }}
-      GH_TOKEN: ${{ secrets.CODEX_GITHUB_TOKEN || github.token }}
+      GH_TOKEN: ${{ github.token }}
       CODEX_REVIEWER: ${{ vars.CODEX_REVIEWER }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
       CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
