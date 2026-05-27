@@ -84,6 +84,7 @@ Operational rules:
 - `./bin/codex-local-pipeline.sh fast` runs lightweight repository guardrails and unit tests only; use `full` only when the change genuinely needs integration, functional, smoke, or coverage verification.
 - Do not push branches, open pull requests, or modify GitHub Actions runner setup. The workflow handles Git and PR creation after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
+- In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
 
 Jira issue:
 - Key: {payload["issueKey"]}
@@ -99,15 +100,39 @@ Description:
 prompt_path = Path(os.environ["PROMPT_PATH"])
 prompt_path.write_text(prompt, encoding="utf-8")
 
-pr_body = f"""## Jira
+pr_body = f"""### Jira link
 
-- Issue: {payload["issueKey"]}
-- URL: {payload["issueUrl"]}
-- Summary: {payload["summary"]}
+See [{payload["issueKey"]}]({payload["issueUrl"]})
 
-## Codex Notes
+### Change description
 
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the workflow logs for the full execution trace and verification output.
+Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
+
+<details>
+<summary>Jira description</summary>
+
+{payload["description"]}
+
+</details>
+
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the Codex final message below for the implementation summary.
+
+### Testing done
+
+The Codex workflow is configured to run the most relevant targeted verification commands it can reasonably run for the change, followed by the repository local pipeline before opening this PR. See the Codex final message below and the workflow logs for the exact commands and output.
+
+### Security Vulnerability Assessment ###
+
+**CVE Suppression:** Are there any CVEs present in the codebase (either newly introduced or pre-existing) that are being intentionally suppressed or ignored by this commit?
+  * [ ] Yes
+  * [x] No
+
+### Checklist
+
+- [x] commit messages are meaningful and follow good commit message guidelines
+- [ ] README and other documentation has been updated / added (if needed)
+- [ ] tests have been updated / new tests has been added (if needed)
+- [ ] Does this PR introduce a breaking change
 {review_request}
 """
 
