@@ -38,14 +38,12 @@ public class ObfuscationUtil {
     private static ObjectMapper createObjectMapper() {
         SimpleModule maskingModule = new SimpleModule();
 
-        maskingModule.addSerializer(Person.class, new PersonSensitiveSerializer());
-        maskingModule.addSerializer(Organisation.class, new OrganizationSensitiveSerializer());
-        maskingModule.addSerializer(NameAddress.class, new NameAddressSensitiveSerializer());
-        maskingModule.addSerializer(
-                EntryGetDetailDto.class, new EntryGetDetailDtoSensitiveSerializer());
-        maskingModule.addSerializer(
-                EntryGetPrintDto.class, new EntryGetPrintDtoSensitiveSerializer());
-        maskingModule.addSerializer(EntryCreateDto.class, new EntryCreateDtoSensitiveSerializer());
+        maskingModule.addSerializer(Person.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(Organisation.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(NameAddress.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(EntryGetDetailDto.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(EntryGetPrintDto.class, new RedactedSerializer<>());
+        maskingModule.addSerializer(EntryCreateDto.class, new RedactedSerializer<>());
         maskingModule.addSerializer(
                 EntryGetSummaryDto.class, new EntryGetSummaryDtoSensitiveSerializer());
         maskingModule.addSerializer(EntryPage.class, new EntryPageSensitiveSerializer());
@@ -90,64 +88,10 @@ public class ObfuscationUtil {
         }
     }
 
-    /** Serializer to redact Person PII data. */
-    static class PersonSensitiveSerializer extends JsonSerializer<Person> {
+    static class RedactedSerializer<T> extends JsonSerializer<T> {
 
         @Override
-        public void serialize(Person value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
-            gen.writeString(REDACTED);
-        }
-    }
-
-    /** Serializer to redact Person PII data. */
-    static class NameAddressSensitiveSerializer extends JsonSerializer<NameAddress> {
-
-        @Override
-        public void serialize(NameAddress value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
-            gen.writeString(REDACTED);
-        }
-    }
-
-    /** Serializer to redact Person PII data. */
-    static class OrganizationSensitiveSerializer extends JsonSerializer<Organisation> {
-
-        @Override
-        public void serialize(Organisation value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
-            gen.writeString(REDACTED);
-        }
-    }
-
-    /** Serializer to redact EntryGetDetailDto PII data. */
-    static class EntryGetDetailDtoSensitiveSerializer extends JsonSerializer<EntryGetDetailDto> {
-
-        @Override
-        public void serialize(
-                EntryGetDetailDto value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
-            gen.writeString(REDACTED);
-        }
-    }
-
-    /** Serializer to redact EntryGetPrintDto PII data. */
-    static class EntryGetPrintDtoSensitiveSerializer extends JsonSerializer<EntryGetPrintDto> {
-
-        @Override
-        public void serialize(
-                EntryGetPrintDto value, JsonGenerator gen, SerializerProvider serializers)
-                throws IOException {
-            gen.writeString(REDACTED);
-        }
-    }
-
-    /** Serializer to redact EntryCreateDto PII data. */
-    static class EntryCreateDtoSensitiveSerializer extends JsonSerializer<EntryCreateDto> {
-
-        @Override
-        public void serialize(
-                EntryCreateDto value, JsonGenerator gen, SerializerProvider serializers)
+        public void serialize(T value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {
             gen.writeString(REDACTED);
         }
@@ -190,17 +134,17 @@ public class ObfuscationUtil {
         @Override
         public void serialize(EntryPage value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("pageNumber", value.getPageNumber());
-            gen.writeObjectField("pageSize", value.getPageSize());
-            gen.writeObjectField("totalElements", value.getTotalElements());
-            gen.writeObjectField("totalPages", value.getTotalPages());
-            gen.writeObjectField("sort", value.getSort());
-            gen.writeObjectField("first", value.getFirst());
-            gen.writeObjectField("last", value.getLast());
-            gen.writeObjectField("elementsOnPage", value.getElementsOnPage());
-            gen.writeObjectField("content", value.getContent());
-            gen.writeEndObject();
+            writePage(
+                    gen,
+                    value.getPageNumber(),
+                    value.getPageSize(),
+                    value.getTotalElements(),
+                    value.getTotalPages(),
+                    value.getSort(),
+                    value.getFirst(),
+                    value.getLast(),
+                    value.getElementsOnPage(),
+                    value.getContent());
         }
     }
 
@@ -276,17 +220,42 @@ public class ObfuscationUtil {
         @Override
         public void serialize(ResultPage value, JsonGenerator gen, SerializerProvider serializers)
                 throws IOException {
-            gen.writeStartObject();
-            gen.writeObjectField("pageNumber", value.getPageNumber());
-            gen.writeObjectField("pageSize", value.getPageSize());
-            gen.writeObjectField("totalElements", value.getTotalElements());
-            gen.writeObjectField("totalPages", value.getTotalPages());
-            gen.writeObjectField("sort", value.getSort());
-            gen.writeObjectField("first", value.getFirst());
-            gen.writeObjectField("last", value.getLast());
-            gen.writeObjectField("elementsOnPage", value.getElementsOnPage());
-            gen.writeObjectField("content", value.getContent());
-            gen.writeEndObject();
+            writePage(
+                    gen,
+                    value.getPageNumber(),
+                    value.getPageSize(),
+                    value.getTotalElements(),
+                    value.getTotalPages(),
+                    value.getSort(),
+                    value.getFirst(),
+                    value.getLast(),
+                    value.getElementsOnPage(),
+                    value.getContent());
         }
+    }
+
+    private static void writePage(
+            JsonGenerator gen,
+            Object pageNumber,
+            Object pageSize,
+            Object totalElements,
+            Object totalPages,
+            Object sort,
+            Object first,
+            Object last,
+            Object elementsOnPage,
+            Object content)
+            throws IOException {
+        gen.writeStartObject();
+        gen.writeObjectField("pageNumber", pageNumber);
+        gen.writeObjectField("pageSize", pageSize);
+        gen.writeObjectField("totalElements", totalElements);
+        gen.writeObjectField("totalPages", totalPages);
+        gen.writeObjectField("sort", sort);
+        gen.writeObjectField("first", first);
+        gen.writeObjectField("last", last);
+        gen.writeObjectField("elementsOnPage", elementsOnPage);
+        gen.writeObjectField("content", content);
+        gen.writeEndObject();
     }
 }
