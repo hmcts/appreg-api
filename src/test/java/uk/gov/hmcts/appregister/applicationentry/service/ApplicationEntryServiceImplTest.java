@@ -2250,7 +2250,7 @@ public class ApplicationEntryServiceImplTest {
         EntryUpdateDto dto = new EntryUpdateDto();
         dto.setWordingFields(List.of());
 
-        PayloadForUpdateEntry payload = new PayloadForUpdateEntry(dto, listId, entryId);
+        final PayloadForUpdateEntry payload = new PayloadForUpdateEntry(dto, listId, entryId);
 
         ApplicationListEntry applicationListEntry = new ApplicationListEntry();
         applicationListEntry.setUuid(entryId);
