@@ -309,6 +309,30 @@ public class ReportingControllerPostTest extends BaseIntegration {
     }
 
     @Test
+    public void givenOtherLocationOnlyFilter_whenCreatingFeesReport_thenCsvIncludesMatchingRows()
+            throws Exception {
+        LocalDate listDate = LocalDate.of(2026, 5, 20);
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Village", "ARC village fee wording", "Village Hall");
+        insertFeesReportApplication(
+                listDate, null, "ArcPerson", "Town", "ARC town fee wording", "Town Hall");
+
+        FeesReportFilterDto request =
+                new FeesReportFilterDto()
+                        .dateFrom(listDate)
+                        .dateTo(listDate)
+                        .location(new LegacyReportLocation().otherLocationDescription("village"));
+
+        String report = createFeesReportAndDownload(request);
+
+        Assertions.assertTrue(report.contains("Fees Report"));
+        Assertions.assertTrue(report.contains("Village Hall"));
+        Assertions.assertTrue(report.contains("ArcPerson Village"));
+        Assertions.assertFalse(report.contains("Town Hall"));
+        Assertions.assertFalse(report.contains("ArcPerson Town"));
+    }
+
+    @Test
     public void givenUnknownCjaCode_whenCreatingFeesReport_thenBadRequestIsReturned()
             throws Exception {
         TokenGenerator tokenGenerator =
@@ -361,9 +385,8 @@ public class ReportingControllerPostTest extends BaseIntegration {
                 createResponse
                         .asString()
                         .contains(
-                                "Either 'courtLocation' must be provided, or both "
-                                        + "'criminalJusticeArea' and 'otherLocationDescription' "
-                                        + "must be supplied."));
+                                "'courtLocationCode' cannot be supplied with 'cjaCode' or "
+                                        + "'otherLocationDescription'."));
     }
 
     @Test
@@ -2057,6 +2080,22 @@ public class ReportingControllerPostTest extends BaseIntegration {
             String applicantForename,
             String applicantSurname,
             String wording) {
+        insertFeesReportApplication(
+                listDate,
+                applicantOrganisation,
+                applicantForename,
+                applicantSurname,
+                wording,
+                "Fees Hall");
+    }
+
+    private void insertFeesReportApplication(
+            LocalDate listDate,
+            String applicantOrganisation,
+            String applicantForename,
+            String applicantSurname,
+            String wording,
+            String otherCourthouse) {
         long applicantId =
                 insertNameAddressRow(
                         applicantOrganisation, applicantForename, applicantSurname, "Fees Street");
@@ -2065,7 +2104,7 @@ public class ReportingControllerPostTest extends BaseIntegration {
                         "CLOSED",
                         listDate,
                         "XCD997",
-                        "Fees Hall",
+                        otherCourthouse,
                         "Fees report integration list",
                         "Fees Court",
                         0,
