@@ -75,7 +75,7 @@ Operational rules:
 - Follow the repository's existing patterns and style.
 - Add or update tests where the behavior changes.
 - Run the most relevant targeted verification commands you can reasonably run in this CI job.
-- `./bin/codex-local-pipeline.sh fast` runs lightweight repository guardrails and unit tests only; use `full` only when the change genuinely needs integration, functional, smoke, or coverage verification.
+- `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the change genuinely needs functional, smoke, coverage, or dependency verification.
 - Do not push branches, open pull requests, or modify GitHub Actions runner setup. The workflow handles Git and PR creation after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
 - In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
