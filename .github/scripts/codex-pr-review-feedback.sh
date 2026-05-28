@@ -26,8 +26,43 @@ pr_json_path="${artifact_dir}/pull-request.json"
 review_comments_json_path="${artifact_dir}/review-comments.json"
 final_message_path="${artifact_dir}/codex-final-message.md"
 comment_body_path="${artifact_dir}/codex-review-comment.md"
+trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
+guardrail_pathspecs=(
+  "bin/codex-local-pipeline.sh"
+  ".github/scripts"
+  ".github/workflows"
+  "build.gradle"
+  "settings.gradle"
+  "gradle.properties"
+  "gradle"
+  "gradlew"
+  "gradlew.bat"
+  "init.gradle"
+  "buildSrc"
+)
 
 mkdir -p "${artifact_dir}" "$(dirname "${PROMPT_PATH}")"
+
+check_guardrail_changes() {
+  local base_ref="${1:-}"
+  local guardrail_changes
+
+  guardrail_changes="$(
+    {
+      if [[ -n "${base_ref}" ]] && git rev-parse --verify --quiet "${base_ref}" >/dev/null; then
+        git diff --name-status "${base_ref}...HEAD" -- "${guardrail_pathspecs[@]}" || true
+      fi
+      git status --short --untracked-files=normal -- "${guardrail_pathspecs[@]}" || true
+    } | sed '/^[[:space:]]*$/d'
+  )"
+
+  if [[ -n "${guardrail_changes}" ]]; then
+    echo "Codex changed workflow, runner, or Gradle verification files; refusing to run mutable verification." >&2
+    echo "These files need separate human review before Codex can continue:" >&2
+    printf '%s\n' "${guardrail_changes}" >&2
+    exit 1
+  fi
+}
 
 python3 - <<'PY' >"${feedback_env_path}"
 import json
@@ -246,13 +281,17 @@ Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
 git fetch origin "${HEAD_REF}"
+git fetch origin "${BASE_REF}"
+git show "origin/${BASE_REF}:bin/codex-local-pipeline.sh" >"${trusted_pipeline_path}"
+chmod +x "${trusted_pipeline_path}"
 git checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
+check_guardrail_changes "origin/${BASE_REF}"
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 echo "Running Codex review feedback for PR #${PR_NUMBER} on ${HEAD_REF}"
-codex exec \
+env -u GH_TOKEN -u GITHUB_TOKEN codex exec \
   --cd "${PWD}" \
   --dangerously-bypass-approvals-and-sandbox \
   --output-last-message "${final_message_path}" \
@@ -264,6 +303,8 @@ fi
 
 echo "Codex final message:"
 sed -n '1,200p' "${final_message_path}"
+
+check_guardrail_changes "origin/${BASE_REF}"
 
 if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
   echo "Applying Spotless formatting before verification"
@@ -290,7 +331,7 @@ if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
   echo "Running local pipeline before pushing review feedback: ${local_pipeline_mode}"
-  ./bin/codex-local-pipeline.sh "${local_pipeline_mode}" --base "${BASE_REF}"
+  "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${BASE_REF}"
 fi
 
 git add -A
