@@ -28,12 +28,47 @@ payload_path="${PAYLOAD_PATH}"
 prompt_path="${PROMPT_PATH}"
 final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
+trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
+guardrail_pathspecs=(
+  "bin/codex-local-pipeline.sh"
+  ".github/scripts"
+  ".github/workflows"
+  "build.gradle"
+  "settings.gradle"
+  "gradle.properties"
+  "gradle"
+  "gradlew"
+  "gradlew.bat"
+  "init.gradle"
+  "buildSrc"
+)
 
 mkdir -p \
   "${artifact_dir}" \
   "$(dirname "${payload_path}")" \
   "$(dirname "${prompt_path}")" \
   "$(dirname "${pr_body_path}")"
+
+check_guardrail_changes() {
+  local base_ref="${1:-}"
+  local guardrail_changes
+
+  guardrail_changes="$(
+    {
+      if [[ -n "${base_ref}" ]] && git rev-parse --verify --quiet "${base_ref}" >/dev/null; then
+        git diff --name-status "${base_ref}...HEAD" -- "${guardrail_pathspecs[@]}" || true
+      fi
+      git status --short --untracked-files=normal -- "${guardrail_pathspecs[@]}" || true
+    } | sed '/^[[:space:]]*$/d'
+  )"
+
+  if [[ -n "${guardrail_changes}" ]]; then
+    echo "Codex changed workflow, runner, or Gradle verification files; refusing to run mutable verification." >&2
+    echo "These files need separate human review before Codex can continue:" >&2
+    printf '%s\n' "${guardrail_changes}" >&2
+    exit 1
+  fi
+}
 
 branch_slug="$(
   python3 - <<'PY'
@@ -128,13 +163,15 @@ PY
 
 git fetch origin "${default_branch}"
 git checkout -B "${default_branch}" "origin/${default_branch}"
+cp bin/codex-local-pipeline.sh "${trusted_pipeline_path}"
+chmod +x "${trusted_pipeline_path}"
 git checkout -B "${branch_name}"
 
 git config user.name "github-actions[bot]"
 git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 echo "Running Codex for ${ISSUE_KEY} on ${branch_name}"
-codex exec \
+env -u GH_TOKEN -u GITHUB_TOKEN codex exec \
   --cd "${PWD}" \
   --dangerously-bypass-approvals-and-sandbox \
   --output-last-message "${final_message_path}" \
@@ -153,6 +190,8 @@ sed -n '1,200p' "${final_message_path}"
   echo
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
+
+check_guardrail_changes "origin/${default_branch}"
 
 if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
   echo "Applying Spotless formatting before verification"
@@ -178,7 +217,7 @@ if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
   echo "Running local pipeline before opening PR: ${local_pipeline_mode}"
-  ./bin/codex-local-pipeline.sh "${local_pipeline_mode}" --base "${default_branch}"
+  "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${default_branch}"
 fi
 
 git add -A
