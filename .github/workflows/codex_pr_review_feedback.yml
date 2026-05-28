@@ -35,7 +35,8 @@ jobs:
           pr_number=""
           head_ref=""
           body=""
-          author_association=""
+          actor_login=""
+          actor_permission=""
           review_state=""
 
           write_skip() {
@@ -54,11 +55,11 @@ jobs:
               head_ref="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
               if [[ "$GITHUB_EVENT_NAME" == "pull_request_review" ]]; then
                 body="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
-                author_association="$(jq -r '.review.author_association // ""' "$GITHUB_EVENT_PATH")"
+                actor_login="$(jq -r '.review.user.login // ""' "$GITHUB_EVENT_PATH")"
                 review_state="$(jq -r '.review.state // ""' "$GITHUB_EVENT_PATH")"
               else
                 body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
-                author_association="$(jq -r '.comment.author_association // ""' "$GITHUB_EVENT_PATH")"
+                actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
               fi
               ;;
             issue_comment)
@@ -70,7 +71,7 @@ jobs:
               pr_number="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
               head_ref="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" --jq '.head.ref')"
               body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
-              author_association="$(jq -r '.comment.author_association // ""' "$GITHUB_EVENT_PATH")"
+              actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
               ;;
             *)
               write_skip "unsupported event: ${GITHUB_EVENT_NAME}"
@@ -88,19 +89,36 @@ jobs:
             exit 0
           fi
 
-          case "$author_association" in
-            OWNER|MEMBER|COLLABORATOR)
-              ;;
-            *)
-              write_skip "actor association ${author_association:-unknown} is not trusted"
-              exit 0
-              ;;
-          esac
-
           if ! grep -Eiq '(^|[[:space:]])/(codex-review|codex review)([[:space:]]|$)' <<<"$body"; then
             write_skip "missing explicit /codex-review command"
             exit 0
           fi
+
+          if [[ -z "$actor_login" || "$actor_login" == "null" ]]; then
+            write_skip "comment author could not be determined"
+            exit 0
+          fi
+
+          case "$actor_login" in
+            github-actions[bot]|app/github-actions)
+              write_skip "ignoring GitHub Actions bot comment"
+              exit 0
+              ;;
+          esac
+
+          actor_permission="$(
+            gh api "repos/${GITHUB_REPOSITORY}/collaborators/${actor_login}/permission" \
+              --jq '.permission' 2>/dev/null || true
+          )"
+
+          case "$actor_permission" in
+            write|maintain|admin)
+              ;;
+            *)
+              write_skip "actor ${actor_login} does not have repository write permission"
+              exit 0
+              ;;
+          esac
 
           {
             echo "is_codex_pr=true"

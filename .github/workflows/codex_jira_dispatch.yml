@@ -77,11 +77,7 @@ jobs:
           {
             echo "## Codex Jira Dispatch"
             echo
-            echo "- Issue: $ISSUE_KEY"
-            echo "- Summary: $ISSUE_SUMMARY"
-            echo "- Status: $ISSUE_STATUS"
-            echo "- Assignee: $ISSUE_ASSIGNEE"
-            echo "- URL: $ISSUE_URL"
+            echo "- Issue: [$ISSUE_KEY]($ISSUE_URL)"
             echo "- Payload file: runner temp directory only"
             echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
             echo "- Pull request: ${{ steps.codex.outputs.pr_url }}"
