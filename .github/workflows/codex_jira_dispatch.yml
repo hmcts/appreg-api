@@ -66,7 +66,7 @@ jobs:
       - name: Run Codex and open pull request
         id: codex
         env:
-          PAYLOAD_PATH: build/codex/jira-ticket.json
+          PAYLOAD_PATH: ${{ runner.temp }}/jira-ticket.json
           PROMPT_PATH: ${{ runner.temp }}/codex-prompt.md
           PR_BODY_PATH: ${{ runner.temp }}/codex-pr-body.md
         run: ./.github/scripts/codex-jira-implement.sh
@@ -82,7 +82,7 @@ jobs:
             echo "- Status: $ISSUE_STATUS"
             echo "- Assignee: $ISSUE_ASSIGNEE"
             echo "- URL: $ISSUE_URL"
-            echo "- Payload file: build/codex/jira-ticket.json"
+            echo "- Payload file: runner temp directory only"
             echo "- Branch: ${{ steps.codex.outputs.branch_name }}"
             echo "- Pull request: ${{ steps.codex.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
