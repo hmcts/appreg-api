@@ -28,8 +28,6 @@ payload_path="${PAYLOAD_PATH}"
 prompt_path="${PROMPT_PATH}"
 final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
-reviewer="${CODEX_REVIEWER:-}"
-reviewer="${reviewer#@}"
 
 mkdir -p \
   "${artifact_dir}" \
@@ -62,10 +60,6 @@ payload = {
     "assignee": os.environ.get("ISSUE_ASSIGNEE", ""),
     "issueUrl": os.environ["ISSUE_URL"],
 }
-reviewer = os.environ.get("CODEX_REVIEWER", "").strip().lstrip("@")
-review_request = (
-    f"\nReview requested from @{reviewer}.\n" if reviewer else ""
-)
 
 payload_path = Path(os.environ["PAYLOAD_PATH"])
 payload_path.parent.mkdir(parents=True, exist_ok=True)
@@ -81,9 +75,10 @@ Operational rules:
 - Follow the repository's existing patterns and style.
 - Add or update tests where the behavior changes.
 - Run the most relevant targeted verification commands you can reasonably run in this CI job.
-- `./bin/codex-local-pipeline.sh fast` runs lightweight repository guardrails and unit tests only; use `full` only when the change genuinely needs integration, functional, smoke, or coverage verification.
+- `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the change genuinely needs functional, smoke, coverage, or dependency verification.
 - Do not push branches, open pull requests, or modify GitHub Actions runner setup. The workflow handles Git and PR creation after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
+- In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
 
 Jira issue:
 - Key: {payload["issueKey"]}
@@ -99,16 +94,39 @@ Description:
 prompt_path = Path(os.environ["PROMPT_PATH"])
 prompt_path.write_text(prompt, encoding="utf-8")
 
-pr_body = f"""## Jira
+pr_body = f"""### Jira link
 
-- Issue: {payload["issueKey"]}
-- URL: {payload["issueUrl"]}
-- Summary: {payload["summary"]}
+See [{payload["issueKey"]}]({payload["issueUrl"]})
 
-## Codex Notes
+### Change description
 
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the workflow logs for the full execution trace and verification output.
-{review_request}
+Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
+
+<details>
+<summary>Jira description</summary>
+
+{payload["description"]}
+
+</details>
+
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the Codex final message below for the implementation summary.
+
+### Testing done
+
+The Codex workflow is configured to run the most relevant targeted verification commands it can reasonably run for the change, followed by the repository local pipeline before opening this PR. See the Codex final message below and the workflow logs for the exact commands and output.
+
+### Security Vulnerability Assessment ###
+
+**CVE Suppression:** Are there any CVEs present in the codebase (either newly introduced or pre-existing) that are being intentionally suppressed or ignored by this commit?
+  * [ ] Yes
+  * [x] No
+
+### Checklist
+
+- [x] commit messages are meaningful and follow good commit message guidelines
+- [ ] README and other documentation has been updated / added (if needed)
+- [ ] tests have been updated / new tests has been added (if needed)
+- [ ] Does this PR introduce a breaking change
 """
 
 pr_body_path = Path(os.environ["PR_BODY_PATH"])
@@ -142,6 +160,11 @@ sed -n '1,200p' "${final_message_path}"
   echo
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
+
+if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
+  echo "Applying Spotless formatting before verification"
+  ./gradlew --no-daemon spotlessApply
+fi
 
 echo "Git status after Codex:"
 git status --short --untracked-files=normal
@@ -202,12 +225,6 @@ if [[ -z "${pr_url}" ]]; then
 fi
 
 echo "Opened pull request: ${pr_url}"
-
-if [[ -n "${reviewer}" ]]; then
-  gh pr edit "${pr_url}" --add-reviewer "${reviewer}" || {
-    echo "::warning::Unable to request review from ${reviewer}"
-  }
-fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {

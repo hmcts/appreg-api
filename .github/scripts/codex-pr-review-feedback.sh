@@ -215,7 +215,7 @@ Operational rules:
 - Make focused code/test/documentation changes that address the feedback.
 - Preserve the repository's existing patterns and style.
 - Run the most relevant targeted verification commands you can reasonably run.
-- `./bin/codex-local-pipeline.sh fast` runs lightweight repository guardrails and unit tests only; use `full` only when the feedback genuinely needs integration, functional, smoke, or coverage verification.
+- `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the feedback genuinely needs functional, smoke, coverage, or dependency verification.
 - Do not push branches, open pull requests, request reviews, or modify GitHub Actions runner setup. The workflow handles Git and PR updates after you finish.
 - Leave the working tree containing only intended changes for this review feedback.
 
@@ -264,6 +264,11 @@ fi
 
 echo "Codex final message:"
 sed -n '1,200p' "${final_message_path}"
+
+if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
+  echo "Applying Spotless formatting before verification"
+  ./gradlew --no-daemon spotlessApply
+fi
 
 if [[ -z "$(git status --short --untracked-files=normal)" ]]; then
   {
@@ -323,14 +328,6 @@ git push origin "${HEAD_REF}"
   sed -n '1,200p' "${final_message_path}"
 } >"${comment_body_path}"
 gh pr comment "${PR_NUMBER}" --body-file "${comment_body_path}"
-
-reviewer="${CODEX_REVIEWER:-}"
-reviewer="${reviewer#@}"
-if [[ -n "${reviewer}" ]]; then
-  gh pr edit "${PR_NUMBER}" --add-reviewer "${reviewer}" || {
-    echo "::warning::Unable to request review from ${reviewer}"
-  }
-fi
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
