@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -30,9 +31,12 @@ import uk.gov.hmcts.appregister.common.async.model.JobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.model.TrackJobStatusResponse;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobPersistenceService;
 import uk.gov.hmcts.appregister.common.async.service.AsyncJobService;
+import uk.gov.hmcts.appregister.common.entity.repository.CriminalJusticeAreaRepository;
+import uk.gov.hmcts.appregister.common.entity.repository.NationalCourtHouseRepository;
 import uk.gov.hmcts.appregister.common.enumeration.CrudEnum;
 import uk.gov.hmcts.appregister.common.exception.AppRegistryException;
 import uk.gov.hmcts.appregister.common.security.UserProvider;
+import uk.gov.hmcts.appregister.common.service.BusinessDateProvider;
 import uk.gov.hmcts.appregister.generated.model.ActivityAuditFilterDto;
 import uk.gov.hmcts.appregister.generated.model.ActivityType;
 import uk.gov.hmcts.appregister.generated.model.DurationFilterDto;
@@ -44,6 +48,7 @@ import uk.gov.hmcts.appregister.generated.model.LegacyReportLocation;
 import uk.gov.hmcts.appregister.generated.model.ListMaintenanceFilterDto;
 import uk.gov.hmcts.appregister.generated.model.PrivateProsecutorsIndexFilterDto;
 import uk.gov.hmcts.appregister.generated.model.SearchWarrantsReportFilterDto;
+import uk.gov.hmcts.appregister.generated.model.WorkloadFilterDto;
 import uk.gov.hmcts.appregister.job.mapper.JobMapper;
 import uk.gov.hmcts.appregister.report.audit.ReportJobAuditService;
 import uk.gov.hmcts.appregister.report.exception.ReportError;
@@ -534,6 +539,67 @@ class ReportServiceImplTest {
         Mockito.verifyNoInteractions(asyncJobService);
     }
 
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("reportTypesUsingSharedLocationValidation")
+    void givenOtherLocationOnly_whenCreatingReportUsingSharedLocationValidation_thenStartsJob(
+            SharedLocationReportCase<?> reportCase) throws IOException {
+        TrackJobStatusResponse jobResponse = createJobResponse(reportCase.jobType());
+        JobAcknowledgement acknowledgement = new JobAcknowledgement().type(reportCase.jobType());
+        AtomicReference<AsyncJobLifecycle<?>> lifecycle = new AtomicReference<>();
+        CriminalJusticeAreaRepository criminalJusticeAreaRepository =
+                Mockito.mock(CriminalJusticeAreaRepository.class);
+        NationalCourtHouseRepository courtHouseRepository =
+                Mockito.mock(NationalCourtHouseRepository.class);
+        BusinessDateProvider businessDateProvider = Mockito.mock(BusinessDateProvider.class);
+        ReportLocationValidator sharedValidator =
+                Mockito.spy(
+                        new ReportLocationValidator(
+                                criminalJusticeAreaRepository,
+                                courtHouseRepository,
+                                businessDateProvider));
+
+        when(userProvider.getUserId()).thenReturn("user-id");
+        when(asyncJobService.startJob(any(), any(), any(), any(Integer.class)))
+                .thenAnswer(
+                        invocation -> {
+                            lifecycle.set(invocation.getArgument(2));
+                            return jobResponse;
+                        });
+        when(jobMapper.toDto(jobResponse)).thenReturn(acknowledgement);
+
+        ReportServiceImpl service =
+                new ReportServiceImpl(
+                        asyncJobService,
+                        userProvider,
+                        jobMapper,
+                        jdbcTemplate,
+                        reportJobAuditService,
+                        new ReportFilterNormaliser(),
+                        sharedValidator);
+        ReflectionTestUtils.setField(service, "schema", "appreg");
+        ReflectionTestUtils.setField(service, "reportPageSize", 500);
+        LegacyReportLocation location =
+                new LegacyReportLocation().otherLocationDescription("Town Hall");
+
+        try {
+            ReportJobCreation result = reportCase.create(service, location);
+
+            Assertions.assertSame(acknowledgement, result.acknowledgement());
+            Mockito.verify(sharedValidator).validate(location);
+            Mockito.verify(asyncJobService)
+                    .startJob(
+                            Mockito.argThat(
+                                    request -> request.getJobType() == reportCase.jobType()),
+                            Mockito.any(),
+                            Mockito.same(lifecycle.get()),
+                            Mockito.eq(500));
+            Mockito.verifyNoInteractions(
+                    criminalJusticeAreaRepository, courtHouseRepository, businessDateProvider);
+        } finally {
+            closeLifecycle(lifecycle);
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("validDurationLocations")
     void givenValidDurationLocationCombination_whenCreatingReport_thenStartsJob(
@@ -596,6 +662,74 @@ class ReportServiceImplTest {
                                 .cjaCode("01")));
     }
 
+    private static Stream<Arguments> reportTypesUsingSharedLocationValidation() {
+        final LocalDate dateFrom = LocalDate.of(2018, 5, 1);
+        final LocalDate dateTo = LocalDate.of(2018, 5, 31);
+
+        return Stream.of(
+                Arguments.of(
+                        new SharedLocationReportCase<FeesReportFilterDto>(
+                                "fees report",
+                                JobType.FEES_REPORT,
+                                location ->
+                                        new FeesReportFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .location(location),
+                                ReportServiceImpl::createFeesReport)),
+                Arguments.of(
+                        new SharedLocationReportCase<SearchWarrantsReportFilterDto>(
+                                "search warrants report",
+                                JobType.SEARCH_WARRANTS_REPORT,
+                                location ->
+                                        new SearchWarrantsReportFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .location(location),
+                                ReportServiceImpl::createSearchWarrantsReport)),
+                Arguments.of(
+                        new SharedLocationReportCase<DurationFilterDto>(
+                                "duration report",
+                                JobType.DURATION_REPORT,
+                                location ->
+                                        new DurationFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .location(location),
+                                ReportServiceImpl::createDurationReport)),
+                Arguments.of(
+                        new SharedLocationReportCase<WorkloadFilterDto>(
+                                "workload report",
+                                JobType.WORKLOAD_REPORT,
+                                location ->
+                                        new WorkloadFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .location(location),
+                                ReportServiceImpl::createWorkloadReport)),
+                Arguments.of(
+                        new SharedLocationReportCase<ListMaintenanceFilterDto>(
+                                "list maintenance report",
+                                JobType.LIST_MAINTENANCE_REPORT,
+                                location ->
+                                        new ListMaintenanceFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .location(location),
+                                ReportServiceImpl::createListMaintenanceReport)),
+                Arguments.of(
+                        new SharedLocationReportCase<PrivateProsecutorsIndexFilterDto>(
+                                "private prosecutors index report",
+                                JobType.PRIVATE_PROSECUTORS_INDEX_REPORT,
+                                location ->
+                                        new PrivateProsecutorsIndexFilterDto()
+                                                .dateFrom(dateFrom)
+                                                .dateTo(dateTo)
+                                                .applicantSurname("Smith")
+                                                .location(location),
+                                ReportServiceImpl::createPrivateProsecutorsIndexReport)));
+    }
+
     private TrackJobStatusResponse createJobResponse(JobType jobType) {
         JobStatusResponse response =
                 JobStatusResponse.builder()
@@ -608,13 +742,32 @@ class ReportServiceImplTest {
         return new TrackJobStatusResponse(response, CompletableFuture.completedFuture(null));
     }
 
-    private <T> void closeLifecycle(AtomicReference<AsyncJobLifecycle<T>> lifecycle)
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void closeLifecycle(AtomicReference<? extends AsyncJobLifecycle<?>> lifecycle)
             throws IOException {
-        if (lifecycle.get() != null) {
-            lifecycle
-                    .get()
-                    .lifeCycleEventPerformed(
-                            new AsyncJobLifecycleEvent<>(null, List.of(), null, JobStatus1.FAILED));
+        AsyncJobLifecycle currentLifecycle = lifecycle.get();
+        if (currentLifecycle != null) {
+            currentLifecycle.lifeCycleEventPerformed(
+                    new AsyncJobLifecycleEvent(null, List.of(), null, JobStatus1.FAILED));
+        }
+    }
+
+    private interface ReportCreator<T> {
+        ReportJobCreation create(ReportServiceImpl service, T filter);
+    }
+
+    private record SharedLocationReportCase<T>(
+            String name,
+            JobType jobType,
+            Function<LegacyReportLocation, T> filterFactory,
+            ReportCreator<T> creator) {
+        private ReportJobCreation create(ReportServiceImpl service, LegacyReportLocation location) {
+            return creator.create(service, filterFactory.apply(location));
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 
