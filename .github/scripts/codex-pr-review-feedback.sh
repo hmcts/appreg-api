@@ -27,6 +27,7 @@ review_comments_json_path="${artifact_dir}/review-comments.json"
 final_message_path="${artifact_dir}/codex-final-message.md"
 comment_body_path="${artifact_dir}/codex-review-comment.md"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
+trusted_pipeline_sha=""
 codex_home="${HOME:-/home/runner}"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
@@ -162,6 +163,34 @@ git_authenticated() {
     -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
     -c protocol.file.allow=never \
     "$@"
+}
+
+file_sha256() {
+  local path="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${path}" | awk '{print $1}'
+  else
+    shasum -a 256 "${path}" | awk '{print $1}'
+  fi
+}
+
+verify_trusted_file() {
+  local path="$1"
+  local expected_sha="$2"
+  local label="$3"
+  local actual_sha
+
+  if [[ -z "${expected_sha}" ]]; then
+    echo "Missing expected checksum for trusted ${label}." >&2
+    exit 1
+  fi
+
+  actual_sha="$(file_sha256 "${path}")"
+  if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+    echo "::error::Trusted ${label} changed after it was captured; refusing to execute it." >&2
+    exit 1
+  fi
 }
 
 mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "$(dirname "${PROMPT_PATH}")"
@@ -426,6 +455,7 @@ git_authenticated fetch origin "${HEAD_REF}"
 git_authenticated fetch origin "${BASE_REF}"
 git_sanitized show "origin/${BASE_REF}:bin/codex-local-pipeline.sh" >"${trusted_pipeline_path}"
 chmod +x "${trusted_pipeline_path}"
+trusted_pipeline_sha="$(file_sha256 "${trusted_pipeline_path}")"
 git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
 detect_guardrail_changes "origin/${BASE_REF}"
 
@@ -471,6 +501,7 @@ if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
   echo "Running local pipeline before pushing review feedback: ${local_pipeline_mode}"
+  verify_trusted_file "${trusted_pipeline_path}" "${trusted_pipeline_sha}" "pipeline wrapper"
   run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${BASE_REF}"
 fi
 

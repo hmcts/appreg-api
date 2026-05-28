@@ -30,6 +30,8 @@ final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
 trusted_notify_path="${artifact_dir}/trusted-notify-jira-automation.py"
+trusted_pipeline_sha=""
+trusted_notify_sha=""
 codex_home="${HOME:-/home/runner}"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
@@ -162,6 +164,56 @@ git_authenticated() {
     -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
     -c protocol.file.allow=never \
     "$@"
+}
+
+file_sha256() {
+  local path="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${path}" | awk '{print $1}'
+  else
+    shasum -a 256 "${path}" | awk '{print $1}'
+  fi
+}
+
+verify_trusted_file() {
+  local path="$1"
+  local expected_sha="$2"
+  local label="$3"
+  local actual_sha
+
+  if [[ -z "${expected_sha}" ]]; then
+    echo "Missing expected checksum for trusted ${label}." >&2
+    exit 1
+  fi
+
+  actual_sha="$(file_sha256 "${path}")"
+  if [[ "${actual_sha}" != "${expected_sha}" ]]; then
+    echo "::error::Trusted ${label} changed after it was captured; refusing to execute it." >&2
+    exit 1
+  fi
+}
+
+run_trusted_notify() {
+  verify_trusted_file "${trusted_notify_path}" "${trusted_notify_sha}" "Jira notification script"
+
+  env -i \
+    "HOME=${sanitized_home}" \
+    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
+    "LANG=${LANG:-C.UTF-8}" \
+    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
+    "TERM=${TERM:-xterm}" \
+    "TMPDIR=${sanitized_tmp}" \
+    "ISSUE_KEY=${ISSUE_KEY}" \
+    "ISSUE_SUMMARY=${ISSUE_SUMMARY}" \
+    "ISSUE_URL=${ISSUE_URL}" \
+    "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}" \
+    "GITHUB_ACTOR=${GITHUB_ACTOR:-}" \
+    "GITHUB_RUN_ID=${GITHUB_RUN_ID:-}" \
+    "GITHUB_SERVER_URL=${GITHUB_SERVER_URL:-https://github.com}" \
+    "CODEX_JIRA_PR_NOTIFY_URL=${CODEX_JIRA_PR_NOTIFY_URL:-}" \
+    "CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS=${CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS:-10}" \
+    python3 "${trusted_notify_path}" "$@"
 }
 
 mkdir -p \
@@ -306,6 +358,8 @@ git_sanitized checkout -B "${default_branch}" "origin/${default_branch}"
 cp bin/codex-local-pipeline.sh "${trusted_pipeline_path}"
 cp .github/scripts/notify-jira-automation.py "${trusted_notify_path}"
 chmod +x "${trusted_pipeline_path}"
+trusted_pipeline_sha="$(file_sha256 "${trusted_pipeline_path}")"
+trusted_notify_sha="$(file_sha256 "${trusted_notify_path}")"
 git_sanitized checkout -B "${branch_name}"
 
 echo "Running Codex for ${ISSUE_KEY} on ${branch_name}"
@@ -356,6 +410,7 @@ if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
   echo "Running local pipeline before opening PR: ${local_pipeline_mode}"
+  verify_trusted_file "${trusted_pipeline_path}" "${trusted_pipeline_sha}" "pipeline wrapper"
   run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${default_branch}"
 fi
 
@@ -413,7 +468,7 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
 fi
 
 commit_sha="$(git_sanitized rev-parse HEAD)"
-python3 "${trusted_notify_path}" \
+run_trusted_notify \
   --pr-url "${pr_url}" \
   --branch-name "${branch_name}" \
   --commit-sha "${commit_sha}"
