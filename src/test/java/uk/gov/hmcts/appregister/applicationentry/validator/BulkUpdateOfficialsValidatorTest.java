@@ -234,6 +234,6 @@ class BulkUpdateOfficialsValidatorTest {
     }
 
     private Official official(OfficialType type) {
-        return new Official().forename("Ada").surname("Bench").type(type);
+        return new Official().title("Mr").forename("Ada").surname("Bench").type(type);
     }
 }

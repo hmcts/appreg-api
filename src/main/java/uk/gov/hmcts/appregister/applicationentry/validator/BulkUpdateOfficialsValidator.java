@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.appregister.applicationentry.exception.AppListEntryError;
 import uk.gov.hmcts.appregister.applicationentry.model.BulkUpdateOfficialsPayload;
@@ -93,18 +94,54 @@ public class BulkUpdateOfficialsValidator
         }
 
         List<Official> officials = payload.data().getOfficials();
-        List<Integer> invalidOfficialIndexes = new ArrayList<>();
+        List<Integer> invalidTypeIndexes = new ArrayList<>();
+        List<Integer> invalidTitleIndexes = new ArrayList<>();
+        List<Integer> invalidForenameIndexes = new ArrayList<>();
+        List<Integer> invalidSurnameIndexes = new ArrayList<>();
+
         for (int i = 0; i < officials.size(); i++) {
-            if (officials.get(i) == null || officials.get(i).getType() == null) {
-                invalidOfficialIndexes.add(i);
+            Official official = officials.get(i);
+
+            if (official == null || official.getType() == null) {
+                invalidTypeIndexes.add(i);
+                continue;
+            }
+
+            if (StringUtils.isBlank(official.getTitle())) {
+                invalidTitleIndexes.add(i);
+            }
+            if (StringUtils.isBlank(official.getForename())) {
+                invalidForenameIndexes.add(i);
+            }
+            if (StringUtils.isBlank(official.getSurname())) {
+                invalidSurnameIndexes.add(i);
             }
         }
 
-        if (!invalidOfficialIndexes.isEmpty()) {
+        if (!invalidTypeIndexes.isEmpty()) {
             throw new AppRegistryException(
                     AppListEntryError.OFFICIAL_TYPE_REQUIRED,
-                    "Officials must include a type at indexes %s"
-                            .formatted(invalidOfficialIndexes));
+                    "Officials must include a type at indexes %s".formatted(invalidTypeIndexes));
+        }
+
+        if (!invalidTitleIndexes.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.OFFICIAL_TITLE_REQUIRED,
+                    "Officials must include a title at indexes %s".formatted(invalidTitleIndexes));
+        }
+
+        if (!invalidForenameIndexes.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.OFFICIAL_FORENAME_REQUIRED,
+                    "Officials must include a forename at indexes %s"
+                            .formatted(invalidForenameIndexes));
+        }
+
+        if (!invalidSurnameIndexes.isEmpty()) {
+            throw new AppRegistryException(
+                    AppListEntryError.OFFICIAL_SURNAME_REQUIRED,
+                    "Officials must include a surname at indexes %s"
+                            .formatted(invalidSurnameIndexes));
         }
 
         long magistrateCount =
