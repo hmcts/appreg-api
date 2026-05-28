@@ -22,22 +22,19 @@ public class SecurityEndpointFailureLogger {
     public static final String ACCESS_DENIED = "access_denied";
 
     private static final String ANONYMOUS = "anonymous";
-    private static final String UNKNOWN_FAILURE_TYPE = "unknown";
     private static final String UNKNOWN_METHOD = "UNKNOWN";
     private static final String ROOT_PATH = "/";
 
     private final ObjectProvider<UserProvider> userProvider;
 
-    public void logFailure(
-            HttpServletRequest request, int statusCode, String category, Throwable failure) {
+    public void logFailure(HttpServletRequest request, int statusCode, String category) {
         log.warn(
-                "Endpoint security response method={} path={} status={} category={} user={} failureType={}",
+                "Endpoint security response method={} path={} status={} category={} user={}",
                 resolveMethod(request),
                 resolvePath(request),
                 statusCode,
                 category,
-                resolveUser(),
-                resolveFailureType(failure));
+                resolveUser());
     }
 
     private String resolveMethod(HttpServletRequest request) {
@@ -61,24 +58,29 @@ public class SecurityEndpointFailureLogger {
     }
 
     private String resolveUser() {
+        String providerUser = resolveUserFromProvider();
+        if (providerUser != null) {
+            return providerUser;
+        }
+
         String mdcUser = MDC.get(LogMdcFilter.USER);
         if (mdcUser != null && !mdcUser.isBlank()) {
             return mdcUser;
         }
 
+        return ANONYMOUS;
+    }
+
+    private String resolveUserFromProvider() {
         UserProvider provider = userProvider.getIfAvailable();
         if (provider == null) {
-            return ANONYMOUS;
+            return null;
         }
 
         try {
             return provider.getUserId();
         } catch (AppRegistryException ignored) {
-            return ANONYMOUS;
+            return null;
         }
-    }
-
-    private String resolveFailureType(Throwable failure) {
-        return failure == null ? UNKNOWN_FAILURE_TYPE : failure.getClass().getSimpleName();
     }
 }

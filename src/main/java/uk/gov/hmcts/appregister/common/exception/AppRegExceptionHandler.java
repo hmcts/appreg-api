@@ -382,10 +382,7 @@ public class AppRegExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleAccessDenied(
             AccessDeniedException ex, HttpServletRequest request) {
         securityEndpointFailureLogger.logFailure(
-                request,
-                HttpStatus.FORBIDDEN.value(),
-                SecurityEndpointFailureLogger.ACCESS_DENIED,
-                ex);
+                request, HttpStatus.FORBIDDEN.value(), SecurityEndpointFailureLogger.ACCESS_DENIED);
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Access denied"));

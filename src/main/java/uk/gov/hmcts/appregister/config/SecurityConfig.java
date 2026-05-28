@@ -59,8 +59,7 @@ public class SecurityConfig {
                                                             req,
                                                             ERR_AUTH_REQUIRED,
                                                             SecurityEndpointFailureLogger
-                                                                    .AUTHENTICATION_FAILURE,
-                                                            ex);
+                                                                    .AUTHENTICATION_FAILURE);
                                                     res.sendError(ERR_AUTH_REQUIRED);
                                                 }))
                 .exceptionHandling(
@@ -70,8 +69,7 @@ public class SecurityConfig {
                                             securityEndpointFailureLogger.logFailure(
                                                     req,
                                                     ERR_FORBIDDEN,
-                                                    SecurityEndpointFailureLogger.ACCESS_DENIED,
-                                                    ex);
+                                                    SecurityEndpointFailureLogger.ACCESS_DENIED);
                                             res.sendError(ERR_FORBIDDEN);
                                         }));
 

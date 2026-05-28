@@ -41,12 +41,13 @@ import uk.gov.hmcts.appregister.generated.model.BulkOfficialsUpdateDto;
 
 class AppRegExceptionHandlerTest {
     private AppRegExceptionHandler exceptionHandler;
+    private SecurityEndpointFailureLogger securityEndpointFailureLogger;
     private LogCaptor logCaptor;
 
     @BeforeEach
     void beforeEach() {
-        exceptionHandler =
-                new AppRegExceptionHandler(Mockito.mock(SecurityEndpointFailureLogger.class));
+        securityEndpointFailureLogger = Mockito.mock(SecurityEndpointFailureLogger.class);
+        exceptionHandler = new AppRegExceptionHandler(securityEndpointFailureLogger);
         logCaptor = LogCaptor.forClass(AppRegExceptionHandler.class);
         logCaptor.clearLogs();
     }
@@ -640,17 +641,19 @@ class AppRegExceptionHandlerTest {
             givenAccessDeniedException_whenTheExceptionIsThrown_thenForbiddenProblemDetailIsReturned() {
         // setup
         AccessDeniedException exception = new AccessDeniedException("Forbidden");
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
 
         // execute
         ResponseEntity<ProblemDetail> problemDetail =
-                exceptionHandler.handleAccessDenied(
-                        exception, Mockito.mock(HttpServletRequest.class));
+                exceptionHandler.handleAccessDenied(exception, request);
 
         // assert
         Assertions.assertEquals(HttpStatusCode.valueOf(403), problemDetail.getStatusCode());
         Assertions.assertNotNull(problemDetail.getBody());
         Assertions.assertEquals(403, problemDetail.getBody().getStatus());
         Assertions.assertEquals("Access denied", problemDetail.getBody().getDetail());
+        Mockito.verify(securityEndpointFailureLogger)
+                .logFailure(request, 403, SecurityEndpointFailureLogger.ACCESS_DENIED);
     }
 
     @Test
