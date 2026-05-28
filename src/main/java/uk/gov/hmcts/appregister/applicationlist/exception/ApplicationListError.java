@@ -45,48 +45,51 @@ public enum ApplicationListError implements ErrorCodeEnum {
     ENTRY_NOT_PROVIDED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST, "'entryIds' must be provided and non-empty", "AL-10")),
+    ENTRY_IDS_MUST_BE_UNIQUE(
+            DefaultErrorDetail.create(
+                    HttpStatus.BAD_REQUEST, "'entryIds' must not contain duplicates", "AL-11")),
     INVALID_LIST_STATUS(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Cannot move the applications because either the source or target list have a CLOSED 'status'",
-                    "AL-11")),
+                    "AL-12")),
     ENTRY_NOT_IN_SOURCE_LIST(
             DefaultErrorDetail.create(
-                    HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-12")),
+                    HttpStatus.BAD_REQUEST, "Application list entry not in source list", "AL-13")),
     SOURCE_LIST_NOT_FOUND(
-            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-13")),
-    TARGET_LIST_NOT_FOUND(
             DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-14")),
+    TARGET_LIST_NOT_FOUND(
+            DefaultErrorDetail.create(HttpStatus.NOT_FOUND, "Application List not found", "AL-15")),
     INVALID_NEW_LIST_STATUS(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "Cannot create the application because the " + "list has a CLOSED 'status'",
-                    "AL-15")),
+                    "AL-16")),
     INVALID_FOR_CLOSE_DURATION(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "List cannot be closed. Please add duration hours and/or duration minutes.",
-                    "AL-16")),
+                    "AL-17")),
     INVALID_FOR_CLOSE_NOT_RESULTED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "List cannot be closed. Please result all the applications in the list and try again",
-                    "AL-17")),
+                    "AL-18")),
     INVALID_FOR_CLOSE_NO_OFFICIAL(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "List cannot be closed. No Official is recorded against any of the applications in the list.",
-                    "AL-18")),
+                    "AL-19")),
     INVALID_FOR_CLOSE_NOT_SETTLED(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "List cannot be closed. At least one application does not have a Paid or Remitted fee status.",
-                    "AL-19")),
+                    "AL-20")),
     UPDATE_NOT_ALLOWED_ON_CLOSED_LIST(
             DefaultErrorDetail.create(
                     HttpStatus.BAD_REQUEST,
                     "A closed application list is not allowed to be updated",
-                    "AL-20"));
+                    "AL-21"));
 
     private final DefaultErrorDetail defaultErrorCode;
 

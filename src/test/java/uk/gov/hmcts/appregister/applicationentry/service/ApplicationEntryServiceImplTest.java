@@ -1997,7 +1997,7 @@ public class ApplicationEntryServiceImplTest {
         official.setSurname("Lovelace");
 
         val dto = new BulkOfficialsUpdateDto();
-        dto.setEntryIds(Set.of(entryId1, entryId2));
+        dto.setEntryIds(List.of(entryId1, entryId2));
         dto.setOfficials(List.of(official));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))
@@ -2044,7 +2044,7 @@ public class ApplicationEntryServiceImplTest {
         official.setType(OfficialType.MAGISTRATE);
 
         val dto = new BulkOfficialsUpdateDto();
-        dto.setEntryIds(Set.of(entryId1, entryId2));
+        dto.setEntryIds(List.of(entryId1, entryId2));
         dto.setOfficials(List.of(official));
 
         when(applicationListRepository.findByUuidIncludingDelete(listId))

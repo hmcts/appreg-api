@@ -83,7 +83,16 @@ public class BulkUpdateOfficialsValidator
                     ApplicationListError.ENTRY_NOT_PROVIDED, "No entry IDs provided");
         }
 
-        return new HashSet<>(payload.data().getEntryIds());
+        List<UUID> entryIds = payload.data().getEntryIds().stream().toList();
+        Set<UUID> uniqueEntryIds = new HashSet<>(entryIds);
+
+        if (uniqueEntryIds.size() != entryIds.size()) {
+            throw new AppRegistryException(
+                    ApplicationListError.ENTRY_IDS_MUST_BE_UNIQUE,
+                    "Duplicate entry IDs are not allowed");
+        }
+
+        return uniqueEntryIds;
     }
 
     private void validateOfficials(BulkUpdateOfficialsPayload payload) {
