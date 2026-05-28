@@ -77,7 +77,7 @@ jobs:
           retention-days: 1
 
   publish-pr:
-    needs: codex-generate
+    needs: [codex-generate, verify-codex-output]
     if: needs.codex-generate.outputs.has_changes == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -91,6 +91,7 @@ jobs:
       ISSUE_SUMMARY: ${{ inputs.summary }}
       ISSUE_URL: ${{ inputs.issueUrl }}
       GH_TOKEN: ${{ github.token }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
       CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
 
@@ -108,10 +109,17 @@ jobs:
           name: codex-jira-output
           path: ${{ runner.temp }}/codex-output
 
+      - name: Download verified Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-jira-verified
+          path: ${{ runner.temp }}/codex-verified
+
       - name: Publish pull request and notify Jira
         id: publish
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: ./.github/scripts/codex-jira-publish.sh
 
       - name: Write workflow summary
@@ -124,3 +132,47 @@ jobs:
             echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
             echo "- Pull request: ${{ steps.publish.outputs.pr_url }}"
           } >>"$GITHUB_STEP_SUMMARY"
+
+  verify-codex-output:
+    needs: codex-generate
+    if: needs.codex-generate.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      EXPECTED_BRANCH_NAME: ${{ needs.codex-generate.outputs.branch_name }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: checks-only
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Codex output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-jira-output
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-jira-verify.sh
+
+      - name: Upload verified Codex output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-jira-verified
+          path: |
+            ${{ runner.temp }}/codex-output/codex-pr-body.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1

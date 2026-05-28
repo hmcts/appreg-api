@@ -14,6 +14,7 @@ required_env() {
 required_env "GH_TOKEN"
 required_env "GITHUB_REPOSITORY"
 required_env "OUTPUT_DIR"
+required_env "VERIFICATION_DIR"
 required_env "EXPECTED_PR_NUMBER"
 required_env "EXPECTED_HEAD_REF"
 
@@ -21,13 +22,30 @@ output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
 patch_path="${output_dir}/changes.patch"
 final_message_path="${output_dir}/codex-final-message.md"
-comment_body_path="${output_dir}/codex-review-comment.md"
+verification_dir="${VERIFICATION_DIR}"
+verification_path="${verification_dir}/verification.env"
+comment_body_path="${verification_dir}/codex-review-comment.md"
 sanitized_home="${RUNNER_TEMP:-/tmp}/codex-review-publish-home"
 sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-review-publish-tmp"
 
 metadata_value() {
   local key="$1"
   awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${metadata_path}"
+}
+
+verification_value() {
+  local key="$1"
+  awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${verification_path}"
+}
+
+file_sha256() {
+  local path="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${path}" | awk '{print $1}'
+  else
+    shasum -a 256 "${path}" | awk '{print $1}'
+  fi
 }
 
 git_authenticated() {
@@ -91,6 +109,9 @@ mkdir -p "${sanitized_home}" "${sanitized_tmp}"
 has_changes="$(metadata_value has_changes)"
 pr_number="$(metadata_value pr_number)"
 head_ref="$(metadata_value head_ref)"
+verified_has_changes="$(verification_value has_changes)"
+verified_pr_number="$(verification_value pr_number)"
+verified_head_ref="$(verification_value head_ref)"
 
 if [[ "${has_changes}" != "true" ]]; then
   if [[ -z "${pr_number}" || -z "${head_ref}" ]]; then
@@ -99,6 +120,10 @@ if [[ "${has_changes}" != "true" ]]; then
   fi
   if [[ "${pr_number}" != "${EXPECTED_PR_NUMBER}" || "${head_ref}" != "${EXPECTED_HEAD_REF}" || "${head_ref}" != codex/* ]]; then
     echo "Refusing to publish unexpected review artifact metadata." >&2
+    exit 1
+  fi
+  if [[ "${verified_has_changes}" != "false" || "${verified_pr_number}" != "${pr_number}" || "${verified_head_ref}" != "${head_ref}" ]]; then
+    echo "Refusing to publish unverified no-change review result." >&2
     exit 1
   fi
   if [[ -s "${comment_body_path}" ]]; then
@@ -113,15 +138,27 @@ if [[ "${pr_number}" != "${EXPECTED_PR_NUMBER}" || "${head_ref}" != "${EXPECTED_
   exit 1
 fi
 
+if [[ "${verified_has_changes}" != "true" || "${verified_pr_number}" != "${pr_number}" || "${verified_head_ref}" != "${head_ref}" ]]; then
+  echo "Refusing to publish unexpected review artifact metadata." >&2
+  exit 1
+fi
+
 if [[ ! -s "${patch_path}" ]]; then
   echo "Missing or empty Codex review patch artifact: ${patch_path}" >&2
+  exit 1
+fi
+
+verified_patch_sha="$(verification_value patch_sha)"
+actual_patch_sha="$(file_sha256 "${patch_path}")"
+if [[ -z "${verified_patch_sha}" || "${actual_patch_sha}" != "${verified_patch_sha}" ]]; then
+  echo "Refusing to publish Codex review patch because it does not match the verified patch hash." >&2
   exit 1
 fi
 
 commit_subject="Address Codex review feedback on PR #${EXPECTED_PR_NUMBER}"
 commit_subject="${commit_subject:0:72}"
 
-git_authenticated fetch origin "${head_ref}"
+git_authenticated fetch origin "${head_ref}:refs/remotes/origin/${head_ref}"
 git_authenticated checkout -B "${head_ref}" "origin/${head_ref}"
 git_local apply --index --binary "${patch_path}"
 

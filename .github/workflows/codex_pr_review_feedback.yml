@@ -34,6 +34,7 @@ jobs:
 
           pr_number=""
           head_ref=""
+          head_repo=""
           body=""
           actor_login=""
           actor_permission=""
@@ -53,6 +54,7 @@ jobs:
             pull_request_review|pull_request_review_comment)
               pr_number="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
               head_ref="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+              head_repo="$(jq -r '.pull_request.head.repo.full_name' "$GITHUB_EVENT_PATH")"
               if [[ "$GITHUB_EVENT_NAME" == "pull_request_review" ]]; then
                 body="$(jq -r '.review.body // ""' "$GITHUB_EVENT_PATH")"
                 actor_login="$(jq -r '.review.user.login // ""' "$GITHUB_EVENT_PATH")"
@@ -69,7 +71,9 @@ jobs:
                 exit 0
               fi
               pr_number="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
-              head_ref="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" --jq '.head.ref')"
+              pull_request_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}")"
+              head_ref="$(jq -r '.head.ref' <<<"${pull_request_json}")"
+              head_repo="$(jq -r '.head.repo.full_name' <<<"${pull_request_json}")"
               body="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
               actor_login="$(jq -r '.comment.user.login // ""' "$GITHUB_EVENT_PATH")"
               ;;
@@ -81,6 +85,11 @@ jobs:
 
           if [[ "$head_ref" != codex/* ]]; then
             write_skip "PR branch ${head_ref} is not a Codex branch"
+            exit 0
+          fi
+
+          if [[ "$head_repo" != "$GITHUB_REPOSITORY" ]]; then
+            write_skip "PR head repo ${head_repo} is not ${GITHUB_REPOSITORY}"
             exit 0
           fi
 
@@ -167,7 +176,7 @@ jobs:
           retention-days: 1
 
   codex-review-publish:
-    needs: [detect-codex-pr, codex-review-generate]
+    needs: [detect-codex-pr, codex-review-generate, codex-review-verify]
     if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -195,10 +204,17 @@ jobs:
           name: codex-review-output
           path: ${{ runner.temp }}/codex-output
 
+      - name: Download verified Codex review output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-review-verified
+          path: ${{ runner.temp }}/codex-verified
+
       - name: Publish Codex review feedback
         id: publish
         env:
           OUTPUT_DIR: ${{ runner.temp }}/codex-output
+          VERIFICATION_DIR: ${{ runner.temp }}/codex-verified
         run: ./.github/scripts/codex-pr-review-publish.sh
 
       - name: Write workflow summary
@@ -212,3 +228,48 @@ jobs:
             echo "- Branch: ${{ steps.publish.outputs.branch_name }}"
             echo "- Commit: ${{ steps.publish.outputs.commit_sha }}"
           } >>"$GITHUB_STEP_SUMMARY"
+
+  codex-review-verify:
+    needs: [detect-codex-pr, codex-review-generate]
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    timeout-minutes: 30
+    env:
+      EXPECTED_PR_NUMBER: ${{ needs.detect-codex-pr.outputs.pr_number }}
+      EXPECTED_HEAD_REF: ${{ needs.detect-codex-pr.outputs.head_ref }}
+      GH_TOKEN: ${{ github.token }}
+      LOCAL_PIPELINE_MODE: checks-only
+
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download Codex review output
+        uses: actions/download-artifact@v4
+        with:
+          name: codex-review-output
+          path: ${{ runner.temp }}/codex-output
+
+      - name: Verify Codex review patch
+        id: verify
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/codex-output
+        run: ./.github/scripts/codex-pr-review-verify.sh
+
+      - name: Upload verified Codex review output
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-review-verified
+          path: |
+            ${{ runner.temp }}/codex-output/codex-review-comment.md
+            ${{ runner.temp }}/codex-output/guardrail-changes.txt
+            ${{ runner.temp }}/codex-output/verification.env
+          if-no-files-found: error
+          retention-days: 1

@@ -16,12 +16,16 @@ required_env "ISSUE_SUMMARY"
 required_env "ISSUE_URL"
 required_env "GH_TOKEN"
 required_env "OUTPUT_DIR"
+required_env "VERIFICATION_DIR"
+required_env "EXPECTED_BRANCH_NAME"
 
 default_branch="${DEFAULT_BRANCH:-master}"
 output_dir="${OUTPUT_DIR}"
 metadata_path="${output_dir}/metadata.env"
 patch_path="${output_dir}/changes.patch"
-pr_body_path="${output_dir}/codex-pr-body.md"
+verification_dir="${VERIFICATION_DIR}"
+verification_path="${verification_dir}/verification.env"
+pr_body_path="${verification_dir}/codex-pr-body.md"
 trusted_notify_path="${RUNNER_TEMP:-/tmp}/trusted-notify-jira-automation.py"
 sanitized_home="${RUNNER_TEMP:-/tmp}/codex-jira-publish-home"
 sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-jira-publish-tmp"
@@ -29,6 +33,21 @@ sanitized_tmp="${RUNNER_TEMP:-/tmp}/codex-jira-publish-tmp"
 metadata_value() {
   local key="$1"
   awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${metadata_path}"
+}
+
+verification_value() {
+  local key="$1"
+  awk -F= -v key="${key}" '$1 == key { sub(/^[^=]*=/, ""); print; exit }' "${verification_path}"
+}
+
+file_sha256() {
+  local path="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${path}" | awk '{print $1}'
+  else
+    shasum -a 256 "${path}" | awk '{print $1}'
+  fi
 }
 
 git_authenticated() {
@@ -112,13 +131,27 @@ mkdir -p "${sanitized_home}" "${sanitized_tmp}"
 cp .github/scripts/notify-jira-automation.py "${trusted_notify_path}"
 
 branch_name="$(metadata_value branch_name)"
-if [[ "${branch_name}" != codex/* ]]; then
+verified_branch_name="$(verification_value branch_name)"
+verified_patch_sha="$(verification_value patch_sha)"
+
+if [[ "${branch_name}" != "${EXPECTED_BRANCH_NAME}" || "${branch_name}" != "${verified_branch_name}" || "${branch_name}" != codex/* ]]; then
   echo "Refusing to publish unexpected Codex branch name: ${branch_name}" >&2
   exit 1
 fi
 
 if [[ ! -s "${patch_path}" ]]; then
   echo "Missing or empty Codex patch artifact: ${patch_path}" >&2
+  exit 1
+fi
+
+actual_patch_sha="$(file_sha256 "${patch_path}")"
+if [[ -z "${verified_patch_sha}" || "${actual_patch_sha}" != "${verified_patch_sha}" ]]; then
+  echo "Refusing to publish Codex patch because it does not match the verified patch hash." >&2
+  exit 1
+fi
+
+if [[ ! -s "${pr_body_path}" ]]; then
+  echo "Missing verified Codex PR body artifact: ${pr_body_path}" >&2
   exit 1
 fi
 
@@ -133,7 +166,7 @@ print(subject[:72].rstrip())
 PY
 )"
 
-git_authenticated fetch origin "${default_branch}"
+git_authenticated fetch origin "${default_branch}:refs/remotes/origin/${default_branch}"
 git_authenticated checkout -B "${default_branch}" "origin/${default_branch}"
 git_authenticated checkout -B "${branch_name}"
 git_local apply --index --binary "${patch_path}"
