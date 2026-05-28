@@ -15,25 +15,28 @@ required_env "GH_TOKEN"
 required_env "GITHUB_EVENT_NAME"
 required_env "GITHUB_EVENT_PATH"
 required_env "GITHUB_REPOSITORY"
-required_env "PROMPT_PATH"
+required_env "OUTPUT_DIR"
 
 default_branch="${DEFAULT_BRANCH:-master}"
 run_id="${GITHUB_RUN_ID:-manual}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
-artifact_dir="${RUNNER_TEMP:-/tmp}/codex-review-${run_id}-${run_attempt}"
+artifact_dir="${RUNNER_TEMP:-/tmp}/codex-review-generate-${run_id}-${run_attempt}"
+output_dir="${OUTPUT_DIR}"
 feedback_env_path="${artifact_dir}/feedback.env"
 pr_json_path="${artifact_dir}/pull-request.json"
 review_comments_json_path="${artifact_dir}/review-comments.json"
-final_message_path="${artifact_dir}/codex-final-message.md"
-comment_body_path="${artifact_dir}/codex-review-comment.md"
+prompt_path="${artifact_dir}/codex-review-feedback-prompt.md"
+final_message_path="${output_dir}/codex-final-message.md"
+comment_body_path="${output_dir}/codex-review-comment.md"
+patch_path="${output_dir}/changes.patch"
+metadata_path="${output_dir}/metadata.env"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
 trusted_pipeline_sha=""
 codex_home="${HOME:-/home/runner}"
 sanitized_home="${artifact_dir}/sanitized-home"
 sanitized_tmp="${artifact_dir}/sanitized-tmp"
-guardrail_changes_path="${artifact_dir}/guardrail-changes.txt"
+guardrail_changes_path="${output_dir}/guardrail-changes.txt"
 guardrail_review_required="false"
-trusted_git_branch=""
 guardrail_pathspecs=(
   "bin/codex-local-pipeline.sh"
   ".github/scripts"
@@ -103,30 +106,7 @@ run_codex() {
   "${codex_env[@]}" "$@"
 }
 
-restore_trusted_git_config() {
-  if [[ ! -d ".git" ]]; then
-    return
-  fi
-
-  {
-    echo "[core]"
-    echo "	repositoryformatversion = 0"
-    echo "	filemode = true"
-    echo "	bare = false"
-    echo "	logallrefupdates = true"
-    echo "[remote \"origin\"]"
-    echo "	url = https://github.com/${GITHUB_REPOSITORY}.git"
-    echo "	fetch = +refs/heads/*:refs/remotes/origin/*"
-    if [[ -n "${trusted_git_branch}" ]]; then
-      echo "[branch \"${trusted_git_branch}\"]"
-      echo "	remote = origin"
-      echo "	merge = refs/heads/${trusted_git_branch}"
-    fi
-  } >".git/config"
-}
-
 git_sanitized() {
-  restore_trusted_git_config
   run_sanitized git \
     -c core.hooksPath=/dev/null \
     -c credential.helper= \
@@ -134,12 +114,7 @@ git_sanitized() {
     "$@"
 }
 
-git_status_short() {
-  git_sanitized status --short --untracked-files=normal
-}
-
-git_authenticated() {
-  restore_trusted_git_config
+git_read_authenticated() {
   env -i \
     "HOME=${sanitized_home}" \
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
@@ -150,9 +125,6 @@ git_authenticated() {
     "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
     "TERM=${TERM:-xterm}" \
     "TMPDIR=${sanitized_tmp}" \
-    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}" \
-    "CI=${CI:-true}" \
-    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}" \
     "GIT_CONFIG_GLOBAL=/dev/null" \
     "GIT_CONFIG_NOSYSTEM=1" \
     "GIT_TERMINAL_PROMPT=0" \
@@ -181,19 +153,12 @@ verify_trusted_file() {
   local label="$3"
   local actual_sha
 
-  if [[ -z "${expected_sha}" ]]; then
-    echo "Missing expected checksum for trusted ${label}." >&2
-    exit 1
-  fi
-
   actual_sha="$(file_sha256 "${path}")"
   if [[ "${actual_sha}" != "${expected_sha}" ]]; then
-    echo "::error::Trusted ${label} changed after it was captured; refusing to execute it." >&2
+    echo "::error::Trusted ${label} changed after capture; refusing to execute it." >&2
     exit 1
   fi
 }
-
-mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "$(dirname "${PROMPT_PATH}")"
 
 detect_guardrail_changes() {
   local base_ref="${1:-}"
@@ -211,7 +176,7 @@ detect_guardrail_changes() {
   printf '%s\n' "${guardrail_changes}" >"${guardrail_changes_path}"
   if [[ -n "${guardrail_changes}" ]]; then
     guardrail_review_required="true"
-    echo "::warning::Codex changed workflow, runner, Gradle, or verification files. Continuing, but manual verification is required."
+    echo "::warning::Codex changed workflow, runner, Gradle, or verification files. Manual verification is required."
     printf '%s\n' "${guardrail_changes}"
   fi
 }
@@ -225,13 +190,15 @@ write_guardrail_warning() {
     echo
     echo "Manual verification required:"
     echo
-    echo "Codex changed workflow, runner, Gradle, or verification files. The workflow still ran the local pipeline using a trusted copy of the pipeline wrapper where possible, but these changes can affect how checks execute and must be reviewed manually."
+    echo "Codex changed workflow, runner, Gradle, or verification files. These changes can affect how checks execute and must be reviewed manually."
     echo
     echo "Changed verification-sensitive files:"
     sed 's/^/- /' "${guardrail_changes_path}"
     echo
   } >>"${comment_body_path}"
 }
+
+mkdir -p "${artifact_dir}" "${sanitized_home}" "${sanitized_tmp}" "${output_dir}"
 
 python3 - <<'PY' >"${feedback_env_path}"
 import json
@@ -311,6 +278,10 @@ set +a
 
 if [[ -n "${SKIP_REASON}" ]]; then
   echo "Skipping Codex review feedback: ${SKIP_REASON}"
+  {
+    echo "has_changes=false"
+    echo "skip_reason=${SKIP_REASON}"
+  } >"${metadata_path}"
   exit 0
 fi
 
@@ -355,6 +326,10 @@ fi
 
 if [[ -z "${COMMENT_BODY}${REVIEW_COMMENTS}" ]]; then
   echo "Skipping Codex review feedback: comment body is empty"
+  {
+    echo "has_changes=false"
+    echo "skip_reason=comment body is empty"
+  } >"${metadata_path}"
   exit 0
 fi
 
@@ -386,25 +361,21 @@ set -a
 source "${feedback_env_path}"
 set +a
 
-if [[ "${PR_STATE}" != "open" ]]; then
-  echo "Skipping Codex review feedback: PR #${PR_NUMBER} is ${PR_STATE}"
+if [[ "${PR_STATE}" != "open" || "${HEAD_REPO}" != "${GITHUB_REPOSITORY}" || "${HEAD_REF}" != codex/* ]]; then
+  echo "Skipping Codex review feedback: PR is not an open Codex PR in this repository"
+  {
+    echo "has_changes=false"
+    echo "skip_reason=PR is not an open Codex PR in this repository"
+  } >"${metadata_path}"
   exit 0
 fi
 
-if [[ "${HEAD_REPO}" != "${GITHUB_REPOSITORY}" ]]; then
-  echo "Skipping Codex review feedback: PR head repo ${HEAD_REPO} is not ${GITHUB_REPOSITORY}"
-  exit 0
-fi
-
-if [[ "${HEAD_REF}" != codex/* ]]; then
-  echo "Skipping Codex review feedback: PR branch ${HEAD_REF} is not a Codex branch"
-  exit 0
-fi
-
-trusted_git_branch="${HEAD_REF}"
-
-if ! git_authenticated ls-remote --exit-code --heads origin "${HEAD_REF}" >/dev/null 2>&1; then
+if ! git_read_authenticated ls-remote --exit-code --heads origin "${HEAD_REF}" >/dev/null 2>&1; then
   echo "Skipping Codex review feedback: branch ${HEAD_REF} no longer exists on origin"
+  {
+    echo "has_changes=false"
+    echo "skip_reason=branch no longer exists"
+  } >"${metadata_path}"
   exit 0
 fi
 
@@ -422,7 +393,7 @@ Operational rules:
 - Preserve the repository's existing patterns and style.
 - Run the most relevant targeted verification commands you can reasonably run.
 - `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the feedback genuinely needs functional, smoke, coverage, or dependency verification.
-- Do not push branches, open pull requests, or request reviews. The workflow handles Git and PR updates after you finish.
+- Do not push branches, open pull requests, or request reviews. The workflow handles Git and PR updates in a separate trusted job after you finish.
 - Leave the working tree containing only intended changes for this review feedback.
 
 Pull request:
@@ -451,36 +422,34 @@ Inline review comments:
 Path(os.environ["PROMPT_PATH"]).write_text(prompt, encoding="utf-8")
 PY
 
-git_authenticated fetch origin "${HEAD_REF}"
-git_authenticated fetch origin "${BASE_REF}"
+git_read_authenticated fetch origin "${HEAD_REF}"
+git_read_authenticated fetch origin "${BASE_REF}"
+git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
 git_sanitized show "origin/${BASE_REF}:bin/codex-local-pipeline.sh" >"${trusted_pipeline_path}"
 chmod +x "${trusted_pipeline_path}"
 trusted_pipeline_sha="$(file_sha256 "${trusted_pipeline_path}")"
-git_sanitized checkout -B "${HEAD_REF}" "origin/${HEAD_REF}"
-detect_guardrail_changes "origin/${BASE_REF}"
+
+unset GH_TOKEN
 
 echo "Running Codex review feedback for PR #${PR_NUMBER} on ${HEAD_REF}"
 run_codex codex exec \
   --cd "${PWD}" \
   --dangerously-bypass-approvals-and-sandbox \
   --output-last-message "${final_message_path}" \
-  - <"${PROMPT_PATH}"
+  - <"${prompt_path}"
 
 if [[ ! -s "${final_message_path}" ]]; then
   echo "Codex completed without writing a final message." >"${final_message_path}"
 fi
 
-echo "Codex final message:"
-sed -n '1,200p' "${final_message_path}"
-
 detect_guardrail_changes "origin/${BASE_REF}"
 
-if [[ -n "$(git_status_short)" ]]; then
+if [[ -n "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   echo "Applying Spotless formatting before verification"
   run_sanitized ./gradlew --no-daemon spotlessApply
 fi
 
-if [[ -z "$(git_status_short)" ]]; then
+if [[ -z "$(git_sanitized status --short --untracked-files=normal)" ]]; then
   {
     echo "Codex reviewed this feedback but did not produce any committable changes."
     echo
@@ -491,8 +460,11 @@ if [[ -z "$(git_status_short)" ]]; then
     sed -n '1,200p' "${final_message_path}"
   } >"${comment_body_path}"
   write_guardrail_warning
-  gh pr comment "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --body-file "${comment_body_path}"
-  echo "Codex produced no changes for PR #${PR_NUMBER}."
+  {
+    echo "has_changes=false"
+    echo "pr_number=${PR_NUMBER}"
+    echo "head_ref=${HEAD_REF}"
+  } >"${metadata_path}"
   exit 0
 fi
 
@@ -500,57 +472,22 @@ local_pipeline_mode="${LOCAL_PIPELINE_MODE:-fast}"
 if [[ "${SKIP_LOCAL_PIPELINE:-false}" == "true" ]]; then
   echo "Skipping local pipeline because SKIP_LOCAL_PIPELINE=true"
 else
-  echo "Running local pipeline before pushing review feedback: ${local_pipeline_mode}"
   verify_trusted_file "${trusted_pipeline_path}" "${trusted_pipeline_sha}" "pipeline wrapper"
   run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${BASE_REF}"
 fi
 
 git_sanitized add -A
-
 if git_sanitized diff --cached --quiet; then
-  echo "Codex produced changes, but none were staged for commit." >&2
+  echo "Codex produced changes, but none were staged for patch output." >&2
   exit 1
 fi
 
-commit_subject="$(
-  python3 - <<'PY'
-import os
+git_sanitized diff --cached --binary >"${patch_path}"
 
-subject = f"Address Codex review feedback on PR #{os.environ['PR_NUMBER']}"
-print(subject[:72].rstrip())
-PY
-)"
-
-git_sanitized \
-  -c user.name="github-actions[bot]" \
-  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-  commit \
-  -m "${commit_subject}" \
-  -m "Feedback: ${COMMENT_URL}" \
-  -m "Generated by Codex self-hosted runner."
-
-git_sanitized remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
-git_authenticated push origin "${HEAD_REF}"
-
-commit_sha="$(git_sanitized rev-parse HEAD)"
 {
-  echo "Codex pushed an update for review feedback from @${COMMENT_AUTHOR}."
-  echo
-  echo "Feedback: ${COMMENT_URL}"
-  echo
-  echo "Commit: ${commit_sha}"
-  echo
-  echo "Codex final message:"
-  echo
-  sed -n '1,200p' "${final_message_path}"
-} >"${comment_body_path}"
-write_guardrail_warning
-gh pr comment "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --body-file "${comment_body_path}"
-
-if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-  {
-    echo "pr_number=${PR_NUMBER}"
-    echo "branch_name=${HEAD_REF}"
-    echo "commit_sha=${commit_sha}"
-  } >>"${GITHUB_OUTPUT}"
-fi
+  echo "has_changes=true"
+  echo "pr_number=${PR_NUMBER}"
+  echo "head_ref=${HEAD_REF}"
+  echo "comment_author=${COMMENT_AUTHOR}"
+  echo "comment_url=${COMMENT_URL}"
+} >"${metadata_path}"
