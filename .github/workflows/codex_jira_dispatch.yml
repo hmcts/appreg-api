@@ -48,7 +48,6 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       CODEX_JIRA_PR_NOTIFY_URL: ${{ secrets.CODEX_JIRA_PR_NOTIFY_URL }}
       CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS: ${{ vars.CODEX_JIRA_PR_NOTIFY_TIMEOUT_SECONDS || '10' }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
       - name: Checkout default branch
@@ -61,6 +60,8 @@ jobs:
           git checkout -B "${DEFAULT_BRANCH}" FETCH_HEAD
 
       - name: Verify runner toolchain and Codex auth
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: ./.github/scripts/codex-runner-preflight.sh
 
       - name: Run Codex and open pull request
