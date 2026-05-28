@@ -14,8 +14,66 @@ permissions:
   issues: write
 
 jobs:
+  detect-codex-pr:
+    runs-on: ubuntu-latest
+    outputs:
+      is_codex_pr: ${{ steps.detect.outputs.is_codex_pr }}
+      pr_number: ${{ steps.detect.outputs.pr_number }}
+      head_ref: ${{ steps.detect.outputs.head_ref }}
+    steps:
+      - name: Detect Codex PR
+        id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          pr_number=""
+          head_ref=""
+
+          case "$GITHUB_EVENT_NAME" in
+            pull_request_review|pull_request_review_comment)
+              pr_number="$(jq -r '.pull_request.number' "$GITHUB_EVENT_PATH")"
+              head_ref="$(jq -r '.pull_request.head.ref' "$GITHUB_EVENT_PATH")"
+              ;;
+            issue_comment)
+              is_pr="$(jq -r '.issue | has("pull_request")' "$GITHUB_EVENT_PATH")"
+              if [[ "$is_pr" != "true" ]]; then
+                {
+                  echo "is_codex_pr=false"
+                  echo "pr_number="
+                  echo "head_ref="
+                } >>"$GITHUB_OUTPUT"
+                exit 0
+              fi
+              pr_number="$(jq -r '.issue.number' "$GITHUB_EVENT_PATH")"
+              head_ref="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" --jq '.head.ref')"
+              ;;
+            *)
+              {
+                echo "is_codex_pr=false"
+                echo "pr_number="
+                echo "head_ref="
+              } >>"$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+
+          if [[ "$head_ref" == codex/* ]]; then
+            is_codex_pr="true"
+          else
+            is_codex_pr="false"
+          fi
+
+          {
+            echo "is_codex_pr=${is_codex_pr}"
+            echo "pr_number=${pr_number}"
+            echo "head_ref=${head_ref}"
+          } >>"$GITHUB_OUTPUT"
+
   codex-review-feedback:
-    if: github.event_name != 'issue_comment' || github.event.issue.pull_request
+    needs: detect-codex-pr
+    if: needs.detect-codex-pr.outputs.is_codex_pr == 'true'
     runs-on: codex-pilot-azure-aks
     timeout-minutes: 120
     env:
