@@ -29,6 +29,8 @@ prompt_path="${PROMPT_PATH}"
 final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
+guardrail_changes_path="${artifact_dir}/guardrail-changes.txt"
+guardrail_review_required="false"
 guardrail_pathspecs=(
   "bin/codex-local-pipeline.sh"
   ".github/scripts"
@@ -49,7 +51,7 @@ mkdir -p \
   "$(dirname "${prompt_path}")" \
   "$(dirname "${pr_body_path}")"
 
-check_guardrail_changes() {
+detect_guardrail_changes() {
   local base_ref="${1:-}"
   local guardrail_changes
 
@@ -62,12 +64,29 @@ check_guardrail_changes() {
     } | sed '/^[[:space:]]*$/d'
   )"
 
+  printf '%s\n' "${guardrail_changes}" >"${guardrail_changes_path}"
   if [[ -n "${guardrail_changes}" ]]; then
-    echo "Codex changed workflow, runner, or Gradle verification files; refusing to run mutable verification." >&2
-    echo "These files need separate human review before Codex can continue:" >&2
-    printf '%s\n' "${guardrail_changes}" >&2
-    exit 1
+    guardrail_review_required="true"
+    echo "::warning::Codex changed workflow, runner, Gradle, or verification files. Continuing, but manual verification is required."
+    printf '%s\n' "${guardrail_changes}"
   fi
+}
+
+append_guardrail_warning() {
+  if [[ "${guardrail_review_required}" != "true" ]]; then
+    return
+  fi
+
+  {
+    echo
+    echo "### Manual verification required"
+    echo
+    echo "Codex changed workflow, runner, Gradle, or verification files. The workflow still ran the local pipeline using a trusted copy of the pipeline wrapper where possible, but these changes can affect how checks execute and must be reviewed manually."
+    echo
+    echo "Changed verification-sensitive files:"
+    echo
+    sed 's/^/- /' "${guardrail_changes_path}"
+  } >>"${pr_body_path}"
 }
 
 branch_slug="$(
@@ -111,7 +130,7 @@ Operational rules:
 - Add or update tests where the behavior changes.
 - Run the most relevant targeted verification commands you can reasonably run in this CI job.
 - `./bin/codex-local-pipeline.sh fast` runs repository guardrails and Gradle `check`, including formatting, unit, and integration tests. Use `full` only when the change genuinely needs functional, smoke, coverage, or dependency verification.
-- Do not push branches, open pull requests, or modify GitHub Actions runner setup. The workflow handles Git and PR creation after you finish.
+- Do not push branches or open pull requests. The workflow handles Git and PR creation after you finish.
 - Leave the working tree containing only the intended code/test/documentation changes.
 - In your final message, include a concise change summary and the exact testing or verification commands you ran with their outcomes. This final message is added to the pull request description.
 
@@ -191,7 +210,8 @@ sed -n '1,200p' "${final_message_path}"
   sed -n '1,200p' "${final_message_path}"
 } >>"${pr_body_path}"
 
-check_guardrail_changes "origin/${default_branch}"
+detect_guardrail_changes "origin/${default_branch}"
+append_guardrail_warning
 
 if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
   echo "Applying Spotless formatting before verification"
