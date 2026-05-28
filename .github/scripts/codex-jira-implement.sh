@@ -102,14 +102,7 @@ See [{payload["issueKey"]}]({payload["issueUrl"]})
 
 Implements Jira issue {payload["issueKey"]}: {payload["summary"]}
 
-<details>
-<summary>Jira description</summary>
-
-{payload["description"]}
-
-</details>
-
-Codex ran on the Azure AKS self-hosted runner scale set using the Jira payload above. See the Codex final message below for the implementation summary.
+Codex ran on the Azure AKS self-hosted runner scale set using the Jira issue context. See the Codex final message below for the implementation summary.
 
 ### Testing done
 
