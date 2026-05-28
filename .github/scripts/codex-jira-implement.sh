@@ -30,6 +30,9 @@ final_message_path="${artifact_dir}/codex-final-message.md"
 pr_body_path="${PR_BODY_PATH}"
 trusted_pipeline_path="${artifact_dir}/trusted-codex-local-pipeline.sh"
 trusted_notify_path="${artifact_dir}/trusted-notify-jira-automation.py"
+codex_home="${HOME:-/home/runner}"
+sanitized_home="${artifact_dir}/sanitized-home"
+sanitized_tmp="${artifact_dir}/sanitized-tmp"
 guardrail_changes_path="${artifact_dir}/guardrail-changes.txt"
 guardrail_review_required="false"
 guardrail_pathspecs=(
@@ -49,7 +52,35 @@ guardrail_pathspecs=(
 run_sanitized() {
   local sanitized_env=(
     env -i
-    "HOME=${HOME:-/home/runner}"
+    "HOME=${sanitized_home}"
+    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+    "SHELL=${SHELL:-/bin/bash}"
+    "USER=${USER:-runner}"
+    "LOGNAME=${LOGNAME:-${USER:-runner}}"
+    "LANG=${LANG:-C.UTF-8}"
+    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}"
+    "TERM=${TERM:-xterm}"
+    "TMPDIR=${sanitized_tmp}"
+    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
+    "CI=${CI:-true}"
+    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
+    "GRADLE_USER_HOME=${sanitized_home}/.gradle"
+    "GIT_CONFIG_GLOBAL=/dev/null"
+    "GIT_CONFIG_NOSYSTEM=1"
+    "GIT_TERMINAL_PROMPT=0"
+  )
+
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    sanitized_env+=("JAVA_HOME=${JAVA_HOME}")
+  fi
+
+  "${sanitized_env[@]}" "$@"
+}
+
+run_codex() {
+  local codex_env=(
+    env -i
+    "HOME=${codex_home}"
     "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
     "SHELL=${SHELL:-/bin/bash}"
     "USER=${USER:-runner}"
@@ -61,33 +92,82 @@ run_sanitized() {
     "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}"
     "CI=${CI:-true}"
     "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}"
+    "GIT_CONFIG_GLOBAL=/dev/null"
+    "GIT_CONFIG_NOSYSTEM=1"
+    "GIT_TERMINAL_PROMPT=0"
   )
 
   if [[ -n "${JAVA_HOME:-}" ]]; then
-    sanitized_env+=("JAVA_HOME=${JAVA_HOME}")
+    codex_env+=("JAVA_HOME=${JAVA_HOME}")
   fi
 
-  if [[ -n "${GRADLE_USER_HOME:-}" ]]; then
-    sanitized_env+=("GRADLE_USER_HOME=${GRADLE_USER_HOME}")
-  fi
-
-  "${sanitized_env[@]}" "$@"
+  "${codex_env[@]}" "$@"
 }
 
-git_no_hooks() {
-  git -c core.hooksPath=/dev/null "$@"
+restore_trusted_git_config() {
+  if [[ ! -d ".git" ]]; then
+    return
+  fi
+
+  {
+    echo "[core]"
+    echo "	repositoryformatversion = 0"
+    echo "	filemode = true"
+    echo "	bare = false"
+    echo "	logallrefupdates = true"
+    echo "[remote \"origin\"]"
+    echo "	url = https://github.com/${GITHUB_REPOSITORY}.git"
+    echo "	fetch = +refs/heads/*:refs/remotes/origin/*"
+    echo "[branch \"${branch_name}\"]"
+    echo "	remote = origin"
+    echo "	merge = refs/heads/${branch_name}"
+  } >".git/config"
+}
+
+git_sanitized() {
+  restore_trusted_git_config
+  run_sanitized git \
+    -c core.hooksPath=/dev/null \
+    -c credential.helper= \
+    -c protocol.file.allow=never \
+    "$@"
+}
+
+git_status_short() {
+  git_sanitized status --short --untracked-files=normal
 }
 
 git_authenticated() {
-  git \
+  restore_trusted_git_config
+  env -i \
+    "HOME=${sanitized_home}" \
+    "PATH=${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}" \
+    "SHELL=${SHELL:-/bin/bash}" \
+    "USER=${USER:-runner}" \
+    "LOGNAME=${LOGNAME:-${USER:-runner}}" \
+    "LANG=${LANG:-C.UTF-8}" \
+    "LC_ALL=${LC_ALL:-${LANG:-C.UTF-8}}" \
+    "TERM=${TERM:-xterm}" \
+    "TMPDIR=${sanitized_tmp}" \
+    "RUNNER_TEMP=${RUNNER_TEMP:-/tmp}" \
+    "CI=${CI:-true}" \
+    "GITHUB_ACTIONS=${GITHUB_ACTIONS:-true}" \
+    "GIT_CONFIG_GLOBAL=/dev/null" \
+    "GIT_CONFIG_NOSYSTEM=1" \
+    "GIT_TERMINAL_PROMPT=0" \
+    "GH_TOKEN=${GH_TOKEN}" \
+    git \
     -c core.hooksPath=/dev/null \
     -c credential.helper= \
     -c credential.helper='!f() { test "$1" = get && echo username=x-access-token && echo "password=$GH_TOKEN"; }; f' \
+    -c protocol.file.allow=never \
     "$@"
 }
 
 mkdir -p \
   "${artifact_dir}" \
+  "${sanitized_home}" \
+  "${sanitized_tmp}" \
   "$(dirname "${payload_path}")" \
   "$(dirname "${prompt_path}")" \
   "$(dirname "${pr_body_path}")"
@@ -98,10 +178,10 @@ detect_guardrail_changes() {
 
   guardrail_changes="$(
     {
-      if [[ -n "${base_ref}" ]] && git rev-parse --verify --quiet "${base_ref}" >/dev/null; then
-        git diff --name-status "${base_ref}...HEAD" -- "${guardrail_pathspecs[@]}" || true
+      if [[ -n "${base_ref}" ]] && git_sanitized rev-parse --verify --quiet "${base_ref}" >/dev/null; then
+        git_sanitized diff --name-status "${base_ref}...HEAD" -- "${guardrail_pathspecs[@]}" || true
       fi
-      git status --short --untracked-files=normal -- "${guardrail_pathspecs[@]}" || true
+      git_sanitized status --short --untracked-files=normal -- "${guardrail_pathspecs[@]}" || true
     } | sed '/^[[:space:]]*$/d'
   )"
 
@@ -221,18 +301,15 @@ pr_body_path = Path(os.environ["PR_BODY_PATH"])
 pr_body_path.write_text(pr_body, encoding="utf-8")
 PY
 
-git fetch origin "${default_branch}"
-git checkout -B "${default_branch}" "origin/${default_branch}"
+git_authenticated fetch origin "${default_branch}"
+git_sanitized checkout -B "${default_branch}" "origin/${default_branch}"
 cp bin/codex-local-pipeline.sh "${trusted_pipeline_path}"
 cp .github/scripts/notify-jira-automation.py "${trusted_notify_path}"
 chmod +x "${trusted_pipeline_path}"
-git checkout -B "${branch_name}"
-
-git config user.name "github-actions[bot]"
-git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+git_sanitized checkout -B "${branch_name}"
 
 echo "Running Codex for ${ISSUE_KEY} on ${branch_name}"
-run_sanitized codex exec \
+run_codex codex exec \
   --cd "${PWD}" \
   --dangerously-bypass-approvals-and-sandbox \
   --output-last-message "${final_message_path}" \
@@ -255,15 +332,15 @@ sed -n '1,200p' "${final_message_path}"
 detect_guardrail_changes "origin/${default_branch}"
 append_guardrail_warning
 
-if [[ -n "$(git status --short --untracked-files=normal)" ]]; then
+if [[ -n "$(git_status_short)" ]]; then
   echo "Applying Spotless formatting before verification"
   run_sanitized ./gradlew --no-daemon spotlessApply
 fi
 
 echo "Git status after Codex:"
-git status --short --untracked-files=normal
+git_status_short
 
-if [[ -z "$(git status --short --untracked-files=normal)" ]]; then
+if [[ -z "$(git_status_short)" ]]; then
   echo "Codex did not produce any committable changes." >&2
   if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     {
@@ -282,9 +359,9 @@ else
   run_sanitized "${trusted_pipeline_path}" "${local_pipeline_mode}" --base "${default_branch}"
 fi
 
-git add -A
+git_sanitized add -A
 
-if git diff --cached --quiet; then
+if git_sanitized diff --cached --quiet; then
   echo "Codex produced changes, but none were staged for commit." >&2
   exit 1
 fi
@@ -300,18 +377,22 @@ print(subject[:72].rstrip())
 PY
 )"
 
-git_no_hooks commit \
+git_sanitized \
+  -c user.name="github-actions[bot]" \
+  -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+  commit \
   -m "${commit_subject}" \
   -m "Jira: ${ISSUE_URL}" \
   -m "Generated by Codex self-hosted runner for ${ISSUE_KEY}."
 
-git remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
+git_sanitized remote set-url origin "https://github.com/${GITHUB_REPOSITORY}.git"
 git_authenticated push --set-upstream origin "${branch_name}"
 
-pr_url="$(gh pr list --head "${branch_name}" --state open --json url --jq '.[0].url // empty')"
+pr_url="$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${branch_name}" --state open --json url --jq '.[0].url // empty')"
 if [[ -z "${pr_url}" ]]; then
   pr_url="$(
     gh pr create \
+      --repo "${GITHUB_REPOSITORY}" \
       --base "${default_branch}" \
       --head "${branch_name}" \
       --title "${ISSUE_KEY}: ${ISSUE_SUMMARY}" \
@@ -322,15 +403,17 @@ fi
 echo "Opened pull request: ${pr_url}"
 
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+  commit_sha="$(git_sanitized rev-parse HEAD)"
   {
     echo "branch_name=${branch_name}"
-    echo "commit_sha=$(git rev-parse HEAD)"
+    echo "commit_sha=${commit_sha}"
     echo "has_changes=true"
     echo "pr_url=${pr_url}"
   } >>"${GITHUB_OUTPUT}"
 fi
 
+commit_sha="$(git_sanitized rev-parse HEAD)"
 python3 "${trusted_notify_path}" \
   --pr-url "${pr_url}" \
   --branch-name "${branch_name}" \
-  --commit-sha "$(git rev-parse HEAD)"
+  --commit-sha "${commit_sha}"
